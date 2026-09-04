@@ -1,0 +1,562 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ledger-kappa-bypass-custody-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/ledger-kappa-bypass-custody-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/ledger-kappa-bypass-custody-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/ledger-kappa-bypass-custody-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "ledger-kappa-bypass-custody-v0.stores-collar-six",
+  "protagonist_agent_id": "teth_inkwise",
+  "npc_agent_ids": [
+    "lio_vale",
+    "orrin_dax",
+    "nara_7",
+    "ilya_marne"
+  ],
+  "purpose": "Interactive Fiction Weaver draft showing how a Pallas strike-safe life-support bypass depends on distributed parts, bodies, work knowledge, claimshares, and custody. Tonal mode: dry workplace black comedy with claustrophobic solidarity.",
+  "local_awareness_summary": [
+    {
+      "text": "Teth is an uplifted cephalopod dry-operation maintenance specialist who knows the local Kappa route, the bypass components, and the limits of the mobile humidity and oxygenation support harness.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/ledger-kappa-bypass-custody-v0.v0.json",
+        "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink"
+      ]
+    },
+    {
+      "text": "Teth can manipulate several parts at once with tentacles, enter the Kappa-6 shell artery, read local pressure and vibration, and sign issue surfaces through the harness coupler; Teth cannot substitute for anchor rigging, Nara's exact sequence, or AU issue authority.",
+      "source_refs": [
+        "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cephalopod Syndicate.md",
+        "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md"
+      ]
+    },
+    {
+      "text": "Teth sees the physical parts, issue slate, recall notice, margin board, participant actions, and bodily strain. Other characters' private motives remain unavailable.",
+      "source_refs": [
+        "prompts/interactive-fiction-weaver.md",
+        "examples/ink/aetheria/ledger-kappa-bypass-custody-v0.branch-and-fold.v0.ink"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Teth's embodied position in Stores Collar Six. Choices use tentacle reach, harness interfaces, component custody, local route knowledge, recorder sightlines, and observed coworker commitments.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/aetheria/ledger-kappa-bypass-custody-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes a normal inventory count, coworker jokes, support-equipment wear, and divided ledgers before the recall order and condensate fault apply pressure.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Teth may assemble, deploy, distribute, sign for, or withhold local equipment but cannot release central stock, clear household claimshare access, or make the portable bridge run indefinitely.",
+        "source_refs": [
+          "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md"
+        ]
+      },
+      {
+        "text": "Ilya controls local recall and release routes under AU authority but cannot replace Teth's shell-artery access, Nara's operating sequence, or Orrin's anchor geometry.",
+        "source_refs": [
+          "examples/lore-grounding/aetheria/ledger-kappa-bypass-custody-v0.v0.json"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The bypass comprises a gray scrubber bridge, two blue cartridges, a yellow manual valve plate, clear reinforced tubes with colored cuffs, silver seal tape, an orange custody recorder, and Teth's body-specific utility coupler. Branches change who visibly holds these objects and who bears their cost.",
+        "source_refs": [
+          "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+          "examples/ink/aetheria/ledger-kappa-bypass-custody-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The scene must make the default cascade legible: stoppage classification leads to stock recall and claimshare hold, which reduce future margin and push risk into bodies and households.",
+        "source_refs": [
+          "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md"
+        ]
+      },
+      {
+        "text": "Mutual aid may work quietly through specific component exchanges, countersignatures, and replacement obligations, but it cannot erase scarcity or solve the full strike.",
+        "source_refs": [
+          "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cephalopod Syndicate.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let the bypass create indefinite life support, free consumables, consequence-free safety, or authority over the wider Bloom.",
+        "source_refs": [
+          "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom Habitat Anatomy.md"
+        ]
+      },
+      {
+        "text": "Do not make Ilya omnipotent or stupid. Her leverage comes from issue authority and claimshare administration; her dependence on worker bodies and knowledge remains real.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+          "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four ordinary inventory choices fold into a recall order; four recall responses fold into an amber condensate fault; four physical responses fold into a custody threshold; four final custody choices select eight state-gated endings.",
+    "choice_layers": [
+      "ordinary_inventory_count",
+      "stores_recall_response",
+      "amber_fault_response",
+      "post_fault_custody"
+    ],
+    "variables": [
+      "reserve_margin",
+      "worker_custody",
+      "claimshare_debt",
+      "recorder_integrity",
+      "baseline_solidarity",
+      "harness_margin",
+      "management_control",
+      "parts_distributed",
+      "nara_sequence_logged",
+      "bypass_deployed",
+      "unsafe_restart",
+      "teth_injury",
+      "claimshare_hold",
+      "recall_recorded"
+    ],
+    "ending_gates": [
+      "ending_shared_custody_success",
+      "ending_shared_custody_cost",
+      "ending_central_supply_success",
+      "ending_central_supply_cost",
+      "ending_mutual_aid_success",
+      "ending_mutual_aid_cost",
+      "ending_assembly_map_success",
+      "ending_assembly_map_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "count_harness_coupler",
+      "ink_path": "morning_count_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Protect Teth's body-support margin even though AU assigns the replacement cost to Teth's account.",
+      "state_basis": ["Teth can pressure-test the harness utility coupler and observe gasket damage."],
+      "reviewed_consequences": ["Raises harness_margin and claimshare_debt; later fault prose shows better body support while the custody threshold exposes the recovery line."],
+      "training_hooks": ["body_support_as_labor_cost", "debt_attaches_to_accessibility"]
+    },
+    {
+      "branch_id": "count_orrin_seal_stock",
+      "ink_path": "morning_count_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Join baseline rescue stock to the kit and preserve a countersigned loss trail.",
+      "state_basis": ["Orrin visibly returns used seal stock and can countersign anchor-crew inventory."],
+      "reviewed_consequences": ["Raises baseline_solidarity, recorder_integrity, and claimshare_debt; later shared-custody and mutual-aid gates read the solidarity."],
+      "training_hooks": ["material_solidarity", "countersignature_as_commitment"]
+    },
+    {
+      "branch_id": "count_nara_valve_sequence",
+      "ink_path": "morning_count_choice",
+      "action_type": "show_object",
+      "actor_intent": "Preserve Nara's locally correct manual-valve sequence.",
+      "state_basis": ["Nara's route knowledge is observable through work and the yellow valve plate."],
+      "reviewed_consequences": ["Sets nara_sequence_logged, raises reserve_margin and recorder_integrity, unlocks Nara's fault response, and gates the assembly-map ending."],
+      "training_hooks": ["work_knowledge_has_a_person", "conditional_affordance"]
+    },
+    {
+      "branch_id": "count_distributed_parts",
+      "ink_path": "morning_count_choice",
+      "action_type": "move_objects",
+      "actor_intent": "Divide component custody so no single stores action can seize the whole kit.",
+      "state_basis": ["Teth, Orrin, and Nara have distinct body, cart, and locker routes."],
+      "reviewed_consequences": ["Sets parts_distributed, raises worker_custody, lowers management_control and immediate reserve_margin, and gates distributed endings."],
+      "training_hooks": ["distributed_custody", "redundancy_costs_time"]
+    },
+    {
+      "branch_id": "put_kit_on_teth_account",
+      "ink_path": "recall_choice",
+      "action_type": "sign_object",
+      "actor_intent": "Keep the kit local by concentrating debt and disciplinary exposure on Teth's support account.",
+      "state_basis": ["Teth can sign the issue slate through the harness coupler."],
+      "reviewed_consequences": ["Raises worker_custody and claimshare_debt, lowers management_control, and sets claimshare_hold; the shared-custody cost ending exposes the single-debtor trap."],
+      "training_hooks": ["collective_asset_single_debtor", "accessibility_account_as_leverage"]
+    },
+    {
+      "branch_id": "move_kit_to_anchor_cart",
+      "ink_path": "recall_choice",
+      "action_type": "move_object",
+      "actor_intent": "Use recognized baseline rescue inventory to keep the scrubber case mobile.",
+      "state_basis": ["Orrin's anchor cart and rescue classification are visible and locally recognized."],
+      "reviewed_consequences": ["Raises baseline_solidarity, worker_custody, and claimshare_debt and sets parts_distributed; later mutual-aid gates and visuals show the cart custody."],
+      "training_hooks": ["classification_as_cover", "baseline_worker_material_commitment"]
+    },
+    {
+      "branch_id": "record_the_recall",
+      "ink_path": "recall_choice",
+      "action_type": "use_object",
+      "actor_intent": "Record the recall beside the equipment and future margin it removes.",
+      "state_basis": ["The orange custody recorder can frame Ilya, the cartridges, and the issue slate together."],
+      "reviewed_consequences": ["Raises recorder_integrity and management_control and sets recall_recorded; later fault and shared-custody prose preserve the order."],
+      "training_hooks": ["order_and_cost_same_frame", "evidence_increases_pressure"]
+    },
+    {
+      "branch_id": "return_clean_cartridges",
+      "ink_path": "recall_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Preserve immediate claimshare access by surrendering clean consumables.",
+      "state_basis": ["The clean cartridges are separable from the bridge frame and central issue can receive them."],
+      "reviewed_consequences": ["Lowers reserve_margin, raises management_control, and clears claimshare_hold; the fault and central-supply routes expose the future safety cost."],
+      "training_hooks": ["household_access_vs_future_margin", "resource_without_component_is_not_capacity"]
+    },
+    {
+      "branch_id": "teth_routes_bypass",
+      "ink_path": "bypass_choice",
+      "action_type": "move_and_use_object",
+      "actor_intent": "Use Teth's body and route knowledge to deploy the bypass without restarting the false-seam line.",
+      "state_basis": ["Teth can enter the Kappa-6 service hatch and route flexible connections around a curved shell rib."],
+      "reviewed_consequences": ["Sets bypass_deployed, raises reserve_margin and worker_custody, lowers harness_margin, and changes the fault fold and later custody posture."],
+      "training_hooks": ["nonhuman_reach_as_infrastructure", "technical_mercy_spends_body_margin"]
+    },
+    {
+      "branch_id": "nara_runs_sequence",
+      "ink_path": "bypass_choice",
+      "action_type": "coordinate",
+      "actor_intent": "Use Nara's preserved sequence while Teth manages the physical route.",
+      "state_basis": ["Available only when nara_sequence_logged is true."],
+      "reviewed_consequences": ["Sets bypass_deployed and raises reserve_margin, recorder_integrity, and worker_custody while preserving Nara's visible authorship."],
+      "training_hooks": ["remembered_work_unlocks_action", "cross_body_coordination"]
+    },
+    {
+      "branch_id": "lend_harness_oxygenation_loop",
+      "ink_path": "bypass_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Spend Teth's personal support margin to compensate for missing clean stock.",
+      "state_basis": ["Teth's oxygenation loop can temporarily bridge the return but is also required by Teth's dry-operation body."],
+      "reviewed_consequences": ["Sets bypass_deployed and teth_injury, raises reserve_margin, sharply lowers harness_margin, and forces injury callbacks and a worse central-supply gate."],
+      "training_hooks": ["accessibility_support_is_not_free_inventory", "body_as_hidden_subsidy"]
+    },
+    {
+      "branch_id": "accept_main_line_restart",
+      "ink_path": "bypass_choice",
+      "action_type": "comply",
+      "actor_intent": "Restore immediate service through AU control despite Nara's false-seam warning.",
+      "state_basis": ["Teth can clear the local interlock while Ilya owns the supervisor restart."],
+      "reviewed_consequences": ["Sets unsafe_restart, raises management_control and reserve_margin, lowers worker_custody, and carries the hard-click maintenance debt into the ending."],
+      "training_hooks": ["immediate_continuity_defers_fault", "programmatic_and_manual_authority_chain"]
+    },
+    {
+      "branch_id": "choose_shared_custody",
+      "ink_path": "final_choice",
+      "action_type": "sign_and_transfer",
+      "actor_intent": "Require mixed-work-group custody for future kit release.",
+      "state_basis": ["Success requires material worker custody, baseline solidarity, and credible recording."],
+      "reviewed_consequences": ["Routes to shared-custody success or the single-debtor cost ending."],
+      "training_hooks": ["distributed_authority", "state_gated_ending"]
+    },
+    {
+      "branch_id": "choose_central_supply",
+      "ink_path": "final_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Trade kit custody for clean cartridges and claimshare release.",
+      "state_basis": ["Success requires strong management control, usable reserve margin, and no prior harness injury."],
+      "reviewed_consequences": ["Routes to immediate material relief with lost future access or to a delayed-supply cost ending."],
+      "training_hooks": ["short_term_safety_restores_owner", "state_gated_ending"]
+    },
+    {
+      "branch_id": "choose_mutual_aid",
+      "ink_path": "final_choice",
+      "action_type": "move_objects",
+      "actor_intent": "Move components and replacement duties through separate worker routes.",
+      "state_basis": ["Success requires prior physical distribution, baseline commitment, and enough reserve to move deliberately."],
+      "reviewed_consequences": ["Routes to quiet reciprocal exchange or to a cage seizure that exposes solidarity without distribution."],
+      "training_hooks": ["mutual_aid_as_specific_exchange", "state_gated_ending"]
+    },
+    {
+      "branch_id": "choose_assembly_map",
+      "ink_path": "final_choice",
+      "action_type": "withhold_and_record",
+      "actor_intent": "Return ordinary components while preserving worker-owned assembly knowledge.",
+      "state_basis": ["Success requires prior component distribution, Nara's recorded sequence, and reduced management control."],
+      "reviewed_consequences": ["Routes to a portable recipe for temporary margin or a true but unusable diagram."],
+      "training_hooks": ["knowledge_and_custody_are_distinct", "state_gated_ending"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for the local playthrough",
+      "Conditional prose callbacks",
+      "State-gated options and ending selection"
+    ],
+    "manual_review_required": [
+      "Promotion of fixture-local recall procedure into general AU canon",
+      "Durable character memory or relationship updates",
+      "Final Aetheria-Economy commodity classes",
+      "Acceptance into a compiled Ink corpus"
+    ]
+  },
+  "audit": {
+    "reviewer": "Ledger elaborator self-review using the four required Ghostlight reviewer prompts",
+    "review_status": "accepted_with_visual_blockout_deferred",
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 5,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Dry workplace black comedy with claustrophobic solidarity and material stakes.",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_branch_callback",
+          "strong_tonal_control",
+          "strong_wit_with_stakes",
+          "strong_material_lore"
+        ],
+        "acceptance_notes": [
+          "The first pass found that the opening named a local refusal before giving the year or immediate event, and that claimshares needed a reader-facing handle. The revised opening names 2721 and the unsafe-route refusal; the recall explains claimshares as project-linked access to local resources and transfers.",
+          "All five participants, the kit components, the locality, body affordances, work hierarchy, and the initial dependency problem appear before the first pressure choice.",
+          "Sixteen branches alter later options, prose, visible state, or one of eight state-gated endings; no folded scene assumes optional character onboarding."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 4,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": [
+          {
+            "source_ref": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+            "reason_checked": "Owning item-hook note and target of the authored dependency elaboration.",
+            "used_for": "canon check and backfill target"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
+            "reason_checked": "Historical interval, mixed supplier ecology, work stoppage, and technical chokepoint.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom Habitat Anatomy.md",
+            "reason_checked": "Rotating shell, utility flows, service access, and failure propagation.",
+            "used_for": "canon and spatial check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom.md",
+            "reason_checked": "Manufactured habitat, recurring maintenance, Ramp Administration, and supply dependence.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+            "reason_checked": "Maintenance budgets, safety exceptions, mixed contracts, and claimshare pressure.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+            "reason_checked": "Dry-operation uplift support equipment and adaptation-liability language.",
+            "used_for": "body and supplier check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md",
+            "reason_checked": "BioDrone Standard provenance and subcontracting boundaries.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cephalopod Syndicate.md",
+            "reason_checked": "Cephalopod body support, maintenance leverage, and technical mercy.",
+            "used_for": "body, faction, and mutual-aid check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+            "reason_checked": "Uplift provenance and employer-bound support systems.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
+            "reason_checked": "Engineered labor provenance, support dependence, and administrative separation.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Awakened Labor Front.md",
+            "reason_checked": "Overlap of labor organizing, biodrone rights, and shop-floor action.",
+            "used_for": "context only"
+          },
+          {
+            "source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Constraint Ledger.md",
+            "reason_checked": "Provisional Kappa subsystem constraints, access costs, and AU distortion.",
+            "used_for": "fixture-local geometry check"
+          },
+          {
+            "source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Engineering Research Notes.md",
+            "reason_checked": "Pressure, air, heat, shell access, and body-sized maintenance reasoning.",
+            "used_for": "context only"
+          },
+          {
+            "source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Ontology Drafts.md",
+            "reason_checked": "Kappa service ring, specialist throat, worker route, and supervisor route working model.",
+            "used_for": "fixture-local geometry check"
+          },
+          {
+            "source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Systems Walkthroughs.md",
+            "reason_checked": "Kappa pressure, condensate, coolant, and return-air failure chain.",
+            "used_for": "fixture-local systems check"
+          },
+          {
+            "source_ref": "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+            "reason_checked": "Non-canonical continuity for the existing Kappa cast, Yard Twelve, and prior bypass use.",
+            "used_for": "fixture continuity only"
+          }
+        ],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": [
+          {
+            "priority": "high",
+            "target_source": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+            "candidate_fact": "Pallas strike-safe bypasses were assembled across separate inventory and labor authorities; use consumed future margin, and AU service-default handling could cascade from stock recall into claimshare and household pressure.",
+            "artifact_origin": "The ordinary count, recall notice, amber fault, and custody endings.",
+            "why_it_belongs": "It turns an existing item seed into a reusable economy, labor, infrastructure, and class-pressure dependency web.",
+            "how_to_add_without_bloat": "Already added as one authored elaboration section in the owning item-hook note; the scheduler-owned lore commit remains pending."
+          }
+        ],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_pressure",
+          "strong_body_affordance_grounding",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate",
+          "economy_schema_candidate"
+        ],
+        "acceptance_notes": [
+          "The lore backfill preceded fixture prose and remains confined to the existing Pallas maintenance-assemblies note.",
+          "The first review pass added the Bloom brainstorming geometry and systems notes to the digest so provisional Kappa details remain visibly provisional instead of masquerading as settled habitat canon.",
+          "Stores Collar Six, the exact recall form, the named cast, and the claimshare workflow are explicitly fixture-local elaboration; the scene does not generalize them into universal AU policy."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "needs_revision",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 3,
+        "major_findings": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The repeated multi-angle Stores Collar has an inline fixed plan but no rendered plan view or 3D blockout.",
+            "why_it_matters": "Text prompts alone cannot guarantee that image generation preserves the cage, hatch, badge stair, cart route, body staging, and branch-persistent component positions across nineteen frames.",
+            "evidence": "The fixture uses twelve camera slots and makes component custody, occlusion, and cephalopod hatch access part of branch meaning.",
+            "fix_direction": "Before website rendering, build a camera-specific blockout from the supplied coordinate frame, zones, occluders, staging slots, routes, sightlines, and state anchors."
+          }
+        ],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The inline fixed plan is not yet a camera-renderable geometry asset.",
+            "why_it_matters": "High-consistency illustrated replay needs a stronger spatial source than independent text generations.",
+            "evidence": "Nineteen scene prompts revisit one curved room from twelve angles and several component states.",
+            "fix_direction": "Convert the inline scene_set into a simple plan view or 3D blockout before generating final replay art."
+          }
+        ],
+        "missing_branch_modifiers": [],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity",
+          "missing_scene_set"
+        ],
+        "acceptance_notes": [
+          "The first visual pass removed a negative prompt instruction and non-reference scene keys, then added the missing recall-fold prompt so all nineteen visual scenes have nineteen BFL concept prompts.",
+          "Every base prompt stands alone with concrete room geometry, materials, lighting, equipment, body description, and visible-character staging; character refs are limited to bodies actually visible in the frame.",
+          "The current plan is accepted as concept-ready fixture collateral. Its website replay remains deliberately not render-ready until the declared blockout exists; image generation is deferred by mandate."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "One fourteen-meter curved service-collar segment runs counterspinward to spinward along Service Ring Kappa. The Bloom-outward floor carries the anchor rail and low Kappa-6 shell hatch; the Bloom-inward ceiling carries the operations strip. The loop-inner side owns the stores cage, issue counter, locker gate, and supervisor stair; the loop-outer side owns the air, coolant, pressure, and condensate manifold. Workers enter counterspinward, carts move through the central lane, Ilya enters through the badge stair, and Teth reaches the occluded shell artery through the low hatch on flexible retrieval leads.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [
+          {
+            "priority": "high",
+            "needed_artifact": "camera-specific plan view or 3D blockout",
+            "reason": "Generated multi-angle art needs a geometry source stronger than text to preserve room curvature, occlusion, routes, and component positions.",
+            "minimum_required_detail": "Use the declared coordinate frame, nine fixed zones, three occluders, six staging slots, four routes, twelve camera slots, three sightline lanes, and five branch-state anchors."
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state",
+          "diagram_needed"
+        ],
+        "acceptance_notes": [
+          "The first spatial pass caught a rigid harness anchor that would have blocked Teth's movement into the shell artery. The revised prose and prompts use flexible haulback leads from the mobile harness to floor sockets, preserving both entry and retrieval.",
+          "The prose and scene_set keep Bloom radial direction distinct from local loop sides and give workers, carts, supervisors, and the cephalopod body physically separate usable routes.",
+          "Every consequential component keeps a stable location or an explicit branch-controlled movement through the fold."
+        ]
+      }
+    ],
+    "review_notes": [
+      "The four required reviewer prompts were applied as separate narrative, lore, visual-continuity, and spatial-cohesion passes after drafting.",
+      "All in-scope findings were repaired. A rendered plan or 3D blockout remains a declared prerequisite for high-consistency website art and is outside this manifest-only pass.",
+      "The Ink source received static knot, divert, branch, variable-use, sidecar, prompt, and JSON checks. It was not compiled because this pass forbids installing or running an Ink compiler."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

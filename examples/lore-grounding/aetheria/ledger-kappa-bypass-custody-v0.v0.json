@@ -1,0 +1,336 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.ledger-kappa-bypass-custody-v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "pallas-maintenance-assemblies",
+      "path": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+      "title": "Pallas Strike Maintenance Assemblies",
+      "line_start": 84,
+      "line_end": 122,
+      "relevance": "Defines the strike-safe life-support bypass kit, its consumable parts, distributed component ownership, mixed-workforce dependencies, claimshare exposure, and default cascade."
+    },
+    {
+      "source_id": "pallas-species-strikes",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
+      "title": "Pallas Species Strikes",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Grounds the 2719-2724 Pallas stoppages, mixed supplier ecology, technical chokepoints, dry-yard cephalopod labor, and management's liability framing."
+    },
+    {
+      "source_id": "bloom-habitat-anatomy",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom Habitat Anatomy.md",
+      "title": "Bloom Habitat Anatomy",
+      "line_start": 1,
+      "line_end": 66,
+      "relevance": "Grounds a rotating manufactured habitat, radial direction, open atmosphere, shell service routes, pressure and coolant dependencies, access control, and fault propagation."
+    },
+    {
+      "source_id": "bloom",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom.md",
+      "title": "Bloom",
+      "line_start": 1,
+      "line_end": 41,
+      "relevance": "Grounds Bloom construction, recurring certification, Ramp Administration control, incomplete local autonomy, and dependence on replacement parts and skilled labor."
+    },
+    {
+      "source_id": "aeronautics-unlimited",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+      "title": "Aeronautics Unlimited",
+      "line_start": 1,
+      "line_end": 29,
+      "relevance": "Grounds Ramp Administration authority over berths, shifts, maintenance budgets, safety exceptions, outside freight, claimshares, and mixed labor contracts."
+    },
+    {
+      "source_id": "bioelevate",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+      "title": "BioElevate",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds cephalopod dry-operation adaptation, mobile life-support equipment, and supplier language that classifies pain or refusal as variance."
+    },
+    {
+      "source_id": "vitaforge",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md",
+      "title": "VitaForge",
+      "line_start": 1,
+      "line_end": 7,
+      "relevance": "Grounds BioDrone Standard provenance and split responsibility in mixed yards."
+    },
+    {
+      "source_id": "cephalopod-syndicate",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cephalopod Syndicate.md",
+      "title": "Cephalopod Syndicate",
+      "line_start": 1,
+      "line_end": 7,
+      "relevance": "Grounds uplifted cephalopod maintenance expertise, bare-minimum dry-operation rigs, technical mercy, and mutual-aid extraction."
+    },
+    {
+      "source_id": "uplift",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+      "title": "Uplift",
+      "line_start": 1,
+      "line_end": 13,
+      "relevance": "Grounds the distinction between uplift and biodrone provenance and the use of support systems to bind labor to an employer."
+    },
+    {
+      "source_id": "biodrone",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
+      "title": "Biodrone",
+      "line_start": 1,
+      "line_end": 33,
+      "relevance": "Grounds purpose-grown labor organisms, distributed control through support and credentials, local hazard knowledge, and separated administrative channels."
+    },
+    {
+      "source_id": "awakened-labor-front",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Awakened Labor Front.md",
+      "title": "Awakened Labor Front",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds the overlap of biodrone rights, workplace sabotage, and labor organizing."
+    },
+    {
+      "source_id": "bloom-constraint-ledger",
+      "path": "Aetheria/Brainstorming/Technology/Bloom Habitat Constraint Ledger.md",
+      "title": "Bloom Habitat Constraint Ledger",
+      "line_start": 1,
+      "line_end": 253,
+      "relevance": "Brainstorming geometry source for maintenance access as a cost decision, Kappa as a local subsystem, and the distinction between Bloom-radial and service-ring directions."
+    },
+    {
+      "source_id": "bloom-ontology-drafts",
+      "path": "Aetheria/Brainstorming/Technology/Bloom Habitat Ontology Drafts.md",
+      "title": "Bloom Habitat Ontology Drafts",
+      "line_start": 1,
+      "line_end": 427,
+      "relevance": "Brainstorming source for the Kappa work ring, supervisor route, specialist throat, manifold crossing, and separate worker access paths used as fixture-local geometry."
+    },
+    {
+      "source_id": "bloom-systems-walkthroughs",
+      "path": "Aetheria/Brainstorming/Technology/Bloom Habitat Systems Walkthroughs.md",
+      "title": "Bloom Habitat Systems Walkthroughs",
+      "line_start": 1,
+      "line_end": 234,
+      "relevance": "Brainstorming source for condensate, return-air, coolant, heat, pressure-lung, worker-route, and Kappa fault causality."
+    },
+    {
+      "source_id": "pallas-fixture-continuity",
+      "path": "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+      "title": "Pallas Species Strikes Branch And Fold Fixture",
+      "line_start": 1,
+      "line_end": 510,
+      "relevance": "Provides non-canonical fixture continuity for Teth Inkwise, Lio Vale, Orrin Dax, Nara-7, Ilya Marne, AU Yard Twelve, Service Ring Kappa, and the first staged bypass."
+    }
+  ],
+  "historical_context": {
+    "time_period": "2721, three weeks after the fixture-local Kappa Refusal during the Pallas Species Strikes",
+    "location": "Stores Collar Six at the counterspinward entrance to Service Ring Kappa, AU Yard Twelve, Pallas Bloom Cluster.",
+    "summary": "A mixed Kappa work group rebuilds a strike-safe bypass from separately budgeted parts. AU's service-default notice recalls the consumables and freezes claimshare access just as a local condensate fault tests whether workers can preserve air without surrendering their refusal.",
+    "public_facts": [
+      {
+        "text": "A strike-safe bypass buys temporary air, pressure, condensate, or coolant margin; it is not indefinite replacement life support.",
+        "source_refs": ["pallas-maintenance-assemblies", "bloom-habitat-anatomy", "bloom-systems-walkthroughs"]
+      },
+      {
+        "text": "The kit's parts normally belong to separate inventories, so its operational identity appears only when workers assemble and coordinate them.",
+        "source_refs": ["pallas-maintenance-assemblies"]
+      },
+      {
+        "text": "AU Ramp Administrations control maintenance budgets, safety exceptions, replacement machinery, schedules, and claimshare access while different labor categories share one physical system.",
+        "source_refs": ["aeronautics-unlimited", "bloom"]
+      },
+      {
+        "text": "Dry-operation cephalopod specialists require mobile humidity, oxygenation, pressure, support, and utility-coupling equipment to work in cramped human-designed service arteries.",
+        "source_refs": ["bioelevate", "cephalopod-syndicate", "pallas-species-strikes"]
+      },
+      {
+        "text": "VitaForge biodrones, BioElevate uplift lines, baseline riggers, and AU supervisors can occupy the same yard while employers route identical refusals through different liability categories.",
+        "source_refs": ["pallas-species-strikes", "vitaforge", "uplift", "biodrone"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Using the bypass consumes cartridges, tubing, seal stock, inspection labor, and body-support margin, making the next emergency poorer unless replacements move.",
+        "source_refs": ["pallas-maintenance-assemblies", "bloom-habitat-anatomy"]
+      },
+      {
+        "text": "A service default can become a stores restriction, claimshare hold, household pressure, and coerced return to work without any office explicitly ordering a worker to risk the unsafe route.",
+        "source_refs": ["pallas-maintenance-assemblies", "aeronautics-unlimited"]
+      },
+      {
+        "text": "The worker counter-pressure is quiet distributed custody: different crews hold components and reciprocal obligations so one administrative seizure cannot erase all safety margin.",
+        "source_refs": ["pallas-maintenance-assemblies", "cephalopod-syndicate", "awakened-labor-front"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "kappa-mixed-work-group",
+      "label": "Kappa mixed work group",
+      "group_type": "cross_contract_labor_cell",
+      "institutional_logic": ["Keep the stoppage safe by joining body access, route memory, anchor geometry, ordinary stock, and local authorization."],
+      "material_incentives": ["Preserve air margin", "Keep parts reachable", "Avoid concentrating debt on one worker", "Retain enough claimshare access for households"],
+      "internal_virtues": ["Technical mercy", "Specific reciprocal debt", "Countersigned risk", "No hero required"],
+      "internal_shames": ["Using downstream residents as leverage", "Leaving one worker as the debtor for collective safety", "Letting solidarity remain only speech"],
+      "prestige_markers": ["A bypass assembled before the margin turns red", "A route map another body can use", "Parts distributed without losing deployment speed"],
+      "taboo_triggers": ["Central stores calling seizure continuity", "Support equipment treated as optional comfort", "One labor category taking credit for a mixed repair"],
+      "emotional_display_norms": ["Concern appears as checking cuffs, counting parts, countersigning losses, and jokes narrow enough to fit through a service hatch."],
+      "trust_defaults": ["Trusts workers who expose their own material stake", "Distrusts clean issue records that omit who can physically deploy the equipment"],
+      "speech_register_cues": ["Dry shop-floor compression", "Specific object and route references", "Humor aimed at ledger categories"],
+      "source_refs": ["pallas-maintenance-assemblies", "pallas-species-strikes", "cephalopod-syndicate"]
+    },
+    {
+      "group_id": "au-ramp-administration",
+      "label": "AU Yard Twelve Ramp Administration",
+      "group_type": "corporate_operating_authority",
+      "institutional_logic": ["Preserve throughput by controlling budgets, issue authority, safety exceptions, and the classification of nonperformance."],
+      "material_incentives": ["Keep fabrication online", "Move scarce cartridges to centrally controlled stock", "Make one account responsible for disputed use", "Prevent claimshares from becoming portable claims against AU"],
+      "internal_virtues": ["Inventory legibility", "Schedule continuity", "Central accountability", "Recoverable cost"],
+      "internal_shames": ["A locally safe stoppage outside management custody", "Distributed equipment AU cannot recall", "A written order visibly causing a later shortage"],
+      "prestige_markers": ["A blue stores slate", "A named accountable operator", "A repayment schedule that replaces open conflict"],
+      "taboo_triggers": ["Worker-owned emergency stock", "An assembly with no single debtor", "Local route knowledge outranking the supervisor bus"],
+      "emotional_display_norms": ["Fear appears as calm classification, recall orders, and offers to restore access on revised terms."],
+      "trust_defaults": ["Trusts central issue and assigned liability", "Distrusts distributed custody and unpriced mutual aid"],
+      "speech_register_cues": ["Continuity", "service default", "accountable operator", "recovery schedule", "inventory instruction"],
+      "source_refs": ["aeronautics-unlimited", "bloom", "pallas-maintenance-assemblies"]
+    },
+    {
+      "group_id": "supplier-liability-channels",
+      "label": "Supplier liability channels",
+      "group_type": "distributed_commercial_pressure",
+      "institutional_logic": ["Keep each body, support system, and component failure inside its own product or service category."],
+      "material_incentives": ["Avoid whole-system responsibility", "Preserve line sales", "Charge inspection and replacement to the issuing contract"],
+      "internal_virtues": ["Clean provenance", "Bounded warranty", "Instrumented behavior"],
+      "internal_shames": ["A work refusal linking separated invoices into one labor system", "A support failure visible as coercion"],
+      "prestige_markers": ["A fault returned to the buyer", "A variance contained to one line"],
+      "taboo_triggers": ["Mixed-cause casualty evidence", "Workers using vendor boundaries as an organizing map"],
+      "emotional_display_norms": ["No emotion is recorded; discomfort becomes variance, misuse, or local character."],
+      "trust_defaults": ["Trusts product categories", "Distrusts cross-category testimony"],
+      "speech_register_cues": ["Support misuse", "local character", "adaptation variance", "product behavior"],
+      "source_refs": ["bioelevate", "vitaforge", "biodrone", "uplift"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "kappa-work-group.safety-without-surrender",
+      "applies_to": ["kappa-mixed-work-group"],
+      "pressure_type": "material_solidarity",
+      "summary": "The work group must keep downstream air safe without letting management use civilian safety to end every refusal.",
+      "projection_use": "Choices should trade consumables, body margin, custody, time, and evidence rather than offering consequence-free moral declarations.",
+      "source_refs": ["pallas-maintenance-assemblies", "cephalopod-syndicate"]
+    },
+    {
+      "field_id": "au-ramp-administration.default-as-leverage",
+      "applies_to": ["au-ramp-administration"],
+      "pressure_type": "class_control",
+      "summary": "AU can turn a missed service obligation into parts denial and claimshare pressure while describing each step as separate administration.",
+      "projection_use": "Management pressure should arrive through a readable chain of records and gates, not omnipotent corporate command.",
+      "source_refs": ["pallas-maintenance-assemblies", "aeronautics-unlimited"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "au-ramp-administration",
+      "target_group_id": "kappa-mixed-work-group",
+      "observer_read": ["Uncommitted inventory", "support misuse", "diffuse accountability", "service default"],
+      "target_self_read": ["Distributed safety system", "reciprocal obligation", "worker-owned deployment knowledge"],
+      "misread_patterns": ["Treats assembled capacity as theft because no approved product class owns it", "Treats one worker's account as sufficient ownership of mixed labor"],
+      "likely_insults": ["unaccounted stock", "noncompliant specialist", "local misuse"],
+      "projection_use": "Let Ilya understand the physical risk while still preferring a single accountable operator and central issue authority.",
+      "source_refs": ["aeronautics-unlimited", "pallas-maintenance-assemblies"]
+    },
+    {
+      "observer_group_id": "kappa-mixed-work-group",
+      "target_group_id": "au-ramp-administration",
+      "observer_read": ["A budget with legs", "a clean route for blame", "an owner allergic to maintenance responsibility"],
+      "target_self_read": ["The only authority able to preserve habitat-wide continuity"],
+      "misread_patterns": ["Workers may underestimate how real central inventory scarcity is", "Management may mistake practical jokes for lack of strategic discipline"],
+      "likely_insults": ["central continuity", "the shy part of ownership", "management removed"],
+      "projection_use": "Keep worker contempt precise and practical; Ilya remains competent at moving stock even when the terms are coercive.",
+      "source_refs": ["aeronautics-unlimited", "bloom"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "cephalopod-bypass-specialist",
+      "summary": "An uplifted cephalopod worker whose body, support harness, and route knowledge make the portable bridge physically deployable.",
+      "obligations": ["Protect downstream residents", "Protect bodily support margin", "Keep kit custody from becoming one worker's debt", "Leave an assembly another crew can understand"],
+      "available_masks": ["Dryly literal technician", "ordinary inventory clerk", "support-equipment user"],
+      "failure_modes": ["Spending personal oxygenation margin as if it were free", "Becoming the single debtor", "Turning clever distribution into slow emergency response"],
+      "source_refs": ["cephalopod-syndicate", "bioelevate", "pallas-maintenance-assemblies"]
+    },
+    {
+      "role_id": "baseline-anchor-rigger",
+      "summary": "A baseline human worker whose recognized rescue stock and heavy cart can shelter parts that cephalopod reach alone cannot carry through administrative gates.",
+      "obligations": ["Keep rescue geometry credible", "Expose material solidarity through countersignature", "Protect the crew's own claimshare access"],
+      "available_masks": ["Inventory complaint", "rescue classification", "bad joke told to a worse form"],
+      "failure_modes": ["Offering sympathy without custody", "Letting baseline grievance block mixed-worker safety"],
+      "source_refs": ["pallas-species-strikes", "aeronautics-unlimited", "pallas-maintenance-assemblies"]
+    },
+    {
+      "role_id": "au-shift-superintendent",
+      "summary": "A local authority who can release or recall stock and convert a claimshare freeze into a repayment schedule, but cannot physically substitute for the workers who deploy the kit.",
+      "obligations": ["Keep district air stable", "Recover centrally owned stock", "Name an accountable operator", "Protect schedule and liability posture"],
+      "available_masks": ["Continuity steward", "inventory adult", "bounded negotiator"],
+      "failure_modes": ["Removing local reserve to improve central control", "Making the unsafe restart look administratively clean", "Treating competence as an issue-authority problem"],
+      "source_refs": ["aeronautics-unlimited", "bloom-habitat-anatomy"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "teth_inkwise",
+      "known_context": [
+        {"text": "Teth knows local body-support limits, component custody, Kappa route geometry, and what the bypass can physically buy.", "source_refs": ["pallas-maintenance-assemblies", "cephalopod-syndicate", "pallas-fixture-continuity"]}
+      ],
+      "beliefs": [
+        {"text": "Teth treats technical mercy as a duty and concentrated ownership as a predictable seizure point.", "source_refs": ["cephalopod-syndicate", "pallas-maintenance-assemblies"]}
+      ],
+      "misreads": [
+        {"text": "Teth may underestimate how quickly claimshare holds reach households beyond the work ring.", "source_refs": ["aeronautics-unlimited"]}
+      ],
+      "must_not_know": [
+        {"text": "Teth does not know which ending the wider Pallas strikes will earn or every central-store shortage beyond the local notice.", "source_refs": ["pallas-species-strikes"]}
+      ]
+    },
+    {
+      "speaker_id": "ilya_marne",
+      "known_context": [
+        {"text": "Ilya knows local stock, claimshare levers, the condensate fault, and AU's service-default classification.", "source_refs": ["aeronautics-unlimited", "bloom-habitat-anatomy", "pallas-fixture-continuity"]}
+      ],
+      "beliefs": [
+        {"text": "Ilya believes central custody is safer because it produces one accountable issue route.", "source_refs": ["aeronautics-unlimited"]}
+      ],
+      "misreads": [
+        {"text": "Ilya may read distributed worker custody as diffuse irresponsibility instead of redundancy against coercive seizure.", "source_refs": ["pallas-maintenance-assemblies"]}
+      ],
+      "must_not_know": [
+        {"text": "Ilya cannot see every hidden part location or infer private solidarity from one countersignature.", "source_refs": ["bloom-habitat-anatomy"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The named stores collar, exact recall notice, claimshare form behavior, and assembly outcome are fixture-local historical elaboration, not a universal AU procedure.",
+      "source_refs": ["pallas-maintenance-assemblies", "pallas-fixture-continuity"]
+    },
+    {
+      "text": "The scene may demonstrate mixed-worker competence and solidarity but must not resolve the full Pallas strikes or declare universal recognition of engineered workers.",
+      "source_refs": ["pallas-species-strikes", "uplift", "biodrone"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which late-Sol commodity schemas should own scrubber cartridges, custody recorders, and manual valve plates when the item hooks become CultCache economy records?",
+      "blocks_training": false,
+      "notes": "The fixture keeps each component's operational role explicit while leaving final SimpleCommodity, CompoundCommodityData, GearData, or consumable classification open."
+    },
+    {
+      "question": "How portable were claimshares between AU ramps and household services in different Pallas yards?",
+      "blocks_training": false,
+      "notes": "This fixture uses the existing claim that claimshares affect local resource access and confines the exact hold behavior to AU Yard Twelve."
+    }
+  ]
+}

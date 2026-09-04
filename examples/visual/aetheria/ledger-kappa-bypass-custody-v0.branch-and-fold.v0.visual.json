@@ -1,0 +1,425 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ledger-kappa-bypass-custody-v0-branch-and-fold-visual",
+  "ink_ref": "examples/ink/aetheria/ledger-kappa-bypass-custody-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/ledger-kappa-bypass-custody-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ledger-kappa-bypass-custody-v0.stores-collar-six",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Pallas bypass-custody dependency fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for Stores Collar Six, ordinary mixed-body inventory work, the AU recall, the Kappa-6 condensate fault, bypass deployment, and four state-gated custody outcomes.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the room establishing view, worker and equipment introduction, each ordinary preparation action, the inventory fold, the recall notice, Ilya's entrance, the recall choice, the amber fault, bypass action, held-fault state, custody threshold, and each ending family.",
+    "prompting_rule": "Each base image prompt is a complete standalone description for a general image model. It names visible geometry, materials, lighting, bodies, equipment, and staging. Character refs repeat stable identity during prompt assembly; continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: bleak painterly industrial science-fiction illustration for interactive fiction, charcoal and oxidized orange with restrained cyan instrument light, tactile scuffed metal and patched polymer, expressive body posture, legible machinery, humane dry wit, cinematic 16:9 composition, non-photoreal but physically coherent.",
+    "prompt_assembly_rule": "Assemble each generated prompt from global_style_cue, visual refs only for named characters visible in that frame, the complete scene base_image_prompt, and triggered state_image_modifiers or global_branch_image_modifiers. Use the scene_set camera slot as geometry authority and omit visual_continuity_notes from prompt text.",
+    "scene_set_guidance": {
+      "current_mode": "inline_fixed_plan_view",
+      "scope_reason": "The fixture stays inside one curved service collar and supplies fixed zones, routes, sightlines, staging slots, occluders, and camera slots. This supports draft illustrated replay without treating generated concept art as room geometry.",
+      "future_scene_set_need": "For high-consistency website rendering, convert this inline plan into a simple 3D blockout and feed each named camera render to the image model as painterly input."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "ledger_kappa_stores_establishing",
+        "ink_anchor": "stores_establishing",
+        "base_image_prompt": "Wide view of an empty Stores Collar Six from the counterspinward worker entrance, a curved human-scale service bay inside a rotating manufactured asteroid habitat. The scuffed floor follows the curve of the consolidated aggregate shell and is crossed by a recessed anchor rail. A tall wire-mesh stores cage and waist-high issue counter line the left loop-inner wall. The right loop-outer wall carries insulated air and coolant trunks, valve housings, gauges, cable bundles, and a low outward-facing oval service hatch set into the floor-wall joint. A short badge stair descends from a glass-fronted operations strip near the inward-curving ceiling. The service ring continues through an open spinward portal. Cold cyan instrument lights mix with tired amber work lamps; gray shell ribs, layered pressure seals, and patched panels make the built habitat structure visible.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Floor is Bloom-outward and ceiling is Bloom-inward; loop-inner and loop-outer name corridor sides, not radial direction.",
+          "Worker entrance is counterspinward, the Kappa-7 continuation is spinward, and the badge stair reaches the operations strip above the loop-inner cage."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_ordinary_count",
+        "ink_anchor": "ordinary_people",
+        "base_image_prompt": "Medium-wide inventory scene at the Stores Collar Six issue counter. Teth Inkwise is a large uplifted cephalopod with mottled blue-gray skin, expressive dark eyes, multiple flexible tentacles, and a compact mobile dry-operation harness made of an open support frame, bare-minimum humidity ring, oxygenation tubes, padded pressure cuffs, utility coupler, and curved tool rails; one worn contact band leaves a pale rub mark. Orrin Dax is a broad older baseline human with light-brown weathered skin, graying cropped hair, jaw frost scar, patched brown-and-orange rigger jacket, heavy gloves, magnetic boots, battered metal mug, and an anchor cart. Nara-7 is a slender engineered humanoid with pale gray-brown skin, close-cropped dark hair, faint wrist and neck interface lines, and a gray numbered seal-technician skinsuit. Lio Vale is a lean medium-brown baseline human with short close-clipped black hair, tired dark eyes, slate-gray maintenance jacket, magnetic boots, utility belt, and scuffed rectangular work slate. On the counter sit a gray two-handled scrubber bridge case, two blue cartridges, a yellow manual valve plate, clear reinforced tubing with red and blue cuffs, silver seal tape, and an orange custody recorder. Wire mesh, curved shell ribs, cyan status lights, and amber work lamps frame ordinary morning work.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "harness anchored beside the issue counter, several tentacles counting parts", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "orrin_dax", "default_stance": "one gloved hand on anchor cart and one near returned seal tape", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "nara_7", "default_stance": "still at the issue slate beside the yellow valve plate", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "lio_vale", "default_stance": "watching from the counterspinward worker entrance with slate lowered", "visual_ref": "visual_character_refs.characters.lio_vale"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "All bypass components begin together on the issue counter.",
+          "Teth's equipment is autonomous mobile work support, not a chair, cage, tank, or fixed workstation."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_count_harness",
+        "ink_anchor": "morning_count_choice.count_harness_coupler",
+        "base_image_prompt": "Close working view at a scuffed metal issue counter in a curved industrial habitat service bay. Teth Inkwise, a large mottled blue-gray uplifted cephalopod, braces three flexible tentacles on a recessed floor anchor rail while a fourth seats a small utility coupler into a compact open-frame dry-operation harness. The harness has a humidity ring, clear oxygenation tubes, padded pressure cuffs, curved tool rails, and a worn band leaving a pale skin mark. A white stress line crosses the old gasket; a clean replacement cuff and red work-group recovery line glow on the rectangular issue slate. Orrin Dax, a broad older human rigger with a jaw frost scar and patched brown-and-orange jacket, stands behind the counter with a battered mug and skeptical expression. Amber work lamps and cyan instrument light reveal wire mesh and curved shell ribs.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "braced on floor rail while testing the harness coupler", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "orrin_dax", "default_stance": "watching the issue charge over a battered mug", "visual_ref": "visual_character_refs.characters.orrin_dax"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Replacement cuff fits the same harness position as the visibly stressed gasket."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_count_seal_stock",
+        "ink_anchor": "morning_count_choice.count_orrin_seal_stock",
+        "base_image_prompt": "Object-centered close view of a torn silver seal-tape roll on the Stores Collar Six metal issue counter. Orrin Dax, a broad older baseline human rigger with weathered light-brown skin, graying hair, jaw frost scar, patched brown-and-orange work jacket, and heavy glove, plants his palm on one side. A flexible blue-gray cephalopod tentacle from Teth Inkwise rests beside the roll, suckers visible and precise. An orange tamper-evident custody recorder frames both points of contact; the gray scrubber case and coiled clear tubing sit behind it. Wire-mesh stores cage, amber work light, and cyan issue-slate glow form a cramped industrial background.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "one tentacle countersigning beside the seal roll", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "orrin_dax", "default_stance": "heavy glove planted on returned stock", "visual_ref": "visual_character_refs.characters.orrin_dax"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Seal tape is half-used rescue stock and the recorder sees both signers."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_count_nara_sequence",
+        "ink_anchor": "morning_count_choice.count_nara_valve_sequence",
+        "base_image_prompt": "Close view of Nara-7 operating a yellow manual valve logic plate on the Stores Collar Six issue counter. She is a slender engineered humanoid with pale gray-brown skin, close-cropped dark hair, faint subdermal interface lines at wrists and neck, and a gray numbered seal-technician skinsuit with a small VitaForge batch tag. Precise fingers bridge two separated contacts while a small green manual-path indicator lights independently from the dark supervisor-bus socket. Teth Inkwise, a mottled blue-gray uplifted cephalopod in an open-frame dry-operation harness with humidity ring and oxygenation tubes, watches with two dark eyes while an orange custody recorder captures the sequence. Curved shell ribs, wire mesh, and instrument cables remain sharp in the background.",
+        "visible_characters": [
+          {"agent_id": "nara_7", "default_stance": "precise hands spanning the valve plate contacts", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "teth_inkwise", "default_stance": "eyes and tentacle tips focused on Nara's sequence", "visual_ref": "visual_character_refs.characters.teth_inkwise"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Yellow plate has a manual path and a distinct supervisor-bus socket."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_count_distributed_parts",
+        "ink_anchor": "morning_count_choice.count_distributed_parts",
+        "base_image_prompt": "Wide lateral view across Stores Collar Six showing one emergency assembly divided into ordinary routes. Teth Inkwise, a large mottled blue-gray uplifted cephalopod moving autonomously in a compact open-frame dry-operation harness, clips clear reinforced tubing to a curved tool rail. Orrin Dax, a broad older human rigger with jaw frost scar and patched brown-and-orange jacket, hides the gray scrubber bridge case beneath orange haulback lines on an anchor cart in the central lane. Nara-7, a slender engineered humanoid in a gray numbered seal-technician skinsuit, carries the yellow manual valve plate toward a locker gate. The wire-mesh stores cage looks visibly emptier; cyan issue lights, amber lamps, low service hatch, curved pressure panels, and shell ribs establish the industrial habitat bay.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "clipping tubing to mobile harness rail", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "orrin_dax", "default_stance": "placing scrubber case under anchor lines", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "nara_7", "default_stance": "walking valve plate toward locker gate", "visual_ref": "visual_character_refs.characters.nara_7"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The three component routes remain physically distinct and recoverable."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Routine morning inventory at a curved industrial habitat issue counter. Teth Inkwise, a large mottled blue-gray uplifted cephalopod in a compact dry-operation harness with humidity ring, oxygenation tubes, padded cuffs, and tool rails, works beside Orrin Dax, a broad older human rigger with jaw frost scar, patched brown-and-orange jacket, gloves, mug, and anchor cart; Nara-7, a slender engineered humanoid in a gray numbered skinsuit, stands by a yellow valve plate; Lio Vale, a lean medium-brown human coordinator in a slate-gray maintenance jacket, reads a scuffed work slate. A wire-mesh cage, gray scrubber case, blue cartridges, clear tubes, orange recorder, curved shell ribs, manifold pipes, amber lamps, and cyan screens make the dependency web visible as ordinary work.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "working at counter with harness connected", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "orrin_dax", "default_stance": "beside anchor cart and returned stock", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "nara_7", "default_stance": "near valve plate and locker gate", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "lio_vale", "default_stance": "reading the work slate near worker entrance", "visual_ref": "visual_character_refs.characters.lio_vale"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "harness_margin >= 3", "modifier_prompt": "Show a clean replacement cuff seated on Teth's harness and a steady cyan humidity indicator."},
+          {"trigger": "claimshare_debt >= 1", "modifier_prompt": "Show a red WORK-GROUP RECOVERY line on the issue slate."},
+          {"trigger": "baseline_solidarity >= 3", "modifier_prompt": "Show Orrin's countersignature exposed beside the half-used silver seal roll."},
+          {"trigger": "nara_sequence_logged == true", "modifier_prompt": "Show Nara's manual valve sequence as a short chain of lit contacts on the orange recorder."},
+          {"trigger": "parts_distributed == true", "modifier_prompt": "Show tubing on Teth's harness, the gray bridge case under Orrin's anchor lines, and the yellow plate at Nara's locker gate."}
+        ],
+        "visual_continuity_notes": ["Modifiers show only states created by the selected morning branch."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_recall_notice",
+        "ink_anchor": "recall_notice",
+        "base_image_prompt": "Close view of a rectangular industrial issue slate mounted at the Stores Collar Six counter. Three severe lines fill the cyan-white screen: SERVICE DEFAULT: KAPPA WORK GROUP; UNCOMMITTED EMERGENCY RESERVE RECALLED TO CENTRAL ISSUE; CLAIMSHARE RELEASE PENDING PRODUCTIVITY REVIEW. Two clean blue scrubber cartridges, an orange custody recorder, and a red work-group recovery line sit in the foreground. Behind them, the wire-mesh cage, curved gray shell rib, manifold tubing, and amber work lamp make the notice part of a physical maintenance bay. Teth Inkwise's mottled blue-gray tentacle tip rests at the lower screen edge, visibly receiving the order.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "one tentacle tip touching the lower slate edge", "visual_ref": "visual_character_refs.characters.teth_inkwise"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The notice appears before Ilya enters the room."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_ilya_arrival",
+        "ink_anchor": "ilya_arrival",
+        "base_image_prompt": "Low-angle view of the short badge stair descending from a glass-fronted operations strip into Stores Collar Six. Ilya Marne is a tall baseline human woman with cool light skin, severe silver-blonde hair pinned tight, sharp cheekbones, clean dark AU superintendent coat with pale blue trim, polished magnetic boots, and a slim console cuff; she descends toward the loop-inner wire-mesh stores cage. Below, Teth Inkwise, a large mottled blue-gray uplifted cephalopod in a compact open-frame dry-operation harness with humidity ring and oxygenation tubes, faces her from the issue counter. Lio Vale, a lean medium-brown human with close-clipped black hair and slate-gray maintenance jacket, stands at the counterspinward worker entrance. Blue cartridges wait on the counter beneath amber lamps and cyan screens; curved shell ribs and pressure seals show the manufactured habitat.",
+        "visible_characters": [
+          {"agent_id": "ilya_marne", "default_stance": "descending badge stair toward stores cage", "visual_ref": "visual_character_refs.characters.ilya_marne"},
+          {"agent_id": "teth_inkwise", "default_stance": "facing stair from issue counter", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "lio_vale", "default_stance": "watching from worker entrance", "visual_ref": "visual_character_refs.characters.lio_vale"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Ilya enters only through the badge stair; Lio remains by the worker entrance."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_recall_choice",
+        "ink_anchor": "recall_choice",
+        "base_image_prompt": "Wide decision frame across Stores Collar Six. Teth Inkwise, a large mottled blue-gray uplifted cephalopod in a compact mobile dry-operation harness, occupies the issue counter between four concrete routes: a scuffed issue slate ready for a harness-coupler signature, Orrin Dax's anchor cart in the central lane with orange haulback lines, an orange custody recorder aimed at Ilya Marne beside the cage, and two clean blue cartridges on the transfer counter. Orrin is a broad older human rigger with jaw frost scar and patched brown-and-orange jacket; Ilya is a tall silver-blonde superintendent in a clean dark coat; Lio Vale is a lean medium-brown coordinator in a slate-gray jacket at the worker entrance. Wire mesh, curved gray ribs, manifold pipes, cyan status lights, amber lamps, and the low shell-artery hatch keep every choice inside one legible room.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "centered between slate, cart, recorder, and cartridges", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "orrin_dax", "default_stance": "guarding anchor cart in central lane", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "ilya_marne", "default_stance": "beside cage and transfer counter", "visual_ref": "visual_character_refs.characters.ilya_marne"},
+          {"agent_id": "lio_vale", "default_stance": "at worker entrance with work slate", "visual_ref": "visual_character_refs.characters.lio_vale"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["All four recall responses are reachable from Teth's position at the issue counter."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_recall_fold",
+        "ink_anchor": "recall_fold",
+        "base_image_prompt": "Medium-wide post-recall view of Stores Collar Six. Ilya Marne, a tall silver-blonde superintendent in a clean dark coat, waits beside the loop-inner wire-mesh cage. Teth Inkwise, a large mottled blue-gray uplifted cephalopod in a compact open-frame dry-operation harness, remains at the issue counter. Orrin Dax, a broad older human rigger in a patched brown-and-orange jacket, holds his anchor cart in the central lane. Nara-7, a slender engineered humanoid in a gray numbered skinsuit, stands near the locker gate. The issue slate, gray bridge case, blue cartridges, clear tubing, yellow plate, orange recorder, shell ribs, manifold pipes, amber lamps, and cyan status lights remain readable for branch-specific custody changes.",
+        "visible_characters": [
+          {"agent_id": "ilya_marne", "default_stance": "waiting beside stores cage", "visual_ref": "visual_character_refs.characters.ilya_marne"},
+          {"agent_id": "teth_inkwise", "default_stance": "at issue counter with harness rails exposed", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "orrin_dax", "default_stance": "beside anchor cart in central lane", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "nara_7", "default_stance": "near locker gate and valve plate", "visual_ref": "visual_character_refs.characters.nara_7"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "worker_custody >= 3", "modifier_prompt": "Show Teth holding the issue slate and tubing while Orrin and Nara visibly retain other components."},
+          {"trigger": "management_control >= 4", "modifier_prompt": "Show the issue slate glowing corporate blue and Ilya holding a sealed central-transfer sleeve."},
+          {"trigger": "recorder_integrity >= 3", "modifier_prompt": "Show the orange recorder aimed squarely at Ilya, the cartridges, and the recall notice."},
+          {"trigger": "claimshare_hold == true", "modifier_prompt": "Show a bright red claimshare hold beside Teth's account on the issue slate."},
+          {"trigger": "parts_distributed == true", "modifier_prompt": "Show the scrubber case under Orrin's anchor lines, clear tubing clipped to Teth's harness, and the yellow plate held near Nara's locker."}
+        ],
+        "visual_continuity_notes": ["The selected recall response determines exact component placement before the fault."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_amber_fault",
+        "ink_anchor": "amber_fault",
+        "base_image_prompt": "Wide alarm frame along the loop-outer manifold of Stores Collar Six. Amber warning light races across insulated air and coolant trunks, a condensate trap spits clear droplets into a grated channel, pressure gauges swing, and a flexible pressure-lung housing pulses heat behind layered shell panels. The low outward-facing oval Kappa-6 service hatch glows amber at the floor-wall joint. Teth Inkwise, a large mottled blue-gray uplifted cephalopod in a compact dry-operation harness with humidity ring, oxygenation tubes, padded cuffs, and tool rails, turns toward the hatch. Nara-7, a slender engineered humanoid in a gray numbered skinsuit, places two precise fingers on the yellow valve plate. Orrin Dax, a broad older rigger in a patched brown-and-orange jacket, grips the anchor cart. Lio Vale, a lean medium-brown coordinator in a slate-gray jacket, closes the counterspinward worker gate. Ilya Marne, a tall silver-blonde superintendent in a clean dark coat, reads her console cuff near the cage. Curved shell ribs and aggregate-backed pressure panels make the habitat engineering visible.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "turning from counter toward low service hatch", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "nara_7", "default_stance": "two fingers on yellow valve plate", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "orrin_dax", "default_stance": "bracing anchor cart in central lane", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "lio_vale", "default_stance": "closing counterspinward worker gate", "visual_ref": "visual_character_refs.characters.lio_vale"},
+          {"agent_id": "ilya_marne", "default_stance": "reading console cuff beside stores cage", "visual_ref": "visual_character_refs.characters.ilya_marne"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "reserve_margin <= 1", "modifier_prompt": "Show one thin amber reserve bar on the margin display beside empty cartridge sockets."},
+          {"trigger": "parts_distributed == true", "modifier_prompt": "Show the bridge case on Orrin's cart, tubing on Teth's harness, and valve plate in Nara's hands."}
+        ],
+        "visual_continuity_notes": ["Fault originates in the loop-outer condensate and return-air manifold; the low Kappa-6 hatch leads outward into the shell artery."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_bypass_action",
+        "ink_anchor": "bypass_choice",
+        "base_image_prompt": "Low close-medium decision frame at the Kappa-6 service hatch in Stores Collar Six. Teth Inkwise, a large mottled blue-gray uplifted cephalopod in a compact open-frame dry-operation harness, clips two flexible haulback leads from the harness to floor sockets beside the oval outward-facing hatch; flexible tentacles can reach the clear reinforced tubes, red and blue cuffs, gray scrubber bridge, harness oxygenation loop, and local interlock. Nara-7, a slender engineered humanoid in a gray numbered seal-technician skinsuit, stands at the yellow manual valve plate. Orrin Dax, a broad older human rigger with jaw frost scar and patched brown-and-orange jacket, braces the anchor cart and orange haulback lines. Ilya Marne, a tall silver-blonde superintendent in a clean dark coat, holds her console cuff by the loop-inner cage. Amber fault light, cyan gauges, wet condensate grating, layered pressure seals, curved ribs, and dense manifold pipes define the four physical response routes.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "harness clipped by haulback leads at service hatch among bridge components", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "nara_7", "default_stance": "ready at yellow valve plate", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "orrin_dax", "default_stance": "bracing cart and haulback lines", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "ilya_marne", "default_stance": "poised over console cuff near cage", "visual_ref": "visual_character_refs.characters.ilya_marne"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Teth can reach every local option from the hatch staging position; flexible haulback leads permit entry while preserving retrieval. Ilya's restart still travels through the console cuff."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_fault_hold",
+        "ink_anchor": "fault_fold",
+        "base_image_prompt": "Wide post-response view of the loop-outer Stores Collar Six manifold. The low oval Kappa-6 hatch, gray scrubber bridge, clear reinforced tubing, colored cuffs, yellow valve plate, anchor cart, orange custody recorder, cyan margin board, wet condensate grate, dense air and coolant trunks, curved structural ribs, and layered pressure panels remain visible under amber fault light. Teth Inkwise, a large mottled blue-gray uplifted cephalopod in a compact dry-operation harness, occupies the hatch. Nara-7, a slender engineered humanoid in a gray numbered skinsuit, listens at the wall. Orrin Dax, a broad older human rigger in a patched brown-and-orange jacket, stands by the cart with his battered mug. Ilya Marne, a tall silver-blonde superintendent in a clean dark coat, watches from the loop-inner side. The frame leaves exact hose connection, body strain, restart state, and evidence posture to modifiers.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "at low hatch with harness and tubes", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "nara_7", "default_stance": "two fingers listening against shell panel", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "orrin_dax", "default_stance": "near cart and mug", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "ilya_marne", "default_stance": "watching from loop-inner cage side", "visual_ref": "visual_character_refs.characters.ilya_marne"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "bypass_deployed == true", "modifier_prompt": "Show clear tubes pulsing from the gray bridge at the human-scale manifold through colored cuffs into the Kappa-6 hatch."},
+          {"trigger": "reserve_margin >= 4", "modifier_prompt": "Show a broad amber reserve band across the cyan margin board."},
+          {"trigger": "reserve_margin <= 1", "modifier_prompt": "Show one thin amber reserve bar and empty blue cartridge sockets."},
+          {"trigger": "harness_margin <= 1", "modifier_prompt": "Show Teth's humidity ring flashing low and mottled skin paling around the worn pressure band."},
+          {"trigger": "teth_injury == true", "modifier_prompt": "Show Orrin holding his battered mug beneath Teth's nearest working tentacle while Teth's harness oxygenation line is connected to the bridge."},
+          {"trigger": "unsafe_restart == true", "modifier_prompt": "Show the main-line indicator bright corporate blue, the bridge disconnected, and Nara's fingertips pressed to a shell panel marked by a fresh vibration trace."},
+          {"trigger": "recall_recorded == true", "modifier_prompt": "Show the orange recorder screen pairing Ilya's recall order with the live amber margin board."}
+        ],
+        "visual_continuity_notes": ["Branch result determines which tubes connect and whether Teth's harness loop remains personal support or becomes part of the bridge."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_custody_threshold",
+        "ink_anchor": "custody_threshold",
+        "base_image_prompt": "Medium-wide final negotiation at the Stores Collar Six issue counter after a contained amber fault. Teth Inkwise, a large mottled blue-gray uplifted cephalopod in a compact mobile dry-operation harness, faces Ilya Marne, a tall silver-blonde superintendent in a clean dark coat beside the wire-mesh cage. Orrin Dax, a broad older rigger with jaw frost scar and patched brown-and-orange jacket, holds the anchor cart. Nara-7, a slender engineered humanoid in a gray numbered skinsuit, holds or stands beside the yellow manual valve plate. Lio Vale, a lean medium-brown coordinator in a slate-gray jacket, reads a scuffed slate. The gray bridge case, blue cartridges or empty sockets, clear tubes, silver seal tape, orange recorder, red claimshare line, cyan margin board, low service hatch, curved ribs, layered pressure panels, amber lamps, and wet manifold all remain in view. Character hands, tentacles, parts, cage access, and issue screens form a visible custody diagram.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "facing Ilya from worker side of counter", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "ilya_marne", "default_stance": "beside cage lock and issue authority screen", "visual_ref": "visual_character_refs.characters.ilya_marne"},
+          {"agent_id": "orrin_dax", "default_stance": "at anchor cart in central lane", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "nara_7", "default_stance": "near yellow valve plate", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "lio_vale", "default_stance": "reading terms on work slate", "visual_ref": "visual_character_refs.characters.lio_vale"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "claimshare_debt >= 3", "modifier_prompt": "Show a thick red recovery line extending from Teth's account to the next work-group distribution on the issue slate."},
+          {"trigger": "claimshare_hold == true", "modifier_prompt": "Show the claimshare access icon locked in red beside small household service symbols."},
+          {"trigger": "worker_custody >= 4", "modifier_prompt": "Show Teth holding tubing and recorder, Orrin holding the bridge case, and Nara holding the valve plate."},
+          {"trigger": "management_control >= 4", "modifier_prompt": "Show Ilya's console cuff linked by blue light to the cage lock and central issue screen."},
+          {"trigger": "nara_sequence_logged == true", "modifier_prompt": "Show Nara's valve contact sequence copied on the orange recorder and Lio's slate."}
+        ],
+        "visual_continuity_notes": ["Ending choice begins with the exact component positions produced by earlier branches."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_ending_shared_custody",
+        "ink_anchor": "ending_shared_custody_success|ending_shared_custody_cost",
+        "base_image_prompt": "Close-medium shared-custody signing at the Stores Collar Six issue counter. Teth Inkwise, a large mottled blue-gray uplifted cephalopod in a compact dry-operation harness, presses the harness utility coupler to the slate. Nara-7, a slender engineered humanoid in a gray numbered skinsuit, touches the yellow valve sequence beside it. Orrin Dax, a broad older rigger with jaw frost scar and patched brown-and-orange jacket, places a heavy gloved hand and anchor rescue mark on the third field. The gray scrubber case, orange custody recorder, blue cartridge sockets, red claimshare line, wire-mesh cage, amber work lamps, and cyan display create a tight image of signatures attached to bodies and equipment.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "coupler pressed to shared custody slate", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "nara_7", "default_stance": "fingers on valve-sequence field", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "orrin_dax", "default_stance": "glove on anchor rescue mark", "visual_ref": "visual_character_refs.characters.orrin_dax"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Success and cost use the same signing geometry; modifiers change debt allocation and object custody."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_ending_central_supply",
+        "ink_anchor": "ending_central_supply_success|ending_central_supply_cost",
+        "base_image_prompt": "Wide view across Stores Collar Six centered on the loop-inner wire-mesh cage. Ilya Marne, a tall silver-blonde superintendent in a clean dark coat, stands at a bright blue cage lock and central issue screen. The assembled gray scrubber bridge, yellow valve plate, coiled clear tubing, silver seal tape, orange recorder, and two clean blue cartridges sit behind mesh on labeled shelves. Teth Inkwise, a large mottled blue-gray uplifted cephalopod in a compact dry-operation harness, waits on the worker side; Orrin Dax, a broad older rigger in a patched brown-and-orange jacket, looks through the mesh with a battered mug; Nara-7, a slender engineered humanoid in a gray numbered skinsuit, stands near the now-empty locker gate. Curved shell ribs, low service hatch, amber lamps, and cooling cyan fault indicators keep the safe present and controlled future in one frame.",
+        "visible_characters": [
+          {"agent_id": "ilya_marne", "default_stance": "hand at cage lock and central issue screen", "visual_ref": "visual_character_refs.characters.ilya_marne"},
+          {"agent_id": "teth_inkwise", "default_stance": "worker side of locked cage", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "orrin_dax", "default_stance": "looking through mesh over battered mug", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "nara_7", "default_stance": "still beside empty locker gate", "visual_ref": "visual_character_refs.characters.nara_7"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Every kit component is visibly behind mesh under Ilya's authorization in this ending family."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_ending_mutual_aid",
+        "ink_anchor": "ending_mutual_aid_success|ending_mutual_aid_cost",
+        "base_image_prompt": "Wide counterspinward departure view through Stores Collar Six. Teth Inkwise, a large mottled blue-gray uplifted cephalopod moving autonomously in a compact open-frame dry-operation harness, carries clear tubing on curved tool rails toward the worker gate. Orrin Dax, a broad older rigger with jaw frost scar and patched brown-and-orange jacket, rolls the gray scrubber bridge beneath orange haulback lines on the anchor cart. Nara-7, a slender engineered humanoid in a gray numbered skinsuit, carries the yellow valve plate toward a separate locker route. Lio Vale, a lean medium-brown coordinator in a slate-gray jacket, copies the orange recorder chain onto three scuffed work slates. A sealed blue humidity cartridge rests quietly beside Teth's route. The wire cage, curved ribs, low hatch, manifold pipes, amber lamps, and cyan screens remain legible behind them.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "moving tubing toward worker gate", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "orrin_dax", "default_stance": "rolling bridge case along central lane", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "nara_7", "default_stance": "taking valve plate toward locker route", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "lio_vale", "default_stance": "copying custody record near issue counter", "visual_ref": "visual_character_refs.characters.lio_vale"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Success shows three moving routes; cost modifier may stop them at the cage."]
+      },
+      {
+        "visual_scene_id": "ledger_kappa_ending_assembly_map",
+        "ink_anchor": "ending_assembly_map_success|ending_assembly_map_cost",
+        "base_image_prompt": "Overhead view of the Stores Collar Six issue counter after the emergency assembly has been separated into ordinary inventory. A scuffed work slate shows a clear diagram linking a gray scrubber bridge outline, blue cartridges, yellow valve plate contacts, clear tubing and colored cuffs, silver seal tape, orange recorder, harness coupler geometry, Kappa-6 oval hatch route, and floor anchor loads. Three distinct annotations appear: Nara-7's precise contact sequence, Teth Inkwise's curved route marks, and Orrin Dax's heavy handwritten load figures. Around the counter edges, Nara's slender gray-sleeved hands, Teth's mottled blue-gray tentacle tips, and Orrin's heavy glove remain visible. Wire mesh, amber lamp reflections, cyan screen light, curved shell panel seams, and a complete inventory count frame a map that is materially separate from the parts.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "tentacle tips adding route geometry at counter edge", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "nara_7", "default_stance": "precise fingers adding valve sequence", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "orrin_dax", "default_stance": "heavy glove beside handwritten anchor loads", "visual_ref": "visual_character_refs.characters.orrin_dax"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Success shows complete worker knowledge; cost modifier removes a required sequence or access route while leaving the diagram visibly incomplete."]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {"modifier_id": "count_harness_coupler_visual", "trigger": "branch_id == count_harness_coupler", "apply_to_visual_scene_ids": ["ledger_kappa_routine_fold", "ledger_kappa_fault_hold"], "modifier_prompt": "Show a clean replacement cuff on Teth's harness and a red charge line on the issue slate."},
+      {"modifier_id": "count_orrin_seal_stock_visual", "trigger": "branch_id == count_orrin_seal_stock", "apply_to_visual_scene_ids": ["ledger_kappa_routine_fold", "ledger_kappa_custody_threshold"], "modifier_prompt": "Show the half-used silver seal roll beside Orrin's visible countersignature."},
+      {"modifier_id": "count_nara_sequence_visual", "trigger": "branch_id == count_nara_valve_sequence", "apply_to_visual_scene_ids": ["ledger_kappa_routine_fold", "ledger_kappa_bypass_action", "ledger_kappa_custody_threshold"], "modifier_prompt": "Show Nara's manual valve contact sequence lit on the yellow plate and copied to the orange recorder."},
+      {"modifier_id": "count_distributed_parts_visual", "trigger": "branch_id == count_distributed_parts", "apply_to_visual_scene_ids": ["ledger_kappa_routine_fold", "ledger_kappa_recall_fold", "ledger_kappa_custody_threshold"], "modifier_prompt": "Show the bridge case under Orrin's anchor lines, tubing on Teth's harness rail, and valve plate by Nara's locker route."},
+      {"modifier_id": "teth_account_visual", "trigger": "branch_id == put_kit_on_teth_account", "apply_to_visual_scene_ids": ["ledger_kappa_recall_fold", "ledger_kappa_custody_threshold", "ledger_kappa_ending_shared_custody"], "modifier_prompt": "Show Teth's harness coupler beside a bright red single-account debt and claimshare hold."},
+      {"modifier_id": "anchor_cart_visual", "trigger": "branch_id == move_kit_to_anchor_cart", "apply_to_visual_scene_ids": ["ledger_kappa_recall_fold", "ledger_kappa_amber_fault", "ledger_kappa_custody_threshold"], "modifier_prompt": "Show the gray scrubber case strapped beneath orange haulback lines on Orrin's anchor cart."},
+      {"modifier_id": "record_recall_visual", "trigger": "branch_id == record_the_recall", "apply_to_visual_scene_ids": ["ledger_kappa_recall_fold", "ledger_kappa_fault_hold", "ledger_kappa_custody_threshold"], "modifier_prompt": "Show the orange recorder framing Ilya's recall order, clean cartridges, and live margin board in one evidence chain."},
+      {"modifier_id": "return_cartridges_visual", "trigger": "branch_id == return_clean_cartridges", "apply_to_visual_scene_ids": ["ledger_kappa_recall_fold", "ledger_kappa_amber_fault", "ledger_kappa_custody_threshold"], "modifier_prompt": "Show two blue cartridges sealed in Ilya's central-transfer sleeve and empty cartridge sockets on the gray bridge."},
+      {"modifier_id": "teth_routes_bypass_visual", "trigger": "branch_id == teth_routes_bypass", "apply_to_visual_scene_ids": ["ledger_kappa_bypass_action", "ledger_kappa_fault_hold", "ledger_kappa_custody_threshold"], "modifier_prompt": "Show Teth advancing mantle-first through the oval service hatch, tentacles routing clear tubing around a curved rib to a red pressure cuff while two flexible haulback leads run from the mobile harness to floor sockets."},
+      {"modifier_id": "nara_runs_sequence_visual", "trigger": "branch_id == nara_runs_sequence", "apply_to_visual_scene_ids": ["ledger_kappa_bypass_action", "ledger_kappa_fault_hold", "ledger_kappa_custody_threshold"], "modifier_prompt": "Show Nara bridging two yellow plate contacts while Teth answers from the hatch through pressure taps on a clear tube."},
+      {"modifier_id": "lend_harness_loop_visual", "trigger": "branch_id == lend_harness_oxygenation_loop", "apply_to_visual_scene_ids": ["ledger_kappa_bypass_action", "ledger_kappa_fault_hold", "ledger_kappa_custody_threshold", "ledger_kappa_ending_central_supply"], "modifier_prompt": "Show Teth's personal oxygenation loop connected into the gray scrubber case, the humidity ring flashing low, and pale strain around the worn contact band."},
+      {"modifier_id": "unsafe_restart_visual", "trigger": "branch_id == accept_main_line_restart", "apply_to_visual_scene_ids": ["ledger_kappa_bypass_action", "ledger_kappa_fault_hold", "ledger_kappa_custody_threshold", "ledger_kappa_ending_central_supply"], "modifier_prompt": "Show Ilya's console cuff linked to a bright blue main-line indicator while Nara listens to a fresh vibration trace on the shell panel."},
+      {"modifier_id": "shared_custody_success_visual", "trigger": "ending_label == shared_custody_success", "apply_to_visual_scene_ids": ["ledger_kappa_ending_shared_custody"], "modifier_prompt": "Show three equal custody marks linked to the recorder and gray bridge, replacement blue cartridges on the worker side of the counter, and three small painted marks plus one new fourth mark on the case."},
+      {"modifier_id": "shared_custody_cost_visual", "trigger": "ending_label == shared_custody_cost", "apply_to_visual_scene_ids": ["ledger_kappa_ending_shared_custody"], "modifier_prompt": "Show three names on the form but one thick red debt line terminating at Teth's harness account and household service icons locked behind it."},
+      {"modifier_id": "central_supply_success_visual", "trigger": "ending_label == central_supply_success", "apply_to_visual_scene_ids": ["ledger_kappa_ending_central_supply"], "modifier_prompt": "Show full clean cartridges, a green dormitory-air icon, a cleared claimshare symbol, and every kit component behind a bright blue superintendent cage lock."},
+      {"modifier_id": "central_supply_cost_visual", "trigger": "ending_label == central_supply_cost", "apply_to_visual_scene_ids": ["ledger_kappa_ending_central_supply"], "modifier_prompt": "Show Teth's low humidity warning or one thin amber margin bar, a repayment schedule on the screen, and the kit locked behind mesh."},
+      {"modifier_id": "mutual_aid_success_visual", "trigger": "ending_label == mutual_aid_success", "apply_to_visual_scene_ids": ["ledger_kappa_ending_mutual_aid"], "modifier_prompt": "Show all three component routes in motion and a sealed blue humidity cartridge placed beside Teth's path by an unseen helper beyond the frame."},
+      {"modifier_id": "mutual_aid_cost_visual", "trigger": "ending_label == mutual_aid_cost", "apply_to_visual_scene_ids": ["ledger_kappa_ending_mutual_aid"], "modifier_prompt": "Show the bridge case and cartridges stopped behind newly closed wire mesh while Nara alone reaches the locker gate with the yellow plate."},
+      {"modifier_id": "assembly_map_success_visual", "trigger": "ending_label == assembly_map_success", "apply_to_visual_scene_ids": ["ledger_kappa_ending_assembly_map"], "modifier_prompt": "Show a complete map linking Nara's contact sequence, Teth's Kappa-6 route, Orrin's anchor loads, and every ordinary component outline."},
+      {"modifier_id": "assembly_map_cost_visual", "trigger": "ending_label == assembly_map_cost", "apply_to_visual_scene_ids": ["ledger_kappa_ending_assembly_map"], "modifier_prompt": "Show the map ending at an incomplete printed valve sequence and a bright blue cage-lock symbol between the component outlines and Kappa-6 route."}
+    ],
+    "scene_set": {
+      "scene_set_id": "stores_collar_six.scene_set.inline_v0",
+      "geometry_authority_level": "draft_plan_view_with_fixed_routes_and_cameras",
+      "room_model": "A fourteen-meter curved service-collar segment, four meters wide and three meters high, following Service Ring Kappa. Apparent gravity points through the floor toward the Bloom shell. Local loop-inner and loop-outer sides remain distinct from Bloom radial inward and outward.",
+      "coordinate_frame": {
+        "counterspinward": "worker entrance and shift locks",
+        "spinward": "open continuation toward the Kappa-7 primary segment",
+        "loop_inner": "wire-mesh stores cage, issue counter, locker gate, and base of badge stair",
+        "loop_outer": "air, coolant, pressure, and condensate manifold wall",
+        "bloom_outward": "scuffed floor, anchor rail, and low Kappa-6 service hatch entering the shell artery",
+        "bloom_inward": "curved ceiling and glass-fronted operations strip"
+      },
+      "fixed_zones": [
+        {"zone_id": "counterspinward_worker_entry", "visible_form": "two-meter worker gate with manual bar and timekeeping panel", "used_for": "worker arrival, Lio staging, mutual-aid exit"},
+        {"zone_id": "loop_inner_stores_cage", "visible_form": "six-meter wire-mesh cage with waist-high issue counter, labeled shelves, blue lock, and cartridge sockets", "used_for": "inventory, recall, central custody, occlusion"},
+        {"zone_id": "issue_counter", "visible_form": "scuffed metal counter with rectangular slate dock and object-sized work surface", "used_for": "ordinary count, recorder, signatures, assembly map"},
+        {"zone_id": "locker_gate", "visible_form": "narrow worker locker gate immediately spinward of the stores cage", "used_for": "Nara's valve-plate route"},
+        {"zone_id": "central_anchor_lane", "visible_form": "recessed floor rail and clear cart-width path along room center", "used_for": "Orrin's anchor cart, harness anchors, heavy bridge movement"},
+        {"zone_id": "loop_outer_manifold", "visible_form": "insulated air and coolant trunks, valve housings, condensate trap, gauges, cable bundles, pressure-lung panels", "used_for": "fault source and bypass connection"},
+        {"zone_id": "kappa_6_service_hatch", "visible_form": "low oval outward-facing hatch at the loop-outer floor-wall joint with two floor anchor sockets", "used_for": "Teth shell-artery access and tube route"},
+        {"zone_id": "badge_stair", "visible_form": "short stair from a locked loop-inner door to the glass-fronted operations strip near the inward-curving ceiling", "used_for": "Ilya's protected entrance"},
+        {"zone_id": "spinward_ring_portal", "visible_form": "open reinforced portal continuing along Service Ring Kappa", "used_for": "route toward Kappa-7 and later work"}
+      ],
+      "occluders": [
+        {"occluder_id": "stores_mesh_and_shelves", "effect": "Mesh permits partial sightlines while stocked shelves block hands and lower-body detail behind the cage."},
+        {"occluder_id": "loop_outer_manifold_bank", "effect": "Dense pipes block sight into the shell artery; only the hatch mouth and near curved rib are visible from the room."},
+        {"occluder_id": "anchor_cart_load", "effect": "Orange haulback coils can conceal the gray scrubber case from the badge-stair angle while leaving it visible from the worker entrance."}
+      ],
+      "staging_slots": [
+        {"slot_id": "teth_counter", "body_fit": "mobile cephalopod harness", "position": "worker side of issue counter beside floor rail"},
+        {"slot_id": "teth_hatch_anchor", "body_fit": "mobile cephalopod harness", "position": "two sockets beside Kappa-6 hatch"},
+        {"slot_id": "orrin_cart_lane", "body_fit": "baseline human plus anchor cart", "position": "central rail between worker entrance and hatch"},
+        {"slot_id": "nara_plate", "body_fit": "engineered humanoid", "position": "issue counter, locker gate, or valve plate station beside hatch"},
+        {"slot_id": "lio_worker_gate", "body_fit": "baseline human", "position": "counterspinward worker entrance with sightline to counter and hatch"},
+        {"slot_id": "ilya_badge_route", "body_fit": "baseline human", "position": "badge stair, cage lock, or loop-inner issue authority screen"}
+      ],
+      "routes": [
+        {"route_id": "worker_route", "path": "counterspinward_worker_entry -> issue_counter -> central_anchor_lane -> spinward_ring_portal", "access": "shift workers and carts"},
+        {"route_id": "supervisor_route", "path": "operations_strip -> badge_stair -> loop_inner_stores_cage", "access": "AU supervisor badge"},
+        {"route_id": "teth_shell_route", "path": "teth_hatch_anchor -> kappa_6_service_hatch -> curved shell artery", "access": "mobile cephalopod harness and flexible tools"},
+        {"route_id": "component_distribution", "path": "issue_counter -> Teth harness rail | Orrin anchor cart | Nara locker gate", "access": "three distinct worker custody paths"}
+      ],
+      "camera_slots": [
+        {"camera_id": "wide_counterspinward_entry", "supports_visual_scene_ids": ["ledger_kappa_stores_establishing", "ledger_kappa_ending_mutual_aid"]},
+        {"camera_id": "medium_issue_counter", "supports_visual_scene_ids": ["ledger_kappa_ordinary_count", "ledger_kappa_routine_fold", "ledger_kappa_recall_fold", "ledger_kappa_custody_threshold"]},
+        {"camera_id": "close_harness_counter", "supports_visual_scene_ids": ["ledger_kappa_count_harness"]},
+        {"camera_id": "close_issue_objects", "supports_visual_scene_ids": ["ledger_kappa_count_seal_stock", "ledger_kappa_ending_shared_custody"]},
+        {"camera_id": "close_valve_plate", "supports_visual_scene_ids": ["ledger_kappa_count_nara_sequence"]},
+        {"camera_id": "wide_counter_to_cart", "supports_visual_scene_ids": ["ledger_kappa_count_distributed_parts", "ledger_kappa_recall_choice"]},
+        {"camera_id": "close_issue_slate", "supports_visual_scene_ids": ["ledger_kappa_recall_notice"]},
+        {"camera_id": "low_badge_stair", "supports_visual_scene_ids": ["ledger_kappa_ilya_arrival"]},
+        {"camera_id": "wide_loop_outer_fault", "supports_visual_scene_ids": ["ledger_kappa_amber_fault", "ledger_kappa_fault_hold"]},
+        {"camera_id": "low_service_hatch", "supports_visual_scene_ids": ["ledger_kappa_bypass_action"]},
+        {"camera_id": "wide_cage_lock", "supports_visual_scene_ids": ["ledger_kappa_ending_central_supply"]},
+        {"camera_id": "overhead_counter_map", "supports_visual_scene_ids": ["ledger_kappa_ending_assembly_map"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "worker_gate_to_counter", "path": "counterspinward worker gate -> central lane -> issue counter", "supports": ["Lio observes inventory and closes the gate during the fault"]},
+        {"lane_id": "badge_stair_to_cage", "path": "operations strip -> badge stair -> cage lock and issue counter", "supports": ["Ilya sees stock and recorder after entering"]},
+        {"lane_id": "counter_to_hatch", "path": "issue counter -> central lane -> Kappa-6 hatch mouth", "supports": ["workers coordinate bridge deployment while the shell artery interior remains occluded"]}
+      ],
+      "branch_state_anchors": [
+        {"anchor_id": "component_custody", "visible_states": ["all on issue counter", "distributed across harness/cart/locker", "sealed behind cage"]},
+        {"anchor_id": "cartridge_state", "visible_states": ["two clean cartridges", "empty bridge sockets", "central-transfer sleeve"]},
+        {"anchor_id": "harness_support", "visible_states": ["steady cuff", "oxygenation loop connected to worker", "oxygenation loop lent to bridge", "low humidity warning"]},
+        {"anchor_id": "claimshare_state", "visible_states": ["clear", "small recovery line", "thick debt line", "red access hold"]},
+        {"anchor_id": "fault_route", "visible_states": ["bypass tubes connected", "main-line blue restart", "one-bar amber margin", "broad amber margin"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character visual identities for prompt assembly. Include only refs for characters visible in each frame; complete base prompts also carry visible appearance and staging.",
+    "characters": {
+      "teth_inkwise": {
+        "display_name": "Teth Inkwise",
+        "species_or_body": "uplifted cephalopod dry-operation shell-artery maintenance specialist",
+        "stable_visual_description": "Large uplifted cephalopod with mottled blue-gray skin, expressive dark eyes, multiple flexible tentacles, and a compact low-gravity mobile dry-operation harness. The open body-support frame has a bare-minimum humidity ring, clear oxygenation tubes, padded pressure cuffs, adjustable support loops, utility coupler, anchor clips, and curved tool rails. One worn contact band leaves a pale rub mark.",
+        "silhouette_notes": "Horizontal or suspended nonhuman silhouette moving autonomously through dry low-gravity work space, tentacles distributed between floor anchors, tools, valves, and support rails.",
+        "do_not_change": ["mottled blue-gray cephalopod body", "multiple flexible tentacles", "mobile open-frame dry-operation harness", "humidity ring and oxygenation tubes", "pale rub mark at one contact band"]
+      },
+      "orrin_dax": {
+        "display_name": "Orrin Dax",
+        "species_or_body": "baseline human anchor rigger",
+        "stable_visual_description": "Broad older baseline human with light-brown weathered skin, close-cropped graying hair, rough stubble, and a pale frost scar along one side of the jaw. Wears a patched brown-and-orange anchor-crew jacket, heavy gloves, magnetic boots, and stays near an old anchor cart, orange haulback line, and battered dark metal coffee mug.",
+        "silhouette_notes": "Solid guarded build, slightly hunched from rail work, visually tied to cart, rescue line, gloves, and mug.",
+        "do_not_change": ["jaw frost scar", "patched brown-and-orange rigger jacket", "heavy gloves", "anchor cart and orange haulback line", "battered metal mug"]
+      },
+      "nara_7": {
+        "display_name": "Nara-7",
+        "species_or_body": "VitaForge BioDrone Standard engineered humanoid seal technician",
+        "stable_visual_description": "Slender engineered humanoid with smooth androgynous features, pale gray-brown skin, close-cropped dark hair, faint subdermal route-interface lines at wrists and neck, and a clean gray numbered seal-technician skinsuit with a small VitaForge batch tag. Hands move with precise economical contact sequences.",
+        "silhouette_notes": "Narrow still posture, hands often flat on panels or spanning valve contacts.",
+        "do_not_change": ["gray numbered skinsuit", "VitaForge batch tag", "faint wrist and neck interface lines", "precise hand sequence", "slender engineered humanoid silhouette"]
+      },
+      "lio_vale": {
+        "display_name": "Lio Vale",
+        "species_or_body": "baseline human maintenance coordinator",
+        "stable_visual_description": "Lean compact adult baseline human with medium-brown skin, short black hair clipped close at the sides, tired dark eyes, and controlled practical posture. Wears a worn slate-gray AU maintenance jacket, soft-soled magnetic boots, utility belt with tags and seals, and carries a scuffed rectangular work slate.",
+        "silhouette_notes": "Shoulders slightly forward, usually placed between worker routes and authority while holding the slate low.",
+        "do_not_change": ["medium-brown skin", "short close-clipped black hair", "slate-gray maintenance jacket", "scuffed rectangular work slate", "compact practical build"]
+      },
+      "ilya_marne": {
+        "display_name": "Ilya Marne",
+        "species_or_body": "baseline human AU superintendent",
+        "stable_visual_description": "Tall baseline human woman with cool light skin, severe silver-blonde hair pinned tight, sharp cheekbones, and a controlled corporate expression. Wears a clean dark AU superintendent coat with pale blue trim, polished magnetic boots, and a slim supervisor console cuff.",
+        "silhouette_notes": "Vertical polished stance associated with badge stair, cage lock, glass operations strip, and blue-white authority screens.",
+        "do_not_change": ["silver-blonde pinned hair", "dark superintendent coat with pale blue trim", "polished magnetic boots", "supervisor console cuff", "controlled upright posture"]
+      }
+    },
+    "groups": {}
+  },
+  "review_notes": [
+    "The inline scene_set fixes radial and ring-relative directions, component routes, body staging, sightlines, occluders, and camera slots for one-room multi-angle replay.",
+    "Every base prompt repeats visible character appearance and room geometry so it can stand alone; prompt assembly still applies stable refs only for visible named characters.",
+    "Generated imagery is deferred. For website-quality continuity, image generation should paint over camera-specific renders from a simple blockout derived from the inline plan."
+  ]
+}

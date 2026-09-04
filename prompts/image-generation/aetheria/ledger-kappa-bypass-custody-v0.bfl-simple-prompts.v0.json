@@ -1,0 +1,88 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ledger-kappa-bypass-custody-v0.bfl-simple-v0",
+  "fixture_id": "ledger-kappa-bypass-custody-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Bleak painterly industrial science-fiction illustration, charcoal and oxidized orange with restrained cyan instrument light, tactile scuffed metal and patched polymer, expressive body posture, legible machinery, humane dry wit, physically coherent, non-photoreal, image-led composition with abstract interface glyphs.",
+  "prompts": [
+    {
+      "id": "01_stores_establishing",
+      "prompt": "Empty curved service bay inside a rotating manufactured asteroid habitat: scuffed outward floor, recessed anchor rail, loop-inner wire-mesh stores cage and issue counter, loop-outer air and coolant manifolds, low oval shell-artery hatch, curved ribs, layered pressure seals, amber work lamps, cyan instruments, badge stair rising to glass operations strip."
+    },
+    {
+      "id": "02_ordinary_count",
+      "prompt": "Morning parts count in the curved service bay: large mottled blue-gray uplifted cephalopod moving autonomously in an open-frame dry-operation harness with humidity ring and oxygen tubes; broad older human rigger with jaw scar, patched orange-brown jacket, cart and mug; slender gray-suited engineered technician; lean coordinator with scuffed slate. Gray scrubber case, blue cartridges, yellow valve plate, clear tubes, silver tape, orange recorder on the counter."
+    },
+    {
+      "id": "03_harness_coupler",
+      "prompt": "Close industrial work: mottled blue-gray cephalopod tentacles brace on floor rail and seat a clean utility cuff into a mobile humidity-and-oxygen work harness; white stress line on old gasket; red debt line on issue slate; older human rigger watches over battered mug."
+    },
+    {
+      "id": "04_seal_stock_countersign",
+      "prompt": "Object closeup at scuffed issue counter: heavy human glove and blue-gray cephalopod tentacle countersign beside a half-used silver seal-tape roll; orange custody recorder frames both bodies; gray bridge case and clear tubing behind."
+    },
+    {
+      "id": "05_nara_valve_sequence",
+      "prompt": "Slender engineered humanoid technician in gray numbered skinsuit bridges two contacts on a yellow manual valve plate; small green manual-path light, dark supervisor socket; mottled cephalopod in mobile dry-operation harness watches while orange recorder captures the sequence."
+    },
+    {
+      "id": "06_distributed_parts",
+      "prompt": "One emergency kit split across three worker routes in a curved industrial service bay: cephalopod clips clear tubes to mobile harness rail, older rigger hides gray bridge case beneath orange lines on cart, slender engineered technician carries yellow plate toward locker gate; stores cage visibly emptier."
+    },
+    {
+      "id": "07_routine_fold",
+      "prompt": "Ordinary mixed-body maintenance inventory under amber lamps and cyan screens: cephalopod harness worker, human rigger and cart, engineered technician and valve plate, tired human coordinator and slate; all bypass parts and separate ledgers visible in one cramped curved habitat bay."
+    },
+    {
+      "id": "08_recall_notice",
+      "prompt": "Close issue slate with three severe warning rows, red work-group recovery line, two clean blue cartridges, orange custody recorder, wire-mesh cage and curved shell rib; one mottled cephalopod tentacle receives the recall order at screen edge."
+    },
+    {
+      "id": "09_ilya_arrival",
+      "prompt": "Tall silver-blonde corporate superintendent in clean dark coat descends short badge stair from glass operations strip into dirty curved stores collar; mottled cephalopod in mobile dry-operation harness faces her at issue counter; tired coordinator watches from worker gate; blue cartridges and cage between them."
+    },
+    {
+      "id": "10_recall_choice",
+      "prompt": "Cephalopod maintenance specialist centered between four material choices: signature slate, human rigger's anchor cart, orange recorder aimed at superintendent, and clean blue cartridges on transfer counter; wire cage, low hatch, curved ribs, pipes, amber lamps and cyan status lights make a visible custody puzzle."
+    },
+    {
+      "id": "11_recall_fold",
+      "prompt": "Post-recall inventory in one curved service bay: silver-blonde superintendent waits beside wire cage, mottled cephalopod harness worker remains at issue counter, older rigger guards anchor cart, engineered technician stands by locker gate; bridge, cartridges, tubing, valve plate, recorder and claimshare screen show the selected custody state."
+    },
+    {
+      "id": "12_amber_fault",
+      "prompt": "Amber condensate fault in curved habitat service bay: wet grate, pulsing pressure-lung panel, swinging gauges, dense air and coolant pipes, low oval shell hatch; cephalopod harness worker turns toward hatch, engineered technician touches valve plate, rigger grips cart, coordinator closes worker gate, superintendent reads console cuff."
+    },
+    {
+      "id": "13_bypass_action",
+      "prompt": "Low view at oval shell-artery hatch: mobile cephalopod harness clipped by flexible haulback leads to floor sockets among clear tubes, colored cuffs, gray scrubber bridge and personal oxygen loop; engineered technician at yellow valve plate, rigger bracing cart, silver-blonde superintendent holding console cuff under amber fault light."
+    },
+    {
+      "id": "14_fault_hold",
+      "prompt": "Temporary bypass holding a condensate fault in amber: clear tubes pulse from gray bridge through colored cuffs into low shell hatch; cephalopod harness worker at the route, engineered technician listening at wall, older rigger offering battered mug, superintendent watching; margin board, wet grate, pipes and pressure ribs visible."
+    },
+    {
+      "id": "15_custody_threshold",
+      "prompt": "Post-fault negotiation at issue counter: cephalopod harness worker faces corporate superintendent beside cage lock; rigger holds cart, engineered technician guards yellow plate, coordinator reads terms; bridge, cartridges, tubes, seal tape, recorder, red claimshare line and cyan margin board form a visible dependency web."
+    },
+    {
+      "id": "16_shared_custody_end",
+      "prompt": "Close shared-custody signing: cephalopod harness coupler, engineered technician's precise fingers, and older rigger's heavy glove meet three fields on an issue slate beside gray bridge and orange recorder; one red debt line threatens to collapse the collective agreement onto a single worker."
+    },
+    {
+      "id": "17_central_supply_end",
+      "prompt": "All bypass components and clean blue cartridges locked behind loop-inner wire mesh under a bright blue superintendent lock; silver-blonde manager controls screen while cephalopod harness worker, older rigger with mug, and engineered technician stand outside the cage in the now-safe service bay."
+    },
+    {
+      "id": "18_mutual_aid_end",
+      "prompt": "Three quiet worker routes leaving a curved industrial stores collar: cephalopod carries clear tubes on harness rails toward gate, older rigger rolls gray bridge beneath orange lines on cart, engineered technician takes yellow plate to locker path, coordinator copies recorder chain; sealed blue humidity cartridge waits anonymously beside the route."
+    },
+    {
+      "id": "19_assembly_map_end",
+      "prompt": "Overhead issue-counter map linking outlines of scrubber bridge, cartridges, valve plate, tubes, tape, recorder, harness coupler, oval shell hatch route and floor anchors; engineered gray-sleeved fingers add contact sequence, blue-gray cephalopod tentacles add route curves, heavy human glove adds handwritten load figures."
+    }
+  ]
+}
