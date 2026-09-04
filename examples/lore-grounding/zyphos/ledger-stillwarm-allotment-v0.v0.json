@@ -1,0 +1,324 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.ledger-stillwarm-allotment-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "lore_grounded",
+  "source_refs": [
+    {
+      "source_id": "breeding-grounds",
+      "path": "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+      "title": "Breeding Grounds",
+      "line_start": 1,
+      "line_end": 33,
+      "relevance": "Primary owner for the reproductive commons, caretaker handover, heat pledges, trophic inputs, need-first allocation, mobility debt, and the provisional Stillwarm Shelf locality."
+    },
+    {
+      "source_id": "saueia",
+      "path": "Eusocial Interbeing/Species/Sa'ueia.md",
+      "title": "Sa'ueia",
+      "line_start": 1,
+      "line_end": 25,
+      "relevance": "Grounds the protagonist and Vara as long-bodied hexapods with four running legs, two chest manipulators, chemical-sensing facial fans, balanced flank frames, and low work geometry."
+    },
+    {
+      "source_id": "saueia-continent",
+      "path": "Eusocial Interbeing/World/Sa'ueia Continent.md",
+      "title": "Sa'ueia Continent",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds remembered motion, ecological standing, overdrawn regions, breeding-ground permanence, and mobile civilizational authority."
+    },
+    {
+      "source_id": "saueia-family-units",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+      "title": "Sa'ueia Family Units",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds mobile family units as carriers of childcare, craft, trade, ritual, memory, and ecological negotiation whose movement can be constrained by broken obligations."
+    },
+    {
+      "source_id": "saueia-nomadic-civilization",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md",
+      "title": "Sa'ueia Nomadic Civilization",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Grounds breeding grounds as anchors for infancy, infirm care, reproductive ritual, and inter-family legitimacy rather than capitals."
+    },
+    {
+      "source_id": "mobile-technologies",
+      "path": "Eusocial Interbeing/Technologies/Sa'auei'a Mobile Technologies.md",
+      "title": "Sa'auei'a Mobile Technologies",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Grounds portable archives, medical grafts, repairable equipment, and relationship-aware route technology."
+    },
+    {
+      "source_id": "reciprocal-ecologies",
+      "path": "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md",
+      "title": "Reciprocal Ecologies",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds future access, nourishment, guidance, warning, shelter, and refusal as remembered returns on conduct."
+    },
+    {
+      "source_id": "glassback-grazers",
+      "path": "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md",
+      "title": "Glassback Grazers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds translucent heat-storage plates, feeding dependence on producer mats and mineral films, Sa'ueia calving-lane and parasite bargains, readable plate state, and route debt."
+    },
+    {
+      "source_id": "prismwake-mats",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Prismwake Mats.md",
+      "title": "Prismwake Mats",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds sugar production, eclipse-tuned light storage, damage memory, fungal mineral exchange, grazing access, and repriced future feeding after injury."
+    },
+    {
+      "source_id": "candle-fungal-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds living route logistics, decomposition, mineral transport, disease filtering, remembered payment, quarantine, and breeding-ground connections."
+    },
+    {
+      "source_id": "lantern-trees",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+      "title": "Umbros-Facing Lantern Trees",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds cold eclipse lighting, route taxation, infant shelter, fungal exchange, and visible invitation or refusal."
+    },
+    {
+      "source_id": "zyphos-umbros",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds the fixed planet Umbros, frequent roughly hour-long eclipses, low energy availability, and pressure on heat storage and breeding-ground location."
+    },
+    {
+      "source_id": "fractal-eusocial-web",
+      "path": "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md",
+      "title": "Fractal Eusocial Web",
+      "line_start": 1,
+      "line_end": 146,
+      "relevance": "Grounds breeding grounds as commons-scale interbeings and feed, route, boundary, anchor, debt, and contamination relations across scales."
+    },
+    {
+      "source_id": "ecological-bargaining",
+      "path": "Eusocial Interbeing/Themes/Ecological Bargaining.md",
+      "title": "Ecological Bargaining",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds nonhuman leverage and Sa'ueia generosity or restraint as material access rather than moral decoration."
+    },
+    {
+      "source_id": "nomadism-without-primitivism",
+      "path": "Eusocial Interbeing/Themes/Nomadism Without Primitivism.md",
+      "title": "Nomadism Without Primitivism",
+      "line_start": 1,
+      "line_end": 7,
+      "relevance": "Grounds route law, breeding-ground care, portable craft, and ecological memory as sophisticated infrastructure."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Current Sa'ueia civilizational pattern; no contact-war event is required by the fixture.",
+    "location": "Stillwarm Shelf, a provisional descriptive locality for one sub-Umbros breeding ground on the Sa'ueia continent.",
+    "summary": "A routine heat-pledge shift becomes a shortage dispute when a glassback herd withholds warmth after an injured prismwake mat reduces its feeding access. The player allocates the deficit across ecological credit, herd obligations, family mobility, or caretaker labor.",
+    "public_facts": [
+      {
+        "text": "Breeding grounds house infants, infirm adults, caretakers, rotating specialists, and ecological partners as a reproductive commons rather than a family-owned settlement.",
+        "source_refs": ["breeding-grounds", "saueia", "saueia-nomadic-civilization"]
+      },
+      {
+        "text": "Glassbacks store heat in translucent dorsal plates and bargain with Sa'ueia through calving protection, parasite care, transport, water knowledge, and mineral gifts.",
+        "source_refs": ["glassback-grazers"]
+      },
+      {
+        "text": "Prismwake mats control grazing through remembered conduct, while candle roads carry nutrients, waste, disease reports, and route credit.",
+        "source_refs": ["prismwake-mats", "candle-fungal-roads"]
+      },
+      {
+        "text": "Stillwarm Shelf uses glassback heat pledges, fungal waste capacity, prismwake feeding access, lantern light, and caretaker labor to keep clean nursery cradles viable through eclipse.",
+        "source_refs": ["breeding-grounds", "zyphos-umbros"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Need-first warmth allocation protects infants and infirm adults, but shortages can bind able-bodied families to repair work and make mobility unequal.",
+        "source_refs": ["breeding-grounds", "saueia-continent"]
+      },
+      {
+        "text": "A necessary rescue can still damage a sentient food producer; explanation changes obligation without erasing material repair.",
+        "source_refs": ["breeding-grounds", "prismwake-mats", "reciprocal-ecologies"]
+      },
+      {
+        "text": "Daily eclipse creates a hard decision window because lantern light preserves visibility but does not replace metabolic warmth.",
+        "source_refs": ["breeding-grounds", "lantern-trees", "zyphos-umbros"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "stillwarm-shelf-commons",
+      "label": "Stillwarm Shelf breeding-ground commons",
+      "group_type": "reproductive_commons_interbeing",
+      "institutional_logic": ["Allocate clean heat by bodily need while preserving ecological consent and future reproductive capacity."],
+      "material_incentives": ["Keep infant and infirm cradles warm", "Maintain clean fungal throughput", "Preserve herd and wetland standing", "Prevent permanent caretaker capture"],
+      "internal_virtues": ["Need-first care", "Public accounting", "Repair before absolution", "Rotating burden"],
+      "internal_shames": ["Selling cradle priority", "Calling coerced labor voluntary", "Spending another partner's consent", "Letting rotation become inheritance"],
+      "prestige_markers": ["A shortage closed without infant triage", "A debt discharged across more than one ecology", "A repair witnessed by the injured partner"],
+      "taboo_triggers": ["Private ownership of a cradle", "Forced heat extraction", "Hidden contamination", "Permanent claim over a caretaker family"],
+      "emotional_display_norms": ["Fear is made public through body heat, facial-fan posture, route cords, plate color, and cradle stones rather than concealed as private distress."],
+      "trust_defaults": ["Trusts overlapping bodily and ecological testimony; distrusts a single family account or a single route authority."],
+      "speech_register_cues": ["Concise work language", "Dry jokes about accounting", "Material nouns", "Publicly named costs"],
+      "source_refs": ["breeding-grounds", "fractal-eusocial-web", "ecological-bargaining"]
+    },
+    {
+      "group_id": "stillwarm-glassback-herd",
+      "label": "Wide-Blue's glassback herd",
+      "group_type": "mobile_heat_and_grazing_partner",
+      "institutional_logic": ["Protect herd heat, calves, feeding access, and route reputation by making discharge conditional on reciprocal care."],
+      "material_incentives": ["Prismwake sugar", "Mineral washing", "Parasite work", "Protected calving lanes", "Respectful plate contact"],
+      "internal_virtues": ["Calf protection", "Readable refusal", "Heat sharing under earned conditions"],
+      "internal_shames": ["Spending heat into a feeding system that cannot sustain the herd", "Allowing plate access to become extraction"],
+      "prestige_markers": ["Clear plates", "Calm broadside posture", "A pledge honored after partners honor theirs"],
+      "taboo_triggers": ["Forced separation", "Plate scraping", "Overharvested mats", "Being treated as a passive heat tank"],
+      "emotional_display_norms": ["Warmth, fear, trust, and refusal appear in plate clarity, color, body spacing, and whether the herd kneels under collection ribs."],
+      "trust_defaults": ["Trusts repeated care and mat access; treats emergency claims as proposals rather than commands."],
+      "speech_register_cues": ["No verbal dialogue required; use plate-state, stance, contact, and withdrawal."],
+      "source_refs": ["glassback-grazers", "breeding-grounds"]
+    },
+    {
+      "group_id": "vara-family-unit",
+      "label": "Vara's route family",
+      "group_type": "mobile_family_unit_under_debt",
+      "institutional_logic": ["Preserve movement, carry medical craft, protect dependents, and repair ecological standing without becoming hereditary stationary labor."],
+      "material_incentives": ["Depart during the route window", "Keep graft packets viable", "Receive unconditional infant care", "Discharge the prismwake repair obligation"],
+      "internal_virtues": ["Rescue under pressure", "Portable skill", "Truthful route testimony", "Debt that ends when repair is recognized"],
+      "internal_shames": ["Concealing damage", "Abandoning a dependent", "Leaving the same kin to absorb every stationary duty"],
+      "prestige_markers": ["A viable graft delivery", "A witnessed repair", "Return to movement after a finite obligation"],
+      "taboo_triggers": ["Cradle care priced against family standing", "Necessary rescue rewritten as moral unfitness"],
+      "emotional_display_norms": ["Fatigue and stress remain visible in bare throat and flank patches even when speech stays dry and controlled."],
+      "trust_defaults": ["Trusts public records more than reputation summaries; expects low standing to be mistaken for complete guilt."],
+      "speech_register_cues": ["Direct cost language", "Defensive wit", "Refusal of flattering euphemism"],
+      "source_refs": ["saueia", "saueia-family-units", "breeding-grounds"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "stillwarm.need-first-warmth",
+      "applies_to": ["stillwarm-shelf-commons", "vara-family-unit"],
+      "pressure_type": "care_and_scarcity",
+      "summary": "Cradle care remains unconditional while the burden of restoring depleted inputs attaches to adult mobility, labor, and future route access.",
+      "projection_use": "Keep final choices focused on where the deficit moves, never on whether an infant deserves warmth.",
+      "source_refs": ["breeding-grounds"]
+    },
+    {
+      "field_id": "stillwarm.ecological-input-consent",
+      "applies_to": ["stillwarm-shelf-commons", "stillwarm-glassback-herd"],
+      "pressure_type": "distributed_infrastructure_authority",
+      "summary": "Caretakers allocate heat, but the herd, mats, road, and grove retain refusal over the matter and services they contribute.",
+      "projection_use": "Render bargains as multi-party trophic consent rather than a caretaker operating passive utilities.",
+      "source_refs": ["breeding-grounds", "ecological-bargaining", "fractal-eusocial-web"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "stillwarm-shelf-commons",
+      "target_group_id": "vara-family-unit",
+      "observer_read": ["Poor route standing", "Known mat damage", "Available repair labor"],
+      "target_self_read": ["Family that damaged a partner during a necessary rescue", "Medical carrier with obligations elsewhere"],
+      "misread_patterns": ["Low standing can be treated as a complete causal account", "Repair duty can become an excuse for indefinite stationary labor"],
+      "likely_insults": ["unremembered", "route-thin", "permanent helper"],
+      "projection_use": "Let public evidence separate damage, necessity, continuing repair, and class burden without erasing any of them.",
+      "source_refs": ["breeding-grounds", "saueia-continent", "saueia-family-units"]
+    },
+    {
+      "observer_group_id": "stillwarm-shelf-commons",
+      "target_group_id": "stillwarm-glassback-herd",
+      "observer_read": ["Emergency reserve", "Pledge supplier", "Body holding unused warmth"],
+      "target_self_read": ["Herd protecting future feeding access", "Party to a reciprocal calving and heat agreement"],
+      "misread_patterns": ["Urgency can make withheld heat look like cruelty", "Caretakers may mistake a bargain for ownership of stored energy"],
+      "likely_insults": ["hoarder", "failed pledge", "walking tank"],
+      "projection_use": "Keep the herd's refusal materially rational and visible through plate state and withdrawal.",
+      "source_refs": ["glassback-grazers", "breeding-grounds"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "heat-steward",
+      "summary": "A rotating Sa'ueia caretaker who can allocate cradle heat and bind commons obligations but cannot command ecological inputs.",
+      "obligations": ["Warm infants and infirm adults first", "Keep waste streams clean", "Preserve route and herd standing", "Name who absorbs the shortfall"],
+      "available_masks": ["Dry competence", "Procedural calm", "Public neutrality", "Workplace humor"],
+      "failure_modes": ["Scapegoating a low-standing family", "Overdrawing caretaker bodies", "Spending standing without transport capacity", "Treating herd refusal as disobedience"],
+      "source_refs": ["breeding-grounds", "saueia", "ecological-bargaining"]
+    },
+    {
+      "role_id": "route-family-graft-carrier",
+      "summary": "A mobile Sa'ueia adult whose family owes mat repair while their warm medical cargo is needed elsewhere.",
+      "obligations": ["Tell the route truth", "Keep grafts viable", "Repair ecological injury", "Resist indefinite conversion into stationary labor"],
+      "available_masks": ["Defensive wit", "Visible compliance", "Demand for plain accounting"],
+      "failure_modes": ["Leaving before repair", "Losing graft viability while detained", "Accepting a debt with no completion condition"],
+      "source_refs": ["saueia-family-units", "mobile-technologies", "breeding-grounds"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "ruun",
+      "known_context": [
+        {"text": "Ruun can read cradle stones, glassback plate states, fungal bead patterns, route cords, and visible Sa'ueia stress signals at this locality.", "source_refs": ["breeding-grounds", "saueia", "glassback-grazers", "candle-fungal-roads"]}
+      ],
+      "beliefs": [
+        {"text": "Ruun believes every safe solution moves a finite cost into labor, credit, mobility, or a future ecological promise.", "source_refs": ["breeding-grounds", "reciprocal-ecologies"]}
+      ],
+      "misreads": [
+        {"text": "Ruun may treat public accounting as sufficient protection against a recurring caretaker class even when the same low-standing families remain.", "source_refs": ["breeding-grounds"]}
+      ],
+      "must_not_know": [
+        {"text": "Ruun cannot know which bargain will be accepted until the visible herd, road, and mat responses occur.", "source_refs": ["ecological-bargaining", "glassback-grazers", "prismwake-mats"]}
+      ]
+    },
+    {
+      "speaker_id": "vara",
+      "known_context": [
+        {"text": "Vara knows the family's flood crossing, the mat damage, the rescued infant, the graft route, and the family's weak local standing.", "source_refs": ["breeding-grounds", "saueia-family-units", "mobile-technologies"]}
+      ],
+      "beliefs": [
+        {"text": "Vara expects a real debt to name repair and an end condition rather than treating family identity as the debt.", "source_refs": ["breeding-grounds", "saueia-continent"]}
+      ],
+      "misreads": [
+        {"text": "Vara may read ecological caution as a caretaker accusation before the road or herd has completed its own response.", "source_refs": ["breeding-grounds", "reciprocal-ecologies"]}
+      ],
+      "must_not_know": [
+        {"text": "Vara cannot privately know why the herd will accept or refuse a revised pledge beyond readable plate state and prior contracts.", "source_refs": ["glassback-grazers"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Stillwarm Shelf is a provisional descriptive name and should not be treated as final Weksa-derived terminology.",
+      "source_refs": ["breeding-grounds"]
+    },
+    {
+      "text": "The fixture explores possible local outcomes; no ending is promoted as a canonical historical event.",
+      "source_refs": ["breeding-grounds", "fractal-eusocial-web"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What exact anatomy and gait should become canonical for glassback grazers beyond their translucent dorsal plates and herd behavior?",
+      "blocks_training": false,
+      "notes": "The visual plan uses broad grazing bodies and sturdy legs without fixing limb count; a future species elaboration should own the precise body plan."
+    },
+    {
+      "question": "Which Weksa-derived term should replace the provisional locality name Stillwarm Shelf?",
+      "blocks_training": false,
+      "notes": "Keep the plain descriptive name marked provisional until language work supplies a locally grounded term."
+    }
+  ]
+}

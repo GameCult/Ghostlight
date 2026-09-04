@@ -1,0 +1,60 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ledger-stillwarm-allotment-v0.bfl-simple-v0",
+  "fixture_id": "ledger-stillwarm-allotment-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Ecological science-fantasy storybook illustration, fine ink contours over matte gouache, restrained mineral blue, amber, silver, charcoal, and moss-green palette, readable nonhuman silhouettes, tactile living infrastructure, humane workplace detail, cinematic interactive-fiction frame, all meaning carried by visible bodies, materials, light, and objects.",
+  "prompts": [
+    {
+      "id": "01_stillwarm_establishing",
+      "prompt": "Wide view of an open fan-shaped dark-stone breeding-ground terrace beneath an enormous fixed planet. Three blue-lit nursery ramps descend toward warm communal hollows; three outer heat bays use flexible pale root-and-stone arches; an amber fungal waste lane crosses the center; a short broad grazing path rises from a silver-green wetland below. Long-bodied six-limbed caretakers work among translucent-backed grazing herds."
+    },
+    {
+      "id": "02_claimants_at_shelf",
+      "prompt": "Medium view of a low public allotment shelf holding three warm stones, mineral brushes, braided cords, and a child-carved stone head. A smoke-gray long-bodied hexapod caretaker with four running legs and two small chest hands faces a rust-fibered route carrier with leaf-wrapped medical grafts and a broad grazer whose translucent dorsal plates glow blue and honey gold; two packed six-limbed travelers wait at the route exit."
+    },
+    {
+      "id": "03_routine_choice",
+      "prompt": "Overhead-oblique work choice around a low stone shelf: mineral brush beside glowing dorsal plates, sorted dung and graft waste beside amber fungi, warm medical packets in a flank frame, and a mineral request cord leading toward a silver-green wetland. A smoke-gray six-limbed caretaker can reach each tool with two small chest hands."
+    },
+    {
+      "id": "04_trophic_heat_circuit",
+      "prompt": "Wide working ecology: silver-green wetland mats feed broad translucent-backed grazers; grazers kneel beneath flexible root-and-stone collection arches; gold warmth travels through roots toward nursery cradle stones; separate amber fungal beads digest sorted dung, spoilage, and failed graft tissue; blue lantern knots wake above shallow ramps."
+    },
+    {
+      "id": "05_heat_pledge_refusal",
+      "prompt": "A broad grazer rises from a heat bay and turns broadside with blue-gold warmth trapped behind fogged translucent dorsal plates. A smoke-gray six-limbed caretaker turns two gold cradle stones and one gray stone on a low shelf. A rust-fibered route carrier watches beside medical grafts. A silver-green wetland below displays one long torn scar."
+    },
+    {
+      "id": "06_shortfall_choices",
+      "prompt": "Eclipse-ingress choice frame around a low public shelf: an unfurling route-memory membrane, a mineral basin with grooming cords, two gold cradle stones and one gray adult-work stone, and amber fungi sampling dust and shed fiber. The smoke-gray hexapod steward faces a rust-fibered graft carrier and a glassback with fogged dorsal plates."
+    },
+    {
+      "id": "07_public_accounting",
+      "prompt": "Deep-blue eclipse frame of a public ecological account: three cradle stones, a route membrane, mineral cords, graft packets, amber fungal sample trails, and one partly clear glassback plate surround a low shelf. Infants and infirm six-limbed bodies cluster around two gold cradles while able-bodied caretakers work in the cold outer court."
+    },
+    {
+      "id": "08_totality_threshold",
+      "prompt": "An enormous black planet rimmed by a dim star hangs above an open dark-stone terrace. Blue lantern knots mark three nursery ramps; amber fungal beads cross the central court; a smoke-gray six-limbed steward stands over cradle stones and obligation cords; a rust-fibered carrier waits with medical grafts; a fog-plated grazer holds warmth beneath a pale root arch."
+    },
+    {
+      "id": "09_mobility_debt_end",
+      "prompt": "Under blue eclipse light, a smoke-gray hexapod steward ties a rust-fibered traveler's family cord to an amber repair branch leading toward a scarred silver-green wetland. A medical graft frame rests on the public shelf while two packed six-limbed eastbound travelers wait to accept it; warm nursery light glows down inner ramps and a fog-plated grazer watches from the heat-bay boundary."
+    },
+    {
+      "id": "10_ecological_credit_end",
+      "prompt": "A braided mineral request cord runs from a low public shelf through amber fungi toward a scarred silver-green wetland. A smoke-gray six-limbed steward holds the final cord, a broad translucent-backed grazer stands under a flexible collection arch, and a rust-fibered route carrier waits beside leaf-wrapped graft packets and three cradle stones."
+    },
+    {
+      "id": "11_herd_bargain_end",
+      "prompt": "At three open heat bays, a smoke-gray long-bodied hexapod steward lays three braided calving-watch cords before a broad grazer with tall translucent dorsal plates. Other glassbacks line up behind the representative; flexible root-and-stone arches wait above kneeling platforms; blue nursery ramps and public cradle stones remain visible behind the bargain."
+    },
+    {
+      "id": "12_caretaker_cost_end",
+      "prompt": "Two inner root-and-stone nursery cradles glow gold beneath blue lantern knots while the adult work shelf stays gray and cold. A smoke-gray six-limbed caretaker and several tired long-bodied colleagues sort pale graft waste from dark spoiled food beside an amber fungal lane, their bare throat patches dark with fatigue."
+    }
+  ]
+}

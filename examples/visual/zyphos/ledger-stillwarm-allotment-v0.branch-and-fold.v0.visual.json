@@ -1,0 +1,651 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ledger-stillwarm-allotment-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/ledger-stillwarm-allotment-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/ledger-stillwarm-allotment-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ledger-stillwarm-allotment-v0.heat-pledge-shortfall",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a trophic heat-allotment dispute at Stillwarm Shelf.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the breeding-ground heat circuit, ordinary caretaker work, glassback refusal, public accounting, final cost assignment, and four state-gated outcome families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the locality, claimant introduction, routine choice, routine fold, shortfall reveal, shortage response, public fold, totality threshold, and each ending family. The herd's visible withholding of heat receives its own frame before the player responds.",
+    "prompting_rule": "Each base image prompt describes a complete drawable frame for a general image model with physical geometry, light, materials, bodies, tools, and staging. Character refs are assembled only for named bodies visible in that frame. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: ecological science-fantasy storybook illustration, fine ink contours over matte gouache, restrained mineral blue, amber, silver, charcoal, and moss-green palette, readable nonhuman silhouettes, tactile living infrastructure, humane workplace detail, cinematic composition designed for interactive-fiction replay.",
+    "prompt_assembly_rule": "Assemble every rendered prompt from global_style_cue, the selected scene base_image_prompt, visual refs only for named characters and groups listed in visible_characters, and triggered state_image_modifiers plus global_branch_image_modifiers. Use a camera-specific Stillwarm Shelf blockout as visual input before high-consistency multi-angle rendering.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one open terrace from several focal distances and carries branch-created body positions, cradle states, and route signals across folds. The embedded draft map owns zones, routes, sightlines, camera slots, and visible state anchors for review.",
+      "future_scene_set_need": "Before image rendering, build a simple plan view or low-detail blockout for Stillwarm Shelf using the embedded zones and camera slots. The image model should paint over camera-specific visual input rather than invent terrace topology from prose."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "stillwarm_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of Stillwarm Shelf, an open dark-stone breeding-ground terrace on a cool slope beneath an enormous fixed planet in the daytime sky. Three broad shallow ramps descend from the inner terrace edge into low communal nursery hollows. Short trees ring the inner edge, carrying cold blue bioluminescent knots beneath their canopies. Three open heat bays occupy the outer edge; each bay has a low kneeling platform and a flexible arch of pale root braided through dark porous stone. Amber bead-like fungal fruiting bodies mark a separate waste lane across the middle and descend toward a silver-green wetland of thin light-catching mats below. A short broad grazing path rises directly from the wetland to the heat bays. Long-bodied six-limbed Sa'ueia caretakers work at low shelves while infants and infirm adults rest around warm root-and-stone cradles. Broad grazing animals with translucent dorsal plates wait near the heat bays. The view clearly separates routeward outer edge, central work shelf, fungal waste lane, and nurseryward inner ramps.",
+        "visible_characters": [
+          {
+            "agent_id": "nursery_dependents",
+            "default_stance": "resting in small groups around warm cradles below the inner ramps",
+            "visual_ref": "visual_character_refs.groups.nursery_dependents"
+          },
+          {
+            "agent_id": "stillwarm_glassback_herd",
+            "default_stance": "waiting beside the outer heat bays with dorsal plates exposed",
+            "visual_ref": "visual_character_refs.groups.stillwarm_glassback_herd"
+          },
+          {
+            "agent_id": "stillwarm_caretakers",
+            "default_stance": "folded at low work shelves or moving on four tall running legs",
+            "visual_ref": "visual_character_refs.groups.stillwarm_caretakers"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Stillwarm Shelf is an open fan-shaped terrace: outer heat bays uphill and routeward, central allotment shelf and waste lane, inner nursery ramps downhill and inward, prismwake wetland visible below the outer overlook.",
+          "Lantern knots provide blue visibility during eclipse; cradle warmth appears gold and comes through roots connected to the glassback collection ribs."
+        ]
+      },
+      {
+        "visual_scene_id": "stillwarm_claimants",
+        "ink_anchor": "introduce_claimants",
+        "base_image_prompt": "Medium-wide view across the central allotment shelf at Stillwarm Shelf. Ruun, a long-bodied Sa'ueia with smoke-gray insulating fibers, an ochre saddle marking, four tall digitigrade running legs folded beneath the torso, two small three-digit chest hands, a wedge-shaped head, and paired chemical-sensing facial fans, sorts three warm round cradle stones beside mineral brushes and route cords. Vara, a rust-fibered Sa'ueia with dark-speckled facial fans, stands routeward on four running legs with a balanced flank frame holding sealed leaf-skin medical graft packets. Two other long-bodied six-limbed Sa'ueia tighten braided cords on balanced route packs at the terrace exit. Wide-Blue, a broad low glassback grazer on sturdy dark legs with tall translucent dorsal plates glowing blue and honey gold, stands beside an open heat bay. Amber fungal beads divide them from the three blue-lit nursery ramps. A warm stone carved by a child into a lopsided elder head sits among the serious accounting objects.",
+        "visible_characters": [
+          {
+            "agent_id": "ruun",
+            "default_stance": "folded at the low allotment shelf with chest hands sorting cradle stones",
+            "visual_ref": "visual_character_refs.characters.ruun"
+          },
+          {
+            "agent_id": "vara",
+            "default_stance": "standing routeward with graft frame balanced across the flanks",
+            "visual_ref": "visual_character_refs.characters.vara"
+          },
+          {
+            "agent_id": "wide_blue",
+            "default_stance": "broadside beside the nearest heat bay",
+            "visual_ref": "visual_character_refs.characters.wide_blue"
+          },
+          {
+            "agent_id": "eastbound_family_unit",
+            "default_stance": "tightening pack cords beside the routeward exit",
+            "visual_ref": "visual_character_refs.groups.eastbound_family_unit"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The allotment shelf is low enough for a folded Sa'ueia to use both chest hands; Vara's graft frame stays in Vara's custody until an ending explicitly transfers it.",
+          "Wide-Blue's plate clarity and contact with the flexible collection rib are the visible herd-consent signals."
+        ]
+      },
+      {
+        "visual_scene_id": "stillwarm_routine_choice",
+        "ink_anchor": "routine_choice",
+        "base_image_prompt": "Medium overhead-oblique choice frame centered on Ruun at a low dark-stone shelf. Four physical work affordances form a readable arc: a wide mineral brush lies beside Wide-Blue's glowing dorsal plates at the outer heat bay; a sorted basket holds glassback dung, spoiled fibrous food, and one pale failed graft beside amber fungal beads; Vara's leaf-skin graft frame rests at the routeward end of the shelf; a braided mineral request cord leads toward the silver-green prismwake wetland below. Ruun's smoke-gray hexapod body is folded at center with two small chest hands free, facial fans open toward the work. Vara waits beside the graft frame. Wide-Blue stands at the heat bay. Three nursery ramps and blue lantern knots remain visible behind the shelf.",
+        "visible_characters": [
+          {
+            "agent_id": "ruun",
+            "default_stance": "folded at center with chest hands poised over four work options",
+            "visual_ref": "visual_character_refs.characters.ruun"
+          },
+          {
+            "agent_id": "vara",
+            "default_stance": "beside the routeward graft frame",
+            "visual_ref": "visual_character_refs.characters.vara"
+          },
+          {
+            "agent_id": "wide_blue",
+            "default_stance": "beside the mineral brush and heat bay",
+            "visual_ref": "visual_character_refs.characters.wide_blue"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "stillwarm_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide working view of the full heat circuit at Stillwarm Shelf before eclipse. Silver-green prismwake sheets shine in shallow water below the terrace. Broad glassbacks with translucent blue-gold dorsal plates approach three open heat bays. Flexible pale root-and-stone ribs curve over kneeling platforms and carry gold warmth toward round cradle stones on the central allotment shelf. Amber fungal beads receive separate baskets of dung, spoiled food, and clean failed graft tissue along the waste lane. Ruun, a smoke-gray long-bodied six-limbed Sa'ueia, works at the shelf; Vara, a rust-fibered Sa'ueia, checks a balanced flank frame of sealed medical grafts. Blue lantern knots begin to brighten above the three nursery ramps. The composition foregrounds connected bodies, material flows, and skilled work.",
+        "visible_characters": [
+          {
+            "agent_id": "ruun",
+            "default_stance": "working between cradle stones and fungal lane",
+            "visual_ref": "visual_character_refs.characters.ruun"
+          },
+          {
+            "agent_id": "vara",
+            "default_stance": "checking the graft frame near the routeward exit",
+            "visual_ref": "visual_character_refs.characters.vara"
+          },
+          {
+            "agent_id": "stillwarm_glassback_herd",
+            "default_stance": "moving between wetland approach and heat bays",
+            "visual_ref": "visual_character_refs.groups.stillwarm_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "herd_trust >= 4",
+            "modifier_prompt": "Wide-Blue kneels willingly beneath a flexible collection rib with clear blue-gold dorsal plates touching the pale root surface."
+          },
+          {
+            "trigger": "road_capacity >= 4",
+            "modifier_prompt": "The fungal waste lane glows in two orderly amber lines and the root surfaces around the cradles look dry and clean."
+          },
+          {
+            "trigger": "graft_departure >= 4",
+            "modifier_prompt": "Vara's sealed leaf-skin graft packets show even amber warmth along every seam."
+          },
+          {
+            "trigger": "ground_credit <= 1",
+            "modifier_prompt": "A newly tied mineral request cord hangs visibly from the shelf toward the wetland path."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "stillwarm_shortfall_reveal",
+        "ink_anchor": "shortfall_reveal",
+        "base_image_prompt": "Pivotal medium-wide refusal frame at Stillwarm Shelf. Wide-Blue rises out of the nearest heat bay and turns broadside; warmth remains visible behind dorsal plates that have fogged from front to rear, breaking contact with the flexible root-and-stone collection rib. Ruun, a smoke-gray long-bodied Sa'ueia folded at the central shelf, turns three cradle stones: two hold gold centers and one has cooled gray. Vara, a rust-fibered Sa'ueia with a medical graft frame, looks between the gray stone and the routeward exit. Amber fungal beads rise around a mineral request cord. In the wetland below, a thin silver-green prismwake mat displays one long torn silver scar. The fixed dark planet begins to cover the dim sun while blue lantern knots wake above the nursery ramps.",
+        "visible_characters": [
+          {
+            "agent_id": "ruun",
+            "default_stance": "folded at shelf, chest hands turning one gray and two gold cradle stones",
+            "visual_ref": "visual_character_refs.characters.ruun"
+          },
+          {
+            "agent_id": "vara",
+            "default_stance": "tense beside the routeward exit and graft frame",
+            "visual_ref": "visual_character_refs.characters.vara"
+          },
+          {
+            "agent_id": "wide_blue",
+            "default_stance": "broadside outside the heat bay with fogged plates withdrawn from the collection rib",
+            "visual_ref": "visual_character_refs.characters.wide_blue"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The prismwake scar is visible only from the terrace's outer overlook and lies below the heat bays; it is not inside the nursery.",
+          "This frame establishes the third cradle stone as gray before shortage responses alter heat or efficiency."
+        ]
+      },
+      {
+        "visual_scene_id": "stillwarm_shortfall_choice",
+        "ink_anchor": "shortfall_choice",
+        "base_image_prompt": "Medium overhead-oblique choice frame at the central allotment shelf during eclipse ingress. Ruun's smoke-gray Sa'ueia body is folded at center with two chest hands free. Vara can unroll a flexible route-memory membrane showing pressure traces beside the graft frame. A mineral basin and three grooming cords lie within reach of Wide-Blue's fogged translucent dorsal plates at the heat-bay edge. Two gold cradle stones and one gray stone can be moved toward the blue-lit nursery ramps. Amber candle fungi sample dust and shed fiber along the waste lane. Each option occupies a distinct reachable zone around the low shelf; the wounded silver prismwake mat remains visible below the outer edge.",
+        "visible_characters": [
+          {
+            "agent_id": "ruun",
+            "default_stance": "folded at the allotment shelf, able to reach cords, stones, basin, and route membrane",
+            "visual_ref": "visual_character_refs.characters.ruun"
+          },
+          {
+            "agent_id": "vara",
+            "default_stance": "routeward with one chest hand near the rolled route membrane",
+            "visual_ref": "visual_character_refs.characters.vara"
+          },
+          {
+            "agent_id": "wide_blue",
+            "default_stance": "outside the heat bay with fogged plates angled toward the mineral basin",
+            "visual_ref": "visual_character_refs.characters.wide_blue"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "stillwarm_shortfall_fold",
+        "ink_anchor": "shortfall_fold",
+        "base_image_prompt": "Public accounting frame across Stillwarm Shelf in deep eclipse blue. The central low shelf displays three cradle stones, Vara's flexible route membrane, mineral and grooming cords, and the medical graft frame. Ruun, a smoke-gray long-bodied hexapod caretaker, faces both Vara and Wide-Blue. Vara's rust-fibered body shows stress at a bare throat patch while standing beside the routeward exit. Wide-Blue waits at the heat-bay boundary with fogged translucent plates and one possible clear blue plate. Amber fungal beads trace the waste lane and sample the route membrane. Two inward cradles below the three shallow ramps hold clustered Sa'ueia infants and infirm adults under blue lantern knots; able-bodied caretakers work nearer the colder outer shelf.",
+        "visible_characters": [
+          {
+            "agent_id": "ruun",
+            "default_stance": "at the public shelf facing both claimant and herd",
+            "visual_ref": "visual_character_refs.characters.ruun"
+          },
+          {
+            "agent_id": "vara",
+            "default_stance": "beside the routeward exit with visible throat stress",
+            "visual_ref": "visual_character_refs.characters.vara"
+          },
+          {
+            "agent_id": "wide_blue",
+            "default_stance": "at the heat-bay boundary with plates turned toward the shelf",
+            "visual_ref": "visual_character_refs.characters.wide_blue"
+          },
+          {
+            "agent_id": "nursery_dependents",
+            "default_stance": "clustered around two inward cradles below the ramps",
+            "visual_ref": "visual_character_refs.groups.nursery_dependents"
+          },
+          {
+            "agent_id": "stillwarm_caretakers",
+            "default_stance": "working at the cold outer edge or tending inner cradles according to state",
+            "visual_ref": "visual_character_refs.groups.stillwarm_caretakers"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "repair_evidence >= 3",
+            "modifier_prompt": "The route membrane and amber fungal sample lines form two distinct visible tracks: one toward the torn mat and one toward rejected flood microbes."
+          },
+          {
+            "trigger": "herd_trust >= 4",
+            "modifier_prompt": "One of Wide-Blue's dorsal plates clears to deep blue and touches the edge of the flexible collection rib."
+          },
+          {
+            "trigger": "ground_credit <= 0",
+            "modifier_prompt": "Both mineral request cords hang dark and slack from the route branch."
+          },
+          {
+            "trigger": "cradle_efficiency >= 4",
+            "modifier_prompt": "Dependents cluster tightly around two gold-lit cradles while tools and able-bodied caretakers occupy the colder outer court."
+          },
+          {
+            "trigger": "caretaker_strain >= 3",
+            "modifier_prompt": "Ruun's bare throat patch carries a dark fatigue band and the two small chest hands visibly tremble above the shelf."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "stillwarm_totality_threshold",
+        "ink_anchor": "final_threshold",
+        "base_image_prompt": "Wide threshold view of Stillwarm Shelf under total eclipse. An enormous black planet with a thin pale rim hangs above the open fan-shaped terrace. Cold blue lantern knots outline three shallow ramps into communal nursery hollows. Amber fungal beads mark the separate waste lane across the center. Three open heat bays with flexible pale root-and-stone arches line the routeward outer edge. Ruun, a smoke-gray six-limbed Sa'ueia, stands at the central low shelf over three cradle stones and obligation cords. Vara, a rust-fibered Sa'ueia carrying a balanced frame of sealed leaf-skin medical graft packets, waits at the routeward exit. Wide-Blue, a broad glassback with fogged blue-gold dorsal plates, stands under one collection rib. The composition makes four possible costs readable: Vara's family cord, dark ecological request cords, future calving-watch cords before the herd, and the gray adult work stone.",
+        "visible_characters": [
+          {
+            "agent_id": "ruun",
+            "default_stance": "standing over the shelf with chest hands near four cost markers",
+            "visual_ref": "visual_character_refs.characters.ruun"
+          },
+          {
+            "agent_id": "vara",
+            "default_stance": "at the routeward exit with graft frame balanced for departure",
+            "visual_ref": "visual_character_refs.characters.vara"
+          },
+          {
+            "agent_id": "wide_blue",
+            "default_stance": "under the nearest collection rib with warmth banked in fogged plates",
+            "visual_ref": "visual_character_refs.characters.wide_blue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "heat_reserve >= 3",
+            "modifier_prompt": "All three cradle stones on the shelf retain gold centers of different brightness."
+          },
+          {
+            "trigger": "heat_reserve <= 1",
+            "modifier_prompt": "Only two inward cradle stones retain small gold centers; the adult work stone is fully gray."
+          },
+          {
+            "trigger": "graft_departure >= 4",
+            "modifier_prompt": "Every sealed graft packet in Vara's flank frame shows a smooth even amber seam."
+          },
+          {
+            "trigger": "graft_departure <= 2",
+            "modifier_prompt": "Several graft packets show uneven amber edges fading toward gray."
+          },
+          {
+            "trigger": "road_capacity >= 3",
+            "modifier_prompt": "A bright amber fungal branch remains open from the shelf toward the wounded wetland."
+          },
+          {
+            "trigger": "road_capacity <= 2",
+            "modifier_prompt": "The fungal waste lane glows densely at its safe limit and the wetland request branch stays dark."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "stillwarm_ending_mobility",
+        "ink_anchor": "ending_mobility_success|ending_mobility_cost",
+        "base_image_prompt": "Mobility-debt aftermath at the central public shelf under blue eclipse light. Ruun, a smoke-gray long-bodied Sa'ueia, ties Vara's braided family cord to an amber branch leading toward the scarred silver-green wetland. Vara, a rust-fibered Sa'ueia, stands beside the routeward exit with the medical graft frame placed on the low shelf for transfer. Two other long-bodied six-limbed Sa'ueia in balanced route harnesses wait at the exit to accept viable graft cargo. Gold cradle light glows down the inner ramps. Wide-Blue watches from the outer heat-bay boundary with fogged translucent plates. The scene centers the physical difference between warm dependent care, a bound repair cord, and a route that may continue for somebody else.",
+        "visible_characters": [
+          {
+            "agent_id": "ruun",
+            "default_stance": "tying Vara's family cord to the wetland repair branch",
+            "visual_ref": "visual_character_refs.characters.ruun"
+          },
+          {
+            "agent_id": "vara",
+            "default_stance": "beside the exit and transferred graft frame",
+            "visual_ref": "visual_character_refs.characters.vara"
+          },
+          {
+            "agent_id": "wide_blue",
+            "default_stance": "watching from the heat-bay boundary",
+            "visual_ref": "visual_character_refs.characters.wide_blue"
+          },
+          {
+            "agent_id": "eastbound_family_unit",
+            "default_stance": "waiting at the exit to receive viable graft cargo",
+            "visual_ref": "visual_character_refs.groups.eastbound_family_unit"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "stillwarm_ending_credit",
+        "ink_anchor": "ending_credit_success|ending_credit_cost",
+        "base_image_prompt": "Ecological-credit aftermath spanning the Stillwarm Shelf outer edge and wetland below. A braided mineral request cord runs from Ruun's low allotment shelf through amber candle fungi toward a silver-green prismwake mat with a long torn scar. Ruun, a smoke-gray six-limbed Sa'ueia, holds the final cord end in two chest hands. Wide-Blue stands in the nearest heat bay beneath a flexible root-and-stone collection rib, translucent dorsal plates positioned to show either renewed blue-gold warmth or complete fog. Vara waits at the routeward exit with a balanced frame of leaf-skin graft packets. Three cradle stones lie in a row on the shelf beneath blue lantern light.",
+        "visible_characters": [
+          {
+            "agent_id": "ruun",
+            "default_stance": "holding the final request cord at the allotment shelf",
+            "visual_ref": "visual_character_refs.characters.ruun"
+          },
+          {
+            "agent_id": "vara",
+            "default_stance": "waiting at the routeward exit with graft frame",
+            "visual_ref": "visual_character_refs.characters.vara"
+          },
+          {
+            "agent_id": "wide_blue",
+            "default_stance": "in the heat bay under the collection rib",
+            "visual_ref": "visual_character_refs.characters.wide_blue"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "stillwarm_ending_herd",
+        "ink_anchor": "ending_herd_success|ending_herd_cost",
+        "base_image_prompt": "Herd-negotiation aftermath at the outer heat bays of Stillwarm Shelf. Ruun, a smoke-gray long-bodied Sa'ueia, lays three braided calving-watch cords on the dark stone between the central shelf and Wide-Blue. Wide-Blue is a broad low grazer with sturdy dark legs and a tall fan of translucent dorsal plates, positioned beneath one flexible pale root-and-stone collection rib. Other glassbacks form a loose line behind Wide-Blue. Blue lantern knots light the nursery ramps in the distance; three round cradle stones remain visible on the public shelf. The frame makes future labor cords, herd stance, plate clarity, and rib contact the central visual negotiation.",
+        "visible_characters": [
+          {
+            "agent_id": "ruun",
+            "default_stance": "placing three calving-watch cords before the herd",
+            "visual_ref": "visual_character_refs.characters.ruun"
+          },
+          {
+            "agent_id": "wide_blue",
+            "default_stance": "under the collection rib facing the cords",
+            "visual_ref": "visual_character_refs.characters.wide_blue"
+          },
+          {
+            "agent_id": "stillwarm_glassback_herd",
+            "default_stance": "forming a loose line behind Wide-Blue",
+            "visual_ref": "visual_character_refs.groups.stillwarm_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "stillwarm_ending_caretakers",
+        "ink_anchor": "ending_caretaker_success|ending_caretaker_cost",
+        "base_image_prompt": "Caretaker-cost aftermath across the inner half of Stillwarm Shelf during total eclipse. Two root-and-stone cradles glow gold below the blue-lit nursery ramps, surrounded by Sa'ueia infants and infirm adults. The adult work shelf at the central terrace is gray and cold. Ruun, a smoke-gray long-bodied Sa'ueia with an ochre saddle marking, works at that shelf with two small three-digit chest hands over separate baskets of clean pale graft waste and dark spoiled food. Several six-limbed caretakers in practical flank harnesses stand or fold in the cold outer court, bare throat patches showing fatigue. Amber fungal beads line the waste lane beside the sorting baskets. The visual cost rests on the bodies continuing the work.",
+        "visible_characters": [
+          {
+            "agent_id": "ruun",
+            "default_stance": "working at the cold shelf with chest hands over sorted waste",
+            "visual_ref": "visual_character_refs.characters.ruun"
+          },
+          {
+            "agent_id": "stillwarm_caretakers",
+            "default_stance": "continuing work in the cold outer court with visible fatigue",
+            "visual_ref": "visual_character_refs.groups.stillwarm_caretakers"
+          },
+          {
+            "agent_id": "nursery_dependents",
+            "default_stance": "resting around two warm inner cradles",
+            "visual_ref": "visual_character_refs.groups.nursery_dependents"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_herd_trust_visual",
+        "trigger": "branch_label == prime_herd_trust",
+        "apply_to_visual_scene_ids": ["stillwarm_routine_fold", "stillwarm_shortfall_reveal", "stillwarm_totality_threshold"],
+        "modifier_prompt": "A broad mineral brush rests beside cleaned plate edges; Wide-Blue keeps closer to the collection rib and one blue plate remains clear."
+      },
+      {
+        "modifier_id": "prime_road_capacity_visual",
+        "trigger": "branch_label == prime_road_capacity",
+        "apply_to_visual_scene_ids": ["stillwarm_routine_fold", "stillwarm_shortfall_fold", "stillwarm_totality_threshold"],
+        "modifier_prompt": "Separate waste baskets stand empty beside two bright orderly lines of amber fungal beads; cradle roots appear dry and clean."
+      },
+      {
+        "modifier_id": "prime_graft_departure_visual",
+        "trigger": "branch_label == prime_graft_departure",
+        "apply_to_visual_scene_ids": ["stillwarm_routine_fold", "stillwarm_shortfall_fold", "stillwarm_totality_threshold"],
+        "modifier_prompt": "Vara's sealed leaf-skin graft packets glow with even amber seams while one cradle stone on the shelf has cooled gray."
+      },
+      {
+        "modifier_id": "prime_ground_credit_visual",
+        "trigger": "branch_label == prime_ground_credit",
+        "apply_to_visual_scene_ids": ["stillwarm_routine_fold", "stillwarm_shortfall_reveal", "stillwarm_totality_threshold"],
+        "modifier_prompt": "A fresh braided mineral request cord visibly connects the public shelf to an amber fungal branch descending toward the wetland."
+      },
+      {
+        "modifier_id": "hear_vara_testimony_visual",
+        "trigger": "branch_label == hear_vara_testimony",
+        "apply_to_visual_scene_ids": ["stillwarm_shortfall_fold", "stillwarm_totality_threshold", "stillwarm_ending_mobility"],
+        "modifier_prompt": "Vara's flexible route membrane lies open on the public shelf with pressure marks showing a flood crossing and an added infant weight; amber fungal beads sample its edge."
+      },
+      {
+        "modifier_id": "offer_herd_care_visual",
+        "trigger": "branch_label == offer_herd_care",
+        "apply_to_visual_scene_ids": ["stillwarm_shortfall_fold", "stillwarm_totality_threshold", "stillwarm_ending_herd"],
+        "modifier_prompt": "A mineral basin and two grooming cords sit before Wide-Blue; one rear dorsal plate clears and touches the flexible collection rib."
+      },
+      {
+        "modifier_id": "compress_cradles_visual",
+        "trigger": "branch_label == compress_cradles",
+        "apply_to_visual_scene_ids": ["stillwarm_shortfall_fold", "stillwarm_totality_threshold", "stillwarm_ending_caretakers"],
+        "modifier_prompt": "Infants and infirm adults cluster around two inward gold-lit cradles while the adult work stone sits gray beside tools in the cold outer court."
+      },
+      {
+        "modifier_id": "wait_for_road_sample_visual",
+        "trigger": "branch_label == wait_for_road_sample",
+        "apply_to_visual_scene_ids": ["stillwarm_shortfall_fold", "stillwarm_totality_threshold", "stillwarm_ending_mobility"],
+        "modifier_prompt": "Amber fungal beads form two separate sample trails across Vara's shed fiber and route membrane, and Ruun's bare throat patch shows a deeper fatigue band."
+      },
+      {
+        "modifier_id": "mobility_debt_bounded_visual",
+        "trigger": "ending_label == mobility_debt_bounded",
+        "apply_to_visual_scene_ids": ["stillwarm_ending_mobility"],
+        "modifier_prompt": "Another mobile Sa'ueia unit lifts Vara's warm graft frame toward the routeward exit while Vara remains beside the wetland repair cord; the cord has a clear finite set of three repair knots."
+      },
+      {
+        "modifier_id": "mobility_debt_scapegoat_visual",
+        "trigger": "ending_label == mobility_debt_scapegoat",
+        "apply_to_visual_scene_ids": ["stillwarm_ending_mobility"],
+        "modifier_prompt": "Vara remains bound by a long unmeasured repair cord, the graft frame stays cooling on the shelf, the eastbound unit turns its facial fans away with pack cords closed, the prismwake scar remains silver, and every glassback plate stays fogged."
+      },
+      {
+        "modifier_id": "commons_credit_spent_visual",
+        "trigger": "ending_label == commons_credit_spent",
+        "apply_to_visual_scene_ids": ["stillwarm_ending_credit"],
+        "modifier_prompt": "The scarred prismwake mat opens one narrow pale-green sugar seam; amber fungal beads carry the accepted line uphill; Wide-Blue's plates glow clear blue-gold against the collection rib; the final request cord on Ruun's shelf goes dark."
+      },
+      {
+        "modifier_id": "commons_credit_overdrawn_visual",
+        "trigger": "ending_label == commons_credit_overdrawn",
+        "apply_to_visual_scene_ids": ["stillwarm_ending_credit"],
+        "modifier_prompt": "The prismwake mat flashes silver over its scar, the crowded fungal waste lane blocks the request branch, Wide-Blue's plates remain opaque, and all mineral request cords hang dark from Ruun's shelf."
+      },
+      {
+        "modifier_id": "herd_pledge_renegotiated_visual",
+        "trigger": "ending_label == herd_pledge_renegotiated",
+        "apply_to_visual_scene_ids": ["stillwarm_ending_herd"],
+        "modifier_prompt": "Wide-Blue presses one clear blue-gold dorsal plate against the collection rib while the herd follows by degrees; three calving-watch cords glow amber on the public stone."
+      },
+      {
+        "modifier_id": "herd_pledge_refused_visual",
+        "trigger": "ending_label == herd_pledge_refused",
+        "apply_to_visual_scene_ids": ["stillwarm_ending_herd"],
+        "modifier_prompt": "Wide-Blue steps clear of the collection rib with fully opaque plates; the herd forms a broad living wall between the heat bays and wetland while the three offered cords remain untouched."
+      },
+      {
+        "modifier_id": "caretaker_bodies_absorb_shortfall_visual",
+        "trigger": "ending_label == caretaker_bodies_absorb_shortfall",
+        "apply_to_visual_scene_ids": ["stillwarm_ending_caretakers"],
+        "modifier_prompt": "Two inward cradles glow steadily while Ruun and the outgoing caretakers work in blue cold light, warming their small chest hands around tools between tasks."
+      },
+      {
+        "modifier_id": "caretaker_capacity_overdrawn_visual",
+        "trigger": "ending_label == caretaker_capacity_overdrawn",
+        "apply_to_visual_scene_ids": ["stillwarm_ending_caretakers"],
+        "modifier_prompt": "Ruun's sorting hands have stopped over mixed pale graft waste and dark spoilage; the nearest amber fungal branch retracts and dims while the graft frame waits routeward."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "stillwarm_shelf.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Open fan-shaped stone terrace on a slope, with the narrow routeward point uphill, three outer heat bays along one edge, a central allotment shelf and transverse fungal waste lane, and a broad nurseryward edge descending through three shallow ramps into communal hollows.",
+      "fixed_zones": [
+        {
+          "zone_id": "routeward_entry",
+          "visible_form": "narrow uphill path joining the candle fungal road and widening beside the graft staging rail",
+          "used_for": "Vara arrival, departure, and graft custody"
+        },
+        {
+          "zone_id": "outer_heat_bays",
+          "visible_form": "three open-sided low kneeling platforms under flexible arches of pale roots braided through dark porous stone",
+          "used_for": "glassback heat discharge, mineral washing, grooming, and herd refusal"
+        },
+        {
+          "zone_id": "allotment_shelf",
+          "visible_form": "low central dark-stone work surface with three cradle stones, route cords, mineral basin, brushes, and public route membranes",
+          "used_for": "Ruun's reachable interface and visible cost assignment"
+        },
+        {
+          "zone_id": "fungal_waste_lane",
+          "visible_form": "transverse double line of amber bead-like fruiting bodies with separate intake pockets for dung, spoilage, and clean dead graft tissue",
+          "used_for": "waste transport, mineral return, disease sampling, and request routing"
+        },
+        {
+          "zone_id": "nursery_ramps",
+          "visible_form": "three broad shallow ramps descending from the inner terrace edge beneath low blue lantern knots",
+          "used_for": "dependent movement, caretaker access, and visible heat priority"
+        },
+        {
+          "zone_id": "communal_hollows",
+          "visible_form": "low root-lined resting hollows partly below terrace level, each centered on a round root-and-stone cradle",
+          "used_for": "infant and infirm care"
+        },
+        {
+          "zone_id": "prismwake_overlook",
+          "visible_form": "outer terrace edge overlooking shallow silver-green wetland producer sheets, one long scarred regrowth strip, and a short broad grazing path rising directly to the heat bays",
+          "used_for": "visible feeding dependency and mat refusal"
+        },
+        {
+          "zone_id": "lantern_inner_rim",
+          "visible_form": "short trees around the nursery edge with cold blue light knots hanging beneath their canopies",
+          "used_for": "eclipse visibility and route marking"
+        }
+      ],
+      "routes": [
+        {
+          "route_id": "route_entry_to_shelf",
+          "path": "routeward_entry -> graft staging rail -> allotment_shelf",
+          "users": ["Vara", "departing family units", "Ruun"]
+        },
+        {
+          "route_id": "herd_feed_to_heat",
+          "path": "short broad grazing path from prismwake wetland -> outer_heat_bays -> collection roots -> communal cradles",
+          "users": ["glassback herd", "heat-steward caretakers"]
+        },
+        {
+          "route_id": "waste_and_request_branch",
+          "path": "communal hollows -> fungal_waste_lane -> split downhill branch toward prismwake wetland",
+          "users": ["candle fungal road", "caretakers"]
+        },
+        {
+          "route_id": "shelf_to_nursery",
+          "path": "allotment_shelf -> one of three nursery_ramps -> communal_hollows",
+          "users": ["Sa'ueia caretakers", "infants", "infirm adults"]
+        }
+      ],
+      "occluders": [
+        {
+          "occluder_id": "collection_ribs",
+          "effect": "Each heat-bay arch blocks part of the wetland view from a kneeling glassback position; the central shelf retains a clear oblique view between bays."
+        },
+        {
+          "occluder_id": "nursery_lip",
+          "effect": "The low terrace lip hides the deepest parts of communal hollows from the routeward entry while leaving the three ramps and nearest cradles visible."
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_terrace_overlook",
+          "supports_visual_scene_ids": ["stillwarm_establishing", "stillwarm_routine_fold", "stillwarm_totality_threshold"]
+        },
+        {
+          "camera_id": "medium_public_shelf",
+          "supports_visual_scene_ids": ["stillwarm_claimants", "stillwarm_shortfall_fold", "stillwarm_ending_mobility"]
+        },
+        {
+          "camera_id": "overhead_choice_arc",
+          "supports_visual_scene_ids": ["stillwarm_routine_choice", "stillwarm_shortfall_choice"]
+        },
+        {
+          "camera_id": "heat_bay_refusal",
+          "supports_visual_scene_ids": ["stillwarm_shortfall_reveal", "stillwarm_ending_herd"]
+        },
+        {
+          "camera_id": "wetland_request_line",
+          "supports_visual_scene_ids": ["stillwarm_ending_credit"]
+        },
+        {
+          "camera_id": "inner_caretaker_cost",
+          "supports_visual_scene_ids": ["stillwarm_ending_caretakers"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "shelf_to_wetland_scar",
+          "path": "allotment_shelf -> gap between heat bays -> prismwake_overlook -> scarred mat",
+          "supports": ["shortfall_reveal", "hear_vara_testimony", "spend_ground_credit"]
+        },
+        {
+          "lane_id": "shelf_to_dependents",
+          "path": "allotment_shelf -> nursery ramps -> nearest communal cradles",
+          "supports": ["compress_cradles", "shift_cost_to_caretakers"]
+        },
+        {
+          "lane_id": "herd_to_public_account",
+          "path": "outer_heat_bays -> allotment_shelf cords and stones",
+          "supports": ["offer_herd_care", "renegotiate_herd_pledge"]
+        }
+      ],
+      "state_anchors": [
+        {
+          "anchor_id": "three_cradle_stones",
+          "states": ["three gold centers", "two gold and one gray", "all dim", "two steady gold inner stones"]
+        },
+        {
+          "anchor_id": "wide_blue_plates",
+          "states": ["clear blue-gold", "front-to-rear fog", "one clear plate", "fully opaque"]
+        },
+        {
+          "anchor_id": "request_cords",
+          "states": ["untied", "fresh mineral knot", "dark and spent", "three calving-watch cords"]
+        },
+        {
+          "anchor_id": "fungal_lane",
+          "states": ["orderly amber throughput", "bitter raised beads", "bright wetland branch", "retracted contaminated branch"]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for bodies visible in the selected scene.",
+    "characters": {
+      "ruun": "Ruun: adult Sa'ueia heat steward, long horizontal torso with smoke-gray short insulating fibers and one ochre saddle-shaped marking, darker hide at a bare throat patch, four tall digitigrade running legs, two smaller anterior chest limbs ending in three soft opposing digits, flexible neck, wedge-shaped head, paired fan-shaped chemical sensors along the face, compact flank harness carrying mineral brushes and braided cords; folds all four running legs under the body at low work surfaces; attentive posture expressed through facial-fan spread, throat color, neck angle, and chest-hand precision.",
+      "vara": "Vara: adult Sa'ueia route carrier, long horizontal torso with rust-red short fibers dusted pale from travel, bare dark flank and throat patches, four tall digitigrade running legs, two smaller three-digit chest hands, flexible neck, wedge-shaped head, paired facial sensor fans patterned with dark speckles, balanced flank frame holding individually sealed pale leaf-skin medical graft packets; tension shown by clamped facial fans, rigid running legs, and darkening throat patch.",
+      "wide_blue": "Wide-Blue: large glassback herd representative, broad low grazing body supported by sturdy dark legs, translucent dorsal plates rising in overlapping fans along the back, plates carrying deep blue and honey-gold heat when open and clouding violet-gray when withholding, blunt grazing head, mineral residue around plate edges, deliberate broadside stance; communication shown through plate clarity, color bands, flank contact, kneeling beneath a heat rib, or stepping away."
+    },
+    "groups": {
+      "stillwarm_glassback_herd": "Stillwarm glassback herd: several broad low grazing animals on sturdy dark legs, each with overlapping translucent dorsal plates showing blue, honey-gold, violet, or cloudy gray heat states; bodies form heat-sharing arrays, calf-protective rings, loose waiting lines, or a broad refusal wall; plate color and spacing carry the visible social state.",
+      "eastbound_family_unit": "Eastbound family unit: two adult Sa'ueia with long horizontal bodies, four tall digitigrade running legs, two small three-digit chest hands, wedge heads, paired facial sensor fans, and balanced flank route harnesses already loaded with braided packs; they can accept Vara's graft frame by lashing it between the existing flank rails, adding visible bulk and weight.",
+      "nursery_dependents": "Stillwarm nursery dependents: Sa'ueia infants with compact long bodies and developing facial fans, plus infirm adults with worn fibers and careful low postures, resting around root-and-stone cradles in communal hollows; all share the six-limbed Sa'ueia plan of four running legs and two smaller chest manipulators at age-appropriate proportions; body arrangement follows warmth and care rather than family ownership.",
+      "stillwarm_caretakers": "Stillwarm caretakers: adult and older Sa'ueia with long horizontal bodies, four tall running legs, two small three-digit chest hands, wedge heads, paired chemical-sensing facial fans, practical balanced flank harnesses holding brushes, cords, leaf-skin wraps, and sorting baskets; fatigue appears in dark bare throat patches, lowered necks, folded running legs, trembling chest hands, and bodies gathered around scarce warm tools."
+    }
+  },
+  "review_notes": [
+    "Visual-continuity review accepted twelve click-through scenes, explicit visible-character refs, affirmative standalone prompts, and sixteen branch or ending modifiers.",
+    "Spatial-cohesion review accepted the fan-shaped terrace map, four traversable routes, two occlusion constraints, six camera slots, three sightline lanes, and four persistent state anchors.",
+    "The embedded scene_set map is a planning authority only. A plan view or low-detail blockout is required before high-consistency multi-angle rendering.",
+    "No image generation was performed; the BFL manifest is deferred rendering input."
+  ]
+}

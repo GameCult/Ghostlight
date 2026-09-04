@@ -1,0 +1,366 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ledger-stillwarm-allotment-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/zyphos/ledger-stillwarm-allotment-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/ledger-stillwarm-allotment-v0.v0.json",
+  "visual_plan_ref": "examples/visual/zyphos/ledger-stillwarm-allotment-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "ledger-stillwarm-allotment-v0.heat-pledge-shortfall",
+  "protagonist_agent_id": "ruun",
+  "npc_agent_ids": [
+    "vara",
+    "wide_blue",
+    "stillwarm_glassback_herd",
+    "stillwarm_candle_road",
+    "stillwarm_prismwake_mat",
+    "nursery_dependents",
+    "eastbound_family_unit"
+  ],
+  "purpose": "Lore-grounded branch-and-fold fixture that dramatizes a Sa'ueia breeding ground's trophic heat economy and the class pressure created when an ecological pledge falls short.",
+  "tonal_mode": "Workplace warmth, ecological bargaining, and quiet class-pressure satire.",
+  "local_awareness_summary": [
+    {
+      "text": "Ruun is the rotating heat steward at Stillwarm Shelf and can read visible cradle warmth, glassback plate state, fungal bead patterns, route cords, graft condition, and Sa'ueia stress display.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/ledger-stillwarm-allotment-v0.v0.json",
+        "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+      ]
+    },
+    {
+      "text": "The ordinary circuit turns prismwake sugar and returned light into glassback heat, glassback heat into cradle warmth, nursery waste into fungal nutrition, and breeding-ground care into future herd and route cooperation.",
+      "source_refs": [
+        "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+        "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md",
+        "Eusocial Interbeing/Biosphere/Primary Producers/Prismwake Mats.md",
+        "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md"
+      ]
+    },
+    {
+      "text": "Vara's family damaged a prismwake mat while carrying an infant out of floodwater and now has poor local standing, while Vara's warm medical graft cargo is needed at the next breeding ground.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/ledger-stillwarm-allotment-v0.v0.json"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Ruun's embodied Sa'ueia work position at the low allotment shelf. Choices use two chest hands, visible body signals, route cords, cradle stones, grooming tools, movement, waiting, and public speech.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Sa'ueia.md",
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      },
+      {
+        "text": "The scene establishes a routine heat shift before the glassback shortfall converts ecological accounting into class pressure.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Ruun allocates breeding-ground cradles and can bind finite commons obligations, but cannot command prismwake feeding, glassback heat discharge, fungal transport, or lantern-tree consent.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+          "Eusocial Interbeing/Themes/Ecological Bargaining.md"
+        ]
+      },
+      {
+        "text": "Infant and infirm care is unconditional. Player choices decide which adult labor, family mobility, ecological credit, or future contract absorbs the shortfall.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Ruun controls the three cradle stones, mineral wash, grooming cords, public route shelf, and breeding-ground request cords; Vara controls the route membrane and graft frame; the road and ecological partners control whether matter and promises move.",
+        "source_refs": [
+          "examples/ink/zyphos/ledger-stillwarm-allotment-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every ending must preserve infant care while making a distinct cost visible in mobility, future ecological credit, herd labor claims, or caretaker exhaustion.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      },
+      {
+        "text": "The damaged prismwake mat, glassback herd, candle road, and breeding ground remain parties with separate interests rather than scenery or equipment.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md",
+          "Eusocial Interbeing/Themes/Ecological Bargaining.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let a family purchase cradle priority or let Ruun convert emergency authority into ownership of ecological inputs.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+        ]
+      },
+      {
+        "text": "Do not erase the mat damage because the flood rescue was necessary, and do not erase the rescue because repair is still owed.",
+        "source_refs": [
+          "examples/lore-grounding/zyphos/ledger-stillwarm-allotment-v0.v0.json"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through a shared heat shortfall and select one of eight state-gated endings.",
+    "choice_layers": [
+      "morning_heat_work",
+      "account_for_shortfall",
+      "assign_the_cost"
+    ],
+    "variables": [
+      "heat_reserve",
+      "herd_trust",
+      "road_capacity",
+      "ground_credit",
+      "caretaker_strain",
+      "graft_departure",
+      "repair_evidence",
+      "cradle_efficiency",
+      "eclipse_margin"
+    ],
+    "ending_gates": [
+      "ending_mobility_success",
+      "ending_mobility_cost",
+      "ending_credit_success",
+      "ending_credit_cost",
+      "ending_herd_success",
+      "ending_herd_cost",
+      "ending_caretaker_success",
+      "ending_caretaker_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_herd_trust",
+      "ink_path": "routine_choice",
+      "action_type": "groom",
+      "actor_intent": "Invest skilled labor in clean plate contact before asking the glassbacks to discharge heat.",
+      "state_basis": ["Glassbacks respond to parasite removal, mineral gifts, respectful plate contact, and prior care."],
+      "reviewed_consequences": ["Raises herd_trust while spending caretaker strength and eclipse margin; later enables the negotiated herd-pledge ending when cradle efficiency is also adequate."],
+      "training_hooks": ["ecological_partner_care", "labor_spends_time", "nonhuman_trust"]
+    },
+    {
+      "branch_id": "prime_road_capacity",
+      "ink_path": "routine_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Sort waste into fungal-safe streams before shortage adds another transport demand.",
+      "state_basis": ["Candle roads digest dung, spoiled material, failed grafts, and dead tissue but refuse contamination and hidden disease."],
+      "reviewed_consequences": ["Raises road_capacity and cradle_efficiency; later enables a successful commons-credit transfer and makes the heat system cleaner."],
+      "training_hooks": ["waste_as_infrastructure", "decomposer_authority", "preventive_work"]
+    },
+    {
+      "branch_id": "prime_graft_departure",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Spend local heat to preserve medical graft viability for the next breeding ground.",
+      "state_basis": ["Sa'ueia carry portable medical grafts maintained by breeding-ground specialists."],
+      "reviewed_consequences": ["Raises graft_departure while lowering heat_reserve; later preserves the option to transfer the cargo if Vara is bound to repair."],
+      "training_hooks": ["resource_spent_for_other_locality", "mobile_medicine", "routine_tradeoff"]
+    },
+    {
+      "branch_id": "prime_ground_credit",
+      "ink_path": "routine_choice",
+      "action_type": "authorize",
+      "actor_intent": "Spend breeding-ground standing early to request extra prismwake sugar for the herd.",
+      "state_basis": ["Prismwake mats regulate grazing access and ecological partners remember the breeding ground's conduct."],
+      "reviewed_consequences": ["Lowers ground_credit while raising heat_reserve and repair_evidence; later makes caretaker absorption safer but leaves less credit for the final ecological-credit route."],
+      "training_hooks": ["reputation_as_material_credit", "future_access_cost", "light_to_heat_chain"]
+    },
+    {
+      "branch_id": "hear_vara_testimony",
+      "ink_path": "shortfall_choice",
+      "action_type": "show_object",
+      "actor_intent": "Make the flood rescue and mat damage jointly visible before assigning repair.",
+      "state_basis": ["Portable archives and route testimony can preserve ecological obligations without owning the route's truth."],
+      "reviewed_consequences": ["Raises repair_evidence while spending eclipse margin; later distinguishes bounded mobility debt from scapegoating."],
+      "training_hooks": ["plural_accounting", "necessary_harm_still_owes_repair", "evidence_costs_time"]
+    },
+    {
+      "branch_id": "offer_herd_care",
+      "ink_path": "shortfall_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Offer immediate mineral and grooming value for a partial heat discharge.",
+      "state_basis": ["Glassbacks cooperate with mineral gifts, parasite removal, and stable calving relationships."],
+      "reviewed_consequences": ["Raises herd_trust and heat_reserve while spending ground_credit; later changes the viability of herd negotiation and caretaker absorption."],
+      "training_hooks": ["trophic_renegotiation", "payment_is_work_and_mineral", "partner_not_utility"]
+    },
+    {
+      "branch_id": "compress_cradles",
+      "ink_path": "shortfall_choice",
+      "action_type": "move",
+      "actor_intent": "Concentrate dependents around two cradles and move able-bodied labor into the cold court.",
+      "state_basis": ["Breeding grounds prioritize infants and infirm adults, with caretakers absorbing operational burden."],
+      "reviewed_consequences": ["Raises cradle_efficiency and heat_reserve while increasing caretaker_strain; later enables herd renegotiation but risks the caretaker-overdraw ending."],
+      "training_hooks": ["non_speech_allocation", "efficiency_has_class_body", "need_first_care"]
+    },
+    {
+      "branch_id": "wait_for_road_sample",
+      "ink_path": "shortfall_choice",
+      "action_type": "wait",
+      "actor_intent": "Give the fungal road time to separate mat damage from flood-borne sickness.",
+      "state_basis": ["Candle roads read foot pressure, mineral taste, shed fibers, and disease residue at their own timescale."],
+      "reviewed_consequences": ["Raises road_capacity and repair_evidence while spending eclipse margin and caretaker strength; later improves credit transport and mobility-debt evidence."],
+      "training_hooks": ["wait_as_action", "slow_nonhuman_witness", "time_is_resource"]
+    },
+    {
+      "branch_id": "assign_mobility_debt",
+      "ink_path": "final_choice",
+      "action_type": "authorize",
+      "actor_intent": "Keep care unconditional while binding Vara's family to mat repair and transferring the graft cargo.",
+      "state_basis": ["Mobility debt is intended to attach repair work to causal obligations without selling cradle priority."],
+      "reviewed_consequences": ["Routes to bounded repair and transfer to the established eastbound unit when evidence and graft viability are adequate, or to scapegoating and cargo delay when the account is thin."],
+      "training_hooks": ["class_pressure_through_mobility", "state_gated_ending", "care_not_currency"]
+    },
+    {
+      "branch_id": "spend_ground_credit",
+      "ink_path": "final_choice",
+      "action_type": "spend_resource",
+      "actor_intent": "Move the immediate shortage into future ecological standing by buying one narrow sugar and transport concession.",
+      "state_basis": ["The commons can stake remembered standing, but every trophic link must have capacity to carry the bargain."],
+      "reviewed_consequences": ["Routes to restored heat and reduced future standing when road capacity is adequate, or to an overdrawn promise that produces no heat."],
+      "training_hooks": ["credit_requires_physical_throughput", "future_access_cost", "state_gated_ending"]
+    },
+    {
+      "branch_id": "renegotiate_herd_pledge",
+      "ink_path": "final_choice",
+      "action_type": "negotiate",
+      "actor_intent": "Ask the herd to exchange partial heat now for three future calving-lane work rotations.",
+      "state_basis": ["Glassbacks retain heat authority and accept care, mineral, and calving protection as reciprocal value."],
+      "reviewed_consequences": ["Routes to a visible future herd labor claim when trust and clean cradle capacity are high, or to refusal when emergency language outruns the relationship."],
+      "training_hooks": ["nonhuman_partner_sets_price", "future_labor_encumbrance", "state_gated_ending"]
+    },
+    {
+      "branch_id": "shift_cost_to_caretakers",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Preserve dependents and outside medical traffic by draining the adult work shelf and extending the caretaker watch.",
+      "state_basis": ["Caretaker labor and body heat are finite parts of breeding-ground infrastructure, and repeated stationary duty can harden into class."],
+      "reviewed_consequences": ["Routes to safe dependent care with visible caretaker immobility when reserve and strain allow it, or to lost waste capacity and delayed grafts when labor is overdrawn."],
+      "training_hooks": ["labor_as_finite_resource", "stationary_class_pressure", "state_gated_ending"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Promotion of any ending as canonical history",
+      "Durable character memory or relationship updates",
+      "Replacement of the provisional Stillwarm Shelf name",
+      "Any universal glassback anatomy beyond the current vault source"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex titled elaborator using the four required reviewer prompts",
+    "review_status": "accepted",
+    "reviewer_verdicts": {
+      "narrative_quality": {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 5,
+          "voice": 4,
+          "tonal_fit": 5,
+          "if_playability": 5
+        },
+        "detected_tonal_mode": "Workplace warmth and ecological bargaining with quiet class-pressure satire.",
+        "findings_fixed": [
+          "The mobility-debt ending initially introduced an unnamed replacement graft carrier only after the final choice; two eastbound family units are now established before the first choice and carried into the visual plan."
+        ],
+        "remaining_notes": [
+          "Ruun and Vara share dry work humor, but their roles remain distinct through Ruun's allocation language and Vara's demand for plain cost accounting."
+        ]
+      },
+      "lore_grounding": {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings_fixed": [
+          "The fixture made medical graft viability temperature-dependent before the owning source said so; the authored Breeding Grounds elaboration now states that clean heat conditions temperature-sensitive grafts and makes their competition with bodily care visible.",
+          "A stale digest source alias was removed so every citation resolves to a declared source_ref."
+        ],
+        "remaining_notes": [
+          "Stillwarm Shelf remains explicitly provisional pending Weksa language work.",
+          "The exact glassback limb count remains open; prompts preserve the sourced dorsal-plate body and use non-numeric sturdy-leg language."
+        ]
+      },
+      "visual_continuity": {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings_fixed": [
+          "The eastbound graft carriers lacked stable visual staging and a group reference; both were added to the claimant and mobility-debt scenes.",
+          "The compact BFL batch omitted the wetland-to-bay grazing path and eastbound carriers; its corresponding prompts now preserve both anchors.",
+          "An ending prompt named off-frame characters; the prompt now describes only visible bodies."
+        ],
+        "remaining_notes": [
+          "The embedded draft scene_set map supports B-level planning; a plan view or low-detail blockout is required before high-consistency multi-angle rendering."
+        ]
+      },
+      "spatial_cohesion": {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 5,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "inferred_layout_summary": "A fan-shaped slope terrace links a narrow routeward entry to three outer heat bays, a central low allotment shelf, a transverse fungal waste lane, and three inner nursery ramps; a short broad path connects the wetland below to the heat bays, while gaps between collection ribs preserve the shelf's view of the mat scar.",
+        "findings_fixed": [
+          "The herd's route from wetland feeding to the heat bays was implicit; the Ink, establishing prompt, scene_set, and BFL manifest now name a short broad grazing path.",
+          "Compressing the cradles moved the gray adult work stone but the folded threshold did not preserve that position; the threshold now conditionally reads the stone beside the waste lane.",
+          "The mobility-debt transfer needed a previously established carrier and route; the eastbound unit and routeward staging now appear before branching."
+        ],
+        "remaining_notes": [
+          "The plan keeps the deepest nursery hollows below the terrace lip while leaving the nearest cradles and all three ramps visible from the public shelf."
+        ]
+      }
+    },
+    "review_notes": [
+      "Narrative review accepted the three-layer branch-and-fold structure after early establishment of the eastbound graft carriers.",
+      "Lore review accepted the fixture after temperature-sensitive graft conditioning was promoted into the authored breeding-ground elaboration.",
+      "Visual review accepted twelve click-through scenes, sixteen branch/state modifiers, complete visible-character refs, one global style cue, and affirmative standalone base prompts.",
+      "Spatial review accepted the embedded terrace map, routes, occluders, camera coverage, body affordances, and branch-persistent cradle and herd states.",
+      "All eight endings are reachable across the sixteen routine-plus-shortfall combinations; no declared Ink variable is telemetry-only or unread."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "lore_content_readable": true,
+      "every_material_variable_read_later": true
+    }
+  }
+}
