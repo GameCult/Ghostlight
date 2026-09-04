@@ -1,0 +1,64 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "charter-route-voice-v0.bfl-simple-v0",
+  "fixture_id": "charter-route-voice-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Retro-industrial hard-science-fiction editorial illustration, precise ink linework under opaque gouache, slate-blue water, sodium amber and cold white task light, tactile worn steel and ceramic, readable body silhouettes and interfaces, restrained expression, bleak corporate procedure with humane workplace warmth, square interactive-fiction frame.",
+  "prompts": [
+    {
+      "id": "01_registry_establishing",
+      "prompt": "Wide view from the dry entrance of a long Ganymede orbital-dock registry bay divided lengthwise by a waist-high sealed pressure wall. A deep slate-blue dolphin orientation basin runs beneath windows showing dock trusses, cargo hulls, Jupiter, and black space. The parallel dry bench holds a ceramic duplicate press, clamped covered tea cup, source receiver, pale translation panel, red safety square, and raised tactile pins. A route board bridges water and dry deck. One slate-blue uplifted dolphin with pale jaw and three dorsal scars surfaces beside a compact brown-skinned recorder in an orange union vest; a tall dark-skinned dispatcher in a navy coat and a pale silver-haired bond clerk in charcoal wait at separate stations."
+    },
+    {
+      "id": "02_mandate_routine",
+      "prompt": "Medium-wide wet-dry registry routine: slate-blue uplifted dolphin waits beside the low pressure wall; compact brown-skinned union recorder in orange vest holds a blank ceramic receipt wafer; tall dark-skinned carrier dispatcher in navy coat watches an amber six-minute berth dial above sealed food cultures and scrubber cases; pale silver-haired bond clerk in charcoal holds a thin slate beside a blue price field. The route board shows one white Ganymede-to-Callisto line and one dark alternate lamp."
+    },
+    {
+      "id": "03_preparation_desk",
+      "prompt": "Desk-level choice frame inside a wet-dry orbital registry. A compact brown-skinned recorder in an orange union vest stands between four physical controls on a scratched metal bench: squat ceramic duplicate press, round alternate-channel lamp, pale insurer translation preview, and route-scope columns. Across the low sealed pressure wall, a slate-blue uplifted dolphin with pale jaw and three dorsal scars keeps one eye level with the controls. A navy-coated carrier dispatcher watches the berth dial and a silver-haired bond clerk watches the blue price field."
+    },
+    {
+      "id": "04_mandate_arrival",
+      "prompt": "Pool-to-desk view of a route mandate entering. A slate-blue uplifted dolphin turns broadside as four pressure ridges spread through the orientation basin. Above the low sealed wall, a route board shows a white Ganymede-to-Callisto segment, two watch clocks, green alternate lamp, four permitted-act icons, and four amber exclusion icons. A brown-skinned union recorder in orange vest follows raised pins with both hands while a tall navy-coated dispatcher reads the route and a pale silver-haired bond clerk holds an insurer slate near the translation panel."
+    },
+    {
+      "id": "05_translation_failure",
+      "prompt": "Pivotal source-translation divergence across a wet-dry route board. On the pool side, a slate-blue uplifted dolphin with pale jaw and three dorsal scars waits beside four precise pressure ridges ending at a two-watch symbol. On the dry display, one broad clean translation block dominates while exclusion icons collapse into a small amber attachment. A compact brown-skinned recorder in orange vest suspends a wrist stylus above an empty witness square; a silver-haired bond clerk points at a blue price field; a tall navy-coated dispatcher watches the amber berth dial."
+    },
+    {
+      "id": "06_divergence_response",
+      "prompt": "Medium diagonal response frame in a worn wet-dry Ganymede registry. A compact brown-skinned union recorder in orange vest works tactile pins, source receiver, translation hierarchy, and witness square. Across the low pressure wall, a slate-blue uplifted dolphin turns broadside to visible water ripples. A tall dark-skinned dispatcher in navy stands under an amber berth dial; a pale silver-haired bond clerk in charcoal waits beside a blue bond field. The board holds route segment, expiry clocks, act and exclusion icons, one broad translation block, and a round alternate lamp."
+    },
+    {
+      "id": "07_departure_alert",
+      "prompt": "Wide alert frame from behind a witness bench toward orbital-dock windows. Outside, an angular gray ore lighter drifts sideways between trusses across a launch lane while a six-ship cargo convoy waits behind bright beacons. Inside, the route board turns red. A slate-blue uplifted dolphin strikes a low red-edged paddle in the basin; a brown-skinned union recorder in orange vest turns toward the matching dry safety square; a navy-coated dispatcher and silver-haired bond clerk lean toward the governing display."
+    },
+    {
+      "id": "08_safety_hold",
+      "prompt": "Desk-and-pool emergency frame: a slate-blue uplifted dolphin with pale jaw and three dorsal scars holds its rostrum by a wet red safety paddle as one pressure ring crosses the basin. A compact brown-skinned recorder in an orange union vest hovers a wrist stylus above the matching red square and witness field. A tall dark-skinned navy-coated dispatcher points toward the closed red lane while a pale silver-haired bond clerk watches a blue price field. Through dock windows, the ore lighter crosses an empty lane and the cargo convoy waits behind beacons."
+    },
+    {
+      "id": "09_final_record",
+      "prompt": "Symmetrical route-voice decision frame in a wet-dry registry annex. A compact brown-skinned union recorder in orange vest stands centered before four record surfaces: narrow source certificate, green alternate succession field, open amber docket square, and broad pale insurer authorization. A slate-blue uplifted dolphin waits across the low pressure wall. A tall dark-skinned carrier dispatcher in navy stands at the route side and a pale silver-haired bond clerk in charcoal at the price side. The board shows cleared ore lighter, waiting convoy, berth dial, source waveform, expiry, translation block, and emergency-hold attribution."
+    },
+    {
+      "id": "10_narrow_mandate_end",
+      "prompt": "Narrow-mandate aftermath in a Ganymede registry. The route board shows one crisp white route segment, two watch clocks, four act icons, four amber exclusions, and a dolphin source waveform aligned beside a modest certificate. A compact brown-skinned recorder in orange vest sets down a stylus beside a rocking covered tea cup. The slate-blue uplifted dolphin surfaces close to the wall. A tall dark-skinned dispatcher in navy restacks sealed cargo for a later amber lane while a pale silver-haired bond clerk recalculates a smaller blue price field."
+    },
+    {
+      "id": "11_alternate_succession_end",
+      "prompt": "Succession aftermath in a wet-dry registry. A compact brown-skinned union recorder in orange vest stands at a split green display showing one withdrawal waveform followed by one answering waveform, with unchanged route segment and expiry beneath. The slate-blue dolphin who withdrew circles at the far basin turn. A second smaller charcoal-gray dolphin with cream throat patch and pale rostrum ring appears inside a round water-backed remote channel. A navy-coated dispatcher watches the next lane slot and a silver-haired bond clerk watches the bond field."
+    },
+    {
+      "id": "12_open_record_delay_end",
+      "prompt": "Late-shift open-record aftermath in a Ganymede orbital registry. A compact brown-skinned union recorder in orange vest holds a white ceramic receipt beside an amber open-docket square. A slate-blue uplifted dolphin rests near the pressure wall under dim basin light. A tall dark-skinned dispatcher in navy kneels beside sealed food-culture cases plugged into two borrowed cooling sockets. Two dock workers in patched orange-gray coveralls and magnetic boots connect thick cables and set a dented tea pot on the bench. Through windows, the cargo convoy remains behind beacons while another ship departs."
+    },
+    {
+      "id": "13_clean_capture_end",
+      "prompt": "Authority-capture aftermath in a wet-dry orbital registry. A broad pale insurer translation dominates the board and sends bright lines toward a green bond field, open launch lane, and departing six-ship cargo convoy outside. A smaller amber source packet with four exclusion icons sits beneath it. A compact brown-skinned recorder in orange vest stands at a signed witness square beside a perfectly still covered tea cup. The slate-blue uplifted dolphin swims at the far dark basin turn while the navy-coated dispatcher watches cargo leave and the silver-haired bond clerk closes the green price field."
+    }
+  ]
+}

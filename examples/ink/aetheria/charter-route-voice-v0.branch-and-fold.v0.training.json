@@ -1,0 +1,505 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "charter-route-voice-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/charter-route-voice-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/charter-route-voice-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/charter-route-voice-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "charter-route-voice-v0.ganymede-mandate-desk",
+  "protagonist_agent_id": "sen_ochoa",
+  "npc_agent_ids": [
+    "talu_at_four_returns",
+    "pel_of_nine_echoes",
+    "rem_saye",
+    "vela_quine"
+  ],
+  "purpose": "Interactive Fiction Weaver draft about witnessed uplift route voice during early Ganymede Route Compact implementation. Tonal mode: procedural workplace comedy with mounting legal dread and a quiet mutual-aid coda.",
+  "local_awareness_summary": [
+    {
+      "text": "Sen Ochoa is the dock labor syndicate's mandate recorder. Sen can witness source and scope, operate the multimodal route board, press an independent receipt, record or withhold a signature, and distinguish a one-cycle safety hold from a route mandate.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/charter-route-voice-v0.v0.json",
+        "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md"
+      ]
+    },
+    {
+      "text": "Sen cannot choose the navigator steward, inherit uplift voice, know Talu's private appraisal, settle the insurer's later bond decision, or convert an emergency action into consent.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/charter-route-voice-v0.v0.json",
+        "prompts/interactive-fiction-weaver.md"
+      ]
+    },
+    {
+      "text": "The scene begins with the annex's ordinary channel test, tea joke, six-minute berth margin, cargo docket, named steward, and named alternate before the translation failure and collision warning apply pressure.",
+      "source_refs": [
+        "examples/ink/aetheria/charter-route-voice-v0.branch-and-fold.v0.ink",
+        "AGENTS.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains local to Sen's dryside witness desk, observable source channels, shared board, union press, clock, public speech, and visible participant actions.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/aetheria/charter-route-voice-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Institutional exposition stays embodied in the desk, source signal, translation display, bond field, berth clock, wet/dry geometry, and physical duplicate receipt.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "Aetheria/Narrative Themes.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Talu's navigator watch chooses and scopes route voice. Sen and Vela witness the same source and scope through separate squares; Rem needs it; Vela's insurer office prices against it. None of those dependencies merge authority.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md"
+        ]
+      },
+      {
+        "text": "The safety hold owns one immediate collision decision only. It cannot prove broad route authority, settle the translation dispute, or transfer voice to the carrier.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The raw source packet, active translation, union receipt wafer, witness square, safety-hold square, bond field, and route-board state retain distinct owners and visible status across folds.",
+        "source_refs": [
+          "examples/ink/aetheria/charter-route-voice-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every preparation and divergence choice changes later scope, evidence, time, trust, carrier pressure, bond pressure, alternate availability, visual state, or ending access.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "examples/ink/aetheria/charter-route-voice-v0.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "The hopeful outcome remains small and material: duplicate custody, cooling sockets, tea, and staff time keep people and perishable cargo alive without declaring a movement.",
+        "source_refs": [
+          "Aetheria/Narrative Themes.md",
+          "examples/ink/aetheria/charter-route-voice-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let Sen speak for Talu, let Pel succeed without answering, or let a carrier or insurer become the source of navigator authority.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md"
+        ]
+      },
+      {
+        "text": "Do not make a correct record erase berth, wage, cargo, fuel, or bond costs, and do not make an independent copy retroactively stop an authorization already governing.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+          "Aetheria/Narrative Themes.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through one mandate desk: preparation, translation divergence, immediate safety hold, and final route-voice disposition. State routes to six endings.",
+    "choice_layers": [
+      "mandate_preparation",
+      "translation_divergence_response",
+      "immediate_safety_hold",
+      "route_voice_disposition"
+    ],
+    "variables": [
+      "source_integrity",
+      "scope_clarity",
+      "navigator_trust",
+      "berth_minutes",
+      "carrier_pressure",
+      "bond_pressure",
+      "alternate_ready",
+      "union_copy",
+      "safety_hold_recorded",
+      "clean_translation_relied"
+    ],
+    "ending_gates": [
+      "ending_narrow_voice",
+      "ending_narrow_cost",
+      "ending_alternate_voice",
+      "ending_alternate_cost",
+      "ending_open_record",
+      "ending_clean_capture"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_union_copy",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Bind an independent union receipt to Talu's source channel before translation.",
+      "state_basis": ["Sen controls the union duplicate press and may witness source custody without deciding its content."],
+      "reviewed_consequences": ["Sets union_copy, raises source_integrity and navigator_trust, and spends one berth minute; later folds and two endings read the duplicate."],
+      "training_hooks": ["independent_record_custody", "witness_not_principal", "time_cost"]
+    },
+    {
+      "branch_id": "prepare_alternate_channel",
+      "ink_path": "preparation_choice",
+      "action_type": "request_signal",
+      "actor_intent": "Test Pel's declared succession channel before it is needed.",
+      "state_basis": ["Pel is the watch's predeclared alternate and must answer rather than inherit voice through availability."],
+      "reviewed_consequences": ["Sets alternate_ready to tested, raises scope_clarity, and spends one berth minute; later enables the alternate-answer branch and valid-succession ending choice."],
+      "training_hooks": ["callable_succession", "alternate_not_replacement", "conditional_affordance"]
+    },
+    {
+      "branch_id": "prepare_clean_preview",
+      "ink_path": "preparation_choice",
+      "action_type": "accept_interface_default",
+      "actor_intent": "Start the bond clock under approved language and preserve schedule margin.",
+      "state_basis": ["Vela can supply approved wording but cannot make it the navigator source."],
+      "reviewed_consequences": ["Sets clean_translation_relied, preserves the current berth margin, lowers bond pressure, and lowers source_integrity and scope_clarity; the active preview is read after folding."],
+      "training_hooks": ["interface_default_as_authority_pressure", "legibility_tradeoff"]
+    },
+    {
+      "branch_id": "prepare_scope_boundaries",
+      "ink_path": "preparation_choice",
+      "action_type": "ask_question",
+      "actor_intent": "Put powers, exclusions, and expiry into the source record before translation.",
+      "state_basis": ["Sen may request source clarification; Talu alone supplies the navigator scope."],
+      "reviewed_consequences": ["Raises scope_clarity, navigator_trust, and carrier_pressure; the four powers and exclusions appear at the first fold."],
+      "training_hooks": ["source_scoped_voice", "clarity_costs_social_margin"]
+    },
+    {
+      "branch_id": "respond_source_replay",
+      "ink_path": "divergence_choice",
+      "action_type": "operate_interface",
+      "actor_intent": "Replay the raw mandate through all shared channels before witnessing.",
+      "state_basis": ["Sen operates the route board and can compare water, light, sound, and raised notation."],
+      "reviewed_consequences": ["Raises source_integrity and scope_clarity while spending two berth minutes; later gates the strong narrow and succession endings."],
+      "training_hooks": ["multimodal_source_replay", "access_cost"]
+    },
+    {
+      "branch_id": "respond_narrow_witness",
+      "ink_path": "divergence_choice",
+      "action_type": "annotate_record",
+      "actor_intent": "Witness only the uncontested route segment and expiry while leaving other fields disputed.",
+      "state_basis": ["Compact witness scope can be narrower than the translation and does not settle unresolved fields."],
+      "reviewed_consequences": ["Raises source_integrity and scope_clarity, sharply raises carrier_pressure, and spends one berth minute; later pressure and endings read those values."],
+      "training_hooks": ["bounded_partial_commit", "honest_incompleteness"]
+    },
+    {
+      "branch_id": "respond_clean_translation",
+      "ink_path": "divergence_choice",
+      "action_type": "sign_record",
+      "actor_intent": "Let approved translation govern while preserving the raw source as dissent.",
+      "state_basis": ["Sen can sign the witness square, but preserving an attachment does not make the governing text faithful."],
+      "reviewed_consequences": ["Sets clean_translation_relied to governing, preserves the current time margin and lowers carrier and bond pressure while lowering source_integrity and scope_clarity; later safety and ending prose read the capture."],
+      "training_hooks": ["dissent_as_supporting_material", "clean_authority_capture"]
+    },
+    {
+      "branch_id": "respond_alternate_answer",
+      "ink_path": "divergence_choice",
+      "action_type": "request_signal",
+      "actor_intent": "Make the tested alternate callable without displacing the current steward.",
+      "state_basis": ["This branch appears only if the player prepared Pel's succession channel."],
+      "reviewed_consequences": ["Sets alternate_ready to answered and raises source_integrity and scope_clarity while spending one berth minute; later enables valid succession."],
+      "training_hooks": ["state_gated_succession", "readiness_not_transfer"]
+    },
+    {
+      "branch_id": "record_bounded_safety_hold",
+      "ink_path": "safety_choice",
+      "action_type": "touch_interface",
+      "actor_intent": "Close one launch lane and record Talu's hold as one decision cycle only.",
+      "state_basis": ["Any affected navigator may issue a bounded immediate safety hold; Sen can witness its source and limit."],
+      "reviewed_consequences": ["Sets safety_hold_recorded, raises source_integrity and navigator_trust, and spends two berth minutes; all ending families read hold attribution."],
+      "training_hooks": ["emergency_authority_is_bounded", "safety_without_consent"]
+    },
+    {
+      "branch_id": "use_hold_as_broad_proof",
+      "ink_path": "safety_choice",
+      "action_type": "annotate_record",
+      "actor_intent": "Use one successful emergency act to validate the broad translation.",
+      "state_basis": ["The hold safely changes motion but does not source the disputed wider authority."],
+      "reviewed_consequences": ["Records the hold, sets clean_translation_relied to confirming use, lowers scope clarity and carrier and bond pressure; later folds show the correction under governing text."],
+      "training_hooks": ["authority_without_scope", "successful_action_appropriated"]
+    },
+    {
+      "branch_id": "refuse_hold_witness",
+      "ink_path": "safety_choice",
+      "action_type": "withhold_signature",
+      "actor_intent": "Preserve the mandate dispute by declining to witness the emergency hold.",
+      "state_basis": ["Dock traffic control has an independent collision rule and may close the lane without inheriting navigator voice."],
+      "reviewed_consequences": ["Leaves safety_hold_recorded false, lowers navigator_trust, raises carrier and bond pressure, and spends one minute; later folds attribute safe motion to the human office."],
+      "training_hooks": ["procedural_purity_can_erase_labor", "split_authority"]
+    },
+    {
+      "branch_id": "decide_narrow_mandate",
+      "ink_path": "final_choice",
+      "action_type": "sign_record",
+      "actor_intent": "Certify Talu's named route voice without enlarging scope.",
+      "state_basis": ["Strong outcome requires adequate source_integrity and scope_clarity."],
+      "reviewed_consequences": ["Routes to a source-grounded or thin-source narrow mandate; hold attribution and union_copy remain conditional."],
+      "training_hooks": ["state_gated_scope", "representation_not_ownership"]
+    },
+    {
+      "branch_id": "decide_valid_succession",
+      "ink_path": "final_choice",
+      "action_type": "record_succession",
+      "actor_intent": "Ask for Talu's source-channel withdrawal and, only if given, record Pel's answer under the predeclared scope.",
+      "state_basis": ["Choice exists only after Pel's tested channel has answered; strong outcome still requires valid source and scope."],
+      "reviewed_consequences": ["Routes to valid or contested succession; berth time and safety-hold ownership alter the ending."],
+      "training_hooks": ["succession_requires_two_acts", "no_employer_inheritance"]
+    },
+    {
+      "branch_id": "decide_honest_delay",
+      "ink_path": "final_choice",
+      "action_type": "withhold_signature",
+      "actor_intent": "Keep the mandate open and export a reviewable dispute rather than false finality.",
+      "state_basis": ["Sen can refuse witness authority, but cannot prevent the material cost of delay."],
+      "reviewed_consequences": ["Routes to an open record with cargo, wage, cooling, and bond costs; union_copy changes how much evidence leaves independent custody."],
+      "training_hooks": ["redress_has_material_cost", "quiet_mutual_aid"]
+    },
+    {
+      "branch_id": "decide_clean_authorization",
+      "ink_path": "final_choice",
+      "action_type": "sign_record",
+      "actor_intent": "Move cargo and coverage by letting approved translation govern.",
+      "state_basis": ["The broad sentence is legible to carrier and insurer but exceeds Talu's source scope."],
+      "reviewed_consequences": ["Routes to authority capture; hold attribution, union_copy, and bond pressure change the final record texture."],
+      "training_hooks": ["lawful_scope_capture", "correction_without_causal_force"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional branch availability and prose callbacks",
+      "State-gated ending selection",
+      "Visual modifier trigger evaluation"
+    ],
+    "manual_review_required": [
+      "Any durable relationship or memory updates for Sen, Talu, Pel, Rem, or Vela",
+      "Any promotion of the fixture-local cast, convoy, docket, or outcome into Aetheria history",
+      "Any generalization of this annex's exact hardware to all Navigator interfaces",
+      "Any economy-schema treatment of berth time, bond price, wages, cooling, or cargo loss"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Aetheria Charter worker using the four required Ghostlight reviewer prompts as separate passes",
+    "review_status": "accepted_with_visual_blockout_deferred",
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 4,
+        "voice_score": 4,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Procedural workplace comedy with mounting legal dread and a quiet mutual-aid coda.",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_branch_callback",
+          "strong_tonal_control",
+          "strong_wit_with_stakes",
+          "strong_material_lore"
+        ],
+        "acceptance_notes": [
+          "The opening establishes the 2478 Ganymede locality, wet/dry body affordances, four office roles, two-witness procedure, cargo clock, and translation risk before the first choice.",
+          "The first pass removed two state changes that implausibly created berth time, made Vela's independent counterparty signature explicit in valid dispositions, and rewrote succession so the player requests rather than puppets Talu's withdrawal.",
+          "All optional preparation states return through conditional prose or outcome logic; no folded scene assumes branch-only character onboarding."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 4,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": [
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+            "reason_checked": "Primary 2478 event, represented parties, shared hazard ledger, route-steward representation, and arbitration authority.",
+            "used_for": "canon check and backfill target"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+            "reason_checked": "Navigator institutional descendants, reciprocal dependence, wet/dry circulation, multimodal boards, sanctions, and access inequality.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md",
+            "reason_checked": "Carrier reliability, convoy management, cargo movement, and Navigator corridor dependence.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+            "reason_checked": "Nonhuman biological lineage, environmental scaffolding, labor classification, and separate personhood recognition.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+            "reason_checked": "Ganymede's overlapping route, industrial, research, dock, and logistics authorities.",
+            "used_for": "context only"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Identity Crisis.md",
+            "reason_checked": "2478 period boundary, uplift labor, recognition disputes, and contractual governance.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Narrative Themes.md",
+            "reason_checked": "Administrative personhood, bounded authority, records, material care, and survivable-choice pressure.",
+            "used_for": "context only"
+          },
+          {
+            "source_ref": "Aetheria/Brainstorming/Stories/Pirate Metagame Novella/Cast Bible.md",
+            "reason_checked": "Noncanonical same-era context for a bottlenose Navigator body serving court and ledger functions.",
+            "used_for": "context only"
+          }
+        ],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": [
+          {
+            "priority": "high",
+            "target_source": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+            "candidate_fact": "The Compact makes uplift representation usable through scoped route-voice mandates, two independent scope witnesses, callable succession, bounded emergency holds, challenge and replay, and separate union custody.",
+            "artifact_origin": "Registry Annex B preparation, source-translation divergence, safety-hold, succession, and redress paths.",
+            "why_it_belongs": "It furnishes the event's previously thin route-steward representation claim with a repeatable public-authority procedure, costs, dependencies, and failure modes.",
+            "how_to_add_without_bloat": "Added as one plainly marked authored-elaboration section in the owning event note; scheduler commit remains pending."
+          }
+        ],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_pressure",
+          "strong_body_affordance_grounding",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate"
+        ],
+        "acceptance_notes": [
+          "The fixture-local annex, cast, convoy, docket, interface hardware, and bottlenose-dolphin body do not claim founding-lineage or universal-hardware canon.",
+          "The scene keeps mature Route Choir, Corridor Court, Waystation Council, and Rescue Ledger doctrine in later context instead of projecting those institutions backward into 2478.",
+          "A first pass made the independent carrier-or-insurer witness visible in prose and endings, and removed unsupported rotating-dock language from the visual plan."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "needs_revision",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 3,
+        "major_findings": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The textual scene-set specification has no rendered plan view or 3D blockout for the repeated multi-angle annex.",
+            "why_it_matters": "Text prompts alone cannot reliably preserve the pressure wall, route board, stations, windows, body routes, and occlusion across thirteen generated frames.",
+            "evidence": "The fixture revisits one wet/dry room from six camera slots and makes desk hierarchy, reach, and window sightlines part of branch meaning.",
+            "fix_direction": "Before website rendering, build a durable camera-specific blockout from the supplied fixed zones, routes, occluders, camera slots, staging slots, sightlines, and state anchors."
+          }
+        ],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The textual scene-set specification has no rendered plan view or 3D blockout for the repeated multi-angle annex.",
+            "why_it_matters": "Text prompts alone cannot reliably preserve the pressure wall, route board, stations, windows, body routes, and occlusion across thirteen generated frames.",
+            "evidence": "The fixture revisits one wet/dry room from six camera slots and makes desk hierarchy, reach, and window sightlines part of branch meaning.",
+            "fix_direction": "Before website rendering, build a durable camera-specific blockout from the supplied fixed zones, routes, occluders, camera slots, staging slots, sightlines, and state anchors."
+          }
+        ],
+        "missing_branch_modifiers": [],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity",
+          "missing_scene_set"
+        ],
+        "acceptance_notes": [
+          "All thirteen Ink visual ids map to standalone scene prompts and the BFL manifest carries thirteen matching concept prompts with one global style cue.",
+          "Character refs are restricted to visible bodies; Pel appears only in the succession-ending frame, and the dock-worker group appears only in the open-record aftermath.",
+          "Verdict accepts the current visual plan and manifest as concept-ready collateral only. High-consistency replay rendering remains blocked on the declared scene-set blockout."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 4,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "One long converted dispatch bay is divided lengthwise into a portside orientation basin and starboard dry registry deck by a waist-high sealed pressure wall. Talu moves between the deep basin turn, pressure-wall shelf, and wet safety paddle. Sen works the central dry bench with the union press to the left, carrier station to the right, and insurer station toward the entrance. The route board bridges both sides; portside windows preserve the outer-hazard sightline, while the dry entrance and cooling alcove carry staff and cargo.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [
+          {
+            "priority": "high",
+            "needed_artifact": "camera-specific plan view or 3D blockout",
+            "reason": "Generated multi-angle art needs geometry authority stronger than text to preserve the wet/dry division, desk order, window sightline, and body reach.",
+            "minimum_required_detail": "Use the eight fixed zones, four role routes, two occluders, six camera slots, six staging slots, three sightline lanes, and five branch-state anchors already declared in the visual plan."
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state",
+          "diagram_needed"
+        ],
+        "acceptance_notes": [
+          "The prose and visual plan preserve one coordinate frame, compatible human and cetacean reach, named role routes, and stable locations for every consequential control and record.",
+          "The source signal has a physical route from Talu through water, emitters, light and tactile pins to Sen; outside hazard knowledge arrives through windows and the route projection rather than omniscient narration.",
+          "Folded scenes retain union-copy, alternate-channel, record-hierarchy, safety-attribution, trust-distance, berth, and bond states through conditional prose or visible modifiers."
+        ]
+      }
+    ],
+    "review_notes": [
+      "One-shot authoring is fixture scaffolding and does not claim to be a runtime responder capture.",
+      "The four required reviewer prompts were applied as separate narrative, lore, visual continuity, and spatial cohesion passes after drafting.",
+      "The Ink compiler is intentionally not installed or run under the swarm contract."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

@@ -1,0 +1,347 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.charter-route-voice-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "ganymede-route-compact",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+      "title": "Ganymede Route Compact",
+      "line_start": 1,
+      "line_end": 25,
+      "relevance": "Primary authority for the 2478 settlement, route-steward representation, shared hazard ledgers, witnessed route-voice mandates, scope, succession, emergency holds, challenge, cost, dependency, and union duplicate receipts."
+    },
+    {
+      "source_id": "cetacean-navigators",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+      "title": "Cetacean Navigators",
+      "line_start": 1,
+      "line_end": 28,
+      "relevance": "Grounds uplift-led corridor government, Route Choirs, Waystation Councils, Corridor Courts, Rescue Ledgers, reciprocal dependency, sanctions, wet/dry circulation, multimodal route boards, and access inequality."
+    },
+    {
+      "source_id": "lightsail-express",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md",
+      "title": "Lightsail Express",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds a bulk carrier and convoy manager whose livelihood and political role depend on dependable delivery and Navigator corridor reputation."
+    },
+    {
+      "source_id": "uplift",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+      "title": "Uplift",
+      "line_start": 1,
+      "line_end": 13,
+      "relevance": "Grounds uplift as nonhuman biological lineages shaped by cognitive modification and environmental scaffolds, with personhood and legal recognition remaining separate under labor contracts."
+    },
+    {
+      "source_id": "territories",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+      "title": "Territories",
+      "line_start": 1,
+      "line_end": 61,
+      "relevance": "Grounds Ganymede as a junction of route law, shipbuilding, research, and outer-system logistics where several institutions share authority without territorial merger."
+    },
+    {
+      "source_id": "identity-crisis",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Identity Crisis.md",
+      "title": "Identity Crisis",
+      "line_start": 1,
+      "line_end": 28,
+      "relevance": "Places the fixture in the 2250-2500 Identity Crisis and grounds corporate uplift programs, labor classification, recognition disputes, bargaining, and expanding contractual governance."
+    },
+    {
+      "source_id": "narrative-themes",
+      "path": "Aetheria/Narrative Themes.md",
+      "title": "Narrative Themes",
+      "line_start": 1,
+      "line_end": 53,
+      "relevance": "Grounds administrative personhood, divided institutions, material care, records, disability access, bounded authority, and the need to change which choices remain survivable."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Identity Crisis era, 2478, during early implementation of the Ganymede Route Compact",
+    "location": "Registry Annex B in a Ganymede orbital dock, a converted convoy dispatch bay with one shared wet/dry route-voice desk; the annex, cast, convoy, and docket are fixture-local dramatization.",
+    "summary": "A routine route-voice signing for a Lightsail Express convoy becomes a scope dispute when the translation buffer turns a navigator's two-watch mandate into broad operational consent. An immediate collision warning then tests whether a one-cycle safety hold can remain distinct from permanent route authority.",
+    "public_facts": [
+      {
+        "text": "The 2478 Compact established route-steward representation, shared hazard ledgers, rescue obligations, and legal status for navigator councils in convoy arbitration.",
+        "source_refs": ["ganymede-route-compact"]
+      },
+      {
+        "text": "A route-voice mandate names its steward, alternate, represented crews and segment, permitted acts, exclusions, and expiry; witnesses attest source and scope rather than choosing the speaker.",
+        "source_refs": ["ganymede-route-compact"]
+      },
+      {
+        "text": "A declared alternate must answer through the recorded channel, and silence does not transfer navigator voice to an employer.",
+        "source_refs": ["ganymede-route-compact"]
+      },
+      {
+        "text": "An affected navigator may issue a one-decision-cycle safety hold without letting the emergency act settle the disputed mandate.",
+        "source_refs": ["ganymede-route-compact"]
+      },
+      {
+        "text": "Lightsail Express relies on predictable movement and Navigator corridor reputation to move bulk goods, data, and people.",
+        "source_refs": ["lightsail-express", "cetacean-navigators"]
+      },
+      {
+        "text": "Ganymede's route authority overlaps with carrier, insurer, dock labor, research, and industrial interests rather than replacing them with one sovereign office.",
+        "source_refs": ["territories", "ganymede-route-compact"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Every minute spent repairing voice access consumes berth time, wages, fuel margin, cargo life, and bond capacity.",
+        "source_refs": ["ganymede-route-compact", "cetacean-navigators", "narrative-themes"]
+      },
+      {
+        "text": "A clean translation can make a contested uplift signal easier to insure while demoting the source voice into an attachment.",
+        "source_refs": ["ganymede-route-compact", "uplift", "identity-crisis"]
+      },
+      {
+        "text": "Dock labor duplicate custody offers a small defense because it preserves the source outside the carrier and insurer offices that benefit from broad wording.",
+        "source_refs": ["ganymede-route-compact", "narrative-themes"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "proto-navigator-watch",
+      "label": "Compact-recognized navigator watch",
+      "group_type": "uplift_labor_council",
+      "institutional_logic": ["Turn indispensable navigation labor, shared hazard knowledge, and rescue practice into scoped corridor authority."],
+      "material_incentives": ["Keep source channels usable", "Prevent employers inheriting voice", "Preserve route access and rescue capacity", "Avoid delays that make small crews surrender scope"],
+      "internal_virtues": ["Exact scope", "Callable succession", "Recorded dissent", "Rescue before schedule"],
+      "internal_shames": ["Speaking for an absent watch", "Letting safety authority become ownership", "Using translation fluency as proof of consent"],
+      "prestige_markers": ["Hazard readings other crews trust", "Mandates that expire when promised", "Refusals that keep a corridor usable"],
+      "taboo_triggers": ["asset", "backup operator", "owner-certified translation", "silence treated as transfer"],
+      "emotional_display_norms": ["Disagreement is made operational through source signals, scope fields, refusal, and withdrawal rather than performed for dryside sympathy."],
+      "trust_defaults": ["Trusts navigator-controlled channels and witnessed duplicate records; treats carrier urgency and insurer legibility as interests, not neutral facts."],
+      "speech_register_cues": ["Short translated clauses", "Named intervals", "Route geometry", "Acoustic and pressure signal paired with dryside notation"],
+      "source_refs": ["ganymede-route-compact", "cetacean-navigators", "uplift"]
+    },
+    {
+      "group_id": "ganymede-dock-syndicate",
+      "label": "Ganymede dock labor syndicate recorders",
+      "group_type": "labor_registry_interface",
+      "institutional_logic": ["Witness source, channel, scope, and expiry without becoming the represented voice."],
+      "material_incentives": ["Keep docks safe", "Protect members from preventable collisions", "Preserve witness work", "Avoid making every accommodation cost a worker's job"],
+      "internal_virtues": ["Exact receipts", "Refusal to over-sign", "Duplicate custody", "Knowing which office owns which act"],
+      "internal_shames": ["Letting a clean form replace a living source", "Inventing authority to save a schedule", "Losing a challenge record"],
+      "prestige_markers": ["A receipt another dock accepts", "A stoppage with a named cause", "A duplicate that survives pressure"],
+      "taboo_triggers": ["Calling witness work clerical decoration", "Asking a recorder to choose the steward", "Hiding schedule pressure inside neutral interface text"],
+      "emotional_display_norms": ["Humor and procedural dryness make conflict bearable; fear becomes a hold, duplicate, named requester, or refusal to sign."],
+      "trust_defaults": ["Trusts source receipts and other workers' custody more than carrier-owned translation defaults."],
+      "speech_register_cues": ["Plain office boundaries", "Dry jokes about defective forms", "Short questions about source and scope"],
+      "source_refs": ["ganymede-route-compact", "territories", "narrative-themes"]
+    },
+    {
+      "group_id": "lightsail-dispatch",
+      "label": "Lightsail Express convoy dispatch",
+      "group_type": "carrier_operator",
+      "institutional_logic": ["Turn recognized route decisions into predictable bulk movement across low-trust corridors."],
+      "material_incentives": ["Keep cargo moving", "Preserve departure slots", "Protect carrier reputation", "Avoid open-ended liability"],
+      "internal_virtues": ["Arrival", "Operational clarity", "Schedule recovery", "A route commitment other carriers honor"],
+      "internal_shames": ["Late cargo", "An unbonded convoy", "A promise that cannot be scheduled"],
+      "prestige_markers": ["Boring reliability", "Accepted route records", "Goods delivered through disputed space"],
+      "taboo_triggers": ["A mandate too narrow to launch", "Procedure that consumes a cargo window", "Unpriced ambiguity"],
+      "emotional_display_norms": ["Anxiety appears as clock watching, compressed phrasing, and requests for one usable sentence."],
+      "trust_defaults": ["Trusts navigator competence and accepted Compact records while preferring scope broad enough to keep operations moving."],
+      "speech_register_cues": ["Cargo clocks", "Lane windows", "Necessary operations", "Operational continuity"],
+      "source_refs": ["lightsail-express", "ganymede-route-compact"]
+    },
+    {
+      "group_id": "jovian-convoy-insurers",
+      "label": "Jovian convoy insurers",
+      "group_type": "risk_and_bond_office",
+      "institutional_logic": ["Convert witnessed authority and route risk into a price the convoy system will accept."],
+      "material_incentives": ["Bound coverage", "Price delay and hazard", "Avoid paying on ambiguous authority", "Keep recognized records portable"],
+      "internal_virtues": ["Legible scope", "Independent witness", "Quantified exposure", "Reviewable authorization"],
+      "internal_shames": ["Unpriced risk", "A policy resting on an unusable signal", "A challenge that makes prior coverage incoherent"],
+      "prestige_markers": ["Fast bond clearance", "Records other offices adopt", "Losses assigned to named clauses"],
+      "taboo_triggers": ["Unbounded emergency authority", "Unwitnessed succession", "Source channels no desk can read"],
+      "emotional_display_norms": ["Concern appears as price color, attachment status, and a request for a cleaner governing sentence."],
+      "trust_defaults": ["Trusts standardized translations and witnessed mandates; may mistake legibility for faithful representation."],
+      "speech_register_cues": ["Bond fields", "Coverage price", "Approved wording", "Confirming exercise"],
+      "source_refs": ["ganymede-route-compact", "identity-crisis"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "proto-navigator-watch.voice-without-transfer",
+      "applies_to": ["proto-navigator-watch"],
+      "pressure_type": "public_authority",
+      "summary": "A navigator watch needs its decisions to bind convoy operations without letting an employer own the channel through which those decisions become legible.",
+      "projection_use": "Keep navigator speech scoped by route, interval, named act, source signal, and expiry; never treat employment, translation, or availability as voice transfer.",
+      "source_refs": ["ganymede-route-compact", "uplift"]
+    },
+    {
+      "field_id": "ganymede-dock-syndicate.witness-not-principal",
+      "applies_to": ["ganymede-dock-syndicate"],
+      "pressure_type": "authority_boundary",
+      "summary": "The recorder can make a navigator's mandate usable or unusable but cannot choose the steward or enlarge the mandate.",
+      "projection_use": "Player choices should operate on witness, copy, pause, annotation, and refusal surfaces instead of puppeting navigator consent.",
+      "source_refs": ["ganymede-route-compact"]
+    },
+    {
+      "field_id": "compact-parties.delay-is-not-neutral",
+      "applies_to": ["proto-navigator-watch", "ganymede-dock-syndicate", "lightsail-dispatch", "jovian-convoy-insurers"],
+      "pressure_type": "material_cost",
+      "summary": "Accurate scope and accessible replay consume scarce berth time, cargo life, wages, and coverage margin, making procedural perfection easier for wealthy operators.",
+      "projection_use": "Every repair or refusal must leave a clock, cargo, wage, bond, or trust consequence visible.",
+      "source_refs": ["ganymede-route-compact", "cetacean-navigators", "narrative-themes"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "lightsail-dispatch",
+      "target_group_id": "proto-navigator-watch",
+      "observer_read": ["Indispensable route competence", "A source of launch authority", "A costly limit on operational flexibility"],
+      "target_self_read": ["Represented watch", "Author of one bounded route commitment", "Holder of rescue and refusal obligations"],
+      "misread_patterns": ["Treats a safety hold as proof of broad authority", "Treats a ready alternate as replaceable capacity", "Treats an exclusion as needless friction"],
+      "likely_insults": ["backup operator", "necessary operations", "redundant route asset"],
+      "projection_use": "Let dispatcher pressure remain locally rational and materially useful while showing where schedule language expands voice.",
+      "source_refs": ["ganymede-route-compact", "lightsail-express"]
+    },
+    {
+      "observer_group_id": "jovian-convoy-insurers",
+      "target_group_id": "proto-navigator-watch",
+      "observer_read": ["A risk-bearing authority only when translated into portable clauses", "A source signal that needs office adoption"],
+      "target_self_read": ["The principal whose exact signal and limits the office is meant to carry"],
+      "misread_patterns": ["Treats clean translation as neutral", "Treats dissent as supporting material", "Treats accessible source replay as an optional service cost"],
+      "likely_insults": ["unpriceable channel", "incomplete assent", "nonstandard signal"],
+      "projection_use": "Use insurer language to expose how representation can be preserved in storage while displaced from governing authority.",
+      "source_refs": ["ganymede-route-compact", "uplift", "identity-crisis"]
+    },
+    {
+      "observer_group_id": "proto-navigator-watch",
+      "target_group_id": "ganymede-dock-syndicate",
+      "observer_read": ["Potentially useful witness", "Dryside choke point", "A worker office that can still choose convenience"],
+      "target_self_read": ["Narrow recorder", "Safety worker", "Keeper of reviewable receipts"],
+      "misread_patterns": ["May read a careful non-signature as erasure", "May overestimate how much a union copy can stop after departure"],
+      "likely_insults": ["clean hand", "borrowed voice", "blank witness"],
+      "projection_use": "Keep trust conditional on what the recorder materially preserves, not on stated sympathy.",
+      "source_refs": ["ganymede-route-compact", "narrative-themes"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "dock-mandate-recorder",
+      "summary": "A union recorder who can witness source and scope, operate the shared board, preserve a duplicate, pause or withhold a signature, and record an emergency hold without choosing the navigator speaker.",
+      "obligations": ["Preserve the source signal", "Name scope and expiry", "Keep safety action bounded", "Make challenge reviewable"],
+      "available_masks": ["Procedural neutrality", "Dry workplace humor", "Technical fussiness", "Schedule sympathy"],
+      "failure_modes": ["Letting translation govern", "Using safety as consent", "Confusing non-signature with adequate redress", "Inventing authority to save cargo"],
+      "source_refs": ["ganymede-route-compact"]
+    },
+    {
+      "role_id": "route-steward",
+      "summary": "A navigator chosen by the affected watch to bind named route acts for a named interval through a recorded source channel.",
+      "obligations": ["Speak only for represented crews", "Preserve exclusions", "Invoke rescue and safety duties", "Withdraw or expire visibly"],
+      "available_masks": ["Compressed translation", "Exact route notation", "Silence", "Humor carried through test signals"],
+      "failure_modes": ["Scope capture by translation", "Coercion hidden inside employment", "A safety hold reused as general consent", "An alternate treated as property"],
+      "source_refs": ["ganymede-route-compact", "cetacean-navigators", "uplift"]
+    },
+    {
+      "role_id": "carrier-dispatcher",
+      "summary": "A Lightsail worker responsible for getting perishable and life-support cargo through a narrowing departure slot under recognized route authority.",
+      "obligations": ["Move cargo", "Keep crews paid", "Honor route decisions", "Preserve carrier reputation"],
+      "available_masks": ["Operational necessity", "Respect for Navigator competence", "Clock arithmetic", "Helpful compression"],
+      "failure_modes": ["Expanding scope", "Calling readiness succession", "Converting emergency competence into permanent authority"],
+      "source_refs": ["lightsail-express", "ganymede-route-compact"]
+    },
+    {
+      "role_id": "convoy-bond-clerk",
+      "summary": "An insurer clerk who can price and clear coverage against a witnessed mandate but cannot choose the navigator steward or settle a voice challenge.",
+      "obligations": ["Price the actual authority", "Preserve attachments", "Keep bond decisions reviewable", "Avoid unbounded exposure"],
+      "available_masks": ["Approved wording", "Neutral price colors", "Attachment completeness", "Portable certainty"],
+      "failure_modes": ["Pricing the translation instead of the source", "Treating dissent as harmless because it remains attached", "Making access failure the navigator's cost"],
+      "source_refs": ["ganymede-route-compact", "identity-crisis"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "sen_ochoa",
+      "known_context": [
+        {"text": "Sen knows the local board, translation buffer, union press, witness rule, berth clock, declared steward and alternate, and observable route and bond pressure.", "source_refs": ["ganymede-route-compact"]}
+      ],
+      "beliefs": [
+        {"text": "Sen believes a useful record must say whose voice, which act, and until when, but also knows delay can harm crews and cargo.", "source_refs": ["ganymede-route-compact", "narrative-themes"]}
+      ],
+      "misreads": [
+        {"text": "Sen may mistake visible dissent or an independent copy for effective redress after a broad authorization already governs.", "source_refs": ["ganymede-route-compact", "identity-crisis"]}
+      ],
+      "must_not_know": [
+        {"text": "Sen must not know Talu's private appraisal, insurer decisions outside the displayed bond field, or how later Navigator institutions develop.", "source_refs": ["ganymede-route-compact", "cetacean-navigators"]}
+      ]
+    },
+    {
+      "speaker_id": "talu_at_four_returns",
+      "known_context": [
+        {"text": "Talu knows their watch's source mandate, route segment, powers, exclusions, expiry, alternate, immediate hazard, and the room's visible translation divergence.", "source_refs": ["ganymede-route-compact"]}
+      ],
+      "beliefs": [
+        {"text": "Talu treats translation as an instrument and refuses to let emergency competence authorize acts the watch did not delegate.", "source_refs": ["ganymede-route-compact", "uplift"]}
+      ],
+      "misreads": [
+        {"text": "Talu may read Sen's refusal to witness an emergency hold as dryside erasure even when Sen intends to preserve the mandate challenge.", "source_refs": ["ganymede-route-compact"]}
+      ],
+      "must_not_know": [
+        {"text": "Talu must not know private insurer pricing logic beyond the displayed field or treat the 2478 procedure as the mature later coalition's settled doctrine.", "source_refs": ["identity-crisis", "cetacean-navigators"]}
+      ]
+    },
+    {
+      "speaker_id": "rem_saye",
+      "known_context": [
+        {"text": "Rem knows the cargo, departure throat, crew schedule, route requirement, displayed translation, and whether the witness square has cleared.", "source_refs": ["lightsail-express", "ganymede-route-compact"]}
+      ],
+      "beliefs": [
+        {"text": "Rem believes a route decision has to become portable operational language before a convoy can rely on it.", "source_refs": ["lightsail-express"]}
+      ],
+      "misreads": [
+        {"text": "Rem may mistake a bounded safety hold for proof of broad route authority because both produce the necessary safe movement.", "source_refs": ["ganymede-route-compact"]}
+      ],
+      "must_not_know": [
+        {"text": "Rem must not know Talu's interior consent or treat carrier dependency as ownership of navigator judgment.", "source_refs": ["uplift", "ganymede-route-compact"]}
+      ]
+    },
+    {
+      "speaker_id": "vela_quine",
+      "known_context": [
+        {"text": "Vela knows the bond terms, accepted witness fields, displayed authority, attachments, and price changes visible from the insurer desk.", "source_refs": ["ganymede-route-compact"]}
+      ],
+      "beliefs": [
+        {"text": "Vela believes portable wording protects the convoy system from ambiguous authority and loss.", "source_refs": ["ganymede-route-compact", "identity-crisis"]}
+      ],
+      "misreads": [
+        {"text": "Vela may treat faithful source preservation as sufficient even when the source has been demoted beneath governing translation.", "source_refs": ["ganymede-route-compact", "narrative-themes"]}
+      ],
+      "must_not_know": [
+        {"text": "Vela must not decide who speaks for the navigator watch or claim insurer adoption creates corridor authority.", "source_refs": ["ganymede-route-compact"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Registry Annex B, Sen, Talu, Pel, Rem, Vela, Common Wake, the ore lighter, and this specific docket are fixture-local dramatization, not added historical canon.",
+      "source_refs": ["ganymede-route-compact"]
+    },
+    {
+      "text": "The mature Route Choir, Waystation Council, Corridor Court, and Rescue Ledger system is later institutional context; participants in this 2478 scene should not speak as if its full later form already exists.",
+      "source_refs": ["cetacean-navigators", "identity-crisis"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which specific cetacean uplift lineages participated in the first Ganymede mandates?",
+      "blocks_training": false,
+      "notes": "The fixture uses one bottlenose-dolphin body as local dramatization because later Navigator examples support that lineage; it does not claim exclusivity or founding primacy."
+    },
+    {
+      "question": "What exact hardware implemented navigator-controlled source channels in 2478?",
+      "blocks_training": false,
+      "notes": "The fixture uses a local multimodal board, waterborne pressure pulses, low sound, light, raised pins, and a dry translation buffer, following later Navigator interface doctrine without canonizing one universal device."
+    }
+  ]
+}

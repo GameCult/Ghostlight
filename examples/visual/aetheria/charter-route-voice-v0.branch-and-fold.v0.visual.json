@@ -1,0 +1,424 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "charter-route-voice-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/charter-route-voice-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/charter-route-voice-v0.branch-and-fold.v0.training.json",
+  "scene_id": "charter-route-voice-v0.ganymede-mandate-desk",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for a witnessed uplift route-voice mandate at Ganymede in 2478.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for the converted wet/dry registry annex, ordinary mandate work, source and translation divergence, immediate safety authority, final public record, and four disposition families.",
+    "segmentation_rule": "Give the room, routine, preparation, mandate arrival, pivotal translation divergence, departure alert, emergency hold, final record, and each ending family a stable visual scene. Branch-specific actions modify the preparation, divergence, and safety frames instead of inventing new room geometry.",
+    "prompting_rule": "Every base prompt describes a complete visible frame in plain language with room geometry, camera, light, materials, interfaces, body plans, clothing, props, and stance. Modifiers add only the visible state delta. Character references are assembled only for characters listed as visible in the rendered frame.",
+    "global_style_cue": "Style: retro-industrial hard-science-fiction editorial illustration, precise ink linework under opaque gouache, slate-blue water, sodium amber and cold white task light, tactile worn steel and ceramic, readable body silhouettes and interfaces, restrained expression, bleak corporate procedure with humane workplace warmth, square illustrated interactive-fiction frame.",
+    "prompt_assembly_rule": "Assemble each render from global_style_cue, the scene base_image_prompt, visual refs for named characters actually listed in visible_characters, and triggered state_image_modifiers or global_branch_image_modifiers. Use a camera-specific blockout from scene_set for multi-angle website rendering.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_spec_present_blockout_missing",
+      "scope_reason": "The fixture returns to one wet/dry registry annex from wide, desk-level, pool-level, board-close, and doorway cameras. The pressure wall, source receiver, translation display, union press, safety control, participant routes, and sightlines carry branch meaning.",
+      "future_scene_set_need": "Build a durable plan view or simple 3D blockout from the fixed zones, routes, occluders, camera slots, staging slots, and state anchors below before high-consistency multi-angle website rendering."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "ganymede_registry_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view from the dry entrance of Registry Annex B inside a Ganymede orbital dock in 2478. A long rectangular dispatch bay is divided lengthwise by a waist-high sealed pressure wall. Portside, a deep slate-blue orientation basin runs beneath thick windows showing dock trusses, tethered cargo hulls, Jupiter's banded curve, and black space. Dryside, a worn clerk bench holds a ceramic duplicate press, covered tea cup in a clamp, source receiver, pale translation panel, red-rimmed safety square, and raised tactile pins. A broad route board bridges basin and bench with white route lines, low acoustic emitter discs, and visible water ripples. Talu-at-Four-Returns, an uplifted slate-blue dolphin with a pale jaw and three short white scars near the dorsal fin, surfaces beside the wall. Sen Ochoa, a compact brown-skinned human recorder with shaved dark hair, orange union vest, gray work shirt, magnetic-soled boots, and wrist stylus, stands at the bench. Rem Saye, a tall dark-skinned human dispatcher in a navy Lightsail coat, and Vela Quine, a pale human bond clerk with cropped silver hair and a charcoal office jacket, wait beside separate dryside stations.",
+        "visible_characters": [
+          {"agent_id": "talu_at_four_returns", "default_stance": "surfaced beside the pressure wall after a test pulse", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "sen_ochoa", "default_stance": "at the central witness bench beside a clamped tea cup", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "rem_saye", "default_stance": "at the launch-lane side of the dry bench", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "vela_quine", "default_stance": "at the bond terminal near the dry entrance", "visual_ref": "visual_character_refs.characters.vela_quine"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The basin and dry bench run parallel beneath one bridging route board; the pressure wall preserves water while allowing eye contact and shared controls.",
+          "The union press stays left of Sen, the source receiver and translation panel stay centered, and the red safety square stays beside the launch-lane display."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_mandate_routine",
+        "ink_anchor": "routine",
+        "base_image_prompt": "Medium-wide diagonal view across a converted wet/dry convoy dispatch bay. Talu-at-Four-Returns, a slate-blue uplifted dolphin with pale jaw and three dorsal scars, waits close to the waist-high pressure wall in the orientation basin. Sen Ochoa, compact brown-skinned union recorder in an orange vest and magnetic boots, reviews an empty ceramic receipt wafer at the worn central bench. Rem Saye, tall dark-skinned Lightsail dispatcher in a navy coat with reflective cuffs, stands beneath an amber six-minute berth dial beside icons for sealed food cultures and scrubber-cartridge cases. Vela Quine, pale bond clerk with cropped silver hair and charcoal jacket, holds a thin insurer slate beside a blue price field. The overhead route board shows one white line from Ganymede toward a Callisto transfer marker, while a small green alternate-channel lamp waits dark.",
+        "visible_characters": [
+          {"agent_id": "talu_at_four_returns", "default_stance": "floating close to the witness desk", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "sen_ochoa", "default_stance": "reviewing a blank ceramic receipt wafer", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "rem_saye", "default_stance": "watching the amber berth dial", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "vela_quine", "default_stance": "holding an insurer slate near the price field", "visual_ref": "visual_character_refs.characters.vela_quine"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "All four roles and the cargo, clock, alternate lamp, witness wafer, and bond field are visible before the first choice."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_preparation_desk",
+        "ink_anchor": "preparation_choice",
+        "base_image_prompt": "Desk-level preparation frame in Registry Annex B. Sen Ochoa, compact brown-skinned human recorder with shaved dark hair, orange union vest, gray work shirt, magnetic boots, and wrist stylus, stands between four physical controls on a scratched metal bench: a squat ceramic duplicate press with a blank white wafer, a round green alternate-channel lamp, a pale insurer translation preview, and a columned route-scope panel. Across the low sealed pressure wall, Talu-at-Four-Returns, an uplifted slate-blue dolphin with pale jaw and three short dorsal scars, keeps one dark eye level with the controls. Rem Saye in a navy Lightsail coat watches the berth dial from the right; Vela Quine with cropped silver hair and charcoal jacket watches the bond field from the left. Cold white panel light meets amber dock light across repaired steel, rubber seals, raised pins, and rippling basin water.",
+        "visible_characters": [
+          {"agent_id": "sen_ochoa", "default_stance": "centered among four preparation controls", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "talu_at_four_returns", "default_stance": "one eye level with the dry controls across the wall", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "rem_saye", "default_stance": "at the berth-dial end of the bench", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "vela_quine", "default_stance": "at the bond-field end of the bench", "visual_ref": "visual_character_refs.characters.vela_quine"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "union_copy == 1", "modifier_prompt": "The ceramic press closes around a white receipt wafer; its edge shows a punched time pattern and the source-channel key glows on a separate union custody strip."},
+          {"trigger": "alternate_ready >= 1", "modifier_prompt": "The round alternate-channel lamp glows green beside a water-wave signal icon and a fixed route-segment bracket."},
+          {"trigger": "clean_translation_relied >= 1", "modifier_prompt": "The insurer preview expands into a broad pale sentence block under a bright ACTIVE strip while the source panel becomes smaller."},
+          {"trigger": "scope_clarity >= 3", "modifier_prompt": "The scope panel displays eight distinct symbol rows: four bright permitted-act marks and four amber exclusion marks, ending at a clear second-watch clock symbol."}
+        ],
+        "visual_continuity_notes": [
+          "Branch modifiers alter only the press, alternate lamp, translation hierarchy, or scope columns; participant positions and desk geometry stay fixed."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_mandate_arrival",
+        "ink_anchor": "mandate_arrival",
+        "base_image_prompt": "Medium pool-to-desk view of a route mandate entering Registry Annex B. Talu-at-Four-Returns, slate-blue uplifted dolphin with pale jaw and three dorsal scars, turns broadside in the orientation basin while four pressure ridges spread across the water from black emitter discs. Above the waist-high pressure wall, the broad route board renders a white Ganymede-to-Callisto line, two watch-clock symbols, a green alternate lamp, four permitted-act icons, and four amber exclusion icons. Sen Ochoa in orange union vest follows raised pins with both hands at the source receiver. Rem Saye in navy carrier coat reads the white route line; Vela Quine in charcoal office jacket holds an insurer slate beside the translation panel. The ceramic union press and clamped covered tea cup remain visible at Sen's left.",
+        "visible_characters": [
+          {"agent_id": "talu_at_four_returns", "default_stance": "broadside in the basin sending pressure ridges", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "sen_ochoa", "default_stance": "both hands following raised source pins", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "rem_saye", "default_stance": "reading the route line", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "vela_quine", "default_stance": "holding insurer slate near translation panel", "visual_ref": "visual_character_refs.characters.vela_quine"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "union_copy == 1", "modifier_prompt": "A separate white ceramic receipt wafer glows in the union press with a source-key pattern along its edge."},
+          {"trigger": "berth_minutes <= 5", "modifier_prompt": "The berth dial changes from white to amber and throws warm light across Rem's coat."}
+        ],
+        "visual_continuity_notes": [
+          "Source information originates from Talu's basin channel and appears across pressure, light, sound hardware, and raised pins before translation."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_translation_failure",
+        "ink_anchor": "translation_failure",
+        "base_image_prompt": "Pivotal close-wide frame across the route board and witness desk. The left half shows Talu-at-Four-Returns, an uplifted slate-blue dolphin with pale jaw and three dorsal scars, beside four precise pressure ridges ending at a two-watch clock symbol. The right half shows a large clean pale translation block spanning the dry display, with exclusion icons collapsed into a small attachment panel and the alternate symbol changed into a generic operator silhouette. Sen Ochoa, compact brown-skinned recorder in orange union vest, holds the wrist stylus above an empty witness square. Vela Quine, pale silver-haired bond clerk in charcoal jacket, points toward a blue price field; Rem Saye, tall dark-skinned dispatcher in navy coat, looks toward the amber berth dial. Cold white interface light makes the broad translation visually easier to read than the narrower source geometry.",
+        "visible_characters": [
+          {"agent_id": "talu_at_four_returns", "default_stance": "beside the intact source ridges", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "sen_ochoa", "default_stance": "stylus suspended above blank witness square", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "vela_quine", "default_stance": "pointing toward the bond field", "visual_ref": "visual_character_refs.characters.vela_quine"},
+          {"agent_id": "rem_saye", "default_stance": "looking at the berth dial", "visual_ref": "visual_character_refs.characters.rem_saye"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The source and translation occupy separate surfaces so the image can show preserved evidence and governing hierarchy at once."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_divergence_response",
+        "ink_anchor": "divergence_choice",
+        "base_image_prompt": "Medium diagonal response frame in the wet/dry registry annex. Sen Ochoa, compact brown-skinned union recorder in orange vest and magnetic boots, works the raised tactile pins, source receiver, translation hierarchy, and witness square at the central bench. Across the waist-high pressure wall, Talu-at-Four-Returns, slate-blue uplifted dolphin with pale jaw and three dorsal scars, turns broadside to visible pressure ripples. Rem Saye, tall dark-skinned Lightsail dispatcher in a navy coat, stands beneath the amber berth dial. Vela Quine, pale bond clerk with cropped silver hair and charcoal jacket, waits beside the blue bond field. The overhead route board holds a white route line, two watch symbols, four act icons, four exclusion icons, one broad pale translation block, and a round alternate-channel lamp.",
+        "visible_characters": [
+          {"agent_id": "sen_ochoa", "default_stance": "working the central record surfaces", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "talu_at_four_returns", "default_stance": "broadside to pressure ripples", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "rem_saye", "default_stance": "beneath the berth dial", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "vela_quine", "default_stance": "beside the bond field", "visual_ref": "visual_character_refs.characters.vela_quine"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "source_integrity >= 3", "modifier_prompt": "Water ridges, white route light, low acoustic emitter pulses, and raised tactile pins align in four visibly synchronized channels."},
+          {"trigger": "scope_clarity >= 3", "modifier_prompt": "The route segment, two-watch expiry, four permitted acts, and four amber exclusions appear in separate balanced columns."},
+          {"trigger": "clean_translation_relied >= 2", "modifier_prompt": "The broad pale translation occupies the largest display plane while the source geometry and amber dissent packet sit beneath it."},
+          {"trigger": "alternate_ready >= 2", "modifier_prompt": "The alternate-channel lamp glows steady green with an answered waveform and the original scope bracket intact."}
+        ],
+        "visual_continuity_notes": [
+          "All divergence branches use the same desk and participant positions; only record hierarchy, channel agreement, brackets, and alternate status change."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_departure_alert",
+        "ink_anchor": "departure_alert",
+        "base_image_prompt": "Wide alert frame from behind the witness bench toward Registry Annex B's portside windows. Outside, an angular gray ore lighter drifts sideways between dock trusses while a six-ship cargo convoy waits behind bright lane beacons. Inside, the overhead route board turns red and projects the lighter's crossing path over the launch lane. Talu-at-Four-Returns, an uplifted slate-blue dolphin with pale jaw and three dorsal scars, strikes a low red-edged paddle at the basin wall, sending one strong pressure ring through dark water. Sen Ochoa in orange union vest turns from the translation panel toward the red safety square. Rem Saye in navy Lightsail coat and Vela Quine in charcoal bond jacket both lean toward the governing display. The amber berth dial remains visible above sealed cargo icons.",
+        "visible_characters": [
+          {"agent_id": "talu_at_four_returns", "default_stance": "rostrum at the red-edged wet safety paddle", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "sen_ochoa", "default_stance": "turning toward the dry safety square", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "rem_saye", "default_stance": "leaning toward the launch display", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "vela_quine", "default_stance": "leaning toward the authority display", "visual_ref": "visual_character_refs.characters.vela_quine"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "scope_clarity >= 3", "modifier_prompt": "A single red cycle-ring symbol appears beside the crossing route, clearly bounding the safety action to one decision."},
+          {"trigger": "clean_translation_relied >= 2", "modifier_prompt": "The broad translation panel extends a bright connector line toward the red safety action, visually proposing that the emergency act confirms wider authority."},
+          {"trigger": "alternate_ready >= 2", "modifier_prompt": "A separate green alternate waveform waits at the edge of the board, visibly ready and visibly uninvoked."}
+        ],
+        "visual_continuity_notes": [
+          "The ore lighter crosses outside the windows from left to right; the waiting convoy remains behind lane beacons and the annex stays inside the dock collar."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_safety_hold",
+        "ink_anchor": "safety_choice",
+        "base_image_prompt": "Desk-and-pool emergency frame inside Registry Annex B. Talu-at-Four-Returns, slate-blue uplifted dolphin with pale jaw and three dorsal scars, holds the rostrum near the wet red-edged safety paddle as a single pressure ring crosses the basin. Sen Ochoa, compact brown-skinned recorder in orange union vest, hovers a wrist stylus over the matching red-rimmed square and adjacent witness field. Rem Saye, tall dark-skinned dispatcher in navy coat, points toward the red launch lane; Vela Quine, pale silver-haired bond clerk in charcoal jacket, watches a blue price field beside the broad translation block. Through the portside windows, the angular ore lighter slides across an empty lane while the cargo convoy waits behind beacons. The board shows distinct source geometry, translation hierarchy, lane closure, and one-cycle symbol.",
+        "visible_characters": [
+          {"agent_id": "talu_at_four_returns", "default_stance": "holding position by the wet safety paddle", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "sen_ochoa", "default_stance": "stylus above safety and witness fields", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "rem_saye", "default_stance": "pointing at the closed lane", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "vela_quine", "default_stance": "watching the bond price field", "visual_ref": "visual_character_refs.characters.vela_quine"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "safety_hold_recorded == 1 && clean_translation_relied < 3", "modifier_prompt": "The red safety square glows beside a single closed cycle ring, with a crisp gap separating it from the pale route-mandate block."},
+          {"trigger": "clean_translation_relied >= 3", "modifier_prompt": "A bright line links the red safety square upward into the broad governing translation while a smaller amber correction packet sits below."},
+          {"trigger": "safety_hold_recorded == 0", "modifier_prompt": "The Compact safety square stays dark while a separate dock-traffic control lamp closes the lane; Talu's source pulse remains as a small waveform at the board edge."}
+        ],
+        "visual_continuity_notes": [
+          "The lane closes in every branch for physical safety; the modifier controls which office and record receives visible authorship."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_final_record",
+        "ink_anchor": "final_record",
+        "base_image_prompt": "Symmetrical final-decision frame in the wet/dry registry annex. Sen Ochoa, compact brown-skinned union recorder with shaved dark hair, orange vest, gray shirt, magnetic boots, and wrist stylus, stands centered at a worn bench with four disposition surfaces: a narrow source certificate, green alternate succession field, open amber docket square, and broad pale insurer authorization. Talu-at-Four-Returns, an uplifted slate-blue dolphin with pale jaw and three dorsal scars, waits across the waist-high pressure wall in the basin. Rem Saye, tall dark-skinned dispatcher in a navy Lightsail coat, stands at the route side; Vela Quine, pale silver-haired bond clerk in charcoal jacket, stands at the price side. The overhead board shows the cleared ore lighter, waiting convoy, berth dial, source waveform, route segment, expiry, translation block, and emergency hold attribution.",
+        "visible_characters": [
+          {"agent_id": "sen_ochoa", "default_stance": "centered before four disposition surfaces", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "talu_at_four_returns", "default_stance": "waiting close to or far from the pressure wall according to trust", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "rem_saye", "default_stance": "at route side watching the witness square", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "vela_quine", "default_stance": "at price side watching the bond field", "visual_ref": "visual_character_refs.characters.vela_quine"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "union_copy == 1", "modifier_prompt": "A white ceramic union receipt rests in a separate orange-edged custody slot left of the governing record."},
+          {"trigger": "alternate_ready >= 2", "modifier_prompt": "The green succession field contains an answered waveform and fixed scope bracket."},
+          {"trigger": "carrier_pressure >= 3", "modifier_prompt": "Rem leans past the route display toward Sen's wrist stylus, coat cuffs tight against the bench edge."},
+          {"trigger": "bond_pressure >= 2", "modifier_prompt": "Vela's bond field becomes a saturated expensive blue that reflects across the charcoal jacket."},
+          {"trigger": "navigator_trust >= 3", "modifier_prompt": "Talu waits close to the pressure wall with one eye level to Sen and the source panel."},
+          {"trigger": "navigator_trust <= 0", "modifier_prompt": "Talu circles at the far basin turn, separated from the dry desk by a long strip of dark water."}
+        ],
+        "visual_continuity_notes": [
+          "The four final affordances are record actions at Sen's desk; Talu retains the source position across every route."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_ending_narrow",
+        "ink_anchor": "ending_narrow_voice|ending_narrow_cost",
+        "base_image_prompt": "Narrow-mandate aftermath at Registry Annex B. The overhead route board shows one crisp white Ganymede-to-Callisto segment, two watch-clock symbols, four permitted-act icons, four amber exclusions, and Talu's pressure waveform aligned beside a modest source certificate. Sen Ochoa, compact brown-skinned union recorder in orange vest, sets the wrist stylus down beside a covered tea cup rocking in its clamp. Talu-at-Four-Returns, slate-blue uplifted dolphin with pale jaw and three dorsal scars, surfaces close to the pressure wall. Rem Saye, tall dark-skinned dispatcher in navy coat, restacks sealed food-culture cases beneath a later amber lane slot. Vela Quine, pale silver-haired bond clerk in charcoal jacket, recalculates a smaller blue price field. Worn steel, white route light, amber clocks, and basin ripples carry restrained relief and visible cost.",
+        "visible_characters": [
+          {"agent_id": "sen_ochoa", "default_stance": "stylus down beside the rocking cup", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "talu_at_four_returns", "default_stance": "surfaced close to the wall", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "rem_saye", "default_stance": "restacking sealed cargo for a later slot", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "vela_quine", "default_stance": "recalculating the bond field", "visual_ref": "visual_character_refs.characters.vela_quine"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "ending_label == narrow_voice_claimed_from_thin_source", "modifier_prompt": "The source certificate carries an amber incomplete-channel edge and Vela adds a later-review marker beside the blue price field."},
+          {"trigger": "safety_hold_recorded == 0", "modifier_prompt": "The lane-closure credit sits on a separate dock-traffic lamp while Talu's small hold waveform remains at the source edge."}
+        ],
+        "visual_continuity_notes": [
+          "The narrow ending preserves the same route segment and two-watch expiry while showing the lost first slot through cargo restacking."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_ending_alternate",
+        "ink_anchor": "ending_alternate_voice|ending_alternate_cost",
+        "base_image_prompt": "Succession aftermath in Registry Annex B. Sen Ochoa, compact brown-skinned union recorder in orange vest, stands at a split green succession display showing Talu's withdrawal waveform followed by Pel's answering waveform, with one fixed route segment and two-watch expiry beneath both. Talu-at-Four-Returns, slate-blue uplifted dolphin with pale jaw and three dorsal scars, circles at the far basin turn after withdrawal. Pel-of-Nine-Echoes appears only on a round water-backed remote channel as a smaller charcoal-gray uplifted dolphin with a cream throat patch and one pale ring scar around the rostrum, body broadside to their own emitter ripples. Rem Saye in navy Lightsail coat watches the next lane slot; Vela Quine with cropped silver hair and charcoal jacket watches the bond field. A separate red safety record remains attributed to Talu.",
+        "visible_characters": [
+          {"agent_id": "sen_ochoa", "default_stance": "at the split succession display", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "talu_at_four_returns", "default_stance": "circling at the far basin turn after withdrawal", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "pel_of_nine_echoes", "default_stance": "broadside in the round remote water channel", "visual_ref": "visual_character_refs.characters.pel_of_nine_echoes"},
+          {"agent_id": "rem_saye", "default_stance": "watching the next lane slot", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "vela_quine", "default_stance": "watching the bond field", "visual_ref": "visual_character_refs.characters.vela_quine"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "ending_label == alternate_answer_inside_contested_scope", "modifier_prompt": "The green succession chain is intact while the inherited scope panel beneath it flickers amber and incomplete."},
+          {"trigger": "berth_minutes <= 1", "modifier_prompt": "The first lane slot is gray and closed; a later amber slot glows beyond it."}
+        ],
+        "visual_continuity_notes": [
+          "Pel is visible only inside the remote water-backed channel and receives a visual ref only in this frame."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_ending_delay",
+        "ink_anchor": "ending_open_record",
+        "base_image_prompt": "Late-shift open-record aftermath inside Registry Annex B. Sen Ochoa, compact brown-skinned union recorder in orange vest, holds a white ceramic receipt wafer beside an amber open-docket square. Talu-at-Four-Returns, slate-blue uplifted dolphin with pale jaw and three dorsal scars, rests near the pressure wall under dim basin light. Rem Saye, tall dark-skinned Lightsail dispatcher in navy coat, kneels beside sealed food-culture cases plugged into two borrowed cooling sockets near the dry entrance. Two dock workers in patched orange-gray coveralls, magnetic boots, tool belts, and knit caps connect thick cooling cables and set a dented tea pot on the clerk bench. Vela's empty bond station remains blue and frozen. Through the windows, the waiting cargo convoy is held behind lane beacons while another ship departs.",
+        "visible_characters": [
+          {"agent_id": "sen_ochoa", "default_stance": "holding the duplicate beside the open docket", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "talu_at_four_returns", "default_stance": "resting close to the wall under dim basin light", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "rem_saye", "default_stance": "kneeling beside cooled cargo cases", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "dock_shift_workers", "default_stance": "connecting borrowed cooling sockets and setting down tea", "visual_ref": "visual_character_refs.groups.dock_shift_workers"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "union_copy == 1", "modifier_prompt": "The white receipt wafer carries a complete source, translation, hold, and challenge pattern in four colored edge bands."},
+          {"trigger": "union_copy == 0", "modifier_prompt": "The newly pressed receipt wafer carries an amber missing-source notch along one edge."}
+        ],
+        "visual_continuity_notes": [
+          "Borrowed cooling and tea occupy the dry entrance alcove inside the annex; the scene remains one locality and keeps the basin, pressure wall, desk, and window lane visible."
+        ]
+      },
+      {
+        "visual_scene_id": "ganymede_ending_capture",
+        "ink_anchor": "ending_clean_capture",
+        "base_image_prompt": "Authority-capture aftermath in Registry Annex B. A broad pale insurer translation dominates the overhead board and sends bright lines toward a cleared bond field, open launch lane, and departing six-ship cargo convoy outside the portside windows. A smaller amber source packet with four exclusion icons sits below the governing block. Sen Ochoa, compact brown-skinned recorder in orange union vest, stands at the signed witness square beside a perfectly still covered tea cup. Talu-at-Four-Returns, slate-blue uplifted dolphin with pale jaw and three dorsal scars, swims at the far dark turn of the orientation basin. Rem Saye, tall dark-skinned dispatcher in navy Lightsail coat, watches sealed cargo move outward. Vela Quine, pale silver-haired bond clerk in charcoal jacket, closes a calm green price field. Cold white corporate light flattens the worn steel and water between the speaking body and the governing record.",
+        "visible_characters": [
+          {"agent_id": "sen_ochoa", "default_stance": "at the signed witness square beside the still cup", "visual_ref": "visual_character_refs.characters.sen_ochoa"},
+          {"agent_id": "talu_at_four_returns", "default_stance": "at the far dark turn of the basin", "visual_ref": "visual_character_refs.characters.talu_at_four_returns"},
+          {"agent_id": "rem_saye", "default_stance": "watching cargo depart", "visual_ref": "visual_character_refs.characters.rem_saye"},
+          {"agent_id": "vela_quine", "default_stance": "closing the green bond field", "visual_ref": "visual_character_refs.characters.vela_quine"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "union_copy == 1", "modifier_prompt": "A separate white ceramic union receipt leaves the central hierarchy in an orange-edged custody slot at the far left of the desk."},
+          {"trigger": "safety_hold_recorded == 1", "modifier_prompt": "The red emergency hold appears as a confirming link inside the broad governing authorization."},
+          {"trigger": "safety_hold_recorded == 0", "modifier_prompt": "The launch-lane closure credit appears on the dock-traffic panel while Talu's source waveform stays small beneath the broad translation."}
+        ],
+        "visual_continuity_notes": [
+          "The capture ending preserves the source packet visibly but subordinates it through size, light, and connection hierarchy."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prepare_union_copy_visual",
+        "trigger": "branch_label == prepare_union_copy",
+        "apply_to_visual_scene_ids": ["ganymede_preparation_desk", "ganymede_mandate_arrival", "ganymede_final_record"],
+        "modifier_prompt": "A white ceramic receipt wafer sits in a separate orange-edged custody path beside the union press, carrying the source-channel key before translation."
+      },
+      {
+        "modifier_id": "prepare_alternate_visual",
+        "trigger": "branch_label == prepare_alternate_channel",
+        "apply_to_visual_scene_ids": ["ganymede_preparation_desk", "ganymede_mandate_arrival"],
+        "modifier_prompt": "The round alternate-channel lamp glows green with a water-wave signal and the original scope bracket."
+      },
+      {
+        "modifier_id": "prepare_clean_preview_visual",
+        "trigger": "branch_label == prepare_clean_preview",
+        "apply_to_visual_scene_ids": ["ganymede_preparation_desk", "ganymede_mandate_arrival", "ganymede_translation_failure"],
+        "modifier_prompt": "The insurer-approved translation occupies a bright active panel while the raw source geometry is compressed into a smaller adjacent strip."
+      },
+      {
+        "modifier_id": "prepare_scope_visual",
+        "trigger": "branch_label == prepare_scope_boundaries",
+        "apply_to_visual_scene_ids": ["ganymede_preparation_desk", "ganymede_mandate_arrival"],
+        "modifier_prompt": "Four white permitted-act icons and four amber exclusion icons form balanced columns ending at a clear two-watch expiry symbol."
+      },
+      {
+        "modifier_id": "source_replay_visual",
+        "trigger": "branch_label == respond_source_replay",
+        "apply_to_visual_scene_ids": ["ganymede_divergence_response", "ganymede_departure_alert"],
+        "modifier_prompt": "Water ridges, white route light, low acoustic pulses, and raised pins align across four channels while the berth dial loses two amber segments."
+      },
+      {
+        "modifier_id": "narrow_witness_visual",
+        "trigger": "branch_label == respond_narrow_witness",
+        "apply_to_visual_scene_ids": ["ganymede_divergence_response", "ganymede_final_record"],
+        "modifier_prompt": "The route segment and expiry glow white inside a narrow bracket while every other authority field remains amber and unresolved."
+      },
+      {
+        "modifier_id": "clean_translation_visual",
+        "trigger": "branch_label == respond_clean_translation",
+        "apply_to_visual_scene_ids": ["ganymede_divergence_response", "ganymede_departure_alert", "ganymede_final_record"],
+        "modifier_prompt": "The broad translation governs from the largest bright panel; Talu's narrower source remains preserved as a complete amber attachment below it."
+      },
+      {
+        "modifier_id": "alternate_answer_visual",
+        "trigger": "branch_label == respond_alternate_answer",
+        "apply_to_visual_scene_ids": ["ganymede_divergence_response", "ganymede_departure_alert", "ganymede_final_record"],
+        "modifier_prompt": "The green alternate field shows an answered waveform with the route segment, acts, exclusions, and expiry intact while Talu remains named steward."
+      },
+      {
+        "modifier_id": "bounded_hold_visual",
+        "trigger": "branch_label == record_bounded_safety_hold",
+        "apply_to_visual_scene_ids": ["ganymede_safety_hold", "ganymede_final_record", "ganymede_ending_narrow"],
+        "modifier_prompt": "The red safety square glows inside one closed cycle ring and remains separated from the route-mandate certificate."
+      },
+      {
+        "modifier_id": "broad_hold_proof_visual",
+        "trigger": "branch_label == use_hold_as_broad_proof",
+        "apply_to_visual_scene_ids": ["ganymede_safety_hold", "ganymede_final_record", "ganymede_ending_capture"],
+        "modifier_prompt": "A bright connector lifts the red safety act into the broad governing authorization while a smaller amber correction packet sits beneath it."
+      },
+      {
+        "modifier_id": "refused_hold_visual",
+        "trigger": "branch_label == refuse_hold_witness",
+        "apply_to_visual_scene_ids": ["ganymede_safety_hold", "ganymede_final_record"],
+        "modifier_prompt": "The Compact hold square stays dark; a separate dock-traffic lamp closes the lane and Talu's source waveform remains uncredited at the board edge."
+      },
+      {
+        "modifier_id": "narrow_source_grounded_visual",
+        "trigger": "ending_label == narrow_route_voice_witnessed",
+        "apply_to_visual_scene_ids": ["ganymede_ending_narrow"],
+        "modifier_prompt": "The narrow source certificate is crisp and complete, aligned with source waveform, route segment, four acts, four exclusions, and two-watch expiry."
+      },
+      {
+        "modifier_id": "narrow_thin_source_visual",
+        "trigger": "ending_label == narrow_voice_claimed_from_thin_source",
+        "apply_to_visual_scene_ids": ["ganymede_ending_narrow"],
+        "modifier_prompt": "The narrow certificate carries an amber incomplete-source edge and a later-review marker beside the insurer field."
+      },
+      {
+        "modifier_id": "valid_succession_visual",
+        "trigger": "ending_label == predeclared_alternate_succeeds",
+        "apply_to_visual_scene_ids": ["ganymede_ending_alternate"],
+        "modifier_prompt": "Two green waveforms form a clear sequence: Talu's withdrawal first, Pel's answer second, with unchanged scope and expiry beneath them."
+      },
+      {
+        "modifier_id": "contested_succession_visual",
+        "trigger": "ending_label == alternate_answer_inside_contested_scope",
+        "apply_to_visual_scene_ids": ["ganymede_ending_alternate"],
+        "modifier_prompt": "The withdrawal and answer waveforms remain clean green while the scope block below flickers amber and incomplete."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "ganymede_registry_annex_b.scene_set.spec",
+      "geometry_authority_level": "textual_spec_blockout_required_for_rendering",
+      "room_model": "Long rectangular converted convoy dispatch bay inside a Ganymede orbital dock, divided lengthwise into a portside orientation basin and starboard dry registry deck by a waist-high sealed pressure wall.",
+      "fixed_zones": [
+        {"zone_id": "orientation_basin", "visible_form": "long slate-blue pool beneath portside windows with deep turning lane, shallow pressure-wall shelf, black acoustic emitters, and low red safety paddle", "used_for": "Talu movement, source pressure signals, safety hold, eye-level exchange"},
+        {"zone_id": "central_witness_bench", "visible_form": "scratched steel dry desk parallel to the basin with raised tactile pins, source receiver, witness square, red safety square, clamped tea cup, and wrist-stylus reach", "used_for": "Sen preparation, witnessing, annotation, refusal, and disposition"},
+        {"zone_id": "union_duplicate_press", "visible_form": "squat ceramic press and separate orange-edged custody slot left of Sen", "used_for": "independent source receipt and later challenge evidence"},
+        {"zone_id": "carrier_station", "visible_form": "launch-lane display, amber berth dial, cargo icons, and dry standing mark at the right end of the bench", "used_for": "Rem's schedule pressure and cargo route"},
+        {"zone_id": "insurer_station", "visible_form": "translation hierarchy, bond price field, insurer slate dock, and dry standing mark near the entrance", "used_for": "Vela's approved wording and coverage price"},
+        {"zone_id": "overhead_route_board", "visible_form": "broad light board bridging basin and dry deck with route lines, waveform strips, act and exclusion icons, scope brackets, expiry clocks, and red lane paths", "used_for": "shared visual state and record hierarchy"},
+        {"zone_id": "portside_windows", "visible_form": "thick windows showing dock trusses, lane beacons, cargo hulls, Jupiter, and the ore-lighter crossing path", "used_for": "physical hazard, convoy state, and ending movement"},
+        {"zone_id": "dry_entrance_cooling_alcove", "visible_form": "pressure door, two wall cooling sockets, cargo-case space, and a small tool shelf beside the entrance", "used_for": "staff arrival, cargo delay, borrowed cooling, and quiet mutual aid"}
+      ],
+      "routes": [
+        {"route_id": "talu_basin_loop", "path": "deep_turn -> pressure_wall_shelf -> wet_safety_paddle -> deep_turn", "authorized_bodies": ["talu_at_four_returns"], "branch_state": "Talu stays near the wall at higher navigator_trust and uses the far turn at low trust or withdrawal."},
+        {"route_id": "sen_desk_route", "path": "dry entrance -> insurer station -> central witness bench -> carrier station -> cooling alcove", "authorized_bodies": ["sen_ochoa", "dock_shift_workers"], "branch_state": "Sen remains at the central bench during choices; dock workers enter only in the delay ending."},
+        {"route_id": "carrier_cargo_route", "path": "carrier station -> dry entrance cooling alcove -> dock cargo corridor", "authorized_bodies": ["rem_saye", "dock_shift_workers"], "branch_state": "Cargo exits through the dry door after authorization or plugs into cooling sockets during delay."},
+        {"route_id": "insurer_route", "path": "dry entrance -> insurer station", "authorized_bodies": ["vela_quine"], "branch_state": "Vela remains at the bond and translation surfaces and leaves the frame in the delay ending."}
+      ],
+      "occluders": [
+        {"occluder_id": "pressure_wall", "effect": "blocks basin water and low body details while preserving faces, dorsal posture, rostrum reach, and board sightlines"},
+        {"occluder_id": "overhead_route_board", "effect": "can obscure dock-window hulls from board-close cameras; wide alert and ending cameras must preserve an outer-lane sightline"}
+      ],
+      "camera_slots": [
+        {"camera_id": "dry_entrance_wide", "supports_visual_scene_ids": ["ganymede_registry_establishing", "ganymede_ending_delay"]},
+        {"camera_id": "routine_diagonal", "supports_visual_scene_ids": ["ganymede_mandate_routine", "ganymede_divergence_response"]},
+        {"camera_id": "desk_level", "supports_visual_scene_ids": ["ganymede_preparation_desk", "ganymede_safety_hold", "ganymede_final_record"]},
+        {"camera_id": "pool_to_board", "supports_visual_scene_ids": ["ganymede_mandate_arrival", "ganymede_translation_failure"]},
+        {"camera_id": "window_alert_wide", "supports_visual_scene_ids": ["ganymede_departure_alert", "ganymede_ending_capture"]},
+        {"camera_id": "aftermath_diagonal", "supports_visual_scene_ids": ["ganymede_ending_narrow", "ganymede_ending_alternate"]}
+      ],
+      "staging_slots": [
+        {"slot_id": "talu_wall", "zone": "orientation_basin", "reach": "wet safety paddle, pressure ridges, Sen eye line"},
+        {"slot_id": "talu_far_turn", "zone": "orientation_basin", "reach": "source emitters and remote speaker; long visible distance from dry bench"},
+        {"slot_id": "sen_center", "zone": "central_witness_bench", "reach": "source, translation, union press, witness square, safety square, and disposition fields"},
+        {"slot_id": "rem_route", "zone": "carrier_station", "reach": "berth dial, launch display, cargo route"},
+        {"slot_id": "vela_bond", "zone": "insurer_station", "reach": "approved translation, bond field, insurer slate"},
+        {"slot_id": "dock_workers_alcove", "zone": "dry_entrance_cooling_alcove", "reach": "cooling sockets, cargo cases, tool shelf, and tea pot"}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "source_to_witness", "path": "Talu at pressure-wall shelf -> water ripples and acoustic emitters -> source receiver and tactile pins -> Sen", "supports": ["mandate arrival", "source replay", "safety hold"]},
+        {"lane_id": "translation_hierarchy", "path": "insurer station -> broad translation panel -> witness square -> carrier station", "supports": ["clean preview", "clean translation", "hold as broad proof", "capture ending"]},
+        {"lane_id": "outer_hazard", "path": "ore lighter outside portside windows -> red route projection -> wet and dry safety controls", "supports": ["departure alert", "all safety branches"]}
+      ],
+      "branch_state_anchors": [
+        {"anchor_id": "union_receipt_state", "values": ["blank", "source_bound", "complete_challenge_copy", "late_copy_with_missing_edge"]},
+        {"anchor_id": "alternate_channel_state", "values": ["dark", "tested_green", "answered_green", "withdrawal_then_answer"]},
+        {"anchor_id": "record_hierarchy_state", "values": ["source_first", "narrow_bracket", "translation_governing_source_attached", "open_dispute"]},
+        {"anchor_id": "safety_attribution_state", "values": ["bounded_compact_hold", "hold_confirms_broad_authority", "dock_traffic_closure_source_uncredited"]},
+        {"anchor_id": "berth_and_bond_state", "values": ["white", "amber", "expensive_blue", "cleared_green", "frozen_open"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visible identity and group references for prompt assembly. Apply a ref only when its character or group is present in visible_characters for the rendered scene.",
+    "characters": {
+      "sen_ochoa": "Sen Ochoa: compact baseline human, middle-aged, warm brown skin, shaved dark hair, broad nose, tired attentive eyes, orange dock-union vest over a charcoal-gray work shirt, dark utility trousers, magnetic-soled work boots, narrow wrist stylus, posture squared to the witness bench with hands kept close to the exact control being used.",
+      "talu_at_four_returns": "Talu-at-Four-Returns: uplifted dolphin-shaped cetacean, adult slate-blue body, pale gray jaw and underside, three short white scars near the dorsal fin, dark intelligent eyes, powerful tail stock, body language through distance from the pressure wall, roll angle, eye line, surfacing, rostrum contact, broadside presentation, and the rhythm of visible water pressure rings.",
+      "pel_of_nine_echoes": "Pel-of-Nine-Echoes: uplifted dolphin-shaped cetacean visible through a round water-backed remote channel, smaller charcoal-gray body, cream throat patch, one pale ring scar around the rostrum, dark eyes, broadside answering posture among precise emitter ripples.",
+      "rem_saye": "Rem Saye: tall baseline human, middle-aged, deep brown skin, close-cropped black hair graying at the temples, navy Lightsail Express dispatch coat with silver reflective cuffs over practical work clothes, long careful hands, posture repeatedly drawn toward berth clocks, lane displays, and cargo routes.",
+      "vela_quine": "Vela Quine: baseline human bond clerk, older adult, pale skin, cropped silver hair, narrow face, charcoal office jacket with blue insurer seam piping, thin slate held close to the body, expression translated into price-field attention and exact finger placement rather than overt alarm."
+    },
+    "groups": {
+      "dock_shift_workers": "Two Ganymede dock shift workers: baseline human adults in patched orange-gray pressure-rated coveralls, magnetic-soled boots, knit caps, tool belts, thick cooling cables over one shoulder, practical crouched posture around cargo sockets and a dented metal tea pot."
+    }
+  },
+  "review_notes": [
+    "The visual plan supplies a textual scene-set specification with fixed geometry, routes, occluders, cameras, staging slots, sightlines, and state anchors.",
+    "A durable plan view or 3D blockout remains required before high-consistency multi-angle website rendering; current prompts are standalone concept frames.",
+    "Every base prompt restates its visible environment and character bodies, and every branch modifier describes a visible object, posture, light, position, or interface delta.",
+    "Pel's visual ref is included only in the succession-ending frame where the remote water-backed channel visibly carries Pel's body."
+  ]
+}
