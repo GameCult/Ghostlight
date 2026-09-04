@@ -1,0 +1,824 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "numen-mother-tree-recall-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/numen-mother-tree-recall-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/numen-mother-tree-recall-v0.branch-and-fold.v0.training.json",
+  "scene_id": "numen-mother-tree-recall-v0.shale-root-recall-audience",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a Matriarch Tree recall audience in Shale-Root Gallery.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the root-gallery locality, ordinary archive labor, multispecies witness staging, embodied ancestral recall, contamination pressure, final priorities, and four state-gated aftermath families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the establishing gallery, Airawa body-and-work introduction, arriving witnesses, preparation choice, prepared ritual fold, embodied recall, cadence mismatch, contamination response, final threshold, and each ending family. The impossible remembered footfall stands alone at the end of the embodied-recall screen before the contamination frame.",
+    "prompting_rule": "Each base image prompt independently describes camera, gallery geometry, living materials, light, visible body anatomy, interfaces, and props for a general image model. Continuity notes remain tooling constraints; prompt assembly uses concrete visible facts.",
+    "global_style_cue": "Style: painterly speculative-ecology storybook frame, restrained gouache and ink texture, precise alien anatomy, tactile living infrastructure, cold eclipse blues against amber fungal light and deep root browns, numinous biological wonder, humane workplace detail, readable cinematic composition for illustrated interactive fiction.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the scene base_image_prompt, visual refs only for characters or groups listed as visible in that scene, and triggered state_image_modifiers or global_branch_image_modifiers. Use the embedded draft scene-set map for camera and staging continuity; use a hand-built blockout before high-consistency multi-angle rendering.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture remains in one wedge-shaped root gallery but uses several angles, branch-visible object custody, a moving threadwing, and aperture state changes. The embedded map controls draft replay staging.",
+      "future_scene_set_need": "For website-quality multi-angle generation, build a plan view or simple 3D blockout of Shale-Root Gallery with the outer ledge, uphill crack sightline, four root cups, central work shelf, load-root braces, shallow archive aperture, fungal quarantine lane, salt perch, lantern knots, and entrance path."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "shale_root_gallery_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view into a wedge-shaped chamber grown between immense dark-brown tree roots and a split wall of black shale on an alien hillside. The chamber opens onto an outer stone ledge at left, where an enormous dark planet hangs fixed in a violet sky and begins to cover a dim red-orange sun. Cold blue bioluminescent knots hang beneath small lantern-tree branches over the ledge. A lane of amber beadlike fungal fruiting bodies enters along the floor. At the deep right wall, four shallow root cups and a translucent veined archive membrane surround a closed oval aperture. Chest-height shelves of grown wood hold carved plate tokens, a mineral bowl, a silver ribbonlike vane, and a damp fungal strand.",
+        "visible_characters": [
+          {
+            "agent_id": "shale_root_matriarch",
+            "default_stance": "present through load roots, root cups, and closed translucent aperture",
+            "visual_ref": "visual_character_refs.characters.shale_root_matriarch"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "amber fungal bead lane entering from the ledge and ending near the work shelf",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          },
+          {
+            "agent_id": "lantern_grove",
+            "default_stance": "cold blue light knots above the outer ledge",
+            "visual_ref": "visual_character_refs.groups.lantern_grove"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The local coordinate frame is deep/archive-wall at right, outer ledge and exit at left, uphill crack visible beyond the ledge, fungal lane along the lower floor, and lantern knots overhead outside.",
+          "The deep organs remain beyond the archive wall. Only the shallow oval aperture and translucent surface membrane enter the playable chamber."
+        ]
+      },
+      {
+        "visual_scene_id": "archive_tender_at_work",
+        "ink_anchor": "introduce_tender",
+        "base_image_prompt": "Medium view of an Airawa archive tender working at chest-height root shelves inside a wedge-shaped root-and-shale gallery. The alien worker has a long digitigrade six-limbed body covered in tiny soft ochre scales, a wedge-shaped head with slitlike nose and ear openings, grown plate sections with faint bioluminescent seams, two large clawed upper arms, two smaller lower arms ending in four blunt digits arranged as opposing pairs, and grasping taloned feet. Both feet hook into bark scars, one upper claw braces on a thick load root, the other holds a mineral bowl, and both lower hands sort carved plate tokens, a silver sensory ribbon, and a damp fungal strand. Four empty root cups and a closed translucent archive membrane fill the deep wall behind her; blue eclipse light enters from the outer ledge.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "feet anchored in bark scars, one upper claw on load root, lower hands sorting witness objects",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "shale_root_matriarch",
+            "default_stance": "closed aperture and supporting roots behind the tender",
+            "visual_ref": "visual_character_refs.characters.shale_root_matriarch"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Airawa manipulation uses the small lower hands; upper claws and taloned feet carry load and anchor the body."
+        ]
+      },
+      {
+        "visual_scene_id": "route_and_ecological_witnesses",
+        "ink_anchor": "introduce_witnesses",
+        "base_image_prompt": "Medium-wide view from the deep wall toward the outer ledge of a wedge-shaped living archive chamber. A route-tired Airawa waits on the left ledge with gray stone dust in the glowing seams of charcoal-green grown body plates, four limbs folded close and two taloned feet gripping shale. At center, a small flying alien courier perches on a mineral-salt cup: narrow body, two gripping feet, tapered head, and many long silver ribbonlike sensory vanes streaming from its sides. Three amber fungal beads rise around a damp dark strand on the floor, one bead held half closed as if tasting it. The ochre archive tender stands at the right work shelf beside carved tokens and four root cups. Blue lantern knots frame the eclipse-dark entrance.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "at deep-wall shelf, watching all witness channels",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "route_witness",
+            "default_stance": "folded on outer ledge, dusted from hard climbing",
+            "visual_ref": "visual_character_refs.characters.route_witness"
+          },
+          {
+            "agent_id": "threadwing_witness",
+            "default_stance": "perched on the mineral-salt cup with sensory vanes spread",
+            "visual_ref": "visual_character_refs.characters.threadwing_witness"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "three amber beads around the fungal witness strand",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The route witness remains on or beside the outer load root until final evacuation.",
+          "The salt cup sits on the center shelf within a short threadwing flight of the aperture."
+        ]
+      },
+      {
+        "visual_scene_id": "audience_preparation_choice",
+        "ink_anchor": "preparation_choice",
+        "base_image_prompt": "Overhead three-quarter work view of the archive tender anchored between a deep-wall root shelf and the outer ledge in a wedge-shaped root gallery. Four material choices form a readable circle around her precise lower hands: an amber sugar-and-mineral bowl above four shallow root cups; a carved plate token beside a shed silver threadwing vane and mineral-salt cup; a loose ochre wrist scale above a small witness cup; and a damp black fungal strand inside three amber road beads. The closed translucent archive membrane waits at right. Blue lantern light from the eclipse ledge crosses warm amber fungal light in the center.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "anchored over the work shelf with lower hands poised among four offerings",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "threadwing_witness",
+            "default_stance": "watching from the salt cup",
+            "visual_ref": "visual_character_refs.characters.threadwing_witness"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "three tasting beads around the strand",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          },
+          {
+            "agent_id": "shale_root_matriarch",
+            "default_stance": "closed shallow aperture at the deep wall",
+            "visual_ref": "visual_character_refs.characters.shale_root_matriarch"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "prepared_recall_audience",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide ritual-work frame inside a wedge-shaped root-and-shale archive gallery during eclipse ingress. The ochre six-limbed archive tender anchors before a translucent oval root aperture at the deep right wall, with a charcoal-green route witness gripping the outer load root at left. Carved plate tokens line the aperture rim. A silver-vane threadwing watches from a central salt cup. Amber fungal beads breathe beside a damp strand along the floor lane. Four root cups surround the membrane; cold blue lantern knots over the outer ledge cast long shadows toward the deep wall. Every body and object forms one circular living evidence chain around the transmitting aperture.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "anchored before the aperture, lower hands arranging tokens",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "route_witness",
+            "default_stance": "gripping the outer load root and facing the aperture",
+            "visual_ref": "visual_character_refs.characters.route_witness"
+          },
+          {
+            "agent_id": "threadwing_witness",
+            "default_stance": "perched at center with vanes directed toward the archive",
+            "visual_ref": "visual_character_refs.characters.threadwing_witness"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "amber witness beads beside the strand",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          },
+          {
+            "agent_id": "shale_root_matriarch",
+            "default_stance": "shallow aperture beginning to open around the tokens",
+            "visual_ref": "visual_character_refs.characters.shale_root_matriarch"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "archive_energy >= 4",
+            "modifier_prompt": "The four root cups glow amber through contracting pores, and the translucent oval membrane swells warm and broad."
+          },
+          {
+            "trigger": "route_light <= 2",
+            "modifier_prompt": "Several cold blue lantern knots over the outer ledge are visibly dark, leaving gaps in the departure lane."
+          },
+          {
+            "trigger": "witness_integrity >= 3",
+            "modifier_prompt": "Silver vane, carved token, Airawa trace cup, and fungal strand form a clear aligned chain around the aperture."
+          },
+          {
+            "trigger": "tender_boundary <= 2",
+            "modifier_prompt": "Faint light travels from the archive tender's wrist seam toward the witness cup and root membrane."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Branch preparation changes object and light state but keeps all zones, body anatomy, and camera geometry fixed."
+        ]
+      },
+      {
+        "visual_scene_id": "embodied_ancestral_recall",
+        "ink_anchor": "opening_recall",
+        "base_image_prompt": "Numinous close-medium frame in the wedge-shaped root gallery: translucent archive filaments touch carved tokens, a silver vane, a fungal strand, and the ochre Airawa tender's glowing wrist seam. The tender remains physically anchored by taloned feet and one upper claw while her two small lower hands involuntarily form a protective cup in front of an absent infant. In layered painterly echoes around her, a prior Airawa body braces under falling shale with upper claws, covers a small wedge-shaped head with lower hands, and searches for an old root ledge. The route witness grips the outer root and experiences the same iron-rain sensation through bright plate seams. The threadwing's silver vanes ripple; amber fungal beads pulse out of phase; the deep archive wall stays materially present behind the memory layers.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "anchored at the aperture while lower hands repeat an ancestral protective reflex",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "route_witness",
+            "default_stance": "holding the outer root, startled by shared sensation",
+            "visual_ref": "visual_character_refs.characters.route_witness"
+          },
+          {
+            "agent_id": "threadwing_witness",
+            "default_stance": "vanes rippling toward the transmitting membrane",
+            "visual_ref": "visual_character_refs.characters.threadwing_witness"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "amber beads pulsing around the strand",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          },
+          {
+            "agent_id": "shale_root_matriarch",
+            "default_stance": "translucent archive filaments open across the shallow aperture",
+            "visual_ref": "visual_character_refs.characters.shale_root_matriarch"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Memory echoes are painterly overlays around real anchored bodies, not independent ghosts occupying the room.",
+          "The impossible remembered footfall points toward blank air beside the historical ledge echo."
+        ]
+      },
+      {
+        "visual_scene_id": "imperial_cadence_mismatch",
+        "ink_anchor": "contaminated_mismatch",
+        "base_image_prompt": "Pivotal contamination frame in the same wedge-shaped root gallery rendered from a frontal deep-wall camera. The shallow oval archive aperture has clamped into pale folded tissue. A hard sequence of identical white pulses runs from a damp fungal strand toward the ochre archive tender's left taloned foot, repeating with machine-perfect spacing across living brown roots. The tender twists that foot toward empty air while three other limbs remain anchored. Amber fungal beads rise into a bitter red quarantine ring around the strand. The silver-vane threadwing is airborne with vanes flared away from the contaminated lane. On the outer ledge, fresh gray dust falls past darkening blue lantern knots beneath the giant eclipsing planet.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "three-point anchored while the left foot kicks toward empty air",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "route_witness",
+            "default_stance": "ducked at the outer load root beneath falling dust",
+            "visual_ref": "visual_character_refs.characters.route_witness"
+          },
+          {
+            "agent_id": "threadwing_witness",
+            "default_stance": "airborne above center with silver vanes flared away",
+            "visual_ref": "visual_character_refs.characters.threadwing_witness"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "bitter red ring around the suspect strand",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          },
+          {
+            "agent_id": "shale_root_matriarch",
+            "default_stance": "pale clamped shallow aperture at deep wall",
+            "visual_ref": "visual_character_refs.characters.shale_root_matriarch"
+          },
+          {
+            "agent_id": "lantern_grove",
+            "default_stance": "darkening blue knots outside under falling dust",
+            "visual_ref": "visual_character_refs.groups.lantern_grove"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The regular white pulse is the visible contamination marker; native witness channels retain asynchronous amber, blue, silver, and body-seam rhythms."
+        ]
+      },
+      {
+        "visual_scene_id": "contamination_response_choice",
+        "ink_anchor": "contamination_choice",
+        "base_image_prompt": "Medium overhead response frame in a wedge-shaped living archive chamber under deep eclipse blue. The ochre six-limbed archive tender is anchored between four physical response surfaces: the pale shallow membrane at the deep right wall within reach of both precise lower hands; the silver-vane threadwing circling above the central salt perch; the damp fungal strand enclosed by a bitter red ring along the floor lane; and a carved contract token resting at the aperture rim. A charcoal-green Airawa route witness holds the outer load root at left while dust falls beyond. Dark blue lantern knots and amber fungal beads make the available routes and costs visible.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "anchored at center, lower hands between membrane, strand, and contract token",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "route_witness",
+            "default_stance": "holding the outer load root and watching the crack",
+            "visual_ref": "visual_character_refs.characters.route_witness"
+          },
+          {
+            "agent_id": "threadwing_witness",
+            "default_stance": "circling above the central salt perch",
+            "visual_ref": "visual_character_refs.characters.threadwing_witness"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "bitter ring controlling the floor lane",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          },
+          {
+            "agent_id": "shale_root_matriarch",
+            "default_stance": "clamped shallow membrane at the deep wall",
+            "visual_ref": "visual_character_refs.characters.shale_root_matriarch"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "recall_priority_threshold",
+        "ink_anchor": "pressure_fold|final_choice",
+        "base_image_prompt": "Wide threshold view across a wedge-shaped root-and-shale gallery at near-total eclipse. At deep right, the Matriarch Tree's shallow oval aperture is pale and partly sealed, ringed by four root cups and carved plate tokens. At center, the ochre archive tender anchors with upper claws and taloned feet while her small lower hands hover between the aperture and a quarantine ring. The charcoal-green route witness stands at the outer load root on the left. A silver-vane threadwing circles above a central salt cup. Amber fungal beads define a lane from the suspect strand to the ledge. Outside, gray dust falls from an uphill crack and cold blue lantern knots trace a sparse lower path beneath the huge black disk of Umbros.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "anchored at center, deciding among archive, warning, tree route, and bodily carriage",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "route_witness",
+            "default_stance": "at the outer load root ready to carry a decision",
+            "visual_ref": "visual_character_refs.characters.route_witness"
+          },
+          {
+            "agent_id": "threadwing_witness",
+            "default_stance": "circling over the salt perch and exit lane",
+            "visual_ref": "visual_character_refs.characters.threadwing_witness"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "amber and bitter beads controlling the fungal lane",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          },
+          {
+            "agent_id": "shale_root_matriarch",
+            "default_stance": "partly sealed aperture and directional load roots",
+            "visual_ref": "visual_character_refs.characters.shale_root_matriarch"
+          },
+          {
+            "agent_id": "lantern_grove",
+            "default_stance": "sparse blue path lights outside",
+            "visual_ref": "visual_character_refs.groups.lantern_grove"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "contamination_risk <= 1",
+            "modifier_prompt": "The bitter red quarantine ring forms a crisp closed boundary around the fungal strand, and the identical white cadence stops at its edge."
+          },
+          {
+            "trigger": "contamination_risk >= 3",
+            "modifier_prompt": "Identical white pulses repeat from the strand through the aperture rim and into the archive tender's leg seams."
+          },
+          {
+            "trigger": "warning_clarity >= 3",
+            "modifier_prompt": "Three uneven amber root pulses travel from the deep wall toward the lower bridge direction, making the third-groan warning visually legible."
+          },
+          {
+            "trigger": "tree_consent >= 4",
+            "modifier_prompt": "Several shallow brown roots remain softly open around the archive tender's anchored limbs, forming a continued invitation."
+          },
+          {
+            "trigger": "legal_standing >= 3",
+            "modifier_prompt": "The fungal road raises an orderly amber custody line from the quarantine ring toward the outer ledge."
+          },
+          {
+            "trigger": "route_light <= 1",
+            "modifier_prompt": "Only one cold blue lantern knot remains lit along the lower path outside, leaving the rest of the route in eclipse darkness."
+          }
+        ],
+        "visual_continuity_notes": [
+          "All final options begin from this shared physical state. Ending modifiers own later aperture, route, body, and witness deltas."
+        ]
+      },
+      {
+        "visual_scene_id": "full_recall_aftermath",
+        "ink_anchor": "ending_full_recall_success|ending_full_recall_cost",
+        "base_image_prompt": "Aftermath inside a wedge-shaped root archive gallery: the deep right wall holds an expanded translucent shallow aperture surrounded by emptied root cups; carved tokens, silver vane, Airawa trace cup, and fungal strand form the recall evidence chain; the ochre archive tender remains anchored before it; the charcoal-green route witness turns toward the outer ledge; a silver-vane threadwing hovers above the center; amber fungal beads and cold blue lantern knots lead toward the eclipse-dark exit. Layered memory imagery of a historical shale collapse crosses the living roots while the actual uphill crack sheds fresh dust outside.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "anchored before the opened or torn-shut aperture",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "route_witness",
+            "default_stance": "turning toward the exit with the recalled route sequence",
+            "visual_ref": "visual_character_refs.characters.route_witness"
+          },
+          {
+            "agent_id": "threadwing_witness",
+            "default_stance": "hovering above the corroboration chain",
+            "visual_ref": "visual_character_refs.characters.threadwing_witness"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "beads along the route from evidence to exit",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          },
+          {
+            "agent_id": "shale_root_matriarch",
+            "default_stance": "shallow archive tissue dominating the deep wall",
+            "visual_ref": "visual_character_refs.characters.shale_root_matriarch"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "bounded_warning_aftermath",
+        "ink_anchor": "ending_bounded_warning_success|ending_bounded_warning_cost",
+        "base_image_prompt": "Wide view from the sealed deep wall through Shale-Root Gallery toward the outer ledge during total eclipse. The oval archive membrane is closed and covered by carved contract tokens. The ochre archive tender stamps three uneven pulses into a thick load root with one clawed upper hand while both small lower hands hold the remaining tokens shut. The charcoal-green route witness is moving onto the ledge. Amber fungal beads and cold blue lantern knots form several possible warning lines outside; the silver-vane threadwing banks above them. Gray dust falls from the uphill crack toward the lower root bridge.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "closing tokens with lower hands and stamping a three-pulse warning with an upper claw",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "route_witness",
+            "default_stance": "moving onto the outer ledge to carry the warning",
+            "visual_ref": "visual_character_refs.characters.route_witness"
+          },
+          {
+            "agent_id": "threadwing_witness",
+            "default_stance": "banking above the route lights",
+            "visual_ref": "visual_character_refs.characters.threadwing_witness"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "amber warning or refusal beads along the floor and exit",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          },
+          {
+            "agent_id": "lantern_grove",
+            "default_stance": "blue route lights beyond the ledge",
+            "visual_ref": "visual_character_refs.groups.lantern_grove"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tree_authority_aftermath",
+        "ink_anchor": "ending_tree_authority_success|ending_tree_authority_cost",
+        "base_image_prompt": "Tree-led aftermath in a wedge-shaped root-and-shale gallery under a huge eclipsing planet. The work shelf at deep right is cleared of Airawa contract tokens. Thick living roots cross the floor from the sealed oval aperture toward two exits on the outer ledge, and cold blue lantern knots wait above both paths. The ochre archive tender stands back with upper claws lowered and small lower hands empty. The charcoal-green route witness waits at the ledge for a physical route signal. Amber fungal beads hold along the chamber edge; a silver-vane threadwing perches above them.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "standing back from the aperture with empty lower hands",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "route_witness",
+            "default_stance": "waiting at the ledge for the tree's route",
+            "visual_ref": "visual_character_refs.characters.route_witness"
+          },
+          {
+            "agent_id": "threadwing_witness",
+            "default_stance": "perched above the gallery edge",
+            "visual_ref": "visual_character_refs.characters.threadwing_witness"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "amber beads held along the chamber edge",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          },
+          {
+            "agent_id": "shale_root_matriarch",
+            "default_stance": "sealed aperture and thick directional roots owning the frame",
+            "visual_ref": "visual_character_refs.characters.shale_root_matriarch"
+          },
+          {
+            "agent_id": "lantern_grove",
+            "default_stance": "blue route lights over the ledge exits",
+            "visual_ref": "visual_character_refs.groups.lantern_grove"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "living_carrier_aftermath",
+        "ink_anchor": "ending_living_carrier_success|ending_living_carrier_cost",
+        "base_image_prompt": "Embodied-memory aftermath at the outer ledge of Shale-Root Gallery. The ochre six-limbed archive tender releases dark load roots one limb at a time, with bioluminescent plate seams carrying uneven amber route pulses down the left leg. The charcoal-green route witness stands close enough to catch her with both large upper arms. Behind them, the wedge-shaped chamber shows a sealed pale archive aperture, carved tokens on the work shelf, a bitter fungal ring around the suspect strand, and a silver-vane threadwing above the salt perch. Ahead, sparse cold blue lantern knots mark an eclipse-dark hillside and a cracked lower root bridge under falling gray dust.",
+        "visible_characters": [
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "releasing the load root while bodily route pulses travel through leg seams",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "route_witness",
+            "default_stance": "close behind, ready to support or restrain the tender",
+            "visual_ref": "visual_character_refs.characters.route_witness"
+          },
+          {
+            "agent_id": "threadwing_witness",
+            "default_stance": "above the salt perch watching the body's signal",
+            "visual_ref": "visual_character_refs.characters.threadwing_witness"
+          },
+          {
+            "agent_id": "candle_road_delegate",
+            "default_stance": "bitter ring around the suspect strand near the exit",
+            "visual_ref": "visual_character_refs.groups.candle_road_delegate"
+          },
+          {
+            "agent_id": "shale_root_matriarch",
+            "default_stance": "sealed aperture behind the departing tender",
+            "visual_ref": "visual_character_refs.characters.shale_root_matriarch"
+          },
+          {
+            "agent_id": "lantern_grove",
+            "default_stance": "sparse blue route knots outside",
+            "visual_ref": "visual_character_refs.groups.lantern_grove"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prepare_archive_energy_visual",
+        "trigger": "branch_label == prepare_archive_energy",
+        "apply_to_visual_scene_ids": [
+          "prepared_recall_audience",
+          "recall_priority_threshold"
+        ],
+        "modifier_prompt": "Amber sugar-and-mineral mash fills the four root cups; the shallow aperture looks broader and warmer; one rank of blue lantern knots outside is dark."
+      },
+      {
+        "modifier_id": "prepare_courier_witness_visual",
+        "trigger": "branch_label == prepare_courier_witness",
+        "apply_to_visual_scene_ids": [
+          "prepared_recall_audience",
+          "recall_priority_threshold"
+        ],
+        "modifier_prompt": "A silver shed vane is knotted through a carved plate token; the threadwing perches beside it over scattered salt crystals; one blue departure light is allocated outside."
+      },
+      {
+        "modifier_id": "prepare_personal_trace_visual",
+        "trigger": "branch_label == prepare_personal_trace",
+        "apply_to_visual_scene_ids": [
+          "prepared_recall_audience",
+          "recall_priority_threshold"
+        ],
+        "modifier_prompt": "A small ochre scale rests in the witness cup, and faint light connects the archive tender's exposed wrist seam to the shallow membrane."
+      },
+      {
+        "modifier_id": "prepare_fungal_crosscheck_visual",
+        "trigger": "branch_label == prepare_fungal_crosscheck",
+        "apply_to_visual_scene_ids": [
+          "prepared_recall_audience",
+          "recall_priority_threshold"
+        ],
+        "modifier_prompt": "Three fungal beads close around the damp strand; one bead shows a bitter red core; a gap appears in the blue route-light chain outside."
+      },
+      {
+        "modifier_id": "deepen_embodied_recall_visual",
+        "trigger": "branch_label == deepen_embodied_recall",
+        "apply_to_visual_scene_ids": [
+          "contamination_response_choice",
+          "recall_priority_threshold",
+          "living_carrier_aftermath"
+        ],
+        "modifier_prompt": "Both of the archive tender's small lower hands press the pale membrane; identical white pulses and uneven amber pulses compete through her glowing wrist and leg seams."
+      },
+      {
+        "modifier_id": "call_courier_comparison_visual",
+        "trigger": "branch_label == call_courier_comparison",
+        "apply_to_visual_scene_ids": [
+          "contamination_response_choice",
+          "recall_priority_threshold"
+        ],
+        "modifier_prompt": "The silver-vane threadwing makes a tight circuit over the aperture and strikes the suspect fungal strand with a targeted dark dropping before landing at a distance."
+      },
+      {
+        "modifier_id": "quarantine_fungal_witness_visual",
+        "trigger": "branch_label == quarantine_fungal_witness",
+        "apply_to_visual_scene_ids": [
+          "contamination_response_choice",
+          "recall_priority_threshold"
+        ],
+        "modifier_prompt": "The archive tender holds the damp strand with both small lower hands inside a crisp bitter red fungal custody ring separated from the pale aperture."
+      },
+      {
+        "modifier_id": "defer_to_tree_boundary_visual",
+        "trigger": "branch_label == defer_to_tree_boundary",
+        "apply_to_visual_scene_ids": [
+          "contamination_response_choice",
+          "recall_priority_threshold",
+          "tree_authority_aftermath"
+        ],
+        "modifier_prompt": "The archive tender withdraws her carved token and lowers both upper arms; the pale aperture seals while a shallow root presses directionally against her ankle toward the uphill exit."
+      },
+      {
+        "modifier_id": "full_recall_success_visual",
+        "trigger": "ending_label == full_recall_success",
+        "apply_to_visual_scene_ids": [
+          "full_recall_aftermath"
+        ],
+        "modifier_prompt": "The opened membrane carries irregular interwoven amber, silver, blue, and body-seam rhythms; the complete historical collapse shows the lower bridge failing on the third uneven pulse; the route witness leaves uphill with clear bodily route posture."
+      },
+      {
+        "modifier_id": "full_recall_cost_visual",
+        "trigger": "ending_label == full_recall_cost",
+        "apply_to_visual_scene_ids": [
+          "full_recall_aftermath"
+        ],
+        "modifier_prompt": "The shallow membrane is torn and clamped shut; identical white cadence lines contaminate both upper and lower route imagery; every root cup is empty and the route witness signals evacuation toward both exits."
+      },
+      {
+        "modifier_id": "bounded_warning_success_visual",
+        "trigger": "ending_label == bounded_warning_success",
+        "apply_to_visual_scene_ids": [
+          "bounded_warning_aftermath"
+        ],
+        "modifier_prompt": "Three uneven amber pulses repeat coherently through the load root, fungal beads, the route witness's claw count, and one banking threadwing; bodies beyond the ledge move uphill before stone falls."
+      },
+      {
+        "modifier_id": "bounded_warning_cost_visual",
+        "trigger": "ending_label == bounded_warning_cost",
+        "apply_to_visual_scene_ids": [
+          "bounded_warning_aftermath"
+        ],
+        "modifier_prompt": "The fungal road beads remain closed, blue lantern knots light both exits, threadwing vanes point in conflicting directions, and the route witness carries an Airawa-only warning into divided traffic."
+      },
+      {
+        "modifier_id": "tree_authority_success_visual",
+        "trigger": "ending_label == tree_authority_success",
+        "apply_to_visual_scene_ids": [
+          "tree_authority_aftermath"
+        ],
+        "modifier_prompt": "A thick shallow root rises to block the lower exit while blue lantern knots illuminate only the uphill path; the route witness and threadwing move along that tree-selected lane."
+      },
+      {
+        "modifier_id": "tree_authority_cost_visual",
+        "trigger": "ending_label == tree_authority_cost",
+        "apply_to_visual_scene_ids": [
+          "tree_authority_aftermath"
+        ],
+        "modifier_prompt": "The archive wall seals into smooth pale tissue, every directional root withdraws, both blue-lit exits remain ambiguous, and falling dust reaches the outer load root where the two Airawa wait."
+      },
+      {
+        "modifier_id": "living_carrier_success_visual",
+        "trigger": "ending_label == living_carrier_success",
+        "apply_to_visual_scene_ids": [
+          "living_carrier_aftermath"
+        ],
+        "modifier_prompt": "Uneven amber pulses travel cleanly through the archive tender's leg seams toward the safe uphill step; the route witness mirrors the movement at one-body distance while the bitter ring remains closed behind them."
+      },
+      {
+        "modifier_id": "living_carrier_cost_visual",
+        "trigger": "ending_label == living_carrier_cost",
+        "apply_to_visual_scene_ids": [
+          "living_carrier_aftermath"
+        ],
+        "modifier_prompt": "The archive tender's left foot reaches toward open air while identical white and uneven amber pulses conflict across her leg seams; the route witness catches her with both large upper arms as amber-red fungal beads form a quarantine ring around both bodies."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "shale_root_recall_gallery.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "A single wedge-shaped chamber grown between a deep Matriarch root wall on the right and an open shale ledge on the left. The floor slopes gently outward. The aperture wall, work shelf, central salt perch, fungal lane, load-root brace, and ledge sightline remain fixed across every frame.",
+      "fixed_zones": [
+        {
+          "zone_id": "deep_archive_wall",
+          "visible_form": "dark living root wall with a translucent oval shallow aperture, four root cups, and branching load roots",
+          "used_for": "archive opening, closure, consent, contamination clamp, and final tree authority"
+        },
+        {
+          "zone_id": "root_work_shelf",
+          "visible_form": "chest-height grown-wood shelves beside the aperture holding mineral bowl, contract tokens, witness cup, vane, strand, and salt",
+          "used_for": "precise lower-hand preparation and object custody"
+        },
+        {
+          "zone_id": "central_salt_perch",
+          "visible_form": "low forked root beside a shallow mineral-salt cup within a short flight of the aperture",
+          "used_for": "threadwing staging and comparison circuit"
+        },
+        {
+          "zone_id": "fungal_floor_lane",
+          "visible_form": "amber fungal bead route entering from the ledge along the lower floor and ending beside the witness strand",
+          "used_for": "route testimony, contamination taste, and quarantine custody"
+        },
+        {
+          "zone_id": "outer_load_root",
+          "visible_form": "thick horizontal root crossing the chamber mouth above the outer ledge",
+          "used_for": "route-witness anchoring, tender support, warning transmission, and safe departure"
+        },
+        {
+          "zone_id": "outer_shale_ledge",
+          "visible_form": "dark stone shelf open to the eclipse sky with uphill and lower-path exits",
+          "used_for": "arrival, fracture sightline, evacuation, and living-carrier threshold"
+        },
+        {
+          "zone_id": "lantern_route",
+          "visible_form": "cold blue bioluminescent knots beneath small outer branches tracing the lower and uphill paths",
+          "used_for": "route-light resource display and tree-led route selection"
+        },
+        {
+          "zone_id": "uphill_fracture_sightline",
+          "visible_form": "visible cracked shale face above the lower root bridge shedding gray dust onto the ledge",
+          "used_for": "present landslide pressure and final route consequence"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_ledge_to_archive",
+          "supports_visual_scene_ids": [
+            "shale_root_gallery_establishing",
+            "prepared_recall_audience",
+            "recall_priority_threshold"
+          ]
+        },
+        {
+          "camera_id": "medium_archive_work",
+          "supports_visual_scene_ids": [
+            "archive_tender_at_work",
+            "audience_preparation_choice"
+          ]
+        },
+        {
+          "camera_id": "deep_wall_to_ledge",
+          "supports_visual_scene_ids": [
+            "route_and_ecological_witnesses",
+            "bounded_warning_aftermath"
+          ]
+        },
+        {
+          "camera_id": "memory_close",
+          "supports_visual_scene_ids": [
+            "embodied_ancestral_recall",
+            "full_recall_aftermath"
+          ]
+        },
+        {
+          "camera_id": "frontal_contamination",
+          "supports_visual_scene_ids": [
+            "imperial_cadence_mismatch",
+            "contamination_response_choice"
+          ]
+        },
+        {
+          "camera_id": "cleared_work_shelf",
+          "supports_visual_scene_ids": [
+            "tree_authority_aftermath"
+          ]
+        },
+        {
+          "camera_id": "outer_ledge_departure",
+          "supports_visual_scene_ids": [
+            "living_carrier_aftermath"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "aperture_to_witness_chain",
+          "path": "deep_archive_wall -> root_work_shelf -> central_salt_perch -> fungal_floor_lane",
+          "supports": [
+            "prepare_archive_energy",
+            "prepare_courier_witness",
+            "prepare_personal_trace",
+            "prepare_fungal_crosscheck"
+          ]
+        },
+        {
+          "lane_id": "threadwing_comparison_circuit",
+          "path": "central_salt_perch -> shallow aperture -> fungal strand -> central_salt_perch",
+          "supports": [
+            "call_courier_comparison"
+          ]
+        },
+        {
+          "lane_id": "fracture_warning_line",
+          "path": "deep_archive_wall -> outer_load_root -> outer_shale_ledge -> uphill fracture -> lower root bridge",
+          "supports": [
+            "prioritize_bounded_warning",
+            "prioritize_tree_authority",
+            "prioritize_living_carrier"
+          ]
+        }
+      ],
+      "aperture_states": [
+        {
+          "value": 1,
+          "label": "sealed",
+          "visible_form": "flat translucent oval membrane with tight pale veins"
+        },
+        {
+          "value": 2,
+          "label": "shallow_open",
+          "visible_form": "warm expanded membrane with visible filaments reaching only the rim objects and petitioners"
+        },
+        {
+          "value": 3,
+          "label": "quarantine_clamped",
+          "visible_form": "pale folded membrane with hard closed veins and a separated bitter fungal ring"
+        }
+      ],
+      "route_light_states": [
+        {
+          "value": 3,
+          "label": "serviceable",
+          "visible_form": "continuous cold blue knot chain across lower and uphill paths"
+        },
+        {
+          "value": 2,
+          "label": "sparse",
+          "visible_form": "one dark gap in the cold blue knot chain"
+        },
+        {
+          "value": 1,
+          "label": "critical",
+          "visible_form": "a single cold blue knot marking one usable direction"
+        },
+        {
+          "value": 0,
+          "label": "dark",
+          "visible_form": "all route knots dark under eclipse"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable character and ecological-body visual identities for prompt assembly. Include only refs for agents or groups visible in a scene.",
+    "characters": {
+      "archive_tender": "Archive tender: adult Airawa with a long digitigrade six-limbed body, tiny soft ochre scales, wedge-shaped head, minimal slitlike nose and ear openings, grown brown plate sections with faint amber bioluminescent seams, two large clawed upper arms for load and anchoring, two smaller lower arms with four blunt digits arranged as two opposing pairs for precise work, and grasping feet with four opposing toes and hooked climbing talons. Wears a braided root-fiber waist harness carrying carved plate tokens and shallow mineral cups. Continuity anchors: ochre scales, brown plates, amber seams, root-fiber harness, precise lower-hand work posture.",
+      "route_witness": "Route witness: adult Airawa with a long digitigrade six-limbed body, tiny charcoal-green scales, wedge-shaped head, grown dark plates with cool gray-green bioluminescent seams, two large clawed upper arms, two small four-digit lower hands, and grasping taloned feet. Fresh gray shale dust sits in plate seams; a narrow blue contract binding crosses the chest. Continuity anchors: charcoal-green body, dusty dark plates, blue binding, fatigued folded posture.",
+      "threadwing_witness": "Threadwing witness: small flying alien courier with a narrow dark body, tapered head, two gripping feet, and many long silver ribbonlike sensory vanes that read air pressure, chemicals, static charge, heat, and memory residue. Its motion is quick circling, refusal to land, vane flaring, targeted dropping, and precise perching. Continuity anchors: silver sensory ribbons, narrow dark body, salt-cup perch.",
+      "shale_root_matriarch": "Shale-Root Matriarch visible body: immense dark-brown living roots fused through black shale; a shallow oval archive aperture made of translucent veined tissue; four contracting root cups; thick load roots with old landslide scars; slow signals expressed through tissue color, root pressure, aperture width, and filament reach. Continuity anchors: deep wall at gallery right, four root cups, scarred load roots, translucent oval aperture."
+    },
+    "groups": {
+      "candle_road_delegate": "Candle-road delegate: a lane of braided underground fungus visible as thumb-sized amber fruiting beads, damp mineral threads, and a movable dark witness strand. It communicates by bead spacing, amber brightness, bitter red quarantine rings, and narrow opening or closing paths. Continuity anchors: floor lane from outer ledge to center shelf, amber service light, red quarantine state.",
+      "lantern_grove": "Lantern-grove route organ: small dark-barked branches outside the gallery carrying fist-sized cold blue bioluminescent knots beneath their canopy. The knots trace ledge paths and change through lit gaps, color pulses, or total darkness. Continuity anchors: overhead outer-ledge position, cold blue knots, huge fixed Umbros behind them."
+    }
+  },
+  "review_notes": [
+    "All four required self-reviews accepted the repaired fixture; detailed verdicts and scores are recorded in the training sidecar audit.",
+    "The embedded scene-set map is sufficient for draft staging and prompt-manifest preparation; high-consistency multi-angle art still requires a hand-built plan view or 3D blockout.",
+    "Every base prompt restates visible geometry and body anatomy; character refs are limited to agents listed as visible in that frame."
+  ]
+}

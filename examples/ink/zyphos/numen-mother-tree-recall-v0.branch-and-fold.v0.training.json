@@ -1,0 +1,395 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "numen-mother-tree-recall-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/zyphos/numen-mother-tree-recall-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/numen-mother-tree-recall-v0.v0.json",
+  "scene_id": "numen-mother-tree-recall-v0.shale-root-recall-audience",
+  "protagonist_agent_id": "archive_tender",
+  "npc_agent_ids": [
+    "route_witness",
+    "shale_root_matriarch",
+    "threadwing_witness",
+    "candle_road_delegate",
+    "lantern_grove"
+  ],
+  "purpose": "A Numen-lane branch-and-fold fixture dramatizing a Matriarch Tree recall audience as wondrous, embodied, costly ecological infrastructure in a disconnected Airawa network.",
+  "local_awareness_summary": [
+    {
+      "text": "The archive tender is an unnamed six-limbed Airawa worker with load-bearing clawed upper arms, precise blunt lower hands, grasping taloned feet, memory-bearing cellular symbionts, and practical knowledge of Shale-Root's shallow archive procedure.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/numen-mother-tree-recall-v0.v0.json",
+        "Eusocial Interbeing/Species/Airawa.md",
+        "Eusocial Interbeing/Species/Matriarch Trees.md"
+      ]
+    },
+    {
+      "text": "The scene begins during routine preparation for an eclipse-ingress recall audience, before a contaminated cadence appears and the present hillside starts to fail.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/numen-mother-tree-recall-v0.v0.json",
+        "Eusocial Interbeing/World/Zyphos Umbros Binary System.md"
+      ]
+    },
+    {
+      "text": "The tender can stage offerings, negotiate with ecological witnesses, touch or close shallow archive tissue, spend route resources, and carry a bounded embodied echo; she cannot command deep tree memory or identify the contaminant without evidence.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/numen-mother-tree-recall-v0.v0.json",
+        "Eusocial Interbeing/Species/Matriarch Trees.md",
+        "Eusocial Interbeing/Ecology/Nation Scale Interbeings.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains the archive tender's embodied position inside one shallow root gallery. Choices use Airawa anchoring, lower-hand craft, contract objects, witness negotiation, bodily memory, and consent signals.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Eusocial Interbeing/Species/Airawa.md"
+        ]
+      },
+      {
+        "text": "Tonal mode is ritual quiet with dry workplace wit, sensory wonder, and bounded ecological dread. Routine work and colleague familiarity arrive before contamination pressure.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "examples/ink/zyphos/numen-mother-tree-recall-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The Matriarch Tree owns archive permeability and selective emphasis. The tender owns preparation, petition, embodied participation, and the decision to accept, limit, defer, or personally carry an output.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Ecology/Nation Scale Interbeings.md"
+        ]
+      },
+      {
+        "text": "Fungal, courier, Airawa, and tree traces corroborate different channels. No single witness supplies an objective view, and the Biological Memetic Engine pressure remains an unresolved contaminant rather than a speaking omniscient antagonist.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Technologies/Biological Memetic Engine.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The mineral bowl, root cups, contract tokens, shed Airawa scale, threadwing vane, fungal witness strand, salt cup, shallow aperture, and quarantine ring have visible custody and affect branch state.",
+        "source_refs": [
+          "examples/ink/zyphos/numen-mother-tree-recall-v0.branch-and-fold.v0.ink",
+          "Eusocial Interbeing/Species/Matriarch Trees.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The recall must remain a multispecies biological reconstruction that can be wondrous, biased, refused, exhausted, or infected.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+        ]
+      },
+      {
+        "text": "Every route must preserve the tradeoff among immediate warning, legal standing, archive safety, route light, bodily boundary, and Matriarch Tree consent.",
+        "source_refs": [
+          "examples/lore-grounding/zyphos/numen-mother-tree-recall-v0.v0.json",
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not turn the Matriarch Tree into an infallible deity, passive database, human elder in bark, or universal planetary mind.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+        ]
+      },
+      {
+        "text": "Do not canonize the contaminant's origin, make one branch the canonical outcome, or let urgency authorize unbounded deep archive access.",
+        "source_refs": [
+          "examples/lore-grounding/zyphos/numen-mother-tree-recall-v0.v0.json"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through routine preparation and a contaminated recall mismatch, then select one of eight state-gated endings.",
+    "choice_layers": [
+      "audience_preparation",
+      "archive_contamination_response",
+      "recall_priority"
+    ],
+    "variables": [
+      "archive_energy",
+      "route_light",
+      "witness_integrity",
+      "contamination_risk",
+      "tree_consent",
+      "tender_boundary",
+      "warning_clarity",
+      "legal_standing"
+    ],
+    "ending_gates": [
+      "ending_full_recall_success",
+      "ending_full_recall_cost",
+      "ending_bounded_warning_success",
+      "ending_bounded_warning_cost",
+      "ending_tree_authority_success",
+      "ending_tree_authority_cost",
+      "ending_living_carrier_success",
+      "ending_living_carrier_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_archive_energy",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Feed the root cups enough stored sugar and minerals to widen shallow archive access.",
+      "state_basis": [
+        "Recall consumes stored energy.",
+        "Lantern-route sugar is a civic resource during eclipse."
+      ],
+      "reviewed_consequences": [
+        "Raises archive_energy and tree_consent while lowering route_light; later prose shows dimmed travel infrastructure, and full recall reads both resources."
+      ],
+      "training_hooks": [
+        "numinous_metabolic_cost",
+        "archive_access_as_bargain",
+        "route_light_tradeoff"
+      ]
+    },
+    {
+      "branch_id": "prepare_courier_witness",
+      "ink_path": "preparation_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Use a paid threadwing vane trace to strengthen route provenance.",
+      "state_basis": [
+        "Threadwing vanes carry memory residues and route reputation.",
+        "Couriers are paid in salt and reliable route light."
+      ],
+      "reviewed_consequences": [
+        "Raises witness_integrity while lowering route_light; later folds and the full-recall gate read both."
+      ],
+      "training_hooks": [
+        "courier_as_witness",
+        "paid_nonhuman_labor",
+        "evidence_has_transport_cost"
+      ]
+    },
+    {
+      "branch_id": "prepare_personal_trace",
+      "ink_path": "preparation_choice",
+      "action_type": "offer_body_trace",
+      "actor_intent": "Add a living Airawa comparison trace at the cost of a thinner personal memory boundary.",
+      "state_basis": [
+        "Airawa cells carry mutable memory symbionts.",
+        "A recall audience can propagate compatible fragments through petitioners."
+      ],
+      "reviewed_consequences": [
+        "Raises witness_integrity and tree_consent while lowering tender_boundary; the living-carrier ending reads the bodily cost."
+      ],
+      "training_hooks": [
+        "body_as_archive_interface",
+        "consent_and_exposure",
+        "embodied_non_speech_action"
+      ]
+    },
+    {
+      "branch_id": "prepare_fungal_crosscheck",
+      "ink_path": "preparation_choice",
+      "action_type": "inspect_object",
+      "actor_intent": "Ask the candle road to taste the fungal witness before it reaches archive tissue.",
+      "state_basis": [
+        "Candle roads remember sickness and maintain quarantine pockets.",
+        "Their visible beads can signal contamination."
+      ],
+      "reviewed_consequences": [
+        "Lowers contamination_risk while raising witness_integrity and warning_clarity and lowering route_light; later folds and multiple endings read these changes."
+      ],
+      "training_hooks": [
+        "road_as_diagnostic_party",
+        "quarantine_before_access",
+        "light_cost_for_verification"
+      ]
+    },
+    {
+      "branch_id": "deepen_embodied_recall",
+      "ink_path": "contamination_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Use the tender's own symbionts to separate the useful disaster reflex from the authored cadence.",
+      "state_basis": [
+        "Recall is embodied through compatible memory symbionts.",
+        "The tender can touch shallow archive tissue but does not control deep organs."
+      ],
+      "reviewed_consequences": [
+        "Raises warning_clarity and tree_consent while sharply lowering tender_boundary and raising contamination_risk; the folded prose and living-carrier gate expose both benefit and danger."
+      ],
+      "training_hooks": [
+        "embodied_recall",
+        "personal_boundary_spend",
+        "truth_and_infection_cohabiting"
+      ]
+    },
+    {
+      "branch_id": "call_courier_comparison",
+      "ink_path": "contamination_choice",
+      "action_type": "speak",
+      "actor_intent": "Invite the threadwing to compare the suspect trace through a living circuit it may refuse.",
+      "state_basis": [
+        "Threadwings read chemical, static, pressure, and memory residues.",
+        "They retain agency over message and route."
+      ],
+      "reviewed_consequences": [
+        "Raises witness_integrity and warning_clarity while lowering route_light; a visible threadwing accusation and the full-recall gate use the result."
+      ],
+      "training_hooks": [
+        "nonhuman_witness_consent",
+        "courier_grievance_action",
+        "route_payment_spend"
+      ]
+    },
+    {
+      "branch_id": "quarantine_fungal_witness",
+      "ink_path": "contamination_choice",
+      "action_type": "move_object",
+      "actor_intent": "Give the candle road custody of the suspect strand and continue with cleaner but thinner evidence.",
+      "state_basis": [
+        "Candle roads can raise quarantine rings and remember custody.",
+        "A missing witness reduces completeness while a legible refusal can preserve standing."
+      ],
+      "reviewed_consequences": [
+        "Lowers contamination_risk and witness_integrity while raising warning_clarity, legal_standing, and tree_consent; bounded-warning and tree-authority routes read the change."
+      ],
+      "training_hooks": [
+        "quarantine_as_political_custody",
+        "uncertainty_preserved",
+        "cleaner_thinner_evidence"
+      ]
+    },
+    {
+      "branch_id": "defer_to_tree_boundary",
+      "ink_path": "contamination_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Withdraw the Airawa claim and let the Matriarch Tree decide what its archive may expose.",
+      "state_basis": [
+        "The tree owns archive permeability and may refuse access.",
+        "Tree survival and community legal needs can diverge."
+      ],
+      "reviewed_consequences": [
+        "Raises tree_consent and warning_clarity while lowering archive_energy and legal_standing; the tree-authority ending can succeed while producing a less invocable public claim."
+      ],
+      "training_hooks": [
+        "deference_without_infallibility",
+        "boundary_owner",
+        "survival_advice_without_precedent"
+      ]
+    },
+    {
+      "branch_id": "prioritize_full_recall",
+      "ink_path": "final_choice",
+      "action_type": "spend_resource",
+      "actor_intent": "Spend the remaining archive reserve for a complete, corroborated collapse reconstruction.",
+      "state_basis": [
+        "Success requires energy, witness integrity, tolerable contamination, and at least one remaining route-light unit."
+      ],
+      "reviewed_consequences": [
+        "Routes to a legally strong multispecies recall or to an over-opened contaminated archive; route_light changes the success aftermath."
+      ],
+      "training_hooks": [
+        "state_gated_full_recall",
+        "energy_and_witness_threshold",
+        "archive_exposure_cost"
+      ]
+    },
+    {
+      "branch_id": "prioritize_bounded_warning",
+      "ink_path": "final_choice",
+      "action_type": "close_and_warn",
+      "actor_intent": "Close the archive and act only on the smallest warning the witnesses support.",
+      "state_basis": [
+        "Success requires clear warning content, adequate legal standing, and tolerable contamination."
+      ],
+      "reviewed_consequences": [
+        "Routes to a repeated multispecies evacuation warning or to a fragmented warning other ecological parties will not carry."
+      ],
+      "training_hooks": [
+        "bounded_uncertainty",
+        "warning_requires_standing",
+        "archive_safety_priority"
+      ]
+    },
+    {
+      "branch_id": "prioritize_tree_authority",
+      "ink_path": "final_choice",
+      "action_type": "yield_authority",
+      "actor_intent": "Accept the Matriarch Tree as boundary owner and follow its chosen illuminated route.",
+      "state_basis": [
+        "Success requires strong tree consent and tolerable contamination.",
+        "Tree authority does not guarantee Airawa legal standing or altruistic emphasis."
+      ],
+      "reviewed_consequences": [
+        "Routes to a coherent tree-led evacuation with explicit future debt or to a refusal that saves the deep archive while exposing the route."
+      ],
+      "training_hooks": [
+        "tree_as_political_actor",
+        "consent_gated_deference",
+        "wonder_and_leverage"
+      ]
+    },
+    {
+      "branch_id": "prioritize_living_carrier",
+      "ink_path": "final_choice",
+      "action_type": "carry_memory",
+      "actor_intent": "Carry the unsettled route reflex into the world as a living, revisable witness.",
+      "state_basis": [
+        "Success requires enough personal boundary, warning clarity, and contamination control for the tender to remain an accountable carrier."
+      ],
+      "reviewed_consequences": [
+        "Routes to embodied route guidance that remains open to correction or to memory bleed that makes the tender the new quarantined channel."
+      ],
+      "training_hooks": [
+        "person_as_temporary_organ",
+        "embodied_memory_carryover",
+        "memory_bleed_cost"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Promotion of any branch outcome into Zyphos canon",
+      "Durable character memory or relationship updates",
+      "Weksa naming of the ritual, roles, or locality",
+      "Any claim about the contaminant's origin",
+      "High-consistency illustrated replay promotion requiring a durable scene blockout"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Numen elaborator using the four required Ghostlight reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality review: accepted. Scores: reader orientation 4/5, coherence 5/5, pacing 4/5, voice 4/5, tonal fit 5/5, IF playability 5/5. Applied fix: replaced an unexplained assertion about imperial cadence with a local description of engineered obedience rhythm and explicitly preserved uncertainty among residue, probe, bait, or damage.",
+      "Lore grounding review: accepted. Scores: source coverage 5/5, canon fit 5/5, grounding quality 5/5, vault backfill value 5/5. Checked the vault index and nineteen relevant Zyphos notes; the only durable backfill is the authored Recall Audiences section in Matriarch Trees. Shale-Root and every ending remain fixture-local.",
+      "Visual continuity review: accepted for B-level draft replay. Scores: segmentation 4/5, visual prompts 5/5, character visibility 5/5, branch visual continuity 5/5, website replay 4/5. Applied fix: replaced one negative comparison in a base prompt with affirmative circular evidence-chain staging. Thirteen visual anchors, sixteen branch or ending modifiers, stable visible-character refs, and an embedded draft scene map remain; a hand-built blockout is required before high-consistency multi-angle website art.",
+      "Spatial cohesion review: accepted. Scores: layout cohesion 5/5, sightlines 5/5, body affordance 5/5, movement and access 5/5, object-system geometry 5/5, branch spatial state 5/5. The stable frame is deep archive wall to the right, outer ledge to the left, floor fungal lane, central salt perch, overhead lantern route, and visible uphill fracture; all actions use reachable Airawa limbs or declared ecological routes."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true,
+      "narrative_quality_review_accepted": true,
+      "lore_grounding_review_accepted": true,
+      "visual_continuity_review_accepted": true,
+      "spatial_cohesion_review_accepted": true
+    }
+  }
+}

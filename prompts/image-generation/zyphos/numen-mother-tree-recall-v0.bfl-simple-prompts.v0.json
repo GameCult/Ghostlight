@@ -1,0 +1,64 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "numen-mother-tree-recall-v0.bfl-simple-v0",
+  "fixture_id": "numen-mother-tree-recall-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly speculative-ecology storybook frame, restrained gouache and ink texture, precise alien anatomy, tactile living infrastructure, cold eclipse blues against amber fungal light and deep root browns, numinous biological wonder, humane workplace detail, readable cinematic composition for illustrated interactive fiction.",
+  "prompts": [
+    {
+      "id": "01_shale_root_gallery_establishing",
+      "prompt": "Wide view into a wedge-shaped chamber grown between immense dark-brown roots and split black shale: outer ledge beneath a giant eclipsing planet, cold blue lantern knots overhead, amber fungal beads entering along the floor, chest-height witness shelves, four root cups, and a closed translucent oval archive membrane in the deep wall."
+    },
+    {
+      "id": "02_archive_tender_at_work",
+      "prompt": "Medium view of an ochre six-limbed alien archive worker anchored in bark scars: two large clawed upper arms brace a root and mineral bowl, two small blunt four-digit lower hands sort carved tokens, a silver sensory vane, and a fungal strand, and taloned digitigrade feet grip the living floor before a translucent root aperture."
+    },
+    {
+      "id": "03_route_and_ecological_witnesses",
+      "prompt": "A dusty charcoal-green six-limbed route witness waits on an open shale ledge; a narrow dark flying courier with many silver ribbonlike sensory vanes perches on a mineral-salt cup; three amber fungal beads taste a damp strand; an ochre archive tender watches from the deep-wall work shelf under blue eclipse light."
+    },
+    {
+      "id": "04_audience_preparation_choice",
+      "prompt": "Overhead ritual-work view of four material choices around an anchored six-limbed archive tender: amber sugar-and-mineral bowl above four root cups, carved plate token and silver sensory vane beside a salt perch, a loose ochre scale over a witness cup, and a damp fungal strand inside three amber tasting beads."
+    },
+    {
+      "id": "05_prepared_recall_audience",
+      "prompt": "Wide recall audience inside a root-and-shale gallery: ochre six-limbed tender anchored before an opening translucent root membrane, charcoal-green route witness holding the outer load root, silver-ribbon courier at a salt perch, amber fungal beads beside a witness strand, carved tokens around four root cups, and blue lantern knots darkening under eclipse."
+    },
+    {
+      "id": "06_embodied_ancestral_recall",
+      "prompt": "Numinous biological memory passes through an anchored ochre six-limbed worker, translucent root filaments, silver courier vanes, and asynchronous amber fungal beads; painterly echoes show an ancestral alien bracing falling shale with upper claws and shielding a child with two small lower hands while the real archive wall remains visible."
+    },
+    {
+      "id": "07_imperial_cadence_mismatch",
+      "prompt": "Contamination inside the root gallery: identical white pulses run from a damp fungal strand through living roots into an ochre alien worker's taloned left foot, pulling it toward empty air; the pale archive membrane clamps shut, amber beads rise into a bitter red ring, a silver-vane courier flares away, and dust falls past dark blue lantern knots."
+    },
+    {
+      "id": "08_contamination_response_choice",
+      "prompt": "Overhead response choice in the eclipse-dark gallery: an anchored ochre six-limbed tender reaches among a pale shallow archive membrane, a circling silver-ribbon courier, a damp strand inside a bitter red fungal ring, and a withdrawn carved contract token while a dusty charcoal-green witness watches the cracking ledge."
+    },
+    {
+      "id": "09_recall_priority_threshold",
+      "prompt": "Wide threshold at near-total eclipse: partly sealed root aperture and four cups at deep right, ochre six-limbed tender anchored at center, dusty route witness on the left load root, silver-vane courier circling, amber fungal lane holding a suspect strand, sparse blue route lights, and gray dust falling from an uphill fracture toward a lower root bridge."
+    },
+    {
+      "id": "10_full_recall_aftermath",
+      "prompt": "Expanded translucent archive membrane spends its last amber light across carved tokens, silver vane, fungal strand, and an anchored six-limbed tender; layered imagery shows the historical shale collapse while a route witness turns uphill, a silver-ribbon courier hovers, root cups stand empty, and the present fracture sheds dust outside."
+    },
+    {
+      "id": "11_bounded_warning_aftermath",
+      "prompt": "The oval root archive is sealed under carved tokens as an ochre six-limbed tender stamps three uneven pulses into a load root with one large claw; a dusty route witness moves onto the ledge, amber fungal beads and blue lantern knots carry or refuse the warning, a silver-vane courier banks overhead, and stone begins to fall."
+    },
+    {
+      "id": "12_tree_authority_aftermath",
+      "prompt": "Tree-led aftermath in the root gallery: cleared witness shelf, sealed translucent aperture, thick directional roots crossing toward two ledge exits, ochre archive tender standing back with empty small hands and lowered upper claws, dusty route witness waiting, amber fungal beads holding at the edge, silver-vane courier perched, and blue lantern knots awaiting the tree's route choice."
+    },
+    {
+      "id": "13_living_carrier_aftermath",
+      "prompt": "At the outer ledge, an ochre six-limbed archive tender releases roots one limb at a time while uneven amber memory pulses travel down glowing leg seams; a charcoal-green route witness waits close to support the body; behind them sit a sealed aperture, bitter fungal ring, silver-vane courier, and witness shelf; sparse blue lights mark a cracked eclipse-dark hillside."
+    }
+  ]
+}
