@@ -1,0 +1,429 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "kalsa-ember-final-depot-audit-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/ember-final-depot-audit-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/ember-final-depot-audit-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/ember-final-depot-audit-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "ember-final-depot-audit-v0.wrong-ledger-at-final-depot",
+  "protagonist_agent_id": "ari_vesk",
+  "npc_agent_ids": [
+    "tera_sen",
+    "mara_il",
+    "oren_jai",
+    "lower_porter_train"
+  ],
+  "purpose": "Interactive Fiction Weaver compile of a Kalsa road-and-archive pressure at the final depot, from a local witness's bounded perspective, with ordinary hosting work preceding an audit that recovers the wrong ledger.",
+  "tonal_mode": "Roadside workplace warmth turning into archival noir and dry institutional suspense.",
+  "artifact_role": "Playable illustrated-fiction website collateral and lore stress test; not simulation state and not automatic canonization of any branch outcome.",
+  "local_awareness_summary": [
+    {
+      "text": "Ari is the depot witness for one announced crossing watch. Ari can preserve local entries and copies, maintain the host families' warning, receive or transfer the book under witnessed terms, and refuse to certify title; Ari cannot decide unpaid wages, imperial portfolio continuity, territorial passage, or structural safety alone.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/ember-final-depot-audit-v0.v0.json",
+        "Kalsa/Spoilers/Events/The Road That Returned.md"
+      ]
+    },
+    {
+      "text": "Ari knows the depot court, lower hosted path, upper stair, closure cord, numbered stone, weigh table, guest tablets, visible wall seepage, and whatever evidence Ari personally inspects. The concealed refuge is local host knowledge, not a public road-office route.",
+      "source_refs": [
+        "Kalsa/Spoilers/Events/The Road That Returned.md",
+        "Kalsa/Spoilers/Institutions/Selza'a Family Territories.md"
+      ]
+    },
+    {
+      "text": "Oren's warrant and seals can establish an audit chain, not passage or ownership. Tera's cords and copied tallies can establish witness continuity, not the whole historical road claim. Mara controls present depot stores and shelter work, not the ledger or upper cut.",
+      "source_refs": [
+        "Kalsa/Spoilers/Institutions/Measured Offices.md",
+        "Kalsa/Spoilers/Institutions/Selza'a Family Territories.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Ari's local witness position in the final depot. Narration may make ownership and consequence legible but cannot reveal invisible Luck, a complete imperial legal verdict, or off-route actions before a signal or witness reports them.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      },
+      {
+        "text": "The opening establishes permanent fog-light, depot geometry, hosted-crossing routine, claim-copy work, stores, characters, and the closure warning before the audit changes the room's authority geometry.",
+        "source_refs": [
+          "AGENTS.md",
+          "Kalsa/Public/World/Kalsa.md",
+          "Kalsa/Spoilers/Events/The Road That Returned.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Ari owns the current guest entry, witnessed copies made at the depot, the book's local custody until transferred, and the host warning for this watch. Ari does not own final wage adjudication, the Ju'onai portfolio, host-family passage, catchment repair, or the road beyond the local closure.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Road That Returned.md",
+          "Kalsa/Spoilers/Institutions/Measured Offices.md"
+        ]
+      },
+      {
+        "text": "Oren may inspect, copy, receipt, seal, and recover records within the warrant. Audit custody does not make his sponsor's road claim true or authorize structural loading.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Measured Offices.md",
+          "Kalsa/Spoilers/Polities/Ju'onai Hegemony.md"
+        ]
+      },
+      {
+        "text": "Host families may withhold passage and maintain a territorial warning, but closure cannot erase wages, office evidence, or the immediate needs of people called onto the ascent.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Selza'a Family Territories.md",
+          "Kalsa/Spoilers/Events/The Road That Returned.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The waxed ledger begins in depot custody beneath an old road-office seal. Tera controls three witness cords, Oren controls the recovery warrant and new audit seal, Ari controls current tablets and the closure cord, and Mara controls the depot's dry stores and load rails.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Road That Returned.md",
+          "examples/ink/kalsa/ember-final-depot-audit-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The same book must remain useful to several narrower claims without becoming a universal title: guide pay, depot withdrawals, later road orders, and the missing closing inventory retain separate evidentiary force.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Road That Returned.md",
+          "Kalsa/Spoilers/Institutions/Measured Offices.md"
+        ]
+      },
+      {
+        "text": "Every final priority spends a real capacity: separate copies, current warning, shared custody, material wall evidence, depot shelter, or political credit. No branch solves all claims.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Kalsa/Spoilers/Events/The Road That Returned.md"
+        ]
+      },
+      {
+        "text": "The approaching porter train and retaining-wall seepage make delay consequential, while safety remains owned by material inspection rather than by seal, audit, alleged Luck, or narrative intuition.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Road That Returned.md",
+          "Kalsa/Spoilers/Institutions/Selza'a Family Territories.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not identify a Luck bearer, dimna intervention, or magical cause for the book's recovery, wall failure, or road dispute.",
+        "source_refs": [
+          "Kalsa/Spoilers/Polities/Luck - Selza'a.md",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      },
+      {
+        "text": "Do not make an imperial seal grant passage, make a local warning settle historical title, or make one witness's moral clarity substitute for the offices and compacts that own consequences.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Measured Offices.md",
+          "Kalsa/Spoilers/Institutions/Selza'a Family Territories.md"
+        ]
+      },
+      {
+        "text": "Do not universalize the final depot's geometry, local witness role, warning cord, current characters, or closure practice across Selza'a.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Road That Returned.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through ordinary depot preparation, wrong-ledger custody, and the lower carrier bell, then select one of eight state-gated endings.",
+    "choice_layers": [
+      "ordinary_depot_preparation",
+      "wrong_ledger_custody",
+      "urgent_consequence"
+    ],
+    "variables": [
+      "claim_copy",
+      "road_warning",
+      "office_pressure",
+      "depot_trust",
+      "ledger_custody",
+      "wall_evidence",
+      "train_exposure",
+      "shelter_capacity",
+      "seal_scope"
+    ],
+    "ending_gates": [
+      "ending_claims_preserved",
+      "ending_claims_cost",
+      "ending_bounded_review",
+      "ending_review_cost",
+      "ending_audit_bounded",
+      "ending_audit_capture",
+      "ending_shelter_hold",
+      "ending_shelter_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_claim_copy",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Create a separate, witnessed wage record before audit custody can move the original.",
+      "state_basis": ["Ari keeps copy tablets; Tera can compare names and loads against witness cords."],
+      "reviewed_consequences": ["Raises claim_copy and office_pressure; enables strong guide-claim and audit-handoff outcomes while making preparation visible to Oren."],
+      "training_hooks": ["duplicate_record_custody", "labor_evidence", "preparation_has_political_cost"]
+    },
+    {
+      "branch_id": "inspect_upper_cut",
+      "ink_path": "preparation_choice",
+      "action_type": "move",
+      "actor_intent": "Inspect the material hazard and refuge-side geometry before treating the closure as record language.",
+      "state_basis": ["Ari can climb the upper stair without moving the maintained closure cord."],
+      "reviewed_consequences": ["Raises wall_evidence and train_exposure; enables a bounded audit transfer but spends time while the train approaches."],
+      "training_hooks": ["material_evidence_before_title", "route_geometry", "time_cost"]
+    },
+    {
+      "branch_id": "prepare_shelter_hold",
+      "ink_path": "preparation_choice",
+      "action_type": "move_object",
+      "actor_intent": "Increase the depot's capacity to shelter people and loads if the road remains closed.",
+      "state_basis": ["Mara controls the dry eaves; Ari can help clear and mark a load lane."],
+      "reviewed_consequences": ["Raises shelter_capacity and depot_trust; enables the depot-only porter hold ending."],
+      "training_hooks": ["care_as_logistics", "shelter_capacity", "ordinary_work_callback"]
+    },
+    {
+      "branch_id": "prepare_road_warning",
+      "ink_path": "preparation_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Test the warning chain and place the current closure in a record travelers and later reviewers can reach.",
+      "state_basis": ["Ari maintains the local closure warning for this watch."],
+      "reviewed_consequences": ["Raises road_warning and depot_trust; later changes the train's location, final options, and visual signal state."],
+      "training_hooks": ["warning_as_work", "road_state_callback", "local_authority"]
+    },
+    {
+      "branch_id": "retain_depot_custody",
+      "ink_path": "audit_choice",
+      "action_type": "hold_object",
+      "actor_intent": "Expose both claim classes while refusing removal of the original during the first comparison.",
+      "state_basis": ["The book starts in Ari's witnessed local custody."],
+      "reviewed_consequences": ["Raises claim_copy, office_pressure, and seal_scope; keeps ledger_custody local and makes obstruction pressure explicit."],
+      "training_hooks": ["bounded_refusal", "archive_leverage", "custody_is_not_truth"]
+    },
+    {
+      "branch_id": "yield_to_audit_receipt",
+      "ink_path": "audit_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Create a clean superior-review chain while forcing the receipt to name local claims.",
+      "state_basis": ["Oren has a recovery warrant and can sign an audit receipt without acquiring road authority."],
+      "reviewed_consequences": ["Moves ledger_custody to audit, creates an annexed wage copy, raises seal_scope, lowers office_pressure, and lowers depot_trust; gates both audit endings."],
+      "training_hooks": ["record_transfer", "receipt_boundary", "local_trust_cost"]
+    },
+    {
+      "branch_id": "establish_joint_custody",
+      "ink_path": "audit_choice",
+      "action_type": "place_object",
+      "actor_intent": "Keep both claimants attached to the original long enough to create separate review routes.",
+      "state_basis": ["Ari can propose a local witnessed thread; Oren and Tera retain authority to accept or refuse it."],
+      "reviewed_consequences": ["Sets joint custody, raises claim_copy, depot_trust, office_pressure, and train_exposure; enables bounded-review success."],
+      "training_hooks": ["shared_custody", "slowness_as_resilience", "time_pressure"]
+    },
+    {
+      "branch_id": "warn_before_title",
+      "ink_path": "audit_choice",
+      "action_type": "pull_signal",
+      "actor_intent": "Protect the approaching porters before completing the evidentiary dispute.",
+      "state_basis": ["Ari can maintain the current host warning but cannot settle the road office."],
+      "reviewed_consequences": ["Raises road_warning and office_pressure while lowering train_exposure; changes the lower-bell callback and ending gates."],
+      "training_hooks": ["warning_before_certainty", "authority_pressure", "people_before_title"]
+    },
+    {
+      "branch_id": "prioritize_guide_claims",
+      "ink_path": "final_choice",
+      "action_type": "write_and_signal",
+      "actor_intent": "Preserve unpaid labor evidence and spend local stores on the train while refusing a road-title finding.",
+      "state_basis": ["Success depends on separate claim_copy and depot_trust."],
+      "reviewed_consequences": ["Routes to preserved guide claims or a costly dispute in which the evidence remains concentrated and stores lack agreed support."],
+      "training_hooks": ["narrow_certification", "labor_priority", "state_gated_ending"]
+    },
+    {
+      "branch_id": "prioritize_bounded_review",
+      "ink_path": "final_choice",
+      "action_type": "mixed",
+      "actor_intent": "Keep the road closed and route separate copies while preserving shared original custody.",
+      "state_basis": ["Success depends on joint ledger custody and a warning the train has received."],
+      "reviewed_consequences": ["Routes to a resilient shared review or to procedure that lacks the custody and signal needed to control the present hazard."],
+      "training_hooks": ["shared_archive", "road_closure", "procedure_needs_actuators"]
+    },
+    {
+      "branch_id": "prioritize_audit_chain",
+      "ink_path": "final_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Let the original travel to superior review while keeping wage copies and present wall evidence outside the office chain.",
+      "state_basis": ["Success depends on prior audit custody, material wall evidence, and a separate wage copy."],
+      "reviewed_consequences": ["Routes to bounded audit custody or to capture of the record, local claims, and road narrative under one seal."],
+      "training_hooks": ["audit_chain", "material_stop", "record_capture_risk"]
+    },
+    {
+      "branch_id": "prioritize_porter_shelter",
+      "ink_path": "final_choice",
+      "action_type": "open_shelter",
+      "actor_intent": "Admit people and loads only to the depot court while keeping the upper cut closed and assigning the hold cost to the claimant.",
+      "state_basis": ["Success depends on prepared shelter capacity and a received road warning."],
+      "reviewed_consequences": ["Routes to a material depot-only hold or to congestion, wet goods, and an office argument that local custody cannot manage the route."],
+      "training_hooks": ["shelter_without_passage", "material_capacity", "claimant_cost"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose and ending gates",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable relationship or memory update for Ari, Tera, Mara, or Oren",
+      "Any canonization of a branch outcome as the final settlement of the depot audit",
+      "Any universalization of the depot witness role, closure cord, scene geometry, named characters, or warning meanings",
+      "Any claim that Luck caused the recovery, dispute, warning, or structural failure"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex titled elaborator applying four repository reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Weaver artifact authoring complete; Ink source was inspected but not compiled, as required by the titled-pass contract.",
+      "Narrative review repaired an unreachable bounded-audit success by making the receipted handoff create a separate witnessed wage annex before the original leaves.",
+      "Lore review accepted the fixture after the owning note explicitly bounded the elaboration to the final depot, its lower hosted approach, and its presently closed upper cut.",
+      "Visual review aligned the BFL and visual-plan style cues, removed conditional alternatives from base prompts, made the lower-bell staging custody-neutral, and rewrote one negative state prompt as positive visible geometry.",
+      "Spatial review split Mara and the porter train into explicit hearth, eaves, lower-path, and receiving-lane staging slots. All four passes meet B-level acceptance."
+    ],
+    "review_passes": {
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 4,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 5
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "status": "fixed",
+            "location": "audit_choice/yield_to_audit_receipt and final_choice/prioritize_audit_chain",
+            "problem": "The bounded-audit success originally required a separate claim copy that the handoff path could not produce after wall inspection.",
+            "fix": "The receipted handoff now creates a witnessed annex copy before the original transfers, making each successful ending reachable through one preparation choice and one custody choice."
+          },
+          {
+            "severity": "minor",
+            "status": "fixed",
+            "location": "wrong_ledger and ending_claims_preserved",
+            "problem": "One abstract pressure summary and one unsupported crop detail weakened the otherwise material prose.",
+            "fix": "The fold now names what each actor sees in the book, and the meal remains generic broth."
+          }
+        ],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_wit_with_stakes",
+          "strong_domestic_worldbuilding",
+          "strong_branch_callback",
+          "strong_character_voice",
+          "strong_material_lore"
+        ]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings": [
+          {
+            "severity": "minor",
+            "status": "fixed",
+            "location": "Kalsa/Spoilers/Events/The Road That Returned.md, fixture elaboration",
+            "problem": "The new depot practice and geometry needed an explicit locality boundary to avoid becoming a universal claim about every surviving approach work.",
+            "fix": "The owning note now limits the elaboration to the final depot court, lower hosted approach, and closed upper cut while leaving other approach works unresolved."
+          }
+        ],
+        "training_labels": [
+          "source_grounded",
+          "material_institutional_pressure",
+          "useful_vault_backfill",
+          "spoiler_tier_respected"
+        ]
+      },
+      "visual_continuity": {
+        "verdict": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "status": "fixed",
+            "location": "BFL style_prefix and prepared-watch/lower-bell prompts",
+            "problem": "The BFL batch retained an obsolete magical-style cue and two base prompts encoded mutually exclusive branch or custody states.",
+            "fix": "The batch now shares the visual plan's material-realism cue; base prompts show neutral state and triggered modifiers own visible deltas."
+          },
+          {
+            "severity": "minor",
+            "status": "fixed",
+            "location": "ember_lower_carrier_bell wall_evidence modifier",
+            "problem": "One state modifier used negative prompt language instead of a drawable target.",
+            "fix": "The low-evidence state now describes an equally prominent field of seepage and mortar seams."
+          }
+        ],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity"
+        ],
+        "deferred_requirement": "Before high-consistency multi-angle rendering, lower the embedded plan to camera-specific blockout images; rendering is outside this pass."
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 5,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "findings": [
+          {
+            "severity": "minor",
+            "status": "fixed",
+            "location": "visual_scene_plan.scene_set.staging_slots",
+            "problem": "Two slot labels implied that one zone identifier covered both the hearth and eaves or both the lower path and receiving lane.",
+            "fix": "Mara and the porter train now have separate explicit staging slots in each zone they can occupy."
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state"
+        ],
+        "inferred_layout_summary": "A twelve-by-eight-pace roofed court runs from lower hosted arch to rear upper stair. The central axial table divides visitor and record sides; the east load lane reaches dry eaves; the west hearth serves routine work; fog occludes the lower route and a stone screen hides the refuge branch."
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "kalsa_lore_content_readable": true
+    }
+  }
+}

@@ -1,0 +1,361 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.ember-final-depot-audit-v0.v0",
+  "source_status": "reviewed",
+  "fixture_status": "procedural_branch",
+  "source_refs": [
+    {
+      "source_id": "public-kalsa",
+      "path": "Kalsa/Public/World/Kalsa.md",
+      "title": "Kalsa",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 42,
+      "relevance": "Reader-facing permanent twilight, coldward fog, roads as negotiated infrastructure, warning marks, hosted passage, and high-fantasy daily life."
+    },
+    {
+      "source_id": "public-peoples",
+      "path": "Kalsa/Public/World/Peoples and Polities.md",
+      "title": "Peoples and Polities",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 152,
+      "relevance": "Reader-facing Selza'a family territories, paths, stores, shared work, fogbound interdependence, and Ju'onai office separation."
+    },
+    {
+      "source_id": "public-road",
+      "path": "Kalsa/Public/Sources/The Road That Returned.md",
+      "title": "The Road That Returned",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 59,
+      "relevance": "Situated road-office and plateau accounts, abandoned depots, unpaid guide claims, damaged catchments, surviving warning stones, and the final depot."
+    },
+    {
+      "source_id": "canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 129,
+      "relevance": "Controls canon status, public versus backstage knowledge, unresolved claims, and the rule that institutions grant force to records without owning reality."
+    },
+    {
+      "source_id": "world-foundation",
+      "path": "Kalsa/Spoilers/Foundations/World.md",
+      "title": "World",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 41,
+      "relevance": "Owns the tidally locked climate, coldward fog, mountain geography, and the rule that infrastructure and climate constrain power."
+    },
+    {
+      "source_id": "road-event",
+      "path": "Kalsa/Spoilers/Events/The Road That Returned.md",
+      "title": "The Road That Returned",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 165,
+      "relevance": "Primary owner for the road program, withdrawn office, unpaid work, local inheritance, the final depot, and the fixture-authored present audit and structural hazard."
+    },
+    {
+      "source_id": "selzaa-polity",
+      "path": "Kalsa/Spoilers/Polities/Luck - Selza'a.md",
+      "title": "Luck — Selza'a",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 152,
+      "relevance": "Owns the fogbound plateau, distributed family government, hosted entry, road inheritance, material evidence, and the prohibition on treating apparent Luck as proof."
+    },
+    {
+      "source_id": "family-territories",
+      "path": "Kalsa/Spoilers/Institutions/Selza'a Family Territories.md",
+      "title": "Selza'a Family Territories",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 215,
+      "relevance": "Owns territorial response, boundary compacts, passage, host obligations, warning stations, shared works, poor and outsider claims, and temporary federation limits."
+    },
+    {
+      "source_id": "juonai-hegemony",
+      "path": "Kalsa/Spoilers/Polities/Ju'onai Hegemony.md",
+      "title": "Ju'onai Hegemony",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 172,
+      "relevance": "Owns Ju'onai expansion, administrative portfolios, road interventions, audits, material blind spots, office succession, and the historical reading of the returned road."
+    },
+    {
+      "source_id": "measured-offices",
+      "path": "Kalsa/Spoilers/Institutions/Measured Offices.md",
+      "title": "Measured Offices",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 274,
+      "relevance": "Primary institution owner for bounded administrative authority, record chains, public works, road portfolios, petitions, audit, refusal, and restoration."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Kalsa's standing present; the present date, calendar, and interval since the road office withdrew remain unresolved.",
+    "location": "The existing final depot below the last imperial cut toward the fogbound Luck Crown, with a lower hosted approach, roofed court, upper stair, and seeping retaining wall.",
+    "summary": "A local depot witness opens a sealed volume for a Ju'onai recovery audit and discovers the guide-pay book, later reused for road orders, where the claimant expected the final office ledger. An approaching porter train and unstable upper cut force record custody, passage, labor claims, and shelter costs to bite before title can be decided.",
+    "public_facts": [
+      {
+        "text": "The Ju'onai road office reached the Selza'a plateau more than once but did not keep a permanent self-supporting office; the works left numbered stones, cut paths, damaged catchments, abandoned depots, and unpaid guide claims.",
+        "source_refs": ["public-road"]
+      },
+      {
+        "text": "The final depot contains unpaid guide claims, and one numbered stone above it has been turned toward the plateau.",
+        "source_refs": ["public-road"]
+      },
+      {
+        "text": "Selza'a country has no central government; territorial families answer for paths, stores, hosted entry, and shared work through local arrangements.",
+        "source_refs": ["public-peoples"]
+      },
+      {
+        "text": "Road travel in Kalsa depends on water, shelter, warning marks, negotiated passage, dangerous weather, and authorities that do not collapse into road ownership.",
+        "source_refs": ["public-kalsa"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The recovered volume can support unpaid labor, depot-store, and later road-order claims without becoming a deed over the road or a complete closing inventory.",
+        "source_refs": ["road-event", "measured-offices"]
+      },
+      {
+        "text": "Ju'onai administrative competence depends on persistent records and bounded portfolios, but class power enters through who frames the system and controls the archive used for appeal.",
+        "source_refs": ["juonai-hegemony", "measured-offices"]
+      },
+      {
+        "text": "Selza'a host families can withhold passage and maintain warnings, while unpaid workers, guests, and present dependents retain claims that a territorial closure cannot erase.",
+        "source_refs": ["family-territories", "road-event"]
+      },
+      {
+        "text": "The road crisis has no valid magical shortcut: coincidence, survival, or well-timed recovery cannot identify Luck or authorize blame.",
+        "source_refs": ["selzaa-polity", "canon-policy"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "final-depot-hosts-and-claimants",
+      "label": "Final depot hosts, guide claimants, and current users",
+      "group_type": "local_route_compact",
+      "institutional_logic": ["Keep hosted crossings, warning, shelter, old labor claims, and present territorial limits legible without creating a central road owner."],
+      "material_incentives": ["Protect the upper cut and catchment", "Preserve unpaid guide evidence", "Keep the depot usable", "Avoid exposing the refuge path"],
+      "internal_virtues": ["Named custody", "Maintained warnings", "Witnesses attached to claims", "Shelter before abstract title"],
+      "internal_shames": ["Hiding a book that workers need", "Opening a dangerous cut for prestige", "Calling guests protected while leaving them in fog"],
+      "prestige_markers": ["A warning that reaches the lower path", "A copy that survives separation", "A hosted crossing that creates no permanent command"],
+      "taboo_triggers": ["An imperial seal treated as passage", "A guide claim translated into collaboration", "A host using protection to erase a guest's claim"],
+      "emotional_display_norms": ["Fear appears as dry work humor, hands on cords and records, rapid shelter preparation, and refusal to certify more than a witness saw."],
+      "trust_defaults": ["Trusts maintained route marks, current material inspection, duplicate records, and witnesses more than inherited office language or claims of lucky timing."],
+      "speech_register_cues": ["Loads and names", "Path landmarks", "Who holds the original", "What the roof can carry", "Dry procedural wit"],
+      "source_refs": ["road-event", "family-territories", "public-road"]
+    },
+    {
+      "group_id": "juonai-road-recovery",
+      "label": "Ju'onai road recovery audit and claimant pressure",
+      "group_type": "external_administrative_portfolio",
+      "institutional_logic": ["Recover the office record chain, separate valid intervention from local obstruction, and test whether the road portfolio ever lawfully ended."],
+      "material_incentives": ["Secure the original ledger", "Keep a supply route legible", "Protect the claimant's investment", "Avoid inheriting a wall failure as office liability"],
+      "internal_virtues": ["Traceable custody", "Named record boundaries", "Reviewable refusal", "Material outcomes attached to interventions"],
+      "internal_shames": ["A broken chain", "An audit captured by its sponsor", "An elegant office claim defeated by wet stone"],
+      "prestige_markers": ["An original under seal", "A receipt that survives appeal", "A recovered portfolio that can answer its debts"],
+      "taboo_triggers": ["Local witnesses denying the seal any force", "A host compact making imperial measurement irrelevant", "Evidence that the office improved a road and abandoned its workers"],
+      "emotional_display_norms": ["Alarm is compressed into warrants, seals, system boundaries, and increasingly narrow accusations of obstruction."],
+      "trust_defaults": ["Trusts authenticated chains and comparative records, but risks mistaking archival continuity for territorial authority."],
+      "speech_register_cues": ["Portfolio", "Recovery", "Obstruction", "Receipt", "Closing inventory", "Review horizon"],
+      "source_refs": ["juonai-hegemony", "measured-offices", "road-event"]
+    },
+    {
+      "group_id": "lower-porter-train",
+      "label": "Porters and current road users called onto the ascent",
+      "group_type": "route_dependents",
+      "institutional_logic": ["Reach shelter and deliver loads under a route sequence someone else represented as current."],
+      "material_incentives": ["Receive warning before the upper cut", "Keep goods dry", "Avoid carrying handcarts onto a failing wall", "Have delay charged to the caller rather than the carriers"],
+      "internal_virtues": ["Signal discipline", "Load solidarity", "Visible receipts for delay and loss"],
+      "internal_shames": ["Being used as a fait accompli for a road claim", "Leaving slower porters outside shelter"],
+      "prestige_markers": ["A train brought under roof intact", "A hold cost assigned to the office that created it"],
+      "taboo_triggers": ["An upper seal overruling a warning heard on the lower path", "Being called unauthorized after following the claimant's own sequence"],
+      "emotional_display_norms": ["Urgency arrives through chimes, cart noise, wet loads, clipped route reports, and impatience with ownership arguments conducted under a dry roof."],
+      "trust_defaults": ["Trusts current warning relays, visible road condition, and whoever provides shelter; may distrust both host and auditor for the dangerous summons."],
+      "speech_register_cues": ["Load count", "Shelter space", "Warning heard", "Who sent the route", "Who pays for delay"],
+      "source_refs": ["road-event", "public-kalsa"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "final-depot-hosts-and-claimants.warning-without-erasure",
+      "applies_to": ["final-depot-hosts-and-claimants"],
+      "pressure_type": "route_custody",
+      "summary": "The depot must keep the upper cut closed when material danger requires it without letting closure erase unpaid work, guest needs, or the audit trail.",
+      "projection_use": "Give Ari choices among copying, inspection, warning, shelter, refusal, and transfer; each protects one owner while exposing another claim or cost.",
+      "source_refs": ["road-event", "family-territories"]
+    },
+    {
+      "field_id": "juonai-road-recovery.record-chain-versus-territory",
+      "applies_to": ["juonai-road-recovery"],
+      "pressure_type": "administrative_capture",
+      "summary": "The audit needs a coherent record chain, but every step that makes the book easier to carry upward can detach it from workers, current hazards, and the local authorities the old road never abolished.",
+      "projection_use": "Make Oren value receipts and original custody while remaining capable of recognizing a documented material stop; do not make him a caricature or a universal judge.",
+      "source_refs": ["measured-offices", "juonai-hegemony"]
+    },
+    {
+      "field_id": "lower-porter-train.summoned-into-dispute",
+      "applies_to": ["lower-porter-train"],
+      "pressure_type": "urgent_dependency",
+      "summary": "The approaching train turns abstract title into immediate shelter, load, wall, and delay costs borne by people who did not choose the audit.",
+      "projection_use": "Let chimes and handcart arrival change options and visible state before any archive claim is resolved.",
+      "source_refs": ["road-event"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "juonai-road-recovery",
+      "target_group_id": "final-depot-hosts-and-claimants",
+      "observer_read": ["Local custody protecting a useful record", "Possible obstruction disguised as territorial care", "Unreviewed warning practice"],
+      "target_self_read": ["People preserving wages, shelter, and present road safety after the office withdrew"],
+      "misread_patterns": ["Treats refusal to transfer as refusal to inspect", "Treats a current host warning as a rival road office", "Underweights claims that lack imperial form"],
+      "likely_insults": ["obstruction", "unregistered custody", "private closure"],
+      "projection_use": "Let Oren's best administrative language remain useful and coercive at once; Ari can correct scope but cannot make the audit harmless.",
+      "source_refs": ["measured-offices", "road-event"]
+    },
+    {
+      "observer_group_id": "final-depot-hosts-and-claimants",
+      "target_group_id": "juonai-road-recovery",
+      "observer_read": ["The old road returning through a book", "A sponsor-owned audit", "An office searching for title in unpaid labor"],
+      "target_self_read": ["A bounded recovery process capable of preserving claims beyond one mountain court"],
+      "misread_patterns": ["May treat every receipt as seizure", "May ignore that superior review can preserve a claim local power would bury", "May confuse Oren's warrant with the claimant's full intent"],
+      "likely_insults": ["seal carrier", "road heir", "dry-handed guide"],
+      "projection_use": "Keep local suspicion sharp but not omniscient; Oren's chain can protect evidence even while empowering the claimant.",
+      "source_refs": ["road-event", "juonai-hegemony", "canon-policy"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "depot-witness",
+      "summary": "A local witness for one crossing watch who controls present entries, copies, warning maintenance, and initial book custody without owning the claims inside them.",
+      "obligations": ["Keep claims separable", "Maintain a usable warning", "Record transfers", "Refuse unsupported title", "Avoid making shelter depend on agreement"],
+      "available_masks": ["Literal clerk", "Dry host", "Procedural obstruction", "Helpful copyist"],
+      "failure_modes": ["Confusing custody with verdict", "Protecting the book at the expense of people", "Issuing a warning no lower relay receives"],
+      "source_refs": ["road-event", "family-territories"]
+    },
+    {
+      "role_id": "guide-claimant-witness",
+      "summary": "A claimant carrying family testimony and witness cords for labor the former road office used and did not pay.",
+      "obligations": ["Keep names attached to loads", "Challenge collaboration language", "Preserve a copy outside imperial custody"],
+      "available_masks": ["Old grievance", "Patient witness", "Sharp local humor"],
+      "failure_modes": ["Blocking every review route", "Protecting family standing while poorer workers vanish from the copy"],
+      "source_refs": ["road-event", "public-road"]
+    },
+    {
+      "role_id": "recovery-auditor",
+      "summary": "A Ju'onai auditor empowered to recover and receipt records, not to decide passage or make a sponsor's portfolio claim true.",
+      "obligations": ["Authenticate the object", "Name claims on the receipt", "Preserve current hazard evidence", "Route disputes upward"],
+      "available_masks": ["Neutral recovery", "Narrow legalism", "Respectful visitor", "Obstruction finding"],
+      "failure_modes": ["Letting the sponsor choose the frame", "Reading reused leaves as uninterrupted authority", "Taking the original before claims have separate witnesses"],
+      "source_refs": ["measured-offices", "juonai-hegemony"]
+    },
+    {
+      "role_id": "depot-keeper",
+      "summary": "The worker who controls the court's current stores, roof space, load rails, and hospitality costs while other offices contest the road.",
+      "obligations": ["Shelter people within material capacity", "Keep goods and routes separated", "Record who created the emergency cost"],
+      "available_masks": ["Domestic authority", "Soup humor", "Impatient materialism"],
+      "failure_modes": ["Opening shelter beyond capacity", "Letting the archive dispute consume stores without account"],
+      "source_refs": ["road-event", "family-territories"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "ari_vesk",
+      "known_context": [
+        {"text": "Ari knows the local custody terms, current records, warning system, host marks, and only the material wall condition Ari personally inspects or hears.", "source_refs": ["road-event", "family-territories"]}
+      ],
+      "beliefs": [
+        {"text": "Ari believes a useful record keeps owners separable and a warning must reach bodies before an appeal can vindicate it.", "source_refs": ["road-event", "measured-offices"]}
+      ],
+      "misreads": [
+        {"text": "Ari may treat Oren's demand for a clean chain as claimant loyalty even when he is trying to preserve several claims in a portable form.", "source_refs": ["canon-policy", "measured-offices"]}
+      ],
+      "must_not_know": [
+        {"text": "Ari must not know whether Luck caused the recovery or what superior Ju'onai review will decide.", "source_refs": ["selzaa-polity", "canon-policy"]}
+      ]
+    },
+    {
+      "speaker_id": "tera_sen",
+      "known_context": [
+        {"text": "Tera knows her inherited witness cords, guide-pay claims, local road memory, and what the old office failed to pay; she does not own every claimant's story.", "source_refs": ["road-event", "public-road"]}
+      ],
+      "beliefs": [
+        {"text": "Tera believes removing the original before copies are witnessed lets office continuity swallow labor evidence.", "source_refs": ["road-event"]}
+      ],
+      "misreads": [
+        {"text": "Tera may read any audit custody as erasure and underweight the danger of one local family controlling the only book.", "source_refs": ["measured-offices", "canon-policy"]}
+      ],
+      "must_not_know": [
+        {"text": "Tera must not know the auditor's private sponsor instructions or treat inherited recitation as complete author history.", "source_refs": ["canon-policy", "road-event"]}
+      ]
+    },
+    {
+      "speaker_id": "oren_jai",
+      "known_context": [
+        {"text": "Oren knows his warrant, old and current seals, administrative record practice, the leaves he reads, and material evidence admitted into his receipt.", "source_refs": ["measured-offices", "juonai-hegemony"]}
+      ],
+      "beliefs": [
+        {"text": "Oren believes an original under traceable custody can preserve claims beyond a local dispute, while an unbounded refusal may let the strongest host keep the archive.", "source_refs": ["measured-offices"]}
+      ],
+      "misreads": [
+        {"text": "Oren may treat a maintained territorial warning as obstruction because the old road sequence gives it no legible office owner.", "source_refs": ["road-event", "family-territories"]}
+      ],
+      "must_not_know": [
+        {"text": "Oren must not infer safe passage, legal portfolio continuity, intent, or Luck from the recovered seal alone.", "source_refs": ["measured-offices", "selzaa-polity"]}
+      ]
+    },
+    {
+      "speaker_id": "mara_il",
+      "known_context": [
+        {"text": "Mara knows the depot's actual roof, stores, load lanes, lower arch, and immediate shelter capacity.", "source_refs": ["road-event"]}
+      ],
+      "beliefs": [
+        {"text": "Mara believes the people called into danger need shelter before claimants finish assigning its cost.", "source_refs": ["road-event", "family-territories"]}
+      ],
+      "misreads": [
+        {"text": "Mara may dismiss slow record work until a missing copy turns current generosity into unowned debt.", "source_refs": ["measured-offices"]}
+      ],
+      "must_not_know": [
+        {"text": "Mara must not know the train's exact condition before a chime or arrival makes it observable.", "source_refs": ["canon-policy"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Luck's backstage operation remains unavailable to the characters. The audit, wall seepage, warning, and book recovery have no adopted magical cause.",
+      "source_refs": ["canon-policy", "selzaa-polity"]
+    },
+    {
+      "text": "The fixture-authored depot court, witness role, closure cord, present characters, and mixed ledger are one local elaboration, not a universal Selza'a road institution.",
+      "source_refs": ["road-event", "family-territories"]
+    },
+    {
+      "text": "The old road's final ownership, exact geography, historical actors, campaign count, and any surviving Ju'onai portfolio remain unresolved outside this present audit pressure.",
+      "source_refs": ["road-event", "canon-policy"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which office or compact will ultimately hear the wage, road-portfolio, and territorial-passage claims?",
+      "blocks_training": false,
+      "notes": "The fixture ends with evidence and present hazard redistributed, not with a universal court invented to settle the dispute."
+    },
+    {
+      "question": "Does the upper retaining wall fail after the watch, and what repair compact owns the catchment above it?",
+      "blocks_training": false,
+      "notes": "The scene uses visible seepage, moved chalk beads, grit, and audible stone movement while leaving final structural outcome and wider work ownership open."
+    },
+    {
+      "question": "Does any present Ju'onai authority recognize the claimant's old road portfolio?",
+      "blocks_training": false,
+      "notes": "Oren can recover the record chain and argue scope; he cannot settle present recognition inside the depot."
+    }
+  ]
+}

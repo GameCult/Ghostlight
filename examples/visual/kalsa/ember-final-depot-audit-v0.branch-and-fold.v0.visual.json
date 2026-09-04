@@ -1,0 +1,405 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "kalsa-ember-final-depot-audit-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/ember-final-depot-audit-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/ember-final-depot-audit-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ember-final-depot-audit-v0.wrong-ledger-at-final-depot",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Kalsa final-depot audit fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary hosted-road work, the wrong-ledger reveal, changing record custody, the lower carrier bell, and four state-gated consequence families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for depot geography, table routine, each first-layer preparation, auditor arrival, the wrong-ledger closeup, custody dispute, lower-bell interruption, final threshold, and each ending family. The line declaring the wrong ledger and the first carrier bell receive distinct screens.",
+    "prompting_rule": "Every base image prompt restates the complete visible frame for a general image model. Fictional offices and objects are translated into geometry, materials, clothing, tools, posture, light, and placement. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, sharp readable silhouettes, cold pearl-gray fog and blue-black mountain stone, warm ochre firelight, weathered bronze and wax, material realism, humane faces, archival-noir tension, cinematic composition designed for click-through story replay.",
+    "prompt_assembly_rule": "Assemble each generated prompt from the global_style_cue, the selected scene base_image_prompt, visual refs only for named characters or groups listed as visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Exclude absent character refs and continuity notes. Use the matching scene_set camera render as geometry input for any multi-angle generation.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture revisits one depot from wide, table, upper-stair, lower-arch, and overhead-ledger angles. The embedded map fixes zones, routes, occlusion, staging, and camera slots for draft replay.",
+      "future_scene_set_need": "Before high-consistency website rendering, convert this map into a simple plan-view or 3D blockout and provide the camera-specific blockout render to the image model."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "ember_depot_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide exterior-to-interior establishing view of a high mountain road depot on a fogbound shelf in permanent cold twilight: a rectangular roofed court built from blue-black fitted stone, an open lower arch facing the viewer, and an upper stair at the rear climbing right beneath a retaining wall dark with water seepage. A turned numbered stone stands above the roof facing the plateau, connected by a thick knotted closure cord to the lower lintel. Inside are a long waist-high imperial stone weigh table, deep dry eaves with baskets and wrapped trade bundles, a small side hearth with a black soup pot, and old numbered road blocks fading into pearl-gray fog. A few cloaked travelers exchange small bundles under the roof while cold mist erases the mountain beyond.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The final depot is one compact rectangular court. The lower arch and upper stair face each other across the central weigh table; the dry eaves and hearth occupy opposite long walls.",
+          "Permanent twilight supplies cold diffuse light. Warm light comes only from the side hearth and low oil lamps."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_depot_table",
+        "ink_anchor": "depot_table",
+        "base_image_prompt": "Medium-wide interior of a blue-black stone road depot under warm ochre lamps: a long imperial weigh table divides the rectangular court, with fresh wax guest tablets at the lower-arch end and a waxed sealed ledger beneath oilcloth at the upper-stair end. Ari Vesk, a medium-built brown-skinned adult with shaved temples, a long dark braid, slate-blue wool wrap, short gray fog cloak, copper witness clips, and wax-stained fingers, stands behind the table. Tera Sen, an older deep-brown-skinned woman with silver hair in tight coils, a charcoal felt coat, scarred hands, and three red-ochre-black knotted witness cords, sits at the upper end. Mara Il, a sturdy olive-brown-skinned middle-aged woman with cropped gray-black curls, moss-green wool layers, rust apron, and iron ladle, fits wrapped bundles under the dry eaves beside a black soup pot. The lower arch glows with fog; the wet upper stair rises behind the ledger.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "behind the center of the weigh table with one hand near current guest tablets", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "tera_sen", "default_stance": "seated at the upper end with three witness cords spread before her", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "at the dry eaves beside wrapped bundles and the soup pot", "visual_ref": "visual_character_refs.characters.mara_il"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The sealed ledger begins under oilcloth at the upper-stair end of the table; current guest tablets remain at the lower-arch end."]
+      },
+      {
+        "visual_scene_id": "ember_ordinary_watch",
+        "ink_anchor": "ordinary_watch",
+        "base_image_prompt": "Workplace-routine frame inside a rectangular high-fantasy mountain depot: pearl-gray fog beads on the open lower arch, a wooden handcart wheel rests just inside, and water forms a dark line through one mortar joint above the rear upper stair. Ari Vesk, brown-skinned with shaved temples, long dark braid, slate-blue wrap, gray fog cloak, copper witness clips, and wax-stained fingers, checks a guest tablet at the central stone table. Tera Sen, older with deep brown skin, silver coiled hair, charcoal felt coat, scarred hands, and three colored witness cords, sorts knots by touch. Mara Il, sturdy with olive-brown skin, cropped gray-black curls, green wool, rust apron, and iron ladle, stirs broth over the side hearth. The waxed sealed ledger waits under oilcloth at the far end of the table; cold diffuse light and warm firelight divide the room.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "checking a guest tablet at the table", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "tera_sen", "default_stance": "sorting witness cords by touch", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "stirring broth at the hearth", "visual_ref": "visual_character_refs.characters.mara_il"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_prepare_claim_copy",
+        "ink_anchor": "preparation_choice.prepare_claim_copy",
+        "base_image_prompt": "Close table-side work frame in a stone mountain depot: Ari Vesk, brown-skinned with shaved temples, long dark braid, slate-blue wool wrap, copper witness clips, and wax-stained fingers, warms a fresh rectangular wax tablet beside a black soup pot and copies names and load marks from an old cloth-backed ledger leaf. Tera Sen, an older deep-brown-skinned woman with silver coiled hair, charcoal felt coat, scarred hands, and three colored witness cords, checks each copied mark against knots laid in parallel. Warm lamp and hearth light reveal wax ridges, old dark ink, frayed cloth binding, and the road-office seal at the edge of the open book.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "leaning over a fresh wax copy tablet", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "tera_sen", "default_stance": "comparing colored witness cords to the copied tally", "visual_ref": "visual_character_refs.characters.tera_sen"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_inspect_upper_cut",
+        "ink_anchor": "preparation_choice.inspect_upper_cut",
+        "base_image_prompt": "Medium view from the upper stair of a fogbound mountain road depot: Ari Vesk, a medium-built brown-skinned adult with shaved temples, long dark braid, slate-blue wool wrap, short gray fog cloak, copper witness clips, and wet sleeves, crouches beside a blue-black stone retaining wall. Three small white chalk beads have separated across a dark wet mortar seam; fresh grit lies on the stair. The imperial road cut climbs into pearl-gray fog beyond the landing. A narrow side path begins behind a rough screen of unnumbered stones and descends out of the main road sightline. The knotted closure cord remains taut along the stair rail toward the turned number-stone above the depot roof.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "crouched at the wet mortar seam with one hand near shifted chalk beads", "visual_ref": "visual_character_refs.characters.ari_vesk"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The side refuge path branches from the upper landing behind a rough stone screen; it is visible from the landing and occluded from the central table."]
+      },
+      {
+        "visual_scene_id": "ember_prepare_shelter",
+        "ink_anchor": "preparation_choice.prepare_shelter_hold",
+        "base_image_prompt": "Medium-wide preparation frame under the deep east eaves of a blue-black stone road depot: Ari Vesk, brown-skinned with long dark braid, slate-blue wrap, gray fog cloak, copper witness clips, and wax-stained fingers, lifts an empty basket onto a wall shelf. Mara Il, a sturdy olive-brown-skinned woman with cropped gray-black curls, moss-green wool layers, rust apron, and iron ladle tucked into her belt, sets two low timber load rails parallel to a chalked dry lane. Wrapped trade bundles stack against the stone wall above a sloped drainage channel. The open lower arch and fog path remain visible beyond the clear receiving lane.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "lifting an empty basket clear of the receiving lane", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "mara_il", "default_stance": "placing low timber rails along the dry chalk lane", "visual_ref": "visual_character_refs.characters.mara_il"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_prepare_warning",
+        "ink_anchor": "preparation_choice.prepare_road_warning",
+        "base_image_prompt": "Low-arch signal frame at a fogbound high-fantasy depot: Ari Vesk, brown-skinned with shaved temples, long dark braid, slate-blue wool wrap, short gray fog cloak, copper witness clips, and wax-stained fingers, pulls a short braided cord beside the open stone arch. A hand-sized bronze warning chime swings under the lintel. The thicker knotted closure cord rises from the lintel toward a turned numbered stone above the roof. A fresh wax guest tablet on a wall ledge bears abstract unlettered route marks for the closed upper cut. Old numbered road blocks and one small relay chime disappear down the pearl-gray hosted path.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "at the lower arch pulling the bronze warning chime cord", "visual_ref": "visual_character_refs.characters.ari_vesk"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_prepared_watch_fold",
+        "ink_anchor": "preparation_fold",
+        "base_image_prompt": "Wide interior of a rectangular blue-black stone depot during ordinary hosted-road work: lower fog arch in front, wet upper stair at rear, central imperial weigh table, dry east eaves, and warm west hearth all readable in one frame. Ari Vesk stands at the table between current guest tablets and a sealed waxed ledger. Tera Sen sorts three colored witness cords at the upper end. Mara Il tends a black soup pot and wrapped stores. Ari has brown skin, shaved temples, a long dark braid, slate-blue wool wrap, short gray fog cloak, copper witness clips, and wax-stained fingers; Tera is older with deep brown skin, silver coiled hair, charcoal felt coat, and scarred hands; Mara is sturdy with olive-brown skin, cropped gray-black curls, green wool, rust apron, and iron ladle.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "standing at the center table between current and old records", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "tera_sen", "default_stance": "at the upper table end with witness cords", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "at the hearth and dry stores", "visual_ref": "visual_character_refs.characters.mara_il"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "claim_copy >= 2", "modifier_prompt": "A fresh wax tablet carrying rows of abstract load marks cools beside Tera's three witness cords."},
+          {"trigger": "wall_evidence >= 2", "modifier_prompt": "Ari's cuff is dark with water and carries pale grit from the upper stair."},
+          {"trigger": "shelter_capacity >= 3", "modifier_prompt": "The east eaves have a clear chalked receiving lane and two low timber load rails."},
+          {"trigger": "road_warning >= 3", "modifier_prompt": "The bronze chime still swings slightly under the lower lintel and the current guest tablet displays a fresh closure mark."}
+        ]
+      },
+      {
+        "visual_scene_id": "ember_auditor_arrival",
+        "ink_anchor": "auditor_arrival",
+        "base_image_prompt": "Authority-arrival frame inside a high-fantasy mountain depot: Oren Jai steps through the open lower arch from pearl-gray fog, a lean light-brown-skinned man with straight black hair tied low, an ochre travel coat soaked to the knees, brass edge gauge at his belt, oiled warrant case, red office cord, and narrow seal kit. Across the central stone table stand Ari Vesk in slate-blue wrap and gray fog cloak, Tera Sen in charcoal felt with three witness cords, and Mara Il in green wool and rust apron beside the soup hearth. Oren bows toward carved host marks on the lintel while the old road-office seal remains visible under oilcloth at the table's far end. The lower arch, table, dry eaves, hearth, and wet upper stair fix the room's power geometry.",
+        "visible_characters": [
+          {"agent_id": "oren_jai", "default_stance": "just inside the lower arch bowing toward host marks", "visual_ref": "visual_character_refs.characters.oren_jai"},
+          {"agent_id": "ari_vesk", "default_stance": "behind the center of the table facing Oren", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "tera_sen", "default_stance": "at the upper table end with witness cords ready", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "at the hearth moving the soup pot away from records", "visual_ref": "visual_character_refs.characters.mara_il"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_wrong_ledger_reveal",
+        "ink_anchor": "wrong_ledger",
+        "base_image_prompt": "Overhead archival closeup on a weathered imperial stone weigh table under warm oil light: an old waxed cloth-backed ledger lies open beneath a dark bronze road-office seal. Early leaves show rows of abstract unlettered names, porter-load marks, depot withdrawal tallies, and unpaid-payment columns. Later leaves use a visibly different hand and ink for detour diagrams and supply movements, followed by blank space where a closing inventory should sit. Wax-stained brown hands hold the book edges from the depot side; a lean light-brown hand with an ochre cuff points to the later order; a scarred deep-brown hand places a red-ochre-black witness cord beside the unpaid tallies; a rust-apron edge and iron ladle appear near the moved soup pot. The composition makes one object carry several incompatible claims.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The book contains wage and store leaves first, later reused road-order leaves, and an absent closing inventory; the abstract marks remain unlettered in generated art."]
+      },
+      {
+        "visual_scene_id": "ember_audit_choice",
+        "ink_anchor": "audit_choice",
+        "base_image_prompt": "Medium cross-table confrontation in a rectangular mountain depot: Ari Vesk, brown-skinned with long dark braid, slate-blue wrap, gray fog cloak, copper witness clips, and wax-stained fingers, holds the open waxed ledger at the depot side of the central stone table. Oren Jai, lean and light-brown-skinned with tied black hair, wet ochre coat, brass gauge, oiled warrant case, red office cord, and seal kit, stands at the visitor side. Tera Sen, older with deep brown skin, silver coiled hair, charcoal felt coat, scarred hands, and three witness cords, leans over a low witness rail at the upper end. Mara Il, sturdy with olive-brown skin, cropped gray-black curls, green wool, rust apron, and iron ladle, watches from the hearth. The lower fog arch opens behind Oren; the wet upper stair and closure cord rise behind Ari.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "holding the open ledger from the depot side", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "oren_jai", "default_stance": "at the visitor side with warrant and seal kit", "visual_ref": "visual_character_refs.characters.oren_jai"},
+          {"agent_id": "tera_sen", "default_stance": "leaning over the witness rail with colored cords", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "at the hearth watching the table", "visual_ref": "visual_character_refs.characters.mara_il"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_custody_fold",
+        "ink_anchor": "custody_fold",
+        "base_image_prompt": "Wide table-and-room frame in a fogbound road depot after a custody decision: the open lower arch, central stone table, east dry eaves, west soup hearth, and rear upper stair remain visible. Ari Vesk stands on the depot side in slate-blue wool and gray cloak; Oren Jai stands opposite in wet ochre with warrant and seal kit; Tera Sen waits at the upper rail with three witness cords; Mara Il holds the iron ladle by the hearth. Fresh copy tablets, a coiled red office cord, a current warning tablet, and an unfinished witness thread occupy separate corners of the fully visible table. Cold pearl fog at the arch and warm ochre interior light sharpen the division between road, archive, and shelter.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "at the depot side of the table", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "oren_jai", "default_stance": "at the visitor side with warrant case", "visual_ref": "visual_character_refs.characters.oren_jai"},
+          {"agent_id": "tera_sen", "default_stance": "at the upper witness rail", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "at the hearth with ladle", "visual_ref": "visual_character_refs.characters.mara_il"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "ledger_custody == 1", "modifier_prompt": "Ari holds the waxed original at chest height on the depot side while Oren reads across the stone table."},
+          {"trigger": "ledger_custody == 2", "modifier_prompt": "The ledger is wrapped in dark oiled cloth beside Oren, bound by a new narrow audit seal; a separate receipt remains on Ari's side."},
+          {"trigger": "ledger_custody == 3", "modifier_prompt": "The ledger lies open across the table seam with an unfinished two-color custody thread passing through witness loops beside Oren and Tera."},
+          {"trigger": "claim_copy >= 2", "modifier_prompt": "A fresh wax copy tablet carrying rows of abstract load marks rests beside Tera's witness cords."},
+          {"trigger": "office_pressure >= 3", "modifier_prompt": "Oren holds a narrow red office cord above the warrant, ready to mark a formal obstruction finding."},
+          {"trigger": "seal_scope >= 2", "modifier_prompt": "A fresh tablet beside Oren carries copied detour diagrams and later supply-order marks under his small seal."}
+        ]
+      },
+      {
+        "visual_scene_id": "ember_lower_carrier_bell",
+        "ink_anchor": "lower_bell",
+        "base_image_prompt": "Pivotal sound-and-stone frame inside a blue-black mountain depot: the open lower arch fills with pearl-gray fog as a bronze carrier bell swings on a relay line and faint silhouettes of cloaked porters with wooden handcarts emerge far below on the road. At the rear, the wet retaining wall above the upper stair sheds a thin line of pale grit. Ari Vesk in slate-blue and gray turns between arch and wall; Tera Sen in charcoal felt gathers three witness cords; Mara Il in green wool and rust apron lifts the black broth pot from its hook; Oren Jai in wet ochre braces one palm on the visitor edge of the stone table beside his warrant, receipt cloth, and compact seal kit. Warm hearth light cuts across cold fog, visible chime metal, wet stone, wax tablets, and tense hands.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "turning between the lower bell and upper wall", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "tera_sen", "default_stance": "gathering witness cords at the table", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "lifting the soup pot from the hearth hook", "visual_ref": "visual_character_refs.characters.mara_il"},
+          {"agent_id": "oren_jai", "default_stance": "one palm braced on the visitor edge beside his warrant and seal kit", "visual_ref": "visual_character_refs.characters.oren_jai"},
+          {"agent_id": "lower_porter_train", "default_stance": "distant cloaked porters pulling oilcloth-wrapped wooden handcarts on the lower road", "visual_ref": "visual_character_refs.groups.lower_porter_train"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "wall_evidence >= 2", "modifier_prompt": "Three separated chalk beads and a fresh grit fall make the wet mortar seam visibly identified."},
+          {"trigger": "wall_evidence < 2", "modifier_prompt": "The retaining wall presents one continuous field of dark seepage and scattered grit across several equally prominent mortar seams."},
+          {"trigger": "road_warning >= 3", "modifier_prompt": "A smaller relay chime down the fog path swings in reply; the porter silhouettes are stopped on the lower shelf."},
+          {"trigger": "road_warning < 3", "modifier_prompt": "The porter silhouettes and loaded handcarts continue climbing toward the open lower arch."}
+        ]
+      },
+      {
+        "visual_scene_id": "ember_final_threshold",
+        "ink_anchor": "final_choice",
+        "base_image_prompt": "Whole-room final threshold in a rectangular high-fantasy road depot: open lower fog arch and bronze chime at front, central stone weigh table with wax tablets, witness cords, receipt cloth, and seal kit, deep dry eaves to the east, warm soup hearth to the west, and wet upper stair beneath a seeping retaining wall at rear. Ari Vesk in slate-blue wool and gray cloak stands at the center able to move toward table, warning cord, or receiving lane. Tera Sen in charcoal felt holds three colored witness cords at the upper rail. Oren Jai in wet ochre stands opposite with warrant and red cord. Mara Il in green wool and rust apron waits by stores and black pot. Distant cloaked porters and wooden handcarts show through the lower fog. The composition presents four real levers: claim copy, record custody, road warning, and shelter capacity.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "centered between table, warning cord, and receiving lane", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "tera_sen", "default_stance": "at the upper rail with witness cords", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "at the stores and hearth", "visual_ref": "visual_character_refs.characters.mara_il"},
+          {"agent_id": "oren_jai", "default_stance": "at the visitor side with warrant and seal kit", "visual_ref": "visual_character_refs.characters.oren_jai"},
+          {"agent_id": "lower_porter_train", "default_stance": "distant figures with handcarts climbing the first lower road shelf", "visual_ref": "visual_character_refs.groups.lower_porter_train"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "claim_copy >= 2", "modifier_prompt": "A separate wax copy with load marks sits beside Tera's witness cords."},
+          {"trigger": "road_warning >= 3", "modifier_prompt": "The lower bronze chime and distant relay chime both swing; the porters hold position below the arch."},
+          {"trigger": "ledger_custody == 2", "modifier_prompt": "The original ledger is wrapped and sealed beside Oren while Ari retains a signed receipt."},
+          {"trigger": "ledger_custody == 3", "modifier_prompt": "The original remains open across the table seam under a joint unfinished custody thread."},
+          {"trigger": "shelter_capacity >= 3", "modifier_prompt": "The east eaves show a clear chalked load lane and two low timber rails ready for handcarts."},
+          {"trigger": "office_pressure >= 3", "modifier_prompt": "Oren's narrow red obstruction cord lies stretched beside the warrant."}
+        ]
+      },
+      {
+        "visual_scene_id": "ember_ending_claims",
+        "ink_anchor": "ending_claims_preserved|ending_claims_cost",
+        "base_image_prompt": "Guide-claim aftermath at the central stone table of a fogbound mountain depot: Tera Sen, older with deep brown skin, silver coiled hair, charcoal felt coat, scarred hands, and three colored witness cords, holds a wax claim tablet close to her chest. Ari Vesk, brown-skinned with long dark braid, slate-blue wrap, gray fog cloak, copper witness clips, and wax-stained fingers, records a narrow certification at the table. Mara Il, sturdy with olive-brown skin, green wool, rust apron, and iron ladle, portions hot broth near the lower arch. Oren Jai, lean in wet ochre with red office cord and warrant case, watches from the visitor side. Cloaked porters wait in pearl fog beyond the arch; the upper stair remains closed behind a taut cord.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "writing a narrow certification at the table", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "tera_sen", "default_stance": "holding the wage copy and witness cords", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "serving broth by the lower arch", "visual_ref": "visual_character_refs.characters.mara_il"},
+          {"agent_id": "oren_jai", "default_stance": "watching with warrant and red cord", "visual_ref": "visual_character_refs.characters.oren_jai"},
+          {"agent_id": "lower_porter_train", "default_stance": "waiting beyond the lower arch", "visual_ref": "visual_character_refs.groups.lower_porter_train"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_ending_review",
+        "ink_anchor": "ending_bounded_review|ending_review_cost",
+        "base_image_prompt": "Shared-review aftermath at a long imperial weigh table in a blue-black stone depot: the waxed original ledger lies across the center seam; Oren Jai in wet ochre and Tera Sen in charcoal felt occupy opposite sides with separate fresh copy tablets; Ari Vesk in slate-blue wool stands at the table head holding a two-color custody thread; Mara Il in green wool and rust apron watches from the hearth. The lower arch opens into cold fog and a bronze warning chime; the rear upper stair sits beneath a wet retaining wall. Copy cords, seals, witness loops, and route tablets make the archive physically divided and inspectable.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "at the table head holding the custody thread", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "tera_sen", "default_stance": "on one side with wage copy and witness cords", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "watching from the hearth", "visual_ref": "visual_character_refs.characters.mara_il"},
+          {"agent_id": "oren_jai", "default_stance": "opposite Tera with road-order copy and seal kit", "visual_ref": "visual_character_refs.characters.oren_jai"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_ending_audit",
+        "ink_anchor": "ending_audit_bounded|ending_audit_capture",
+        "base_image_prompt": "Audit-transfer aftermath at the open lower arch of a high-fantasy mountain depot: Oren Jai, lean and light-brown-skinned with tied black hair, wet ochre travel coat, brass gauge, red office cord, and oiled warrant case, holds the waxed ledger wrapped beneath two narrow seals. Ari Vesk, brown-skinned with long dark braid, slate-blue wool wrap, gray fog cloak, copper witness clips, and wax-stained fingers, holds a signed wax receipt. Tera Sen stands by the stone table with three witness cords; Mara Il holds the black broth pot near the receiving lane. Cold fog surrounds distant porters and wooden handcarts; the wet retaining wall and upper stair remain visible behind the table.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "holding the signed receipt near the table", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "tera_sen", "default_stance": "beside witness cords at the table", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "near the receiving lane with soup pot", "visual_ref": "visual_character_refs.characters.mara_il"},
+          {"agent_id": "oren_jai", "default_stance": "at the lower arch carrying the wrapped ledger", "visual_ref": "visual_character_refs.characters.oren_jai"},
+          {"agent_id": "lower_porter_train", "default_stance": "distant in fog with handcarts", "visual_ref": "visual_character_refs.groups.lower_porter_train"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_ending_shelter",
+        "ink_anchor": "ending_shelter_hold|ending_shelter_cost",
+        "base_image_prompt": "Porter-shelter aftermath inside a rectangular stone depot: cloaked adult porters pull wooden handcarts wrapped in dark oilcloth through the open lower arch toward the east eaves. Ari Vesk in slate-blue wool and gray fog cloak directs the boundary between the court and closed upper stair. Mara Il in green wool and rust apron manages wrapped loads and hot broth. Tera Sen in charcoal felt protects witness cords and wax tablets at the central table. Oren Jai in wet ochre records the hold cost beside his warrant. The upper closure cord remains taut; cold fog pours around carts while warm ochre light marks the roofed receiving lane.",
+        "visible_characters": [
+          {"agent_id": "ari_vesk", "default_stance": "directing porters into the receiving lane and away from upper stair", "visual_ref": "visual_character_refs.characters.ari_vesk"},
+          {"agent_id": "tera_sen", "default_stance": "protecting records at the table", "visual_ref": "visual_character_refs.characters.tera_sen"},
+          {"agent_id": "mara_il", "default_stance": "managing loads and broth under the eaves", "visual_ref": "visual_character_refs.characters.mara_il"},
+          {"agent_id": "oren_jai", "default_stance": "recording hold costs at the visitor side", "visual_ref": "visual_character_refs.characters.oren_jai"},
+          {"agent_id": "lower_porter_train", "default_stance": "entering through lower arch with oilcloth-wrapped handcarts", "visual_ref": "visual_character_refs.groups.lower_porter_train"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "retain_depot_custody_visual",
+        "trigger": "branch_label == retain_depot_custody",
+        "apply_to_visual_scene_ids": ["ember_audit_choice", "ember_custody_fold"],
+        "modifier_prompt": "Ari grips both edges of the open original on the depot side while Oren reads across the table and holds his empty oiled warrant cloth."
+      },
+      {
+        "modifier_id": "yield_to_audit_visual",
+        "trigger": "branch_label == yield_to_audit_receipt",
+        "apply_to_visual_scene_ids": ["ember_audit_choice", "ember_custody_fold", "ember_ending_audit"],
+        "modifier_prompt": "Oren wraps the original in oiled cloth beneath a new narrow seal; Ari retains a wax receipt bearing four separate rows of abstract claim marks; Tera's posture closes and her cords stay local."
+      },
+      {
+        "modifier_id": "joint_custody_visual",
+        "trigger": "branch_label == establish_joint_custody",
+        "apply_to_visual_scene_ids": ["ember_audit_choice", "ember_custody_fold", "ember_ending_review"],
+        "modifier_prompt": "The open book rests on the table seam between Oren and Tera, with a two-color custody thread passing through both witness loops and Ari holding the unfinished knot."
+      },
+      {
+        "modifier_id": "warn_before_title_visual",
+        "trigger": "branch_label == warn_before_title",
+        "apply_to_visual_scene_ids": ["ember_audit_choice", "ember_lower_carrier_bell", "ember_final_threshold"],
+        "modifier_prompt": "Ari stands at the lower arch pulling the warning cord twice; both bronze chimes swing through pearl fog while Oren lifts the red office cord in objection."
+      },
+      {
+        "modifier_id": "high_train_exposure_visual",
+        "trigger": "train_exposure >= 3",
+        "apply_to_visual_scene_ids": ["ember_lower_carrier_bell", "ember_final_threshold", "ember_ending_claims", "ember_ending_audit"],
+        "modifier_prompt": "More cloaked porters and oilcloth-wrapped handcarts crowd the exposed lower shelf in wet fog, with visible condensation and strained rope harnesses."
+      },
+      {
+        "modifier_id": "guide_claims_success_visual",
+        "trigger": "ending_label == guide_claims_preserved",
+        "apply_to_visual_scene_ids": ["ember_ending_claims"],
+        "modifier_prompt": "Tera holds a clean separate wax copy beside all three witness cords; porters receive steaming bowls and dry cloth under the lower eaves; Oren wraps his red cord around the closed warrant case."
+      },
+      {
+        "modifier_id": "guide_claims_cost_visual",
+        "trigger": "ending_label == guide_claims_exposed",
+        "apply_to_visual_scene_ids": ["ember_ending_claims"],
+        "modifier_prompt": "The original ledger remains the only complete record, pulled between Ari and Oren across the table; Tera's incomplete tablet shows broken rows; wet porters wait at the arch beside rapidly emptying store baskets."
+      },
+      {
+        "modifier_id": "bounded_review_success_visual",
+        "trigger": "ending_label == shared_custody_road_closed",
+        "apply_to_visual_scene_ids": ["ember_ending_review"],
+        "modifier_prompt": "The joint thread is tied around original custody only; one wage copy sits with Tera, one detour-order copy sits with Oren, and the lower warning chime holds the porter train below while two local maintainers in thick gray work wraps use pry bars and wicker baskets to remove loose stones from the safe side of the upper wall."
+      },
+      {
+        "modifier_id": "bounded_review_cost_visual",
+        "trigger": "ending_label == review_named_but_unowned",
+        "apply_to_visual_scene_ids": ["ember_ending_review"],
+        "modifier_prompt": "The custody thread lies untied between opposing hands; the lower chime hangs still while porter silhouettes continue upward; pale grit falls from the wet upper wall onto the stair."
+      },
+      {
+        "modifier_id": "audit_bounded_success_visual",
+        "trigger": "ending_label == audit_chain_with_material_stop",
+        "apply_to_visual_scene_ids": ["ember_ending_audit"],
+        "modifier_prompt": "Ari's receipt carries a pressed grit sample and three shifted chalk-bead marks; Tera holds a complete separate wage copy; the closure cord remains taut while Oren carries the sealed original toward the lower fog path."
+      },
+      {
+        "modifier_id": "audit_capture_cost_visual",
+        "trigger": "ending_label == audit_capture_under_old_seal",
+        "apply_to_visual_scene_ids": ["ember_ending_audit"],
+        "modifier_prompt": "Oren carries the wrapped original and stretches the red office cord across the warrant; Tera is left with a sparse receipt; porters reach the lower arch while three local adults in heavy fog cloaks stand shoulder-to-shoulder across the upper stair, boots braced and open palms raised."
+      },
+      {
+        "modifier_id": "shelter_hold_success_visual",
+        "trigger": "ending_label == porter_train_held_under_roof",
+        "apply_to_visual_scene_ids": ["ember_ending_shelter"],
+        "modifier_prompt": "Handcarts unload in an orderly chalked dry lane between two timber rails; porters stand under the eaves with broth; the upper stair remains clear and barred; Oren writes storage and delay costs against the claimant's bond."
+      },
+      {
+        "modifier_id": "shelter_hold_cost_visual",
+        "trigger": "ending_label == shelter_overflow_in_fog",
+        "apply_to_visual_scene_ids": ["ember_ending_shelter"],
+        "modifier_prompt": "Wooden handcarts jam the lower arch at opposing angles, oilcloth bundles remain in wet fog, the dry lane disappears under clutter, Mara's store baskets empty, and porters strain to turn loads around."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "kalsa.final_depot.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Rectangular roofed stone court approximately twelve paces long from lower arch to upper stair and eight paces wide between dry eaves and hearth wall; one central weigh table divides visitors from record custody while preserving a clear load route along the east side.",
+      "fixed_zones": [
+        {"zone_id": "lower_hosted_arch", "visible_form": "broad open blue-black stone arch with bronze warning chime, short pull cord, host marks, and thick closure cord rising to roof marker", "used_for": "auditor and porter arrival, warnings, fog exposure, hosted entry"},
+        {"zone_id": "central_weigh_table", "visible_form": "long waist-high imperial stone slab aligned with the room axis, witness rail at upper end, shallow table chest below", "used_for": "guest entries, ledger opening, copies, custody threads, seals, receipts"},
+        {"zone_id": "east_dry_eaves", "visible_form": "deep roofed strip with wall shelves, sloped floor drain, baskets, wrapped goods, chalk lane, and movable timber load rails", "used_for": "shelter capacity and porter-load staging"},
+        {"zone_id": "west_hearth", "visible_form": "small recessed stone hearth with black hanging pot, stacked fuel, bowls, ladle hooks, and warm lamp", "used_for": "ordinary routine, broth, store spending, Mara staging"},
+        {"zone_id": "upper_stair_and_wall", "visible_form": "rear stair climbing right beneath a seeping retaining wall with chalk beads, fresh grit, and closure cord along the rail", "used_for": "material hazard, closed upper cut, wall evidence"},
+        {"zone_id": "upper_landing_refuge_branch", "visible_form": "narrow side path beginning behind a rough screen of unnumbered stones at the upper landing", "used_for": "concealed refuge access threatened by road reopening"},
+        {"zone_id": "roof_number_marker", "visible_form": "one weathered numbered road stone turned plateau-ward above the roof, joined to the lintel by a thick knotted cord", "used_for": "maintained closure state"}
+      ],
+      "routes": [
+        {"route_id": "hosted_lower_path", "path": "fog road below -> lower hosted arch -> court visitor side", "permissions": "hosted travelers, auditor under warrant, porter train after local signal"},
+        {"route_id": "court_load_lane", "path": "lower hosted arch -> east dry eaves", "permissions": "handcarts and porters admitted to depot shelter"},
+        {"route_id": "imperial_upper_cut", "path": "court -> upper stair -> retaining-wall landing -> numbered road into fog", "permissions": "closed during fixture pending material inspection and host-family passage"},
+        {"route_id": "refuge_side_path", "path": "upper landing -> behind rough stone screen -> concealed refuge route", "permissions": "bounded host knowledge; road-office maps omit it"}
+      ],
+      "occluders": [
+        {"occluder_id": "central_table_and_rail", "effect": "separates visitor hands from ledger custody and blocks low floor-level reach across the room"},
+        {"occluder_id": "upper_landing_stone_screen", "effect": "hides the refuge side path from the central table and lower arch"},
+        {"occluder_id": "mountain_fog", "effect": "limits lower-path and upper-cut visibility; chimes provide route state beyond sight"},
+        {"occluder_id": "lower_arch_lintel", "effect": "blocks a direct view of the roof number-stone from inside the central court"}
+      ],
+      "staging_slots": [
+        {"slot_id": "ari_table_head", "zone_id": "central_weigh_table", "used_by": ["ari_vesk"]},
+        {"slot_id": "tera_upper_rail", "zone_id": "central_weigh_table", "used_by": ["tera_sen"]},
+        {"slot_id": "mara_hearth", "zone_id": "west_hearth", "used_by": ["mara_il"]},
+        {"slot_id": "mara_eaves", "zone_id": "east_dry_eaves", "used_by": ["mara_il"]},
+        {"slot_id": "oren_visitor_side", "zone_id": "central_weigh_table", "used_by": ["oren_jai"]},
+        {"slot_id": "porters_lower_path", "zone_id": "lower_hosted_arch", "used_by": ["lower_porter_train"]},
+        {"slot_id": "porters_receiving_lane", "zone_id": "east_dry_eaves", "used_by": ["lower_porter_train"]}
+      ],
+      "camera_slots": [
+        {"camera_id": "wide_lower_arch_in", "supports_visual_scene_ids": ["ember_depot_establishing", "ember_prepared_watch_fold", "ember_auditor_arrival", "ember_final_threshold"]},
+        {"camera_id": "table_crosswise", "supports_visual_scene_ids": ["ember_depot_table", "ember_ordinary_watch", "ember_audit_choice", "ember_custody_fold", "ember_ending_claims", "ember_ending_review"]},
+        {"camera_id": "ledger_overhead", "supports_visual_scene_ids": ["ember_prepare_claim_copy", "ember_wrong_ledger_reveal"]},
+        {"camera_id": "upper_stair_close", "supports_visual_scene_ids": ["ember_inspect_upper_cut"]},
+        {"camera_id": "east_eaves_medium", "supports_visual_scene_ids": ["ember_prepare_shelter", "ember_ending_shelter"]},
+        {"camera_id": "lower_signal_out", "supports_visual_scene_ids": ["ember_prepare_warning", "ember_lower_carrier_bell", "ember_ending_audit"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "table_to_lower_arch", "path": "central table -> lower arch -> first lower road shelf", "supports": ["auditor arrival", "carrier bell", "porter proximity"]},
+        {"lane_id": "upper_stair_to_wall", "path": "upper stair -> chalk-bead seam -> imperial cut", "supports": ["wall inspection", "grit fall", "road closure"]},
+        {"lane_id": "upper_landing_to_refuge_branch", "path": "upper landing -> rough stone screen -> side path mouth", "supports": ["refuge exposure risk"]}
+      ],
+      "state_anchors": [
+        {"anchor_id": "ledger_custody", "states": ["Ari hands on depot side", "wrapped beside Oren", "open on center seam under joint thread"]},
+        {"anchor_id": "claim_copy", "states": ["absent or fragmentary", "fresh wax tablet beside Tera's cords"]},
+        {"anchor_id": "road_warning", "states": ["lower chime still and train climbing", "lower and relay chimes swinging with train held"]},
+        {"anchor_id": "wall_evidence", "states": ["broad seepage", "three shifted chalk beads with identified grit fall"]},
+        {"anchor_id": "shelter_capacity", "states": ["ordinary cluttered eaves", "clear chalk lane with timber rails", "overflow jam"]},
+        {"anchor_id": "office_pressure", "states": ["red cord in warrant case", "red cord stretched beside warrant", "red cord marking obstruction"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for people visible in the selected frame.",
+    "characters": {
+      "ari_vesk": "Ari Vesk: medium-built Kalsan adult, brown skin, shaved temples, long dark braid, slate-blue wool wrap, short pearl-gray fog cloak fastened at the left shoulder, narrow copper witness clips at belt and collar, wax- and chalk-stained fingers, practical soft boots, attentive posture that turns between records and routes.",
+      "tera_sen": "Tera Sen: older Kalsan woman, deep brown skin, broad lined face, silver hair in tight coils, charcoal felt traveling coat, scarred strong hands, three distinctive knotted witness cords in faded red, ochre, and black, patient forward lean and exacting eye contact.",
+      "mara_il": "Mara Il: sturdy middle-aged Kalsan woman, olive-brown skin, cropped gray-black curls, moss-green wool layers, rust-colored work apron marked with pale load chalk, iron ladle, broad practical stance, expressions that move between domestic warmth and material impatience.",
+      "oren_jai": "Oren Jai: lean Kalsan man, light brown skin, straight black hair tied low, wet ochre travel coat with narrow dark edging, brass edge gauge at belt, oiled warrant case, compact bronze seal kit, one narrow red office cord, controlled posture trained to make custody look neutral."
+    },
+    "groups": {
+      "lower_porter_train": "Lower porter train: adult human porters of varied ages and skin tones in layered charcoal, blue, and brown fog cloaks; practical wrapped boots; broad rope shoulder harnesses; small wooden and bronze route chimes; two-wheeled wooden handcarts carrying rectangular loads under dark oilcloth; bodies grouped around the slowest cart and angled toward warning sounds."
+    }
+  },
+  "review_notes": [
+    "Narrative, lore-grounding, visual-continuity, and spatial-cohesion self-review passes accepted the repaired artifact at B level or better; exact scores and fixed findings are recorded in the training sidecar.",
+    "The embedded scene_set map fixes the depot layout, route permissions, occlusion, explicit staging zones, camera slots, and branch-visible state anchors for draft replay.",
+    "The fixture requires a camera-specific blockout before high-consistency multi-angle rendering. The prompt manifest defers rendering and supplies text-only generation inputs.",
+    "All base prompts restate visible geometry and named-character appearance; branch modifiers describe additive changes in object custody, warning state, crowd location, wall evidence, and shelter use."
+  ]
+}

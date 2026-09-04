@@ -1,0 +1,84 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-ember-final-depot-audit-v0.bfl-simple-v0",
+  "fixture_id": "ember-final-depot-audit-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, sharp readable silhouettes, cold pearl-gray fog and blue-black mountain stone, warm ochre firelight, weathered bronze and wax, material realism, humane faces, archival-noir tension, cinematic click-through story composition.",
+  "prompts": [
+    {
+      "id": "01_depot_establishing",
+      "prompt": "Wide exterior-to-interior view of a rectangular roofed mountain road depot on a fogbound shelf in permanent cold twilight: open lower stone arch, rear upper stair beneath a seeping retaining wall, turned numbered stone above the roof joined to a knotted closure cord, central imperial weigh table, deep dry eaves with wrapped trade bundles, side hearth with black soup pot, old numbered road blocks fading into fog."
+    },
+    {
+      "id": "02_depot_table",
+      "prompt": "Medium-wide depot interior with long stone weigh table dividing current wax guest tablets from an oilcloth-covered sealed ledger; brown-skinned depot witness with shaved temples, long dark braid, slate-blue wool wrap, gray fog cloak, copper clips, and wax-stained fingers; older deep-brown-skinned claimant with silver coiled hair, charcoal felt coat, scarred hands, and three colored witness cords; sturdy olive-brown-skinned keeper in green wool and rust apron stacking goods beside soup hearth."
+    },
+    {
+      "id": "03_ordinary_watch",
+      "prompt": "Roadside routine under cold fog and warm firelight: brown-skinned braided witness checks a guest tablet at the central stone table, older silver-haired claimant sorts three knotted cords by touch, sturdy cropped-haired keeper stirs broth, one wooden handcart wheel rests inside the lower arch, water beads through a mortar joint over the rear upper stair, sealed ledger waits under oilcloth."
+    },
+    {
+      "id": "04_claim_copy",
+      "prompt": "Close archival work frame: brown-skinned witness with long dark braid and wax-stained fingers warms a fresh wax tablet beside a black soup pot and copies abstract names and load marks from an old cloth-backed ledger; older deep-brown-skinned silver-haired claimant checks every mark against faded red, ochre, and black witness cords; old bronze road seal glints at book edge."
+    },
+    {
+      "id": "05_upper_cut_inspection",
+      "prompt": "Fogbound upper stair of a mountain depot: brown-skinned adult with shaved temples, long braid, slate-blue wrap, gray fog cloak, and wet sleeves crouches beside blue-black retaining wall; three white chalk beads have shifted across a dark wet mortar seam, fresh grit covers the stair, imperial cut climbs into pearl fog, narrow refuge path begins behind a rough screen of unnumbered stones, taut closure cord follows the rail."
+    },
+    {
+      "id": "06_shelter_preparation",
+      "prompt": "Deep depot eaves prepared for emergency loads: brown-skinned braided witness lifts baskets onto a wall shelf while sturdy olive-brown-skinned keeper in green wool and rust apron sets two low timber rails along a chalked dry lane; wrapped bundles stack over a sloped drain; open lower arch and fog path remain visible beyond the clear handcart route."
+    },
+    {
+      "id": "07_warning_test",
+      "prompt": "Low depot arch in pearl fog: brown-skinned braided witness in slate-blue wool and gray fog cloak pulls a short cord, swinging a hand-sized bronze warning chime; thicker knotted closure cord rises toward a turned number-stone above the roof; fresh wax tablet carries abstract closure marks; old numbered road blocks and a relay chime fade down the hosted path."
+    },
+    {
+      "id": "08_prepared_watch",
+      "prompt": "Wide interior of a rectangular blue-black stone depot during ordinary hosted-road work: lower fog arch in front, wet upper stair at rear, central imperial weigh table, dry east eaves, and warm west hearth all readable in one frame. Brown-skinned braided witness stands at the table between current guest tablets and a sealed waxed ledger; older silver-haired claimant sorts three colored witness cords at the upper end; sturdy cropped-haired keeper in green wool and rust apron tends a black soup pot and wrapped stores."
+    },
+    {
+      "id": "09_auditor_arrival",
+      "prompt": "Authority enters a mountain depot: lean light-brown-skinned man with tied black hair, wet ochre travel coat, brass edge gauge, oiled warrant case, red office cord, and bronze seal kit steps through lower fog arch and bows toward host marks; across the stone table wait the slate-blue-clad braided witness, charcoal-clad silver-haired claimant with cords, and rust-aproned keeper beside the hearth; old office seal waits under oilcloth."
+    },
+    {
+      "id": "10_wrong_ledger",
+      "prompt": "Overhead archival closeup under warm oil light: waxed cloth-backed ledger open on weathered stone table, early leaves carrying abstract unpaid guide names, porter loads, depot withdrawals, and payment columns, later leaves in different ink carrying detour diagrams and supply orders, blank closing-inventory space; brown wax-stained hands hold book, ochre-cuffed hand points, scarred hand places three-color witness cord beside tallies."
+    },
+    {
+      "id": "11_custody_choice",
+      "prompt": "Cross-table confrontation in blue-black stone depot: brown-skinned braided witness in slate-blue wool holds open ledger from depot side; lean tied-haired auditor in wet ochre stands opposite with warrant, red cord, and seal kit; older silver-haired claimant leans over witness rail with colored cords; sturdy rust-aproned keeper watches from hearth; lower fog arch behind auditor and wet upper stair behind witness."
+    },
+    {
+      "id": "12_custody_fold",
+      "prompt": "Wide depot after a record-custody decision: lower arch, central table, dry eaves, soup hearth, and upper stair visible; slate-blue witness, ochre auditor, charcoal claimant, and rust-aproned keeper hold distinct stations; fresh wax tablets, coiled red office cord, current warning tablet, seal cloth, and unfinished witness thread occupy separate corners of the fully visible table."
+    },
+    {
+      "id": "13_lower_carrier_bell",
+      "prompt": "Pivotal sound-and-stone frame: bronze carrier bell swings in open lower arch filled with pearl fog, distant cloaked porters pull oilcloth-wrapped wooden handcarts up the road, wet retaining wall above rear stair sheds pale grit; braided witness turns between arch and wall, silver-haired claimant gathers cords, rust-aproned keeper lifts soup pot, and ochre-coated auditor braces one palm on the visitor edge of the stone table beside his warrant and compact seal kit."
+    },
+    {
+      "id": "14_final_threshold",
+      "prompt": "Whole-room road crisis in rectangular mountain depot: lower fog arch and chime, central weigh table with ledger and wax copies, dry eaves with load lane, warm side hearth, rear wet stair and retaining wall; slate-blue witness centered among warning cord, records, and shelter lane; charcoal claimant with cords, ochre auditor with warrant and red seal cord, rust-aproned keeper by stores, distant porters and handcarts in fog."
+    },
+    {
+      "id": "15_guide_claim_end",
+      "prompt": "Guide-claim aftermath at depot table: older deep-brown-skinned silver-haired claimant holds wax copy beside three colored witness cords; brown-skinned braided witness writes narrow certification; sturdy keeper serves broth near lower arch; lean ochre-coated auditor watches with warrant and red cord; cloaked porters wait in fog and upper stair remains closed by taut cord."
+    },
+    {
+      "id": "16_shared_review_end",
+      "prompt": "Shared-review aftermath under warm depot lamps: original ledger lies across stone table seam, ochre-coated auditor and charcoal-coated silver-haired claimant receive different wax copies, slate-blue braided witness holds two-color custody thread at table head, rust-aproned keeper watches from hearth, lower warning chime and wet upper wall frame the divided inspectable archive."
+    },
+    {
+      "id": "17_audit_transfer_end",
+      "prompt": "Audit-transfer aftermath at lower fog arch: lean light-brown-skinned auditor in wet ochre carries waxed ledger wrapped beneath two narrow seals; brown-skinned braided witness holds signed wax receipt; silver-haired claimant guards witness cords at table; rust-aproned keeper stands by receiving lane; distant porters and handcarts in fog, wet retaining wall visible behind."
+    },
+    {
+      "id": "18_porter_shelter_end",
+      "prompt": "Porter-shelter aftermath inside rectangular stone depot: diverse adult porters in layered fog cloaks pull oilcloth-wrapped wooden handcarts through lower arch toward chalked dry lane; slate-blue braided witness directs court boundary, rust-aproned keeper manages loads and broth, charcoal silver-haired claimant protects records, ochre auditor writes hold costs, upper closure cord remains taut."
+    }
+  ]
+}
