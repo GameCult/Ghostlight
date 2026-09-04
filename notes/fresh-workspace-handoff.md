@@ -292,23 +292,24 @@ landed, passes 2 through 9 are not.
      lore on Zyphos `codex/ghostlight-worlds` at `2fef909`.
    - Kalsa `stormshield-handoff-v0`: `codex/world-kalsa` tip `489c541`; lore
      on Kalsa `codex/ghostlight-worlds` at `c9f4c5c`.
-   The first-generation `Invoke-Worlds.ps1` loop is retired (file still on
-   disk, do not launch it). The live fan-out is the 32-slot titled-elaborator
-   scheduler `C:\Users\Meta\.claude\worlds\Invoke-Elaborators.ps1`, config
-   `worlds.config.psd1`, prompt `elaborator-prompt.md`. Since 18:17 the prompt
-   is a creative brief: vault ideas, no Ink. Each slot publishes its ledger to
-   the base branch under `experiments/elaboration/<world>/ledger/<stamp>-<title>.md`
-   on `codex/world-<world>`. First two ideas: Aetheria Hearth "Keeping The
-   Quarrel" (ledger commit `cead2d5` on `codex/world-aetheria`) and Delvehold
-   Ember null-rune immune response (ledger commit `ad4fcec` on
-   `codex/world-delvehold`). Workers never run git: the Codex workspace-write
-   sandbox keeps `.git` read-only even inside the writable root. The scheduler
-   commits and pushes each slot clone on exit to `slot/<world>/<title>/<stamp>`
-   branches in both the Ghostlight world clone and the lore clone and records
-   each completion in `logs\elab-done.csv`, 44 rows as of this
-   writing; that file is the witness, not the scheduler log. Integration of
-   slot branches into `codex/world-<world>` and `codex/ghostlight-worlds`
-   beyond the published ledgers is a deliberate later pass.
+   The elaborator swarm is paused by operator order and this session no
+   longer owns it. The stop flag `C:\Users\Meta\.claude\worlds\logs\elab-stop.flag`
+   was set at 2026-09-04 20:10 with 66 passes finished in
+   `logs\elab-done.csv`; in-flight slots drain and are pushed, so
+   the final row count is whatever that file holds after the drain. The
+   successor handoff is `C:\Users\Meta\.claude\worlds\README.md` (written
+   20:09; final counts and the Charter idea are filled in at drain). Resume or
+   restart of the loop waits on operator adjustments and belongs to the
+   successor, not to a Ghostlight kernel session. What remains owed and is
+   deliberately deferred: integration of the `slot/<world>/<title>/<stamp>`
+   branches into the lore vaults on `codex/ghostlight-worlds` and into
+   `codex/world-<world>`. The idea index is the four world-branch ledger
+   directories `experiments/elaboration/<world>/ledger/` on `codex/world-<world>`
+   for aetheria, delvehold, kalsa, zyphos. The substrate lessons (workers never
+   run git; a supervisor outside the Codex sandbox commits and pushes each
+   slot clone; full clones, not linked worktrees) stay in `state/evidence.jsonl`.
+   `Invoke-Worlds.ps1` and the first-generation loop are retired under
+   `C:\Users\Meta\.claude\worlds\retired`; do not launch them.
    Clone paths:
    `F:\Projects\Ghostlight-worlds\<world>` and
    `F:\Projects\<Lore>-worktrees\ghostlight-worlds` (full clones despite the
