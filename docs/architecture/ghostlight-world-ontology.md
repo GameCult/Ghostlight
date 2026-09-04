@@ -2,81 +2,110 @@
 
 ## Status
 
-This document is the closed typed vocabulary for world structure and
-elaboration. `docs/architecture/ghostlight-dungeon-mvp.md` remains the authority
-map: it owns who may write, what the invariants are, and where the boundaries
-sit. This document owns only what the vocabulary *is*, and it may not introduce
-a writer, a gate, or a second commit path.
+This document is the closed typed vocabulary for world structure, character
+action, and elaboration, and the deterministic verification that admits all
+three. `docs/architecture/ghostlight-dungeon-mvp.md` remains the authority map:
+it owns who may write, what the prime invariants are, and where the boundaries
+sit. This document owns what the vocabulary *is* and what the reducer checks.
+It may not introduce a writer, a semantic gate, or a second commit path.
 
-`docs/architecture/ghostlight-transition-algebra.md` describes the pre-rebuild
-vocabulary and is teardown evidence. Its principle that different admission
-lanes share one mutation vocabulary survives here. Its types, subject kinds,
-string identifiers, and migration ladder do not.
+`docs/architecture/ghostlight-transition-algebra.md` and
+`docs/architecture/ghostlight-multiresolution-agency.md` describe the
+pre-rebuild machine and are teardown evidence. Three of their ideas survive
+here, named where they are used: one mutation vocabulary across every admission
+lane; compact mutation drafts with a complete deterministic mismatch set; and a
+resumable per-jurisdiction elaborator session checkpointed against admitted
+commit ancestry.
 
 ## Objective
 
-Let a world grow deep enough to constrain decisions, using structure the reducer
-can check, so that depth never depends on a model's opinion that the world is
-interesting.
+One vocabulary and one deterministic verifier for three things that used to be
+three machines:
+
+- **world elaboration** — adding structure at a causal boundary;
+- **character action** — a subject changing the world through an affordance;
+- **institutional flow** — obligations, pressures, and authority propagating
+  through layers of collective agency without a narrator.
+
+Verification is structural. The reducer checks reference integrity,
+preconditions, authority scope, effect ceilings, conservation, and knowledge
+scope. It never checks whether the result is interesting, plausible, diverse,
+or well written. Depth comes from typed structure that constrains decisions,
+not from a model agreeing that the world is deep.
 
 ## Current mechanism
 
 The sealed kernel holds subjects with a label and a kind
-(`Person | Institution | Population`), one affordance kind (`Speak`), and one
-action (`Speak { text }`). There is no place, route, resource, relation, fact,
-commitment, or pressure, and no ingress that could admit one. A world is a room
-of named voices.
+(`Person | Institution | Population`), one affordance (`Speak`), and one action
+(`Speak { text }`). `reduce` checks phase, exact revision-bound opportunity,
+controller identity, and affordance grant, then appends a `DecisionEvent`. There
+is no place, route, resource, relation, fact, commitment, or pressure, no
+precondition on any action, no effect beyond the event itself, and no ingress
+that could admit structure.
 
 ## The failure this vocabulary is designed against
 
 Run 115 terminated because `inst:kharad-road-keepers` referenced
-`loc:kharad-rhythm-road`, which did not exist. Four reconciliation steps failed
-to repair it. Three structural causes, all in the vocabulary rather than in the
-models:
+`loc:kharad-rhythm-road`, which did not exist, and four reconciliation steps
+could not repair it. Three structural causes, all in the vocabulary:
 
 1. **Names were keys.** `SubjectRef { kind, id: String }` accepted a
-   caller-supplied identifier. A plausible-looking string was indistinguishable
-   from a real referent until reduction.
-2. **Admission was two-phase.** `AdmitEntity { initial_components: BTreeSet<..> }`
-   declared which components a subject *could* have, separately from populating
-   them. A referenceable but unpopulated entity was a legal intermediate state.
-3. **The batch was flat.** `Vec<PermittedWorldMutation>` permitted each mutation
-   independently, so a cross-mutation dangling reference was a runtime discovery
-   rather than an unrepresentable input. Reconciliation existed to repair that
-   class, which made it a repair loop standing in for an owner.
+   caller-supplied identifier. A plausible string was indistinguishable from a
+   referent until reduction.
+2. **Admission was two-phase.** `AdmitEntity { initial_components }` declared
+   which components a subject *could* have separately from populating them. A
+   referenceable, empty entity was a legal state.
+3. **The batch was flat.** Each mutation was permitted independently, so a
+   cross-mutation dangling reference was a runtime discovery. Reconciliation
+   existed to repair that class, which made it a repair loop standing in for an
+   owner.
 
-Depth had the same shape of defect. Texture lived in free strings —
-`posture: String`, `resource_kind`, `capability_id`, `persistent_features`,
-`description` — which nothing could reason over. A world with many actors still
-felt thin, and the answer reached for was more model tribunals:
-`ElaboratorTitle`, `WorldComplexitySemanticQualification`,
-`WorldComplexityFissionQualification`,
-`WorldComplexityIndividuationQualification`,
-`WorldComplexitySemanticVerification`. Those were compensators for an ontology
-with nowhere to put depth.
+Depth had the same defect. Texture lived in free strings — `posture`,
+`resource_kind`, `capability_id`, `persistent_features`, `description` — that
+nothing could reason over, so a world with many actors still felt thin. The
+answer reached for was five model tribunals (`ElaboratorTitle` and the
+`WorldComplexity*Qualification`/`*Verification` set): compensators for an
+ontology with nowhere to put depth.
 
-The cut: make identity unforgeable, make admission atomic, and give depth a
-typed home. Then structural admission is sufficient and no verifier is needed.
+Character action had a matching defect: an attempt was an event, and a separate
+wave-level outcome resolver asked a model whether it worked. Resources,
+relationships, knowledge, and pressures mostly stood still while the prose
+stayed busy.
+
+The cut: make identity unforgeable, make admission atomic, give depth a typed
+home, and make an action a typed precondition-effect transition that the same
+reducer verifies. Then structural admission is sufficient and no verifier,
+resolver, or reconciler is needed.
 
 ## Invariants
 
-1. A reference is either an exact canonical ID issued by the reducer or a draft
-   handle resolved inside the same patch. There is no third form.
-2. Cross-kind reference is unrepresentable, not rejected at runtime. Typed ID
-   newtypes carry the kind.
-3. A patch reduces completely or not at all. No canonical ID is issued, revealed,
-   or consumed by a rejected patch.
+1. A reference is an exact canonical ID issued by the reducer or a draft handle
+   resolved inside the same patch. There is no third form.
+2. Cross-kind reference is unrepresentable. Typed ID newtypes carry the kind.
+3. A patch reduces completely or not at all. No canonical ID is issued,
+   revealed, or consumed by a rejected patch.
 4. Only subjects decide. Places, resources, facts, and channels have no
    controller, no affordance, and no decision opportunity.
-5. Custody conserves. A patch may move or transform a declared quantity; it may
-   not create one without an explicit, evidenced admission.
-6. Knowledge is scoped. A subject knows an exact fact or does not; a patch may
-   add knowledge only by citing an accessible fact or admitting an evidenced one.
-7. Persona material enriches and never substitutes. Values, voice, memory, and
+5. Custody conserves. Quantity moves or transforms; it is created only by an
+   explicit evidenced admission or an affordance whose effect schema says so.
+6. Knowledge is scoped. A subject acts only on facts it holds. A patch adds
+   knowledge only by citing an accessible fact or admitting an evidenced one.
+7. An action is an affordance invocation. Its preconditions are checked
+   against the acting subject's own components at the exact scope digest; its
+   effects cannot exceed the affordance's effect ceiling; an uncertain outcome
+   is selected by kernel-owned entropy from the affordance's declared bands.
+8. Persona material enriches and never substitutes. Values, voice, memory, and
    relationship reads cannot stand in for authority, custody, topology, or
    knowledge.
-8. Elaboration answers a derived causal boundary. There is no wave, quota,
-   round budget, coverage ratio, or completeness metric.
+9. Elaboration answers a derived causal boundary or an authored seed request.
+   There is no wave, quota, round budget, coverage ratio, or completeness
+   metric.
+10. A proposal binds to the digest of the components its verification reads,
+    not to the whole world digest. It commits at any later revision where that
+    scope digest is unchanged, and is rejected when it is not.
+11. Every tool a model may call is a projection of this vocabulary. The tool
+    catalog is derived state and cannot carry an operation the reducer does not
+    own.
 
 ## Identity
 
@@ -88,17 +117,78 @@ EntityId    place, resource, fact, channel                     — cannot decide
 EdgeId      route, relation, commitment, pressure              — connects the above
 ```
 
-Display names are labels. They are never keys, never resolve a reference, and
-never bind structure.
+Display names are labels. They never resolve a reference or bind structure.
+
+## Components
+
+Twelve, each earning its place by constraining a decision. Some attach to one
+referent; some are edge-shaped and attach to a pair. The reducer does not care
+which noun a component is; it cares what it constrains.
+
+| Component | Attaches to | Decision it constrains |
+| --- | --- | --- |
+| `Position` | subject → place | who is present, who perceives, who must travel |
+| `Route` | place ↔ place: access, cost | who can arrive in time, who can be cut off |
+| `Custody` | holder → resource: quantity | what can be spent, seized, withheld |
+| `Dependency` | subject → resource, route, or subject | what fails when supply fails |
+| `Authority` | subject → scope: kind | who may legitimately command, tax, judge, admit |
+| `Selection` | office → method, incumbent, term | how power is lost; succession pressure |
+| `Redress` | grievance kind → forum, standing | where conflict goes when it cannot be fought |
+| `Knowledge` | subject → fact: confidence, source | what a subject may act on at all |
+| `Channel` | channel: reach set, latency, controller | how facts travel; who can be silenced |
+| `Commitment` | subject → counterparty: kind, due, stake | obligation with a clock; autonomous motion |
+| `Pressure` | source → target: magnitude, unresolved | the causal boundary trigger |
+| `PersonaMaterial` | subject: values, voice, memories, reads | lived meaning; never authority |
+
+A `Fact` carries a `standing`: `Canonical` (admitted with evidence) or
+`Claimed { by: SubjectId }` (asserted in speech). Knowledge of a claimed fact is
+belief. Deception is a subject asserting a claim while holding a contradicting
+canonical fact; misread is a listener acquiring a claim the speaker did not
+intend. Both are ordinary typed states, not narrator judgments.
+
+Civic order is the `Authority` + `Selection` + `Redress` + `Custody` subgraph.
+It is not a prose manifest and needs no civic verdict. `Dependency` is the
+crisis transmitter: it is what makes a failed pump in one realm a political
+problem in another without anyone deciding that it should be.
+
+## Component operations
+
+This is the closed operation set. Every mutation the kernel will ever apply is
+one of these, and every model-facing tool is a projection of one of these.
+
+```text
+Declaration      declare_subject, declare_place, declare_resource, declare_fact,
+                 declare_channel, declare_route             (draft handles only)
+Position         relocate(subject, via: Route)
+Route            open, close, alter_cost
+Custody          transfer(from, to, resource, qty), transform(resource, into, qty),
+                 consume(holder, resource, qty), admit(holder, resource, qty, evidence)
+Dependency       bind, release
+Authority        grant(subject, scope, kind), revoke
+Selection        install(office, incumbent), vacate, set_method
+Redress          open_forum(kind, forum, standing), close_forum
+Knowledge        acquire(subject, fact, source, confidence), communicate(speaker, fact,
+                 channel), forget
+Channel          set_reach, set_controller
+Commitment       create(subject, counterparty, kind, due, stake), fulfill, default,
+                 release
+Pressure         create(source, target, magnitude), advance, reduce, resolve
+PersonaMaterial  set(subject, material)
+Retirement       retire(referent, reason)
+Time             advance(minutes)
+```
+
+Twenty-nine operations. Adding one is a design change to this document and a
+code change to the reducer; it is never a runtime patch.
 
 ## Patch construction
 
-One primitive admits structure, in draft and in active play:
+One primitive admits structure and effects, in draft and in active play:
 
 ```text
 WorldPatch
-  declarations: Vec<Declaration>       // new subjects, entities, edges — draft handles only
-  components:   Vec<ComponentSpec>     // populate declared or existing referents
+  declarations: Vec<Declaration>       // new referents, draft handles only
+  operations:   Vec<ComponentOp>       // over declared or existing referents
   evidence:     Vec<EvidenceRef>       // exact receipts where a fact is admitted
 
 Ref<Id> = Existing(Id) | Draft(DraftHandle)
@@ -107,103 +197,218 @@ Ref<Id> = Existing(Id) | Draft(DraftHandle)
 Reduction is one pass with no repair step:
 
 1. Index every declaration by handle. Duplicate or unused handles reject.
-2. Resolve every `Ref::Draft` against that index, checking kind. Unresolvable or
-   wrong-kind rejects.
+2. Resolve every `Ref::Draft` against that index, checking kind.
 3. Resolve every `Ref::Existing` against the current revision, checking kind.
-   Unknown or wrong-kind rejects.
-4. Check structural admission (below) over the complete candidate graph.
-5. Only then allocate canonical IDs for all declarations and commit atomically.
+4. Check structural admission over the complete candidate graph.
+5. Only then allocate canonical IDs and commit atomically.
 
-`inst:kharad-road-keepers` referencing a road that is neither declared in the
-patch nor already canonical is rejected at step 2, deterministically, before any
-ID exists. There is nothing for a reconciler to do, so there is no reconciler.
+A rejection returns the complete deterministic mismatch set — every failed
+check, not the first — so a proposer repairs one compact draft without
+guessing which invariant failed first. `inst:kharad-road-keepers` naming an
+undeclared road is rejected at step 2, before any ID exists. There is nothing
+for a reconciler to do, so there is no reconciler.
 
 ### Structural admission
 
-The reducer checks only these, and nothing about quality:
+The reducer checks only these:
 
 - every referent exists or is declared in the same patch;
 - containment is acyclic;
-- routes have exact place endpoints on both ends and a valid cost;
-- relation and edge endpoint kinds match the edge kind;
-- custody transfers conserve declared quantity;
-- authority and affordance scope covers the proposed mutation;
+- routes have exact place endpoints and a valid cost;
+- edge endpoint kinds match the edge kind;
+- custody operations conserve declared quantity;
+- the deriving authority envelope covers every operation in the patch;
 - knowledge additions cite an accessible or newly evidenced fact;
+- communication reaches only subjects inside the channel's reach set;
 - population slices are disjoint beneath their declared parent;
-- externally owned components change only through their admitted owner.
+- externally owned components change only through their admitted owner;
+- the patch produces at least one canonical change.
 
 Interestingness, novelty, political diversity, name quality, prose quality, and
-counts do not appear in this validator and may not be added to it.
+counts do not appear here and may not be added.
 
-## Components
+## Affordances: the action vocabulary a world authors
 
-Twelve, each earning its place by constraining a decision. Anything that does
-not constrain a decision is Persona material or an event, not a component.
+The kernel owns component operations. A **world** owns its affordance catalog.
+This is the generality lever: a setting with spellcraft, insurance claims,
+oath-rhythms, or memetic sovereignty authors affordances from the same
+twenty-nine operations, and the kernel never learns a genre.
 
-| Component | Shape | Decision it constrains |
-| --- | --- | --- |
-| `Position` | subject to place | who is present, who perceives, who must travel |
-| `Route` | place to place, access, cost | who can arrive in time, who can be cut off |
-| `Custody` | holder to resource, quantity | what can be spent, seized, withheld |
-| `Dependency` | subject to resource, route, or subject | what fails when supply fails |
-| `Authority` | subject to scope, kind | who may legitimately command, tax, judge, admit |
-| `Selection` | office to method, incumbent, term | how power is lost; succession pressure |
-| `Redress` | grievance to forum, standing | where conflict goes when it cannot be fought |
-| `Knowledge` | subject to fact, confidence, source | what a subject may act on at all |
-| `Channel` | reach, latency, control | how facts travel; who can be silenced |
-| `Commitment` | subject to counterparty, kind, due, stake | obligation with a clock; autonomous motion |
-| `Pressure` | source to target, magnitude, unresolved | the causal boundary trigger |
-| `PersonaMaterial` | values, voice, memories, relationship reads | lived meaning; never authority |
+```text
+Affordance
+  kind:          AffordanceKind        // world-declared name, e.g. Speak, Move, Transfer,
+                                       //   Decree, Levy, Petition, Cast, Sabotage
+  preconditions: Vec<Precondition>     // over the actor's own components at scope digest
+  effect_schema: Vec<EffectSlot>       // which ComponentOps, on which referent roles,
+                                       //   within which bounds
+  outcome_bands: Vec<OutcomeBand>      // weighted; each band names its effect subset
+```
 
-Civic order is the `Authority` + `Selection` + `Redress` + `Custody` subgraph. It
-is not a prose manifest and does not require a model's civic verdict.
+```text
+Precondition
+  Present { at: Role }                          // actor Position matches target place
+  Reachable { to: Role, within: Cost }          // a Route path exists under access and cost
+  Holds { resource: Role, at_least: Qty }       // Custody
+  Authorized { over: Role, kind }               // Authority covers the target scope
+  Knows { fact: Role, at_least: Confidence }    // Knowledge
+  CanReach { subject: Role, via: Channel }      // channel reach
+  Committed { to: Role, kind }                  // an existing Commitment
+```
 
-`Dependency` is the crisis transmitter. It is what makes a failed dwarven pump in
-one realm a political problem in another without a narrator deciding that it
-should be.
+Preconditions read only the acting subject's own components and the exact
+targets the proposal names. A subject cannot act at a distance, spend what it
+does not hold, command outside its authority, act on a fact it does not know,
+or speak to someone its channels do not reach. These are checks on typed
+state, not a model's opinion of feasibility.
+
+Effect slots bound what the invocation may propose: which operations, on which
+roles, with what magnitude ceiling. A proposal exceeding a slot is rejected.
+A proposal within its slots is admitted structurally like any patch.
+
+Outcome bands make uncertainty deterministic. When an affordance declares more
+than one band, the kernel draws from its own committed entropy — seeded by
+world ID, revision, and command ID — selects one band, and applies only that
+band's effect subset. The same proposal at the same revision always yields the
+same band. Neither the Persona, the Interpreter, nor an operational agent can
+choose success; they choose the attempt.
+
+`Speak` is the one kernel-built affordance: precondition `CanReach`, effect
+`Knowledge.communicate` of a `Claimed` fact to every subject in reach, plus the
+speech event. Everything else is authored per world in the seed and may be
+extended by elaboration under the same patch primitive.
+
+## Action verification
+
+```text
+controller proposal (typed, from Interpreter or OperationalAgent)
+  -> DecisionInvocation { affordance, targets, proposed effects }
+  -> scope digest check: actor components + named targets unchanged
+  -> precondition check over those components
+  -> effect ceiling check against the affordance's slots
+  -> band selection from kernel entropy
+  -> lower the band's effects to a WorldPatch
+  -> structural admission
+  -> atomic commit; DecisionEvent records affordance, band, and patch digest
+```
+
+Every stage is a pure function of committed state, the proposal, and kernel
+entropy. A rejection returns the complete mismatch set. Player, NPC,
+institution, population, import, and elaborator actions share this pipeline;
+different admission lanes derive different authority envelopes and never
+different mutations.
+
+## Institutional layers and flow
+
+Layers of collective agency are relations, not special subjects:
+
+- **Containment** nests places and jurisdictions.
+- **Membership** binds persons and slices to institutions and populations.
+- **Jurisdiction** is an `Authority` component whose scope is a subject set or
+  a place subtree.
+- **Representation** is `Selection`: an institution acts through an office
+  held by a person, so a decree carries an incumbent's name and a succession
+  risk.
+
+An institution normally carries an `OperationalAgent` controller and authored
+affordances such as `Decree`, `Levy`, `Contract`, or `Deploy`. Their effects
+create `Commitment` on subordinates and counterparties. A due or defaulted
+commitment creates or advances `Pressure`. Unresolved pressure on a subject
+becomes that subject's next decision opportunity. That is the whole internal
+flow: obligation → pressure → opportunity, propagating along typed relations
+with no narrator and no wave planner. A population slice under enough pressure
+with no person-shaped subject to bear it derives an `IndividuationRequired`
+boundary.
+
+An institution that also needs a person-shaped public voice gets a separate
+`NarrativePersona` controller on a person subject bound by `Selection`. Two
+controllers, disjoint scopes; awkward overlap is rejected, not resolved by
+precedence.
 
 ## Elaboration
 
-The world grows only where committed pressure reaches a typed boundary. The
-kernel derives boundaries from a revision exactly as it derives decision
-opportunities: revision-bound, digest-bound, and never self-issued by a model.
+The world grows only where committed state reaches a typed boundary or where an
+authored seed request opens a scope. Both are answered by the same patch.
 
 ```text
 CausalBoundary
-  UnelaboratedDestination { route, place }        // a route leads somewhere with no structure
-  PolityInCausalRange     { relation, subject }   // an external polity now bears on committed state
-  IndividuationRequired   { population, slice }   // a slice must act as a person to resolve a pressure
-  MissingStructure        { scope }               // a commitment or pressure has no authority,
-                                                  // channel, or redress path that could resolve it
+  UnelaboratedDestination { route, place }
+  PolityInCausalRange     { relation, subject }
+  IndividuationRequired   { population, slice, pressure }
+  MissingStructure        { scope }     // a commitment or pressure has no authority,
+                                        //   channel, or redress path that could resolve it
+
+SeedRequest { jurisdiction: DraftHandle, brief: EvidenceRef }   // draft phase only
 ```
 
-One command answers one boundary:
+Boundaries are derived from a revision exactly as opportunities are, and each
+carries the digest of the components that derive it. One command answers one:
 
 ```text
-CommandBody::AdmitPatch { boundary: Option<CausalBoundary>, patch: WorldPatch }
+CommandBody::AdmitPatch { answers: Boundary | SeedRequest, patch: WorldPatch }
 ```
 
-In `draft`, `boundary` is `None` and draft authority governs seed construction.
-In `active`, `boundary` must be `Some` and must match a boundary derived at the
-exact submitted revision. A commit clears the boundary; nothing else does.
+A commit clears exactly the boundary it answers. Nothing else clears one. A
+patch answering a boundary the kernel no longer derives is rejected.
 
-Seed admission is this command against an empty draft world. There is no
-separate seed type, seed registry, publication handoff, or compiler install path.
-A consumer-authored seed and a compiled seed are the same patch.
+Seed admission is `AdmitPatch` against an empty draft world under draft
+authority. A consumer-authored seed and a compiled seed are the same patch.
+There is no seed type, registry, publication handoff, or compiler install path.
 
-One author inference may fill semantic fields in a proposed patch. It is not a
-Persona, receives no prose membrane, and holds no authority. World authoring is
-not roleplay and does not borrow Persona standing.
+### Elaborators
+
+Eight elaborators are eight instances of one `OperationalAgent` loop, each
+assigned one jurisdiction — a place subtree or realm. Their tool catalog is
+generated from this document's operation set and declaration kinds, plus
+`record_gap` and `submit`. It cannot contain an operation the reducer does not
+own, because it is derived from the reducer's vocabulary.
+
+```text
+loop:
+  take the oldest open boundary (or seed request) in my jurisdiction
+  retrieve evidence from the Vault for its referents; keep exact receipts
+  build one WorldPatch with declaration and operation tools
+  submit; on rejection, repair the same draft from the complete mismatch set
+  on commit, checkpoint: admitted commit ancestry, open leads, exact rejections
+  stop when my jurisdiction has no open boundary
+```
+
+An elaborator session is resumable and checkpointed against admitted commit
+ancestry; raw conversation is never authority. Elaborators own no fictional
+truth, no target count, no deficit, and no round budget. They stop when the
+horizon is structurally sufficient, which is the definition of a valid sparse
+world. One elaborator may fill semantic fields — names, labels, Persona
+material — inside a typed patch; it is not a Persona, receives no prose
+membrane, and holds no authority.
+
+Eight loops do not serialize on one another. A boundary binds to its own scope
+digest, so a patch answering it commits at any revision where that digest is
+unchanged; only the mailbox serializes the physical commit. Two elaborators
+touching overlapping components conflict on scope digest and one repairs.
 
 A translation gap never mints a boundary. Gaps are non-fictional inference
-evidence; they may inform a later human design decision to extend this
-vocabulary, and a vocabulary extension is a code change, not a world patch.
+evidence that may inform a later human decision to extend this vocabulary, and
+that extension is a code change, not a world patch.
 
-## Sparse validity
+## What stays open
 
-A world with enough structure for its current horizon is complete. Actor counts,
-cover ratios, and qualitative review are evaluation evidence produced after a
-run. They may be severe. They may not become a writer, a gate, or a boundary.
+The ontology does not bound the stories a world can hold, for three reasons
+that are structural rather than promissory:
+
+- **Affordances are data.** A world declares its own action vocabulary over the
+  closed operation set. Genre lives in the catalog, not in the kernel.
+- **Persona prose is free.** A `NarrativePersona` may say, attempt, or feel
+  anything; the Interpreter lowers what the vocabulary can carry and records
+  exact gaps for the rest. Unrepresentable meaning is preserved as evidence,
+  never rejected or invented.
+- **Structure is sparse.** A world needs only enough components for its current
+  horizon. Ordinary life is a recurring `Commitment`; a rite is a `Channel`
+  with a reach set; a private joke is `PersonaMaterial`. None of that requires
+  a count to be satisfied first.
+
+The ontology does bound one thing on purpose: a consequence exists only if a
+component changed. Speech cannot imply an uncommitted effect. That is what
+makes deterministic verification possible, and it is a constraint on lying,
+not on storytelling.
 
 ## Cut line
 
@@ -212,62 +417,91 @@ Deleted before replacement behavior is added, with no compatibility path:
 - caller-supplied string identifiers and `SubjectRef { kind, id: String }`;
 - `AdmitEntity` two-phase admission and `initial_components`;
 - the flat `Vec<PermittedWorldMutation>` batch and every reconciliation step;
-- eight component kinds that carried no decision constraint: `Capability`
-  (subsumed by affordance grants), `Condition` (subsumed by `Pressure`),
-  `Posture` (a free string, derivable from commitments and relations),
-  `Memory` (Persona material), `CivicSystem` manifest (the typed subgraph),
-  `PopulationLineage` (individuation), `Lifecycle` and `WorldTime` (kernel-owned);
-- `ElaboratorTitle`, elaborator quotas, complexity rounds, strategic waves,
-  fission completion counts, and every `*Qualification` and `*Verification` type;
+- the wave-level strategic outcome resolver and the `strategic_activity_outcome`
+  flat-JSON proposal boundary;
+- eight legacy component kinds that carried no decision constraint:
+  `Capability` (subsumed by affordance grants), `Condition` (subsumed by
+  `Pressure`), `Posture` (derivable), `Memory` (Persona material),
+  `CivicSystem` manifest (the typed subgraph), `PopulationLineage`
+  (individuation), `Lifecycle` and `WorldTime` (kernel-owned);
+- `ElaboratorTitle`, elaboration demand and deficit, complexity rounds,
+  strategic waves, fission completion counts, `detail_debt` rotation, and every
+  `*Qualification` and `*Verification` type;
 - `CampaignRegistry`, `WorldSeed`, and `publish_session_zero` as a distinct
-  admission path.
-
-`docs/architecture/ghostlight-world-consumer-api.md` still names
-`CampaignRegistry`, `WorldSeed`, Session Zero publication, and strategic waves.
-It describes the pre-rebuild admission path and must be rewritten against
-`AdmitPatch` or demoted to evidence before it is cited again.
+  admission path;
+- the rule that a stale proposal is discarded on any revision change; it is
+  replaced by scope-digest binding.
 
 ## Subtraction budget
 
-The vocabulary must land smaller than what it replaces:
+- 20 component kinds → 12; 18 `WorldMutation` variants → 29 named operations
+  under 1 patch primitive, replacing both the mutation enum and the separate
+  outcome-effect sum;
+- 5 qualification and verification types plus 1 outcome resolver → 0;
+- elaborator titles, waves, quotas, demand, deficit, and debt rotation → 4
+  derived boundaries and 1 seed request;
+- 2 seed admission paths → 1;
+- N model-facing tool schemas hand-written per stage → 1 derived catalog.
 
-- 20 component kinds to 12;
-- 18 `WorldMutation` variants to 1 patch primitive;
-- 5 qualification and verification types to 0;
-- elaborator titles, waves, quotas, and round budgets to 4 derived boundaries;
-- 2 seed admission paths to 1.
-
-The only additions are the patch reducer, the boundary derivation, and the
-component types themselves. If a pass ends net-additive beyond those three, it
-has bought something the invariants did not ask for.
+The only additions are the patch reducer, precondition and effect-slot
+checking, band selection, boundary derivation, the component types, and the
+tool projection. A net-additive pass beyond those has bought something the
+invariants did not ask for.
 
 ## Build budget
 
-No new crate, binary, dependency, or service. The work is types and reduction
-inside `crates/ghostlight-dungeon/src/world/`, plus one new `patch` module, plus
-focused `ghostlight-dungeon` tests. No workspace-wide or release build is
-admitted for this stage.
+No new crate, binary, dependency, or service. Types and reduction inside
+`crates/ghostlight-dungeon/src/world/`, one new `patch` module, one new
+`affordance` module, focused `ghostlight-dungeon` tests. No workspace-wide or
+release build is admitted for this stage.
 
 ## Verification contract
 
 Beyond the existing kernel proofs, focused tests must prove:
 
-1. A patch declaring an institution whose jurisdiction references an undeclared,
-   non-canonical place is rejected, allocates no ID, and commits nothing — the
-   exact Run 115 shape.
-2. The same patch, with the place declared, commits both atomically at one
-   revision.
-3. A draft handle resolved to a declaration of the wrong kind is rejected; a
-   cross-kind canonical reference does not compile.
-4. Custody transfer that does not conserve declared quantity is rejected.
-5. Knowledge addition citing an inaccessible fact is rejected; scoped knowledge
-   does not leak into another subject's projection.
-6. An `AdmitPatch` in `active` carrying no boundary, a stale-revision boundary,
-   or a boundary the kernel does not currently derive is rejected.
-7. Answering a boundary clears exactly that boundary and no other.
-8. A place, resource, fact, or channel can never receive a controller, an
-   affordance, or a decision opportunity.
-9. A structurally sparse world — few subjects, complete references — activates
-   and runs; no count or ratio blocks it.
-10. Seed admission and boundary elaboration reach the same reducer and the same
-    CAS, with no second path.
+**Structure**
+
+1. A patch declaring an institution whose jurisdiction references an
+   undeclared, non-canonical place is rejected, allocates no ID, and commits
+   nothing — the exact Run 115 shape.
+2. The same patch with the place declared commits both atomically.
+3. A draft handle resolved to the wrong kind is rejected; a cross-kind
+   canonical reference does not compile.
+4. Custody that does not conserve is rejected; `admit` without evidence is
+   rejected.
+5. Knowledge citing an inaccessible fact is rejected; scoped knowledge does not
+   leak into another subject's projection.
+6. A rejection returns every failed check, and repairing exactly those checks
+   yields a commit.
+
+**Action**
+
+7. Acting at a distance, spending unheld custody, commanding outside authority,
+   referencing an unknown fact, and speaking beyond channel reach are each
+   rejected with the exact failed precondition.
+8. A proposal exceeding an effect slot is rejected; one inside it commits.
+9. The same proposal at the same revision selects the same outcome band; a
+   different command ID may select a different one; no caller-supplied value
+   influences the draw.
+10. Only the selected band's effects appear in the commit.
+11. A proposal whose scope digest changed is rejected; one whose scope digest
+    is unchanged commits at a later revision.
+
+**Flow**
+
+12. A defaulted commitment advances pressure on its subject; the subject then
+    derives an opportunity; a place, resource, fact, or channel never does.
+13. A population slice under pressure with no person to bear it derives
+    `IndividuationRequired`, and answering it clears exactly that boundary.
+
+**Elaboration**
+
+14. An `AdmitPatch` answering no boundary in `active`, or a boundary the kernel
+    does not derive, is rejected.
+15. Two patches answering disjoint boundaries at different revisions both
+    commit; two touching the same components conflict on scope digest.
+16. The generated elaborator tool catalog contains exactly the operation set
+    and declaration kinds in this document and nothing else.
+17. Seed admission and boundary elaboration reach the same reducer and CAS.
+18. A structurally sparse world — few subjects, complete references — activates
+    and runs; no count or ratio blocks it.

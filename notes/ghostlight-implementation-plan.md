@@ -242,22 +242,32 @@ boundary" existed; this stage builds that boundary.
 
 The closed vocabulary is `docs/architecture/ghostlight-world-ontology.md`: typed
 ID namespaces, draft-handle references resolved inside one closed `WorldPatch`,
-twelve decision-constraining components, four derived `CausalBoundary` kinds, and
-one `AdmitPatch` command shared by seed admission and boundary elaboration. It
-carries its own cut line, subtraction budget, build budget, and ten-proof
-verification contract.
+twelve decision-constraining components over twenty-nine named operations,
+world-authored affordances (preconditions, effect slots, outcome bands) that
+make character action a deterministic precondition-effect transition, four
+derived `CausalBoundary` kinds plus draft `SeedRequest`, scope-digest binding
+for proposals, and one `AdmitPatch` command shared by seed admission and
+boundary elaboration. Eight elaborators are one `OperationalAgent` loop whose
+tool catalog is a projection of the operation set. The document carries its own
+cut line, subtraction budget, build budget, and eighteen-proof verification
+contract.
 
 Implementation order, each pass landing tests before the next begins:
 
-1. Typed ID namespaces and `Ref<Id>` with draft handles; no components yet.
-   Proves the Run 115 rejection shape against an otherwise empty ontology.
-2. `Position`, `Route`, containment, and topology admission.
-3. `Custody`, `Dependency`, and conservation.
-4. `Authority`, `Selection`, `Redress` — the civic subgraph.
-5. `Knowledge`, `Channel`, and scoped-projection non-leakage.
-6. `Commitment`, `Pressure`, and boundary derivation from committed pressure.
-7. `AdmitPatch` boundary binding in `active`, and seed admission in `draft`
-   through the same reducer.
+1. Typed ID namespaces, `Ref<Id>` with draft handles, closed-patch resolution,
+   and the complete mismatch set; no components yet. Proves the Run 115
+   rejection shape against an otherwise empty ontology.
+2. `Position`, `Route`, containment, topology admission, and scope-digest
+   binding for opportunities.
+3. `Custody`, `Dependency`, conservation, and evidenced admission.
+4. Affordance catalog: preconditions, effect slots, kernel-entropy band
+   selection, and the action pipeline replacing `Speak`-only invocation.
+5. `Authority`, `Selection`, `Redress`, and institutional affordances.
+6. `Knowledge`, `Channel`, `Fact` standing, and scoped-projection non-leakage.
+7. `Commitment`, `Pressure`, obligation → pressure → opportunity flow, and
+   boundary derivation.
+8. `AdmitPatch` with boundary and seed-request binding, and the derived
+   elaborator tool catalog.
 
 The deployment cutover (step 5) is deferred behind this stage, not cancelled. No
 world acceptance run may start while Yggdrasil serves the legacy body.

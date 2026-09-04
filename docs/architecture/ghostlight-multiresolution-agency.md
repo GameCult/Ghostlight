@@ -1,5 +1,12 @@
 # Ghostlight Multiresolution Agency Graph
 
+Status: teardown evidence. Describes the pre-rebuild resolution cover,
+strategic waves, demand/deficit elaboration, and the wave-level outcome
+resolver, all on the deletion line. The current vocabulary is
+`docs/architecture/ghostlight-world-ontology.md`; it keeps only the resumable
+per-jurisdiction elaborator session, compact mutation drafts, and the complete
+deterministic mismatch set.
+
 ## Objective
 
 Let a campaign contain the whole strategic setting without pretending every
