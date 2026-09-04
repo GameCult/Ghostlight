@@ -12,8 +12,8 @@ use std::{
 };
 use thiserror::Error;
 
-const STATE_ROW: &str = "world_state.foundation.v0";
-const COMMIT_ROW: &str = "world_commit.foundation.v1";
+const STATE_ROW: &str = "world_state.foundation.v1";
+const COMMIT_ROW: &str = "world_commit.foundation.v2";
 
 #[derive(Debug, Error)]
 pub(super) enum JournalError {
@@ -445,11 +445,35 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             "world ontology is empty or has split subject/controller ownership".into(),
         ));
     }
+    for entity in state.entities.values() {
+        if !super::patch::is_canonical_text(&entity.label) {
+            return Err(JournalError::Corrupt(
+                "entity label is empty or noncanonical".into(),
+            ));
+        }
+    }
+    if state.edges.values().any(|edge| {
+        !state.entities.contains_key(&edge.from) || !state.entities.contains_key(&edge.to)
+    }) {
+        return Err(JournalError::Corrupt(
+            "edge endpoint references an unknown entity".into(),
+        ));
+    }
     let mut controller_ids = BTreeSet::new();
     for (subject_id, subject) in &state.subjects {
-        if subject.label.trim().is_empty() || subject.label.trim() != subject.label {
+        if !super::patch::is_canonical_text(&subject.label) {
             return Err(JournalError::Corrupt(
                 "subject label is empty or noncanonical".into(),
+            ));
+        }
+        if let Some(entity_id) = subject.authority_scope
+            && state
+                .entities
+                .get(&entity_id)
+                .is_none_or(|entity| entity.kind != super::EntityKind::Place)
+        {
+            return Err(JournalError::Corrupt(
+                "subject authority scope does not name a canonical place".into(),
             ));
         }
         let scope = super::DecisionScope {
@@ -611,13 +635,21 @@ mod tests {
     use super::*;
     use crate::world::{
         AffordanceKind, AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CreateWorld,
-        DraftSubjectHandle, NewController, NewDecisionSubject, PrincipalId, SubjectKind,
-        WorldKernel,
+        Declaration, DraftHandle, EntityDeclaration, EntityId, EntityKind, NewController,
+        PrincipalId, Ref, SubjectDeclaration, SubjectKind, WorldKernel, WorldPatch,
     };
 
     #[derive(serde::Serialize, serde::Deserialize)]
     struct CanonicalFixture {
         value: u8,
+    }
+
+    fn owner_patch(subject: SubjectDeclaration) -> WorldPatch {
+        WorldPatch {
+            declarations: vec![Declaration::Subject(subject)],
+            operations: Vec::new(),
+            evidence: Vec::new(),
+        }
     }
 
     #[test]
@@ -642,15 +674,16 @@ mod tests {
             id: CommandId::new(),
             owner: owner.clone(),
             title: "Before".into(),
-            subjects: vec![NewDecisionSubject {
-                handle: DraftSubjectHandle::new("owner"),
+            patch: owner_patch(SubjectDeclaration {
+                handle: DraftHandle::new("owner"),
                 label: "Owner".into(),
                 kind: SubjectKind::Person,
                 controller: NewController::Human {
                     principal: owner.clone(),
                 },
                 affordances: BTreeSet::from([AffordanceKind::Speak]),
-            }],
+                authority_scope: None,
+            }),
         };
         let (mut kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
         let snapshot = kernel.snapshot().unwrap();
@@ -712,6 +745,82 @@ mod tests {
     }
 
     #[test]
+    fn a_forged_patch_effect_does_not_apply() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let owner = PrincipalId::new("owner@example.test");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let creation = CreateWorld {
+            id: CommandId::new(),
+            owner: owner.clone(),
+            title: "Kharad".into(),
+            patch: owner_patch(SubjectDeclaration {
+                handle: DraftHandle::new("owner"),
+                label: "Owner".into(),
+                kind: SubjectKind::Person,
+                controller: NewController::Human {
+                    principal: owner.clone(),
+                },
+                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                authority_scope: None,
+            }),
+        };
+        let (mut kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
+        let snapshot = kernel.snapshot().unwrap();
+        let command_id = CommandId::new();
+        kernel
+            .submit(
+                CommandEnvelope {
+                    id: command_id,
+                    world_id: snapshot.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(owner),
+                    body: CommandBody::AdmitPatch {
+                        answers: None,
+                        patch: WorldPatch {
+                            declarations: vec![
+                                Declaration::Entity(EntityDeclaration {
+                                    handle: DraftHandle::new("rhythm-road"),
+                                    label: "The Rhythm Road".into(),
+                                    kind: EntityKind::Place,
+                                }),
+                                Declaration::Subject(SubjectDeclaration {
+                                    handle: DraftHandle::new("rhythm-authority"),
+                                    label: "The Rhythm Authority".into(),
+                                    kind: SubjectKind::Institution,
+                                    controller: NewController::OperationalAgent,
+                                    affordances: BTreeSet::from([AffordanceKind::Speak]),
+                                    authority_scope: Some(Ref::Draft(DraftHandle::new(
+                                        "rhythm-road",
+                                    ))),
+                                }),
+                            ],
+                            operations: Vec::new(),
+                            evidence: Vec::new(),
+                        },
+                    },
+                },
+                &authenticated,
+            )
+            .unwrap();
+
+        let mut forged_head = kernel.state.clone();
+        let mut forged_commits = kernel.journal.commits.clone();
+        let forged = forged_commits.get_mut(&command_id).unwrap();
+        let WorldEffect::PatchAdmitted { resolved } = &mut forged.effect else {
+            panic!("expected an admitted patch effect");
+        };
+        resolved.subjects[0].subject.authority_scope = Some(EntityId::issue());
+        forged.digest = commit_digest(forged).unwrap();
+        forged_head.last_commit_digest = Some(forged.digest.clone());
+
+        assert!(matches!(
+            verify_history(&forged_head, &forged_commits),
+            Err(JournalError::Corrupt(_))
+        ));
+    }
+
+    #[test]
     fn replay_rejects_genesis_that_does_not_derive_from_its_creation_command() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
@@ -722,13 +831,14 @@ mod tests {
             id: creation_id,
             owner: owner.clone(),
             title: "Admitted".into(),
-            subjects: vec![NewDecisionSubject {
-                handle: DraftSubjectHandle::new("owner"),
+            patch: owner_patch(SubjectDeclaration {
+                handle: DraftHandle::new("owner"),
                 label: "Owner".into(),
                 kind: SubjectKind::Person,
                 controller: NewController::Human { principal: owner },
                 affordances: BTreeSet::from([AffordanceKind::Speak]),
-            }],
+                authority_scope: None,
+            }),
         };
         let (kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
         let mut forged_head = kernel.state.clone();
@@ -749,10 +859,10 @@ mod tests {
         let mut binding_forged_head = kernel.state.clone();
         let mut binding_forged_commits = kernel.journal.commits.clone();
         let binding_forged = binding_forged_commits.get_mut(&creation_id).unwrap();
-        let WorldEffect::WorldCreated { bindings, .. } = &mut binding_forged.effect else {
+        let WorldEffect::WorldCreated { resolved, .. } = &mut binding_forged.effect else {
             panic!("expected genesis effect");
         };
-        bindings[0].subject.label = "Not the creation subject".into();
+        resolved.subjects[0].subject.label = "Not the creation subject".into();
         binding_forged.digest = commit_digest(binding_forged).unwrap();
         binding_forged_head.last_commit_digest = Some(binding_forged.digest.clone());
 

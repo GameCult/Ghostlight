@@ -1,8 +1,9 @@
 use super::{
     AffordanceKind, AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CommandId,
     CreateWorld, CreateWorldIntent, CreationReceipt, DecisionInvocation, DecisionOpportunity,
-    DraftSubjectHandle, KernelError, NewController, NewDecisionSubject, PrincipalCommandIntent,
-    PrincipalId, SubjectKind, SubmitReceipt, WorldKernel, WorldSnapshot, journal, prepare_creation,
+    Declaration, DraftHandle, KernelError, NewController, PrincipalCommandIntent, PrincipalId,
+    SubjectDeclaration, SubjectKind, SubmitReceipt, WorldKernel, WorldPatch, WorldSnapshot,
+    journal, prepare_creation,
 };
 use crate::app_session::VerifiedPrincipalEvidence;
 use std::collections::BTreeSet;
@@ -79,39 +80,52 @@ impl WorldMailbox {
         principal: &VerifiedPrincipalEvidence,
     ) -> Result<CreationReceipt, MailboxError> {
         let principal_id = PrincipalId::new(principal.account_subject_hash());
-        let mut subjects = vec![NewDecisionSubject {
-            handle: DraftSubjectHandle::new("first-person"),
-            label: input.human_subject_label,
-            kind: SubjectKind::Person,
-            controller: NewController::Human {
+        // Ingress owns label normalization; the reducer only admits canonical
+        // labels.
+        let declare = |handle: &str, label: String, kind, controller| {
+            Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new(handle),
+                label: label.trim().to_owned(),
+                kind,
+                controller,
+                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                authority_scope: None,
+            })
+        };
+        let mut declarations = vec![declare(
+            "first-person",
+            input.human_subject_label,
+            SubjectKind::Person,
+            NewController::Human {
                 principal: principal_id.clone(),
             },
-            affordances: BTreeSet::from([AffordanceKind::Speak]),
-        }];
+        )];
         if let Some(label) = input.narrative_persona_label {
-            subjects.push(NewDecisionSubject {
-                handle: DraftSubjectHandle::new("narrative-persona"),
+            declarations.push(declare(
+                "narrative-persona",
                 label,
-                kind: SubjectKind::Person,
-                controller: NewController::NarrativePersona,
-                affordances: BTreeSet::from([AffordanceKind::Speak]),
-            });
+                SubjectKind::Person,
+                NewController::NarrativePersona,
+            ));
         }
         if let Some(label) = input.operational_agent_label {
-            subjects.push(NewDecisionSubject {
-                handle: DraftSubjectHandle::new("operational-agent"),
+            declarations.push(declare(
+                "operational-agent",
                 label,
-                kind: SubjectKind::Institution,
-                controller: NewController::OperationalAgent,
-                affordances: BTreeSet::from([AffordanceKind::Speak]),
-            });
+                SubjectKind::Institution,
+                NewController::OperationalAgent,
+            ));
         }
         self.create_authenticated(
             CreateWorld {
                 id: input.id,
                 owner: principal_id.clone(),
                 title: input.title,
-                subjects,
+                patch: WorldPatch {
+                    declarations,
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
             },
             AuthenticatedCaller::verified_principal(principal_id),
         )
@@ -432,8 +446,8 @@ async fn run_owner(mut owned: OwnedWorld, mut receiver: mpsc::Receiver<Request>)
 mod tests {
     use super::*;
     use crate::world::{
-        AffordanceKind, CallerId, CommandBody, DraftSubjectHandle, NewController,
-        NewDecisionSubject, PrincipalId, SubjectKind, WorldId,
+        AffordanceKind, CallerId, CommandBody, Declaration, DraftHandle, Mismatch, NewController,
+        PrincipalId, SubjectDeclaration, SubjectKind, WorldId,
     };
     use std::{collections::BTreeSet, path::PathBuf};
     use tempfile::TempDir;
@@ -447,15 +461,20 @@ mod tests {
             id,
             owner: PrincipalId::new("owner"),
             title: title.into(),
-            subjects: vec![NewDecisionSubject {
-                handle: DraftSubjectHandle::new("operator"),
-                label: "Operator".into(),
-                kind: SubjectKind::Person,
-                controller: NewController::Human {
-                    principal: PrincipalId::new("owner"),
-                },
-                affordances: BTreeSet::from([AffordanceKind::Speak]),
-            }],
+            patch: WorldPatch {
+                declarations: vec![Declaration::Subject(SubjectDeclaration {
+                    handle: DraftHandle::new("operator"),
+                    label: "Operator".into(),
+                    kind: SubjectKind::Person,
+                    controller: NewController::Human {
+                        principal: PrincipalId::new("owner"),
+                    },
+                    affordances: BTreeSet::from([AffordanceKind::Speak]),
+                    authority_scope: None,
+                })],
+                operations: Vec::new(),
+                evidence: Vec::new(),
+            },
         }
     }
 
@@ -532,11 +551,21 @@ mod tests {
         let authenticated = authenticated_owner();
         let (mailbox, task) = WorldMailbox::open(&path).unwrap();
         let mut invalid = creation(CommandId::new(), "Invalid");
-        invalid.subjects.push(invalid.subjects[0].clone());
-        assert!(matches!(
-            mailbox.create_fixture(invalid, &authenticated).await,
-            Err(MailboxError::Kernel(KernelError::DuplicateSubjectHandle))
-        ));
+        invalid
+            .patch
+            .declarations
+            .push(invalid.patch.declarations[0].clone());
+        let Err(MailboxError::Kernel(KernelError::PatchRejected(rejected))) =
+            mailbox.create_fixture(invalid, &authenticated).await
+        else {
+            panic!("expected a rejected creation patch");
+        };
+        assert_eq!(
+            rejected,
+            vec![Mismatch::DuplicateHandle {
+                handle: DraftHandle::new("operator")
+            }]
+        );
         assert!(matches!(
             mailbox.snapshot().await,
             Err(MailboxError::Kernel(KernelError::WorldNotCreated))

@@ -3343,8 +3343,8 @@ mod tests {
     use super::*;
     use crate::world::{
         AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, ControllerId, CreateWorld,
-        DecisionScope, DraftSubjectHandle, EventId, NewController, NewDecisionSubject, PrincipalId,
-        SubjectKind, WorldId, WorldPhase,
+        DecisionScope, Declaration, DraftHandle, EventId, NewController, PrincipalId,
+        SubjectDeclaration, SubjectKind, WorldId, WorldPatch, WorldPhase,
     };
     use std::{
         collections::BTreeSet,
@@ -3898,13 +3898,18 @@ mod tests {
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Controller Fixture".into(),
-                    subjects: vec![NewDecisionSubject {
-                        handle: DraftSubjectHandle::new("subject"),
-                        label: "Subject".into(),
-                        kind: SubjectKind::Person,
-                        controller,
-                        affordances: BTreeSet::from([AffordanceKind::Speak]),
-                    }],
+                    patch: WorldPatch {
+                        declarations: vec![Declaration::Subject(SubjectDeclaration {
+                            handle: DraftHandle::new("subject"),
+                            label: "Subject".into(),
+                            kind: SubjectKind::Person,
+                            controller,
+                            affordances: BTreeSet::from([AffordanceKind::Speak]),
+                            authority_scope: None,
+                        })],
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
                 },
                 &authenticated,
             )
@@ -4468,31 +4473,38 @@ mod tests {
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Midnight Roll Call".into(),
-                    subjects: vec![
-                        NewDecisionSubject {
-                            handle: DraftSubjectHandle::new("roll-caller"),
-                            label: "Iris, the midnight roll caller".into(),
-                            kind: SubjectKind::Person,
-                            controller: NewController::Human {
-                                principal: human.clone(),
-                            },
-                            affordances: BTreeSet::from([AffordanceKind::Speak]),
-                        },
-                        NewDecisionSubject {
-                            handle: DraftSubjectHandle::new("watch-officer"),
-                            label: "Mara, a watch officer who answers direct roll calls aloud in one short sentence".into(),
-                            kind: SubjectKind::Person,
-                            controller: NewController::NarrativePersona,
-                            affordances: BTreeSet::from([AffordanceKind::Speak]),
-                        },
-                        NewDecisionSubject {
-                            handle: DraftSubjectHandle::new("signal-council"),
-                            label: "The Signal Council, which answers direct roll calls aloud with one short operational sentence".into(),
-                            kind: SubjectKind::Institution,
-                            controller: NewController::OperationalAgent,
-                            affordances: BTreeSet::from([AffordanceKind::Speak]),
-                        },
-                    ],
+                    patch: WorldPatch {
+                        declarations: vec![
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("roll-caller"),
+                                label: "Iris, the midnight roll caller".into(),
+                                kind: SubjectKind::Person,
+                                controller: NewController::Human {
+                                    principal: human.clone(),
+                                },
+                                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                                authority_scope: None,
+                            }),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("watch-officer"),
+                                label: "Mara, a watch officer who answers direct roll calls aloud in one short sentence".into(),
+                                kind: SubjectKind::Person,
+                                controller: NewController::NarrativePersona,
+                                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                                authority_scope: None,
+                            }),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("signal-council"),
+                                label: "The Signal Council, which answers direct roll calls aloud with one short operational sentence".into(),
+                                kind: SubjectKind::Institution,
+                                controller: NewController::OperationalAgent,
+                                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                                authority_scope: None,
+                            }),
+                        ],
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
                 },
                 &owner_caller,
             )

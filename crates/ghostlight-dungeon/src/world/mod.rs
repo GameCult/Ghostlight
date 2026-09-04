@@ -8,6 +8,7 @@
 mod controllers;
 mod journal;
 mod mailbox;
+mod patch;
 
 pub(crate) use controllers::{
     ControllerError, ControllerModels, ControllerOpenError, ControllerPendingReason,
@@ -16,6 +17,11 @@ pub(crate) use controllers::{
     SourceRange, SubmissionDisposition, TranslationGapSummary,
 };
 pub(crate) use mailbox::{MailboxError, WorldMailbox};
+pub(crate) use patch::{
+    Declaration, DraftHandle, EntityDeclaration, EntityKind, Mismatch, PatchAnswer, Ref,
+    SubjectDeclaration, WorldPatch,
+};
+use patch::{EdgeRecord, EntityRecord, ResolvedPatch};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -26,8 +32,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-const STATE_SCHEMA: &str = "ghostlight.world_state.foundation.v0";
-const COMMIT_SCHEMA: &str = "ghostlight.world_commit.foundation.v1";
+const STATE_SCHEMA: &str = "ghostlight.world_state.foundation.v1";
+const COMMIT_SCHEMA: &str = "ghostlight.world_commit.foundation.v2";
 
 macro_rules! opaque_uuid {
     ($name:ident) => {
@@ -42,6 +48,8 @@ macro_rules! opaque_uuid {
 opaque_uuid!(WorldId);
 opaque_uuid!(CommandId);
 opaque_uuid!(SubjectId);
+opaque_uuid!(EntityId);
+opaque_uuid!(EdgeId);
 opaque_uuid!(ControllerId);
 opaque_uuid!(AffordanceId);
 opaque_uuid!(EventId);
@@ -76,18 +84,31 @@ impl WorldId {
     }
 }
 
+// Subject, entity, controller, and affordance IDs are derived, never drawn.
+// `patch::derive_id` is the only allocator; these fixtures exist so tests can
+// name an ID that no partition holds.
+#[cfg(test)]
 impl SubjectId {
     fn issue() -> Self {
         Self(Uuid::new_v4())
     }
 }
 
+#[cfg(test)]
+impl EntityId {
+    fn issue() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+#[cfg(test)]
 impl ControllerId {
     fn issue() -> Self {
         Self(Uuid::new_v4())
     }
 }
 
+#[cfg(test)]
 impl AffordanceId {
     fn issue() -> Self {
         Self(Uuid::new_v4())
@@ -106,16 +127,6 @@ pub(crate) struct PrincipalId(String);
 
 impl PrincipalId {
     pub(crate) fn new(value: impl Into<String>) -> Self {
-        Self(value.into())
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(transparent)]
-struct DraftSubjectHandle(String);
-
-impl DraftSubjectHandle {
-    fn new(value: impl Into<String>) -> Self {
         Self(value.into())
     }
 }
@@ -151,19 +162,10 @@ pub(crate) enum AffordanceKind {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
-enum NewController {
+pub(crate) enum NewController {
     Human { principal: PrincipalId },
     NarrativePersona,
     OperationalAgent,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-struct NewDecisionSubject {
-    handle: DraftSubjectHandle,
-    label: String,
-    kind: SubjectKind,
-    controller: NewController,
-    affordances: BTreeSet<AffordanceKind>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -171,7 +173,7 @@ struct CreateWorld {
     id: CommandId,
     owner: PrincipalId,
     title: String,
-    subjects: Vec<NewDecisionSubject>,
+    patch: WorldPatch,
 }
 
 /// Unattributed creation intent. World ingress derives ownership, controller
@@ -292,12 +294,19 @@ pub(crate) enum CommandBody {
     DeclineDecision {
         opportunity: DecisionOpportunity,
     },
+    AdmitPatch {
+        /// Structurally `None` until boundary answers exist: `PatchAnswer` is
+        /// uninhabited.
+        answers: Option<PatchAnswer>,
+        patch: WorldPatch,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 struct SubjectState {
     label: String,
     kind: SubjectKind,
+    authority_scope: Option<EntityId>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -374,6 +383,8 @@ struct WorldState {
     title: String,
     draft_approvals: BTreeSet<PrincipalId>,
     subjects: BTreeMap<SubjectId, SubjectState>,
+    entities: BTreeMap<EntityId, EntityRecord>,
+    edges: BTreeMap<EdgeId, EdgeRecord>,
     controller_assignments: BTreeMap<DecisionScope, ControllerAssignment>,
     affordance_grants: BTreeMap<AffordanceId, AffordanceGrant>,
     events: Vec<DecisionEvent>,
@@ -382,21 +393,15 @@ struct WorldState {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-struct GenesisSubjectBinding {
-    handle: DraftSubjectHandle,
-    subject_id: SubjectId,
-    subject: SubjectState,
-    controller: ControllerAssignment,
-    affordances: BTreeMap<AffordanceId, AffordanceGrant>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum WorldEffect {
     WorldCreated {
         owner: PrincipalId,
         title: String,
-        bindings: Vec<GenesisSubjectBinding>,
+        resolved: ResolvedPatch,
+    },
+    PatchAdmitted {
+        resolved: ResolvedPatch,
     },
     DraftApproved {
         principal: PrincipalId,
@@ -542,16 +547,8 @@ pub(crate) enum KernelError {
     EmptyTitle,
     #[error("world owner or human controller principal must be canonical and nonempty")]
     EmptyPrincipal,
-    #[error("world creation requires at least one decision subject")]
-    NoSubjects,
-    #[error("decision subject handle must be canonical and nonempty")]
-    EmptySubjectHandle,
-    #[error("decision subject label must not be empty")]
-    EmptySubjectLabel,
-    #[error("decision subject handles must be unique")]
-    DuplicateSubjectHandle,
-    #[error("every decision subject requires at least one affordance")]
-    NoAffordances,
+    #[error("patch rejected: {0:?}")]
+    PatchRejected(Vec<Mismatch>),
     #[error("spoken action must not be empty")]
     EmptySpeech,
     #[error("command targets another world")]
@@ -639,9 +636,10 @@ struct WorldKernel {
 
 struct PreparedCreation {
     command: CreateWorld,
+    world_id: WorldId,
     owner: PrincipalId,
     title: String,
-    subjects: Vec<NewDecisionSubject>,
+    resolved: ResolvedPatch,
 }
 
 fn prepare_creation(
@@ -655,12 +653,24 @@ fn prepare_creation(
     if &input.owner != authenticated_principal {
         return Err(KernelError::AuthenticationMismatch);
     }
-    let subjects = canonicalize_subjects(&input.subjects)?;
     let title = normalize_title(&input.title)?;
+    // The world's own identity is not world structure, and it feeds every
+    // derived ID, so it is minted before resolution rather than by it.
+    let world_id = WorldId::issue();
+    let resolved = patch::resolve_declarations(
+        &BTreeMap::new(),
+        &BTreeMap::new(),
+        world_id,
+        input.id,
+        &input.patch,
+        true,
+    )
+    .map_err(KernelError::PatchRejected)?;
     Ok(PreparedCreation {
+        world_id,
         owner: input.owner.clone(),
         title,
-        subjects,
+        resolved,
         command: input,
     })
 }
@@ -670,8 +680,12 @@ impl WorldKernel {
         empty: journal::EmptyWorldJournal,
         prepared: PreparedCreation,
     ) -> Result<(Self, CreationReceipt), KernelError> {
-        let world_id = WorldId::issue();
-        let effect = issue_genesis(prepared.owner, prepared.title, prepared.subjects);
+        let world_id = prepared.world_id;
+        let effect = WorldEffect::WorldCreated {
+            owner: prepared.owner,
+            title: prepared.title,
+            resolved: prepared.resolved,
+        };
         let mut state = WorldState::genesis(world_id, &prepared.command, &effect)?;
         let mut genesis = WorldCommit {
             schema: COMMIT_SCHEMA.into(),
@@ -932,7 +946,28 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
                 opportunity: current,
             })
         }
+        CommandBody::AdmitPatch { answers: _, patch } => {
+            require_phase(state, WorldPhase::Draft)?;
+            require_owner(state, &command.caller)?;
+            let resolved = patch::resolve_declarations(
+                &state.subjects,
+                &state.entities,
+                state.world_id,
+                command.id,
+                patch,
+                admits_human(state),
+            )
+            .map_err(KernelError::PatchRejected)?;
+            Ok(WorldEffect::PatchAdmitted { resolved })
+        }
     }
+}
+
+/// A human principal joins `required_approvers`, so only the lane that builds
+/// revision 0 from nothing may bind one. The predicate reads state, never the
+/// caller.
+fn admits_human(state: &WorldState) -> bool {
+    state.revision == 0 && state.subjects.is_empty()
 }
 
 impl WorldState {
@@ -944,7 +979,7 @@ impl WorldState {
         let WorldEffect::WorldCreated {
             owner,
             title,
-            bindings,
+            resolved,
         } = effect
         else {
             return Err(KernelError::Invariant(
@@ -953,85 +988,27 @@ impl WorldState {
         };
         validate_principal(&command.owner)?;
         let expected_title = normalize_title(&command.title)?;
-        let expected_subjects = canonicalize_subjects(&command.subjects)?;
-        if owner != &command.owner
-            || title != &expected_title
-            || bindings.len() != expected_subjects.len()
-        {
+        if owner != &command.owner || title != &expected_title {
             return Err(KernelError::Invariant(
                 "genesis effect does not match the admitted creation command".into(),
             ));
         }
-
-        let mut handles = BTreeSet::new();
-        let mut subjects = BTreeMap::new();
-        let mut assignments = BTreeMap::new();
-        let mut controller_ids = BTreeSet::new();
-        let mut grants = BTreeMap::new();
-        let mut scope_kinds = BTreeSet::new();
-        for (binding, expected) in bindings.iter().zip(&expected_subjects) {
-            let affordance_kinds: BTreeSet<_> = binding
-                .affordances
-                .values()
-                .map(|grant| grant.kind)
-                .collect();
-            if binding.handle != expected.handle
-                || binding.subject.label != expected.label
-                || binding.subject.kind != expected.kind
-                || !assignment_matches_new(&binding.controller, &expected.controller)
-                || binding.affordances.len() != expected.affordances.len()
-                || affordance_kinds != expected.affordances
-            {
-                return Err(KernelError::Invariant(
-                    "genesis binding does not derive from its creation subject".into(),
-                ));
-            }
-            validate_handle(&binding.handle)?;
-            if !handles.insert(binding.handle.clone()) {
-                return Err(KernelError::DuplicateSubjectHandle);
-            }
-            if normalize_label(&binding.subject.label)? != binding.subject.label {
-                return Err(KernelError::Invariant(
-                    "genesis subject label is not canonical".into(),
-                ));
-            }
-            let scope = DecisionScope {
-                subject_id: binding.subject_id,
-            };
-            validate_assignment(&binding.controller)?;
-            if !controller_ids.insert(binding.controller.id()) {
-                return Err(KernelError::Invariant(
-                    "genesis controller ID collision".into(),
-                ));
-            }
-            if binding.affordances.is_empty() {
-                return Err(KernelError::NoAffordances);
-            }
-            if subjects
-                .insert(binding.subject_id, binding.subject.clone())
-                .is_some()
-                || assignments
-                    .insert(scope, binding.controller.clone())
-                    .is_some()
-            {
-                return Err(KernelError::Invariant(
-                    "genesis subject or scope ID collision".into(),
-                ));
-            }
-            for (affordance_id, grant) in &binding.affordances {
-                if grant.scope != scope {
-                    return Err(KernelError::Invariant(
-                        "genesis affordance is bound to another scope".into(),
-                    ));
-                }
-                if !scope_kinds.insert((scope, grant.kind))
-                    || grants.insert(*affordance_id, grant.clone()).is_some()
-                {
-                    return Err(KernelError::Invariant(
-                        "genesis affordance ID or kind collision".into(),
-                    ));
-                }
-            }
+        // The same re-derive-and-compare that `apply_committed_command` runs for
+        // every other command. Deterministic allocation is what lets one
+        // equality replace a field-by-field binding zip.
+        let expected = patch::resolve_declarations(
+            &BTreeMap::new(),
+            &BTreeMap::new(),
+            world_id,
+            command.id,
+            &command.patch,
+            true,
+        )
+        .map_err(KernelError::PatchRejected)?;
+        if &expected != resolved {
+            return Err(KernelError::Invariant(
+                "genesis effect does not derive from its creation command".into(),
+            ));
         }
 
         let mut state = Self {
@@ -1042,93 +1019,120 @@ impl WorldState {
             owner: owner.clone(),
             title: title.clone(),
             draft_approvals: BTreeSet::new(),
-            subjects,
-            controller_assignments: assignments,
-            affordance_grants: grants,
+            subjects: BTreeMap::new(),
+            entities: BTreeMap::new(),
+            edges: BTreeMap::new(),
+            controller_assignments: BTreeMap::new(),
+            affordance_grants: BTreeMap::new(),
             events: Vec::new(),
             state_digest: String::new(),
             last_commit_digest: None,
         };
+        admit_resolved(&mut state, resolved)?;
         state.state_digest = state_digest(&state)?;
         Ok(state)
     }
 }
 
-fn canonicalize_subjects(
-    inputs: &[NewDecisionSubject],
-) -> Result<Vec<NewDecisionSubject>, KernelError> {
-    if inputs.is_empty() {
-        return Err(KernelError::NoSubjects);
+/// The only writer of the subject, entity, controller, and grant partitions.
+/// Both admission lanes mutate through it, and it re-derives every structural
+/// claim from `state`, so an effect that skipped resolution dies here.
+fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<(), KernelError> {
+    if resolved.subjects.is_empty() && resolved.entities.is_empty() {
+        return Err(KernelError::Invariant(
+            "admitted patch carries no canonical change".into(),
+        ));
     }
-    let mut handles = BTreeSet::new();
-    let mut result = Vec::with_capacity(inputs.len());
-    for input in inputs {
-        validate_handle(&input.handle)?;
-        if !handles.insert(input.handle.clone()) {
-            return Err(KernelError::DuplicateSubjectHandle);
+    let humans_admitted = admits_human(state);
+    for entity in &resolved.entities {
+        if !patch::is_canonical_text(&entity.entity.label) {
+            return Err(KernelError::Invariant(
+                "admitted entity label is not canonical".into(),
+            ));
         }
-        if input.affordances.is_empty() {
-            return Err(KernelError::NoAffordances);
+        if state
+            .entities
+            .insert(entity.entity_id, entity.entity.clone())
+            .is_some()
+        {
+            return Err(KernelError::Invariant(
+                "admitted entity ID collision".into(),
+            ));
         }
-        if let NewController::Human { principal } = &input.controller {
-            validate_principal(principal)?;
-        }
-        result.push(NewDecisionSubject {
-            handle: input.handle.clone(),
-            label: normalize_label(&input.label)?,
-            kind: input.kind,
-            controller: input.controller.clone(),
-            affordances: input.affordances.clone(),
-        });
     }
-    Ok(result)
-}
-
-fn issue_genesis(
-    owner: PrincipalId,
-    title: String,
-    subjects: Vec<NewDecisionSubject>,
-) -> WorldEffect {
-    let bindings = subjects
-        .into_iter()
-        .map(|input| {
-            let subject_id = SubjectId::issue();
-            let scope = DecisionScope { subject_id };
-            let controller_id = ControllerId::issue();
-            let controller = match input.controller {
-                NewController::Human { principal } => ControllerAssignment::Human {
-                    controller_id,
-                    principal,
-                },
-                NewController::NarrativePersona => {
-                    ControllerAssignment::NarrativePersona { controller_id }
-                }
-                NewController::OperationalAgent => {
-                    ControllerAssignment::OperationalAgent { controller_id }
-                }
-            };
-            let affordances = input
-                .affordances
-                .into_iter()
-                .map(|kind| (AffordanceId::issue(), AffordanceGrant { scope, kind }))
-                .collect();
-            GenesisSubjectBinding {
-                handle: input.handle,
-                subject_id,
-                subject: SubjectState {
-                    label: input.label,
-                    kind: input.kind,
-                },
-                controller,
-                affordances,
-            }
-        })
+    let mut controller_ids: BTreeSet<ControllerId> = state
+        .controller_assignments
+        .values()
+        .map(ControllerAssignment::id)
         .collect();
-    WorldEffect::WorldCreated {
-        owner,
-        title,
-        bindings,
+    let mut scope_kinds: BTreeSet<(DecisionScope, AffordanceKind)> = state
+        .affordance_grants
+        .values()
+        .map(|grant| (grant.scope, grant.kind))
+        .collect();
+    for subject in &resolved.subjects {
+        let scope = DecisionScope {
+            subject_id: subject.subject_id,
+        };
+        if !patch::is_canonical_text(&subject.subject.label) {
+            return Err(KernelError::Invariant(
+                "admitted subject label is not canonical".into(),
+            ));
+        }
+        validate_assignment(&subject.controller)?;
+        if matches!(subject.controller, ControllerAssignment::Human { .. }) && !humans_admitted {
+            return Err(KernelError::Invariant(
+                "only world genesis may bind a human controller".into(),
+            ));
+        }
+        if subject.affordances.is_empty() {
+            return Err(KernelError::Invariant(
+                "admitted subject has no affordance".into(),
+            ));
+        }
+        if let Some(entity_id) = subject.subject.authority_scope
+            && state
+                .entities
+                .get(&entity_id)
+                .is_none_or(|entity| entity.kind != EntityKind::Place)
+        {
+            return Err(KernelError::Invariant(
+                "admitted authority scope does not name a canonical place".into(),
+            ));
+        }
+        if !controller_ids.insert(subject.controller.id()) {
+            return Err(KernelError::Invariant(
+                "admitted controller ID collision".into(),
+            ));
+        }
+        if state
+            .subjects
+            .insert(subject.subject_id, subject.subject.clone())
+            .is_some()
+            || state
+                .controller_assignments
+                .insert(scope, subject.controller.clone())
+                .is_some()
+        {
+            return Err(KernelError::Invariant(
+                "admitted subject or scope ID collision".into(),
+            ));
+        }
+        for (affordance_id, grant) in &subject.affordances {
+            if grant.scope != scope
+                || !scope_kinds.insert((scope, grant.kind))
+                || state
+                    .affordance_grants
+                    .insert(*affordance_id, grant.clone())
+                    .is_some()
+            {
+                return Err(KernelError::Invariant(
+                    "admitted affordance is unscoped or collides".into(),
+                ));
+            }
+        }
     }
+    Ok(())
 }
 
 fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
@@ -1264,15 +1268,6 @@ fn normalize_title(value: &str) -> Result<String, KernelError> {
     }
 }
 
-fn normalize_label(value: &str) -> Result<String, KernelError> {
-    let value = value.trim();
-    if value.is_empty() {
-        Err(KernelError::EmptySubjectLabel)
-    } else {
-        Ok(value.to_owned())
-    }
-}
-
 fn validated_invocation(value: &DecisionInvocation) -> Result<DecisionInvocation, KernelError> {
     let action = match &value.action {
         DecisionAction::Speak { text } if text.trim().is_empty() => {
@@ -1294,33 +1289,11 @@ fn validate_principal(value: &PrincipalId) -> Result<(), KernelError> {
     }
 }
 
-fn validate_handle(value: &DraftSubjectHandle) -> Result<(), KernelError> {
-    if value.0.trim().is_empty() || value.0.trim() != value.0 {
-        Err(KernelError::EmptySubjectHandle)
-    } else {
-        Ok(())
-    }
-}
-
 fn validate_assignment(value: &ControllerAssignment) -> Result<(), KernelError> {
     if let ControllerAssignment::Human { principal, .. } = value {
         validate_principal(principal)?;
     }
     Ok(())
-}
-
-fn assignment_matches_new(assignment: &ControllerAssignment, expected: &NewController) -> bool {
-    match (assignment, expected) {
-        (
-            ControllerAssignment::Human { principal, .. },
-            NewController::Human {
-                principal: expected,
-            },
-        ) => principal == expected,
-        (ControllerAssignment::NarrativePersona { .. }, NewController::NarrativePersona)
-        | (ControllerAssignment::OperationalAgent { .. }, NewController::OperationalAgent) => true,
-        _ => false,
-    }
 }
 
 fn apply_effect(
@@ -1333,6 +1306,16 @@ fn apply_effect(
             return Err(KernelError::Invariant(
                 "world genesis cannot be applied as a mutable effect".into(),
             ));
+        }
+        WorldEffect::PatchAdmitted { resolved } => {
+            if state.phase != WorldPhase::Draft
+                || caller != &CallerId::Principal(state.owner.clone())
+            {
+                return Err(KernelError::Invariant(
+                    "admitted patch does not satisfy draft authority".into(),
+                ));
+            }
+            admit_resolved(state, resolved)?;
         }
         WorldEffect::DraftApproved { principal } => {
             if state.phase != WorldPhase::Draft
@@ -1431,64 +1414,69 @@ fn commit_digest(commit: &WorldCommit) -> Result<String, KernelError> {
 mod tests {
     use super::*;
 
-    fn owner() -> PrincipalId {
+    pub(super) fn owner() -> PrincipalId {
         PrincipalId::new("owner@example.test")
     }
 
-    fn player() -> PrincipalId {
+    pub(super) fn player() -> PrincipalId {
         PrincipalId::new("player@example.test")
     }
 
-    fn auth_principal(principal: PrincipalId) -> AuthenticatedCaller {
+    pub(super) fn auth_principal(principal: PrincipalId) -> AuthenticatedCaller {
         AuthenticatedCaller::fixture(CallerId::Principal(principal))
     }
 
-    fn subject(
+    pub(super) fn subject(
         handle: &str,
         label: &str,
         kind: SubjectKind,
         controller: NewController,
-    ) -> NewDecisionSubject {
-        NewDecisionSubject {
-            handle: DraftSubjectHandle::new(handle),
+    ) -> Declaration {
+        Declaration::Subject(SubjectDeclaration {
+            handle: DraftHandle::new(handle),
             label: label.into(),
             kind,
             controller,
             affordances: BTreeSet::from([AffordanceKind::Speak]),
-        }
+            authority_scope: None,
+        })
     }
 
-    fn creation(id: CommandId, title: &str) -> CreateWorld {
+    pub(super) fn creation(id: CommandId, title: &str) -> CreateWorld {
         CreateWorld {
             id,
             owner: owner(),
             title: title.into(),
-            subjects: vec![
-                subject(
-                    "player",
-                    "The Player",
-                    SubjectKind::Person,
-                    NewController::Human {
-                        principal: player(),
-                    },
-                ),
-                subject(
-                    "persona",
-                    "The Witness",
-                    SubjectKind::Person,
-                    NewController::NarrativePersona,
-                ),
-                subject(
-                    "operator",
-                    "The Council",
-                    SubjectKind::Institution,
-                    NewController::OperationalAgent,
-                ),
-            ],
+            patch: WorldPatch {
+                operations: Vec::new(),
+                evidence: Vec::new(),
+                declarations: vec![
+                    subject(
+                        "player",
+                        "The Player",
+                        SubjectKind::Person,
+                        NewController::Human {
+                            principal: player(),
+                        },
+                    ),
+                    subject(
+                        "persona",
+                        "The Witness",
+                        SubjectKind::Person,
+                        NewController::NarrativePersona,
+                    ),
+                    subject(
+                        "operator",
+                        "The Council",
+                        SubjectKind::Institution,
+                        NewController::OperationalAgent,
+                    ),
+                ],
+            },
         }
     }
 
-    fn command(
+    pub(super) fn command(
         snapshot: &WorldSnapshot,
         id: CommandId,
         caller: CallerId,
@@ -1503,7 +1491,7 @@ mod tests {
         }
     }
 
-    fn submit_owner(
+    pub(super) fn submit_owner(
         kernel: &mut WorldKernel,
         snapshot: &WorldSnapshot,
         body: CommandBody,
@@ -1521,7 +1509,7 @@ mod tests {
             .unwrap()
     }
 
-    fn activate(kernel: &mut WorldKernel) -> WorldSnapshot {
+    pub(super) fn activate(kernel: &mut WorldKernel) -> WorldSnapshot {
         let genesis = kernel.snapshot().unwrap();
         submit_owner(kernel, &genesis, CommandBody::ApproveDraft);
         let after_owner = kernel.snapshot().unwrap();
@@ -2150,11 +2138,18 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("world.cc");
         let mut invalid = creation(CommandId::new(), "Nope");
-        invalid.subjects[1].handle = invalid.subjects[0].handle.clone();
-        assert!(matches!(
-            WorldKernel::create(&path, invalid, &auth_principal(owner())),
-            Err(KernelError::DuplicateSubjectHandle)
-        ));
+        invalid.patch.declarations[1] = invalid.patch.declarations[0].clone();
+        let Err(KernelError::PatchRejected(rejected)) =
+            WorldKernel::create(&path, invalid, &auth_principal(owner()))
+        else {
+            panic!("expected a rejected creation patch");
+        };
+        assert_eq!(
+            rejected,
+            vec![Mismatch::DuplicateHandle {
+                handle: DraftHandle::new("player")
+            }]
+        );
         assert!(
             WorldKernel::create(
                 &path,
