@@ -1,0 +1,719 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.ledger-breeding-ground-pulse-niche-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "grounded_elaboration",
+  "source_refs": [
+    {
+      "source_id": "breeding-grounds",
+      "path": "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+      "title": "Breeding Grounds",
+      "line_start": 1,
+      "line_end": 35,
+      "relevance": "Owning canon note and authored elaboration: pulse niches, material inputs, family work, draw accounting, dependent-care priority, plural veto, class pressure, and cascading overdraw."
+    },
+    {
+      "source_id": "saueia-body",
+      "path": "Eusocial Interbeing/Species/Sa'ueia.md",
+      "title": "Sa'ueia",
+      "line_start": 1,
+      "line_end": 25,
+      "relevance": "Grounds the long-bodied hexapod plan, four running legs, two chest manipulators, facial fans, low work surfaces, mobile families, and breeding-ground commons."
+    },
+    {
+      "source_id": "saueia-families",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+      "title": "Sa'ueia Family Units",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds mobile family labor, trade, memory, ecological negotiation, route obligation, and prestige from broad remembered relations."
+    },
+    {
+      "source_id": "saueia-civilization",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md",
+      "title": "Sa'ueia Nomadic Civilization",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Grounds breeding grounds as reproductive and legal anchors supplied by mobile families rather than cities."
+    },
+    {
+      "source_id": "mobile-technologies",
+      "path": "Eusocial Interbeing/Technologies/Sa'auei'a Mobile Technologies.md",
+      "title": "Sa'auei'a Mobile Technologies",
+      "line_start": 1,
+      "line_end": 21,
+      "relevance": "Grounds flank-carried equipment, repairable grafts, route-memory instruments, and selective portable archive disclosure."
+    },
+    {
+      "source_id": "reciprocal-ecologies",
+      "path": "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md",
+      "title": "Reciprocal Ecologies",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds remembered generosity, future access, nourishment, refusal, and materially rational ecological diplomacy."
+    },
+    {
+      "source_id": "mutable-memory",
+      "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+      "title": "Mutable Memory Endosymbiosis",
+      "line_start": 1,
+      "line_end": 123,
+      "relevance": "Grounds nested partial agency, ecological contracts, reproduction as memory negotiation, and local rather than universal knowledge."
+    },
+    {
+      "source_id": "fractal-web",
+      "path": "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md",
+      "title": "Fractal Eusocial Web",
+      "line_start": 1,
+      "line_end": 146,
+      "relevance": "Grounds feeding as remembered exchange, breeding-ground agency, route and commons scales, and separate infrastructure parties."
+    },
+    {
+      "source_id": "nation-scale-interbeings",
+      "path": "Eusocial Interbeing/Ecology/Nation Scale Interbeings.md",
+      "title": "Nation Scale Interbeings",
+      "line_start": 1,
+      "line_end": 135,
+      "relevance": "Grounds granular boundary authority, migratory pasture nations, fungal-road sovereignty, and ecological traffic channels."
+    },
+    {
+      "source_id": "candle-road",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds fungal-road geometry, dead-tissue digestion, mineral return, route credit, quarantine, and visible refusal."
+    },
+    {
+      "source_id": "lantern-trees",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+      "title": "Umbros-Facing Lantern Trees",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds stored producer energy, infant shelter, route lighting, fungal exchange, colored signals, and local starvation power."
+    },
+    {
+      "source_id": "prismwake-mats",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Prismwake Mats.md",
+      "title": "Prismwake Mats",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds eclipse-timed producer tissue, mineral pores, sugar access, fungal credit, careful foot placement, and visible accounting colors."
+    },
+    {
+      "source_id": "glassbacks",
+      "path": "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md",
+      "title": "Glassback Grazers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds stored heat, public dorsal plate states, calf protection, fungal spore movement, route bargains, mineral gifts, and voluntary broadside behavior."
+    },
+    {
+      "source_id": "threadwings",
+      "path": "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+      "title": "Threadwing Couriers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds ecological warning and credit carriage while distinguishing courier information from bulk resource movement."
+    },
+    {
+      "source_id": "saueia-continent",
+      "path": "Eusocial Interbeing/World/Sa'ueia Continent.md",
+      "title": "Sa'ueia Continent",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds mineral licks, wetlands, herds, fungal waystations, seasonal corridors, overdraw consequences, and non-urban permanent care sites."
+    },
+    {
+      "source_id": "umbros-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds the fixed enormous Umbros, short daily eclipse, dim primary, energy scarcity, and timed light and heat windows."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Undated Sa'auei'a daily life before or during early imperial contact; no exact era claim is required by the scene.",
+    "location": "The story-local Four-Return feeding apron on the south edge of an unnamed sub-Umbros Sa'auei'a breeding ground, between nursery hollows, a candle road, prismwake wetland, and a glassback warming lane.",
+    "summary": "During ordinary post-eclipse contribution work, a planned reproductive draw collides with increased infant heat need and a prestigious family's incomplete mineral return. A rotating caretaker must allocate material capacity without converting scheduling authority into ownership.",
+    "public_facts": [
+      {
+        "text": "A breeding ground is a reproductive commons, care center, legal anchor, and memory reservoir rather than a city or lineage property.",
+        "source_refs": [
+          "breeding-grounds",
+          "saueia-civilization"
+        ]
+      },
+      {
+        "text": "A usable pulse niche requires timed light, stored sugar, mineral recycling, mobile heat or other local substitutes, route access, and skilled care to overlap.",
+        "source_refs": [
+          "breeding-grounds",
+          "umbros-system",
+          "candle-road",
+          "lantern-trees",
+          "glassbacks",
+          "prismwake-mats"
+        ]
+      },
+      {
+        "text": "Mobile families maintain breeding-ground capacity through material carriage, route repair, organism care, specialist escort, and obligations to living infrastructure.",
+        "source_refs": [
+          "breeding-grounds",
+          "saueia-families",
+          "reciprocal-ecologies"
+        ]
+      },
+      {
+        "text": "Route-rich standing can improve access to scarce reproductive windows even when formal ownership is forbidden, creating class pressure inside reciprocity.",
+        "source_refs": [
+          "breeding-grounds",
+          "saueia-families"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Dependent care must be protected before elective reproductive and adult draws, but actual missing capacity still has consequences.",
+        "source_refs": [
+          "breeding-grounds"
+        ]
+      },
+      {
+        "text": "Caretakers can schedule and witness draws while roads, trees, mats, herds, and other partners retain material vetoes.",
+        "source_refs": [
+          "breeding-grounds",
+          "fractal-web",
+          "reciprocal-ecologies"
+        ]
+      },
+      {
+        "text": "An overdraw reduces later capacity through multiple linked partners, so immediate success can still become seasonal debt.",
+        "source_refs": [
+          "breeding-grounds",
+          "saueia-continent"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "feeding-apron-caretakers",
+      "label": "Feeding-apron caretaker rotation",
+      "group_type": "communal_care_stewardship",
+      "institutional_logic": [
+        "Protect dependent care, expose material limits, preserve future pulses, and schedule claims without becoming owners of the commons."
+      ],
+      "material_incentives": [
+        "Maintain heat, nutrient paste, clean graft capacity, specialist time, partner trust, and an archive other rotations can use."
+      ],
+      "internal_virtues": [
+        "Exact declarations",
+        "Dependent-care priority",
+        "Plural witness",
+        "Visible debt",
+        "Temporary office"
+      ],
+      "internal_shames": [
+        "Hiding reserve depletion",
+        "Selling preferred access",
+        "Assigning shared labor without consent",
+        "Treating a valve as ownership"
+      ],
+      "prestige_markers": [
+        "A pulse that arrives with margin",
+        "Debts another rotation can collect",
+        "Partners that keep answering",
+        "A delayed draw preserved rather than erased"
+      ],
+      "taboo_triggers": [
+        "Abandoning dependents for family debt",
+        "Unrecorded draw priority",
+        "Forced ecological contribution"
+      ],
+      "emotional_display_norms": [
+        "Competence is shown through low work, exact handling, open facial-fan signals, dry correction, and willingness to name shortages before they become injuries."
+      ],
+      "trust_defaults": [
+        "Trusts converging material evidence and remembered conduct; refuses to confuse either with unlimited current capacity."
+      ],
+      "speech_register_cues": [
+        "Compressed allocation language",
+        "Concrete work nouns",
+        "Dry jokes about institutional appetite",
+        "Public distinction between claim and capacity"
+      ],
+      "source_refs": [
+        "breeding-grounds",
+        "saueia-civilization",
+        "mobile-technologies"
+      ]
+    },
+    {
+      "group_id": "route-rich-mobile-families",
+      "label": "Route-rich Sa'auei'a family networks",
+      "group_type": "mobile_kinship_economy",
+      "institutional_logic": [
+        "Convert broad remembered service into reliable travel, specialist exchange, witnessed claims, and reproductive continuity."
+      ],
+      "material_incentives": [
+        "Reach safe pulse windows, keep route credit portable, defend family archive privacy, and make costly rescue work count."
+      ],
+      "internal_virtues": [
+        "Wide reciprocity",
+        "Rescue work",
+        "Reliable return",
+        "Carrying difficult matter"
+      ],
+      "internal_shames": [
+        "A public deficit",
+        "Credit refused at a commons",
+        "Using prestige to hide an incomplete contribution"
+      ],
+      "prestige_markers": [
+        "Many answering routes",
+        "Specialists who travel under the family mark",
+        "Witnesses that arrive quickly",
+        "Reproductive claims met in the safest windows"
+      ],
+      "taboo_triggers": [
+        "Treating earned standing as hereditary ownership",
+        "Demanding private archive depth for one transaction",
+        "Erasing rescue labor from an account"
+      ],
+      "emotional_display_norms": [
+        "Formal confidence and open facial fans display standing; public shortage closes the fans before it raises the voice."
+      ],
+      "trust_defaults": [
+        "Expects long service to receive flexible accommodation, but knows a road can still distinguish yesterday's generosity from today's missing salt."
+      ],
+      "speech_register_cues": [
+        "Route testimony",
+        "Specific service claims",
+        "Controlled offense",
+        "Repair promises measured in journeys and tasks"
+      ],
+      "source_refs": [
+        "saueia-families",
+        "reciprocal-ecologies",
+        "breeding-grounds"
+      ]
+    },
+    {
+      "group_id": "feeding-apron-partner-web",
+      "label": "Feeding-apron ecological partners",
+      "group_type": "multispecies_resource_infrastructure",
+      "institutional_logic": [
+        "Keep light, heat, minerals, decomposition, grazing, shelter, and route traffic mutually viable across repeated eclipse pulses."
+      ],
+      "material_incentives": [
+        "Receive clean tissue, mineral movement, careful grazing, parasite removal, spore carriage, route traffic, and truthful disclosure."
+      ],
+      "internal_virtues": [
+        "Material reciprocity",
+        "Legible refusal",
+        "Local memory",
+        "Independent participation"
+      ],
+      "internal_shames": [
+        "Accepting poison as tribute",
+        "Closing every route",
+        "Being forced into a human-shaped supplier category"
+      ],
+      "prestige_markers": [
+        "Bright fungal lanes",
+        "Warm herd arrays",
+        "Open producer pores",
+        "Lit infant ramps"
+      ],
+      "taboo_triggers": [
+        "Concealed contamination",
+        "Torn regrowth",
+        "Stolen larvae or calves",
+        "Promises used as physical substitutes"
+      ],
+      "emotional_display_norms": [
+        "Position is made visible through plate color, route brightness, lantern patterns, mat closure, and movement away."
+      ],
+      "trust_defaults": [
+        "Each partner remembers on its own channel and timescale; overlap supports action but does not create one private collective voice."
+      ],
+      "speech_register_cues": [
+        "Amber road beads",
+        "Cold blue lantern knots",
+        "Silver-green mat flashes",
+        "Glassback warmth and spacing"
+      ],
+      "source_refs": [
+        "candle-road",
+        "lantern-trees",
+        "prismwake-mats",
+        "glassbacks",
+        "fractal-web"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "feeding-apron-caretakers.capacity-without-custody",
+      "applies_to": [
+        "feeding-apron-caretakers"
+      ],
+      "pressure_type": "stewardship",
+      "summary": "Caretakers make consequential allocation declarations while lacking ownership of the contributors, recipients, and material channels.",
+      "projection_use": "Offer Tesh choices that move matter, expose records, request testimony, delay claims, or open consent; never make declaration sufficient by itself.",
+      "source_refs": [
+        "breeding-grounds",
+        "reciprocal-ecologies"
+      ]
+    },
+    {
+      "field_id": "route-rich-mobile-families.earned-standing-class-pressure",
+      "applies_to": [
+        "route-rich-mobile-families"
+      ],
+      "pressure_type": "class_access",
+      "summary": "Broad ecological standing is productive social capacity and an advantage that can reproduce itself through safer timing and easier substitution.",
+      "projection_use": "Keep Varo's family genuinely useful and genuinely advantaged; do not flatten the conflict into fraud versus fairness.",
+      "source_refs": [
+        "breeding-grounds",
+        "saueia-families"
+      ]
+    },
+    {
+      "field_id": "feeding-apron-partner-web.cascade-accounting",
+      "applies_to": [
+        "feeding-apron-partner-web"
+      ],
+      "pressure_type": "trophic_scarcity",
+      "summary": "Spending one contributor's margin changes what every adjacent contributor can safely offer in later pulses.",
+      "projection_use": "Make reserve use and overdraw visible as dimming, cooling, closing pores, rerouting herds, and smaller future capacity.",
+      "source_refs": [
+        "breeding-grounds",
+        "fractal-web",
+        "saueia-continent"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "feeding-apron-caretakers",
+      "target_group_id": "route-rich-mobile-families",
+      "observer_read": [
+        "A valid rescue claim",
+        "An incomplete current contribution",
+        "Prestige that may pressure the schedule"
+      ],
+      "target_self_read": [
+        "A family whose past and present work keeps the commons supplied",
+        "A claimant entitled to have rescue labor counted"
+      ],
+      "misread_patterns": [
+        "Reducing broad service to privilege alone",
+        "Treating current shortage as proof that old contributions were false"
+      ],
+      "likely_insults": [
+        "route prince",
+        "empty packet",
+        "borrowed witness"
+      ],
+      "projection_use": "Let Tesh distinguish earned standing from available capacity while recognizing that scheduling neutrality can preserve class advantage.",
+      "source_refs": [
+        "breeding-grounds",
+        "saueia-families"
+      ]
+    },
+    {
+      "observer_group_id": "route-rich-mobile-families",
+      "target_group_id": "feeding-apron-caretakers",
+      "observer_read": [
+        "Temporary stewards using a shortage to discount mobile labor",
+        "Residents at risk of becoming a gatekeeping class"
+      ],
+      "target_self_read": [
+        "Caretakers protecting dependents and future capacity under plural witness"
+      ],
+      "misread_patterns": [
+        "Reading triage as lineage exclusion",
+        "Treating requested evidence as a demand for full archive custody"
+      ],
+      "likely_insults": [
+        "resident owner",
+        "valve keeper",
+        "nursery court"
+      ],
+      "projection_use": "Let Varo resist humiliation and resident capture without pretending the missing mineral input is only politics.",
+      "source_refs": [
+        "breeding-grounds",
+        "mobile-technologies"
+      ]
+    },
+    {
+      "observer_group_id": "feeding-apron-caretakers",
+      "target_group_id": "feeding-apron-partner-web",
+      "observer_read": [
+        "Witnesses, suppliers, vetoes, and current capacity signals"
+      ],
+      "target_self_read": [
+        "Unavailable as one unified self-description; each organism and route retains its own appetite, memory, and boundary."
+      ],
+      "misread_patterns": [
+        "Treating convergent signals as one vote",
+        "Treating stored credit as purchased obedience",
+        "Treating a bright lane as unlimited supply"
+      ],
+      "likely_insults": [
+        "hungry road",
+        "renting tree",
+        "ledger mat"
+      ],
+      "projection_use": "Keep the ecological web exact in behavior and opaque in private motive.",
+      "source_refs": [
+        "mutable-memory",
+        "fractal-web",
+        "reciprocal-ecologies"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "rotating-feeding-apron-caretaker",
+      "summary": "A temporary steward who can handle stores and declare allocations but cannot own the pulse or force its contributors.",
+      "obligations": [
+        "Protect dependent care",
+        "Record sources and debt",
+        "Preserve future pulses",
+        "Respect private archive boundaries",
+        "Keep office temporary"
+      ],
+      "available_masks": [
+        "Dry competence",
+        "Procedural calm",
+        "Public arithmetic",
+        "Deference to ecological signals"
+      ],
+      "failure_modes": [
+        "Making shortage invisible",
+        "Assigning consent",
+        "Favoring a lineage",
+        "Opening all reserves",
+        "Confusing triage with legitimacy"
+      ],
+      "source_refs": [
+        "breeding-grounds",
+        "saueia-body"
+      ]
+    },
+    {
+      "role_id": "route-rich-family-advocate",
+      "summary": "A mobile family representative whose valid service history, reproductive timing, archive privacy, and public standing are all exposed by one missing input.",
+      "obligations": [
+        "Represent the waiting family members",
+        "Account for missing matter",
+        "Protect archive depth",
+        "Offer repair the route can recognize"
+      ],
+      "available_masks": [
+        "Formal confidence",
+        "Controlled offense",
+        "Service testimony",
+        "Practical repair promise"
+      ],
+      "failure_modes": [
+        "Using prestige as capacity",
+        "Letting humiliation close negotiation",
+        "Turning broad contribution into inherited priority"
+      ],
+      "source_refs": [
+        "saueia-families",
+        "mobile-technologies",
+        "breeding-grounds"
+      ]
+    },
+    {
+      "role_id": "infirm-archive-keeper",
+      "summary": "A long-resident witness who protects continuity and watches temporary scheduling authority for signs of becoming a resident class.",
+      "obligations": [
+        "Keep records legible",
+        "Witness caretaker decisions",
+        "Protect dependent ramps",
+        "Challenge ownership drift"
+      ],
+      "available_masks": [
+        "Dry correction",
+        "Patient silence",
+        "Archive literalism"
+      ],
+      "failure_modes": [
+        "Mistaking residence for superior moral standing",
+        "Freezing innovation to preserve precedent",
+        "Guarding the archive as property"
+      ],
+      "source_refs": [
+        "breeding-grounds",
+        "saueia-civilization"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "tesh_rotating_caretaker",
+      "known_context": [
+        {
+          "text": "Tesh knows current stores, public draws, caretaker procedure, feeding-apron geometry, and signals visible from the work rail.",
+          "source_refs": [
+            "breeding-grounds",
+            "saueia-body"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Tesh believes dependent care has priority and every exception must expose who pays the next pulse.",
+          "source_refs": [
+            "breeding-grounds"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Tesh may underweight how public disclosure can turn a repairable shortfall into lineage humiliation.",
+          "source_refs": [
+            "breeding-grounds",
+            "saueia-families"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Tesh must not know partner motives, the exact amount spent at the alleged rescue, or the waiting family's private reproductive state beyond offered testimony.",
+          "source_refs": [
+            "mutable-memory",
+            "mobile-technologies"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "varo_family_advocate",
+      "known_context": [
+        {
+          "text": "Varo knows the family contribution history, the scheduled draw, the missing packet, the rescue account, and the archive layer the family may choose to expose.",
+          "source_refs": [
+            "saueia-families",
+            "mobile-technologies"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Varo believes a family that spent matter protecting a shared calving lane should not lose its safest reproductive interval for arriving with less fungible tribute.",
+          "source_refs": [
+            "reciprocal-ecologies",
+            "breeding-grounds"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Varo may read the caretaker's capacity limit as resident contempt for mobile work.",
+          "source_refs": [
+            "breeding-grounds"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Varo must not know whether road, mat, grove, or herd will accept a future repair promise before their visible behavior changes.",
+          "source_refs": [
+            "reciprocal-ecologies"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "oru_archive_keeper",
+      "known_context": [
+        {
+          "text": "Oru knows the commons archive, dependent-care demand, caretaker rotation history, and visible ledger mutations.",
+          "source_refs": [
+            "breeding-grounds",
+            "mobile-technologies"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Oru believes a commons fails when temporary allocation power becomes permanent class office or when shared obligation is declared without consent.",
+          "source_refs": [
+            "breeding-grounds"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Oru may treat procedural novelty as ownership drift sooner than the evidence warrants.",
+          "source_refs": [
+            "breeding-grounds"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Oru must not know Varo's unoffered archive layers or the private condition of the family members waiting beyond the road.",
+          "source_refs": [
+            "mobile-technologies",
+            "mutable-memory"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Tesh, Varo, Oru, the ash-striped herd, Four-Return, and this exact allocation are story-local inventions and do not establish Weksa vocabulary, named geography, or canon history.",
+      "source_refs": [
+        "breeding-grounds",
+        "saueia-body"
+      ]
+    },
+    {
+      "text": "The fixture does not decide whether Varo's family diverted exactly the claimed material amount; archive and herd evidence verify rescue work while leaving quantity disputed.",
+      "source_refs": [
+        "mutable-memory",
+        "mobile-technologies"
+      ]
+    },
+    {
+      "text": "Reproductive physiology, conception procedure, gestation anatomy, and exact resource recipes remain unspecified; the scene models allocation surfaces only.",
+      "source_refs": [
+        "breeding-grounds",
+        "mutable-memory"
+      ]
+    },
+    {
+      "text": "The pulse basin, heat braid, Four-Return apron geometry, and exact arrangement of partner species are story-local implementations of the canonized material flows, not universal breeding-ground infrastructure.",
+      "source_refs": [
+        "breeding-grounds",
+        "saueia-continent"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What exact reproductive tissues, phases, and medical work make one Sa'auei'a draw distinct from infant or adult recovery care?",
+      "blocks_training": false,
+      "notes": "The fixture deliberately uses a scheduled reproductive draw, clean graft bath, nutrient paste, heat, and specialist time without inventing anatomy."
+    },
+    {
+      "question": "Is pulse niche a useful standardized trade-translation term or only a story-local explanatory handle?",
+      "blocks_training": false,
+      "notes": "The owning lore note marks the term as trade translation; Weksa should eventually supply culture- and partner-specific language."
+    },
+    {
+      "question": "Which breeding-ground localities can combine prismwake wetland, lantern grove, candle road, and glassback heat within one compact apron?",
+      "blocks_training": false,
+      "notes": "The scene uses one plausible story-local overlap and does not claim it is the universal breeding-ground layout."
+    }
+  ]
+}

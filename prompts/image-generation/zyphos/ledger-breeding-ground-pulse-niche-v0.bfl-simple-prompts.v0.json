@@ -1,0 +1,64 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ledger-breeding-ground-pulse-niche-v0.bfl-simple-v0",
+  "fixture_id": "ledger-breeding-ground-pulse-niche-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly speculative-ecology storybook frame, restrained gouache and ink texture, deep eclipse blue with dim red-orange return light, cold blue bioluminescence, amber fungal signals, mineral earth colors, precise alien anatomy, tactile living infrastructure, humane logistical comedy, cinematic interactive-fiction composition with clear playable staging.",
+  "prompts": [
+    {
+      "id": "01_pulse_apron_establishing",
+      "prompt": "Wide elevated view of a crescent outdoor feeding apron made from dark root-bound stone. Four shallow ramps descend north into low nursery hollows beneath cold blue light knots. A circular low work rail surrounds a shallow pulse basin at center. Two rows of amber fungal beads enter west. A ribbed heat braid and ash-striped translucent-plated herd animals occupy east. Thin silver-green producer mats cover shallow wet ground south. An enormous fixed black planet releases a dim red-orange sun overhead."
+    },
+    {
+      "id": "02_pulse_people_and_work",
+      "prompt": "Medium view across a circular mineral basin on a root-stone apron. A rust-and-cream long-bodied alien hexapod with four digitigrade running legs, two small three-digit chest hands, wedge head, paired facial fans, and pale flank frame stirs mineral paste. An elderly pale silver-gray hexapod with one drooping facial fan and dark teal archive wrap rests beside translucent memory membranes. Ash-striped herd animals with glowing dorsal plates warm a ribbed braid to the east beneath cold blue tree lights."
+    },
+    {
+      "id": "03_pulse_routine_hub",
+      "prompt": "Overhead-oblique playable work view of a crescent root-stone feeding apron beneath a partial eclipse. A six-limbed caretaker at a central low circular basin can reach four distinct routes: west to amber fungal beads and a sealed clean graft tray; east to translucent-plated herd animals and a ribbed heat braid; south to silver-green wetland mats and a folded mineral cloth; north to four lantern-lit nursery ramps and layered archive membranes."
+    },
+    {
+      "id": "04_pulse_routine_fold",
+      "prompt": "Wide work tableau on a crescent dark-stone feeding apron as a dim red-orange sun emerges from behind a fixed black planet. A rust-and-cream six-limbed caretaker stands by the central basin; an elderly silver-gray six-limbed keeper sits at the north archive rail; amber fungal candles approach west; translucent-plated herd animals warm the east braid; silver-green producer mats flash south; cold blue knots light four nursery ramps north."
+    },
+    {
+      "id": "05_pulse_varo_arrival",
+      "prompt": "Medium-wide west-facing view across a root-stone feeding apron. A deep-umber long-bodied alien hexapod with four digitigrade legs, two small three-digit chest hands, wedge head, broad facial fans, and dark woven flank frame waits beside amber fungal beads holding one full salt packet, one collapsed woven rind, a closed layered archive case, and a pale draw token. A rust-and-cream hexapod caretaker faces the arrival from the central basin while an elderly silver-gray keeper watches from the north rail."
+    },
+    {
+      "id": "06_pulse_shortfall_reveal",
+      "prompt": "Close-medium resource reveal at the west edge of a root-stone feeding apron. Half the amber fungal-candle rows are dark around a deep-umber six-limbed traveler holding one bulging salt packet and one collapsed empty woven rind. A rust-and-cream caretaker faces the deficit from a low basin rail. An elderly silver-gray keeper touches an amber dependent-care membrane leading to four nursery ramps. A pale reproductive draw token hangs beside the visibly low basin."
+    },
+    {
+      "id": "07_pulse_pressure_hub",
+      "prompt": "Overhead-oblique choice frame centered on a low circular pulse basin. A rust-and-cream six-limbed caretaker faces four reachable surfaces: west, a deep-umber traveler's closed archive and empty salt rind beside dim fungal beads; east, ash-striped animals with glowing dorsal plates; north, sealed mineral vessels beside an amber dependent-care membrane and four nursery ramps; outer rail, empty hooks for voluntary work packets and route cords. An elderly silver-gray keeper guards the north archive rail."
+    },
+    {
+      "id": "08_pulse_allocation_fold",
+      "prompt": "Wide allocation tableau on a crescent dark root-stone apron in full return light. A rust-and-cream six-limbed caretaker and deep-umber six-limbed family advocate face each other across a central basin. An elderly silver-gray keeper sits at the northern archive rail below four nursery ramps. The west fungal road, east translucent-plated herd, south silver-green wetland mats, and cold blue northern tree lights all remain visible with archive layers, salt vessels, route cords, and basin membranes ready to show branch state."
+    },
+    {
+      "id": "09_pulse_final_threshold",
+      "prompt": "Wide frontal threshold view of a crescent feeding apron under a fully returned dim red-orange sun and huge fixed black planet. Four nursery ramps descend north beneath cold blue knots; amber fungal beads enter west; ash-striped translucent-plated herd animals stand by a heat braid east; silver-green mats edge shallow water south. A central low basin holds archives, graft vessels, salt, route cords, and a pale draw token between a rust-and-cream caretaker, deep-umber advocate, and elderly silver-gray keeper."
+    },
+    {
+      "id": "10_pulse_ending_dependents",
+      "prompt": "Dependent-priority aftermath at the north half of a crescent root-stone feeding apron. Warm mineral paste flows from a central basin toward four nursery ramps under cold blue knots. A rust-and-cream six-limbed caretaker holds a pale delayed draw token beside archive membranes. A deep-umber advocate stands west near a salt frame and dim amber fungal beads. An elderly silver-gray keeper witnesses at the north rail while the east heat braid and south wetland remain visible."
+    },
+    {
+      "id": "11_pulse_ending_family_debt",
+      "prompt": "Family-debt aftermath at a central basin and west fungal road. A rust-and-cream six-limbed caretaker faces a deep-umber six-limbed advocate across a low circular rail. Two west-route cords are tied to a pale reproductive draw token between the advocate's two small three-digit chest hands. Amber fungal candles define a mineral lane; sealed graft vessels and archive membranes occupy the rail; four cold-blue-lit nursery ramps remain north with herd heat east and wetland mats south."
+    },
+    {
+      "id": "12_pulse_ending_shared",
+      "prompt": "Shared-obligation aftermath around the outer rail of a crescent root-stone feeding apron. A rust-and-cream six-limbed caretaker records separate offerings while a deep-umber advocate stands at the west contribution point and an elderly silver-gray keeper guards the north archive. Several long-bodied six-limbed family workers with paired facial fans and practical flank frames offer mineral cloths, spore bundles, tools, and route cords in distinct groups. West road, east herd heat, south wetland, and north nursery ramps fix the space."
+    },
+    {
+      "id": "13_pulse_ending_reserve",
+      "prompt": "Reserve-spending aftermath across a complete crescent root-stone feeding apron. A central low basin feeds four northern nursery ramps under cold blue knots; amber fungal candles run west; a ribbed heat braid touches ash-striped translucent-plated herd animals east; silver-green wetland mats border south. A rust-and-cream six-limbed caretaker operates separate mineral and heat channels with two small three-digit chest hands while an elderly silver-gray keeper watches the dependent membrane."
+    }
+  ]
+}

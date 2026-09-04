@@ -1,0 +1,453 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ledger-breeding-ground-pulse-niche-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/zyphos/ledger-breeding-ground-pulse-niche-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/ledger-breeding-ground-pulse-niche-v0.v0.json",
+  "scene_id": "ledger-breeding-ground-pulse-niche-v0.four-return-feeding-apron",
+  "protagonist_agent_id": "tesh_rotating_caretaker",
+  "npc_agent_ids": [
+    "varo_family_advocate",
+    "oru_archive_keeper",
+    "ash_striped_glassback_herd",
+    "west_candle_road",
+    "feeding_apron_lantern_grove",
+    "south_prismwake_mat",
+    "feeding_apron_commons"
+  ],
+  "purpose": "Interactive Fiction Weaver compilation of a Zyphos branch-and-fold resource allocation dispute from rotating caretaker Tesh's local perspective, with material scarcity, family standing, dependent-care priority, and ecological co-authority kept visible.",
+  "local_awareness_summary": [
+    {
+      "text": "Tesh knows the feeding apron's routine, current stores, public draw schedule, visible road, tree, mat, and herd signals, and the offered archive layers; Tesh does not know any partner's private intention.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/ledger-breeding-ground-pulse-niche-v0.v0.json",
+        "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+      ]
+    },
+    {
+      "text": "The scene begins during ordinary first-return work while Umbros releases the dim sun; a scheduled reproductive draw later collides with an increased dependent-care draw and an incomplete mineral contribution.",
+      "source_refs": [
+        "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+        "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+      ]
+    },
+    {
+      "text": "Tesh's authority is declarative and scheduling authority only. The living partners separately control the material channels that make a draw possible.",
+      "source_refs": [
+        "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+        "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Tesh's embodied Sa'auei'a viewpoint at a low circular work rail. Choices use two chest hands, facial fans, four-legged movement, archive membranes, route cords, visible ecological signals, and spoken declarations.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Eusocial Interbeing/Species/Sa'ueia.md"
+        ]
+      },
+      {
+        "text": "Routine contribution precedes shortage; the story establishes how the pulse is made before asking who receives it.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Tesh can record, schedule, request, transfer, and refuse. Tesh cannot command the fungal road, lantern trees, prismwake mat, or glassback herd to contribute.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+          "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md"
+        ]
+      },
+      {
+        "text": "Existing debt cannot by itself deny infant or infirm care. Actual capacity can still fail, and elective draws can be delayed.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Varo retains the family archive except for a voluntarily opened rescue layer; Oru stewards the commons archive; Tesh handles public draw tokens, sealed salt, clean rejected graft tissue, route cords, and basin valves.",
+        "source_refs": [
+          "Eusocial Interbeing/Technologies/Sa'auei'a Mobile Technologies.md",
+          "examples/ink/zyphos/ledger-breeding-ground-pulse-niche-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The pulse niche is an overlap of timed relationships, not one fungible commodity. Every successful allocation must name the material contributors and the repair cost.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+        ]
+      },
+      {
+        "text": "The fixture must show route-rich family standing as real productive capacity and real class advantage without turning Varo into a cartoon hoarder.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let a caretaker's declaration manufacture ecological consent, erase a missing material input, or become private ownership of the commons.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+        ]
+      },
+      {
+        "text": "Do not make shared obligation valid without visible consent, or make reputation substitute for energy and matter.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md",
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through one feeding-apron pulse shortfall and select one of eight state-gated allocation endings.",
+    "choice_layers": [
+      "first_return_work",
+      "shortfall_testimony_and_cost",
+      "draw_allocation"
+    ],
+    "variables": [
+      "road_credit",
+      "lantern_reserve",
+      "herd_trust",
+      "dependent_reserve",
+      "pulse_integrity",
+      "salt_stock",
+      "family_standing",
+      "caretaker_legitimacy",
+      "evidence_chain",
+      "shared_obligation",
+      "route_delay"
+    ],
+    "ending_gates": [
+      "ending_dependent_success",
+      "ending_dependent_cost",
+      "ending_family_debt_success",
+      "ending_family_debt_cost",
+      "ending_shared_success",
+      "ending_shared_cost",
+      "ending_reserve_success",
+      "ending_reserve_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_road_and_salt",
+      "ink_path": "routine_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Feed a clean failed graft to the fungal road and establish material credit before draws begin.",
+      "state_basis": [
+        "Candle roads digest failed grafts and exchange useful minerals under remembered terms.",
+        "Caretakers must declare handling history rather than present waste as tribute."
+      ],
+      "reviewed_consequences": [
+        "Raises road_credit, salt_stock, and caretaker_legitimacy; later improves the family-bound repair gate and visible west-road posture."
+      ],
+      "training_hooks": [
+        "clean_decomposition_as_supply",
+        "material_credit",
+        "declared_failure"
+      ]
+    },
+    {
+      "branch_id": "prime_herd_heat",
+      "ink_path": "routine_choice",
+      "action_type": "gesture",
+      "actor_intent": "Earn voluntary glassback heat contribution through grooming and calm route handling.",
+      "state_basis": [
+        "Glassbacks share stored heat and respond to parasite removal and respectful body spacing."
+      ],
+      "reviewed_consequences": [
+        "Raises herd_trust, dependent_reserve, and pulse_integrity; later strengthens herd testimony and the reserve-bridge ending."
+      ],
+      "training_hooks": [
+        "nonhuman_bargaining",
+        "heat_as_resource",
+        "care_work_as_infrastructure"
+      ]
+    },
+    {
+      "branch_id": "prime_producer_reserve",
+      "ink_path": "routine_choice",
+      "action_type": "move",
+      "actor_intent": "Spend portable salt to strengthen the light-and-sugar side of the pulse circuit.",
+      "state_basis": [
+        "Prismwake mats and lantern trees exchange light, minerals, route access, and stored sugars with nearby partners."
+      ],
+      "reviewed_consequences": [
+        "Raises lantern_reserve and pulse_integrity while spending salt_stock; later changes lighting, shelter margin, and reserve availability."
+      ],
+      "training_hooks": [
+        "producer_infrastructure",
+        "salt_for_sugar_tradeoff",
+        "eclipse_return_work"
+      ]
+    },
+    {
+      "branch_id": "prime_draw_evidence",
+      "ink_path": "routine_choice",
+      "action_type": "inspect_object",
+      "actor_intent": "Spend time auditing promised inputs and care claims before allocating the basin.",
+      "state_basis": [
+        "Portable archives expose selected provenance, obligations, and witness traces without surrendering all family memory."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence_chain and caretaker_legitimacy while increasing route_delay; later supports plural-debt allocation and narrows the light window."
+      ],
+      "training_hooks": [
+        "audit_spends_time",
+        "selective_archive_interface",
+        "evidence_before_crisis"
+      ]
+    },
+    {
+      "branch_id": "verify_family_claim",
+      "ink_path": "pressure_choice",
+      "action_type": "speak",
+      "actor_intent": "Request a bounded archive disclosure that distinguishes rescue work from the unpaid deficit.",
+      "state_basis": [
+        "Varo controls the private family archive and can expose one selected layer.",
+        "The open layer can prove conduct without producing missing matter."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence_chain, family_standing, and route_delay; later separates earned prestige from physical capacity."
+      ],
+      "training_hooks": [
+        "consensual_disclosure",
+        "proof_not_payment",
+        "standing_from_service"
+      ]
+    },
+    {
+      "branch_id": "seek_herd_witness",
+      "ink_path": "pressure_choice",
+      "action_type": "gesture",
+      "actor_intent": "Ask the glassback herd for embodied route testimony without treating it as a commanded record.",
+      "state_basis": [
+        "Glassback plates expose heat and memory gradients.",
+        "Herd trust governs how much detail it makes legible around calves."
+      ],
+      "reviewed_consequences": [
+        "Raises herd_trust and route_delay, and raises evidence_chain by one or two according to prior herd trust."
+      ],
+      "training_hooks": [
+        "ecological_witness",
+        "partial_testimony",
+        "trust_changes_legibility"
+      ]
+    },
+    {
+      "branch_id": "spend_commons_stock",
+      "ink_path": "pressure_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Cover the missing mineral share immediately from sealed commons stock.",
+      "state_basis": [
+        "Tesh can open current stores but cannot erase their future care use."
+      ],
+      "reviewed_consequences": [
+        "Spends salt_stock and dependent_reserve while raising road_credit and pulse_integrity; later may make the infant margin visibly unsafe."
+      ],
+      "training_hooks": [
+        "reserve_spend",
+        "shortage_displacement",
+        "resource_cost_visible"
+      ]
+    },
+    {
+      "branch_id": "open_shared_obligation",
+      "ink_path": "pressure_choice",
+      "action_type": "speak",
+      "actor_intent": "Pause the scheduled draw and invite voluntary repair contributions from every present family.",
+      "state_basis": [
+        "The caretaker can open a public contribution process but cannot assign shared debt without consent."
+      ],
+      "reviewed_consequences": [
+        "Sets shared_obligation, raises caretaker_legitimacy and route_delay, and lowers family_standing by making the prestigious shortage public."
+      ],
+      "training_hooks": [
+        "mutual_aid_invitation",
+        "public_class_pressure",
+        "consent_before_federation"
+      ]
+    },
+    {
+      "branch_id": "protect_dependent_baseline",
+      "ink_path": "final_choice",
+      "action_type": "refuse",
+      "actor_intent": "Delay elective reproductive use and preserve infant and infirm care first.",
+      "state_basis": [
+        "Dependent care has priority over elective draws, but the decision needs actual reserve and steward legitimacy to avoid shrinking future support."
+      ],
+      "reviewed_consequences": [
+        "Routes to dependent-baseline success or cost according to dependent_reserve and caretaker_legitimacy."
+      ],
+      "training_hooks": [
+        "care_priority",
+        "delay_preserves_claim",
+        "future_supply_backlash"
+      ]
+    },
+    {
+      "branch_id": "bind_family_repair",
+      "ink_path": "final_choice",
+      "action_type": "authorize",
+      "actor_intent": "Admit the scheduled draw while binding the beneficiary family to material route repairs.",
+      "state_basis": [
+        "A repair promise can support a draw only when road credit, evidence, and current pulse capacity all exist."
+      ],
+      "reviewed_consequences": [
+        "Routes to family-bound repair success or cost; success preserves the class ambiguity of earned contribution and inherited access."
+      ],
+      "training_hooks": [
+        "credit_buys_access",
+        "reputation_not_matter",
+        "class_pressure_without_caricature"
+      ]
+    },
+    {
+      "branch_id": "share_repair_labor",
+      "ink_path": "final_choice",
+      "action_type": "use_object",
+      "actor_intent": "Distribute a voluntarily offered deficit across separate family route cords.",
+      "state_basis": [
+        "Shared obligation must have been opened and visibly consented to before the archive can distribute it."
+      ],
+      "reviewed_consequences": [
+        "Routes to shared-repair success or coercive assessment cost according to consent, legitimacy, and evidence."
+      ],
+      "training_hooks": [
+        "federated_mutual_aid",
+        "consent_is_state",
+        "anti_custodial_commons"
+      ]
+    },
+    {
+      "branch_id": "cover_both_from_reserve",
+      "ink_path": "final_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Spend accumulated ecological margin to complete dependent and scheduled draws in the current pulse.",
+      "state_basis": [
+        "Heat or sugar margin, remaining salt, and intact pulse relations must coexist; separate thin margins cannot be declared into abundance."
+      ],
+      "reviewed_consequences": [
+        "Routes to a one-cycle reserve bridge or a cascading overdraw according to dependent reserve, lantern reserve, salt, and pulse integrity."
+      ],
+      "training_hooks": [
+        "accumulated_credit",
+        "trophic_cascade",
+        "success_requires_repayment"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose and option gates",
+      "Ending gate selection",
+      "Branch and state visual modifier selection"
+    ],
+    "manual_review_required": [
+      "Durable named character or locality promotion",
+      "Character memory, family standing, or relationship updates beyond the fixture",
+      "Quantitative economy or reproductive biology claims",
+      "Accepted corpus promotion"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex world worker applying the four named Ghostlight reviewer prompts as separate passes",
+    "review_status": "accepted",
+    "reviewer_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 4,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 5
+        },
+        "findings_resolved": [
+          "Split the extinguished-road and empty-packet reveal into its own shortfall_reveal knot so the pivotal resource failure has a distinct click-through screen.",
+          "Verified all eleven variables alter later prose, gates, risks, visible state, or endings and that all eight success-or-cost endings are reachable across the sixteen pre-final state combinations.",
+          "Kept Varo's rescue claim materially credible while making missing salt remain missing; the family advocate is pressured rather than flattened into a hoarder."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings_resolved": [
+          "Added pulse-niche metabolism, draw accounting, dependent-care priority, class pressure, and cascade failure to the owning Breeding Grounds note as a plainly marked Ghostlight elaboration.",
+          "Removed a visual assumption that glassbacks have exactly four legs because the source establishes dorsal plates and herd behavior but not limb count.",
+          "Marked the pulse basin, heat braid, Four-Return geometry, named characters, exact reproduction procedure, and species arrangement as story-local or unresolved rather than universal canon."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompts": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings_resolved": [
+          "Replaced a synthetic draw_arrival.shortfall sub-anchor with the real shortfall_reveal Ink knot.",
+          "Aligned northern ramp descent across Ink, visual plan, scene-set map, and BFL manifest.",
+          "Provided stable Sa'auei'a and herd refs, excluded the two off-frame family members, and supplied explicit modifiers for all routine, pressure, and ending branches."
+        ],
+        "remaining_condition": "The embedded scene-set map supports draft illustrated replay; high-consistency multi-angle website art still requires a plan view or 3D blockout used as camera-specific visual input."
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightlines": 5,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "findings_resolved": [
+          "Fixed a north-west-east-south apron coordinate frame with one central basin and named camera slots.",
+          "Added an east-to-south herd grazing loop and an explicit short guardian route for Oru's intervention at the central archive.",
+          "Tracked the draw token, selected family archive layer, sealed salt, and shared work packets through folded branches and outcome modifiers."
+        ]
+      }
+    ],
+    "review_notes": [
+      "Narrative review found no remaining major problem after the pivotal shortfall received its own knot; routine, pressure, and resolution remain legible without outside notes.",
+      "Lore review checked all sixteen cited vault sources and accepted the new economy as a bounded elaboration of the existing breeding-ground dependency web.",
+      "Visual review accepted prompt specificity, character visibility, segmentation, and branch deltas for B-level draft replay; rendering was explicitly deferred.",
+      "Spatial review accepted the stageable layout and branch-persistent object positions after the two missing movement routes were named."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true
+    }
+  }
+}

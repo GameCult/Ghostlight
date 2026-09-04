@@ -1,0 +1,766 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ledger-breeding-ground-pulse-niche-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/ledger-breeding-ground-pulse-niche-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/ledger-breeding-ground-pulse-niche-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ledger-breeding-ground-pulse-niche-v0.four-return-feeding-apron",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a Sa'auei'a breeding-ground pulse allocation under trophic scarcity and class pressure.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary pulse work, a missing mineral contribution, plural testimony, allocation, and four success-or-cost aftermath families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the apron establishing frame, worker introduction, routine choice hub, routine fold, Varo's arrival, the shortfall reveal, testimony choice hub, allocation fold, final threshold, and each ending family. The extinguishing road and empty packet receive their own pivotal reveal frame.",
+    "prompting_rule": "Each base image prompt restates visible geometry, material, light, bodies, and object positions in plain language. Named visible characters also point to stable visual refs. Continuity notes remain tooling constraints and are excluded from prompt assembly.",
+    "global_style_cue": "Style: painterly speculative-ecology storybook frame, restrained gouache and ink texture, deep eclipse blue with dim red-orange return light, cold blue bioluminescence, amber fungal signals, mineral earth colors, precise alien anatomy, tactile living infrastructure, humane logistical comedy, cinematic interactive-fiction composition with clear playable staging.",
+    "prompt_assembly_rule": "Assemble every image prompt from global_style_cue, the selected scene base_image_prompt, visual_character_refs only for characters or groups listed in that scene, and triggered state_image_modifiers or global_branch_image_modifiers. Exclude refs for absent or off-frame characters and exclude visual_continuity_notes.",
+    "scene_set_guidance": {
+      "current_mode": "embedded_scene_set_map_draft",
+      "scope_reason": "The fixture uses one compact outdoor apron from several fixed camera slots. The embedded map fixes zones, routes, sightlines, and staging well enough for draft illustrated replay planning.",
+      "future_scene_set_need": "Before high-consistency website rendering, lower the embedded map into a plan view or simple 3D blockout and feed camera-specific renders to image generation as geometry input."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "pulse_apron_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide elevated view of a crescent outdoor feeding apron made from dark root-bound stone. Four shallow ramps descend at the north edge into low nursery hollows beneath trees carrying cold blue light knots. A circular waist-low work rail surrounds a shallow pulse basin at center. Two rows of amber fungal beads enter from the west. A ribbed mineral heat braid and several ash-striped herd animals occupy the east. Thin silver-green producer mats cover shallow wet ground beyond the south edge. An enormous fixed black planet releases a dim red-orange sun from eclipse overhead. The resource circuit is readable as north nursery, west road, east heat, south wetland, and central basin.",
+        "visible_characters": [
+          {
+            "agent_id": "ash_striped_glassback_herd",
+            "default_stance": "several adults folded broadside at the east heat braid with calves inside the herd",
+            "visual_ref": "visual_character_refs.groups.ash_striped_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "North always means nurseryward; south means wetlandward; west is the fungal-road entry; east is the glassback heat braid; the pulse basin stays central.",
+          "Umbros remains fixed in the sky direction across every frame; only the amount of sun uncovered changes."
+        ]
+      },
+      {
+        "visual_scene_id": "pulse_people_and_work",
+        "ink_anchor": "people_and_work",
+        "base_image_prompt": "Medium view across the central pulse basin on a root-stone feeding apron. Tesh, a rust-and-cream long-bodied alien hexapod with four digitigrade running legs, two small three-digit chest hands, wedge head, paired facial fans, dark bare throat patch, and a pale vine-fiber flank frame, folds at the south side of the low circular rail while stirring mineral paste. Oru, an elderly pale silver-gray hexapod with one drooping facial fan and a dark teal archive wrap, rests at the north rail beside layered translucent memory membranes. At the east ribbed heat braid, ash-striped herd animals with translucent glowing dorsal plates stand around calves. Cold blue tree knots light four northern ramps; amber fungal beads enter from the west; silver-green wetland mats flash south of the stone edge.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "folded at the south side of the basin rail, chest hands stirring mineral paste",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "oru_archive_keeper",
+            "default_stance": "resting at the north rail beside open archive membranes",
+            "visual_ref": "visual_character_refs.characters.oru_archive_keeper"
+          },
+          {
+            "agent_id": "ash_striped_glassback_herd",
+            "default_stance": "broadside around calves at the east heat braid",
+            "visual_ref": "visual_character_refs.groups.ash_striped_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Sa'auei'a work surfaces remain low and approachable from several sides because their four running legs fold beneath the long body.",
+          "Glassbacks keep the low-bodied, sturdy-limbed silhouette in their visual ref and communicate through dorsal plate light, heat, and spacing."
+        ]
+      },
+      {
+        "visual_scene_id": "pulse_routine_hub",
+        "ink_anchor": "routine_choice",
+        "base_image_prompt": "Overhead-oblique playable work view of a crescent root-stone feeding apron beneath a partial eclipse. At center, a low circular rail surrounds a shallow mineral basin beside a rust-and-cream six-limbed caretaker. Four physical work routes radiate from the caretaker: west to amber fungal beads and a sealed clean failed-graft tray; east to ash-striped heat-storing herd animals beside a ribbed braid; south to silver-green wetland mats and a folded mineral cloth; north to four lantern-lit nursery ramps and translucent archive membranes. An elderly pale silver-gray six-limbed keeper rests at the north rail. Every choice object and route is unobstructed and visible.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "folded inside the circular work route with two chest hands free",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "oru_archive_keeper",
+            "default_stance": "at the north archive rail observing the tally",
+            "visual_ref": "visual_character_refs.characters.oru_archive_keeper"
+          },
+          {
+            "agent_id": "ash_striped_glassback_herd",
+            "default_stance": "east of the basin beside the heat braid",
+            "visual_ref": "visual_character_refs.groups.ash_striped_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The four routine affordances occupy distinct cardinal zones and can be reached from the basin by the named work routes."
+        ]
+      },
+      {
+        "visual_scene_id": "pulse_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide work tableau on a crescent dark-stone feeding apron as a dim red-orange sun emerges from behind a fixed black planet. A rust-and-cream six-limbed caretaker stands beside the central low circular pulse basin. An elderly pale silver-gray keeper sits at the north archive rail under four nursery ramps and cold blue tree lights. Amber fungal candles approach from the west, translucent-plated herd animals warm the ribbed braid at east, and silver-green wetland producer tissue flashes beyond the south edge. The frame shows one connected care circuit with branch-specific abundance added by modifiers.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "beside the basin reviewing the first tally",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "oru_archive_keeper",
+            "default_stance": "north rail beside archive membranes",
+            "visual_ref": "visual_character_refs.characters.oru_archive_keeper"
+          },
+          {
+            "agent_id": "ash_striped_glassback_herd",
+            "default_stance": "east side around the heat braid",
+            "visual_ref": "visual_character_refs.groups.ash_striped_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "road_credit >= 4",
+            "modifier_prompt": "A second amber fungal line leans toward the west side of the basin, with pale mineral grains collected beside the work rail."
+          },
+          {
+            "trigger": "lantern_reserve >= 4",
+            "modifier_prompt": "Every northern nursery ramp is brightly traced by cold blue knots hanging beneath the tree canopy."
+          },
+          {
+            "trigger": "herd_trust >= 4",
+            "modifier_prompt": "Two adult herd animals press glowing translucent dorsal plates close to the east heat braid while calves rest safely inside their formation."
+          },
+          {
+            "trigger": "dependent_reserve >= 4",
+            "modifier_prompt": "The basin membrane and northern heat channels glow stable green, carrying visible warmth toward all four nursery ramps."
+          },
+          {
+            "trigger": "route_delay >= 1",
+            "modifier_prompt": "The red-orange sun has emerged farther beyond the black planet and the brightest return-light band is already moving across the southern wetland."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Branch abundance alters signals and material at fixed zones; it does not move the zones."
+        ]
+      },
+      {
+        "visual_scene_id": "pulse_varo_arrival",
+        "ink_anchor": "draw_arrival",
+        "base_image_prompt": "Medium-wide west-facing view across a crescent root-stone feeding apron. Varo, a deep-umber long-bodied alien hexapod with four tall digitigrade running legs, two small three-digit chest hands, wedge head, broad paired facial fans, dark bare flank patches, and a dark woven flank frame, waits beside two amber fungal-bead rows while holding a balanced frame with one full salt packet, one collapsed woven rind, a closed layered archive case, and a pale reproductive draw token. Tesh, a rust-and-cream hexapod caretaker, stands at the central low circular basin. Oru, an elderly pale silver-gray hexapod, remains at the north archive rail under four cold-blue-lit nursery ramps. The east heat braid and south silver-green wetland edge remain visible in the background.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "at the central basin facing west",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "varo_family_advocate",
+            "default_stance": "at the west road entry holding the salt frame level",
+            "visual_ref": "visual_character_refs.characters.varo_family_advocate"
+          },
+          {
+            "agent_id": "oru_archive_keeper",
+            "default_stance": "at the north rail watching the arrival",
+            "visual_ref": "visual_character_refs.characters.oru_archive_keeper"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Varo's two waiting family members remain beyond the west fungal boundary and off-frame in this fixture; their private reproductive state is not illustrated."
+        ]
+      },
+      {
+        "visual_scene_id": "pulse_shortfall_reveal",
+        "ink_anchor": "shortfall_reveal",
+        "base_image_prompt": "Pivotal close-medium resource reveal at the west edge of a root-stone feeding apron. Half of two amber fungal-candle rows have gone dark around Varo, a deep-umber six-limbed traveler holding a route frame with one bulging salt packet and one visibly collapsed empty woven rind. Tesh, a rust-and-cream six-limbed caretaker, faces the empty packet from the central low basin rail. Oru, an elderly pale silver-gray keeper at the north rail, touches an amber dependent-care membrane leading toward four nursery ramps. Cold blue tree knots remain above the ramps, while the basin level sits visibly below its earlier mark. The frame centers missing matter, falling infant heat, and the disputed draw token tied to the outer rail.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "facing Varo and the empty packet from the basin",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "varo_family_advocate",
+            "default_stance": "west of the basin with formal posture tightening",
+            "visual_ref": "visual_character_refs.characters.varo_family_advocate"
+          },
+          {
+            "agent_id": "oru_archive_keeper",
+            "default_stance": "touching the amber dependent-care membrane at the north rail",
+            "visual_ref": "visual_character_refs.characters.oru_archive_keeper"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The empty rind and reproductive draw token remain on Varo's west-side frame until a later branch moves the token."
+        ]
+      },
+      {
+        "visual_scene_id": "pulse_pressure_hub",
+        "ink_anchor": "pressure_choice",
+        "base_image_prompt": "Overhead-oblique choice frame centered on a low circular pulse basin at a crescent root-stone nursery apron. Tesh, a rust-and-cream alien hexapod with four running legs and two chest hands, faces four reachable evidence or cost surfaces: west, Varo's closed layered archive and an empty salt rind beside dim amber fungal beads; east, ash-striped herd animals with glowing translucent dorsal plates; north, two sealed mineral-stock vessels beside an amber dependent-care membrane and four nursery ramps; along the outer rail, unused route cords where families can place work pledges. Varo, a deep-umber hexapod, stands at the west entry; Oru, an elderly silver-gray hexapod, guards the north archive rail. The dark planet and returning red-orange sun hang above the southern wetland mats.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "centered at the basin with both chest hands free",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "varo_family_advocate",
+            "default_stance": "west entry beside closed archive and empty rind",
+            "visual_ref": "visual_character_refs.characters.varo_family_advocate"
+          },
+          {
+            "agent_id": "oru_archive_keeper",
+            "default_stance": "north rail beside sealed stock",
+            "visual_ref": "visual_character_refs.characters.oru_archive_keeper"
+          },
+          {
+            "agent_id": "ash_striped_glassback_herd",
+            "default_stance": "east of the basin with calves protected inside",
+            "visual_ref": "visual_character_refs.groups.ash_striped_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Every second-layer choice is staged from the central rail: speak toward Varo, gesture east to the herd, transfer north-side salt, or strike the outer route cords."
+        ]
+      },
+      {
+        "visual_scene_id": "pulse_allocation_fold",
+        "ink_anchor": "allocation_fold",
+        "base_image_prompt": "Wide allocation tableau at a crescent dark root-stone feeding apron in full return light. A rust-and-cream six-limbed caretaker and a deep-umber six-limbed family advocate face each other across the central low circular basin. An elderly pale silver-gray keeper sits at the northern archive rail below four nursery ramps. The west fungal road, east translucent-plated herd, south silver-green wetland mats, and cold blue northern tree lights all remain visible. Open or closed archive layers, salt vessels, route cords, basin membrane color, and family work packets change only through explicit modifiers.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "at the central rail, body angled between nursery and Varo",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "varo_family_advocate",
+            "default_stance": "west of the rail beside the contribution frame",
+            "visual_ref": "visual_character_refs.characters.varo_family_advocate"
+          },
+          {
+            "agent_id": "oru_archive_keeper",
+            "default_stance": "north rail with the commons archive",
+            "visual_ref": "visual_character_refs.characters.oru_archive_keeper"
+          },
+          {
+            "agent_id": "ash_striped_glassback_herd",
+            "default_stance": "east heat lane",
+            "visual_ref": "visual_character_refs.groups.ash_striped_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "evidence_chain >= 4",
+            "modifier_prompt": "One selected translucent archive membrane is open between Tesh and Varo, showing aligned pressure traces beside a readable sequence of glassback plate colors."
+          },
+          {
+            "trigger": "family_standing >= 4",
+            "modifier_prompt": "Several route travelers with long six-limbed bodies, practical flank frames, folded work cloths, and open attentive facial fans gather at the far west edge to witness and offer help."
+          },
+          {
+            "trigger": "family_standing <= 2",
+            "modifier_prompt": "Route travelers at the far west edge hold back with closed facial fans and guarded spacing around Varo."
+          },
+          {
+            "trigger": "salt_stock <= 0",
+            "modifier_prompt": "Both sealed mineral vessels at the north inner rail stand open and empty, with pale residue around their rims."
+          },
+          {
+            "trigger": "dependent_reserve <= 2",
+            "modifier_prompt": "The membrane leading from the basin to the four northern nursery ramps glows thin amber and the nearest heat rib has cooled."
+          },
+          {
+            "trigger": "shared_obligation == 1",
+            "modifier_prompt": "Separate work packets, spore bundles, mineral cloths, and knotted route cords bearing different family marks accumulate along the outer rail."
+          },
+          {
+            "trigger": "route_delay >= 3",
+            "modifier_prompt": "The red-orange sun is fully clear of the black planet and hard return light has moved beyond the central basin toward the western edge."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Unnamed route travelers remain background bodies with described anatomy, gear, posture, and west-edge placement."
+        ]
+      },
+      {
+        "visual_scene_id": "pulse_final_threshold",
+        "ink_anchor": "final_threshold",
+        "base_image_prompt": "Wide frontal threshold view of a crescent root-stone feeding apron under a fully returned dim red-orange sun and a huge fixed black planet. Four low nursery ramps descend north beneath cold blue lantern knots. Dim or bright amber fungal beads enter from the west. Ash-striped translucent-plated herd animals stand by a ribbed heat braid at east. Silver-green producer mats edge shallow water to the south. A central low circular basin holds layered archive membranes, sealed graft vessels, a pale reproductive draw token, salt packets, and route cords. Tesh, a rust-and-cream six-limbed caretaker, stands at the center; Varo, a deep-umber six-limbed advocate, waits west; Oru, an elderly pale silver-gray keeper, occupies the north rail. The five resource channels and three political positions are visible in one frame.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "center of the basin rail facing north-west",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "varo_family_advocate",
+            "default_stance": "west side holding the draw token route cords",
+            "visual_ref": "visual_character_refs.characters.varo_family_advocate"
+          },
+          {
+            "agent_id": "oru_archive_keeper",
+            "default_stance": "north rail between the basin and dependent ramps",
+            "visual_ref": "visual_character_refs.characters.oru_archive_keeper"
+          },
+          {
+            "agent_id": "ash_striped_glassback_herd",
+            "default_stance": "east heat braid with broadside adults and protected calves",
+            "visual_ref": "visual_character_refs.groups.ash_striped_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "road_credit >= 4",
+            "modifier_prompt": "A bright amber fungal lane leans from the west road into the central basin's mineral channel."
+          },
+          {
+            "trigger": "lantern_reserve >= 4",
+            "modifier_prompt": "All four northern ramps retain dense cold blue illumination and visible sugar-rich root swelling beneath the trees."
+          },
+          {
+            "trigger": "herd_trust >= 4",
+            "modifier_prompt": "Two adult glassbacks remain voluntarily pressed to the eastern heat braid with warm gold light visible through their dorsal plates."
+          },
+          {
+            "trigger": "pulse_integrity <= 2",
+            "modifier_prompt": "The circuit has visible gaps: dark west candles, a cold east rib, closed south mat pores, and one unlit northern ramp."
+          },
+          {
+            "trigger": "caretaker_legitimacy >= 4",
+            "modifier_prompt": "Oru has moved the commons archive beside Tesh at the central rail, making the decision visibly collective."
+          },
+          {
+            "trigger": "caretaker_legitimacy <= 2",
+            "modifier_prompt": "Oru remains north of the basin with the archive held close to the dependent ramps, physically guarding them from Tesh's allocation."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The final threshold shows the complete coordinate frame and all live resource anchors before an ending changes them."
+        ]
+      },
+      {
+        "visual_scene_id": "pulse_ending_dependents",
+        "ink_anchor": "ending_dependent_success|ending_dependent_cost",
+        "base_image_prompt": "Dependent-priority aftermath at the north half of a crescent root-stone feeding apron. Warm mineral paste flows from the central low basin through visible ribs toward four shallow nursery ramps beneath cold blue lantern knots. Tesh, a rust-and-cream six-limbed caretaker, holds a pale reproductive draw token beside layered archive membranes. Varo, a deep-umber six-limbed family advocate, stands west near a route frame and dim amber fungal beads. Oru, an elderly pale silver-gray keeper, witnesses from the north rail. The east herd heat braid and south silver-green wetland remain visible as material context.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "north side of basin with delayed draw token",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "varo_family_advocate",
+            "default_stance": "west of basin watching the delayed token",
+            "visual_ref": "visual_character_refs.characters.varo_family_advocate"
+          },
+          {
+            "agent_id": "oru_archive_keeper",
+            "default_stance": "north rail witnessing dependent care",
+            "visual_ref": "visual_character_refs.characters.oru_archive_keeper"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "pulse_ending_family_debt",
+        "ink_anchor": "ending_family_debt_success|ending_family_debt_cost",
+        "base_image_prompt": "Family-bound debt aftermath at the central and west sides of a crescent root-stone feeding apron. Tesh, a rust-and-cream six-limbed caretaker, and Varo, a deep-umber six-limbed advocate, face each other across a low circular basin. Two west-route cords are tied to a pale reproductive draw token between Varo's two three-digit chest hands. Amber fungal candles define the mineral lane at west; sealed pale graft vessels and layered archive membranes occupy the rail; four nursery ramps remain visible north under cold blue tree knots. The ash-striped herd and silver-green wetland complete the resource circuit in the background.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "at central basin recording the family obligation",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "varo_family_advocate",
+            "default_stance": "west side holding two debt cords and draw token",
+            "visual_ref": "visual_character_refs.characters.varo_family_advocate"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "pulse_ending_shared",
+        "ink_anchor": "ending_shared_success|ending_shared_cost",
+        "base_image_prompt": "Shared-obligation aftermath around the outer rail of a crescent root-stone feeding apron. Tesh, a rust-and-cream long-bodied hexapod, works at the central low basin while Varo, a deep-umber hexapod, remains at the west contribution point and Oru, an elderly pale silver-gray hexapod, guards the north archive. Several unnamed Sa'auei'a families are fully drawable as long six-limbed bodies with four digitigrade running legs, two small chest hands, wedge heads, paired facial fans, practical flank frames, mineral cloths, spore bundles, and route cords; they stand in separate consenting or withdrawing clusters around the outer rail. Amber fungal road west, herd heat east, wetland mats south, and four nursery ramps north fix the space.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "central rail sorting separately marked obligations",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "varo_family_advocate",
+            "default_stance": "west contribution point beside the largest mineral carry",
+            "visual_ref": "visual_character_refs.characters.varo_family_advocate"
+          },
+          {
+            "agent_id": "oru_archive_keeper",
+            "default_stance": "north archive rail observing consent",
+            "visual_ref": "visual_character_refs.characters.oru_archive_keeper"
+          },
+          {
+            "agent_id": "present_family_workers",
+            "default_stance": "separate groups around the outer rail with visibly distinct work packets",
+            "visual_ref": "visual_character_refs.groups.present_family_workers"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "pulse_ending_reserve",
+        "ink_anchor": "ending_reserve_success|ending_reserve_cost",
+        "base_image_prompt": "Reserve-spending aftermath across the complete crescent root-stone feeding apron. The central low pulse basin feeds four northern nursery ramps under cold blue tree knots. Amber fungal candles run west, a ribbed heat braid touches ash-striped translucent-plated herd animals east, and silver-green wetland mats border the south. Tesh, a rust-and-cream six-limbed caretaker, stands at the central valves with two three-digit chest hands extended over mineral and heat channels. Oru, an elderly pale silver-gray keeper, watches from the north rail. The frame is built to show either a narrow balanced bridge or a cascading circuit failure through explicit modifiers.",
+        "visible_characters": [
+          {
+            "agent_id": "tesh_rotating_caretaker",
+            "default_stance": "central valves with both chest hands on separate resource channels",
+            "visual_ref": "visual_character_refs.characters.tesh_rotating_caretaker"
+          },
+          {
+            "agent_id": "oru_archive_keeper",
+            "default_stance": "north rail monitoring the dependent membrane",
+            "visual_ref": "visual_character_refs.characters.oru_archive_keeper"
+          },
+          {
+            "agent_id": "ash_striped_glassback_herd",
+            "default_stance": "east side beside heat braid",
+            "visual_ref": "visual_character_refs.groups.ash_striped_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_road_and_salt_visual",
+        "trigger": "branch_label == prime_road_and_salt",
+        "apply_to_visual_scene_ids": [
+          "pulse_routine_fold",
+          "pulse_final_threshold"
+        ],
+        "modifier_prompt": "Pale mineral grains ring a bright west candle beside the basin, and an empty clean leaf-skin graft tray lies sealed at the road edge."
+      },
+      {
+        "modifier_id": "prime_herd_heat_visual",
+        "trigger": "branch_label == prime_herd_heat",
+        "apply_to_visual_scene_ids": [
+          "pulse_routine_fold",
+          "pulse_final_threshold",
+          "pulse_ending_reserve"
+        ],
+        "modifier_prompt": "Two groomed glassback adults hold warm gold dorsal plates against the east heat braid while calves rest inside the herd."
+      },
+      {
+        "modifier_id": "prime_producer_reserve_visual",
+        "trigger": "branch_label == prime_producer_reserve",
+        "apply_to_visual_scene_ids": [
+          "pulse_routine_fold",
+          "pulse_final_threshold",
+          "pulse_ending_reserve"
+        ],
+        "modifier_prompt": "A damp mineral cloth links open silver-green pores at the south wetland edge to visibly swollen lantern roots beneath bright cold blue knots at north."
+      },
+      {
+        "modifier_id": "prime_draw_evidence_visual",
+        "trigger": "branch_label == prime_draw_evidence",
+        "apply_to_visual_scene_ids": [
+          "pulse_routine_fold",
+          "pulse_allocation_fold",
+          "pulse_final_threshold"
+        ],
+        "modifier_prompt": "Layered translucent archive membranes are spread in separate bands across the north rail, with each draw token and promised input visibly aligned."
+      },
+      {
+        "modifier_id": "verify_family_claim_visual",
+        "trigger": "branch_label == verify_family_claim",
+        "apply_to_visual_scene_ids": [
+          "pulse_allocation_fold",
+          "pulse_final_threshold"
+        ],
+        "modifier_prompt": "Varo opens one selected translucent archive layer over the west rail while the deeper membranes remain folded inside the closed case."
+      },
+      {
+        "modifier_id": "seek_herd_witness_visual",
+        "trigger": "branch_label == seek_herd_witness",
+        "apply_to_visual_scene_ids": [
+          "pulse_allocation_fold",
+          "pulse_final_threshold"
+        ],
+        "modifier_prompt": "Tesh faces east with both facial fans open while glassback adults arrange flank to flank, displaying a sequence of cloudy red alarm, silver torn-mat trace, and warm gold calf-survival color through their dorsal plates."
+      },
+      {
+        "modifier_id": "spend_commons_stock_visual",
+        "trigger": "branch_label == spend_commons_stock",
+        "apply_to_visual_scene_ids": [
+          "pulse_allocation_fold",
+          "pulse_final_threshold"
+        ],
+        "modifier_prompt": "Two opened mineral-stock vessels sit empty at the north inner rail; the west candles have relit while the dependent-care membrane to the nursery ramps has shifted to thin amber."
+      },
+      {
+        "modifier_id": "open_shared_obligation_visual",
+        "trigger": "branch_label == open_shared_obligation",
+        "apply_to_visual_scene_ids": [
+          "pulse_allocation_fold",
+          "pulse_final_threshold",
+          "pulse_ending_shared"
+        ],
+        "modifier_prompt": "Separately marked route cords, spore bundles, mineral cloths, and work packets accumulate along the outer rail; Varo's paired facial fans are half-closed in public discomfort."
+      },
+      {
+        "modifier_id": "ending_dependent_success_visual",
+        "trigger": "ending_label == dependent_baseline_success",
+        "apply_to_visual_scene_ids": [
+          "pulse_ending_dependents"
+        ],
+        "modifier_prompt": "All four northern heat channels glow stable green; Tesh places the reproductive draw token on a clearly marked future-return archive edge while Oru witnesses beside the caretaker."
+      },
+      {
+        "modifier_id": "ending_dependent_cost_visual",
+        "trigger": "ending_label == dependent_baseline_cost",
+        "apply_to_visual_scene_ids": [
+          "pulse_ending_dependents"
+        ],
+        "modifier_prompt": "The nearest northern heat channel glows green but the remaining three stay amber; Varo turns west carrying the draw token, salt frame, and closed archive while the fungal lane behind Varo dims."
+      },
+      {
+        "modifier_id": "ending_family_debt_success_visual",
+        "trigger": "ending_label == family_bound_repair_success",
+        "apply_to_visual_scene_ids": [
+          "pulse_ending_family_debt"
+        ],
+        "modifier_prompt": "A narrow bright amber mineral lane reaches the basin; Varo holds two distinct west-route repair cords tied to the draw token while clean graft vessels warm beside stable northern channels."
+      },
+      {
+        "modifier_id": "ending_family_debt_cost_visual",
+        "trigger": "ending_label == family_bound_repair_cost",
+        "apply_to_visual_scene_ids": [
+          "pulse_ending_family_debt"
+        ],
+        "modifier_prompt": "The second west mineral channel is dark; one graft bath has clouded and been sealed; the dependent membrane is amber; the fungal beads form a tight refusal ring around the attempted draw."
+      },
+      {
+        "modifier_id": "ending_shared_success_visual",
+        "trigger": "ending_label == shared_repair_success",
+        "apply_to_visual_scene_ids": [
+          "pulse_ending_shared"
+        ],
+        "modifier_prompt": "Each family cluster leaves one clearly separate offered object or route cord on the rail; Tesh records them individually while the west road relights section by section and the herd remains on the east braid."
+      },
+      {
+        "modifier_id": "ending_shared_cost_visual",
+        "trigger": "ending_label == shared_repair_cost",
+        "apply_to_visual_scene_ids": [
+          "pulse_ending_shared"
+        ],
+        "modifier_prompt": "Several family clusters pull work packets and route cords back from the outer rail; gaps open between bodies; west fungal candles dim beside each withdrawal; Oru has crossed the short north gap to the central rail and rests one chest hand firmly over Tesh's archive hand."
+      },
+      {
+        "modifier_id": "ending_reserve_success_visual",
+        "trigger": "ending_label == reserve_bridge_success",
+        "apply_to_visual_scene_ids": [
+          "pulse_ending_reserve"
+        ],
+        "modifier_prompt": "One narrow amber road lane, warm east heat braid, cold blue northern lights, and slowly closing silver-green south mat pores form a complete but visibly thin circuit around two active care flows."
+      },
+      {
+        "modifier_id": "ending_reserve_cost_visual",
+        "trigger": "ending_label == reserve_bridge_cost",
+        "apply_to_visual_scene_ids": [
+          "pulse_ending_reserve"
+        ],
+        "modifier_prompt": "The east heat braid is cold, western mineral beads retract into dark soil, the fourth northern ramp is unlit, south wetland pores are tightly closed, and the basin membrane glows red around one sealed half-filled graft bath."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "four_return_feeding_apron.scene_set.draft",
+      "geometry_authority_level": "embedded_plan_map_not_3d_blockout",
+      "room_model": "One outdoor crescent apron approximately thirty Sa'auei'a body lengths across, with a central circular basin and fixed north, west, east, and south resource zones.",
+      "fixed_zones": [
+        {
+          "zone_id": "north_nursery_ramps",
+          "visible_form": "four shallow root-stone ramps descending north into low communal hollows beneath lantern trees",
+          "used_for": "dependent-care delivery, Oru's guarding position, delayed-draw consequence"
+        },
+        {
+          "zone_id": "central_pulse_basin",
+          "visible_form": "shallow circular basin inside a low ring work rail with mineral, heat, sugar, graft, and archive interfaces",
+          "used_for": "Tesh's workstation and final allocation"
+        },
+        {
+          "zone_id": "west_candle_road_entry",
+          "visible_form": "two rows of amber fungal fruiting beads entering the west point of the crescent",
+          "used_for": "Varo's arrival, mineral return, route credit, closure"
+        },
+        {
+          "zone_id": "east_glassback_heat_braid",
+          "visible_form": "ribbed mineral conductor beside a broad standing lane for translucent-plated herd animals",
+          "used_for": "voluntary heat contribution and herd testimony"
+        },
+        {
+          "zone_id": "south_prismwake_edge",
+          "visible_form": "shallow wet ground covered by thin silver-green light-harvesting mats immediately beyond the stone lip",
+          "used_for": "producer exchange, return-light timing, visible closure"
+        },
+        {
+          "zone_id": "north_lantern_root_sink",
+          "visible_form": "thick surface roots with low mineral-cloth slots beneath cold blue hanging light knots",
+          "used_for": "stored sugar, infant shelter, producer-reserve branch"
+        },
+        {
+          "zone_id": "north_archive_rail",
+          "visible_form": "low straight section of the basin rail beside layered translucent archive membranes and sealed stock vessels",
+          "used_for": "Oru staging, draw audit, reserve custody, legitimacy state"
+        },
+        {
+          "zone_id": "outer_contribution_rail",
+          "visible_form": "outer crescent rail with separated hooks and trays for route cords, spore bundles, mineral cloths, and work packets",
+          "used_for": "shared-obligation consent and withdrawal"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_south_elevated",
+          "supports_visual_scene_ids": [
+            "pulse_apron_establishing",
+            "pulse_routine_fold",
+            "pulse_final_threshold",
+            "pulse_ending_reserve"
+          ]
+        },
+        {
+          "camera_id": "central_overhead_oblique",
+          "supports_visual_scene_ids": [
+            "pulse_routine_hub",
+            "pulse_pressure_hub",
+            "pulse_allocation_fold"
+          ]
+        },
+        {
+          "camera_id": "center_medium_north",
+          "supports_visual_scene_ids": [
+            "pulse_people_and_work",
+            "pulse_ending_dependents",
+            "pulse_ending_shared"
+          ]
+        },
+        {
+          "camera_id": "west_entry_medium",
+          "supports_visual_scene_ids": [
+            "pulse_varo_arrival",
+            "pulse_shortfall_reveal",
+            "pulse_ending_family_debt"
+          ]
+        }
+      ],
+      "movement_routes": [
+        {
+          "route_id": "tesh_four_zone_work_loop",
+          "path": "central_pulse_basin -> west_candle_road_entry -> central_pulse_basin -> east_glassback_heat_braid -> south_prismwake_edge -> north_lantern_root_sink -> north_archive_rail",
+          "supports": [
+            "prime_road_and_salt",
+            "prime_herd_heat",
+            "prime_producer_reserve",
+            "prime_draw_evidence"
+          ]
+        },
+        {
+          "route_id": "varo_arrival_limit",
+          "path": "west_candle_road_entry -> west side of central_pulse_basin outer rail",
+          "supports": [
+            "draw_arrival",
+            "verify_family_claim",
+            "bind_family_repair"
+          ]
+        },
+        {
+          "route_id": "herd_graze_heat_loop",
+          "path": "east_glassback_heat_braid -> southeast stone lip -> south_prismwake_edge",
+          "supports": [
+            "people_and_work",
+            "prime_herd_heat"
+          ]
+        },
+        {
+          "route_id": "oru_guardian_step",
+          "path": "north_archive_rail -> short north gap -> northern edge of central_pulse_basin",
+          "supports": [
+            "caretaker_legitimacy modifiers",
+            "ending_shared_cost"
+          ]
+        },
+        {
+          "route_id": "dependent_flow",
+          "path": "central_pulse_basin -> north_archive_rail valves -> north_nursery_ramps",
+          "supports": [
+            "protect_dependent_baseline",
+            "cover_both_from_reserve"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "basin_to_all_resource_zones",
+          "path": "central_pulse_basin has unobstructed ground-level sightlines west, east, south, and north",
+          "supports": [
+            "routine_choice",
+            "pressure_choice",
+            "final_choice"
+          ]
+        },
+        {
+          "lane_id": "herd_plate_testimony",
+          "path": "central_pulse_basin -> east_glassback_heat_braid broadside plates",
+          "supports": [
+            "seek_herd_witness"
+          ]
+        },
+        {
+          "lane_id": "oru_dependent_watch",
+          "path": "north_archive_rail -> basin membrane -> north_nursery_ramps",
+          "supports": [
+            "caretaker_legitimacy modifiers",
+            "dependent_reserve modifiers"
+          ]
+        }
+      ],
+      "branch_persistent_objects": [
+        {
+          "object_id": "reproductive_draw_token",
+          "default_location": "Varo's west contribution frame, then outer basin rail",
+          "state_changes": "moves to future-return archive edge, binds to west-route debt cords, remains at shared allocation, or enters the reserve-funded active draw"
+        },
+        {
+          "object_id": "selected_family_archive_layer",
+          "default_location": "closed in Varo's archive case",
+          "state_changes": "one layer opens over the west rail only after verify_family_claim"
+        },
+        {
+          "object_id": "sealed_commons_salt",
+          "default_location": "two vessels at north inner rail",
+          "state_changes": "opens and empties after spend_commons_stock or reserve use"
+        },
+        {
+          "object_id": "shared_work_packets",
+          "default_location": "absent",
+          "state_changes": "appear separately along outer rail after open_shared_obligation; remain or are withdrawn according to ending"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable story-local character and group identities for prompt assembly. Include only refs listed as visible in the selected scene.",
+    "characters": {
+      "tesh_rotating_caretaker": "Tesh: adult Sa'auei'a, long horizontal hexapod body, four tall digitigrade running legs, two smaller anterior chest limbs ending in three soft opposing digits, flexible neck, wedge-shaped head, paired chemical-sensing facial fans, short rust-brown and cream insulating fibers over dark hide, bare dark throat and flank signal patches, pale vine-fiber flank frame, compact route-cord bundle, precise low folded work posture. Silhouette remains four running legs plus two chest manipulators; facial fans, chest hands, and flank frame remain visible.",
+      "varo_family_advocate": "Varo: adult Sa'auei'a, long horizontal hexapod body, four tall digitigrade running legs, two smaller three-digit chest manipulators, flexible neck, wedge head, broad paired facial fans, deep umber short body fibers over near-black hide, bare flank signal patches, dark woven balanced flank frame sized for salt packets and a layered archive, formal high-necked posture. Silhouette remains four running legs plus two chest manipulators; broad facial fans and dark cargo frame remain visible.",
+      "oru_archive_keeper": "Oru: elderly infirm Sa'auei'a, long low hexapod body, four digitigrade running legs folded close beneath the torso, two small three-digit chest manipulators, wedge head, paired facial fans with the left fan visibly drooping, sparse pale silver-gray body fibers over charcoal hide, dark teal archive wrap across the flank frame, deliberate economical posture near low work rails. Silhouette remains six-limbed and horizontal; drooping left facial fan and teal archive wrap remain unchanged."
+    },
+    "groups": {
+      "ash_striped_glassback_herd": "Ash-striped glassback herd: large low-bodied grazing animals with sturdy splayed limbs and low blunt heads, ash-gray hides crossed by charcoal flank stripes, broad translucent dorsal plates over glowing heat-storage tissue, adults standing or folding flank to flank, smaller calves protected inside the formation; body language through plate color, warmth, broadside presentation, tight calf rings, and route refusal.",
+      "present_family_workers": "Present family workers: several Sa'auei'a adults with long horizontal bodies, four digitigrade running legs, two smaller three-digit chest manipulators, wedge heads, paired facial fans, varied earth-toned short body fibers, balanced flank frames carrying mineral cloths, spore bundles, tools, and route cords; grouped by visible spacing and separately marked offerings rather than a uniform crowd."
+    }
+  },
+  "review_notes": [
+    "Narrative review accepted the ordinary-work opening, reader orientation, material choices, branch folds, state-gated outcomes, and warm logistical-comedy tone after the shortage reveal became its own Ink knot.",
+    "Lore review accepted the fixture after unsupported glassback leg-count language was removed and the pulse basin, heat braid, exact locality, and reproductive mechanics were bounded as story-local or unresolved.",
+    "Visual review accepted the thirteen-screen segmentation, standalone affirmative prompts, visible-character-only refs, branch/state modifiers, and embedded scene-set map for B-level draft replay planning.",
+    "Spatial review accepted the fixed north-west-east-south coordinate frame, Sa'auei'a reach, object custody, Varo arrival limit, herd grazing loop, Oru guardian step, and branch-persistent route changes.",
+    "A plan view or 3D blockout should replace the embedded textual map before high-consistency multi-angle website rendering; no images were generated in this pass."
+  ]
+}
