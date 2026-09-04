@@ -12,8 +12,8 @@ use std::{
 };
 use thiserror::Error;
 
-const STATE_ROW: &str = "world_state.commitment.v1";
-const COMMIT_ROW: &str = "world_commit.commitment.v1";
+const STATE_ROW: &str = "world_state.elaboration.v1";
+const COMMIT_ROW: &str = "world_commit.elaboration.v1";
 
 #[derive(Debug, Error)]
 pub(super) enum JournalError {
@@ -412,6 +412,14 @@ fn verify_history(
         }
         let previous_now = replay.now;
         let previous_commitments = replay.commitments.clone();
+        // Authority is re-decided here for free: `apply_committed_command`
+        // re-runs `reduce` against the pre-commit state and requires effect
+        // equality, then `apply_effect`, and both of those call
+        // `require_patch_author` and `confine_to_jurisdiction`. A forged row
+        // claiming an elaborator caller for a patch outside its jurisdiction
+        // fails replay rather than being admitted by a reducer that trusts the
+        // recorded caller. A third statement of the same rule here would be a
+        // third owner of one decision.
         apply_committed_command(&mut replay, commit)?;
         // Two chain checks one state cannot make: the clock never runs
         // backwards, and it advances only on a tick.

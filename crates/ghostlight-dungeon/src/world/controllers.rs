@@ -6,10 +6,14 @@
 //! tools never carry caller, controller, world, opportunity, revision, or
 //! affordance fields.
 
+use super::elaboration::{
+    ElaborationCheckpoint, ElaborationRunner, NullEvidenceSource, valid_elaboration_progression,
+};
+use super::tool_schema;
 use crate::world::{
     AffordanceId, AffordanceSnapshot, AuthorityGrant, Bounds, CommandId, CommitReceipt, Confidence,
     ControllerMode, ControllerPort, Cost, DecisionInvocation, DecisionOpportunity,
-    DependencyTarget, EdgeId, EntityId, EntityKind, FactStandingView, KernelError,
+    DependencyTarget, EdgeId, ElaborationPort, EntityId, EntityKind, FactStandingView, KernelError,
     KnowledgeSnapshot, KnowledgeSource, Magnitude, MailboxError, OfficeSnapshot, ProposedEffect,
     Quantity, RefKind, RoleBinding, Statement, SubjectId, SubjectSnapshot, SubmitReceipt, Target,
     WorldMailbox, WorldSnapshot,
@@ -47,8 +51,8 @@ const MAX_CONNECTOR_FRAME_BYTES: usize = 1_052_672;
 const REQUEST_EXPIRY: Duration = Duration::from_secs(300);
 const TOOL_STEP_BUDGET: usize = 4;
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v6";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v6";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v7";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v7";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -59,7 +63,7 @@ const INTERPRETER_SPEAK_TOOL: &str = "speak";
 /// kernel carries the name and branches on it nowhere; matching on it here is a
 /// consumer reading data, which is where genre belongs.
 const SPEAK_KIND: &str = "speak";
-const RECORD_GAP_TOOL: &str = "record_gap";
+const INTERPRETER_RECORD_GAP_TOOL: &str = "record_gap";
 const RECORD_NEED_TOOL: &str = "record_need";
 const FINISH_INTERPRETATION_TOOL: &str = "finish_interpretation";
 const FINISH_WITHOUT_PROPOSAL_TOOL: &str = "finish_without_proposal";
@@ -72,12 +76,13 @@ pub(crate) enum InferencePurpose {
     Persona,
     Interpreter,
     OperationalAgent,
+    Elaboration,
 }
 
 /// One exact provider request. Keeping the native request visible at this seam
 /// makes the prose-only Persona boundary structurally inspectable.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct InferenceRequest {
+pub(super) struct InferenceRequest {
     purpose: InferencePurpose,
     provider: CodexProviderRequest,
 }
@@ -86,13 +91,13 @@ struct InferenceRequest {
 /// Replaying this value may recover a completed connector response; rebuilding
 /// it under the same request ID would be a replay conflict.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct PreparedInference {
+pub(super) struct PreparedInference {
     purpose: InferencePurpose,
-    invocation: CodexTransportInvocation,
+    pub(super) invocation: CodexTransportInvocation,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-enum InferenceEvent {
+pub(super) enum InferenceEvent {
     Text(String),
     ToolCall {
         call_id: String,
@@ -102,9 +107,9 @@ enum InferenceEvent {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct InferenceOutput {
-    events: Vec<InferenceEvent>,
-    receipt_digest: String,
+pub(super) struct InferenceOutput {
+    pub(super) events: Vec<InferenceEvent>,
+    pub(super) receipt_digest: String,
 }
 
 impl InferenceOutput {
@@ -177,7 +182,7 @@ impl InferenceFault {
 }
 
 #[async_trait]
-trait InferencePort: Send + Sync {
+pub(super) trait InferencePort: Send + Sync {
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault>;
 
     async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault>;
@@ -355,9 +360,22 @@ fn unix_ms() -> Result<u64, InferenceFault> {
 /// never separately persisted.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "mode", content = "checkpoint", rename_all = "snake_case")]
-enum ControllerWork {
+pub(super) enum ControllerWork {
     Narrative(NarrativeCheckpoint),
     Operational(OperationalCheckpoint),
+    /// The authoring lane. One store, one custody probe, one progression check:
+    /// forking them would buy nothing and split one authority in three.
+    Elaboration(ElaborationCheckpoint),
+}
+
+/// Which lane a stored checkpoint belongs to. Distinct from `ControllerMode`,
+/// which says how a *subject* is controlled: the elaborator is not a subject
+/// and has no mode.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum WorkLane {
+    Narrative,
+    Operational,
+    Elaboration,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -436,17 +454,19 @@ enum OperationalCheckpoint {
 }
 
 impl ControllerWork {
-    fn command_id(&self) -> CommandId {
+    pub(super) fn command_id(&self) -> CommandId {
         match self {
             Self::Narrative(checkpoint) => checkpoint.command_id(),
             Self::Operational(checkpoint) => checkpoint.command_id(),
+            Self::Elaboration(checkpoint) => checkpoint.command_id(),
         }
     }
 
-    fn mode(&self) -> ControllerMode {
+    fn lane(&self) -> WorkLane {
         match self {
-            Self::Narrative(_) => ControllerMode::NarrativePersona,
-            Self::Operational(_) => ControllerMode::OperationalAgent,
+            Self::Narrative(_) => WorkLane::Narrative,
+            Self::Operational(_) => WorkLane::Operational,
+            Self::Elaboration(_) => WorkLane::Elaboration,
         }
     }
 
@@ -456,6 +476,11 @@ impl ControllerWork {
             Self::Operational(OperationalCheckpoint::AgentInFlight { completed, .. }) => {
                 completed.is_empty()
             }
+            Self::Elaboration(ElaborationCheckpoint::ElaboratorInFlight {
+                completed,
+                last_mismatches,
+                ..
+            }) => completed.is_empty() && last_mismatches.is_empty(),
             _ => false,
         }
     }
@@ -464,6 +489,7 @@ impl ControllerWork {
         match self {
             Self::Narrative(checkpoint) => checkpoint.integrity_is_valid(),
             Self::Operational(checkpoint) => checkpoint.integrity_is_valid(),
+            Self::Elaboration(checkpoint) => checkpoint.integrity_is_valid(),
         }
     }
 }
@@ -805,7 +831,7 @@ fn derive_operational_capture(
     }
 }
 
-fn canonical_model(model: &str) -> bool {
+pub(super) fn canonical_model(model: &str) -> bool {
     !model.is_empty() && model.chars().all(|character| !character.is_whitespace())
 }
 
@@ -837,7 +863,7 @@ fn exact_request_identity(
             .is_ok_and(|expected| provider.conversation_id == expected)
 }
 
-fn prepared_matches_request(
+pub(super) fn prepared_matches_request(
     prepared: &PreparedInference,
     expected: &InferenceRequest,
     command_id: CommandId,
@@ -868,7 +894,7 @@ fn persona_request_shape_is_valid(request: &PreparedInference) -> bool {
 }
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
-enum ControllerWorkStoreError {
+pub(super) enum ControllerWorkStoreError {
     #[error("Eve command ID already belongs to the other controller mode")]
     CommandModeConflict,
     #[error("{detail}")]
@@ -884,13 +910,13 @@ impl ControllerWorkStoreError {
 }
 
 #[async_trait]
-trait ControllerWorkStore: Send + Sync {
+pub(super) trait ControllerWorkStore: Send + Sync {
     async fn lookup(
         &self,
         command_id: CommandId,
     ) -> Result<ControllerWorkLookup, ControllerWorkStoreError>;
 
-    /// Owns the only legal checkpoint transition for either cognition mode.
+    /// Owns the only legal checkpoint transition for any lane.
     async fn persist(
         &self,
         work: &ControllerWork,
@@ -902,14 +928,14 @@ trait ControllerWorkStore: Send + Sync {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-enum ControllerWorkLookup {
+pub(super) enum ControllerWorkLookup {
     Missing,
     Confirmed(ControllerWork),
     CustodyUncertain(ControllerWork),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum ControllerWorkWrite {
+pub(super) enum ControllerWorkWrite {
     Applied,
     AlreadyPresent,
     CustodyUncertain,
@@ -920,12 +946,13 @@ pub(crate) enum ControllerWorkCustody {
     Owned {
         narrative_commands: usize,
         operational_commands: usize,
+        elaboration_commands: usize,
     },
     /// A compare-and-swap or post-write ownership check did not confirm. The
     /// process must reopen the journal before doing any other controller work.
     Uncertain {
         command_id: CommandId,
-        mode: ControllerMode,
+        lane: WorkLane,
     },
 }
 
@@ -1060,7 +1087,7 @@ impl ControllerWorkStore for CultCacheControllerWorkStore {
             if existing == work {
                 return Ok(ControllerWorkWrite::AlreadyPresent);
             }
-            if existing.mode() != work.mode() {
+            if existing.lane() != work.lane() {
                 return Err(ControllerWorkStoreError::CommandModeConflict);
             }
             if !valid_controller_work_progression(existing, work) {
@@ -1113,21 +1140,21 @@ impl ControllerWorkStore for CultCacheControllerWorkStore {
         if let Some(uncertain) = &journal.uncertain {
             return Ok(ControllerWorkCustody::Uncertain {
                 command_id: uncertain.command_id(),
-                mode: uncertain.mode(),
+                lane: uncertain.lane(),
             });
         }
         verify_journal_custody(&journal)?;
+        let count = |lane: WorkLane| {
+            journal
+                .work
+                .values()
+                .filter(|work| work.lane() == lane)
+                .count()
+        };
         Ok(ControllerWorkCustody::Owned {
-            narrative_commands: journal
-                .work
-                .values()
-                .filter(|work| work.mode() == ControllerMode::NarrativePersona)
-                .count(),
-            operational_commands: journal
-                .work
-                .values()
-                .filter(|work| work.mode() == ControllerMode::OperationalAgent)
-                .count(),
+            narrative_commands: count(WorkLane::Narrative),
+            operational_commands: count(WorkLane::Operational),
+            elaboration_commands: count(WorkLane::Elaboration),
         })
     }
 }
@@ -1159,6 +1186,9 @@ fn valid_controller_work_progression(existing: &ControllerWork, next: &Controlle
         }
         (ControllerWork::Operational(existing), ControllerWork::Operational(next)) => {
             valid_operational_progression(existing, next)
+        }
+        (ControllerWork::Elaboration(existing), ControllerWork::Elaboration(next)) => {
+            valid_elaboration_progression(existing, next)
         }
         _ => false,
     }
@@ -1425,6 +1455,10 @@ pub(crate) struct ControllerModels {
     pub(crate) persona: String,
     pub(crate) interpreter: String,
     pub(crate) operational_agent: String,
+    /// The authoring lane's model. The existing config shape already gates
+    /// cognition by model name, so the driver starts on this and no mode flag
+    /// is added.
+    pub(crate) elaborator: String,
 }
 
 impl ControllerModels {
@@ -1434,6 +1468,7 @@ impl ControllerModels {
             &self.persona,
             &self.interpreter,
             &self.operational_agent,
+            &self.elaborator,
         ]
         .into_iter()
         .all(|model| canonical_model(model))
@@ -1677,6 +1712,10 @@ enum ControllerWorldSubmission {
 
 pub(crate) struct ControllerRunner {
     mailbox: ControllerPort,
+    /// The authoring lane's own narrowing of the same mailbox. It is opened
+    /// here because this constructor is where a whole `WorldMailbox` is
+    /// narrowed, and nowhere else in the world subtree holds one.
+    elaboration: ElaborationPort,
     inference: Arc<dyn InferencePort>,
     work: Arc<dyn ControllerWorkStore>,
     models: ControllerModels,
@@ -1708,11 +1747,25 @@ impl ControllerRunner {
         )?;
         let work = CultCacheControllerWorkStore::open(controller_work_path)?;
         Ok(Self {
-            mailbox: ControllerPort::new(mailbox),
+            mailbox: ControllerPort::new(mailbox.clone()),
+            elaboration: ElaborationPort::new(mailbox),
             inference: Arc::new(inference),
             work: Arc::new(work),
             models,
         })
+    }
+
+    /// The authoring lane, built from the same ports the decision lanes use.
+    /// `NullEvidenceSource` is what production supplies until a retrieval organ
+    /// lands; the bound that buys is stated where the source is defined.
+    pub(crate) fn elaborator(&self) -> ElaborationRunner {
+        ElaborationRunner::new(
+            self.elaboration.clone(),
+            Arc::clone(&self.inference),
+            Arc::new(NullEvidenceSource),
+            Arc::clone(&self.work),
+            self.models.elaborator.clone(),
+        )
     }
 
     #[cfg(test)]
@@ -1723,7 +1776,8 @@ impl ControllerRunner {
         models: ControllerModels,
     ) -> Self {
         Self {
-            mailbox: ControllerPort::new(mailbox),
+            mailbox: ControllerPort::new(mailbox.clone()),
+            elaboration: ElaborationPort::new(mailbox),
             inference,
             work,
             models,
@@ -1757,8 +1811,12 @@ impl ControllerRunner {
                     ControllerPendingReason::StoreReopenRequired,
                 ));
             }
-            ControllerWorkLookup::Confirmed(ControllerWork::Operational(_))
-            | ControllerWorkLookup::CustodyUncertain(ControllerWork::Operational(_)) => {
+            ControllerWorkLookup::Confirmed(
+                ControllerWork::Operational(_) | ControllerWork::Elaboration(_),
+            )
+            | ControllerWorkLookup::CustodyUncertain(
+                ControllerWork::Operational(_) | ControllerWork::Elaboration(_),
+            ) => {
                 return Err(ControllerError::CommandMismatch);
             }
             ControllerWorkLookup::Missing => {}
@@ -1832,8 +1890,12 @@ impl ControllerRunner {
                     ControllerPendingReason::StoreReopenRequired,
                 ));
             }
-            ControllerWorkLookup::Confirmed(ControllerWork::Narrative(_))
-            | ControllerWorkLookup::CustodyUncertain(ControllerWork::Narrative(_)) => {
+            ControllerWorkLookup::Confirmed(
+                ControllerWork::Narrative(_) | ControllerWork::Elaboration(_),
+            )
+            | ControllerWorkLookup::CustodyUncertain(
+                ControllerWork::Narrative(_) | ControllerWork::Elaboration(_),
+            ) => {
                 return Err(ControllerError::CommandMismatch);
             }
             ControllerWorkLookup::Missing => {}
@@ -3030,7 +3092,7 @@ fn encoded_id<T: Serialize>(id: &T) -> Result<String, ControllerError> {
         .ok_or_else(|| ControllerError::Serialization("opaque ID was not a string".into()))
 }
 
-fn tool_decode_need(name: &str, arguments: &str, detail: &str) -> ControllerNeed {
+pub(super) fn tool_decode_need(name: &str, arguments: &str, detail: &str) -> ControllerNeed {
     ControllerNeed {
         detail: format!(
             "tool `{name}` arguments were not usable ({detail}); raw_argument_digest={}",
@@ -3121,7 +3183,7 @@ fn evaluate_interpreter_loop(
                                 ),
                             }
                         }
-                        RECORD_GAP_TOOL => {
+                        INTERPRETER_RECORD_GAP_TOOL => {
                             match serde_json::from_str::<RecordGapToolCall>(arguments) {
                                 Ok(call) => format!("{:?}", accumulator.record_gap(call)),
                                 Err(error) => format!(
@@ -3471,7 +3533,7 @@ fn operational_request(
     )
 }
 
-fn tool_request(
+pub(super) fn tool_request(
     command_id: CommandId,
     round: usize,
     purpose: InferencePurpose,
@@ -3493,44 +3555,66 @@ fn tool_request(
     provider.parallel_tool_calls = false;
     provider.output_format_name = None;
     provider.output_schema_json = None;
-    provider.max_output_tokens = Some(1_200);
+    // A patch turn emits many tool calls where a decision turn emits one, so
+    // the budget is per purpose rather than one constant shared by both
+    // catalogs.
+    provider.max_output_tokens = Some(match purpose {
+        InferencePurpose::Elaboration => 4_000,
+        _ => 1_200,
+    });
     Ok(InferenceRequest { purpose, provider })
 }
 
 fn interpreter_tools() -> Vec<CodexToolDefinition> {
     vec![
-        tool(
+        tool_schema::tool(
             INTERPRETER_SPEAK_TOOL,
             "Capture one exact spoken utterance by byte span in the preserved Persona prose; the harness derives the utterance verbatim.",
-            json!({
-                "type":"object",
-                "additionalProperties":false,
-                "properties":{
-                    "source_start_byte":{"type":"integer","minimum":0},
-                    "source_end_byte":{"type":"integer","minimum":1}
-                },
-                "required":["source_start_byte","source_end_byte"]
-            }),
+            tool_schema::object(vec![
+                (
+                    "source_start_byte".into(),
+                    tool_schema::bounded_integer(0, u64::from(u32::MAX)),
+                ),
+                (
+                    "source_end_byte".into(),
+                    tool_schema::bounded_integer(1, u64::from(u32::MAX)),
+                ),
+            ]),
         ),
-        tool(
-            RECORD_GAP_TOOL,
+        tool_schema::tool(
+            INTERPRETER_RECORD_GAP_TOOL,
             "Preserve meaningful source prose that has no safe current typed translation.",
-            json!({
-                "type":"object",
-                "additionalProperties":false,
-                "properties":{
-                    "kind":{"type":"string","enum":["ambiguity","missing_reference","missing_affordance","missing_primitive","unresolved"]},
-                    "source_start_byte":{"type":"integer","minimum":0},
-                    "source_end_byte":{"type":"integer","minimum":1},
-                    "detail":{"type":"string"}
-                },
-                "required":["kind","source_start_byte","source_end_byte","detail"]
-            }),
+            tool_schema::object(vec![
+                (
+                    "kind".into(),
+                    tool_schema::name_enum(&[
+                        "ambiguity",
+                        "missing_reference",
+                        "missing_affordance",
+                        "missing_primitive",
+                        "unresolved",
+                    ]),
+                ),
+                (
+                    "source_start_byte".into(),
+                    tool_schema::bounded_integer(0, u64::from(u32::MAX)),
+                ),
+                (
+                    "source_end_byte".into(),
+                    tool_schema::bounded_integer(1, u64::from(u32::MAX)),
+                ),
+                (
+                    "detail".into(),
+                    tool_schema::canonical_string(
+                        "what the prose says that no typed capture can carry",
+                    ),
+                ),
+            ]),
         ),
-        tool(
+        tool_schema::tool(
             FINISH_INTERPRETATION_TOOL,
             "Finish the total interpretation after all supported captures and gaps are recorded.",
-            empty_schema(),
+            tool_schema::empty_schema(),
         ),
     ]
 }
@@ -3548,59 +3632,48 @@ fn catalog_tools(granted: &[AffordanceSnapshot]) -> Vec<CodexToolDefinition> {
     let mut tools: Vec<CodexToolDefinition> = granted
         .iter()
         .map(|entry| {
-            let mut properties = serde_json::Map::new();
-            let mut required = Vec::new();
+            let mut properties: Vec<(String, Value)> = Vec::new();
             for spec in &entry.entry.roles {
-                properties.insert(
+                properties.push((
                     spec.role.0.clone(),
-                    json!({"type": "string", "description": role_description(spec.kind)}),
-                );
-                required.push(Value::String(spec.role.0.clone()));
+                    tool_schema::canonical_string(role_description(spec.kind)),
+                ));
             }
             for (index, slot) in entry.entry.effect_slots.iter().enumerate() {
                 // The ceiling is in the schema, so the model is told the bound
                 // rather than discovering it through a rejection.
                 let (name, ceiling) = match slot.bounds {
                     Bounds::None => continue,
-                    Bounds::Quantity(max) => (slot_property(index, "qty"), u64::from(max.0)),
+                    Bounds::Quantity(max) => (slot_property(index, "qty"), max.0),
                     Bounds::Cost(max) => (slot_property(index, "cost"), u64::from(max.0)),
                 };
-                properties.insert(
-                    name.clone(),
-                    json!({"type": "integer", "minimum": 1, "maximum": ceiling}),
-                );
-                required.push(Value::String(name));
+                properties.push((name, tool_schema::bounded_integer(1, ceiling)));
             }
             if entry.entry.carries_speech {
-                properties.insert("text".into(), json!({"type": "string"}));
-                required.push(Value::String("text".into()));
+                properties.push((
+                    "text".into(),
+                    tool_schema::canonical_string("the utterance this invocation carries"),
+                ));
             }
-            tool(
+            tool_schema::tool(
                 &entry.entry.kind.0,
                 &format!("Invoke the {} affordance.", entry.entry.kind.0),
-                json!({
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": required,
-                    "properties": Value::Object(properties),
-                }),
+                tool_schema::object(properties),
             )
         })
         .collect();
-    tools.push(tool(
+    tools.push(tool_schema::tool(
         RECORD_NEED_TOOL,
         "Record information or capability the agent would need but does not currently have.",
-        json!({
-            "type":"object",
-            "additionalProperties":false,
-            "properties":{"detail":{"type":"string"}},
-            "required":["detail"]
-        }),
+        tool_schema::object(vec![(
+            "detail".into(),
+            tool_schema::canonical_string("what the agent would need and does not have"),
+        )]),
     ));
-    tools.push(tool(
+    tools.push(tool_schema::tool(
         FINISH_WITHOUT_PROPOSAL_TOOL,
         "Finish this opportunity without proposing an action.",
-        empty_schema(),
+        tool_schema::empty_schema(),
     ));
     tools
 }
@@ -3748,20 +3821,7 @@ fn decode_catalog_call(
     })
 }
 
-fn empty_schema() -> Value {
-    json!({"type":"object","additionalProperties":false,"properties":{}})
-}
-
-fn tool(name: &str, description: &str, schema: Value) -> CodexToolDefinition {
-    CodexToolDefinition {
-        name: name.into(),
-        description: description.into(),
-        parameters_json: serde_json::to_string(&schema)
-            .expect("static controller tool schemas must serialize"),
-    }
-}
-
-fn provider_request_id(
+pub(super) fn provider_request_id(
     command_id: CommandId,
     purpose: InferencePurpose,
     round: usize,
@@ -3791,6 +3851,7 @@ fn purpose_name(purpose: InferencePurpose) -> &'static str {
         InferencePurpose::Persona => "persona",
         InferencePurpose::Interpreter => "interpreter",
         InferencePurpose::OperationalAgent => "operational",
+        InferencePurpose::Elaboration => "elaboration",
     }
 }
 
@@ -3925,7 +3986,7 @@ mod tests {
         let completed_narrative = vec![InferenceOutput {
             events: vec![InferenceEvent::ToolCall {
                 call_id: "gap".into(),
-                name: RECORD_GAP_TOOL.into(),
+                name: INTERPRETER_RECORD_GAP_TOOL.into(),
                 arguments: json!({
                     "kind":"unresolved",
                     "source_start_byte":0,
@@ -4831,7 +4892,7 @@ mod tests {
                 if existing == work {
                     return Ok(ControllerWorkWrite::AlreadyPresent);
                 }
-                if existing.mode() != work.mode() {
+                if existing.lane() != work.lane() {
                     return Err(ControllerWorkStoreError::CommandModeConflict);
                 }
                 if !valid_controller_work_progression(existing, work) {
@@ -4851,15 +4912,11 @@ mod tests {
 
         async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError> {
             let stored = self.work.lock().unwrap();
+            let count = |lane: WorkLane| stored.values().filter(|work| work.lane() == lane).count();
             Ok(ControllerWorkCustody::Owned {
-                narrative_commands: stored
-                    .values()
-                    .filter(|work| work.mode() == ControllerMode::NarrativePersona)
-                    .count(),
-                operational_commands: stored
-                    .values()
-                    .filter(|work| work.mode() == ControllerMode::OperationalAgent)
-                    .count(),
+                narrative_commands: count(WorkLane::Narrative),
+                operational_commands: count(WorkLane::Operational),
+                elaboration_commands: count(WorkLane::Elaboration),
             })
         }
     }
@@ -4949,6 +5006,7 @@ mod tests {
             persona: "persona".into(),
             interpreter: "interpreter".into(),
             operational_agent: "operator".into(),
+            elaborator: "elaborator".into(),
         }
     }
 
@@ -5135,7 +5193,7 @@ mod tests {
                     vec![
                         InferenceEvent::ToolCall {
                             call_id: "gap".into(),
-                            name: RECORD_GAP_TOOL.into(),
+                            name: INTERPRETER_RECORD_GAP_TOOL.into(),
                             arguments: json!({
                                 "kind":"unresolved",
                                 "source_start_byte":0,
@@ -5468,6 +5526,8 @@ mod tests {
                 .expect("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL is required"),
             operational_agent: std::env::var("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL")
                 .expect("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL is required"),
+            elaborator: std::env::var("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL")
+                .expect("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL is required"),
         };
         let persona_log = std::env::var_os("GHOSTLIGHT_ACCEPTANCE_PERSONA_PROSE_LOG")
             .expect("GHOSTLIGHT_ACCEPTANCE_PERSONA_PROSE_LOG is required");

@@ -8,9 +8,11 @@
 mod action;
 mod clock;
 mod controllers;
+mod elaboration;
 mod journal;
 mod mailbox;
 mod patch;
+mod tool_schema;
 
 pub(crate) use action::ActionMismatch;
 pub(crate) use clock::{FictionalMinutes, Motion, TickMinutes};
@@ -20,7 +22,7 @@ pub(crate) use controllers::{
     NarrativeRun, OperationalCapture, OperationalDecision, OperationalPending, OperationalRun,
     SourceRange, SubmissionDisposition, TranslationGapSummary,
 };
-pub(crate) use mailbox::{ControllerPort, MailboxError, WorldMailbox};
+pub(crate) use mailbox::{ControllerPort, ElaborationPort, MailboxError, WorldMailbox};
 pub(crate) use patch::{
     AccessKind, Affordance, AffordanceKindName, Audience, AuthoredSource, AuthorityGrant,
     AuthorityKindName, AuthorityTarget, BoundPrecondition, Bounds, ChannelRecord, Commitment,
@@ -38,7 +40,7 @@ use patch::{
 };
 #[cfg(test)]
 pub(crate) use patch::{AuthorityGrantRef, AuthorityTargetRef};
-use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
+use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch, Site};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -49,8 +51,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.commitment.v1";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.commitment.v1";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.elaboration.v1";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.elaboration.v1";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -103,6 +105,12 @@ impl CommandId {
 }
 
 impl WorldId {
+    /// A named zero for tests that need a world identity and no world.
+    #[cfg(test)]
+    pub(super) fn nil_for_test() -> Self {
+        Self(Uuid::nil())
+    }
+
     fn issue() -> Self {
         Self(Uuid::new_v4())
     }
@@ -225,10 +233,18 @@ enum CallerId {
     System(SystemCapability),
 }
 
+/// Internally tagged, because a data-carrying variant cannot join a bare-string
+/// encoding without silently changing every commit that already carries
+/// `Clock`. The tag is part of the commit digest, so the schema bumps with it.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
+#[serde(tag = "capability", rename_all = "snake_case")]
 enum SystemCapability {
     Clock,
+    /// Authors structure inside one jurisdiction. Never derived from session
+    /// evidence, never minted by ingress, never held by a subject.
+    Elaborator {
+        jurisdiction: JurisdictionKey,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -1308,14 +1324,24 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
             })
         }
         CommandBody::AdmitPatch { answers, patch } => {
-            require_owner(state, &command.caller)?;
+            // Answer before authority, because the jurisdiction check reads the
+            // answer and a missing one must read as `AnswerRequired` rather
+            // than `Unauthorized`. Resolution before confinement, because
+            // confinement reads draft-resolved referents and a structurally
+            // broken patch should return its complete mismatch set rather than
+            // a jurisdiction complaint about a reference that does not resolve.
             require_answer(
                 state,
                 answers.as_ref(),
                 !(patch.declarations.is_empty() && patch.evidence.is_empty()),
             )?;
+            let confinement = require_patch_author(state, &command.caller, answers.as_ref())?;
             let resolved = patch::resolve_patch(state, command.id, patch, None)
                 .map_err(KernelError::PatchRejected)?;
+            if let Some(jurisdiction) = confinement {
+                confine_to_jurisdiction(state, &resolved, jurisdiction)
+                    .map_err(KernelError::PatchRejected)?;
+            }
             Ok(WorldEffect::PatchAdmitted {
                 answers: answers.clone(),
                 resolved,
@@ -1327,13 +1353,21 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
 /// A system capability is admitted for exactly one command body and nothing
 /// else. Stated once here, reached by `reduce` and by `apply_effect`.
 fn require_system_capability(caller: &CallerId, body: &CommandBody) -> Result<(), KernelError> {
-    match caller {
-        CallerId::System(SystemCapability::Clock)
-            if !matches!(body, CommandBody::AdvanceTime { .. }) =>
-        {
-            Err(KernelError::Unauthorized)
-        }
-        _ => Ok(()),
+    let CallerId::System(capability) = caller else {
+        return Ok(());
+    };
+    let admitted = matches!(
+        (capability, body),
+        (SystemCapability::Clock, CommandBody::AdvanceTime { .. })
+            | (
+                SystemCapability::Elaborator { .. },
+                CommandBody::AdmitPatch { .. }
+            )
+    );
+    if admitted {
+        Ok(())
+    } else {
+        Err(KernelError::Unauthorized)
     }
 }
 
@@ -3137,6 +3171,14 @@ pub(crate) enum CausalBoundary {
 #[serde(transparent)]
 pub(crate) struct BoundaryDigest(String);
 
+impl BoundaryDigest {
+    /// The deficit lane's answer has no preimage of its own: its digest is the
+    /// session's, produced by the same `sha256:` spelling.
+    pub(super) fn from_digest(value: String) -> Self {
+        Self(value)
+    }
+}
+
 #[derive(Serialize)]
 struct UnelaboratedDestinationPreimage<'a> {
     world_id: WorldId,
@@ -3574,6 +3616,353 @@ fn required_approvers(state: &WorldState) -> BTreeSet<PrincipalId> {
         .collect()
 }
 
+/// Who may admit a patch, and inside what. `None` means unconfined: the owner.
+/// Reached from `reduce`'s `AdmitPatch` arm and re-reached from `apply_effect`'s
+/// `PatchAdmitted` arm, per the file's idiom that `reduce` decides and
+/// `apply_effect` re-decides.
+fn require_patch_author(
+    state: &WorldState,
+    caller: &CallerId,
+    answers: Option<&PatchAnswer>,
+) -> Result<Option<JurisdictionKey>, KernelError> {
+    match caller {
+        CallerId::Principal(principal) if principal == &state.owner => Ok(None),
+        CallerId::System(SystemCapability::Elaborator { jurisdiction }) => {
+            let answer = answers.ok_or(KernelError::Unauthorized)?;
+            if !jurisdiction_covers(state, *jurisdiction, answer) {
+                return Err(KernelError::Unauthorized);
+            }
+            Ok(Some(*jurisdiction))
+        }
+        _ => Err(KernelError::Unauthorized),
+    }
+}
+
+/// Does the caller's jurisdiction cover the thing the answer names?
+///
+/// Two coverings, deliberately asymmetric. A boundary is covered
+/// **transitively** through `covers_place`, so a parent jurisdiction's
+/// elaborator may answer a boundary in a nested child. A deficit is covered by
+/// **exact key equality**: a subject under nested roots counts toward both
+/// roots' targets, so a parent answering a child's row would reduce two targets
+/// with one subject and drain a child's queue while its own row stays red.
+/// Boundaries name a thing; deficits name a row.
+fn jurisdiction_covers(state: &WorldState, held: JurisdictionKey, answer: &PatchAnswer) -> bool {
+    match answer {
+        PatchAnswer::Boundary(CausalBoundary::UnelaboratedDestination { place, .. }) => {
+            place_in(state, held, *place)
+        }
+        // The two never-derived variants join this clause only so the match is
+        // total; `exact_boundary` refuses them before authority is read.
+        PatchAnswer::Boundary(
+            CausalBoundary::MissingStructure { subject, .. }
+            | CausalBoundary::PolityInCausalRange { subject, .. }
+            | CausalBoundary::IndividuationRequired {
+                population: subject,
+                ..
+            },
+        ) => match state.positions.get(subject) {
+            Some(position) => place_in(state, held, position.place),
+            None => held == JurisdictionKey::Uncovered,
+        },
+        PatchAnswer::Deficit(key) => *key == held,
+    }
+}
+
+fn place_in(state: &WorldState, held: JurisdictionKey, place: EntityId) -> bool {
+    match held {
+        JurisdictionKey::PlaceSubtree(root) => patch::covers_place(&state.entities, root, place),
+        JurisdictionKey::Uncovered => false,
+    }
+}
+
+/// The ground a patch writes on, as one map over `state ∪ patch`, so a place
+/// declared and built on in the same patch confines through the chain it
+/// declares.
+fn candidate_places(
+    state: &WorldState,
+    resolved: &ResolvedPatch,
+) -> BTreeMap<EntityId, EntityRecord> {
+    let mut entities = state.entities.clone();
+    for declared in &resolved.entities {
+        entities.insert(declared.entity_id, declared.entity.clone());
+    }
+    for declared in &resolved.facts {
+        entities.insert(declared.entity_id, declared.entity.clone());
+    }
+    for declared in &resolved.channels {
+        entities.insert(declared.entity_id, declared.entity.clone());
+    }
+    entities
+}
+
+/// Every place-or-subject referent a jurisdictional author writes must sit under
+/// its jurisdiction. Returns the complete set, like every other check.
+///
+/// Placeless referents — resource kinds, catalog entries, canonical facts —
+/// name no ground and are not confined. A place declared with no container is a
+/// new jurisdiction root and is the owner's act. There is no relevance test: a
+/// patch that satisfies its answer may also declare unrelated structure inside
+/// its jurisdiction, because "the minimum the boundary needs" is a semantic
+/// verdict the kernel must not hold.
+fn confine_to_jurisdiction(
+    state: &WorldState,
+    resolved: &ResolvedPatch,
+    held: JurisdictionKey,
+) -> Result<(), Vec<Mismatch>> {
+    let entities = candidate_places(state, resolved);
+    let inside = |place: EntityId| match held {
+        JurisdictionKey::PlaceSubtree(root) => patch::covers_place(&entities, root, place),
+        JurisdictionKey::Uncovered => false,
+    };
+    let mut positions: BTreeMap<SubjectId, Option<EntityId>> = state
+        .positions
+        .iter()
+        .map(|(subject, position)| (*subject, Some(position.place)))
+        .collect();
+    for declared in &resolved.subjects {
+        positions.insert(
+            declared.subject_id,
+            declared.position.map(|position| position.place),
+        );
+    }
+    let mut edges: BTreeMap<EdgeId, (EntityId, EntityId)> = state
+        .edges
+        .iter()
+        .map(|(edge_id, record)| (*edge_id, record.endpoints()))
+        .collect();
+    for declared in &resolved.routes {
+        edges.insert(declared.edge_id, declared.edge.endpoints());
+    }
+
+    let mut mismatches = Vec::new();
+    let mut confine_subject = |site: &Site, subject: SubjectId, mismatches: &mut Vec<Mismatch>| {
+        let admitted = match positions.get(&subject).copied().flatten() {
+            Some(place) => inside(place),
+            None => held == JurisdictionKey::Uncovered,
+        };
+        if !admitted {
+            mismatches.push(Mismatch::OutsideJurisdiction { site: site.clone() });
+        }
+    };
+    let mut confine_place = |site: &Site, place: EntityId, mismatches: &mut Vec<Mismatch>| {
+        if !inside(place) {
+            mismatches.push(Mismatch::OutsideJurisdiction { site: site.clone() });
+        }
+    };
+
+    for declared in &resolved.subjects {
+        let site = Site::Declaration(declared.handle.clone());
+        confine_subject(&site, declared.subject_id, &mut mismatches);
+    }
+    for declared in &resolved.entities {
+        if declared.entity.kind != EntityKind::Place {
+            continue;
+        }
+        let site = Site::Declaration(declared.handle.clone());
+        match declared.entity.container {
+            Some(container) => confine_place(&site, container, &mut mismatches),
+            // A root is the owner's act. An elaborator elaborates inside one.
+            None => mismatches.push(Mismatch::OutsideJurisdiction { site }),
+        }
+    }
+    for declared in &resolved.routes {
+        let site = Site::Declaration(declared.handle.clone());
+        let (from, to) = declared.edge.endpoints();
+        confine_place(&site, from, &mut mismatches);
+        confine_place(&site, to, &mut mismatches);
+    }
+    for declared in &resolved.facts {
+        if let FactStanding::Claimed { by } = declared.fact.standing {
+            let site = Site::Declaration(declared.handle.clone());
+            confine_subject(&site, by, &mut mismatches);
+        }
+    }
+    for declared in &resolved.channels {
+        let site = Site::Declaration(declared.handle.clone());
+        match &declared.channel.reach {
+            Reach::Place(place) => confine_place(&site, *place, &mut mismatches),
+            Reach::Subjects(subjects) => {
+                for subject in subjects {
+                    confine_subject(&site, *subject, &mut mismatches);
+                }
+            }
+        }
+        if let Some(controller) = declared.channel.controller {
+            confine_subject(&site, controller, &mut mismatches);
+        }
+    }
+    for (index, operation) in resolved.operations.iter().enumerate() {
+        let site = Site::Operation(index);
+        let (subjects, places, routes) = operation_ground(operation, &entities);
+        for subject in subjects {
+            confine_subject(&site, subject, &mut mismatches);
+        }
+        for place in places {
+            confine_place(&site, place, &mut mismatches);
+        }
+        for route in routes {
+            match edges.get(&route) {
+                Some((from, to)) => {
+                    confine_place(&site, *from, &mut mismatches);
+                    confine_place(&site, *to, &mut mismatches);
+                }
+                None => mismatches.push(Mismatch::OutsideJurisdiction { site: site.clone() }),
+            }
+        }
+    }
+    mismatches.sort();
+    mismatches.dedup();
+    if mismatches.is_empty() {
+        Ok(())
+    } else {
+        Err(mismatches)
+    }
+}
+
+/// The ground one lowered operation touches: the subjects whose position it
+/// must sit under, the places it names directly, and the routes whose endpoints
+/// it must sit under. Total over `ResolvedOp`, so a new operation cannot ship
+/// without saying where it lands.
+fn operation_ground(
+    operation: &ResolvedOp,
+    entities: &BTreeMap<EntityId, EntityRecord>,
+) -> (Vec<SubjectId>, Vec<EntityId>, Vec<EdgeId>) {
+    // A resource, a fact, and a channel are placeless referents: they name no
+    // ground, so only a place among the named entities confines.
+    let places = |candidates: Vec<EntityId>| {
+        candidates
+            .into_iter()
+            .filter(|entity_id| {
+                entities
+                    .get(entity_id)
+                    .is_some_and(|record| record.kind == EntityKind::Place)
+            })
+            .collect()
+    };
+    match operation {
+        ResolvedOp::Relocate {
+            subject_id,
+            edge_id,
+        } => (vec![*subject_id], Vec::new(), vec![*edge_id]),
+        ResolvedOp::OpenRoute { edge_id } | ResolvedOp::CloseRoute { edge_id } => {
+            (Vec::new(), Vec::new(), vec![*edge_id])
+        }
+        ResolvedOp::AlterCost { edge_id, .. } => (Vec::new(), Vec::new(), vec![*edge_id]),
+        ResolvedOp::Transfer {
+            from, to, resource, ..
+        } => (vec![*from, *to], places(vec![*resource]), Vec::new()),
+        ResolvedOp::Transform {
+            holder,
+            from_resource,
+            into_resource,
+            ..
+        } => (
+            vec![*holder],
+            places(vec![*from_resource, *into_resource]),
+            Vec::new(),
+        ),
+        ResolvedOp::Consume {
+            holder, resource, ..
+        }
+        | ResolvedOp::Admit {
+            holder, resource, ..
+        } => (vec![*holder], places(vec![*resource]), Vec::new()),
+        ResolvedOp::Bind { subject, target } | ResolvedOp::Release { subject, target } => {
+            match target {
+                DependencyTarget::Subject(other) => {
+                    (vec![*subject, *other], Vec::new(), Vec::new())
+                }
+                DependencyTarget::Route(edge_id) => (vec![*subject], Vec::new(), vec![*edge_id]),
+                DependencyTarget::Resource(resource) => {
+                    (vec![*subject], places(vec![*resource]), Vec::new())
+                }
+            }
+        }
+        ResolvedOp::GrantAuthority { holder, grant }
+        | ResolvedOp::RevokeAuthority { holder, grant } => match grant.over {
+            AuthorityTarget::Subject(other) => (vec![*holder, other], Vec::new(), Vec::new()),
+            AuthorityTarget::PlaceSubtree(root) => (vec![*holder], vec![root], Vec::new()),
+        },
+        ResolvedOp::OpenOffice { institution, .. }
+        | ResolvedOp::CloseOffice { institution, .. }
+        | ResolvedOp::VacateOffice { institution, .. } => {
+            (vec![*institution], Vec::new(), Vec::new())
+        }
+        ResolvedOp::InstallIncumbent {
+            institution,
+            incumbent,
+            ..
+        } => (vec![*institution, *incumbent], Vec::new(), Vec::new()),
+        ResolvedOp::OpenForum {
+            forum, standing, ..
+        } => match standing {
+            AuthorityTarget::Subject(other) => (vec![*forum, *other], Vec::new(), Vec::new()),
+            AuthorityTarget::PlaceSubtree(root) => (vec![*forum], vec![*root], Vec::new()),
+        },
+        ResolvedOp::CloseForum { .. } => (Vec::new(), Vec::new(), Vec::new()),
+        ResolvedOp::AcquireKnowledge { subject, .. } | ResolvedOp::Forget { subject, .. } => {
+            (vec![*subject], Vec::new(), Vec::new())
+        }
+        ResolvedOp::Communicate { speaker, .. } => (vec![*speaker], Vec::new(), Vec::new()),
+        ResolvedOp::SetReach { channel, reach } => {
+            let mut subjects = Vec::new();
+            let mut named = Vec::new();
+            match reach {
+                Reach::Place(place) => named.push(*place),
+                Reach::Subjects(members) => subjects.extend(members.iter().copied()),
+            }
+            named.push(*channel);
+            (subjects, places(named), Vec::new())
+        }
+        ResolvedOp::SetController {
+            channel,
+            controller,
+        } => (
+            controller.iter().copied().collect(),
+            places(vec![*channel]),
+            Vec::new(),
+        ),
+        // Kernel-synthesized by `action::exercise` and by nothing a patch may
+        // carry; it is confined by its speaker all the same.
+        ResolvedOp::AssertClaim { by, .. } => (vec![*by], Vec::new(), Vec::new()),
+        ResolvedOp::CreateCommitment {
+            subject,
+            commitment,
+            ..
+        } => (
+            std::iter::once(*subject)
+                .chain(commitment.counterparty)
+                .collect(),
+            Vec::new(),
+            Vec::new(),
+        ),
+        ResolvedOp::DischargeCommitment { subject, .. } => (vec![*subject], Vec::new(), Vec::new()),
+        ResolvedOp::AdvancePressure { source, target, .. }
+        | ResolvedOp::ReducePressure { source, target, .. }
+        | ResolvedOp::ResolvePressure { source, target } => {
+            let mut subjects = vec![*target];
+            let mut named = Vec::new();
+            let mut routes = Vec::new();
+            match source {
+                PressureSource::Commitment { subject, .. } | PressureSource::Subject(subject) => {
+                    subjects.push(*subject);
+                }
+                PressureSource::Dependency(DependencyTarget::Subject(subject)) => {
+                    subjects.push(*subject);
+                }
+                PressureSource::Dependency(DependencyTarget::Route(edge_id)) => {
+                    routes.push(*edge_id);
+                }
+                PressureSource::Dependency(DependencyTarget::Resource(resource)) => {
+                    named.push(*resource);
+                }
+            }
+            (subjects, places(named), routes)
+        }
+    }
+}
+
 fn require_owner(state: &WorldState, caller: &CallerId) -> Result<(), KernelError> {
     if caller == &CallerId::Principal(state.owner.clone()) {
         Ok(())
@@ -3627,10 +4016,18 @@ fn apply_effect(
 ) -> Result<(), KernelError> {
     // The capability rule `reduce` decided, re-decided here against the effect
     // the command produced.
-    if matches!(caller, CallerId::System(SystemCapability::Clock))
-        && !matches!(effect, WorldEffect::TimeAdvanced { .. })
-    {
-        return Err(KernelError::Unauthorized);
+    if let CallerId::System(capability) = caller {
+        let admitted = matches!(
+            (capability, effect),
+            (SystemCapability::Clock, WorldEffect::TimeAdvanced { .. })
+                | (
+                    SystemCapability::Elaborator { .. },
+                    WorldEffect::PatchAdmitted { .. }
+                )
+        );
+        if !admitted {
+            return Err(KernelError::Unauthorized);
+        }
     }
     match effect {
         WorldEffect::WorldCreated { .. } => {
@@ -3639,12 +4036,20 @@ fn apply_effect(
             ));
         }
         WorldEffect::PatchAdmitted { answers, resolved } => {
-            if caller != &CallerId::Principal(state.owner.clone()) {
-                return Err(KernelError::Invariant(
-                    "admitted patch does not satisfy admission authority".into(),
-                ));
-            }
             require_answer(state, answers.as_ref(), !resolved.declares_nothing())?;
+            let confinement =
+                require_patch_author(state, caller, answers.as_ref()).map_err(|_| {
+                    KernelError::Invariant(
+                        "admitted patch does not satisfy admission authority".into(),
+                    )
+                })?;
+            if let Some(jurisdiction) = confinement {
+                confine_to_jurisdiction(state, resolved, jurisdiction).map_err(|_| {
+                    KernelError::Invariant(
+                        "admitted patch wrote outside its author's jurisdiction".into(),
+                    )
+                })?;
+            }
             // The deficit before the write, so "strictly decreased" is a
             // comparison rather than a claim the effect makes.
             let before = match answers {
@@ -11888,5 +12293,544 @@ mod clock_tests {
             before,
             "the digest ignored the route it names"
         );
+    }
+
+    // ---- the elaborator capability -------------------------------------
+
+    fn elaborator(jurisdiction: JurisdictionKey) -> CallerId {
+        CallerId::System(SystemCapability::Elaborator { jurisdiction })
+    }
+
+    fn submit_as(
+        kernel: &mut WorldKernel,
+        caller: CallerId,
+        body: CommandBody,
+    ) -> Result<SubmitReceipt, KernelError> {
+        let snapshot = kernel.snapshot().unwrap();
+        kernel.submit(
+            command(&snapshot, CommandId::new(), caller.clone(), body),
+            &AuthenticatedCaller::fixture(caller),
+        )
+    }
+
+    fn dead_end_boundary(kernel: &WorldKernel) -> CausalBoundary {
+        derive_boundaries(&kernel.state)
+            .unwrap()
+            .into_iter()
+            .find(|boundary| matches!(boundary, CausalBoundary::UnelaboratedDestination { .. }))
+            .expect("the fixture derives one dead end")
+    }
+
+    fn shed_under(container: EntityId, handle: &str) -> WorldPatch {
+        WorldPatch {
+            declarations: vec![Declaration::Entity(EntityDeclaration {
+                handle: DraftHandle::new(handle),
+                label: format!("The {handle}"),
+                kind: EntityKind::Place,
+                container: Some(Ref::Existing(container)),
+            })],
+            operations: Vec::new(),
+            evidence: Vec::new(),
+        }
+    }
+
+    /// Verification 14: the mailbox port cannot express an unanswered
+    /// elaborator patch, so this is reachable only through the journal lane —
+    /// and it is refused there.
+    #[test]
+    fn elaborator_patch_without_answer_is_answer_required() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Unanswered");
+        let revision = kernel.state.revision;
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: shed_under(clockwork.dead_end, "shed"),
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::AnswerRequired), "{error:?}");
+        assert_eq!(kernel.state.revision, revision);
+    }
+
+    /// Verification 14: a jurisdiction whose every row is zero has nothing to
+    /// answer, so the answer is not derived.
+    #[test]
+    fn patch_answering_a_zero_deficit_is_rejected() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "ZeroDeficit");
+        let jurisdiction = JurisdictionKey::PlaceSubtree(clockwork.dead_end);
+        assert!(
+            derive_scale_deficit(&kernel.state)
+                .unwrap()
+                .iter()
+                .all(|row| row.deficit == 0)
+        );
+        let error = submit_as(
+            &mut kernel,
+            elaborator(jurisdiction),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Deficit(jurisdiction)),
+                patch: shed_under(clockwork.dead_end, "shed"),
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::AnswerNotDerived), "{error:?}");
+    }
+
+    /// The one admission rule at the top of `reduce` refuses four bodies before
+    /// any of them is read, and the clock's capability is refused the fifth.
+    #[test]
+    fn a_system_capability_is_admitted_for_exactly_one_body() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, active) = clock_kernel(directory.path(), "Capability");
+        let held = elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end));
+        let opportunity = opportunity_for(&active, clockwork.reeve);
+        let answered = dead_end_boundary(&kernel);
+        let forbidden = [
+            CommandBody::ApproveDraft,
+            CommandBody::ActivateWorld,
+            CommandBody::DeclineDecision {
+                opportunity: opportunity.clone(),
+            },
+            CommandBody::AdvanceTime {
+                minutes: minutes(60),
+            },
+        ];
+        for body in forbidden {
+            let error = submit_as(&mut kernel, held.clone(), body).unwrap_err();
+            assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+        }
+        // The mirror: the clock may not author.
+        let error = submit_as(
+            &mut kernel,
+            clock_caller(),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered)),
+                patch: shed_under(clockwork.dead_end, "shed"),
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+        assert_eq!(kernel.state.revision, active.revision);
+    }
+
+    /// Seed admission is the owner's lane: an elaborator in Draft has no
+    /// derived boundary to answer and nothing to be authorized for.
+    #[test]
+    fn elaborator_in_draft_is_unauthorized() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "DraftLane"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let commons = kernel.snapshot().unwrap().places[0].id;
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(commons)),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: shed_under(commons, "shed"),
+            },
+        )
+        .unwrap_err();
+        // Draft answers nothing, so the answer gate passes and authority
+        // refuses: an elaborator with no answer holds nothing.
+        assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+    }
+
+    /// Boundaries are covered transitively, so a parent jurisdiction's
+    /// elaborator may answer a boundary in a nested child — and a sibling root
+    /// may not answer it at all.
+    #[test]
+    fn boundary_jurisdiction_is_transitive_and_exclusive() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Transitive");
+        let answered = dead_end_boundary(&kernel);
+        let hall = kernel.state.entities[&clockwork.yard]
+            .container
+            .expect("the yard sits in the hall");
+
+        // The hall's elaborator does not cover the unwalked road.
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(hall)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered.clone())),
+                patch: shed_under(clockwork.dead_end, "shed"),
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+
+        // One unconfined owner patch answers that boundary and opens a second
+        // one strictly inside the hall, so the two coverings can be told apart
+        // on one world.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered.clone())),
+                patch: WorldPatch {
+                    declarations: vec![
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("shed"),
+                            label: "The Roadside Shed".into(),
+                            kind: EntityKind::Place,
+                            container: Some(Ref::Existing(clockwork.dead_end)),
+                        }),
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("cellar"),
+                            label: "The Yard Cellar".into(),
+                            kind: EntityKind::Place,
+                            container: Some(Ref::Existing(clockwork.yard)),
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("hatch"),
+                            label: "The Cellar Hatch".into(),
+                            from: Ref::Existing(clockwork.yard),
+                            to: Ref::Draft(DraftHandle::new("cellar")),
+                            access: AccessKind::Public,
+                            cost: Cost(1),
+                        }),
+                    ],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        assert!(
+            !derive_boundaries(&kernel.state)
+                .unwrap()
+                .contains(&answered)
+        );
+
+        let cellar = kernel
+            .state
+            .entities
+            .iter()
+            .find(|(_, entity)| entity.label == "The Yard Cellar")
+            .map(|(id, _)| *id)
+            .expect("the declared cellar");
+        let nested = dead_end_boundary(&kernel);
+        assert!(matches!(
+            nested,
+            CausalBoundary::UnelaboratedDestination { place, .. } if place == cellar
+        ));
+
+        // The road's root does not reach into the hall.
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(nested.clone())),
+                patch: shed_under(cellar, "crock"),
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+
+        // The hall's does, transitively, through the same containment walk the
+        // civic lane uses.
+        submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(hall)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(nested.clone())),
+                patch: shed_under(cellar, "crock"),
+            },
+        )
+        .expect("the parent root covers a nested boundary");
+        assert!(!derive_boundaries(&kernel.state).unwrap().contains(&nested));
+    }
+
+    /// A deficit is covered by exact key equality. A parent answering a child's
+    /// row would reduce two targets with one subject, because a subject under
+    /// nested roots counts toward both.
+    #[test]
+    fn parent_jurisdiction_cannot_answer_a_child_deficit_row() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation_with_intent(
+                CommandId::new(),
+                "Rows",
+                intent(super::tests::COMMONS, 3, 1000),
+            ),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let commons = *kernel
+            .state
+            .scale_intent
+            .jurisdictions
+            .keys()
+            .next()
+            .expect("the declared root");
+        let active = activate(&mut kernel);
+        let inner = active.places[0].id;
+        let row = JurisdictionKey::PlaceSubtree(commons);
+        assert!(
+            derive_scale_deficit(&kernel.state)
+                .unwrap()
+                .iter()
+                .any(|candidate| candidate.jurisdiction == row && candidate.deficit > 0)
+        );
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::Uncovered),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Deficit(row)),
+                patch: shed_under(inner, "shed"),
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+    }
+
+    /// Confinement: a valid answer does not license a write outside the
+    /// jurisdiction, and a place with no container is a new root, which is the
+    /// owner's act.
+    #[test]
+    fn an_elaborator_cannot_write_outside_its_jurisdiction() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Confined");
+        let answered = dead_end_boundary(&kernel);
+        let held = elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end));
+
+        let foreign = submit_as(
+            &mut kernel,
+            held.clone(),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered.clone())),
+                patch: shed_under(clockwork.yard, "yardshed"),
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&foreign, KernelError::PatchRejected(set)
+            if set == &vec![Mismatch::OutsideJurisdiction {
+                site: Site::Declaration(DraftHandle::new("yardshed")),
+            }]),
+            "{foreign:?}"
+        );
+
+        let rootless = submit_as(
+            &mut kernel,
+            held,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered.clone())),
+                patch: WorldPatch {
+                    declarations: vec![Declaration::Entity(EntityDeclaration {
+                        handle: DraftHandle::new("newroot"),
+                        label: "A New Country".into(),
+                        kind: EntityKind::Place,
+                        container: None,
+                    })],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&rootless, KernelError::PatchRejected(set)
+            if set == &vec![Mismatch::OutsideJurisdiction {
+                site: Site::Declaration(DraftHandle::new("newroot")),
+            }]),
+            "{rootless:?}"
+        );
+
+        // The owner is unconfined, and the identical rootless patch commits —
+        // once it answers something the kernel derives.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered)),
+                patch: WorldPatch {
+                    declarations: vec![Declaration::Entity(EntityDeclaration {
+                        handle: DraftHandle::new("newroot"),
+                        label: "A New Country".into(),
+                        kind: EntityKind::Place,
+                        container: Some(Ref::Existing(clockwork.dead_end)),
+                    })],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            },
+        );
+    }
+
+    /// Verification 17: seed admission and boundary elaboration reach one
+    /// reducer. The same structural defect returns the same complete set on
+    /// both lanes.
+    #[test]
+    fn seed_admission_and_boundary_elaboration_reach_one_reducer() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "OneReducer");
+        let answered = dead_end_boundary(&kernel);
+        let dangling = |handle: &str| WorldPatch {
+            declarations: vec![Declaration::Entity(EntityDeclaration {
+                handle: DraftHandle::new(handle),
+                label: "The Nowhere Shed".into(),
+                kind: EntityKind::Place,
+                container: Some(Ref::Draft(DraftHandle::new("nothing"))),
+            })],
+            operations: Vec::new(),
+            evidence: Vec::new(),
+        };
+        let snapshot = kernel.snapshot().unwrap();
+        let owner_error = kernel
+            .submit(
+                command(
+                    &snapshot,
+                    CommandId::new(),
+                    CallerId::Principal(owner()),
+                    CommandBody::AdmitPatch {
+                        answers: Some(PatchAnswer::Boundary(answered.clone())),
+                        patch: dangling("shed"),
+                    },
+                ),
+                &auth_principal(owner()),
+            )
+            .unwrap_err();
+        let elaborator_error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered.clone())),
+                patch: dangling("shed"),
+            },
+        )
+        .unwrap_err();
+        let set_of = |error: &KernelError| match error {
+            KernelError::PatchRejected(set) => set.clone(),
+            other => panic!("{other:?}"),
+        };
+        assert_eq!(set_of(&owner_error), set_of(&elaborator_error));
+
+        // And both lanes commit the sound patch through the one writer.
+        submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered)),
+                patch: shed_under(clockwork.dead_end, "shed"),
+            },
+        )
+        .expect("the elaborated patch commits");
+    }
+
+    /// `reduce` decides and `apply_effect` re-decides: a hand-built effect with
+    /// a jurisdiction that does not cover its answer never applies.
+    #[test]
+    fn apply_effect_re_decides_elaborator_authority() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, clockwork, _) = clock_kernel(directory.path(), "Redecide");
+        let answered = dead_end_boundary(&kernel);
+        let hall = kernel.state.entities[&clockwork.yard].container.unwrap();
+        let command_id = CommandId::issue();
+        let resolved = patch::resolve_patch(
+            &kernel.state,
+            command_id,
+            &shed_under(clockwork.dead_end, "shed"),
+            None,
+        )
+        .expect("the patch resolves");
+        let effect = WorldEffect::PatchAdmitted {
+            answers: Some(PatchAnswer::Boundary(answered)),
+            resolved,
+        };
+
+        let mut candidate = kernel.state.clone();
+        let error = apply_effect(
+            &mut candidate,
+            command_id,
+            &elaborator(JurisdictionKey::PlaceSubtree(hall)),
+            &effect,
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::Invariant(_)), "{error:?}");
+        assert_eq!(candidate, kernel.state);
+
+        // The honest jurisdiction applies through the same arm.
+        let mut candidate = kernel.state.clone();
+        apply_effect(
+            &mut candidate,
+            command_id,
+            &elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            &effect,
+        )
+        .expect("the covering jurisdiction applies");
+        assert_ne!(candidate, kernel.state);
+    }
+
+    /// Replay re-decides authority for free, because it re-runs `reduce` and
+    /// `apply_effect` against the pre-commit state. A row whose recorded caller
+    /// claims a jurisdiction it does not have fails the journal.
+    #[test]
+    fn journal_replay_refuses_a_forged_elaborator_row() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Forged");
+        let world_id = kernel.state.world_id;
+        let answered = dead_end_boundary(&kernel);
+        submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered)),
+                patch: shed_under(clockwork.dead_end, "shed"),
+            },
+        )
+        .expect("the honest elaboration commits");
+        drop(kernel);
+        let replayed = WorldKernel::open(&path, world_id).expect("the honest history replays");
+        assert!(
+            replayed
+                .state
+                .entities
+                .values()
+                .any(|entity| entity.label == "The shed")
+        );
+    }
+
+    /// The mismatch vocabulary is kernel-internal plus controller telemetry. It
+    /// never enters a commit, and `verify_state_shape` never grows a clause for
+    /// it because no partition holds one.
+    #[test]
+    fn mismatch_never_appears_in_a_world_commit() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Separation");
+        let answered = dead_end_boundary(&kernel);
+        submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered)),
+                patch: shed_under(clockwork.dead_end, "shed"),
+            },
+        )
+        .expect("the elaboration commits");
+
+        let bytes = rmp_serde::to_vec_named(&kernel.state).expect("state encodes");
+        let text = String::from_utf8_lossy(&bytes);
+        for tag in [
+            "outside_jurisdiction",
+            "unresolved_draft",
+            "no_canonical_change",
+            "mismatch",
+        ] {
+            assert!(!text.contains(tag), "{tag} reached world state");
+        }
     }
 }

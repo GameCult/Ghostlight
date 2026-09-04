@@ -1,10 +1,10 @@
 use super::{
     AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CommandId, CreateWorld,
     CreateWorldIntent, CreationReceipt, DecisionInvocation, DecisionOpportunity, Declaration,
-    DraftHandle, EntityDeclaration, EntityKind, KernelError, NewController, OperatorEvent,
-    PrincipalCommandIntent, PrincipalId, Ref, SubjectDeclaration, SubjectKind, SubmitReceipt,
-    SystemCapability, TickMinutes, WorldKernel, WorldPatch, WorldScaleIntentRef, WorldSnapshot,
-    journal, patch::kernel_speak_grant, prepare_creation,
+    DraftHandle, EntityDeclaration, EntityKind, JurisdictionKey, KernelError, NewController,
+    OperatorEvent, PatchAnswer, PrincipalCommandIntent, PrincipalId, Ref, SubjectDeclaration,
+    SubjectKind, SubmitReceipt, SystemCapability, TickMinutes, WorldKernel, WorldPatch,
+    WorldScaleIntentRef, WorldSnapshot, journal, patch::kernel_speak_grant, prepare_creation,
 };
 use crate::app_session::VerifiedPrincipalEvidence;
 use std::path::Path;
@@ -328,6 +328,33 @@ impl WorldMailbox {
         .await
     }
 
+    /// The elaborator's only commit port. Stamped, like every digest-binding
+    /// command: the loop cannot know the live revision either, and an
+    /// `AdmitPatch` from an elaborator binds by its answer's digest exactly as
+    /// an `ExerciseDecision` binds by scope digest. `answers` is not an
+    /// `Option`, so the port cannot express an unanswered elaborator patch and
+    /// `AnswerRequired` is reachable only through the owner lane and the
+    /// journal. Visible inside the world subtree, where the elaboration organ
+    /// lives; unreachable from runtime ingress.
+    pub(super) async fn submit_elaboration(
+        &self,
+        command_id: CommandId,
+        jurisdiction: JurisdictionKey,
+        answers: PatchAnswer,
+        patch: WorldPatch,
+    ) -> Result<SubmitReceipt, MailboxError> {
+        self.submit_stamped(
+            command_id,
+            CallerId::System(SystemCapability::Elaborator { jurisdiction }),
+            CommandBody::AdmitPatch {
+                answers: Some(answers),
+                patch,
+            },
+            AuthenticatedCaller::verified_system(SystemCapability::Elaborator { jurisdiction }),
+        )
+        .await
+    }
+
     #[cfg(test)]
     pub(super) async fn create_fixture(
         &self,
@@ -431,6 +458,37 @@ impl WorldMailbox {
 /// this type has. Adding `.operator_log()` to `controllers.rs` fails to
 /// compile, because `ControllerPort` never named it; that failure is the
 /// proof, not a test that runs and passes.
+/// The elaboration organ's narrowing of the mailbox: it reads a snapshot and
+/// commits one authored patch. Nothing else on `WorldMailbox` is reachable from
+/// the authoring lane, and that is a fact about which methods this type has
+/// rather than a test that runs and passes.
+#[derive(Clone)]
+pub(crate) struct ElaborationPort {
+    mailbox: WorldMailbox,
+}
+
+impl ElaborationPort {
+    pub(crate) fn new(mailbox: WorldMailbox) -> Self {
+        Self { mailbox }
+    }
+
+    pub(super) async fn snapshot(&self) -> Result<WorldSnapshot, MailboxError> {
+        self.mailbox.snapshot().await
+    }
+
+    pub(super) async fn submit_elaboration(
+        &self,
+        command_id: CommandId,
+        jurisdiction: JurisdictionKey,
+        answers: PatchAnswer,
+        patch: WorldPatch,
+    ) -> Result<SubmitReceipt, MailboxError> {
+        self.mailbox
+            .submit_elaboration(command_id, jurisdiction, answers, patch)
+            .await
+    }
+}
+
 #[derive(Clone)]
 pub(crate) struct ControllerPort {
     mailbox: WorldMailbox,

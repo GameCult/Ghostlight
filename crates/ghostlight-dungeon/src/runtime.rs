@@ -255,6 +255,7 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
     };
     tokio::spawn(maintain_mesh_projection(state.clone()));
     tokio::spawn(advance_world_clock(state.clone()));
+    tokio::spawn(elaborate_world(state.clone()));
     let app = app_router(state.clone(), web_root);
     tracing::info!(address = %bound_address, "Ghostlight Dungeon world owner serving");
     let server = axum::serve(
@@ -307,6 +308,8 @@ fn open_controller(
             interpreter: std::env::var("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL")
                 .unwrap_or_else(|_| "gpt-5.6-terra".into()),
             operational_agent: std::env::var("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL")
+                .unwrap_or_else(|_| "gpt-5.6-terra".into()),
+            elaborator: std::env::var("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL")
                 .unwrap_or_else(|_| "gpt-5.6-terra".into()),
         },
     )
@@ -1462,6 +1465,34 @@ where
     }
 }
 
+/// How often the authoring lane takes one sweep. Slow, and skipping: a sweep
+/// that admits nothing is a fixed point, not a reason to spin against a paid
+/// inference endpoint.
+const ELABORATION_SWEEP_INTERVAL: Duration = Duration::from_secs(300);
+
+/// The authoring lane's only driver. It runs when the cognition organ opened at
+/// all, which is the config gate the runtime already has: no mode flag joins it.
+/// One sequential sweep per wake, because a boundary binds to its own digest and
+/// the loops are logically independent without being separate tasks.
+async fn elaborate_world(state: AppState) {
+    let mut interval = tokio::time::interval(ELABORATION_SWEEP_INTERVAL);
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    interval.tick().await;
+    loop {
+        interval.tick().await;
+        let runner = {
+            let controllers = state.controllers.lock().await;
+            controllers.as_ref().map(ControllerRunner::elaborator)
+        };
+        let Some(runner) = runner else {
+            continue;
+        };
+        if let Err(error) = runner.sweep().await {
+            tracing::debug!(%error, "elaboration sweep did not complete");
+        }
+    }
+}
+
 /// The world clock's only driver.
 async fn advance_world_clock(state: AppState) {
     let Some(minutes) = TickMinutes::new(CLOCK_TICK_MINUTES) else {
@@ -1936,6 +1967,7 @@ mod tests {
                 persona: "gpt-5.6-sol".into(),
                 interpreter: "gpt-5.6-terra".into(),
                 operational_agent: "gpt-5.6-terra".into(),
+                elaborator: "gpt-5.6-terra".into(),
             },
         )
         .unwrap();

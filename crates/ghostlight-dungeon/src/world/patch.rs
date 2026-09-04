@@ -12,11 +12,14 @@
 //! after that set is empty, so a rejected patch never mints an ID.
 
 use super::clock::{FictionalMinutes, TickMinutes};
+use super::tool_schema;
 use super::{
     AffordanceId, CommandId, ControllerAssignment, ControllerId, EdgeId, EntityId, NewController,
     SubjectId, SubjectKind, SubjectState, WorldId,
 };
+use codex_connector::CodexToolDefinition;
 use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, btree_map::Entry};
 use uuid::Uuid;
@@ -233,7 +236,8 @@ pub(crate) enum Ref<Id> {
 }
 
 /// A referent in any of the three referent namespaces, or in the catalog.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "namespace", content = "ref", rename_all = "snake_case")]
 pub(crate) enum RefName {
     Subject(Ref<SubjectId>),
     Entity(Ref<EntityId>),
@@ -858,7 +862,8 @@ pub(crate) struct AffordanceDeclaration {
 
 /// Where a failed check appeared. One way to say it, for declarations and
 /// operations alike.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "site", content = "at", rename_all = "snake_case")]
 pub(crate) enum Site {
     Declaration(DraftHandle),
     Operation(usize),
@@ -869,10 +874,9 @@ pub(crate) enum Site {
 pub(crate) struct EvidenceRef(String);
 
 impl EvidenceRef {
-    /// Gated because no `AdmitPatch` ingress exists yet: every caller that
-    /// builds a patch today is a test. It loses the gate in the same commit as
-    /// the first production patch author.
-    #[cfg(test)]
+    /// The elaborator's evidence receipts are built here, and `Deserialize`
+    /// already mints one from any string, so this constructor gates nothing.
+    /// Canonical text is checked by the resolver, in the complete mismatch set.
     pub(super) fn new(value: impl Into<String>) -> Self {
         Self(value.into())
     }
@@ -1139,8 +1143,12 @@ pub(crate) struct WorldPatch {
 }
 
 /// One named structural check that a patch failed. A rejection carries the
-/// complete set, never the first failure, and is never persisted.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+/// complete set, never the first failure. It never enters `WorldState`,
+/// `WorldEffect`, `CommandEnvelope`, or `WorldCommit`; the serde derives exist
+/// for exactly one reader, the elaboration checkpoint, which is
+/// controller-owned telemetry under its own row type and its own schema.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "mismatch", rename_all = "snake_case")]
 pub(crate) enum Mismatch {
     EmptyHandle {
         position: usize,
@@ -1403,6 +1411,11 @@ pub(crate) enum Mismatch {
     /// The permille weights sum over 1000: weights distribute the target and
     /// never raise it.
     ScaleWeightsExceedWhole,
+    /// A jurisdictional author wrote outside its jurisdiction. The owner is
+    /// unconfined and never sees this.
+    OutsideJurisdiction {
+        site: Site,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -5131,6 +5144,1381 @@ pub(super) fn containment_terminates(
         }
     }
     false
+}
+
+// ---------------------------------------------------------------------------
+// The patch tool catalog.
+//
+// The vocabulary's owner owns its projection. `PATCH_TOOLS` is one entry per
+// admissible authoring shape, and the shape rule is stated once: the tool
+// surface is the variants a non-genesis patch may carry, with every
+// always-refused choice removed rather than exposed. Nothing else in the tree
+// emits a model-facing patch schema.
+// ---------------------------------------------------------------------------
+
+/// What a tool call becomes in the draft patch.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum PatchToolShape {
+    /// Emits `Declaration::<variant>` with `fixed` merged into the arguments.
+    Declare {
+        variant: &'static str,
+        fixed: &'static [(&'static str, &'static str)],
+    },
+    /// Emits `ComponentOp::<variant>`.
+    Operate { variant: &'static str },
+    /// Ends or annotates the session; produces nothing for the patch.
+    Session,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct PatchField {
+    pub(crate) name: &'static str,
+    pub(crate) kind: PatchFieldKind,
+}
+
+/// One argument's projection. Bounds live here rather than only in a rejection,
+/// so the model is told the bound instead of discovering it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum PatchFieldKind {
+    Reference(&'static str),
+    OptionalReference(&'static str),
+    ReferenceSet(&'static str),
+    Handle,
+    Label,
+    Statement,
+    Quantity,
+    Cost,
+    Magnitude,
+    Minutes,
+    OptionalPeriod,
+    Evidence,
+    Flag,
+    Text(&'static str),
+    Name(&'static str),
+    NameSet(&'static str),
+    Choice(&'static [&'static str]),
+    Composite(CompositeShape),
+    CompositeList(CompositeShape),
+}
+
+/// A closed payload type the vocabulary already owns. One arm per shape in both
+/// the schema emitter and the exemplar builder, so a new shape breaks the build
+/// in two places rather than shipping a schema with no decoder.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum CompositeShape {
+    NewController,
+    AccessKind,
+    DependencyRef,
+    AuthorityTargetRef,
+    AuthorityGrantRef,
+    ReachRef,
+    FactStandingRef,
+    AudienceRef,
+    AuthoredSource,
+    PressureSourceRef,
+    CommitmentKey,
+    PreconditionRef,
+    RoleSpec,
+    Precondition,
+    EffectSlot,
+    OutcomeBand,
+}
+
+pub(crate) struct PatchTool {
+    /// Equal to the variant's serde tag, except for the two `Entity` splits and
+    /// the two session tools.
+    pub(crate) name: &'static str,
+    pub(crate) description: &'static str,
+    pub(crate) fields: &'static [PatchField],
+    pub(crate) shape: PatchToolShape,
+}
+
+const fn field(name: &'static str, kind: PatchFieldKind) -> PatchField {
+    PatchField { name, kind }
+}
+
+const SUBJECT_KINDS: &[&str] = &["person", "institution", "population"];
+const COMMITMENT_KINDS: &[&str] = &["routine", "obligation", "goal"];
+const CONFIDENCES: &[&str] = &["doubted", "believed", "certain"];
+
+pub(crate) const RECORD_GAP_PATCH_TOOL: &str = "record_gap";
+pub(crate) const SUBMIT_PATCH_TOOL: &str = "submit";
+
+pub(crate) const PATCH_TOOLS: &[PatchTool] = &[
+    PatchTool {
+        name: "declare_subject",
+        description: "Declare a new subject: a person, an institution, or a population.",
+        fields: &[
+            field("handle", PatchFieldKind::Handle),
+            field("label", PatchFieldKind::Label),
+            field("kind", PatchFieldKind::Choice(SUBJECT_KINDS)),
+            field(
+                "controller",
+                PatchFieldKind::Composite(CompositeShape::NewController),
+            ),
+            field("affordances", PatchFieldKind::ReferenceSet("affordance")),
+            field("position", PatchFieldKind::OptionalReference("place")),
+        ],
+        shape: PatchToolShape::Declare {
+            variant: "subject",
+            fixed: &[],
+        },
+    },
+    PatchTool {
+        name: "declare_place",
+        description: "Declare a place. Its container, when given, must be a place.",
+        fields: &[
+            field("handle", PatchFieldKind::Handle),
+            field("label", PatchFieldKind::Label),
+            field("container", PatchFieldKind::OptionalReference("place")),
+        ],
+        shape: PatchToolShape::Declare {
+            variant: "entity",
+            fixed: &[("kind", "place")],
+        },
+    },
+    PatchTool {
+        name: "declare_resource",
+        description: "Declare a resource kind. Quantity is admitted separately, with evidence.",
+        fields: &[
+            field("handle", PatchFieldKind::Handle),
+            field("label", PatchFieldKind::Label),
+        ],
+        shape: PatchToolShape::Declare {
+            variant: "entity",
+            fixed: &[("kind", "resource")],
+        },
+    },
+    PatchTool {
+        name: "declare_route",
+        description: "Declare an open route between two places.",
+        fields: &[
+            field("handle", PatchFieldKind::Handle),
+            field("label", PatchFieldKind::Label),
+            field("from", PatchFieldKind::Reference("place")),
+            field("to", PatchFieldKind::Reference("place")),
+            field(
+                "access",
+                PatchFieldKind::Composite(CompositeShape::AccessKind),
+            ),
+            field("cost", PatchFieldKind::Cost),
+        ],
+        shape: PatchToolShape::Declare {
+            variant: "route",
+            fixed: &[],
+        },
+    },
+    PatchTool {
+        name: "declare_affordance",
+        description: "Declare one catalog entry: what an affordance is, not who may use it.",
+        fields: &[
+            field("handle", PatchFieldKind::Handle),
+            field("kind", PatchFieldKind::Name("the affordance's tool name")),
+            field(
+                "roles",
+                PatchFieldKind::CompositeList(CompositeShape::RoleSpec),
+            ),
+            field(
+                "preconditions",
+                PatchFieldKind::CompositeList(CompositeShape::Precondition),
+            ),
+            field(
+                "effect_slots",
+                PatchFieldKind::CompositeList(CompositeShape::EffectSlot),
+            ),
+            field(
+                "outcome_bands",
+                PatchFieldKind::CompositeList(CompositeShape::OutcomeBand),
+            ),
+            field("carries_speech", PatchFieldKind::Flag),
+        ],
+        shape: PatchToolShape::Declare {
+            variant: "affordance",
+            fixed: &[],
+        },
+    },
+    PatchTool {
+        name: "declare_fact",
+        description: "Declare a fact: a short authored name and the statement it carries.",
+        fields: &[
+            field("handle", PatchFieldKind::Handle),
+            field("label", PatchFieldKind::Label),
+            field("statement", PatchFieldKind::Statement),
+            field(
+                "standing",
+                PatchFieldKind::Composite(CompositeShape::FactStandingRef),
+            ),
+        ],
+        shape: PatchToolShape::Declare {
+            variant: "fact",
+            fixed: &[],
+        },
+    },
+    PatchTool {
+        name: "declare_channel",
+        description: "Declare a channel and the reach it carries over.",
+        fields: &[
+            field("handle", PatchFieldKind::Handle),
+            field("label", PatchFieldKind::Label),
+            field("reach", PatchFieldKind::Composite(CompositeShape::ReachRef)),
+            field("controller", PatchFieldKind::OptionalReference("subject")),
+        ],
+        shape: PatchToolShape::Declare {
+            variant: "channel",
+            fixed: &[],
+        },
+    },
+    PatchTool {
+        name: "relocate",
+        description: "Move a subject along one open route it may traverse.",
+        fields: &[
+            field("subject", PatchFieldKind::Reference("subject")),
+            field("via", PatchFieldKind::Reference("route")),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "relocate",
+        },
+    },
+    PatchTool {
+        name: "open_route",
+        description: "Open a closed route.",
+        fields: &[field("route", PatchFieldKind::Reference("route"))],
+        shape: PatchToolShape::Operate {
+            variant: "open_route",
+        },
+    },
+    PatchTool {
+        name: "close_route",
+        description: "Close an open route.",
+        fields: &[field("route", PatchFieldKind::Reference("route"))],
+        shape: PatchToolShape::Operate {
+            variant: "close_route",
+        },
+    },
+    PatchTool {
+        name: "alter_cost",
+        description: "Set a route's traversal cost in minutes.",
+        fields: &[
+            field("route", PatchFieldKind::Reference("route")),
+            field("cost", PatchFieldKind::Cost),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "alter_cost",
+        },
+    },
+    PatchTool {
+        name: "transfer",
+        description: "Move a held quantity of one resource from one subject to another.",
+        fields: &[
+            field("from", PatchFieldKind::Reference("subject")),
+            field("to", PatchFieldKind::Reference("subject")),
+            field("resource", PatchFieldKind::Reference("resource")),
+            field("qty", PatchFieldKind::Quantity),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "transfer",
+        },
+    },
+    PatchTool {
+        name: "transform",
+        description: "Relabel a held quantity one for one: the same quantity leaves and arrives.",
+        fields: &[
+            field("holder", PatchFieldKind::Reference("subject")),
+            field("from_resource", PatchFieldKind::Reference("resource")),
+            field("into_resource", PatchFieldKind::Reference("resource")),
+            field("qty", PatchFieldKind::Quantity),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "transform",
+        },
+    },
+    PatchTool {
+        name: "consume",
+        description: "Destroy a held quantity.",
+        fields: &[
+            field("holder", PatchFieldKind::Reference("subject")),
+            field("resource", PatchFieldKind::Reference("resource")),
+            field("qty", PatchFieldKind::Quantity),
+        ],
+        shape: PatchToolShape::Operate { variant: "consume" },
+    },
+    PatchTool {
+        name: "admit",
+        description: "The only creation path for quantity. Its evidence must be cited in this same patch.",
+        fields: &[
+            field("holder", PatchFieldKind::Reference("subject")),
+            field("resource", PatchFieldKind::Reference("resource")),
+            field("qty", PatchFieldKind::Quantity),
+            field("evidence", PatchFieldKind::Evidence),
+        ],
+        shape: PatchToolShape::Operate { variant: "admit" },
+    },
+    PatchTool {
+        name: "bind",
+        description: "Record that a subject depends on a resource, a route, or another subject.",
+        fields: &[
+            field("subject", PatchFieldKind::Reference("subject")),
+            field(
+                "target",
+                PatchFieldKind::Composite(CompositeShape::DependencyRef),
+            ),
+        ],
+        shape: PatchToolShape::Operate { variant: "bind" },
+    },
+    PatchTool {
+        name: "release",
+        description: "Remove one dependency of a subject.",
+        fields: &[
+            field("subject", PatchFieldKind::Reference("subject")),
+            field(
+                "target",
+                PatchFieldKind::Composite(CompositeShape::DependencyRef),
+            ),
+        ],
+        shape: PatchToolShape::Operate { variant: "release" },
+    },
+    PatchTool {
+        name: "grant_authority",
+        description: "Add one jurisdiction to a subject: a kind, and the ground it runs over.",
+        fields: &[
+            field("holder", PatchFieldKind::Reference("subject")),
+            field(
+                "grant",
+                PatchFieldKind::Composite(CompositeShape::AuthorityGrantRef),
+            ),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "grant_authority",
+        },
+    },
+    PatchTool {
+        name: "revoke_authority",
+        description: "Remove one jurisdiction from a subject.",
+        fields: &[
+            field("holder", PatchFieldKind::Reference("subject")),
+            field(
+                "grant",
+                PatchFieldKind::Composite(CompositeShape::AuthorityGrantRef),
+            ),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "revoke_authority",
+        },
+    },
+    PatchTool {
+        name: "open_office",
+        description: "Constitute a seat inside an institution and the authority kinds it lends.",
+        fields: &[
+            field("institution", PatchFieldKind::Reference("subject")),
+            field("office", PatchFieldKind::Name("the office's name")),
+            field(
+                "delegated",
+                PatchFieldKind::NameSet("an authority kind the office lends"),
+            ),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "open_office",
+        },
+    },
+    PatchTool {
+        name: "close_office",
+        description: "Dissolve a seat inside an institution.",
+        fields: &[
+            field("institution", PatchFieldKind::Reference("subject")),
+            field("office", PatchFieldKind::Name("the office's name")),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "close_office",
+        },
+    },
+    PatchTool {
+        name: "install_incumbent",
+        description: "Seat a person in one of an institution's offices.",
+        fields: &[
+            field("institution", PatchFieldKind::Reference("subject")),
+            field("office", PatchFieldKind::Name("the office's name")),
+            field("incumbent", PatchFieldKind::Reference("subject")),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "install_incumbent",
+        },
+    },
+    PatchTool {
+        name: "vacate_office",
+        description: "Empty a seat, preserving the office itself.",
+        fields: &[
+            field("institution", PatchFieldKind::Reference("subject")),
+            field("office", PatchFieldKind::Name("the office's name")),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "vacate_office",
+        },
+    },
+    PatchTool {
+        name: "open_forum",
+        description: "Say where one kind of grievance goes, and who may bring it.",
+        fields: &[
+            field("grievance", PatchFieldKind::Name("the grievance kind")),
+            field("forum", PatchFieldKind::Reference("subject")),
+            field(
+                "standing",
+                PatchFieldKind::Composite(CompositeShape::AuthorityTargetRef),
+            ),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "open_forum",
+        },
+    },
+    PatchTool {
+        name: "close_forum",
+        description: "Remove the forum that takes one kind of grievance.",
+        fields: &[field(
+            "grievance",
+            PatchFieldKind::Name("the grievance kind"),
+        )],
+        shape: PatchToolShape::Operate {
+            variant: "close_forum",
+        },
+    },
+    PatchTool {
+        name: "acquire_knowledge",
+        description: "Give a subject a fact it witnessed, or that a canonical receipt evidences.",
+        fields: &[
+            field("subject", PatchFieldKind::Reference("subject")),
+            field("fact", PatchFieldKind::Reference("fact")),
+            field(
+                "source",
+                PatchFieldKind::Composite(CompositeShape::AuthoredSource),
+            ),
+            field("confidence", PatchFieldKind::Choice(CONFIDENCES)),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "acquire_knowledge",
+        },
+    },
+    PatchTool {
+        name: "communicate",
+        description: "One telling. The recipients are re-derived from live positions and channels.",
+        fields: &[
+            field("speaker", PatchFieldKind::Reference("subject")),
+            field("fact", PatchFieldKind::Reference("fact")),
+            field("to", PatchFieldKind::Composite(CompositeShape::AudienceRef)),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "communicate",
+        },
+    },
+    PatchTool {
+        name: "forget",
+        description: "Remove one fact from one subject's knowledge.",
+        fields: &[
+            field("subject", PatchFieldKind::Reference("subject")),
+            field("fact", PatchFieldKind::Reference("fact")),
+        ],
+        shape: PatchToolShape::Operate { variant: "forget" },
+    },
+    PatchTool {
+        name: "set_reach",
+        description: "Set which subjects a channel carries to.",
+        fields: &[
+            field("channel", PatchFieldKind::Reference("channel")),
+            field("reach", PatchFieldKind::Composite(CompositeShape::ReachRef)),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "set_reach",
+        },
+    },
+    PatchTool {
+        name: "set_controller",
+        description: "Set, or clear, the subject that may speak on a channel from outside its reach.",
+        fields: &[
+            field("channel", PatchFieldKind::Reference("channel")),
+            field("controller", PatchFieldKind::OptionalReference("subject")),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "set_controller",
+        },
+    },
+    PatchTool {
+        name: "create_commitment",
+        description: "Author a promise: a routine with a period, an obligation to another, or a personal goal.",
+        fields: &[
+            field("subject", PatchFieldKind::Reference("subject")),
+            field("counterparty", PatchFieldKind::OptionalReference("subject")),
+            field("kind", PatchFieldKind::Choice(COMMITMENT_KINDS)),
+            field("due", PatchFieldKind::Minutes),
+            field("period", PatchFieldKind::OptionalPeriod),
+            field(
+                "checks",
+                PatchFieldKind::CompositeList(CompositeShape::PreconditionRef),
+            ),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "create_commitment",
+        },
+    },
+    PatchTool {
+        name: "discharge_commitment",
+        description: "Remove a commitment and every pressure row it sources.",
+        fields: &[
+            field("subject", PatchFieldKind::Reference("subject")),
+            field(
+                "key",
+                PatchFieldKind::Composite(CompositeShape::CommitmentKey),
+            ),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "discharge_commitment",
+        },
+    },
+    PatchTool {
+        name: "advance_pressure",
+        description: "Add pressure on a subject from one named source.",
+        fields: &[
+            field(
+                "source",
+                PatchFieldKind::Composite(CompositeShape::PressureSourceRef),
+            ),
+            field("target", PatchFieldKind::Reference("subject")),
+            field("by", PatchFieldKind::Magnitude),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "advance_pressure",
+        },
+    },
+    PatchTool {
+        name: "reduce_pressure",
+        description: "Subtract pressure on a subject from one named source.",
+        fields: &[
+            field(
+                "source",
+                PatchFieldKind::Composite(CompositeShape::PressureSourceRef),
+            ),
+            field("target", PatchFieldKind::Reference("subject")),
+            field("by", PatchFieldKind::Magnitude),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "reduce_pressure",
+        },
+    },
+    PatchTool {
+        name: "resolve_pressure",
+        description: "Remove one pressure row entirely.",
+        fields: &[
+            field(
+                "source",
+                PatchFieldKind::Composite(CompositeShape::PressureSourceRef),
+            ),
+            field("target", PatchFieldKind::Reference("subject")),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "resolve_pressure",
+        },
+    },
+    PatchTool {
+        name: RECORD_GAP_PATCH_TOOL,
+        description: "Record something the world needs that this vocabulary cannot say. It changes nothing.",
+        fields: &[field(
+            "detail",
+            PatchFieldKind::Text("what the world needs and this vocabulary cannot express"),
+        )],
+        shape: PatchToolShape::Session,
+    },
+    PatchTool {
+        name: SUBMIT_PATCH_TOOL,
+        description: "Submit the accumulated patch for admission. Terminal.",
+        fields: &[],
+        shape: PatchToolShape::Session,
+    },
+];
+
+/// The catalog. Fixed per build: it reads `PATCH_TOOLS` and nothing else — not
+/// world state, not a snapshot, not a config.
+pub(crate) fn patch_tools() -> Vec<CodexToolDefinition> {
+    PATCH_TOOLS
+        .iter()
+        .map(|entry| {
+            tool_schema::tool(
+                entry.name,
+                entry.description,
+                tool_schema::object(
+                    entry
+                        .fields
+                        .iter()
+                        .map(|field| (field.name.to_owned(), field_schema(field.kind)))
+                        .collect(),
+                ),
+            )
+        })
+        .collect()
+}
+
+/// The same iteration rendered as one prose line, so the prompt's tool list and
+/// the schemas have one owner and cannot drift.
+pub(crate) fn patch_tool_signatures() -> String {
+    PATCH_TOOLS
+        .iter()
+        .map(|entry| {
+            let parameters: Vec<&str> = entry.fields.iter().map(|field| field.name).collect();
+            format!("{}({})", entry.name, parameters.join(", "))
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn field_schema(kind: PatchFieldKind) -> Value {
+    match kind {
+        PatchFieldKind::Reference(referent) => tool_schema::reference(referent),
+        PatchFieldKind::OptionalReference(referent) => {
+            tool_schema::nullable(tool_schema::reference(referent))
+        }
+        PatchFieldKind::ReferenceSet(referent) => {
+            tool_schema::list(tool_schema::reference(referent))
+        }
+        PatchFieldKind::Handle => {
+            tool_schema::canonical_string("a new draft handle, unique within this patch")
+        }
+        PatchFieldKind::Label => tool_schema::canonical_string("a display label"),
+        PatchFieldKind::Statement => {
+            tool_schema::canonical_string("the committed world text this fact carries")
+        }
+        PatchFieldKind::Quantity => tool_schema::bounded_integer(1, u64::MAX),
+        PatchFieldKind::Cost => tool_schema::bounded_integer(1, u64::from(MAX_ROUTE_COST)),
+        PatchFieldKind::Magnitude => tool_schema::bounded_integer(1, u64::from(u32::MAX)),
+        PatchFieldKind::Minutes => tool_schema::bounded_integer(0, u64::MAX),
+        PatchFieldKind::OptionalPeriod => {
+            tool_schema::nullable(tool_schema::bounded_integer(1, u64::from(MAX_ROUTE_COST)))
+        }
+        PatchFieldKind::Evidence => {
+            tool_schema::canonical_string("an exact evidence receipt retrieved for this answer")
+        }
+        PatchFieldKind::Flag => json!({"type": "boolean"}),
+        PatchFieldKind::Text(description) | PatchFieldKind::Name(description) => {
+            tool_schema::canonical_string(description)
+        }
+        PatchFieldKind::NameSet(description) => {
+            tool_schema::list(tool_schema::canonical_string(description))
+        }
+        PatchFieldKind::Choice(values) => tool_schema::name_enum(values),
+        PatchFieldKind::Composite(shape) => composite_schema(shape),
+        PatchFieldKind::CompositeList(shape) => tool_schema::list(composite_schema(shape)),
+    }
+}
+
+fn subject_ref_schema() -> Value {
+    tool_schema::reference("subject")
+}
+
+fn composite_schema(shape: CompositeShape) -> Value {
+    match shape {
+        // `human` is absent, not present-and-rejected: `UnadmittedController`
+        // refuses it outside genesis, so exposing it would be a door slammed.
+        CompositeShape::NewController => tool_schema::variant(
+            "type",
+            vec![("narrative_persona", vec![]), ("operational_agent", vec![])],
+        ),
+        CompositeShape::AccessKind => tool_schema::variant(
+            "access",
+            vec![
+                ("public", vec![]),
+                (
+                    "restricted",
+                    vec![(
+                        "requires".to_owned(),
+                        tool_schema::canonical_string("the authority kind that opens this route"),
+                    )],
+                ),
+            ],
+        ),
+        CompositeShape::DependencyRef => tool_schema::variant_content(
+            "target",
+            "ref",
+            vec![
+                ("resource", tool_schema::reference("resource")),
+                ("route", tool_schema::reference("route")),
+                ("subject", subject_ref_schema()),
+            ],
+        ),
+        CompositeShape::AuthorityTargetRef => tool_schema::variant_content(
+            "over",
+            "ref",
+            vec![
+                ("subject", subject_ref_schema()),
+                ("place_subtree", tool_schema::reference("place")),
+            ],
+        ),
+        CompositeShape::AuthorityGrantRef => tool_schema::object(vec![
+            (
+                "kind".to_owned(),
+                tool_schema::canonical_string("the authority kind"),
+            ),
+            (
+                "over".to_owned(),
+                composite_schema(CompositeShape::AuthorityTargetRef),
+            ),
+        ]),
+        CompositeShape::ReachRef => tool_schema::variant_content(
+            "reach",
+            "of",
+            vec![
+                ("subjects", tool_schema::list(subject_ref_schema())),
+                ("place", tool_schema::reference("place")),
+            ],
+        ),
+        CompositeShape::FactStandingRef => tool_schema::variant(
+            "standing",
+            vec![
+                (
+                    "canonical",
+                    vec![(
+                        "evidence".to_owned(),
+                        tool_schema::canonical_string("an exact evidence receipt"),
+                    )],
+                ),
+                ("claimed", vec![("by".to_owned(), subject_ref_schema())]),
+            ],
+        ),
+        CompositeShape::AudienceRef => tool_schema::external_variant(vec![
+            ("colocated", None),
+            ("channel", Some(tool_schema::reference("channel"))),
+        ]),
+        CompositeShape::AuthoredSource => {
+            tool_schema::variant("source", vec![("witnessed", vec![]), ("evidenced", vec![])])
+        }
+        CompositeShape::PressureSourceRef => tool_schema::variant_content(
+            "from",
+            "of",
+            vec![
+                (
+                    "commitment",
+                    tool_schema::object(vec![
+                        ("subject".to_owned(), subject_ref_schema()),
+                        (
+                            "key".to_owned(),
+                            composite_schema(CompositeShape::CommitmentKey),
+                        ),
+                    ]),
+                ),
+                (
+                    "dependency",
+                    composite_schema(CompositeShape::DependencyRef),
+                ),
+                ("subject", subject_ref_schema()),
+            ],
+        ),
+        CompositeShape::CommitmentKey => tool_schema::object(vec![
+            (
+                "command".to_owned(),
+                tool_schema::canonical_string("the command id that created the commitment"),
+            ),
+            (
+                "index".to_owned(),
+                tool_schema::bounded_integer(0, u64::from(u32::MAX)),
+            ),
+        ]),
+        CompositeShape::PreconditionRef => precondition_ref_schema(),
+        CompositeShape::RoleSpec => tool_schema::object(vec![
+            (
+                "role".to_owned(),
+                tool_schema::canonical_string("the slot's parameter name"),
+            ),
+            ("kind".to_owned(), ref_kind_schema()),
+        ]),
+        CompositeShape::Precondition => precondition_schema(),
+        CompositeShape::EffectSlot => tool_schema::object(vec![
+            ("op_kind".to_owned(), component_op_kind_schema()),
+            (
+                "roles".to_owned(),
+                tool_schema::list(tool_schema::canonical_string("a declared role name")),
+            ),
+            (
+                "bounds".to_owned(),
+                tool_schema::variant_content(
+                    "bound",
+                    "max",
+                    vec![
+                        ("quantity", tool_schema::bounded_integer(1, u64::MAX)),
+                        (
+                            "cost",
+                            tool_schema::bounded_integer(1, u64::from(MAX_ROUTE_COST)),
+                        ),
+                    ],
+                ),
+            ),
+        ]),
+        CompositeShape::OutcomeBand => tool_schema::object(vec![
+            (
+                "weight".to_owned(),
+                tool_schema::bounded_integer(1, u64::from(u32::MAX)),
+            ),
+            (
+                "effects".to_owned(),
+                tool_schema::list(tool_schema::bounded_integer(0, u64::from(u32::MAX))),
+            ),
+        ]),
+    }
+}
+
+fn ref_kind_schema() -> Value {
+    tool_schema::variant_content(
+        "namespace",
+        "kind",
+        vec![
+            (
+                "subject",
+                tool_schema::nullable(tool_schema::name_enum(SUBJECT_KINDS)),
+            ),
+            (
+                "entity",
+                tool_schema::name_enum(&["place", "resource", "fact", "channel"]),
+            ),
+            ("edge", tool_schema::name_enum(&["route"])),
+        ],
+    )
+}
+
+/// The referent-naming checks a commitment carries.
+fn precondition_ref_schema() -> Value {
+    tool_schema::variant(
+        "precondition",
+        vec![
+            (
+                "present",
+                vec![("at".to_owned(), tool_schema::reference("place"))],
+            ),
+            (
+                "reachable",
+                vec![
+                    ("to".to_owned(), tool_schema::reference("place")),
+                    (
+                        "within".to_owned(),
+                        tool_schema::bounded_integer(1, u64::from(MAX_ROUTE_COST)),
+                    ),
+                ],
+            ),
+            (
+                "holds",
+                vec![
+                    ("resource".to_owned(), tool_schema::reference("resource")),
+                    (
+                        "at_least".to_owned(),
+                        tool_schema::bounded_integer(1, u64::MAX),
+                    ),
+                ],
+            ),
+            (
+                "authorized",
+                vec![
+                    (
+                        "over".to_owned(),
+                        composite_schema(CompositeShape::AuthorityTargetRef),
+                    ),
+                    (
+                        "kind".to_owned(),
+                        tool_schema::canonical_string("the authority kind"),
+                    ),
+                ],
+            ),
+            (
+                "has_standing",
+                vec![(
+                    "grievance".to_owned(),
+                    tool_schema::canonical_string("the grievance kind"),
+                )],
+            ),
+            (
+                "knows",
+                vec![
+                    ("fact".to_owned(), tool_schema::reference("fact")),
+                    ("at_least".to_owned(), tool_schema::name_enum(CONFIDENCES)),
+                ],
+            ),
+            (
+                "can_broadcast",
+                vec![(
+                    "via".to_owned(),
+                    composite_schema(CompositeShape::AudienceRef),
+                )],
+            ),
+            (
+                "can_reach",
+                vec![
+                    ("subject".to_owned(), subject_ref_schema()),
+                    (
+                        "via".to_owned(),
+                        composite_schema(CompositeShape::AudienceRef),
+                    ),
+                ],
+            ),
+            (
+                "committed",
+                vec![
+                    ("to".to_owned(), subject_ref_schema()),
+                    ("kind".to_owned(), tool_schema::name_enum(COMMITMENT_KINDS)),
+                ],
+            ),
+        ],
+    )
+}
+
+/// The role-naming twin. A catalog entry's checks name roles the entry
+/// declares, never referents.
+fn precondition_schema() -> Value {
+    let role = || tool_schema::canonical_string("a declared role name");
+    let audience_spec =
+        || tool_schema::external_variant(vec![("colocated", None), ("channel", Some(role()))]);
+    tool_schema::variant(
+        "precondition",
+        vec![
+            ("present", vec![("at".to_owned(), role())]),
+            (
+                "reachable",
+                vec![
+                    ("to".to_owned(), role()),
+                    (
+                        "within".to_owned(),
+                        tool_schema::bounded_integer(1, u64::from(MAX_ROUTE_COST)),
+                    ),
+                ],
+            ),
+            (
+                "holds",
+                vec![
+                    ("resource".to_owned(), role()),
+                    (
+                        "at_least".to_owned(),
+                        tool_schema::bounded_integer(1, u64::MAX),
+                    ),
+                ],
+            ),
+            (
+                "authorized",
+                vec![
+                    ("over".to_owned(), role()),
+                    (
+                        "kind".to_owned(),
+                        tool_schema::canonical_string("the authority kind"),
+                    ),
+                ],
+            ),
+            (
+                "has_standing",
+                vec![(
+                    "grievance".to_owned(),
+                    tool_schema::canonical_string("the grievance kind"),
+                )],
+            ),
+            (
+                "knows",
+                vec![
+                    ("fact".to_owned(), role()),
+                    ("at_least".to_owned(), tool_schema::name_enum(CONFIDENCES)),
+                ],
+            ),
+            ("can_broadcast", vec![("via".to_owned(), audience_spec())]),
+            (
+                "can_reach",
+                vec![
+                    ("subject".to_owned(), role()),
+                    ("via".to_owned(), audience_spec()),
+                ],
+            ),
+            (
+                "committed",
+                vec![
+                    ("to".to_owned(), role()),
+                    ("kind".to_owned(), tool_schema::name_enum(COMMITMENT_KINDS)),
+                ],
+            ),
+        ],
+    )
+}
+
+/// Exactly the operations an affordance may propose, with the payload the world
+/// fixes when it authors the entry.
+fn component_op_kind_schema() -> Value {
+    let authority_kind = || {
+        vec![(
+            "kind".to_owned(),
+            tool_schema::canonical_string("the authority kind"),
+        )]
+    };
+    let office = || {
+        vec![(
+            "office".to_owned(),
+            tool_schema::canonical_string("the office's name"),
+        )]
+    };
+    tool_schema::variant(
+        "op",
+        vec![
+            ("relocate", vec![]),
+            ("open_route", vec![]),
+            ("close_route", vec![]),
+            ("alter_cost", vec![]),
+            ("transfer", vec![]),
+            ("transform", vec![]),
+            ("consume", vec![]),
+            ("bind", vec![]),
+            ("release", vec![]),
+            ("grant_authority", authority_kind()),
+            ("revoke_authority", authority_kind()),
+            ("install_incumbent", office()),
+            ("vacate_office", office()),
+            (
+                "acquire_knowledge",
+                vec![("confidence".to_owned(), tool_schema::name_enum(CONFIDENCES))],
+            ),
+            ("forget", vec![]),
+            (
+                "create_commitment",
+                vec![
+                    ("kind".to_owned(), tool_schema::name_enum(COMMITMENT_KINDS)),
+                    (
+                        "horizon".to_owned(),
+                        tool_schema::bounded_integer(1, u64::from(MAX_ROUTE_COST)),
+                    ),
+                    (
+                        "period".to_owned(),
+                        tool_schema::nullable(tool_schema::bounded_integer(
+                            1,
+                            u64::from(MAX_ROUTE_COST),
+                        )),
+                    ),
+                ],
+            ),
+            (
+                "advance_pressure",
+                vec![(
+                    "by".to_owned(),
+                    tool_schema::bounded_integer(1, u64::from(u32::MAX)),
+                )],
+            ),
+            (
+                "reduce_pressure",
+                vec![(
+                    "by".to_owned(),
+                    tool_schema::bounded_integer(1, u64::from(u32::MAX)),
+                )],
+            ),
+            ("resolve_pressure", vec![]),
+        ],
+    )
+}
+
+/// One example value per field kind, used by the round-trip test to prove the
+/// const list's field names and shapes against the real structs. It is not a
+/// second schema: serde is the only decoder, so a wrong name cannot survive.
+#[cfg(test)]
+pub(super) fn field_example(kind: PatchFieldKind) -> Value {
+    let draft = |handle: &str| json!({"ref": "draft", "value": handle});
+    match kind {
+        PatchFieldKind::Reference(referent) => draft(referent),
+        PatchFieldKind::OptionalReference(_) => Value::Null,
+        PatchFieldKind::ReferenceSet(referent) => json!([draft(referent)]),
+        PatchFieldKind::Handle => json!("example_handle"),
+        PatchFieldKind::Label => json!("Example Label"),
+        PatchFieldKind::Statement => json!("The lower hinge flooded."),
+        PatchFieldKind::Quantity | PatchFieldKind::Minutes => json!(7),
+        PatchFieldKind::Cost | PatchFieldKind::Magnitude => json!(3),
+        PatchFieldKind::OptionalPeriod => Value::Null,
+        PatchFieldKind::Evidence => json!("vault:example/1"),
+        PatchFieldKind::Flag => json!(false),
+        PatchFieldKind::Text(_) | PatchFieldKind::Name(_) => json!("example_name"),
+        PatchFieldKind::NameSet(_) => json!(["example_name"]),
+        PatchFieldKind::Choice(values) => json!(values[0]),
+        PatchFieldKind::Composite(shape) => composite_example(shape),
+        PatchFieldKind::CompositeList(shape) => json!([composite_example(shape)]),
+    }
+}
+
+#[cfg(test)]
+fn composite_example(shape: CompositeShape) -> Value {
+    let subject = json!({"ref": "draft", "value": "subject"});
+    match shape {
+        CompositeShape::NewController => json!({"type": "narrative_persona"}),
+        CompositeShape::AccessKind => json!({"access": "public"}),
+        CompositeShape::DependencyRef => {
+            json!({"target": "subject", "ref": subject})
+        }
+        CompositeShape::AuthorityTargetRef => json!({"over": "subject", "ref": subject}),
+        CompositeShape::AuthorityGrantRef => {
+            json!({"kind": "command", "over": {"over": "subject", "ref": subject}})
+        }
+        CompositeShape::ReachRef => json!({"reach": "subjects", "of": [subject]}),
+        CompositeShape::FactStandingRef => json!({"standing": "claimed", "by": subject}),
+        CompositeShape::AudienceRef => json!("colocated"),
+        CompositeShape::Precondition => json!({"precondition": "present", "at": "target"}),
+        CompositeShape::AuthoredSource => json!({"source": "witnessed"}),
+        CompositeShape::PressureSourceRef => json!({"from": "subject", "of": subject}),
+        CompositeShape::CommitmentKey => {
+            json!({"command": "00000000-0000-0000-0000-000000000000", "index": 0})
+        }
+        CompositeShape::PreconditionRef => {
+            json!({"precondition": "committed", "to": subject, "kind": "goal"})
+        }
+        CompositeShape::RoleSpec => {
+            json!({"role": "target", "kind": {"namespace": "subject", "kind": null}})
+        }
+        CompositeShape::EffectSlot => json!({
+            "op_kind": {"op": "forget"},
+            "roles": ["target", "fact"],
+            "bounds": {"bound": "none"},
+        }),
+        CompositeShape::OutcomeBand => json!({"weight": 1, "effects": [0]}),
+    }
+}
+
+/// Verification 16: the model-facing patch catalog is exactly the vocabulary
+/// the reducer owns, with every always-refused choice removed rather than
+/// exposed.
+#[cfg(test)]
+mod catalog_tests {
+    use super::*;
+
+    /// One arguments object per entry, one example value per field, with the
+    /// entry's serde tag and its fixed pairs injected exactly as the evaluator
+    /// injects them.
+    fn arguments_for(entry: &PatchTool) -> Value {
+        let mut object = serde_json::Map::new();
+        for field in entry.fields {
+            object.insert(field.name.to_owned(), field_example(field.kind));
+        }
+        match entry.shape {
+            PatchToolShape::Declare { variant, fixed } => {
+                object.insert("type".into(), Value::String(variant.into()));
+                for (key, value) in fixed {
+                    object.insert((*key).into(), Value::String((*value).into()));
+                }
+            }
+            PatchToolShape::Operate { variant } => {
+                object.insert("op".into(), Value::String(variant.into()));
+            }
+            PatchToolShape::Session => {}
+        }
+        Value::Object(object)
+    }
+
+    fn tag_of<T: Serialize>(value: &T, tag: &str) -> String {
+        serde_json::to_value(value).expect("the vocabulary serializes")[tag]
+            .as_str()
+            .expect("an internally tagged variant")
+            .to_owned()
+    }
+
+    /// Serde is the only decoder, so a field name the const list gets wrong
+    /// cannot survive this. It pins the catalog's argument names and shapes to
+    /// the real struct fields, in both directions.
+    #[test]
+    fn patch_tool_arguments_round_trip_into_the_vocabulary() {
+        for entry in PATCH_TOOLS {
+            let arguments = arguments_for(entry);
+            match entry.shape {
+                PatchToolShape::Declare { variant, fixed } => {
+                    let declaration: Declaration = serde_json::from_value(arguments.clone())
+                        .unwrap_or_else(|error| {
+                            panic!("{} did not decode: {error} from {arguments}", entry.name)
+                        });
+                    assert_eq!(tag_of(&declaration, "type"), variant, "{}", entry.name);
+                    let round_tripped =
+                        serde_json::to_value(&declaration).expect("a declaration re-encodes");
+                    for (key, value) in fixed {
+                        assert_eq!(round_tripped[*key], Value::String((*value).into()));
+                    }
+                }
+                PatchToolShape::Operate { variant } => {
+                    let operation: ComponentOp = serde_json::from_value(arguments.clone())
+                        .unwrap_or_else(|error| {
+                            panic!("{} did not decode: {error} from {arguments}", entry.name)
+                        });
+                    assert_eq!(tag_of(&operation, "op"), variant, "{}", entry.name);
+                }
+                PatchToolShape::Session => {
+                    assert!(matches!(arguments, Value::Object(_)));
+                }
+            }
+        }
+    }
+
+    /// Enumeration equality. The tool names, the shapes' variant tags expanded
+    /// by their fixed choices, and the two session tools are one set.
+    #[test]
+    fn patch_tool_catalog_equals_the_vocabulary() {
+        let emitted: BTreeSet<String> = patch_tools()
+            .into_iter()
+            .map(|definition| definition.name)
+            .collect();
+        let listed: BTreeSet<String> = PATCH_TOOLS
+            .iter()
+            .map(|entry| entry.name.to_owned())
+            .collect();
+        assert_eq!(emitted, listed, "the generator invented or dropped a tool");
+        assert!(listed.contains(RECORD_GAP_PATCH_TOOL));
+        assert!(listed.contains(SUBMIT_PATCH_TOOL));
+
+        // Seven declaration shapes over six `Declaration` variants — `Entity`
+        // splits by kind, because a `kind` field would be a door slammed for
+        // half its values — plus twenty-eight operations and two session tools.
+        // `assert_exhaustive` below breaks the build when a variant is added;
+        // these counts are where the addition is restated.
+        let declarations = PATCH_TOOLS
+            .iter()
+            .filter(|entry| matches!(entry.shape, PatchToolShape::Declare { .. }))
+            .count();
+        let operations = PATCH_TOOLS
+            .iter()
+            .filter(|entry| matches!(entry.shape, PatchToolShape::Operate { .. }))
+            .count();
+        assert_eq!((declarations, operations, PATCH_TOOLS.len()), (7, 28, 37));
+
+        // Every declaration variant the vocabulary owns is reachable, and the
+        // two payload-carrying entity kinds are not exposed as an `Entity`
+        // choice.
+        let declared: BTreeSet<String> = PATCH_TOOLS
+            .iter()
+            .filter_map(|entry| match entry.shape {
+                PatchToolShape::Declare { variant, .. } => Some(variant.to_owned()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            declared,
+            BTreeSet::from([
+                "subject".to_owned(),
+                "entity".to_owned(),
+                "route".to_owned(),
+                "affordance".to_owned(),
+                "fact".to_owned(),
+                "channel".to_owned(),
+            ])
+        );
+    }
+
+    /// The forcing function. These carry no data and their only job is to break
+    /// the build when a variant is added, which sends the author to the count
+    /// assertions above and then to `PATCH_TOOLS`.
+    #[test]
+    fn patch_vocabulary_exemplars_are_exhaustive() {
+        #[expect(dead_code, reason = "the match arms are the assertion")]
+        fn assert_declarations_exhaustive(declaration: &Declaration) -> &'static str {
+            match declaration {
+                Declaration::Subject(_) => "declare_subject",
+                Declaration::Entity(_) => "declare_place or declare_resource",
+                Declaration::Route(_) => "declare_route",
+                Declaration::Affordance(_) => "declare_affordance",
+                Declaration::Fact(_) => "declare_fact",
+                Declaration::Channel(_) => "declare_channel",
+            }
+        }
+
+        #[expect(dead_code, reason = "the match arms are the assertion")]
+        fn assert_operations_exhaustive(operation: &ComponentOp) -> &'static str {
+            match operation {
+                ComponentOp::Relocate { .. } => "relocate",
+                ComponentOp::OpenRoute { .. } => "open_route",
+                ComponentOp::CloseRoute { .. } => "close_route",
+                ComponentOp::AlterCost { .. } => "alter_cost",
+                ComponentOp::Transfer { .. } => "transfer",
+                ComponentOp::Transform { .. } => "transform",
+                ComponentOp::Consume { .. } => "consume",
+                ComponentOp::Admit { .. } => "admit",
+                ComponentOp::Bind { .. } => "bind",
+                ComponentOp::Release { .. } => "release",
+                ComponentOp::GrantAuthority { .. } => "grant_authority",
+                ComponentOp::RevokeAuthority { .. } => "revoke_authority",
+                ComponentOp::OpenOffice { .. } => "open_office",
+                ComponentOp::CloseOffice { .. } => "close_office",
+                ComponentOp::InstallIncumbent { .. } => "install_incumbent",
+                ComponentOp::VacateOffice { .. } => "vacate_office",
+                ComponentOp::OpenForum { .. } => "open_forum",
+                ComponentOp::CloseForum { .. } => "close_forum",
+                ComponentOp::AcquireKnowledge { .. } => "acquire_knowledge",
+                ComponentOp::Communicate { .. } => "communicate",
+                ComponentOp::Forget { .. } => "forget",
+                ComponentOp::SetReach { .. } => "set_reach",
+                ComponentOp::SetController { .. } => "set_controller",
+                ComponentOp::CreateCommitment { .. } => "create_commitment",
+                ComponentOp::DischargeCommitment { .. } => "discharge_commitment",
+                ComponentOp::AdvancePressure { .. } => "advance_pressure",
+                ComponentOp::ReducePressure { .. } => "reduce_pressure",
+                ComponentOp::ResolvePressure { .. } => "resolve_pressure",
+            }
+        }
+
+        // Every entry that names an operation names one this match knows, which
+        // is the same set the decoder walks.
+        for entry in PATCH_TOOLS {
+            if let PatchToolShape::Operate { variant } = entry.shape {
+                let operation: ComponentOp =
+                    serde_json::from_value(arguments_for(entry)).expect("the entry decodes");
+                assert_eq!(assert_operations_exhaustive(&operation), variant);
+            }
+        }
+    }
+
+    /// The sibling of the action catalog's authority test. A generated patch
+    /// schema names structure and nothing about who is asking.
+    #[test]
+    fn patch_tool_schemas_cannot_claim_authority() {
+        for definition in patch_tools() {
+            let text = definition.parameters_json.to_lowercase();
+            for forbidden in [
+                "caller",
+                "jurisdiction",
+                "command_id",
+                "revision",
+                "digest",
+                "principal",
+                "affordance_id",
+                "opportunity",
+                "world_id",
+            ] {
+                assert!(
+                    !text.contains(forbidden),
+                    "{} exposed {forbidden}",
+                    definition.name
+                );
+            }
+            // `human` is absent from the controller choice, not
+            // present-and-rejected.
+            if definition.name == "declare_subject" {
+                assert!(
+                    !text.contains("human"),
+                    "the human controller is a door slammed"
+                );
+            }
+            // The entity split is data, not a model choice: neither entity
+            // declaration exposes a `kind` at all, so `fact` and `channel` are
+            // absent rather than present-and-rejected. A role binding may still
+            // name a fact or a channel, which is a different question.
+            if matches!(
+                definition.name.as_str(),
+                "declare_place" | "declare_resource"
+            ) {
+                assert!(
+                    !text.contains("\"kind\""),
+                    "{} exposed an entity kind choice",
+                    definition.name
+                );
+            }
+        }
+    }
+
+    /// One name, two schemas is the drift the catalog exists to prevent: the
+    /// elaborator's gap tool and the interpreter's do not share a constant, and
+    /// neither schema deserializes the other's arguments.
+    #[test]
+    fn elaborator_record_gap_is_not_the_interpreter_record_gap() {
+        let ours = patch_tools()
+            .into_iter()
+            .find(|definition| definition.name == RECORD_GAP_PATCH_TOOL)
+            .expect("the catalog carries a gap tool");
+        assert!(ours.parameters_json.contains("detail"));
+        assert!(
+            !ours.parameters_json.contains("source_start_byte"),
+            "the elaborator has no source prose and no byte span"
+        );
+    }
 }
 
 #[cfg(test)]
