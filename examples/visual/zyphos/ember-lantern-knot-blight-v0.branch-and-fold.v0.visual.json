@@ -1,0 +1,602 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ember-lantern-knot-blight-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/ember-lantern-knot-blight-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/ember-lantern-knot-blight-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ember-lantern-knot-blight-v0.eclipse-saddle",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for an eclipse-ingress lantern-knot blight cascade.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the slope junction, routine ecological work, the contradictory knot pulse, neighbor repositioning, totality decision, and four ending families.",
+    "segmentation_rule": "Use distinct visual anchors for the wide locality, routine partner arrivals, routine state callback, the single blight reveal, first containment geometry, neighbor bargaining, totality threshold, and each ending family. The contradictory blue-white pulse stands alone before response choices.",
+    "prompting_rule": "Each base image prompt fully describes visible outdoor geometry, lighting, organism bodies, materials, and positions for a general image model. Continuity notes remain tooling constraints. Character and group refs are assembled only for bodies visible in that frame.",
+    "global_style_cue": "Style: luminous ecological science-fantasy storybook illustration, painterly gouache and fine ink contours, cold blue bioluminescence against dim amber fungal light, restrained natural color, readable nonhuman silhouettes and body language, tactile bark and wetland surfaces, cinematic framing built for illustrated interactive fiction.",
+    "prompt_assembly_rule": "Assemble every generated prompt from the global_style_cue, the scene base_image_prompt, visual refs only for organisms visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Keep continuity notes outside the prompt. Render each frame from a camera-specific scene-set input when high-consistency art is attempted.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture uses one outdoor saddle from several fixed angles and branches change route light, fallen tissue, herd position, and fungal detours. A draft plan defines those anchors for B-level review.",
+      "future_scene_set_need": "For website-quality multi-angle art, build a terrain blockout with the central lantern tree, dry ridge, eastern wetland edge, northern fungal-road fork, southern calf hollow, fixed Umbros direction, branch-fall zone, and route-light anchors before image generation."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "ember_saddle_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide elevated view of a dark stone saddle descending from a dry western ridge into a shallow eastern wetland. A broad-rooted alien lantern tree dominates the center, its low black-green canopy hung underneath with clusters of cold blue biological light knots. A dim amber fungal road crosses beneath the tree's northern roots and forks uphill and downhill. Flat iridescent prismwake mats tile the shallow marsh at the eastern edge. A southern root hollow shelters three low-bodied glassback calves with translucent dorsal heat plates. One small gliding threadwing covered in long ribbonlike sensory vanes circles above the western fork. The planet Umbros hangs immense and fixed in a dim violet-gray sky while the sun begins to slide behind it.",
+        "visible_characters": [
+          {
+            "agent_id": "slope_lantern_tree",
+            "default_stance": "rooted at center with lit canopy spread over the road junction",
+            "visual_ref": "visual_character_refs.characters.slope_lantern_tree"
+          },
+          {
+            "agent_id": "saddle_threadwing",
+            "default_stance": "circling above the western ridge fork",
+            "visual_ref": "visual_character_refs.groups.saddle_threadwing"
+          },
+          {
+            "agent_id": "sheltering_glassback_herd",
+            "default_stance": "three calves in the southern root hollow, adults at the marsh edge",
+            "visual_ref": "visual_character_refs.groups.sheltering_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "West is dry ridge, east is shallow prismwake marsh, north is the candle-road fork, and south is the root hollow.",
+          "Umbros remains fixed above the northern-to-central sky. The sun crosses behind it during the fixture.",
+          "The eastern knot-bearing limb extends over the wetland edge and falls into the marked branch-fall zone when severed."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_routine_arrivals",
+        "ink_anchor": "routine_arrivals",
+        "base_image_prompt": "Medium-wide eye-level view from the dry western ridge toward the central lantern tree. Its layered charcoal bark shows pale cambium seams and blue light knots beneath a low canopy. A small threadwing glides toward a low western fork, its many long ribbonlike sensory vanes spread to taste air and pollen. Amber fungal fruiting beads open in two neat lines beneath the northern roots. Three young glassback grazers press their translucent dorsal plates toward a warm southern root hollow while larger adults graze iridescent wetland mats in the eastern background. Eclipse shadow advances visibly across the ground from west toward the marsh.",
+        "visible_characters": [
+          {
+            "agent_id": "slope_lantern_tree",
+            "default_stance": "western knots waking above the route",
+            "visual_ref": "visual_character_refs.characters.slope_lantern_tree"
+          },
+          {
+            "agent_id": "saddle_threadwing",
+            "default_stance": "gliding toward the low western landing fork",
+            "visual_ref": "visual_character_refs.groups.saddle_threadwing"
+          },
+          {
+            "agent_id": "sheltering_glassback_herd",
+            "default_stance": "calves at the root hollow and adults grazing east",
+            "visual_ref": "visual_character_refs.groups.sheltering_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The western landing fork, northern road, southern hollow, and eastern marsh keep their established positions."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide working view of a dark stone saddle descending from a dry western ridge into a shallow eastern wetland during early eclipse ingress: the central lantern tree casts cold blue route pools beneath its canopy; amber fungal beacons mark the northern fork; the eastern prismwake wetland folds its flat jewel-toned cells against fading light; a ribbon-vaned threadwing and translucent-plated glassback calves occupy separate working zones around the roots. The scene reads as an active transport and shelter junction whose living partners are calmly exchanging light, nectar, sugar, heat, pollen, and local testimony.",
+        "visible_characters": [
+          {
+            "agent_id": "slope_lantern_tree",
+            "default_stance": "rooted at the junction with routine light patterns",
+            "visual_ref": "visual_character_refs.characters.slope_lantern_tree"
+          },
+          {
+            "agent_id": "saddle_threadwing",
+            "default_stance": "landing or circling near the west fork",
+            "visual_ref": "visual_character_refs.groups.saddle_threadwing"
+          },
+          {
+            "agent_id": "sheltering_glassback_herd",
+            "default_stance": "calves in the hollow, adults on the marsh edge",
+            "visual_ref": "visual_character_refs.groups.sheltering_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "pollinator_loyalty >= 4",
+            "modifier_prompt": "Place the threadwing settled on the low western fork with ribbon vanes relaxed and a clean dusting of luminous pollen along its narrow body."
+          },
+          {
+            "trigger": "road_credit >= 4",
+            "modifier_prompt": "Extend bright amber fungal-beacon lines continuously toward both the dry ridge and the wetland edge."
+          },
+          {
+            "trigger": "calf_shelter >= 4",
+            "modifier_prompt": "Show three glassback calves aligned flank to flank beneath lowered blue knot-light, their translucent plates sharing a warm rose-gold glow."
+          },
+          {
+            "trigger": "ant_testimony >= 1",
+            "modifier_prompt": "Add a delicate loop of tiny jointed lattice ants joined across a pale root scar with translucent microbial fibers."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Routine branch deltas alter light, bodies, and route beacons inside the fixed saddle plan."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_blight_reveal",
+        "ink_anchor": "blight_reveal",
+        "base_image_prompt": "Pivotal close-medium view of the lantern tree's eastern canopy over the wetland. One cluster of biological knots emits contradictory blue invitation light and hard white quarantine light at once, with the colors crossing through pale cambium seams like a doubled signal. A small threadwing jerks away in flight, its long ribbonlike sensory vanes flared and one fiber drifting free. Amber fungal candles below the eastern roots collapse into darkness. Adult glassbacks at the marsh edge raise their translucent plates toward the remaining canopy light. Flat prismwake cells in shallow water fold silver and tight. The immense dark disk of Umbros has covered most of the sun behind the branches.",
+        "visible_characters": [
+          {
+            "agent_id": "slope_lantern_tree",
+            "default_stance": "eastern knots visibly cross-signaling above the marsh",
+            "visual_ref": "visual_character_refs.characters.slope_lantern_tree"
+          },
+          {
+            "agent_id": "saddle_threadwing",
+            "default_stance": "launching away from the eastern canopy with vanes flared",
+            "visual_ref": "visual_character_refs.groups.saddle_threadwing"
+          },
+          {
+            "agent_id": "sheltering_glassback_herd",
+            "default_stance": "adults turning uphill from the wetland",
+            "visual_ref": "visual_character_refs.groups.sheltering_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The contradictory signal originates only in the eastern knot line.",
+          "The western fork, northern road braid, southern hollow, and eastern marsh remain spatially distinct."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_first_response",
+        "ink_anchor": "first_response_choice|pressure_fold",
+        "base_image_prompt": "Wide three-quarter view from the northern road fork during deepening eclipse. The central lantern tree occupies the stone saddle with its eastern canopy over the wetland and its southern roots curved around a calf shelter hollow. Amber fungal beads stop beneath the eastern roots. A threadwing circles above the west fork. Glassback adults climb from the folded silver wetland while three calves remain near the southern hollow. The tree's blue and white light patterns divide the slope into visible zones of access, danger, and possible shelter.",
+        "visible_characters": [
+          {
+            "agent_id": "slope_lantern_tree",
+            "default_stance": "central body divided between lit west and suspect east",
+            "visual_ref": "visual_character_refs.characters.slope_lantern_tree"
+          },
+          {
+            "agent_id": "saddle_threadwing",
+            "default_stance": "circling above the western fork",
+            "visual_ref": "visual_character_refs.groups.saddle_threadwing"
+          },
+          {
+            "agent_id": "sheltering_glassback_herd",
+            "default_stance": "adults climbing, calves near the hollow",
+            "visual_ref": "visual_character_refs.groups.sheltering_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "isolated_sector >= 2",
+            "modifier_prompt": "Render the entire eastern crown dark as a clean canopy silhouette, with a sharp white closure pulse at its boundary."
+          },
+          {
+            "trigger": "archive_contamination >= 3",
+            "modifier_prompt": "Show a faint doubled blue signal traveling inward through pale cambium seams toward the trunk."
+          },
+          {
+            "trigger": "ant_testimony >= 2",
+            "modifier_prompt": "Form the lattice ants into a clearly visible broken-loop glyph across the eastern bark, bodies joined by translucent microbial glue."
+          },
+          {
+            "trigger": "knot_integrity <= 1",
+            "modifier_prompt": "Leave only scattered damaged blue knots on the eastern side, producing an incomplete route sequence."
+          },
+          {
+            "trigger": "marsh_pressure >= 2",
+            "modifier_prompt": "Make the wetland surface ripple with synchronized colorless-silver warning flashes beneath displaced feet and fallen tissue."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The response frame preserves the eastern blight origin and all four junction zones."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_neighbor_bargain",
+        "ink_anchor": "neighbor_choice",
+        "base_image_prompt": "Wide decision view from just above the eastern wetland looking uphill across the whole saddle. The central lantern tree's suspect eastern limb fills the upper center. Four material routes are legible: amber candle-road beads can curve around the dry northern ridge; a ribbon-vaned threadwing waits above the western fork; three translucent-plated calves fit inside the southern root hollow while adult glassbacks crowd the slope; wet fungal filaments braid through the northern roots beside folded silver prismwake mats. Total eclipse is moments away, and each living party occupies a distinct route or pressure zone.",
+        "visible_characters": [
+          {
+            "agent_id": "slope_lantern_tree",
+            "default_stance": "centered above four distinct bargaining surfaces",
+            "visual_ref": "visual_character_refs.characters.slope_lantern_tree"
+          },
+          {
+            "agent_id": "saddle_threadwing",
+            "default_stance": "waiting above the western fork",
+            "visual_ref": "visual_character_refs.groups.saddle_threadwing"
+          },
+          {
+            "agent_id": "sheltering_glassback_herd",
+            "default_stance": "calves south, adults crowding the lower slope",
+            "visual_ref": "visual_character_refs.groups.sheltering_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "All four bargaining affordances are reachable only through their named zone: north road, west flight lane, south hollow, or eastern root braid."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_totality_threshold",
+        "ink_anchor": "final_threshold|final_choice",
+        "base_image_prompt": "Wide low-light view of the stone saddle at total eclipse. Umbros is a huge black world rimmed by the dim primary above the central lantern tree. Cold blue knot clusters, sparse white closure pulses, amber fungal fruiting beads, rose-gold glassback heat plates, and silver prismwake flashes are the only light sources. The dry ridge lies west, the wetland east, the fungal-road fork north, and the calf hollow south. The eastern knot-bearing limb hangs over a clear fall zone at the wetland edge while traffic, shelter, and warning routes remain readable around it.",
+        "visible_characters": [
+          {
+            "agent_id": "slope_lantern_tree",
+            "default_stance": "central rooted body under totality with eastern limb under decision",
+            "visual_ref": "visual_character_refs.characters.slope_lantern_tree"
+          },
+          {
+            "agent_id": "saddle_threadwing",
+            "default_stance": "waiting at the western fork or visibly launching west according to route state",
+            "visual_ref": "visual_character_refs.groups.saddle_threadwing"
+          },
+          {
+            "agent_id": "sheltering_glassback_herd",
+            "default_stance": "distributed between southern hollow and route edge",
+            "visual_ref": "visual_character_refs.groups.sheltering_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "detour_ready >= 2",
+            "modifier_prompt": "Add a continuous arc of amber fungal beacons around the dry northern ridge, visibly bypassing the tree's eastern crown."
+          },
+          {
+            "trigger": "road_credit <= 0",
+            "modifier_prompt": "Extinguish the fungal beacons at both junction exits and retract the visible wet braid from the northern roots."
+          },
+          {
+            "trigger": "calf_shelter >= 4",
+            "modifier_prompt": "Place three glassback calves tightly aligned inside the southern hollow under a low band of blue light."
+          },
+          {
+            "trigger": "marsh_pressure >= 3",
+            "modifier_prompt": "Show the eastern prismwake mats slickened into raised reflective folds with rapid silver exclusion flashes."
+          },
+          {
+            "trigger": "ant_testimony >= 2",
+            "modifier_prompt": "Add a broken-loop glyph of tiny interlocked dark lattice ants and translucent microbial glue across the eastern cambium boundary."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Totality changes illumination while the terrain axes and branch-persistent route states remain fixed."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_ending_severance",
+        "ink_anchor": "ending_sever_success|ending_sever_cost",
+        "base_image_prompt": "Dramatic wide view from the southern calf hollow as the lantern tree's eastern knot-bearing limb breaks over the marked wetland-edge fall zone. Pale cambium and dark charcoal bark show the cut boundary. Cold blue biological knots scatter through eclipse darkness toward folded silver prismwake mats. The surviving western canopy, northern amber road fork, southern root shelter, and immense Umbros remain visible so the loss reads as one sector of a larger living junction.",
+        "visible_characters": [
+          {
+            "agent_id": "slope_lantern_tree",
+            "default_stance": "rooted trunk holding sealed eastern wound while the limb falls",
+            "visual_ref": "visual_character_refs.characters.slope_lantern_tree"
+          },
+          {
+            "agent_id": "saddle_threadwing",
+            "default_stance": "airborne near the surviving western fork",
+            "visual_ref": "visual_character_refs.groups.saddle_threadwing"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The eastern limb falls into the wetland-margin fall zone and cannot cross the southern calf hollow or northern road."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_ending_detour",
+        "ink_anchor": "ending_detour_success|ending_detour_cost",
+        "base_image_prompt": "Wide ridgeward view of the lantern grove in complete darkness while the surrounding route determines its future. The central tree is a black silhouette with one white closure pulse at the trunk. Amber fungal fruiting beads attempt to curve across the dry northern ridge. Glassback adults and calves appear as low bodies with translucent rose-gold heat plates, choosing between ridge and wetland. The eastern prismwake marsh reflects silver pressure patterns under the fixed black disk of Umbros.",
+        "visible_characters": [
+          {
+            "agent_id": "slope_lantern_tree",
+            "default_stance": "entire canopy dark at center",
+            "visual_ref": "visual_character_refs.characters.slope_lantern_tree"
+          },
+          {
+            "agent_id": "sheltering_glassback_herd",
+            "default_stance": "moving toward the route offered by branch state",
+            "visual_ref": "visual_character_refs.groups.sheltering_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The detour follows the northern dry ridge and leaves the dark central grove and eastern wetland spatially distinct."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_ending_lane",
+        "ink_anchor": "ending_lane_success|ending_lane_cost",
+        "base_image_prompt": "Long view along a four-point emergency light lane crossing the eclipsed saddle: one cold blue knot marks the dry ridge, one the central trunk, one the southern root hollow, and one the eastern marsh edge. The lantern tree remains mostly dark around this simple line. A small threadwing streaming many ribbonlike sensory vanes and low translucent-plated glassbacks move according to the light while amber fungal tissue waits beneath the northern roots. Pale cambium seams in the eastern crown reveal whether the line remains bounded or carries a doubled signal.",
+        "visible_characters": [
+          {
+            "agent_id": "slope_lantern_tree",
+            "default_stance": "mostly dark with four plain blue route knots",
+            "visual_ref": "visual_character_refs.characters.slope_lantern_tree"
+          },
+          {
+            "agent_id": "saddle_threadwing",
+            "default_stance": "crossing or landing along the emergency line",
+            "visual_ref": "visual_character_refs.groups.saddle_threadwing"
+          },
+          {
+            "agent_id": "sheltering_glassback_herd",
+            "default_stance": "moving one at a time or crowding eastern roots according to ending state",
+            "visual_ref": "visual_character_refs.groups.sheltering_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The four light points keep the ridge-to-trunk-to-hollow-to-marsh order established in Ink."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_ending_closure",
+        "ink_anchor": "ending_closure_success|ending_closure_cost",
+        "base_image_prompt": "Very wide totality view of the stone saddle with every lantern knot extinguished. The central tree is a layered black silhouette against Umbros and the dim stellar rim. A small threadwing streaming many ribbonlike sensory vanes, an amber fungal-road edge, glassback calves in the southern root hollow, adult glassbacks on dry stone, and silver prismwake wetland flashes provide the only moving or luminous elements. The image centers whether surrounding relationships can carry one hour of deliberate absence.",
+        "visible_characters": [
+          {
+            "agent_id": "slope_lantern_tree",
+            "default_stance": "complete dark closure at center",
+            "visual_ref": "visual_character_refs.characters.slope_lantern_tree"
+          },
+          {
+            "agent_id": "saddle_threadwing",
+            "default_stance": "carrying warning west or leaving the route according to ending state",
+            "visual_ref": "visual_character_refs.groups.saddle_threadwing"
+          },
+          {
+            "agent_id": "sheltering_glassback_herd",
+            "default_stance": "sheltered and waiting or displaced downhill according to ending state",
+            "visual_ref": "visual_character_refs.groups.sheltering_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Complete knot darkness does not move the road, hollow, wetland, ridge, or neighboring bodies from their established zones."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_threadwing_route_visual",
+        "trigger": "branch_label == prime_threadwing_route",
+        "apply_to_visual_scene_ids": ["ember_routine_fold"],
+        "modifier_prompt": "Set the threadwing on the low western fork beside open blue nectar pores, with ribbon vanes relaxed and clean luminous pollen visible."
+      },
+      {
+        "modifier_id": "prime_road_credit_visual",
+        "trigger": "branch_label == prime_road_credit",
+        "apply_to_visual_scene_ids": ["ember_routine_fold"],
+        "modifier_prompt": "Brighten the amber fungal route continuously through both northern exits and show a warm sugar pulse glowing beneath borrowed root sheaths."
+      },
+      {
+        "modifier_id": "prime_calf_shelter_visual",
+        "trigger": "branch_label == prime_calf_shelter",
+        "apply_to_visual_scene_ids": ["ember_routine_fold"],
+        "modifier_prompt": "Lower three blue knot-bearing twigs over the southern hollow and show three calves sharing warm light through touching dorsal plates."
+      },
+      {
+        "modifier_id": "prime_self_audit_visual",
+        "trigger": "branch_label == prime_self_audit",
+        "apply_to_visual_scene_ids": ["ember_routine_fold"],
+        "modifier_prompt": "Dim the public route knots and show a small lattice-ant reading loop across the pale eastern root scar while traffic waits uphill."
+      },
+      {
+        "modifier_id": "isolate_eastern_crown_visual",
+        "trigger": "branch_label == isolate_eastern_crown",
+        "apply_to_visual_scene_ids": ["ember_first_response"],
+        "modifier_prompt": "Turn the complete eastern canopy into a dark quarantine sector bordered by one hard white pulse; move the adult herd toward the southern side."
+      },
+      {
+        "modifier_id": "hold_emergency_line_visual",
+        "trigger": "branch_label == hold_emergency_line",
+        "apply_to_visual_scene_ids": ["ember_first_response"],
+        "modifier_prompt": "Light exactly four bright blue knots from ridge to trunk to hollow to marsh while a faint second blue trace travels through the eastern cambium."
+      },
+      {
+        "modifier_id": "summon_lattice_ants_visual",
+        "trigger": "branch_label == summon_lattice_ants",
+        "apply_to_visual_scene_ids": ["ember_first_response"],
+        "modifier_prompt": "Cover the eastern bark with a living diagnostic sheet of tiny interlocked ants and translucent glue fibers forming a broken-loop report."
+      },
+      {
+        "modifier_id": "shed_first_cluster_visual",
+        "trigger": "branch_label == shed_first_cluster",
+        "apply_to_visual_scene_ids": ["ember_first_response"],
+        "modifier_prompt": "Place a small fallen blue-white knot cluster at the wetland edge, with prismwake tissue flashing silver around its impact and the threadwing circling farther away."
+      },
+      {
+        "modifier_id": "buy_road_detour_visual",
+        "trigger": "branch_label == buy_road_detour",
+        "apply_to_visual_scene_ids": ["ember_totality_threshold"],
+        "modifier_prompt": "Curve a bright continuous amber fungal route around the dry northern ridge, carrying glassback traffic beyond the dark eastern crown."
+      },
+      {
+        "modifier_id": "send_threadwing_warning_visual",
+        "trigger": "branch_label == send_threadwing_warning",
+        "apply_to_visual_scene_ids": ["ember_totality_threshold"],
+        "modifier_prompt": "Show the threadwing launching west with many long ribbonlike sensory vanes aligned in a plain white warning pattern and a clean gap between its body and the suspect canopy."
+      },
+      {
+        "modifier_id": "protect_calves_visual",
+        "trigger": "branch_label == protect_calves_redirect_herd",
+        "apply_to_visual_scene_ids": ["ember_totality_threshold"],
+        "modifier_prompt": "Place calves tightly beneath low blue knots in the southern hollow while a white light band turns adult glassbacks downhill toward flashing wetland mats."
+      },
+      {
+        "modifier_id": "starve_root_braid_visual",
+        "trigger": "branch_label == starve_root_braid",
+        "apply_to_visual_scene_ids": ["ember_totality_threshold"],
+        "modifier_prompt": "Retract wet fungal filaments from the northern root sheaths, extinguish nearby amber beads, and leave a dry pale boundary around the tree roots."
+      },
+      {
+        "modifier_id": "severance_success_visual",
+        "trigger": "ending_label == bounded_severance_success",
+        "apply_to_visual_scene_ids": ["ember_ending_severance"],
+        "modifier_prompt": "Make the break follow an exact broken-loop line of tiny interlocked dark lattice ants and translucent microbial glue, with smooth sealed cambium; place the threadwing landing on an intact western fork and one cautious amber road bead below."
+      },
+      {
+        "modifier_id": "severance_cost_visual",
+        "trigger": "ending_label == blind_severance_cost",
+        "apply_to_visual_scene_ids": ["ember_ending_severance"],
+        "modifier_prompt": "Make the break ragged through healthy pale cambium, show glassbacks bolting from the crack, and leave one doubled blue signal glowing in a root sheath below the wound."
+      },
+      {
+        "modifier_id": "detour_success_visual",
+        "trigger": "ending_label == niche_yield_success",
+        "apply_to_visual_scene_ids": ["ember_ending_detour"],
+        "modifier_prompt": "Complete the amber dry-ridge detour as a continuous safe arc; move adult glassbacks along it while calves remain sheltered at the dark tree."
+      },
+      {
+        "modifier_id": "detour_cost_visual",
+        "trigger": "ending_label == premature_yield_cost",
+        "apply_to_visual_scene_ids": ["ember_ending_detour"],
+        "modifier_prompt": "Break the amber route into isolated beads, split the glassback herd between blind ridge and slick silver wetland, and brighten a distant neighboring grove uphill."
+      },
+      {
+        "modifier_id": "lane_success_visual",
+        "trigger": "ending_label == emergency_lane_success",
+        "apply_to_visual_scene_ids": ["ember_ending_lane"],
+        "modifier_prompt": "Keep the four blue knots plain and evenly spaced, show the threadwing crossing in flight and adult glassbacks moving one at a time while suspect roots remain dry."
+      },
+      {
+        "modifier_id": "lane_cost_visual",
+        "trigger": "ending_label == false_continuity_cost",
+        "apply_to_visual_scene_ids": ["ember_ending_lane"],
+        "modifier_prompt": "Add a doubled blue trace inside each emergency knot, place the threadwing landing on suspect bark, open wet amber fungal tissue beneath falling pollen, and crowd glassbacks at the eastern roots."
+      },
+      {
+        "modifier_id": "closure_success_visual",
+        "trigger": "ending_label == whole_grove_quarantine_success",
+        "apply_to_visual_scene_ids": ["ember_ending_closure"],
+        "modifier_prompt": "Show the threadwing carrying a white warning pattern west, calves sharing warm dorsal-plate light in the hollow, adults waiting calmly on dry stone, and one restrained amber road boundary."
+      },
+      {
+        "modifier_id": "closure_cost_visual",
+        "trigger": "ending_label == whole_grove_quarantine_cost",
+        "apply_to_visual_scene_ids": ["ember_ending_closure"],
+        "modifier_prompt": "Show the threadwing leaving high and empty, calves exposed outside a dark hollow, adults pushed into flashing slick wetland folds, and neighboring trees brightening along the ridge."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "ember-eclipse-saddle.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Outdoor stone saddle with a fixed west-east descent from dry ridge to shallow wetland; the central lantern tree divides north fungal-route traffic from the south calf shelter hollow.",
+      "fixed_zones": [
+        {
+          "zone_id": "central_lantern_tree",
+          "visible_form": "broad charcoal trunk, pale cambium seams, low black-green canopy, cold blue under-canopy knots",
+          "used_for": "protagonist body, route light, archive state, quarantine, energy expenditure"
+        },
+        {
+          "zone_id": "western_dry_ridge",
+          "visible_form": "dark stone rising gently west of the trunk with one threadwing landing fork and open flight lane",
+          "used_for": "courier approach, warning departure, safe dry waiting"
+        },
+        {
+          "zone_id": "eastern_prismwake_wetland",
+          "visible_form": "shallow water and mud covered by flat iridescent producer cells that fold, flash silver, sour, and slick",
+          "used_for": "grazer food, displaced-traffic pressure, fallen-limb impact zone"
+        },
+        {
+          "zone_id": "northern_candle_road_fork",
+          "visible_form": "two lines of amber fruiting beads and wet braided fungal tissue crossing beneath northern roots",
+          "used_for": "route credit, root exchange, dry-ridge detour, fungal withdrawal"
+        },
+        {
+          "zone_id": "southern_root_hollow",
+          "visible_form": "low curved roots surrounding a shallow warm recess sized for three glassback calves",
+          "used_for": "young-grazer shelter and adult-herd leverage"
+        },
+        {
+          "zone_id": "eastern_knot_limb",
+          "visible_form": "one low branch extending from trunk over the wetland edge with dense cold-light knots",
+          "used_for": "blight origin, isolation boundary, ant diagnostic line, severance"
+        },
+        {
+          "zone_id": "branch_fall_zone",
+          "visible_form": "clear wetland-margin patch east of the trunk below the suspect limb",
+          "used_for": "small-cluster shedding and final limb fall"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "high_saddle_establishing",
+          "supports_visual_scene_ids": ["ember_saddle_establishing", "ember_neighbor_bargain"]
+        },
+        {
+          "camera_id": "west_ridge_medium",
+          "supports_visual_scene_ids": ["ember_routine_arrivals", "ember_routine_fold"]
+        },
+        {
+          "camera_id": "east_canopy_close",
+          "supports_visual_scene_ids": ["ember_blight_reveal"]
+        },
+        {
+          "camera_id": "north_fork_wide",
+          "supports_visual_scene_ids": ["ember_first_response", "ember_ending_detour"]
+        },
+        {
+          "camera_id": "wetland_uphill_wide",
+          "supports_visual_scene_ids": ["ember_totality_threshold", "ember_ending_lane", "ember_ending_closure"]
+        },
+        {
+          "camera_id": "south_hollow_severance",
+          "supports_visual_scene_ids": ["ember_ending_severance"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "tree_to_western_courier",
+          "path": "western knot line -> landing fork -> open ridge flight lane",
+          "supports": ["prime_threadwing_route", "send_threadwing_warning", "close_entire_grove"]
+        },
+        {
+          "lane_id": "tree_to_herd_and_hollow",
+          "path": "southern knot band -> root hollow -> eastern marsh grazing edge",
+          "supports": ["prime_calf_shelter", "protect_calves_redirect_herd"]
+        },
+        {
+          "lane_id": "tree_to_road_detour",
+          "path": "northern root braid -> northern candle fork -> dry ridge bypass",
+          "supports": ["prime_road_credit", "buy_road_detour", "yield_to_detour"]
+        }
+      ],
+      "branch_persistent_states": [
+        {
+          "state": "isolated_sector >= 2",
+          "visible_form": "complete dark eastern crown bounded by one white closure pulse"
+        },
+        {
+          "state": "ant_testimony >= 2",
+          "visible_form": "broken-loop lattice-ant diagnostic line on eastern bark"
+        },
+        {
+          "state": "detour_ready >= 2",
+          "visible_form": "continuous amber fungal route around the dry northern ridge"
+        },
+        {
+          "state": "marsh_pressure >= 3",
+          "visible_form": "slick raised wetland folds and rapid silver exclusion flashes"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable organism and group visual identities for prompt assembly. Include only refs for bodies visible in a scene.",
+    "characters": {
+      "slope_lantern_tree": "Slope lantern tree: rooted alien producer-archive with a broad charcoal trunk, layered pale memory-cambium seams, wide surface roots, a low asymmetrical canopy of narrow black-green leaves, and grape-sized cold blue bioluminescent knots hanging beneath branches. The eastern limb extends over the wetland; the western fork is low enough for threadwing landing. Body language uses sequential knot color, canopy dimming, root tension, pollen release, bitter mist, branch angle, and deliberate tissue shedding."
+    },
+    "groups": {
+      "saddle_threadwing": "Saddle threadwing: one small gliding pollinator with a tapered body and many long ribbonlike sensory vanes layered along its outstretched wings and streaming behind the body, plus dustings of visible luminous pollen. Body language uses circling radius, vane flare, refusal to land, fiber shedding, and selective landing.",
+      "root_scar_lattice_colony": "Root-scar lattice colony: many tiny dark jointed insect-analogues that physically lock legs and bodies into loops, nets, bridges, and glyphs; translucent microbial glue fibers connect them across bark; colony-scale body language appears as assembled geometry, collapse, biting lines, and carried sugar beads.",
+      "sheltering_glassback_herd": "Sheltering glassback herd: low sturdy grazers with dark fibrous hides and broad translucent dorsal plates over glowing heat-storage tissue; three smaller calves and several adults; body language uses plate color, flank-to-flank heat sharing, calf rings, broadside turns, plate darkening, and coordinated route refusal."
+    }
+  },
+  "review_notes": [
+    "Narrative review accepted the screen rhythm: routine establishes the living workplace before the contradictory knot pulse receives its own visual beat.",
+    "Lore review accepted the visual elaboration after unsupported exact threadwing and glassback anatomy was removed.",
+    "Visual continuity review accepted all standalone base prompts and branch modifiers after ant-colony presence was made conditional on ant testimony.",
+    "Spatial review accepted the draft saddle scene set and fixed fall zone; website-quality multi-angle generation still requires a terrain blockout."
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ember-lantern-knot-blight-v0.bfl-simple-v0",
+  "fixture_id": "ember-lantern-knot-blight-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Luminous ecological science-fantasy storybook illustration, painterly gouache and fine ink contours, cold blue bioluminescence against dim amber fungal light, restrained natural color, readable nonhuman silhouettes and body language, tactile bark and wetland surfaces, cinematic framing for illustrated interactive fiction, wordless composition.",
+  "prompts": [
+    {
+      "id": "01_saddle_establishing",
+      "prompt": "Wide stone saddle from dry ridge to shallow iridescent wetland; broad charcoal lantern tree at center with cold blue knots under a black-green canopy; amber fungal road beneath northern roots; glassback calves in a southern root hollow; one ribbon-vaned threadwing circling; immense Umbros eclipsing the sun."
+    },
+    {
+      "id": "02_routine_arrivals",
+      "prompt": "Medium-wide living route junction during early eclipse: a small gliding threadwing streams many ribbonlike sensory vanes toward a blue-lit western branch, amber fungal beads open below, translucent-plated calves warm beneath roots, adult grazers feed on folded jewel-toned wetland mats."
+    },
+    {
+      "id": "03_routine_exchange",
+      "prompt": "Calm ecological workplace at eclipse ingress: central lantern tree exchanges blue light, nectar, root sugar, shelter warmth, pollen, and diagnostic testimony with a threadwing, amber fungal road, glassback herd, lattice ants, and prismwake marsh."
+    },
+    {
+      "id": "04_blight_reveal",
+      "prompt": "Close eastern lantern canopy emits blue invitation and white quarantine simultaneously through pale cambium seams; threadwing jerks away shedding one ribbon fiber; fungal candles darken; glassbacks turn uphill; wetland folds silver under near-total eclipse."
+    },
+    {
+      "id": "05_first_response",
+      "prompt": "Wide northern-fork view of a lantern tree divided between trustworthy western light and suspect eastern knots; lattice ants gather at a root scar; glassback adults climb from silver wetland; calves wait by the southern hollow; threadwing circles the ridge exit."
+    },
+    {
+      "id": "06_neighbor_bargain",
+      "prompt": "Whole eclipse saddle presents four living bargains: amber fungal detour around dry ridge, ribbon-vaned courier waiting west, translucent-plated calves inside southern roots with adults crowding below, wet fungal braid beside closed silver wetland mats."
+    },
+    {
+      "id": "07_totality_threshold",
+      "prompt": "Total eclipse over the stone saddle; giant black Umbros rimmed by dim starlight; blue lantern knots, white closure pulses, amber fungal beads, rose-gold grazer plates, ant glue, and silver wetland flashes are the only public light around a suspect eastern limb."
+    },
+    {
+      "id": "08_severance_end",
+      "prompt": "Lantern tree sheds its eastern knot-bearing limb into a clear wetland-edge fall zone; blue knots scatter through eclipse dark; pale cambium seals at the trunk; ant boundary, western courier fork, amber road, and southern shelter remain visible."
+    },
+    {
+      "id": "09_detour_end",
+      "prompt": "Completely dark lantern grove at center while amber fungal beacons attempt a dry-ridge detour; translucent-plated glassbacks choose between ridge and silver wetland; one white closure pulse marks the tree beneath immense Umbros."
+    },
+    {
+      "id": "10_emergency_lane_end",
+      "prompt": "Four plain blue biological knots form an emergency lane from dry ridge to trunk to root hollow to marsh; a ribbon-vaned threadwing and translucent-plated grazers follow the line; amber fungal tissue waits beneath dark roots."
+    },
+    {
+      "id": "11_whole_grove_closure_end",
+      "prompt": "Every lantern knot is extinguished beneath totality; central tree becomes a black layered silhouette while a ribbon-vaned courier, amber road edge, warm glassback plates, and silver prismwake flashes reveal whether the surrounding relationships can carry the darkness."
+    }
+  ]
+}

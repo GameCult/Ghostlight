@@ -1,0 +1,278 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.ember-lantern-knot-blight-v0.v0",
+  "source_status": "reviewed",
+  "fixture_status": "procedural_branch",
+  "source_refs": [
+    {
+      "source_id": "lantern-trees",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+      "title": "Umbros-Facing Lantern Trees",
+      "line_start": 1,
+      "line_end": 56,
+      "relevance": "Primary owner and authored elaboration: route light, memory cambium, fungal exchange, grove quarantine, knot-blight ambiguity, containment costs, and neighbor repositioning."
+    },
+    {
+      "source_id": "threadwing-couriers",
+      "path": "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+      "title": "Threadwing Couriers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds ribbonlike sensory vanes, pollen and memory carriage, route-light payment, landing refusal, individual preferences, and mobile warning pressure."
+    },
+    {
+      "source_id": "candle-fungal-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds amber eclipse beacons, lantern-root sugar exchange, disease reports, route credit, quarantine behavior, and the ability to reroute social traffic."
+    },
+    {
+      "source_id": "lattice-ants",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Lattice Ants.md",
+      "title": "Lattice Ants",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds residue-reading diagnostic lattices, sugar payment, local testimony, assembled colony intelligence, and the danger of selling a history twice."
+    },
+    {
+      "source_id": "glassback-grazers",
+      "path": "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md",
+      "title": "Glassback Grazers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds translucent heat-storage plates, eclipse heat sharing, calf protection, fungal spore transport, shelter bargains, and herd movement as visible pressure."
+    },
+    {
+      "source_id": "prismwake-mats",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Prismwake Mats.md",
+      "title": "Prismwake Mats",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds wetland geometry, eclipse closure, pressure memory, careful grazing, warning flashes, bitterness, slick exclusion, and fungal exchange."
+    },
+    {
+      "source_id": "mutable-memory",
+      "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+      "title": "Mutable Memory Endosymbiosis",
+      "line_start": 1,
+      "line_end": 123,
+      "relevance": "Grounds memory-bearing cells and tissues, immunity as boundary politics, disease as corrupted or incompatible memory traffic, and partial agency across scales."
+    },
+    {
+      "source_id": "fractal-web",
+      "path": "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md",
+      "title": "Fractal Eusocial Web",
+      "line_start": 1,
+      "line_end": 146,
+      "relevance": "Grounds route and organism scale contracts, relation channels, nonuniform local authority, contamination risk, and eclipse changes to active edges."
+    },
+    {
+      "source_id": "umbros-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds the fixed Umbros direction, roughly hour-long daily central eclipse, low energy budget, and competition over light, heat, and migration windows."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Undated ordinary Zyphos ecology during a daily eclipse; no civilizational era is asserted.",
+    "location": "A sub-Umbros stone saddle where an Umbros-facing lantern-tree grove, candle fungal road, glassback shelter hollow, threadwing route, and prismwake wetland meet.",
+    "summary": "A lantern tree discovers that its eastern light knots are replaying incompatible route signals during eclipse ingress and must decide whether to cut tissue, transfer route authority, maintain a bounded lane, or close the grove while every dependent neighbor repositions.",
+    "public_facts": [
+      {
+        "text": "Lantern trees provide scarce route light, pollinator timing, young-grazer shelter, and neighborhood taxation during eclipse ingress.",
+        "source_refs": ["lantern-trees", "umbros-system"]
+      },
+      {
+        "text": "Candle roads and threadwings depend on lantern-tree exchange but retain their own route authority, preferences, and sanctions.",
+        "source_refs": ["candle-fungal-roads", "threadwing-couriers", "fractal-web"]
+      },
+      {
+        "text": "A knot-blight signal cannot identify one cause by itself; the observed failure may mix incompatible memory traffic, tissue hunger, root damage, or courier and fungal carriage.",
+        "source_refs": ["lantern-trees", "mutable-memory"]
+      },
+      {
+        "text": "Glassback shelter pressure and prismwake exclusion turn route closure into trophic and spatial consequences before they can become abstract policy.",
+        "source_refs": ["glassback-grazers", "prismwake-mats", "lantern-trees"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The eclipse is predictable but the useful response window is short, and emergency light spends energy needed for later growth.",
+        "source_refs": ["umbros-system", "lantern-trees"]
+      },
+      {
+        "text": "Containment preserves archive integrity only by withdrawing light, nectar, route continuity, or shelter from other parties.",
+        "source_refs": ["lantern-trees", "fractal-web"]
+      },
+      {
+        "text": "Any neighbor that carries traffic around the failed grove also gains credit, testimony, and bargaining leverage over the route's future shape.",
+        "source_refs": ["candle-fungal-roads", "threadwing-couriers", "lattice-ants"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "eclipse-saddle-lantern-grove",
+      "label": "Eclipse-saddle lantern grove",
+      "group_type": "producer_archive_route_authority",
+      "institutional_logic": ["Convert scarce stored energy into trustworthy route light while protecting root integrity and layered memory."],
+      "material_incentives": ["Keep pollination, root sugars, route traffic, shelter exchange, and archive continuity solvent across repeated eclipses."],
+      "internal_virtues": ["Accurate light grammar", "Bounded quarantine", "Remembered reciprocity", "Costly but legible warning"],
+      "internal_shames": ["False invitation", "Hidden contamination", "Closure that pretends not to export harm", "Deep memory exposed for traffic"],
+      "prestige_markers": ["Knots trusted in darkness", "Couriers that still land", "Roads that report before rerouting", "Young grazers sheltered without root damage"],
+      "taboo_triggers": ["Forced deep-memory access", "Root cutting", "False quarantine claims", "Unauthorized sampling"],
+      "emotional_display_norms": ["Pressure becomes knot color, canopy darkness, root tremor, pollen release, bitter mist, and selective illumination."],
+      "trust_defaults": ["Material history and repeated conduct matter more than a single urgent signal."],
+      "speech_register_cues": ["Cold blue invitation", "White closure", "Sequential knot pulses", "Darkness used as explicit refusal"],
+      "source_refs": ["lantern-trees", "mutable-memory"]
+    },
+    {
+      "group_id": "mobile-route-partners",
+      "label": "Threadwing, glassback, and lattice-ant route parties",
+      "group_type": "mobile_ecological_contractors",
+      "institutional_logic": ["Protect viable cargo, young bodies, colony brood, and route reputation by moving toward trustworthy signals and away from uncompensated risk."],
+      "material_incentives": ["Gain nectar, shelter, safe passage, sugar, diagnostic payment, and reliable timing while avoiding contamination and injury."],
+      "internal_virtues": ["Route memory", "Calf protection", "Useful local testimony", "Refusal to obey false light"],
+      "internal_shames": ["Carrying a bad signal onward", "Abandoning young bodies", "Selling certainty the evidence cannot support"],
+      "prestige_markers": ["Clean cargo", "A herd that moves as one heat body", "A diagnostic that changes a real boundary"],
+      "taboo_triggers": ["False lantern pulses", "Brood threat", "Forced capture", "Plate scraping", "Poisoned payment"],
+      "emotional_display_norms": ["Alarm appears as vane spread, refusal to land, plate darkening, calf rings, ant glyphs, and abrupt route change."],
+      "trust_defaults": ["Trust follows repeated safe exchanges and can move to a neighboring provider within one eclipse."],
+      "speech_register_cues": ["Circling", "Fiber shedding", "Plate alignment", "Diagnostic body lattices", "Selective landing"],
+      "source_refs": ["threadwing-couriers", "glassback-grazers", "lattice-ants"]
+    },
+    {
+      "group_id": "fungal-wetland-junction",
+      "label": "Candle-road and prismwake junction",
+      "group_type": "route_and_producer_boundary",
+      "institutional_logic": ["Keep nutrient and traffic exchange useful without absorbing contamination, trampling, or unpaid displacement."],
+      "material_incentives": ["Receive root sugar, spores, careful grazing, clean dead matter, and trustworthy reports while preserving regrowth tissue."],
+      "internal_virtues": ["Visible route terms", "Conservative closure", "Credit that buys real passage", "Collective exclusion before irreversible injury"],
+      "internal_shames": ["A road becoming a contamination vector", "A mat accepting concealed disease", "A detour that has no safe destination"],
+      "prestige_markers": ["Continuous amber beacons", "Mats that reopen after return light", "Traffic that pays without tearing tissue"],
+      "taboo_triggers": ["Hidden plague", "Trampled beacons", "Tearing bites", "Toxic dumping"],
+      "emotional_display_norms": ["The road dims, detours, sours, or raises bitter beads; mats fold, flash, slick, and reprice sugar."],
+      "trust_defaults": ["Both parties treat testimony as interested evidence and price traffic accordingly."],
+      "speech_register_cues": ["Amber spacing", "Dark route segments", "Silver warning flashes", "Bitter or slick surfaces"],
+      "source_refs": ["candle-fungal-roads", "prismwake-mats"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "lantern-grove.trustworthy-darkness",
+      "applies_to": ["eclipse-saddle-lantern-grove"],
+      "pressure_type": "quarantine_and_service",
+      "summary": "A grove must make darkness legible enough to protect memory without pretending route, shelter, and pollination obligations disappear.",
+      "projection_use": "Give the tree choices among warning, isolation, energy expenditure, memory loss, and authority transfer; exclude costless closure.",
+      "source_refs": ["lantern-trees", "umbros-system"]
+    },
+    {
+      "field_id": "saddle-neighbors.portable-loyalty",
+      "applies_to": ["mobile-route-partners", "fungal-wetland-junction"],
+      "pressure_type": "niche_repositioning",
+      "summary": "Neighbors depend on the grove but can shift traffic, testimony, pollination, and shelter debt to another provider when its signals become unsafe.",
+      "projection_use": "Make every supportive act also a bargaining move that changes who owns the route after the emergency.",
+      "source_refs": ["threadwing-couriers", "candle-fungal-roads", "lantern-trees"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "eclipse-saddle-lantern-grove",
+      "target_group_id": "mobile-route-partners",
+      "observer_read": ["Bodies seeking safe light", "Potential carriers", "Witnesses whose loyalty can move"],
+      "target_self_read": ["Couriers, parents, colonies, and route holders protecting their own cargo and dependents"],
+      "misread_patterns": ["Treating circling as disloyalty", "Treating herd pressure as mere congestion", "Treating paid diagnostics as neutral truth"],
+      "likely_insults": ["dark route", "false landing", "broken loop"],
+      "projection_use": "Keep the tree's interpretations tied to visible motion, chemical traces, and prior contracts rather than private motive access.",
+      "source_refs": ["lantern-trees", "threadwing-couriers", "glassback-grazers", "lattice-ants"]
+    },
+    {
+      "observer_group_id": "fungal-wetland-junction",
+      "target_group_id": "eclipse-saddle-lantern-grove",
+      "observer_read": ["Root sugar source", "Route-light authority", "Possible contamination origin", "Traffic generator"],
+      "target_self_read": ["Archive body attempting to remain itself while continuing public work"],
+      "misread_patterns": ["Treating protective branch shedding as dumped waste", "Treating emergency light as proof of safety", "Treating old credit as consent to new risk"],
+      "likely_insults": ["soured ground", "extinguished candles", "synchronized exclusion flash"],
+      "projection_use": "Make road and mat responses materially precise but uninterested in preserving the tree's preferred self-story.",
+      "source_refs": ["candle-fungal-roads", "prismwake-mats", "lantern-trees"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "rooted-route-light-owner",
+      "summary": "A producer-archive whose body is both the failing infrastructure and the authority deciding how much of itself to quarantine, feed, expose, or cut.",
+      "obligations": ["Protect deep memory", "Keep warnings truthful", "Account for shelter and route dependents", "Spend stored energy visibly", "Avoid exporting an unlabeled hazard"],
+      "available_masks": ["Routine invitation", "Professional darkness", "Emergency simplicity", "Selective generosity"],
+      "failure_modes": ["False continuity", "Blind severance", "Costless-closure fantasy", "Letting one witness become diagnosis"],
+      "source_refs": ["lantern-trees", "mutable-memory", "fractal-web"]
+    },
+    {
+      "role_id": "mobile-niche-claimant",
+      "summary": "A neighboring organism or route that can preserve traffic during the failure and thereby inherit credit, access, or authority.",
+      "obligations": ["Protect viable cargo", "Refuse unsafe signals", "Name or display terms", "Carry only the risk its contract admits"],
+      "available_masks": ["Helpful detour", "Professional refusal", "Paid testimony", "Protective crowd movement"],
+      "failure_modes": ["Turning aid into monopoly", "Spreading a warning as contamination", "Exporting traffic into another closed niche"],
+      "source_refs": ["threadwing-couriers", "candle-fungal-roads", "lattice-ants", "glassback-grazers"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "slope_lantern_tree",
+      "known_context": [
+        {
+          "text": "The tree knows its knot timing, stored energy, cambium reports, root pressure, pollen taste, fungal messages, infant distress chemistry, and prior local contracts.",
+          "source_refs": ["lantern-trees"]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "The tree treats trustworthy light and explicit darkness as forms of route law for which its body remains accountable.",
+          "source_refs": ["lantern-trees", "fractal-web"]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "The tree may mistake neighbors' rapid repositioning for betrayal when they are protecting cargo, calves, brood, or regrowth tissue.",
+          "source_refs": ["threadwing-couriers", "glassback-grazers", "lattice-ants", "prismwake-mats"]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "The tree must not know the single cause of the syndrome, the private intentions of mobile partners, or whether a containment decision succeeded before their visible responses arrive.",
+          "source_refs": ["mutable-memory", "lantern-trees"]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Knot blight remains a field label for a visible failure pattern, not a canonized pathogen species or complete disease taxonomy.",
+      "source_refs": ["lantern-trees", "mutable-memory"]
+    },
+    {
+      "text": "The eclipse saddle and its particular tree, courier, herd, road segment, ant colony, and mat are story-local instances rather than named vault canon.",
+      "source_refs": ["lantern-trees", "fractal-web"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which distinct biological causes can produce the knot-blight syndrome, and which are transmissible across courier, fungal, and root channels?",
+      "blocks_training": false,
+      "notes": "The fixture deliberately preserves diagnostic uncertainty; a future disease ecology pass could split causes without changing this observed emergency pattern."
+    },
+    {
+      "question": "How long can lantern-tree knots sustain emergency light before later growth, reproduction, or archive maintenance fails?",
+      "blocks_training": false,
+      "notes": "The fixture uses coarse stored-energy pressure rather than inventing a quantitative budget."
+    },
+    {
+      "question": "What local-language names distinguish truthful closure, emergency route light, and contaminated invitation among different lantern groves?",
+      "blocks_training": false,
+      "notes": "Names remain for Weksa; the fixture uses descriptive translation handles only."
+    }
+  ]
+}

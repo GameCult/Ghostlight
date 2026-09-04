@@ -1,0 +1,321 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ember-lantern-knot-blight-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/zyphos/ember-lantern-knot-blight-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/ember-lantern-knot-blight-v0.v0.json",
+  "scene_id": "ember-lantern-knot-blight-v0.eclipse-saddle",
+  "protagonist_agent_id": "slope_lantern_tree",
+  "npc_agent_ids": [
+    "saddle_threadwing",
+    "saddle_candle_road",
+    "root_scar_lattice_colony",
+    "sheltering_glassback_herd",
+    "wetland_prismwake_mat"
+  ],
+  "purpose": "Interactive Fiction Weaver-shaped draft about a lantern tree deciding which relationship may fail when knot blight compromises eclipse-ingress route light.",
+  "local_awareness_summary": [
+    {
+      "text": "The protagonist is a rooted lantern tree that senses root pressure, pollen taste, fungal reports, infant distress chemistry, canopy temperature, and its own cambium and light-knot state; it does not know other organisms' private intent.",
+      "source_refs": [
+        "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+        "examples/lore-grounding/zyphos/ember-lantern-knot-blight-v0.v0.json"
+      ]
+    },
+    {
+      "text": "The scene starts during ordinary eclipse-ingress work at a dry-slope-to-wetland saddle where route lighting, pollination, fungal traffic, grazer shelter, and marsh access share one junction.",
+      "source_refs": [
+        "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+        "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+      ]
+    },
+    {
+      "text": "Knot blight is an observable syndrome rather than a known single disease: stale and current route signals conflict in outer cambium and light knots during eclipse ingress.",
+      "source_refs": [
+        "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains rooted and tree-embodied. Choices use knot pulses, nectar, root sugar, cambium isolation, branch shedding, shelter geometry, and fungal exchange rather than mobile-animal action.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md"
+        ]
+      },
+      {
+        "text": "Routine exchange and low-stakes allocation precede the blight signal so the later niche failure has visible social and metabolic costs.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The lantern tree owns its tissue, light, sugar, and invitation signals; it cannot command the road, couriers, ants, herd, or marsh, only bargain through their established appetites and contracts.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+        ]
+      },
+      {
+        "text": "No warning or diagnostic reveals a universal truth. Threadwing, road, ant, herd, mat, and tree responses remain local testimony shaped by their own needs.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Lattice Ants.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The eastern knot-bearing limb, shed threadwing fiber, ant diagnostic loop, fungal detour, southern root hollow, and closed prismwake edge remain material or bodily state anchors across folds.",
+        "source_refs": [
+          "examples/ink/zyphos/ember-lantern-knot-blight-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every containment choice exports pressure into another relationship: light, pollination, route authority, shelter, wetland access, stored energy, or recent memory.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+        ]
+      },
+      {
+        "text": "Endings must differ by whether the tree severs tissue, yields route authority, preserves a bounded emergency lane, or closes the whole grove.",
+        "source_refs": [
+          "examples/ink/zyphos/ember-lantern-knot-blight-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not resolve the syndrome as a diagnosed universal pathogen or let one organism's signal become objective omniscience.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md"
+        ]
+      },
+      {
+        "text": "Do not let quarantine preserve every service without cost; low energy and route dependency must force a real loss or transfer of leverage.",
+        "source_refs": [
+          "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+          "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through routine allocation, first containment, neighbor repositioning, and a totality decision with eight state-gated endings.",
+    "choice_layers": [
+      "routine_allocation",
+      "first_blight_response",
+      "neighbor_bargain",
+      "grove_survival_decision"
+    ],
+    "variables": [
+      "tree_reserve",
+      "knot_integrity",
+      "archive_contamination",
+      "route_trust",
+      "road_credit",
+      "pollinator_loyalty",
+      "ant_testimony",
+      "calf_shelter",
+      "marsh_pressure",
+      "eclipse_time",
+      "isolated_sector",
+      "detour_ready"
+    ],
+    "ending_gates": [
+      "ending_sever_success",
+      "ending_sever_cost",
+      "ending_detour_success",
+      "ending_detour_cost",
+      "ending_lane_success",
+      "ending_lane_cost",
+      "ending_closure_success",
+      "ending_closure_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_threadwing_route",
+      "ink_path": "routine_choice",
+      "action_type": "speak",
+      "actor_intent": "Buy reliable pollinator attention before eclipse ingress.",
+      "state_basis": ["Lantern trees pay threadwings with nectar, reliable route light, and roost access."],
+      "reviewed_consequences": ["Raises pollinator_loyalty and route_trust while spending tree_reserve."],
+      "training_hooks": ["nonverbal_ecological_speech", "energy_for_reputation"]
+    },
+    {
+      "branch_id": "prime_road_credit",
+      "ink_path": "routine_choice",
+      "action_type": "spend_resource",
+      "actor_intent": "Strengthen the fungal-road exchange before traffic peaks.",
+      "state_basis": ["Lantern roots exchange sugar for mineral reports, disease news, and route continuity."],
+      "reviewed_consequences": ["Raises road_credit and route_trust while spending tree_reserve."],
+      "training_hooks": ["trophic_link_as_contract", "logistics_credit"]
+    },
+    {
+      "branch_id": "prime_calf_shelter",
+      "ink_path": "routine_choice",
+      "action_type": "gesture",
+      "actor_intent": "Keep young grazers safe and adult herd weight off the roots.",
+      "state_basis": ["Lantern trees shelter young grazers during dangerous dim phases."],
+      "reviewed_consequences": ["Raises calf_shelter and route_trust while spending eclipse_time."],
+      "training_hooks": ["shelter_as_leverage", "time_cost"]
+    },
+    {
+      "branch_id": "prime_self_audit",
+      "ink_path": "routine_choice",
+      "action_type": "wait",
+      "actor_intent": "Spend public route time checking cambium consistency.",
+      "state_basis": ["Lantern outer rings store fresh pollen and passage reports; lattice ants can read local residue."],
+      "reviewed_consequences": ["Raises knot_integrity and ant_testimony while lowering route_trust and eclipse_time."],
+      "training_hooks": ["rooted_self_diagnosis", "inspection_delays_service"]
+    },
+    {
+      "branch_id": "isolate_eastern_crown",
+      "ink_path": "first_response_choice",
+      "action_type": "gesture",
+      "actor_intent": "Contain contradictory signals by darkening the entire suspect sector.",
+      "state_basis": ["Trees may close grove sectors to protect root integrity and archives."],
+      "reviewed_consequences": ["Raises isolated_sector and route_trust, lowers archive_contamination, knot_integrity, and calf_shelter."],
+      "training_hooks": ["honest_darkness", "containment_exports_shelter_loss"]
+    },
+    {
+      "branch_id": "hold_emergency_line",
+      "ink_path": "first_response_choice",
+      "action_type": "gesture",
+      "actor_intent": "Preserve a simple traffic line despite uncertain tissue state.",
+      "state_basis": ["Cold knot light is scarce infrastructure during eclipse ingress."],
+      "reviewed_consequences": ["Raises route_trust and archive_contamination while lowering tree_reserve and knot_integrity."],
+      "training_hooks": ["continuity_contamination_tradeoff", "signal_simplification"]
+    },
+    {
+      "branch_id": "summon_lattice_ants",
+      "ink_path": "first_response_choice",
+      "action_type": "spend_resource",
+      "actor_intent": "Buy a local history reading before cutting tissue.",
+      "state_basis": ["Lattice colonies read residue for sugar and may sell the same history twice."],
+      "reviewed_consequences": ["Raises ant_testimony and knot_integrity while spending tree_reserve and eclipse_time."],
+      "training_hooks": ["diagnosis_as_market", "evidence_costs_time"]
+    },
+    {
+      "branch_id": "shed_first_cluster",
+      "ink_path": "first_response_choice",
+      "action_type": "mixed",
+      "actor_intent": "Remove the first lying knot cluster before deeper spread.",
+      "state_basis": ["Shedding suspect knot tissue also destroys recent route memory and physical infrastructure."],
+      "reviewed_consequences": ["Lowers archive_contamination, knot_integrity, and pollinator_loyalty while raising marsh_pressure."],
+      "training_hooks": ["memory_loss_as_immune_cost", "falling_tissue_displaces_hazard"]
+    },
+    {
+      "branch_id": "buy_road_detour",
+      "ink_path": "neighbor_choice",
+      "action_type": "spend_resource",
+      "actor_intent": "Pay the fungal road to move traffic around the failing grove.",
+      "state_basis": ["Available only with sufficient road_credit; roads reroute social life when trees close."],
+      "reviewed_consequences": ["Raises detour_ready, lowers road_credit, tree_reserve, and marsh_pressure."],
+      "training_hooks": ["route_authority_transfer", "replacement_leverage"]
+    },
+    {
+      "branch_id": "send_threadwing_warning",
+      "ink_path": "neighbor_choice",
+      "action_type": "speak",
+      "actor_intent": "Spend pollinator relationship capital to warn neighboring groves.",
+      "state_basis": ["Available only with sufficient pollinator_loyalty; threadwings carry route and sickness reports."],
+      "reviewed_consequences": ["Lowers pollinator_loyalty, archive_contamination, and eclipse_time while raising route_trust."],
+      "training_hooks": ["warning_carriage", "reputation_spend"]
+    },
+    {
+      "branch_id": "protect_calves_redirect_herd",
+      "ink_path": "neighbor_choice",
+      "action_type": "gesture",
+      "actor_intent": "Protect young bodies while turning adult weight away from injured roots.",
+      "state_basis": ["Glassbacks follow visible shelter and warning light; displaced herds pressure wetland mats."],
+      "reviewed_consequences": ["Raises calf_shelter, route_trust, and marsh_pressure while lowering knot_integrity."],
+      "training_hooks": ["dependents_as_leverage", "hazard_export_to_wetland"]
+    },
+    {
+      "branch_id": "starve_root_braid",
+      "ink_path": "neighbor_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Force fungal moisture away from suspect roots.",
+      "state_basis": ["Trees can locally starve candle roads, but roads remember and reroute."],
+      "reviewed_consequences": ["Lowers archive_contamination, road_credit, route_trust, and detour_ready while raising knot_integrity."],
+      "training_hooks": ["trophic_sanction", "containment_breaks_alliance"]
+    },
+    {
+      "branch_id": "sever_eastern_limb",
+      "ink_path": "final_choice",
+      "action_type": "mixed",
+      "actor_intent": "Cut away the affected archive and light organ along a witnessed boundary.",
+      "state_basis": ["Success requires ant_testimony, sector isolation, and enough remaining knot integrity."],
+      "reviewed_consequences": ["Routes to bounded severance success or blind severance cost."],
+      "training_hooks": ["state_gated_severance", "identity_preserved_by_forgetting"]
+    },
+    {
+      "branch_id": "yield_to_detour",
+      "ink_path": "final_choice",
+      "action_type": "gesture",
+      "actor_intent": "Contain the grove by letting fungal infrastructure own the active route.",
+      "state_basis": ["Success requires a ready detour, surviving road credit, and manageable marsh pressure."],
+      "reviewed_consequences": ["Routes to successful niche transfer or an unrouted closure cascade."],
+      "training_hooks": ["authority_follows_infrastructure", "ecological_niche_transfer"]
+    },
+    {
+      "branch_id": "preserve_emergency_lane",
+      "ink_path": "final_choice",
+      "action_type": "gesture",
+      "actor_intent": "Keep one bounded lane operating through totality.",
+      "state_basis": ["Success requires stored energy, bounded contamination, neighbor trust, and time remaining before return light changes the signal field."],
+      "reviewed_consequences": ["Routes to truthful emergency continuity or signal-borne spread."],
+      "training_hooks": ["bounded_service_continuity", "false_signal_as_vector"]
+    },
+    {
+      "branch_id": "close_entire_grove",
+      "ink_path": "final_choice",
+      "action_type": "gesture",
+      "actor_intent": "Rely on relationship capital and sheltered bodies while the grove goes completely dark.",
+      "state_basis": ["Success requires courier loyalty, protected calves, and sufficient route trust."],
+      "reviewed_consequences": ["Routes to relationship-supported quarantine or exported niche collapse."],
+      "training_hooks": ["trust_carries_absence", "whole_grove_closure"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Durable canon promotion beyond the authored lantern-tree elaboration",
+      "Any exact pathogen taxonomy or final cause for knot blight",
+      "Character memory or relationship updates beyond the fixture",
+      "Accepted corpus coverage"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex titled elaborator self-review using the four required reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality reviewer verdict: accepted. Scores: reader orientation 5/5, coherence 4/5, pacing 4/5, voice 4/5, tonal fit 5/5, IF playability 4/5. The review found eclipse_time had only a prose callback; the emergency-lane success gate now requires time remaining, so the resource bites.",
+      "Lore grounding reviewer verdict: accepted. Scores: source coverage 5/5, canon fit 5/5, grounding quality 5/5, vault backfill value 4/5. Exact threadwing vane count, membrane-wing anatomy, four-legged glassback anatomy, and hoof language were removed because the owning notes do not establish them.",
+      "Visual continuity reviewer verdict: accepted. Scores: segmentation 5/5, visual prompts 5/5, character visibility 4/5, branch visual continuity 5/5, website replay 4/5. Lattice ants were removed from unconditional base frames and now appear only through ant-testimony modifiers; all prompts remain affirmative and scene-local.",
+      "Spatial cohesion reviewer verdict: accepted. Scores: layout 5/5, sightlines 5/5, body affordance 4/5, movement access 5/5, object-system geometry 5/5, branch spatial state 5/5. The draft scene set fixes the western ridge, eastern wetland, northern road fork, southern calf hollow, eastern limb, and fall zone; a terrain blockout remains the high-consistency art prerequisite.",
+      "Ink was reviewed from source and checked structurally but was not compiled, per the pass contract."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
