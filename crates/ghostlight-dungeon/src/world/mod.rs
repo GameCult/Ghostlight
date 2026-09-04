@@ -11738,4 +11738,48 @@ mod clock_tests {
         assert_eq!(replayed.commitments, kernel.state.commitments);
         assert_eq!(replayed.pressures, kernel.state.pressures);
     }
+
+    /// Soul falsification: a `BoundaryDigest` binds the structure that derives
+    /// it, and nothing else. The clock is not in the preimage, so a tick leaves
+    /// it where it is; closing the one route out of the dead end leaves the
+    /// predicate holding and must still move the digest.
+    #[test]
+    fn soul_a_boundary_digest_binds_its_structure_and_not_the_clock() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Digest");
+        let destination = |kernel: &WorldKernel| {
+            derive_boundaries(&kernel.state)
+                .unwrap()
+                .into_iter()
+                .find_map(|boundary| match boundary {
+                    CausalBoundary::UnelaboratedDestination { place, scope, .. }
+                        if place == clockwork.dead_end =>
+                    {
+                        Some(scope)
+                    }
+                    _ => None,
+                })
+                .expect("the dead end")
+        };
+        let before = destination(&kernel);
+
+        // The clock moves; the digest does not.
+        tick(&mut kernel, 10).expect("the tick commits");
+        assert_eq!(destination(&kernel), before, "the clock entered a preimage");
+
+        // The route's own record moves; the digest must follow.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::CloseRoute {
+                route: Ref::Existing(clockwork.gate),
+            }]),
+        );
+        assert_ne!(
+            destination(&kernel),
+            before,
+            "the digest ignored the route it names"
+        );
+    }
 }
