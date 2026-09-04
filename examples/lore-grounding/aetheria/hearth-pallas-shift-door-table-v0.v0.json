@@ -1,0 +1,642 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.hearth-pallas-shift-door-table-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "aeronautics-unlimited",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+      "title": "Aeronautics Unlimited",
+      "line_start": 1,
+      "line_end": 36,
+      "relevance": "Primary owner and authored elaboration: AU ramps, shift authority, claimshares, mixed contract categories, household risk, and the Pallas shift-door care table."
+    },
+    {
+      "source_id": "pallas-species-strikes",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
+      "title": "Pallas Species Strikes",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Grounds the 2719 Pallas Bloom Cluster, dry-yard cephalopod labor, mixed supplier ecology, separate liability grammars, and later cross-category coordination."
+    },
+    {
+      "source_id": "pallas-maintenance-assemblies",
+      "path": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+      "title": "Pallas Strike Maintenance Assemblies",
+      "line_start": 1,
+      "line_end": 108,
+      "relevance": "Grounds the visible parts and limits of mobile cephalopod dry-operation harnesses and VitaForge limiter interfaces."
+    },
+    {
+      "source_id": "bloom-habitat-anatomy",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom Habitat Anatomy.md",
+      "title": "Bloom Habitat Anatomy",
+      "line_start": 1,
+      "line_end": 66,
+      "relevance": "Grounds apparent gravity, outward housing, inner-wall utilities, open civic air, pressure isolation, access chokepoints, and the authority exercised by doors."
+    },
+    {
+      "source_id": "bloom",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom.md",
+      "title": "Bloom",
+      "line_start": 1,
+      "line_end": 41,
+      "relevance": "Grounds half-commissioned AU ramps, recurring certification, and the division between daily life and ramp control of shifts, docks, budgets, and claims."
+    },
+    {
+      "source_id": "uplift",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+      "title": "Uplift",
+      "line_start": 1,
+      "line_end": 13,
+      "relevance": "Grounds uplift personhood disputes, labor-environment scaffolds, and Pallas coordination across legal categories."
+    },
+    {
+      "source_id": "biodrone",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
+      "title": "Biodrone",
+      "line_start": 1,
+      "line_end": 33,
+      "relevance": "Grounds purpose-grown labor organisms, route improvisation, tailored support dependence, and administrative interpretation of care as product variance."
+    },
+    {
+      "source_id": "bioelevate",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+      "title": "BioElevate",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds AU dry-yard cephalopod equipment and BioElevate's adaptation-variance liability language."
+    },
+    {
+      "source_id": "vitaforge",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md",
+      "title": "VitaForge",
+      "line_start": 1,
+      "line_end": 7,
+      "relevance": "Grounds BioDrone Standard provenance and the contract split between supplier design and AU work assignment."
+    },
+    {
+      "source_id": "territories",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+      "title": "Territories",
+      "line_start": 1,
+      "line_end": 61,
+      "relevance": "Grounds AU and Forge influence across the Belt and the Pallas yards' shared air, technical chokepoints, and differing legal categories."
+    },
+    {
+      "source_id": "narrative-themes",
+      "path": "Aetheria/Narrative Themes.md",
+      "title": "Narrative Themes",
+      "line_start": 1,
+      "line_end": 53,
+      "relevance": "Grounds care as material politics, locally defensible harm, maintenance dependence, and hope through changed survivability rather than moral purity."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Identity Abyss, early 2719, before the Pallas Species Strikes spread beyond one cavity yard",
+    "location": "An outward housing loop beside Cavity Twelve in a half-commissioned AU Bloom in the Pallas Bloom Cluster.",
+    "summary": "Residents whose employers classify them separately use one dented table, reusable door-and-clock clips, food, route overlap, and remembered obligations to cover care that AU does not record as work. A clinic and shift collision proves the arrangement works while exposing who must absorb its contractual cost.",
+    "public_facts": [
+      {
+        "text": "AU ramps control shifts, safety exceptions, maintenance budgets, resource access, and claims against future production; households depend on the ramp remaining recognized and supplied.",
+        "source_refs": [
+          "aeronautics-unlimited",
+          "bloom"
+        ]
+      },
+      {
+        "text": "Pallas yards place baseline workers, BioElevate uplifts, VitaForge biodrones, supervisors, and contractors inside the same seal and air systems under different legal and liability categories.",
+        "source_refs": [
+          "pallas-species-strikes",
+          "uplift",
+          "biodrone"
+        ]
+      },
+      {
+        "text": "BioElevate dry-yard cephalopod workers use mobile harnesses, humidity support, oxygenation loops, pressure cuffs, and interfaces optimized for productivity in human-built workspaces.",
+        "source_refs": [
+          "pallas-species-strikes",
+          "bioelevate",
+          "pallas-maintenance-assemblies"
+        ]
+      },
+      {
+        "text": "A biodrone may remember routes, coordinate work, protect others, improvise, or refuse, while suppliers and operators can classify the same action as product or conditioning failure.",
+        "source_refs": [
+          "biodrone",
+          "vitaforge"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A shared pressure door, shift scanner, clinic junction, galley, and yard tram make neighbors materially dependent even when their contract systems do not recognize one another's care.",
+        "source_refs": [
+          "aeronautics-unlimited",
+          "bloom-habitat-anatomy"
+        ]
+      },
+      {
+        "text": "Care consumes rest, food, service windows, claimshare margin, or exposure to supplier and labor audits; no informal handoff can alter AU's official absence record.",
+        "source_refs": [
+          "aeronautics-unlimited",
+          "narrative-themes"
+        ]
+      },
+      {
+        "text": "The same cross-category dependence that keeps one child supplied can later let a work stoppage travel across liability boundaries management expects to contain.",
+        "source_refs": [
+          "pallas-species-strikes",
+          "aeronautics-unlimited"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "pallas-shift-door-neighbors",
+      "label": "Outward-loop households and shift neighbors",
+      "group_type": "informal_mutual_aid",
+      "institutional_logic": [
+        "Use existing routes and spare minutes to keep food, clinic pickups, child handovers, and work attendance from failing separately."
+      ],
+      "material_incentives": [
+        "Preserve treatment windows, safe waiting, tailored food, harness service, housing standing, and the shifts that keep claimshares alive."
+      ],
+      "internal_virtues": [
+        "Notice the route already being traveled",
+        "Complete the task without purchasing gratitude",
+        "Remember who is already carrying too much"
+      ],
+      "internal_shames": [
+        "Leaving an upright clip when one's route could have answered it",
+        "Turning care into a debt ledger",
+        "Making a differently classified neighbor own all the audit risk"
+      ],
+      "prestige_markers": [
+        "A clinic parcel delivered before its clock closes",
+        "A handover that lets both households keep their shifts",
+        "Food left where the next body can actually use it"
+      ],
+      "taboo_triggers": [
+        "Calling mutual help unauthorized labor after relying on its result",
+        "Treating a biodrone's judgment as a malfunction only when it benefits someone",
+        "Calling survival equipment comfort"
+      ],
+      "emotional_display_norms": [
+        "Affection travels through jars, clips, route changes, open doors, and jokes about administration; nobody needs to declare a movement."
+      ],
+      "trust_defaults": [
+        "Trust is local, practical, and revised by completed handoffs; official classifications are poor evidence of who will show up."
+      ],
+      "speech_register_cues": [
+        "Short shift jokes",
+        "Door numbers and clocks",
+        "Concrete offers",
+        "Understated warnings about audits"
+      ],
+      "source_refs": [
+        "aeronautics-unlimited",
+        "narrative-themes",
+        "pallas-species-strikes"
+      ]
+    },
+    {
+      "group_id": "au-ramp-administration",
+      "label": "AU Ramp Administration and shift office",
+      "group_type": "corporate_operating_authority",
+      "institutional_logic": [
+        "Keep a developing habitat inside schedule, certification, safety, and claim rules while preserving AU's operating rights."
+      ],
+      "material_incentives": [
+        "Maintain cavity throughput, assign absences to recognized workers, and prevent unofficial practices from creating unpriced liability."
+      ],
+      "internal_virtues": [
+        "Legible schedules",
+        "Clear liability ownership",
+        "Working pressure boundaries",
+        "No unassigned delay"
+      ],
+      "internal_shames": [
+        "A corridor practice outperforming official welfare",
+        "Cross-category coordination the scheduler cannot price",
+        "A successful outcome with no authorized owner"
+      ],
+      "prestige_markers": [
+        "Green shift scans",
+        "Claim trajectory protected",
+        "An exception closed inside one record"
+      ],
+      "taboo_triggers": [
+        "Furniture inside a scanner field",
+        "Supplier routes carrying unassigned care",
+        "Shift exchanges outside the scheduler"
+      ],
+      "emotional_display_norms": [
+        "Confusion becomes a review channel; sympathy remains private and cannot close a record."
+      ],
+      "trust_defaults": [
+        "Trusts badges, route orders, supplier diagnostics, and registered households more than a corridor's memory."
+      ],
+      "speech_register_cues": [
+        "Obstruction language",
+        "Separate questions",
+        "Claim and schedule terminology",
+        "Tired procedural precision"
+      ],
+      "source_refs": [
+        "aeronautics-unlimited",
+        "bloom",
+        "pallas-species-strikes"
+      ]
+    },
+    {
+      "group_id": "supplier-classified-workers",
+      "label": "BioElevate uplift and VitaForge biodrone workers",
+      "group_type": "cross_supplier_labor",
+      "institutional_logic": [
+        "Perform work through body support, route permissions, and supplier interfaces that can convert ordinary agency into diagnostic evidence."
+      ],
+      "material_incentives": [
+        "Keep harnesses, tailored support, route access, bodily continuity, and neighbor recognition while surviving AU shifts."
+      ],
+      "internal_virtues": [
+        "Competent route judgment",
+        "Body-specific mutual support",
+        "Refusal to confuse legal category with capacity"
+      ],
+      "internal_shames": [
+        "Allowing a supplier record to erase a completed act",
+        "Leaving another body to absorb a shared system's failure"
+      ],
+      "prestige_markers": [
+        "A route used safely outside its narrow assignment",
+        "A support clock protected without hiding who needed it"
+      ],
+      "taboo_triggers": [
+        "Product variance used as a synonym for judgment",
+        "Adaptation language used to normalize preventable discomfort"
+      ],
+      "emotional_display_norms": [
+        "Care is communicated through movement, touch, route ordering, equipment attention, and compressed speech."
+      ],
+      "trust_defaults": [
+        "Trusts co-workers who understand body and route limits; distrusts offices that separate responsibility by supplier."
+      ],
+      "speech_register_cues": [
+        "Route order",
+        "Equipment clocks",
+        "Dry humor",
+        "Observable assent or refusal"
+      ],
+      "source_refs": [
+        "bioelevate",
+        "vitaforge",
+        "uplift",
+        "biodrone"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "pallas-shift-door-neighbors.route-before-category",
+      "applies_to": [
+        "pallas-shift-door-neighbors",
+        "supplier-classified-workers"
+      ],
+      "pressure_type": "mutual_aid",
+      "summary": "A route already being traveled is treated as care capacity before the helper's employer or legal category is considered.",
+      "projection_use": "Prompt actors to offer or refuse concrete route work and name its time or body cost, not to recite solidarity doctrine.",
+      "source_refs": [
+        "aeronautics-unlimited",
+        "pallas-species-strikes",
+        "narrative-themes"
+      ]
+    },
+    {
+      "field_id": "au-ramp-administration.one-owner-per-loss",
+      "applies_to": [
+        "au-ramp-administration"
+      ],
+      "pressure_type": "liability",
+      "summary": "The ramp can tolerate informal kindness more easily than a repeatable coordination practice with no registered owner.",
+      "projection_use": "Administrative actors should translate a successful shared handoff into separate absence, obstruction, supplier, and household questions.",
+      "source_refs": [
+        "aeronautics-unlimited",
+        "pallas-species-strikes"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "au-ramp-administration",
+      "target_group_id": "pallas-shift-door-neighbors",
+      "observer_read": [
+        "Unassigned labor",
+        "Corridor obstruction",
+        "Schedule leakage",
+        "Supplier-route contamination"
+      ],
+      "target_self_read": [
+        "Food arriving",
+        "A child accompanied",
+        "A parcel collected",
+        "A shift preserved"
+      ],
+      "misread_patterns": [
+        "Treats each helper as the source of one separate variance",
+        "Treats the shared result as nobody's authorized work"
+      ],
+      "likely_insults": [
+        "obstruction",
+        "private absence",
+        "product interference",
+        "adaptation variance"
+      ],
+      "projection_use": "Let the clerk be materially correct about pressure-door clearance and still institutionally unable to recognize the care chain as one successful process.",
+      "source_refs": [
+        "aeronautics-unlimited",
+        "pallas-species-strikes",
+        "biodrone",
+        "bioelevate"
+      ]
+    },
+    {
+      "observer_group_id": "pallas-shift-door-neighbors",
+      "target_group_id": "au-ramp-administration",
+      "observer_read": [
+        "An office that arrives after the care worked",
+        "A scanner seeking one household to bill"
+      ],
+      "target_self_read": [
+        "Safety and schedule staff closing cross-system ambiguity"
+      ],
+      "misread_patterns": [
+        "Neighbors may underweight real pressure-door clearance duties",
+        "Administrators may privately understand the need but still preserve the record system"
+      ],
+      "likely_insults": [
+        "the clock",
+        "clean coat",
+        "hallway medicine"
+      ],
+      "projection_use": "Keep the conflict about authority and cost rather than making every clerk personally cruel.",
+      "source_refs": [
+        "bloom-habitat-anatomy",
+        "aeronautics-unlimited",
+        "narrative-themes"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "baseline-rigger-guardian",
+      "summary": "A seal rigger whose claimshare margin keeps one household housed while her clinic and shift obligations collide.",
+      "obligations": [
+        "Keep Pavi supplied",
+        "Reach Cavity Twelve",
+        "Avoid exporting all audit cost to neighbors",
+        "Preserve the care table if possible"
+      ],
+      "available_masks": [
+        "Meal furniture owner",
+        "Punctual worker",
+        "Private household absence",
+        "Dry workplace humor"
+      ],
+      "failure_modes": [
+        "Spending the last housing margin",
+        "Calling neighbor care free",
+        "Protecting the table by making it inaccessible"
+      ],
+      "source_refs": [
+        "aeronautics-unlimited",
+        "narrative-themes"
+      ]
+    },
+    {
+      "role_id": "dry-yard-cephalopod-neighbor",
+      "summary": "An uplifted cephalopod worker whose mobile harness makes human corridors usable at the cost of constant support and certification clocks.",
+      "obligations": [
+        "Protect bodily support margin",
+        "Keep Pavi physically beside the harness",
+        "Refuse treatment as an interchangeable worker or mobility object"
+      ],
+      "available_masks": [
+        "Equipment joke",
+        "Compressed route speech",
+        "Visible harness clock"
+      ],
+      "failure_modes": [
+        "Missing certification",
+        "Being blamed through adaptation variance",
+        "Allowing help to become custody"
+      ],
+      "source_refs": [
+        "bioelevate",
+        "pallas-maintenance-assemblies",
+        "uplift"
+      ]
+    },
+    {
+      "role_id": "vitaforge-route-worker",
+      "summary": "A six-limbed fixture-local biodrone whose route judgment and fine manipulators can complete a clinic pickup while exposing it to product-variance review.",
+      "obligations": [
+        "Protect bodily and memory continuity",
+        "Choose reachable routes",
+        "Return the sealed parcel",
+        "Avoid letting a supplier diagnostic become the only account of the act"
+      ],
+      "available_masks": [
+        "Assigned cargo movement",
+        "Silent route sorting",
+        "Tool-like stillness"
+      ],
+      "failure_modes": [
+        "Limiter review",
+        "Product-interference classification",
+        "Human characters speaking over observable choice"
+      ],
+      "source_refs": [
+        "biodrone",
+        "vitaforge",
+        "pallas-maintenance-assemblies"
+      ]
+    },
+    {
+      "role_id": "au-shift-clerk",
+      "summary": "A low-level administrator required to make one shared hallway legible to systems that own separate questions.",
+      "obligations": [
+        "Keep the pressure-door arc clear",
+        "Assign shift and supplier variances",
+        "Protect schedule integrity",
+        "Close a reviewable record"
+      ],
+      "available_masks": [
+        "Furniture inspection",
+        "Separate questions",
+        "Exhausted procedural neutrality"
+      ],
+      "failure_modes": [
+        "Mistaking record closure for care",
+        "Punishing the useful route",
+        "Privately understanding without changing what the office does"
+      ],
+      "source_refs": [
+        "aeronautics-unlimited",
+        "bloom-habitat-anatomy",
+        "narrative-themes"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "lea_varek",
+      "known_context": [
+        {
+          "text": "Lea knows her housing loop, Pavi's clinic clock, Cavity Twelve shift, claimshare margin, neighbor routes, and the table's practical use.",
+          "source_refs": [
+            "aeronautics-unlimited"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Lea believes care is real work even when the ramp recognizes it only as private absence.",
+          "source_refs": [
+            "narrative-themes",
+            "aeronautics-unlimited"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Lea may assume one more claimshare mark is survivable or that a supplier review will remain small.",
+          "source_refs": [
+            "aeronautics-unlimited",
+            "biodrone"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Lea does not know how the later Pallas Species Strikes will spread or whether this corridor practice survives them.",
+          "source_refs": [
+            "pallas-species-strikes"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "sori",
+      "known_context": [
+        {
+          "text": "Sori knows the local clinic and service routes, the harness clock, Pavi's safe grip position, and the body cost of dry operation.",
+          "source_refs": [
+            "bioelevate",
+            "pallas-maintenance-assemblies"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Sori treats the table as practical neighbor capacity, not official welfare or a declaration of political identity.",
+          "source_refs": [
+            "aeronautics-unlimited",
+            "narrative-themes"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Sori may underestimate how quickly a missed support slot can become adaptation-variance evidence.",
+          "source_refs": [
+            "bioelevate"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Sori cannot know the supplier or AU records opened outside the visible wall slates unless Imas states or shows them.",
+          "source_refs": [
+            "pallas-species-strikes"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "imas_roe",
+      "known_context": [
+        {
+          "text": "Imas knows the scanner field, shift exchange, supplier route alerts, housing record, and visible table contents.",
+          "source_refs": [
+            "aeronautics-unlimited",
+            "bloom-habitat-anatomy"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Imas believes each exception requires an owner because that is how the ramp can review and price it.",
+          "source_refs": [
+            "aeronautics-unlimited"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Imas may see the completed clinic route as proof of unauthorized coordination instead of proof that the official schedule omitted necessary care.",
+          "source_refs": [
+            "narrative-themes",
+            "pallas-species-strikes"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Imas cannot infer a formal labor movement or strike plan from one corridor table.",
+          "source_refs": [
+            "pallas-species-strikes"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Lea, Pavi, Sori, Kett-4, Imas, Cavity Twelve, and the exact handoff outcome are fixture-local draft material, not independently established historical persons or events.",
+      "source_refs": [
+        "aeronautics-unlimited",
+        "pallas-species-strikes"
+      ]
+    },
+    {
+      "text": "The care table is a durable room-scale elaboration of AU ramp life. It is not a formal organization, strike cell, Aya project, or claim that this one household causes the Pallas Species Strikes.",
+      "source_refs": [
+        "aeronautics-unlimited",
+        "pallas-species-strikes",
+        "narrative-themes"
+      ]
+    },
+    {
+      "text": "Kett-4's six-limbed body and Sori's individual appearance and voice plate are fixture-local body details, not universal VitaForge or BioElevate designs.",
+      "source_refs": [
+        "biodrone",
+        "bioelevate"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "How do AU ramp child bays, clinic pickup authorizations, and household delegations vary across Blooms?",
+      "blocks_training": false,
+      "notes": "The fixture claims only one Pallas loop's local schedule and leaves wider welfare policy open."
+    },
+    {
+      "question": "Which sensory and communication interfaces are common across VitaForge BioDrone Standard bodies?",
+      "blocks_training": false,
+      "notes": "Kett-4 uses visible route colors, fine manipulators, and a limiter port as fixture-local affordances; no universal body plan is asserted."
+    }
+  ]
+}

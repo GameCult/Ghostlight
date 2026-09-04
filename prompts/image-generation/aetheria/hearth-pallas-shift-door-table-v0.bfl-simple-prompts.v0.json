@@ -1,0 +1,64 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "hearth-pallas-shift-door-table-v0.bfl-simple-v0",
+  "fixture_id": "hearth-pallas-shift-door-table-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Humane retro-industrial science-fiction storybook illustration, precise ink linework beneath translucent gouache, warm broth amber against cold cyan and warning red, readable silhouettes and interfaces, tactile worn materials, ordinary tenderness inside extractive infrastructure, cinematic interactive-fiction composition.",
+  "prompts": [
+    {
+      "id": "01_corridor_establishing",
+      "prompt": "Curved outward housing corridor inside a rotating asteroid-built habitat: apartment doors on the outer wall, pipes and cable trays on the inner wall, ribbed shell supports, dark consolidated aggregate, grated floor, yellow pressure door, cyan shift scanner, and a dented care table with lidded jars and colored clips."
+    },
+    {
+      "id": "02_table_routine",
+      "prompt": "Four neighbors around a dented corridor table: stocky brown-skinned human seal rigger in patched rust-orange workwear serving broth, eight-year-old child with black braids sorting clips, red-brown uplifted cephalopod in a low wheeled humidity harness, and slate-gray six-limbed maintenance biodrone arranging routes beneath the table."
+    },
+    {
+      "id": "03_routine_choice_result",
+      "prompt": "Warm broth steam and colored task clips at a housing-loop care table; human rigger, child, wheeled cephalopod worker, and low six-limbed biodrone occupy distinct positions between an apartment threshold, utility route stripe, cyan scanner, and yellow pressure door."
+    },
+    {
+      "id": "04_routine_fold",
+      "prompt": "Wide morning handover in a half-commissioned rotating habitat: jars and route clips on a scarred table form one warm domestic island among exposed utilities, shell ribs, apartment doors, cold work lights, a shift scanner, and four differently embodied neighbors."
+    },
+    {
+      "id": "05_schedule_collision",
+      "prompt": "All corridor slates change to warning colors over a care table: early cavity shift, blue clinic pickup, red child-bay closure, and amber harness service collide while a human guardian, child, cephalopod worker, and six-limbed biodrone face different routes."
+    },
+    {
+      "id": "06_route_choice_result",
+      "prompt": "Clinic handoff in one curved industrial corridor: sealed blue pickup clip and small white parcel move among a human rigger, eight-year-old child, red-brown cephalopod in a low four-wheeled support harness, and slate-gray six-limbed biodrone beside table, scanner, and floor route stripe."
+    },
+    {
+      "id": "07_clinic_fold",
+      "prompt": "Completed clinic handoff at the dented table: child reaches for a sealed white parcel, human rigger stands near the cyan scanner, cephalopod harness shows an amber service clock, and six-limbed biodrone waits by the route stripe under exposed habitat pipes."
+    },
+    {
+      "id": "08_clerk_arrival",
+      "prompt": "Lean shaved-headed shift clerk in a clean charcoal coat enters through a yellow pressure door with a slate of separate warning icons; the human rigger shields the child at the care table while the cephalopod worker and six-limbed biodrone remain visibly present."
+    },
+    {
+      "id": "09_clerk_choice_result",
+      "prompt": "Administrative confrontation around one dented table: sealed clinic parcel, broth jars, colored task clips, apartment threshold, cyan scanner field, pressure-door swing arc, human household, red-brown cephalopod harness, slate-gray biodrone, and tired shift clerk all share the frame."
+    },
+    {
+      "id": "10_liability_threshold",
+      "prompt": "Symmetrical corridor decision frame between open apartment door and yard pressure door: care table at the threshold, child holding clinic parcel, human rigger facing shift clerk, cephalopod harness and biodrone diagnostics glowing beside visible clips and separate incident panes."
+    },
+    {
+      "id": "11_private_ending",
+      "prompt": "Quiet evening at an apartment threshold: human rigger signs one absence pane, child returns a blank clip to the public care table, sealed clinic parcel is safe, neighboring food jars gather under warm light, and a household status bar carries the cost."
+    },
+    {
+      "id": "12_shared_ending",
+      "prompt": "Next-shift neighbors gather around the public care table beside the scanner: human rigger, child placing a fresh blue clip, cephalopod in wheeled harness, and six-limbed biodrone beneath a wall display with several separate warnings; fresh jars prove the handoff continues."
+    },
+    {
+      "id": "13_inward_ending",
+      "prompt": "Care table just inside an open apartment doorway: child sets clips beside the clinic parcel, human rigger holds the door, cephalopod tentacle reads the table edge, and six-limbed biodrone scratches a route map underneath while the industrial corridor remains visible outside."
+    }
+  ]
+}

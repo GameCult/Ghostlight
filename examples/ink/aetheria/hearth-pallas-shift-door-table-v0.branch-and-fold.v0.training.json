@@ -1,0 +1,647 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "hearth-pallas-shift-door-table-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/hearth-pallas-shift-door-table-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/hearth-pallas-shift-door-table-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/hearth-pallas-shift-door-table-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "hearth-pallas-shift-door-table-v0.outward-loop-clinic-handoff",
+  "protagonist_agent_id": "lea_varek",
+  "npc_agent_ids": [
+    "pavi_varek",
+    "sori",
+    "kett_4",
+    "imas_roe"
+  ],
+  "purpose": "Interactive Fiction Weaver draft about an informal care table on an AU ramp at Pallas. Tonal mode: warm domestic workplace comedy under administrative dread.",
+  "local_awareness_summary": [
+    {
+      "text": "Lea is a baseline human seal rigger and Pavi's guardian. She knows the outward housing loop, Cavity Twelve shift, Pavi's clinic clock, her household's claimshare margin, and the practical routes her neighbors can take.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/hearth-pallas-shift-door-table-v0.v0.json",
+        "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md"
+      ]
+    },
+    {
+      "text": "Lea can contribute food, accept or request a care route, move or claim the table, show the completed parcel, and choose which record carries the cost. She cannot alter AU shift authority, supplier diagnostics, housing review, or clinic clocks.",
+      "source_refs": [
+        "examples/ink/aetheria/hearth-pallas-shift-door-table-v0.branch-and-fold.v0.ink",
+        "prompts/interactive-fiction-weaver.md"
+      ]
+    },
+    {
+      "text": "Sori and Kett make their own observable choices within body and route constraints. Lea can ask, offer, wait, or hand over an object; she does not own their motives or bodies.",
+      "source_refs": [
+        "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+        "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
+        "prompts/interactive-fiction-weaver.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective stays with Lea's local perception in one housing corridor. Supplier records become known only when a visible diagnostic or Imas's slate exposes them.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/ink/aetheria/hearth-pallas-shift-door-table-v0.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "The opening establishes food, task clips, route sorting, jokes, and a child doing lessons before schedule pressure arrives.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "AU owns official shifts, claimshares, scanner records, safety review, and housing consequences. The table coordinates voluntary household handoffs only.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+          "examples/lore-grounding/aetheria/hearth-pallas-shift-door-table-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Lea owns only her contribution, requests, household representations, and final record choice. She cannot make Sori's harness service or Kett's supplier classification consequence-free.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The clinic clip travels from the table to Lea's pouch or Kett's manipulators; the sealed parcel returns to Pavi. The task clips remain visible, move under the broth pot, enter Imas's hand, or travel inward with the table according to branch state.",
+        "source_refs": [
+          "examples/ink/aetheria/hearth-pallas-shift-door-table-v0.branch-and-fold.v0.ink",
+          "examples/visual/aetheria/hearth-pallas-shift-door-table-v0.branch-and-fold.v0.visual.json"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Care succeeds materially in every route: Pavi receives the parcel. Branches decide whose rest, claimshare margin, harness certification, supplier record, public access, or audit exposure pays for it.",
+        "source_refs": [
+          "Aetheria/Narrative Themes.md",
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      },
+      {
+        "text": "The care table remains small, informal, unnamed beyond its object name, and dependent on routes and spare minutes. It must not become a mature movement or rival ramp government.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not solve the conflict by making AU recognize all care as work, by erasing claimshare and supplier consequences, or by giving Imas authority over systems outside the shift office.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+          "Aetheria/Narrative Themes.md"
+        ]
+      },
+      {
+        "text": "Do not flatten Sori into a human in unusual furniture or Kett into an obedient tool. Choices and visuals must preserve tentacle reach, wheeled harness movement, low six-limbed gait, route judgment, and separate agency.",
+        "source_refs": [
+          "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
+          "prompts/visual-scene-continuity-reviewer.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four routine contributions fold into one schedule collision; four clinic routes fold into one completed handoff; four liability responses fold into one cost threshold; three final record choices select six state-gated endings.",
+    "choice_layers": [
+      "morning_table_contribution",
+      "clinic_handoff_route",
+      "table_liability_response",
+      "care_cost_ownership"
+    ],
+    "variables": [
+      "table_reserve",
+      "neighborhood_trust",
+      "lea_claimshare_margin",
+      "care_clock",
+      "pavi_clinic_route",
+      "sori_harness_margin",
+      "kett_variance_risk",
+      "audit_visibility",
+      "shared_cost",
+      "table_location",
+      "task_clips_visible"
+    ],
+    "ending_gates": [
+      "ending_private_foundation",
+      "ending_private_cost",
+      "ending_shared_foundation",
+      "ending_shared_cost",
+      "ending_inward_foundation",
+      "ending_inward_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "routine_stock_broth",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Increase the table's food reserve by spending Lea's own ration and part of the morning clock.",
+      "state_basis": [
+        "Lea has a broth pot, lidded jars, and one household ration seal.",
+        "Food is useful care infrastructure but is not free."
+      ],
+      "reviewed_consequences": [
+        "Raises table_reserve and lowers care_clock; the routine fold, shared-record gate, and hidden-table endings read those values."
+      ],
+      "training_hooks": [
+        "food_as_material_care",
+        "care_spends_private_margin"
+      ]
+    },
+    {
+      "branch_id": "routine_take_sori_clip",
+      "ink_path": "routine_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Attach Sori's clinic task to Lea's already-planned route.",
+      "state_basis": [
+        "The blue clip carries only a door, clock, and parcel seal.",
+        "Lea's tool route passes the clinic junction."
+      ],
+      "reviewed_consequences": [
+        "Raises neighborhood_trust and audit_visibility; the blue clip remains visible on Lea's pouch."
+      ],
+      "training_hooks": [
+        "route_overlap_as_care",
+        "visible_cross_category_handoff"
+      ]
+    },
+    {
+      "branch_id": "routine_kett_route_sort",
+      "ink_path": "routine_choice",
+      "action_type": "wait",
+      "actor_intent": "Leave room for Kett to demonstrate route judgment rather than treating the biodrone as assigned motion.",
+      "state_basis": [
+        "Kett reads route colors, has fine manipulators, and can reorder reachable tasks.",
+        "Biodrone initiative may become supplier variance evidence."
+      ],
+      "reviewed_consequences": [
+        "Raises neighborhood_trust and table_reserve and raises kett_variance_risk; later diagnostics and endings preserve that risk."
+      ],
+      "training_hooks": [
+        "wait_as_respect_for_agency",
+        "biodrone_route_judgment"
+      ]
+    },
+    {
+      "branch_id": "routine_clock_in_early",
+      "ink_path": "routine_choice",
+      "action_type": "move",
+      "actor_intent": "Protect Lea's household claimshare margin by leaving the morning table early.",
+      "state_basis": [
+        "The shift scanner can record an early check-in.",
+        "Other neighbors can keep the routine functioning at a social and material cost."
+      ],
+      "reviewed_consequences": [
+        "Raises lea_claimshare_margin while lowering neighborhood_trust and table_reserve; later options and endings read the trade."
+      ],
+      "training_hooks": [
+        "household_self_protection",
+        "mutual_aid_survives_imperfect_participation"
+      ]
+    },
+    {
+      "branch_id": "route_lea_escort",
+      "ink_path": "route_choice",
+      "action_type": "move",
+      "actor_intent": "Keep Pavi's care inside the recognized household by accepting Lea's shift penalty.",
+      "state_basis": [
+        "Lea is Pavi's guardian and can take the clinic route.",
+        "The moved Cavity Twelve check-in consumes claimshare margin."
+      ],
+      "reviewed_consequences": [
+        "Sets pavi_clinic_route to Lea, spends claimshare margin and one clock block, and raises shared_cost because neighbors expose the missing work."
+      ],
+      "training_hooks": [
+        "recognized_household_care",
+        "private_absence_cost"
+      ]
+    },
+    {
+      "branch_id": "route_sori_escort",
+      "ink_path": "route_choice",
+      "action_type": "request_help",
+      "actor_intent": "Use Sori's clinicward route and safe harness grip while accepting the missed service margin.",
+      "state_basis": [
+        "Pavi can walk beside the low harness using a padded side grip.",
+        "Sori's harness service clock overlaps the clinic window."
+      ],
+      "reviewed_consequences": [
+        "Sets pavi_clinic_route to Sori, spends sori_harness_margin and time, and raises trust, audit visibility, and shared cost."
+      ],
+      "training_hooks": [
+        "body_specific_escort",
+        "support_maintenance_tradeoff"
+      ]
+    },
+    {
+      "branch_id": "route_kett_pickup",
+      "ink_path": "route_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Split parcel retrieval from companionship using Kett's service route and Sori's presence.",
+      "state_basis": [
+        "Kett's route reaches the clinic and fine manipulators can carry the sealed clip.",
+        "The VitaForge order does not include human medicine pickup."
+      ],
+      "reviewed_consequences": [
+        "Sets pavi_clinic_route to Kett's pickup, raises supplier variance risk and trust, spends one table reserve and clock block, and records shared cost."
+      ],
+      "training_hooks": [
+        "care_task_decomposition",
+        "product_route_as_personal_action"
+      ]
+    },
+    {
+      "branch_id": "route_shared_relay",
+      "ink_path": "route_choice",
+      "action_type": "mixed",
+      "actor_intent": "Distribute parcel pickup, safe waiting, and Cavity Twelve coverage across routes already present.",
+      "state_basis": [
+        "The option requires either table reserve or neighborhood trust.",
+        "Kett, Sori, Lea, and the next rigger each own one bounded part."
+      ],
+      "reviewed_consequences": [
+        "Sets the shared route, spends smaller margins across Lea, Sori, and Kett, and raises neighborhood trust, shared cost, and audit visibility."
+      ],
+      "training_hooks": [
+        "distributed_mutual_aid",
+        "no_single_caretaker_owner"
+      ]
+    },
+    {
+      "branch_id": "clerk_move_table_inward",
+      "ink_path": "clerk_choice",
+      "action_type": "move_object",
+      "actor_intent": "Preserve the table by moving it under household authority at the cost of public access.",
+      "state_basis": [
+        "Lea's threshold is less than a meter from the public table position.",
+        "Lea, Pavi, Sori, and Kett can move the table together."
+      ],
+      "reviewed_consequences": [
+        "Moves table_location inward, lowers audit visibility, and spends remaining time; the final hidden-table outcome reads these values."
+      ],
+      "training_hooks": [
+        "care_preserved_by_narrowing_access",
+        "shared_lift_embodiment"
+      ]
+    },
+    {
+      "branch_id": "clerk_claim_furniture",
+      "ink_path": "clerk_choice",
+      "action_type": "speak",
+      "actor_intent": "Cover the corridor practice as Lea's personal meal furniture.",
+      "state_basis": [
+        "The table stands beside Lea's door and carries a broth pot.",
+        "One household can be assigned private-property liability."
+      ],
+      "reviewed_consequences": [
+        "Spends claimshare margin and hides task clips while lowering audit visibility; the shared table survives under one household's cover."
+      ],
+      "training_hooks": [
+        "household_cover_story",
+        "public_care_private_liability"
+      ]
+    },
+    {
+      "branch_id": "clerk_surrender_clips",
+      "ink_path": "clerk_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Preserve visible hospitality by giving up the repeatable coordination record.",
+      "state_basis": [
+        "The clips are removable and Imas can inventory them.",
+        "Food and chairs look less like organized work once route records disappear."
+      ],
+      "reviewed_consequences": [
+        "Hides task clips and lowers neighborhood trust, audit visibility, and table reserve; later prose requires routes to be remembered aloud."
+      ],
+      "training_hooks": [
+        "coordination_record_as_liability",
+        "hospitality_without_schedule"
+      ]
+    },
+    {
+      "branch_id": "clerk_show_completed_care",
+      "ink_path": "clerk_choice",
+      "action_type": "show_object",
+      "actor_intent": "Use the delivered clinic parcel to force the review to confront the material result.",
+      "state_basis": [
+        "Pavi visibly holds the sealed parcel before Imas arrives.",
+        "Imas's slate can open labor, supplier, and housing channels but cannot undo delivery."
+      ],
+      "reviewed_consequences": [
+        "Raises audit visibility, neighborhood trust, and shared cost; later visuals and endings preserve the separate incident channels."
+      ],
+      "training_hooks": [
+        "completed_care_as_evidence",
+        "bureaucracy_arrives_after_result"
+      ]
+    },
+    {
+      "branch_id": "decide_private_absence",
+      "ink_path": "final_choice",
+      "action_type": "commit_record",
+      "actor_intent": "Concentrate the official loss on Lea's household to shield supplier-classified neighbors.",
+      "state_basis": [
+        "A strong private-cost ending requires claimshare margin still available after signing."
+      ],
+      "reviewed_consequences": [
+        "Spends one more claimshare mark and routes to a survivable or housing-review ending based on lea_claimshare_margin."
+      ],
+      "training_hooks": [
+        "state_gated_private_sacrifice",
+        "concentrated_household_debt"
+      ]
+    },
+    {
+      "branch_id": "decide_shared_record",
+      "ink_path": "final_choice",
+      "action_type": "commit_record",
+      "actor_intent": "Keep each participant's actual contribution visible instead of recording one household failure.",
+      "state_basis": [
+        "A strong shared record requires high trust, real distributed cost, and at least one clock block of procedural margin."
+      ],
+      "reviewed_consequences": [
+        "Routes to a distributed record that holds or to separate labor and supplier punishments based on trust, shared cost, and care clock."
+      ],
+      "training_hooks": [
+        "state_gated_shared_testimony",
+        "truthful_care_can_create_exposure"
+      ]
+    },
+    {
+      "branch_id": "decide_ownerless_table",
+      "ink_path": "final_choice",
+      "action_type": "withhold_record",
+      "actor_intent": "Keep the table outside all formal accounts by moving its next use into Lea's threshold.",
+      "state_basis": [
+        "A strong inward survival requires low audit visibility and enough table reserve to remain useful after access narrows."
+      ],
+      "reviewed_consequences": [
+        "Sets table_location inward and routes to a durable smaller practice or thin remembered route based on audit visibility and reserve."
+      ],
+      "training_hooks": [
+        "state_gated_informality",
+        "safety_access_tradeoff"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier selection from explicit branch and state triggers"
+    ],
+    "manual_review_required": [
+      "Any durable memory, trust, or relationship update for Lea, Pavi, Sori, Kett-4, or Imas",
+      "Any promotion of a particular fixture ending into Aetheria history",
+      "Any generalization of Kett-4's six-limbed form or Sori's individual harness interface to a whole product line",
+      "Any economy-schema treatment of claimshare marks, clinic parcels, task clips, rations, or harness service"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Aetheria Hearth world worker using the four required Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted_with_visual_blockout_deferred",
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 4,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Warm domestic workplace comedy under administrative dread.",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_branch_callback",
+          "strong_tonal_control",
+          "strong_wit_with_stakes",
+          "strong_domestic_worldbuilding",
+          "strong_material_lore"
+        ],
+        "acceptance_notes": [
+          "A first pass found clerk questions and ending residue that could refer to care routes a player had skipped, and a broth choice that charged a claimshare instead of the time it actually cost.",
+          "The repaired artifact makes clerk questions and ending residue conditional on the chosen care route, charges broth preparation against care_clock, and keeps all six ending gates reachable.",
+          "The Bloom, Aeronautics Unlimited, the cast, the table routine, and the immediate schedule collision are introduced before the first choice; no folded path relies on optional onboarding."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 4,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": [
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+            "reason_checked": "Primary owner of Pallas, work access, claims, housing pressure, and the table elaboration.",
+            "used_for": "canon check and backfill target"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
+            "reason_checked": "Pallas labor conflict, cross-body solidarity, and corporate retaliation boundary.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+            "reason_checked": "Maintenance-worker material culture and the later strike's retained objects.",
+            "used_for": "context only"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom Habitat Anatomy.md",
+            "reason_checked": "Bloom cavity geometry, rotating habitation, access, maintenance, and yard-scale infrastructure.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom.md",
+            "reason_checked": "Bloom construction, ownership, labor, and settlement context.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+            "reason_checked": "Engineered body lineages, labor roles, interface needs, and institutional treatment.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
+            "reason_checked": "Biodrone embodiment, product status, and labor-value pressure.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+            "reason_checked": "Cephalopod uplift and life-support interface provenance.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md",
+            "reason_checked": "Commercial biodrone provenance and corporate body ownership.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+            "reason_checked": "Pallas and Belt jurisdiction, settlement, resource, and route context.",
+            "used_for": "context only"
+          },
+          {
+            "source_ref": "Aetheria/Narrative Themes.md",
+            "reason_checked": "Care, dependency, bodily autonomy, labor, and institutional cost pressure.",
+            "used_for": "context only"
+          }
+        ],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": [
+          {
+            "priority": "high",
+            "target_source": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+            "candidate_fact": "Workers on one outward Pallas housing loop keep an unnamed shift-door care table whose task clips coordinate clinic parcels, child handovers, tailored rations, and harness-service companionship without becoming an employer record.",
+            "artifact_origin": "Cavity Twelve opening, care routes, audit fold, and endings.",
+            "why_it_belongs": "It makes ordinary cross-body dependence concrete while preserving Aeronautics Unlimited's authority over shifts, access, claims, and punishment.",
+            "how_to_add_without_bloat": "Already added as one fixture-marked elaboration in the owning faction note; the scheduler-owned commit remains pending."
+          }
+        ],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_pressure",
+          "strong_body_affordance_grounding",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate"
+        ],
+        "acceptance_notes": [
+          "The cast, Cavity Twelve, and this one care table remain fixture-local elaboration rather than a claim about every Pallas Bloom.",
+          "The table buys treatment, rest, meals, and punctual handoffs but cannot erase claims, audit exposure, badge control, or supplier dependence, and it is not promoted into a movement or sole cause of the later strikes.",
+          "The lore elaboration preceded story prose and remains an uncommitted scheduler deliverable by instruction."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "needs_revision",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 3,
+        "major_findings": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The textual scene-set specification has no rendered plan view or 3D blockout for the repeated multi-angle corridor.",
+            "why_it_matters": "Text prompts alone cannot reliably preserve the curved corridor, door thresholds, table position, yard door, stripe route, occluders, and four different bodies across thirteen frames.",
+            "evidence": "The fixture revisits one narrow loop from five camera slots and makes the table's movement across Lea's threshold part of the ending logic.",
+            "fix_direction": "Before website rendering, build a durable camera-specific blockout from the supplied zones, routes, occluders, camera slots, staging slots, and branch-state anchors."
+          }
+        ],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The textual scene-set specification has no rendered plan view or 3D blockout for the repeated multi-angle corridor.",
+            "why_it_matters": "Text prompts alone cannot reliably preserve the curved corridor, door thresholds, table position, yard door, stripe route, occluders, and four different bodies across thirteen frames.",
+            "evidence": "The fixture revisits one narrow loop from five camera slots and makes the table's movement across Lea's threshold part of the ending logic.",
+            "fix_direction": "Before website rendering, build a durable camera-specific blockout from the supplied zones, routes, occluders, camera slots, staging slots, and branch-state anchors."
+          }
+        ],
+        "missing_branch_modifiers": [],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity",
+          "missing_scene_set"
+        ],
+        "acceptance_notes": [
+          "A first pass removed memory-dependent prompt language, an off-frame Imas reference, and an abstract emotional phrase from visual prompt surfaces.",
+          "All thirteen Ink visual ids map one-to-one to standalone affirmative base prompts, visible-character refs resolve, and the BFL manifest contains thirteen matching concept prompts.",
+          "Verdict accepts the visual plan and prompt manifest as concept-ready collateral only. It is not high-consistency replay-ready until the declared blockout is built; no images were generated."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 4,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "One curved outward housing corridor runs between private pressure doors on its outward wall and a public galley plus utility housings on its inward wall. The yellow Cavity Twelve yard door and shift scanner stand spinward; the clinic route follows a counterspinward floor stripe. The care table begins in public corridor space between Lea's door and the scanner, outside every door swing, and the inward ending moves it laterally across Lea's threshold without changing the corridor coordinate frame.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [
+          {
+            "priority": "high",
+            "needed_artifact": "camera-specific plan view or 3D blockout",
+            "reason": "Generated multi-angle art needs a geometry source stronger than text to preserve door clearances, sightlines, body reach, and the table's threshold move.",
+            "minimum_required_detail": "Use the declared seven zones, three routes, two occluders, five camera slots, four staging slots, and four branch-state anchors."
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_movement_access_logic",
+          "strong_branch_spatial_state",
+          "diagram_needed"
+        ],
+        "acceptance_notes": [
+          "The prose and plan preserve one corridor coordinate frame, compatible door and scanner routes, body-specific reach, and stable positions for the table, task clips, clinic parcel, harness tools, broth flask, and audit slate.",
+          "Folded scenes carry the chosen care route, table location, visible task clips, reserve, shared cost, and audit exposure through explicit conditions or modifiers.",
+          "The textual layout is sufficient to stage and review the IF; the declared blockout remains required for generated replay continuity."
+        ]
+      }
+    ],
+    "review_notes": [
+      "One-shot authoring is bootstrap scaffolding for the fixture corpus and does not claim to be a runtime responder capture.",
+      "The four reviewer prompts were applied as separate narrative, lore, visual, and spatial self-review passes after artifact drafting.",
+      "No Ink compiler was installed or invoked; syntax, branch coverage, ending reachability, and cross-file mappings received static checks only.",
+      "No images were generated. The visual plan and BFL batch are prompt manifests only."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

@@ -1,0 +1,777 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "hearth-pallas-shift-door-table-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/hearth-pallas-shift-door-table-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/hearth-pallas-shift-door-table-v0.branch-and-fold.v0.training.json",
+  "scene_id": "hearth-pallas-shift-door-table-v0.outward-loop-clinic-handoff",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for ordinary mutual aid under AU ramp contracts at Pallas.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for the housing-loop routine, care-route collision, administrative review, and three state-gated aftermath families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the empty corridor, inhabited care table, routine contribution result, routine fold, schedule collision, clinic-route result, completed clinic handoff, clerk arrival, liability response, final threshold, and each ending family. Branches that share one physical beat use additive modifiers instead of inventing new room geometry.",
+    "prompting_rule": "Each base image prompt describes a complete frame in plain visible terms for a general image model. It names the rotating-habitat construction, corridor geometry, materials, light, interfaces, bodies, tools, and props. Character refs are assembled only for named characters visible in that frame.",
+    "global_style_cue": "Humane retro-industrial science-fiction storybook illustration, precise ink linework beneath translucent gouache, warm broth amber against cold cyan and warning red, readable silhouettes and interfaces, tactile worn materials, ordinary tenderness inside extractive infrastructure, cinematic interactive-fiction composition.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the scene base_image_prompt, visual refs only for the named characters visible in the frame, and triggered state_image_modifiers or global_branch_image_modifiers. Continuity notes remain tooling constraints. Camera-specific blockout input is required for high-consistency multi-angle rendering.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture repeatedly stages one curved housing corridor from five camera slots and makes the pressure-door arc, scanner field, table threshold, route stripe, and body reach matter to choices.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a plan view or simple 3D blockout from the declared fixed zones, routes, occluders, staging slots, and branch-visible state anchors."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "pallas_corridor_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view along a curved outward housing corridor inside a rotating asteroid-built habitat. The outer wall on the left carries a row of compact apartment doors and scuffed door numbers; the inner wall on the right carries exposed utility panels, bundled pipes, cable trays, seals, and ribbed structural supports over consolidated dark asteroid aggregate and manufactured shell plating. A yellow pressure-isolation door closes the spinward end; beside it stands a waist-high shift scanner with cyan status bars. A dented gray composite table made from a rejected radiator packing cover sits between one apartment door and the scanner, fully clear of the yellow door's painted swing arc. Grated flooring, warm apartment lamps, cold industrial ceiling strips, lidded meal jars, reusable colored task clips, and a faded floor route stripe make the corridor feel inhabited and provisional.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The housing corridor curves counterspinward from the yellow yard pressure door. Apartment doors remain on the outward wall; utilities remain on the inward wall.",
+          "The care table begins outside Lea's door, beyond the pressure-door swing arc and within the shift scanner's oblique observation field."
+        ]
+      },
+      {
+        "visual_scene_id": "pallas_table_routine",
+        "ink_anchor": "table_routine",
+        "base_image_prompt": "Medium-wide morning handover around a dented composite table in a curved industrial housing corridor. Lea is a stocky brown-skinned human seal rigger in her early thirties with close-cropped black hair, a patched rust-orange work jacket, gray tool trousers, heavy magnetic-soled boots, and a square tool pouch; she sets down a lidded pot of steaming bean broth. Pavi is a small eight-year-old brown-skinned human child with two short black braids, an oversized teal school smock over warm leggings, and a lesson slate; she sorts blue, green, and copper task clips by door number and clock. Sori is a red-brown uplifted cephalopod with a broad mantle, pale speckles, dark horizontal pupils, eight tentacles, and one pale scar across a left-side tentacle; a flexible charcoal body-loop harness on four low blue wheels supports a humidity film, clear oxygenation tubes, padded pressure cuffs, tool loops, and a chest voice plate. Kett-4 is a low six-limbed maintenance biodrone with slate-gray pebbled hide, four sturdy load-bearing legs, two fine front manipulators, a narrow amber sensor band, and a sealed black limiter port; Kett sorts clips beneath the table. Cold ceiling strips meet warm broth light across worn walls, visible pipes, the yellow pressure door, and the cyan scanner.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "standing at the apartment side of the table with both hands near the broth pot",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "seated at the corridor-facing side, sorting colored clips beside a lesson slate",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          },
+          {
+            "agent_id": "sori",
+            "default_stance": "harness frame parallel to the utility wall, tentacle tips near the table edge",
+            "visual_ref": "visual_character_refs.characters.sori"
+          },
+          {
+            "agent_id": "kett_4",
+            "default_stance": "low beneath the table, fine manipulators arranging route clips",
+            "visual_ref": "visual_character_refs.characters.kett_4"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Sori's harness is mobile work support sized for the corridor, with open space around the mantle and tentacles.",
+          "Kett-4 remains low and six-limbed, using two fine front manipulators rather than human hands."
+        ]
+      },
+      {
+        "visual_scene_id": "pallas_routine_choice_result",
+        "ink_anchor": "routine_choice",
+        "base_image_prompt": "Medium view centered on the care table and its four residents. The curved outward housing wall with Lea's apartment door fills the left background; the inward utility wall with pipes and a faded clinic-galley route stripe fills the right; the yellow pressure door and cyan shift scanner remain visible down the corridor. A stocky brown-skinned seal rigger in patched rust-orange workwear stands at the apartment side, a small child with black braids and teal school smock sits beside the clips, a red-brown uplifted cephalopod in a low wheeled humidity-and-oxygenation work harness waits at the utility side, and a slate-gray six-limbed maintenance biodrone with fine front manipulators crouches beneath the table. Lidded broth jars and colored door-and-clock clips fill the reachable center. Warm pot steam catches cold work light.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "beside the table or scanner according to the selected routine branch",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "at the table with clips and lesson slate",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          },
+          {
+            "agent_id": "sori",
+            "default_stance": "harness beside the utility-wall route stripe",
+            "visual_ref": "visual_character_refs.characters.sori"
+          },
+          {
+            "agent_id": "kett_4",
+            "default_stance": "low beside or beneath the table",
+            "visual_ref": "visual_character_refs.characters.kett_4"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "pallas_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide corridor handover after one routine contribution. The dented table stands beside Lea's apartment door with lidded jars, colored route clips, a lesson slate, and a square tool pouch; the yellow pressure door and cyan shift scanner frame the spinward exit. Lea in patched rust-orange seal-rigger workwear, Pavi in a teal school smock, Sori in a four-wheeled dry-operation harness with clear tubes and humidity sheen, and low six-limbed Kett-4 settle into practiced positions. Apartment light and broth steam make one warm island inside cold shell plating, ribbed supports, exposed pipes, cable trays, and dark consolidated aggregate.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "between the table and shift scanner",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "at the table with key and lesson slate",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          },
+          {
+            "agent_id": "sori",
+            "default_stance": "harness parked parallel to the table",
+            "visual_ref": "visual_character_refs.characters.sori"
+          },
+          {
+            "agent_id": "kett_4",
+            "default_stance": "low at the faded route stripe",
+            "visual_ref": "visual_character_refs.characters.kett_4"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "table_reserve >= 4",
+            "modifier_prompt": "The tabletop carries several full lidded jars and neatly routed blue, green, and copper clips, leaving visible practical reserve."
+          },
+          {
+            "trigger": "table_reserve <= 1",
+            "modifier_prompt": "Only one lidded jar and two upright clips remain on a broad scratched empty surface."
+          },
+          {
+            "trigger": "neighborhood_trust >= 4",
+            "modifier_prompt": "Pavi moves comfortably between all three adults, while Sori and Kett angle their bodies toward shared tasks."
+          },
+          {
+            "trigger": "neighborhood_trust <= 1",
+            "modifier_prompt": "Pavi grips a metal apartment key and stays close to Lea's door while the others keep a respectful gap."
+          },
+          {
+            "trigger": "kett_variance_risk >= 1",
+            "modifier_prompt": "Kett's sealed limiter port shows one small amber diagnostic light beside the neatly sorted route clips."
+          },
+          {
+            "trigger": "audit_visibility >= 2",
+            "modifier_prompt": "A blue clinic clip is visibly fastened to Lea's square tool pouch in the scanner's cyan light."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "pallas_schedule_collision",
+        "ink_anchor": "schedule_collision",
+        "base_image_prompt": "Pivotal wide frame as every corridor slate changes to warning colors. Red pressure-isolation light washes the yellow child-bay direction marker; a wall display shows an early cavity-yard shift block, a blue clinic pickup block, and a harness-service block colliding on one clock through simple bars and icons. Lea, a stocky human rigger in rust-orange workwear, stands between the cyan scanner and Pavi, an eight-year-old child clutching a lesson slate. Sori's red-brown mantle and eight tentacles rest inside a low charcoal harness whose service timer glows amber. Kett-4, a low slate-gray six-limbed biodrone, faces the faded service stripe leading toward the clinic. The dented table holds a blue clinic clip, broth jars, and route tokens under cold industrial light.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "caught between the scanner and Pavi",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "beside the table, looking from the wall clock to Lea",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          },
+          {
+            "agent_id": "sori",
+            "default_stance": "beside an amber harness-service timer",
+            "visual_ref": "visual_character_refs.characters.sori"
+          },
+          {
+            "agent_id": "kett_4",
+            "default_stance": "aligned with the clinic service stripe",
+            "visual_ref": "visual_character_refs.characters.kett_4"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "pallas_route_choice_result",
+        "ink_anchor": "route_choice",
+        "base_image_prompt": "Wide action frame along one continuous curved housing corridor. The dented care table remains beside the outward-wall apartment doors; the inward wall carries pipes, utility panels, and a faded clinic-galley service stripe; the yellow pressure door and cyan shift scanner mark the yard exit. A stocky brown-skinned rigger in rust-orange workwear stands between scanner and table; a small child with black braids and teal school smock waits at the table; a red-brown eight-tentacled cephalopod rests inside a low wheeled humidity-and-oxygenation harness beside the child; and a slate-gray six-limbed biodrone crouches at the route stripe. A blue sealed clinic clip lies between the biodrone's fine manipulators and the child's hand; warning clock bars glow overhead.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "at the table, scanner, or clinicward corridor according to branch",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "beside Lea or holding the padded blue wheel on Sori's harness",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          },
+          {
+            "agent_id": "sori",
+            "default_stance": "beside the table or moving clinicward in the low harness",
+            "visual_ref": "visual_character_refs.characters.sori"
+          },
+          {
+            "agent_id": "kett_4",
+            "default_stance": "at the route stripe or carrying the blue sealed clip",
+            "visual_ref": "visual_character_refs.characters.kett_4"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "pallas_clinic_fold",
+        "ink_anchor": "clinic_fold",
+        "base_image_prompt": "Medium-wide completed handoff at the care table. A small white clinic parcel with a blue locking seal rests beside an empty broth bowl and route clips. Pavi, a brown-skinned child with two short black braids and teal school smock, holds or reaches for the parcel. Lea, a stocky brown-skinned human in patched rust-orange seal-rigger workwear, stands near the cyan shift scanner with a square tool pouch. Sori, a red-brown cephalopod with eight tentacles inside a low charcoal wheeled harness, remains beside an amber service clock. Kett-4, a slate-gray six-limbed biodrone with two fine manipulators, stands low near the faded clinic route stripe. Cold shell lights, warm broth steam, exposed utilities, apartment doors, and the yellow pressure door keep the domestic result inside industrial geometry.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "near the scanner or returning from clinicward",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "at the table with the sealed parcel",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          },
+          {
+            "agent_id": "sori",
+            "default_stance": "beside Pavi and the harness timer",
+            "visual_ref": "visual_character_refs.characters.sori"
+          },
+          {
+            "agent_id": "kett_4",
+            "default_stance": "low beside the route stripe or parcel",
+            "visual_ref": "visual_character_refs.characters.kett_4"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "pavi_clinic_route == 1",
+            "modifier_prompt": "Lea and Pavi stand hand in hand on the clinicward side of the table while Lea's shift display carries one red late mark."
+          },
+          {
+            "trigger": "pavi_clinic_route == 2",
+            "modifier_prompt": "Pavi keeps two fingers in the padded grip above Sori's blue harness wheel while Sori's amber service timer nears its final block."
+          },
+          {
+            "trigger": "pavi_clinic_route == 3",
+            "modifier_prompt": "Kett places the sealed clinic parcel on the table with fine manipulators; Sori waits beside Pavi's empty broth bowl."
+          },
+          {
+            "trigger": "pavi_clinic_route == 4",
+            "modifier_prompt": "Kett returns along the service stripe with the parcel, another rigger's gloved hand takes Lea's checklist at the edge of frame, and Sori steadies Pavi's chair."
+          },
+          {
+            "trigger": "sori_harness_margin <= 0",
+            "modifier_prompt": "Sori's harness service panel glows amber-red beside a physically intact humidity cartridge."
+          },
+          {
+            "trigger": "kett_variance_risk >= 2",
+            "modifier_prompt": "Kett's sealed limiter port blinks a clear amber route-variance sequence."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "pallas_clerk_arrival",
+        "ink_anchor": "clerk_arrival",
+        "base_image_prompt": "Authority enters a previously domestic corridor frame. Imas Roe, a lean light-skinned human shift clerk in a clean charcoal-gray coat with silver badge tabs, shaved head, tired eyes, and a thin inspection slate, stands just inside the yellow pressure door beside the cyan scanner. The slate shows separate simple icons for human medicine, cephalopod harness service, biodrone route variance, shift exchange, and furniture obstruction. Lea in patched rust-orange workwear stands protectively beside Pavi, who raises one small hand from the table. Sori's red-brown mantle and eight tentacles occupy the open low wheeled harness beside the utility wall. Kett-4 waits beneath the dented table. The sealed clinic parcel, broth rings, lidded jars, colored task clips, apartment doors, pipes, shell ribs, and painted door-swing arc remain visible.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "between Imas and Pavi",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "seated at the table with one hand raised",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          },
+          {
+            "agent_id": "sori",
+            "default_stance": "harness parallel to the utility wall",
+            "visual_ref": "visual_character_refs.characters.sori"
+          },
+          {
+            "agent_id": "kett_4",
+            "default_stance": "low beneath the table, sensor band aimed at Imas",
+            "visual_ref": "visual_character_refs.characters.kett_4"
+          },
+          {
+            "agent_id": "imas_roe",
+            "default_stance": "inside the pressure door with inspection slate raised",
+            "visual_ref": "visual_character_refs.characters.imas_roe"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "pallas_clerk_choice_result",
+        "ink_anchor": "clerk_choice",
+        "base_image_prompt": "Medium-wide administrative confrontation around the dented table in the curved housing corridor. Imas, a lean shaved-headed human clerk in a clean charcoal coat, holds a thin inspection slate near the cyan shift scanner. Lea, a stocky brown-skinned rigger in patched rust-orange workwear, stands near her outward-wall apartment threshold. Pavi, a small child with black braids and teal school smock, stays with the sealed clinic parcel. Sori, a red-brown eight-tentacled cephalopod in a four-wheeled humidity-and-oxygenation harness, and low six-limbed Kett-4 occupy reachable positions beside the table and faded service stripe. Lidded jars, colored task clips, the clinic parcel, the yellow pressure door, painted swing arc, shell ribs, pipes, and utility panels make every liability physically visible.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "at the apartment threshold or facing Imas according to branch",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "beside the table or helping move it",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          },
+          {
+            "agent_id": "sori",
+            "default_stance": "harness beside the table, tentacles available for lifting or reading clips",
+            "visual_ref": "visual_character_refs.characters.sori"
+          },
+          {
+            "agent_id": "kett_4",
+            "default_stance": "low at the table's buckled center or route stripe",
+            "visual_ref": "visual_character_refs.characters.kett_4"
+          },
+          {
+            "agent_id": "imas_roe",
+            "default_stance": "near the scanner, recording the selected response",
+            "visual_ref": "visual_character_refs.characters.imas_roe"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "pallas_liability_threshold",
+        "ink_anchor": "liability_fold",
+        "base_image_prompt": "Symmetrical decision frame down the curved housing corridor. The yellow pressure door and cyan shift scanner occupy the spinward end; Lea's open apartment doorway occupies the opposite foreground; the dented table sits at its current public or private position between them. Lea in rust-orange rigger workwear faces Imas in a clean charcoal shift coat. Pavi holds a small sealed clinic parcel against a teal school smock. Sori's red-brown mantle, eight tentacles, clear oxygenation tubes, humidity sheen, padded cuffs, and low blue wheels form one side of the table; Kett-4's slate-gray six-limbed body and amber sensor band form the other. Colored task clips, jars, shift warnings, supplier diagnostics, exposed pipes, ribbed shell supports, and dark consolidated aggregate create a readable map of care and cost.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "between apartment threshold and clerk",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "holding the sealed parcel at the table",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          },
+          {
+            "agent_id": "sori",
+            "default_stance": "beside the table with harness clock visible",
+            "visual_ref": "visual_character_refs.characters.sori"
+          },
+          {
+            "agent_id": "kett_4",
+            "default_stance": "low by the faded route stripe",
+            "visual_ref": "visual_character_refs.characters.kett_4"
+          },
+          {
+            "agent_id": "imas_roe",
+            "default_stance": "near the scanner with incident channels open",
+            "visual_ref": "visual_character_refs.characters.imas_roe"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "table_location == 2",
+            "modifier_prompt": "The table stands just inside Lea's open apartment threshold, with its corridor end still visible from the scanner."
+          },
+          {
+            "trigger": "table_location == 1",
+            "modifier_prompt": "The table remains in the public corridor beside the scanner's oblique cyan observation field."
+          },
+          {
+            "trigger": "task_clips_visible == 0",
+            "modifier_prompt": "The tabletop shows broth rings and jars while the colored task clips are absent from view."
+          },
+          {
+            "trigger": "task_clips_visible == 1",
+            "modifier_prompt": "Blue, green, and copper clips with clocks and door symbols remain openly arranged on the tabletop."
+          },
+          {
+            "trigger": "audit_visibility >= 4",
+            "modifier_prompt": "Imas's slate blooms into three separate red-edged incident panes for labor, supplier, and housing review around one blue clinic-parcel icon."
+          },
+          {
+            "trigger": "lea_claimshare_margin <= 0",
+            "modifier_prompt": "Lea's household display beside the apartment door changes from green to an amber-red housing-review bar."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "pallas_ending_private",
+        "ink_anchor": "ending_private_foundation|ending_private_cost",
+        "base_image_prompt": "Quiet evening aftermath at Lea's apartment threshold. Lea, a stocky brown-skinned human in a loosened rust-orange work jacket, signs a small absence pane beside the door. Pavi, an eight-year-old child with short black braids and teal smock, holds the sealed clinic parcel and returns one blank colored clip to the dented table. Warm apartment light spills across jars sent from neighboring doors, worn grated floor, exposed utility pipes, dark aggregate shell, and the distant cyan shift scanner. The table remains reachable from the corridor while one household display carries the visible cost.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "signing the absence pane at her apartment door",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "placing a blank clip on the table with clinic parcel under one arm",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == one_household_absorbs_cost_with_margin",
+            "modifier_prompt": "The household status bar remains amber-green with one lost mark, and the table holds several full jars."
+          },
+          {
+            "trigger": "ending_label == one_household_absorbs_cost_without_margin",
+            "modifier_prompt": "The household status bar glows amber-red for review while three mismatched food containers from neighboring doors crowd the table."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "pallas_ending_shared",
+        "ink_anchor": "ending_shared_foundation|ending_shared_cost",
+        "base_image_prompt": "Next-shift aftermath around the public care table beside the cyan scanner. A stocky brown-skinned rigger in patched rust-orange work clothes, a child with two short black braids and teal school smock, a red-brown eight-tentacled cephalopod in a low charcoal wheeled humidity harness, and a slate-gray six-limbed biodrone gather around a newly supplied table. A wall display above them carries several separate amber warning panes. A sealed clinic parcel with a closed blue lock rests beside fresh jars and one new blue task clip. The curved corridor shows outward apartment doors, inward pipes and cable trays, ribbed shell supports, dark consolidated aggregate, yellow pressure door, and faded service stripe.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "at the public side of the table facing the records",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "placing a fresh blue clip beside new jars",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          },
+          {
+            "agent_id": "sori",
+            "default_stance": "harness close to the table with service panel visible",
+            "visual_ref": "visual_character_refs.characters.sori"
+          },
+          {
+            "agent_id": "kett_4",
+            "default_stance": "low at the service stripe with limiter port visible",
+            "visual_ref": "visual_character_refs.characters.kett_4"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == distributed_care_record_holds",
+            "modifier_prompt": "Three small amber warning panes remain separate on the wall display; the table stays in the public corridor with two fresh jars and one upright blue clip."
+          },
+          {
+            "trigger": "ending_label == distributed_record_exposes_separate_workers",
+            "modifier_prompt": "Lea's shift pane, Sori's harness panel, and Kett's limiter port each glow amber-red; the table is newly bolted to the floor just beyond the scanner's strongest cyan beam."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "pallas_ending_inward",
+        "ink_anchor": "ending_inward_foundation|ending_inward_cost",
+        "base_image_prompt": "Warm interior-threshold aftermath with the dented table just inside Lea's compact apartment. The open door frames the curved industrial corridor, cyan scanner glow, yellow pressure door, exposed pipes, cable trays, ribbed shell supports, and dark consolidated asteroid aggregate outside. Lea, a stocky brown-skinned human in patched rust-orange workwear, holds the door open. Pavi, a child with black braids and teal smock, places colored task clips beside the sealed clinic parcel. Sori's red-brown tentacle tips feel the table edge from a low wheeled humidity harness at the threshold. Kett-4, a slate-gray six-limbed biodrone, scratches a simple branching route mark into the underside with one fine front manipulator. Apartment lamplight and broth steam make the smaller care surface visible from the hall.",
+        "visible_characters": [
+          {
+            "agent_id": "lea_varek",
+            "default_stance": "holding the apartment door open toward the corridor",
+            "visual_ref": "visual_character_refs.characters.lea_varek"
+          },
+          {
+            "agent_id": "pavi_varek",
+            "default_stance": "placing clips beside the clinic parcel",
+            "visual_ref": "visual_character_refs.characters.pavi_varek"
+          },
+          {
+            "agent_id": "sori",
+            "default_stance": "harness at the threshold with tentacle tips on the table edge",
+            "visual_ref": "visual_character_refs.characters.sori"
+          },
+          {
+            "agent_id": "kett_4",
+            "default_stance": "low beneath the table marking its underside",
+            "visual_ref": "visual_character_refs.characters.kett_4"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == ownerless_table_survives_inward",
+            "modifier_prompt": "Several households' clips and full broth jars gather on the tabletop, and the open door offers a clear sightline from the corridor."
+          },
+          {
+            "trigger": "ending_label == ownerless_table_survives_as_thin_memory",
+            "modifier_prompt": "Only one nearly empty jar and a few blank clips remain; Kett's scratched route mark and Sori's reading tentacle become the frame's central detail."
+          }
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "routine_stock_broth_visual",
+        "trigger": "branch_label == routine_stock_broth",
+        "apply_to_visual_scene_ids": [
+          "pallas_routine_choice_result",
+          "pallas_routine_fold"
+        ],
+        "modifier_prompt": "Lea clamps lids onto two extra steaming meal jars while Pavi places a handwritten scrap beneath an empty breakfast bowl."
+      },
+      {
+        "modifier_id": "routine_take_sori_clip_visual",
+        "trigger": "branch_label == routine_take_sori_clip",
+        "apply_to_visual_scene_ids": [
+          "pallas_routine_choice_result",
+          "pallas_routine_fold"
+        ],
+        "modifier_prompt": "A blue clinic clip is snapped onto Lea's square tool pouch; Sori raises two tentacle tips beside the harness service timer."
+      },
+      {
+        "modifier_id": "routine_kett_route_sort_visual",
+        "trigger": "branch_label == routine_kett_route_sort",
+        "apply_to_visual_scene_ids": [
+          "pallas_routine_choice_result",
+          "pallas_routine_fold"
+        ],
+        "modifier_prompt": "Kett arranges blue, green, and copper clips along the faded service stripe in galley-clinic-child-bay-yard order while Pavi copies the sequence onto a slate."
+      },
+      {
+        "modifier_id": "routine_clock_in_early_visual",
+        "trigger": "branch_label == routine_clock_in_early",
+        "apply_to_visual_scene_ids": [
+          "pallas_routine_choice_result",
+          "pallas_routine_fold"
+        ],
+        "modifier_prompt": "Lea touches her badge to a green scanner seven minutes early while Pavi, Sori, and Kett remain grouped around a visibly thinner table reserve."
+      },
+      {
+        "modifier_id": "route_lea_escort_visual",
+        "trigger": "branch_label == route_lea_escort",
+        "apply_to_visual_scene_ids": [
+          "pallas_route_choice_result",
+          "pallas_clinic_fold"
+        ],
+        "modifier_prompt": "Lea turns clinicward holding Pavi's hand; Sori places Lea's square tool pouch on the table and Kett slides a cavity checklist beneath it."
+      },
+      {
+        "modifier_id": "route_sori_escort_visual",
+        "trigger": "branch_label == route_sori_escort",
+        "apply_to_visual_scene_ids": [
+          "pallas_route_choice_result",
+          "pallas_clinic_fold"
+        ],
+        "modifier_prompt": "Sori rolls clinicward in the low blue-wheeled harness while Pavi keeps two fingers through a padded side grip; the amber harness-service clock stays behind on the table."
+      },
+      {
+        "modifier_id": "route_kett_pickup_visual",
+        "trigger": "branch_label == route_kett_pickup",
+        "apply_to_visual_scene_ids": [
+          "pallas_route_choice_result",
+          "pallas_clinic_fold"
+        ],
+        "modifier_prompt": "Kett grips the sealed blue clinic clip with two fine manipulators and runs low along the inward-wall route stripe while Sori waits beside Pavi and an open broth jar."
+      },
+      {
+        "modifier_id": "route_shared_relay_visual",
+        "trigger": "branch_label == route_shared_relay",
+        "apply_to_visual_scene_ids": [
+          "pallas_route_choice_result",
+          "pallas_clinic_fold"
+        ],
+        "modifier_prompt": "Kett carries the blue clinic clip along the service stripe, Sori steadies Pavi's chair with one tentacle, and a second rigger receives Lea's cavity checklist beside the scanner."
+      },
+      {
+        "modifier_id": "clerk_move_table_inward_visual",
+        "trigger": "branch_label == clerk_move_table_inward",
+        "apply_to_visual_scene_ids": [
+          "pallas_clerk_choice_result",
+          "pallas_liability_threshold"
+        ],
+        "modifier_prompt": "Lea and Pavi lift one end of the dented table, Sori supports the opposite end with three tentacles, and Kett pushes the buckled middle across Lea's apartment threshold."
+      },
+      {
+        "modifier_id": "clerk_claim_furniture_visual",
+        "trigger": "branch_label == clerk_claim_furniture",
+        "apply_to_visual_scene_ids": [
+          "pallas_clerk_choice_result",
+          "pallas_liability_threshold"
+        ],
+        "modifier_prompt": "Pavi slides the colored task clips beneath a steaming broth pot while Lea faces Imas and claims the table with one flat gesture."
+      },
+      {
+        "modifier_id": "clerk_surrender_clips_visual",
+        "trigger": "branch_label == clerk_surrender_clips",
+        "apply_to_visual_scene_ids": [
+          "pallas_clerk_choice_result",
+          "pallas_liability_threshold"
+        ],
+        "modifier_prompt": "Lea stacks the colored task clips in Imas's open palm; Kett taps the now-bare route stripe while Pavi pockets one blank clip."
+      },
+      {
+        "modifier_id": "clerk_show_completed_care_visual",
+        "trigger": "branch_label == clerk_show_completed_care",
+        "apply_to_visual_scene_ids": [
+          "pallas_clerk_choice_result",
+          "pallas_liability_threshold"
+        ],
+        "modifier_prompt": "Lea lays Pavi's small sealed clinic parcel across Imas's inspection slate as three separate incident panes open around it."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "pallas_outward_loop_care_table.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "One gently curved inhabited housing corridor in the apparent-gravity outward shell of a half-commissioned Bloom, with apartment thresholds on the outward wall and utilities on the inward wall.",
+      "fixed_zones": [
+        {
+          "zone_id": "outward_apartment_row",
+          "visible_form": "compact metal apartment doors and warm threshold lights along the curved outward wall",
+          "used_for": "Lea's home, neighbor access, and the table's inward relocation"
+        },
+        {
+          "zone_id": "inward_utility_run",
+          "visible_form": "exposed pipes, cable trays, sealed access panels, ribbed supports, and dark consolidated aggregate on the inward wall",
+          "used_for": "service-route movement and habitat material grounding"
+        },
+        {
+          "zone_id": "care_table_public_position",
+          "visible_form": "dented composite radiator-packing table between Lea's door and the shift scanner, outside the painted pressure-door arc",
+          "used_for": "food, task clips, parcel handoff, and public care"
+        },
+        {
+          "zone_id": "lea_private_threshold",
+          "visible_form": "Lea's apartment doorway with warm light, household status pane, and enough clear width for the table",
+          "used_for": "private-table branch and household cost"
+        },
+        {
+          "zone_id": "yard_pressure_door",
+          "visible_form": "yellow pressure-isolation door at the spinward end with a painted swing arc and yard-tram access beyond",
+          "used_for": "shift arrivals, authority entrance, and access control"
+        },
+        {
+          "zone_id": "shift_scanner_field",
+          "visible_form": "waist-high scanner beside the pressure door casting an oblique cyan observation beam across part of the table",
+          "used_for": "claimshare timing, table visibility, and clerk review"
+        },
+        {
+          "zone_id": "service_route_stripe",
+          "visible_form": "faded floor stripe following the inward utility wall toward galley, clinic, child bay, and yard junctions",
+          "used_for": "Kett's route judgment and clinic pickup"
+        }
+      ],
+      "routes": [
+        {
+          "route_id": "clinicward_service_route",
+          "path": "care_table_public_position -> service_route_stripe -> counterspinward clinic junction",
+          "body_access": "Human walking, Sori's low wheeled harness, and Kett's six-limbed low gait all fit the corridor."
+        },
+        {
+          "route_id": "yard_shift_route",
+          "path": "care_table_public_position -> shift_scanner_field -> yard_pressure_door -> yard tram",
+          "body_access": "Badge-gated worker route; scanner speech prompts exclude Kett's direct use but the physical lane remains traversable."
+        },
+        {
+          "route_id": "table_inward_route",
+          "path": "care_table_public_position -> lea_private_threshold",
+          "body_access": "A short lateral move requiring Lea and Pavi at one end, Sori at the other, and Kett at the buckled center."
+        }
+      ],
+      "occluders": [
+        {
+          "occluder_id": "open_apartment_door",
+          "effect": "Partly screens the table from the shift scanner after inward relocation while preserving a corridor sightline through the open threshold."
+        },
+        {
+          "occluder_id": "broth_pot_and_lids",
+          "effect": "Can hide flat task clips from Imas at table height but cannot hide the table or clinic parcel."
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_counterspinward_corridor",
+          "supports_visual_scene_ids": [
+            "pallas_corridor_establishing",
+            "pallas_routine_fold",
+            "pallas_schedule_collision"
+          ]
+        },
+        {
+          "camera_id": "medium_table_crossing",
+          "supports_visual_scene_ids": [
+            "pallas_table_routine",
+            "pallas_routine_choice_result",
+            "pallas_clinic_fold"
+          ]
+        },
+        {
+          "camera_id": "wide_route_and_scanner",
+          "supports_visual_scene_ids": [
+            "pallas_route_choice_result",
+            "pallas_clerk_arrival"
+          ]
+        },
+        {
+          "camera_id": "medium_threshold_review",
+          "supports_visual_scene_ids": [
+            "pallas_clerk_choice_result",
+            "pallas_liability_threshold"
+          ]
+        },
+        {
+          "camera_id": "threshold_aftermath",
+          "supports_visual_scene_ids": [
+            "pallas_ending_private",
+            "pallas_ending_shared",
+            "pallas_ending_inward"
+          ]
+        }
+      ],
+      "staging_slots": [
+        {
+          "slot_id": "table_apartment_side",
+          "allowed_characters": [
+            "lea_varek",
+            "pavi_varek"
+          ]
+        },
+        {
+          "slot_id": "table_utility_side",
+          "allowed_characters": [
+            "sori",
+            "kett_4"
+          ]
+        },
+        {
+          "slot_id": "scanner_authority_position",
+          "allowed_characters": [
+            "lea_varek",
+            "imas_roe"
+          ]
+        },
+        {
+          "slot_id": "clinicward_route",
+          "allowed_characters": [
+            "lea_varek",
+            "pavi_varek",
+            "sori",
+            "kett_4"
+          ]
+        }
+      ],
+      "branch_state_anchors": [
+        {
+          "anchor_id": "table_position",
+          "values": {
+            "1": "public beside scanner field",
+            "2": "inside Lea's open apartment threshold"
+          }
+        },
+        {
+          "anchor_id": "clinic_parcel",
+          "values": {
+            "0": "blue pickup clip on table",
+            "1": "small sealed white parcel returned to Pavi"
+          }
+        },
+        {
+          "anchor_id": "task_clip_visibility",
+          "values": {
+            "0": "hidden beneath pot or surrendered to Imas",
+            "1": "blue, green, and copper clips visible on tabletop"
+          }
+        },
+        {
+          "anchor_id": "supplier_review",
+          "values": {
+            "low": "harness and limiter indicators normal or amber",
+            "high": "Sori harness panel and Kett limiter port visibly amber-red"
+          }
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "lea_varek": "Lea Varek: stocky brown-skinned baseline human woman in her early thirties, close-cropped black hair, broad tired face, patched rust-orange seal-rigger jacket, gray tool trousers, heavy magnetic-soled boots, square tool pouch, practical stance with weight forward when lifting and shoulders tight near official displays.",
+      "pavi_varek": "Pavi Varek: small brown-skinned baseline human child aged eight, two short black braids, expressive dark eyes, oversized teal school smock over warm charcoal leggings, soft corridor shoes, lesson slate usually held against the chest, grave precise gestures when sorting task clips.",
+      "sori": "Sori: uplifted cephalopod worker with red-brown mantle, pale cream speckles, dark horizontal pupils, eight flexible tentacles with visible suckers, one pale scar across a left-side tentacle, flexible charcoal body-loop harness on four low blue wheels, clear oxygenation tubes, humidity film sheen, padded pressure cuffs, small tool loops, and a rectangular chest voice plate; posture through mantle height, eye angle, tentacle curl, sucker placement, and wheel orientation.",
+      "kett_4": "Kett-4: low six-limbed VitaForge maintenance biodrone with slate-gray pebbled hide, long flexible torso, four sturdy load-bearing legs, two fine front manipulators with three gripping pads each, narrow amber sensor band across the head, sealed black limiter port at the upper back, quiet route-focused posture, body kept close to floor stripes and table undersides.",
+      "imas_roe": "Imas Roe: lean light-skinned baseline human shift clerk in their forties, shaved head, tired gray eyes, clean charcoal-gray shift coat with silver badge tabs, black soft-soled work shoes, thin inspection slate, restrained posture that keeps the slate between body and dispute."
+    }
+  },
+  "review_notes": [
+    "The visual plan uses one draft scene-set map and shared branch-result anchors with explicit visible modifiers.",
+    "All base prompts restate the Bloom corridor's visible construction, body affordances, interfaces, light, and important props.",
+    "The BFL prompt manifest is concept collateral only; no image generation was performed.",
+    "A camera-specific plan view or 3D blockout remains required before high-consistency multi-angle website rendering."
+  ]
+}
