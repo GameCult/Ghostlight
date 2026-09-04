@@ -103,8 +103,11 @@ projection of committed history.
    changes it.
 7. External consumers retain sovereignty. Ghostlight views, proposals, and
    acknowledgements cannot mutate external-owned state.
-8. Sparse causal sufficiency controls elaboration. Counts and qualitative
-   review remain evaluation evidence only.
+8. Sparse causal sufficiency governs structural validity; counts and
+   qualitative review remain evaluation evidence and never gate admission.
+   Elaboration additionally pursues the seed's authored `WorldScaleIntent` as
+   a derived scale deficit; cover budget is the deliberate choke on
+   simulation attention.
 9. Restart reconstructs the exact committed world and idempotency history; a
    recovery loop cannot repair or reinterpret it.
 10. Canonical IDs are allocated only while a complete private reduction is

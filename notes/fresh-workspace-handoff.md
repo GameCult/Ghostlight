@@ -69,9 +69,21 @@ accept or reject a proposed mutation. Translation gaps remain non-fictional
 inference/evaluation evidence outside `WorldState`; recording one cannot itself
 request elaboration or advance a world revision.
 
-World validity is sparse and causal. Actor counts, coverage ratios,
-interestingness, political diversity, name quality, and prose quality are
-load or evaluation evidence; none admits ontology or declares a world complete.
+World validity and world liveness are two different claims, and both are
+true. Structural validity is sparse and causal: it never waits on a count, and
+no count, cover ratio, interestingness, diversity, or prose-quality judgment
+can admit ontology, reject a structurally valid mutation, or declare a world
+complete. Liveness is authored: the seed carries a `WorldScaleIntent`, the
+elaborators pursue its derived per-jurisdiction scale deficit as a work queue,
+and the cover budget is the deliberate choke that makes attention scarce.
+
+Operator directive, 2026-09-04, preserve verbatim in intent: the 2,400-subject
+/ 240-cell / 10% cover profile is deliberate design, not a load fixture. A
+world feels alive only when actors at every level pursue their own goals; that
+detail is generated first, then multiresolution simulation is choked so
+attention is scarce and selection is forced. The mvp doc's teardown-era
+sentence calling it "test data, not a production elaboration target" was
+wrong and is amended. Do not re-cut the scale target as fixture noise.
 
 ## Landed and in flight
 
@@ -129,7 +141,10 @@ Invocation `d9254cd9b77946aebcf7a7fdae821402` is terminal. Preserve the root and
 receipts unchanged; its `status.json` is stale derived telemetry.
 
 Runs 108 through 115 are evidence about load and failure properties of the old
-body. The 1,200 and 2,400 actor profiles are synthetic fixtures only.
+body. Those runs were load fixtures; the 2,400-subject / 240-cell profile they
+exercised is the authored design target, not fixture noise (see the operator
+directive under Current authority). The 1,200-actor fixture remains a load
+measure only.
 
 ## Operational boundary
 
@@ -207,7 +222,7 @@ preconditions, effect slots, and kernel-entropy outcome bands, four derived
 `CausalBoundary` kinds, scope-digest binding, one `AdmitPatch` for seed and
 elaboration, eighteen proofs). `ghostlight-transition-algebra.md` and
 `ghostlight-multiresolution-agency.md` are teardown evidence. Plan step 6 is
-eight implementation passes, none landed; kernel source is still Speak-only
+nine implementation passes, none landed; kernel source is still Speak-only
 (`crates/ghostlight-dungeon/src/world/mod.rs`) with revision-bound
 opportunities. Run 115's vocabulary-shaped root cause and the v2 decisions are
 the last two records in `state/evidence.jsonl`.
