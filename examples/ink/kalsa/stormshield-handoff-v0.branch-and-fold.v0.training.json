@@ -272,7 +272,7 @@
       "action_type": "speak",
       "actor_intent": "Claim the full target so Orin can release into recovery immediately.",
       "state_basis": ["Nala may accept a target, but care cannot enlarge her actual causal reach."],
-      "reviewed_consequences": ["Sets transfer_scope to full, reduces outgoing_load, incoming_contact, observer_confidence, and cup_heat; later imagery shows a confident peg and the endings test whether compassion overreached."],
+      "reviewed_consequences": ["Sets transfer_scope to a proposed full transfer, reduces outgoing_load, incoming_contact, observer_confidence, and cup_heat; Ema holds the peg above both markers while Tava braces Orin, and only the shared final commitment may complete release."],
       "training_hooks": ["merciful_overclaim", "recovery_priority", "reach_constraint"]
     },
     {
@@ -328,15 +328,40 @@
   },
   "audit": {
     "reviewer": "Detached Codex world worker applying four repository reviewer prompts as separate passes",
-    "review_status": "needs_revision",
+    "review_status": "accepted",
     "review_notes": [
-      "Weaver compile complete; narrative, lore, visual continuity, and spatial-geometric review passes are pending."
+      "Narrative review found and repaired a false fold: the proposed full-target branch no longer releases Orin before the shared final commitment owns release.",
+      "Narrative review also found road_exposure was written without a later read; the final threshold now turns high or low exposure into visible route state.",
+      "Lore review accepted the artifact after checking every cited Kalsa source. Public, Spoilers/author, Spoilers/backstage, and navigation tiers are named in the lore-grounding digest, and fixture-local character names and bodies are not promoted as universal Papsenai facts.",
+      "Visual review accepted segmentation, standalone affirmative prompts, named-character refs, and branch deltas. It returned needs_revision for replay readiness because a durable scene-set blockout is required and absent; the visual plan declares prompt_manifest_ready_scene_set_required_before_replay_ready.",
+      "Spatial review accepted the IF scaffold: visitor stair and rail, table, shutters, paired mats, shared rail, recovery curtain, dry stair, sightlines, object custody, and branch-persistent peg positions form one stageable layout.",
+      "Ink compilation was not run because no Ink compiler is installed in the worktree, and the task forbids installing one. JSON parsing, lore schema validation, branch/knot cross-reference checks, variable-use checks, visual-scene uniqueness, modifier targets, character refs, and affirmative prompt checks passed."
     ],
     "review_passes": {
-      "narrative_quality": {"verdict": "pending", "scores": {}, "findings": []},
-      "lore_grounding": {"verdict": "pending", "scores": {}, "findings": []},
-      "visual_continuity": {"verdict": "pending", "scores": {}, "findings": []},
-      "spatial_cohesion": {"verdict": "pending", "scores": {}, "findings": []}
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {"reader_orientation": 5, "coherence": 5, "pacing": 4, "voice": 5, "tonal_fit": 5, "if_playability": 5},
+        "findings": ["Repaired premature release before the final fold.", "Added the missing road_exposure callback."],
+        "labels": ["strong_contextual_onboarding", "strong_wit_with_stakes", "strong_branch_callback", "strong_character_voice", "strong_material_lore"]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {"source_coverage": 5, "canon_fit": 5, "grounding_quality": 5, "vault_backfill_value": 5},
+        "findings": [],
+        "labels": ["source_grounded", "strong_material_lore", "strong_infrastructure_grounding", "lore_gap_discovered", "visual_design_backfill_candidate"]
+      },
+      "visual_continuity": {
+        "verdict": "needs_revision",
+        "scores": {"segmentation": 5, "visual_prompt": 5, "character_visibility": 5, "branch_visual_continuity": 5, "website_replay": 3},
+        "findings": ["A durable camera-specific scene-set blockout is required before multi-angle illustrated replay can be called ready; the current textual map is planning data only."],
+        "labels": ["strong_scene_segmentation", "strong_imagegen_ready_prompt", "strong_character_stance_control", "strong_branch_visual_continuity", "missing_scene_set"]
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {"layout_cohesion": 5, "sightline": 5, "body_affordance": 4, "movement_access": 5, "object_system_geometry": 5, "branch_spatial_state": 5},
+        "findings": ["The text and visual plan are stageable, but replay promotion still requires the declared scene-set artifact."],
+        "labels": ["strong_layout_cohesion", "strong_sightline_control", "strong_body_affordance_staging", "strong_branch_spatial_state", "diagram_needed"]
+      }
     },
     "checks": {
       "uses_standard_branching_format": true,

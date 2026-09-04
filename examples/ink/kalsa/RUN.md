@@ -37,3 +37,26 @@
 - Canonical room elaboration: already committed in the lore worktree as `177dda5` (`Bank Ghostlight fixture lore elaboration drafted by the Kalsa world worker`). No additional lore patch is currently required.
 - Supersession: the preceding push prerequisite is retired as active guidance. The current operator contract forbids pushes and defines local commits as the deliverable; the coordinator publishes after ledger entries.
 - Next: compile the grounded Weaver pass into Ink, training, visual, lore-grounding, and BFL prompt-manifest artifacts; then run the four reviewer passes and repair their findings.
+
+## stormshield-handoff-v0 — completed fixture
+
+- Status: complete as playable Ink and prompt-manifest collateral; illustrated replay is intentionally not claimed ready because the required durable scene-set blockout does not exist.
+- Locality: one outer-road Stormshield station at Ti'asantatca; incoming/outgoing watch overlap, observed target transfer, road warning, and first-cup recovery.
+- Tonal mode: workplace warmth and dry institutional comedy under weather pressure.
+- Files written:
+  - `examples/ink/kalsa/stormshield-handoff-v0.branch-and-fold.v0.ink`
+  - `examples/ink/kalsa/stormshield-handoff-v0.branch-and-fold.v0.training.json`
+  - `examples/visual/kalsa/stormshield-handoff-v0.branch-and-fold.v0.visual.json`
+  - `examples/lore-grounding/kalsa/stormshield-handoff-v0.v0.json`
+  - `prompts/image-generation/kalsa/stormshield-handoff-v0.bfl-simple-prompts.v0.json`
+- Lore notes read:
+  - Public tier: `Kalsa/index.md`, `Kalsa/Public/index.md`, `Kalsa/Public/World/Kalsa.md`, `Kalsa/Public/World/Magic and Miracles.md`, `Kalsa/Public/World/Peoples and Polities.md`, `Kalsa/Public/Sources/The Narrow Shield.md`.
+  - Spoilers/author or backstage tier: `Kalsa/Spoilers/index.md`, `Kalsa/Spoilers/Reference/Canon and Provenance.md`, `Kalsa/Spoilers/Foundations/World.md`, `Kalsa/Spoilers/Foundations/Kaos.md`, `Kalsa/Spoilers/Foundations/Oracle Ecology.md`, `Kalsa/Spoilers/Institutions/index.md`, `Kalsa/Spoilers/Institutions/Stormshield Circles.md`, `Kalsa/Spoilers/Polities/Shamanism - Papsenai.md`, `Kalsa/Spoilers/Events/The Narrow Shield.md`.
+- Lore patch committed: `177dda5` in `F:\Projects\Kalsa-worktrees\ghostlight-worlds` (`Bank Ghostlight fixture lore elaboration drafted by the Kalsa world worker`), adding the fixture-marked outer-road handoff-room elaboration to `Kalsa/Spoilers/Institutions/Stormshield Circles.md`. No new lore edit was required during completion.
+- Reviewer verdicts:
+  - Narrative quality: `accepted`; the pass found and repaired premature release before the final fold and added the missing `road_exposure` callback.
+  - Lore grounding: `accepted`; source coverage, canon fit, material grounding, and backfill value all scored 5/5.
+  - Visual continuity: `needs_revision` for illustrated replay only; segmentation, prompts, character refs, and branch visuals scored 5/5, while website replay scored 3/5 because a camera-specific scene-set blockout is absent. The visual plan declares this limit.
+  - Spatial cohesion: `accepted`; the room, routes, sightlines, body positions, object custody, and folded spatial state are stageable. The reviewer also requires the declared scene set before replay promotion.
+- Verification: all four JSON files parse; `tools/validate_lore_grounding.py` passes; all 16 sidecar branch ids map to Ink labels and knots; all 10 Ink variables have later reads; 14 visual scene ids and 20 global modifier targets are unique and valid; every visible named character resolves to a stable visual ref; affirmative-prompt checks pass. Ink was not compiled because no compiler is installed and installation is forbidden for this run.
+- Next: choose a different institution and ordinary routine. Best current candidate is the basin-table allocation and black-door descent preparation at Low Sere, provided source reading exposes a narrow locality gap worth canonizing.

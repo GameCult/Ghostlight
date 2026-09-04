@@ -96,7 +96,7 @@
         ],
         "state_image_modifiers": [
           {"trigger": "outgoing_load >= 4", "modifier_prompt": "A fine tremor runs visibly through Orin's rail hand; sweat darkens his rain-clung collar despite the cold room."},
-          {"trigger": "observer_confidence >= 2", "modifier_prompt": "Ema keeps the corrected first account exposed beside the clean second slate instead of scraping it smooth."}
+          {"trigger": "observer_confidence >= 2", "modifier_prompt": "Ema keeps the corrected first account exposed beside the clean second slate; both surfaces retain visibly distinct grooves."}
         ],
         "visual_continuity_notes": [
           "The peg remains unplaced before the disputed handoff.",
@@ -176,7 +176,7 @@
           {"trigger": "transfer_scope == 1", "modifier_prompt": "Nala speaks with one hand on the road marker sightline while Ema moves the drainage piece away from the peg's empty place; Orin looks toward Nala with tired hurt."},
           {"trigger": "handoff_alignment >= 5 && transfer_scope == 0", "modifier_prompt": "Nala and Orin keep contact at the rail while Orin indicates pressure at eye, teeth, and cityward direction; Ema preserves two visibly different slate diagrams."},
           {"trigger": "transfer_scope == -1", "modifier_prompt": "Nala lays one broad hand flat on the table edge beside the untouched transfer peg; Ema follows the gesture while Orin's rail hand trembles."},
-          {"trigger": "transfer_scope == 2", "modifier_prompt": "Ema places the peg confidently between road and drainage markers as Orin collapses backward toward Tava's waiting support and Nala grips the rail alone."}
+          {"trigger": "transfer_scope == 2", "modifier_prompt": "Ema holds the peg above the road and drainage markers while Tava braces Orin's free arm at the curtain and both shamans retain contact with the rail."}
         ],
         "visual_continuity_notes": [
           "Transfer-scope modifiers are mutually exclusive.",
@@ -196,7 +196,7 @@
           {"agent_id": "ket_oru", "default_stance": "behind the visitor rail ready to carry the next signal", "visual_ref": "visual_character_refs.characters.ket_oru"}
         ],
         "state_image_modifiers": [
-          {"trigger": "transfer_scope == 2", "modifier_prompt": "The plain peg sits between road and drainage markers; Orin has moved to Tava's support at the curtain while Nala alone grips the rail."},
+          {"trigger": "transfer_scope == 2", "modifier_prompt": "Ema holds the plain peg above road and drainage markers; Tava braces Orin at the curtain while both shamans still touch the continuous rail."},
           {"trigger": "transfer_scope == 1", "modifier_prompt": "The drainage marker sits clear of the road piece and the peg waits beside the bounded road marker; both shamans remain in overlap."},
           {"trigger": "transfer_scope == -1", "modifier_prompt": "The peg remains untouched beneath Nala's flat hand while Orin continues the roadward hold."},
           {"trigger": "cup_heat >= 3", "modifier_prompt": "The lidded first cup sends a strong curl of steam beside Tava's blankets and water crock."},
@@ -345,7 +345,7 @@
         "modifier_id": "full_transfer_visual",
         "trigger": "branch_label == accept_full_target_for_recovery",
         "apply_to_visual_scene_ids": ["stormshield_disagreement_choice", "stormshield_final_threshold", "stormshield_ending_recovery"],
-        "modifier_prompt": "The peg bridges road and drainage markers; Nala grips the rail alone as Tava catches Orin at the recovery curtain."
+        "modifier_prompt": "Ema holds the peg above road and drainage markers while Tava braces Orin at the recovery curtain and Nala maintains the incoming grip."
       },
       {
         "modifier_id": "honest_scope_success_visual",
@@ -369,7 +369,7 @@
         "modifier_id": "continuity_cost_visual",
         "trigger": "ending_label == continuity_cost",
         "apply_to_visual_scene_ids": ["stormshield_ending_continuity"],
-        "modifier_prompt": "Orin's tremor climbs visibly into one shoulder, the first cup sits untouched with no steam, and Ema records an extra debt line while both mats remain occupied."
+        "modifier_prompt": "Orin's tremor climbs visibly into one shoulder, the first cup sits cool and matte in still air, and Ema records an extra debt line while both mats remain occupied."
       },
       {
         "modifier_id": "recovery_success_visual",

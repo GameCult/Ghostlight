@@ -250,16 +250,16 @@ Ema does not reach for the transfer peg.
     ~ cup_heat = cup_heat - 1
     Nala closes her hand around the grip rail and says, "Full target. Let him go."
 
-    Ema looks at both shamans, the shutters, and the unplaced peg. Then she places it between road and drainage.
+    Ema looks at both shamans, the shutters, and the unplaced peg. She lifts it between finger and thumb above the road and drainage markers but does not set it down.
 
-    Orin releases with a sound like a rope dropping onto stone. Tava catches him at the curtain.
+    Tava comes to the curtain and braces one hand under Orin's free arm. He has not released. The room has merely arranged itself around the hope that he can.
 
-    The transfer is merciful. Mercy has entered the record wearing a claim Nala may not be able to keep.
+    The proposed transfer is merciful. Mercy has entered the record wearing a claim Nala may not be able to keep.
     -> final_threshold
 
 === final_threshold ===
 // ghostlight.fold: one_record_before_resolution
-The station now has one wet runner, two target accounts, an approach that may still be open, and a transfer peg {transfer_scope == 2: sitting between markers too confidently}{transfer_scope == 1: waiting beside a deliberately narrowed road marker}{transfer_scope == -1: untouched beneath Nala's flat hand}{transfer_scope == 0: still unplaced between the two accounts}.
+The station now has one wet runner, two target accounts, an approach that may still be open, and a transfer peg {transfer_scope == 2: held above both markers in Ema's hand}{transfer_scope == 1: waiting beside a deliberately narrowed road marker}{transfer_scope == -1: untouched beneath Nala's flat hand}{transfer_scope == 0: still unplaced between the two accounts}.
 
 {handoff_alignment >= 4: The road section is clear in speech, clay, slate, and bond. The drainage edge remains the named disagreement.}
 {handoff_alignment <= 2: The target still changes shape depending on who describes it.}
@@ -267,6 +267,8 @@ The station now has one wet runner, two target accounts, an approach that may st
 {relief_status >= 3: Everyone in the room knows the expected cohort cannot arrive intact by the planned route.}
 {warning_state >= 2: The lower gate has been told to hold traffic.}
 {warning_state == 0: The lower gate is still waiting for an answer the station has not sent.}
+{road_exposure >= 3: Through the shutter slats, movement appears below the split channel: people or a cart beginning up an approach the station has not made safe.}
+{road_exposure <= 0: The lower approach lies empty beneath a closed gate signal, buying the station time at public cost.}
 {cup_heat >= 3: Orin's covered first cup is still hot behind the curtain.}
 {cup_heat <= 1: The first cup is cooling while procedure eats the room.}
 
