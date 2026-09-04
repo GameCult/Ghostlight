@@ -1,0 +1,461 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "numen-first-answer-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/numen-first-answer-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/numen-first-answer-v0.branch-and-fold.v0.training.json",
+  "scene_id": "numen-first-answer-v0.hallowshaft-final-hearing",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for Hallowshaft Farm's final First Answer hearing.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary core tending, the First Answer preparation, the Listening Crown's unprepared response, winter custody pressure, and four state-gated aftermath families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the chamber establishing view, worker and witness introduction, each preparation action, the prepared question, the one-sentence darkening, the fourth-channel reveal, each answer action, winter pressure, the final threshold, and each ending family. The Crown's first unprepared channel receives a distinct pivotal frame.",
+    "prompting_rule": "Each base image prompt stands alone for a general image model, explains the chamber and fictional objects in visible terms, and names only visible characters or groups. Continuity notes remain tooling constraints; prompt assembly uses the global style cue, visible-character refs, base prompt, and triggered modifiers.",
+    "global_style_cue": "Style: richly textured high-fantasy industrial storybook illustration, precise ink lines and restrained watercolor, worn brass and dark carved stone, pale living mineral folds, warm amber shrine lamps against cold blue mana, readable silhouettes, humane facial acting, bounded numinous wonder, practical machinery, cinematic but playable as interactive fiction.",
+    "prompt_assembly_rule": "Assemble each image prompt from global_style_cue, the scene base_image_prompt, visual refs only for named characters or groups visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Exclude absent character refs. Treat the declared scene_set as geometry guidance and never rely on a previous generated frame for room memory.",
+    "scene_set_guidance": {
+      "current_mode": "text_layout_only_not_replay_ready",
+      "scope_reason": "The fixture revisits one bowl-shaped cultivation vault from gallery-wide, floor-level, wall-close, gate-facing, and threshold angles. Sightlines, key custody, gate height, offering positions, and living cracks affect choices.",
+      "future_scene_set_need": "Required before replay-ready illustration: build a durable plan view or simple 3D blockout for Hallowshaft's Answering Chamber using the fixed zones, cameras, routes, occluders, staging slots, and object-state anchors declared below. Generated frames serve as paint passes rather than geometry authority."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "hallowshaft_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of a bowl-shaped underground high-fantasy crystal farm chamber. A straight carved-stone service gallery crosses the south rim behind a waist-high brass rail. A grated stair descends into a lower mineral floor with three low offering plinths inside a yellow crystal boundary line. The west wall carries an iron fungal-meal hopper and a barred crystal-harvest sluice. The east wall carries a heavy vertical iron passage gate with chain winch and brake pawl. The north wall is filled by a fan of pale living mineral folds threaded with cold blue mana channels shaped like branching runes. Amber oil lamps, worn tools, a district reserve gauge, a route-book lectern, and a locked reset cabinet make the cavern both shrine and workplace.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The south gallery is one level above the answering bowl; west harvest equipment, east passage gate, and north Listening Crown keep stable positions.",
+          "The pale Crown is living mineral anatomy integrated with the north wall, while carved industrial runes remain on metal slates and conduits."
+        ]
+      },
+      {
+        "visual_scene_id": "hallowshaft_morning_tending",
+        "ink_anchor": "morning_people",
+        "base_image_prompt": "Medium-wide morning work frame on the south service gallery of the bowl-shaped crystal farm. A sturdy adult dwarf woman in a blue-gray work coat brushes pale crystal flour from the west harvest teeth while a lean adult goblin in a patched tunnel vest tips fungal meal and iron shavings into the hopper. A broad dwarf Master with a brass seal stands by the reset cabinet holding a long iron key; a separate lidded iron key coffer rests on the cabinet shelf. A soot-robed dwarf shrine keeper carries a shallow black iron return bowl holding one small uncut crystal. A tall elf witness in a moss-green travel coat opens a waxed-cloth plan at the public lectern. Behind the brass rail, three plinths and the blue-lit living mineral Crown are fully visible below and across the chamber.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "brushing the harvest teeth at the west rail bay", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "lifting a meal scoop into the west hopper", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "at the reset cabinet with key and seal", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "maelin_ash", "default_stance": "holding the black iron return bowl", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "eiravel_senn", "default_stance": "opening a waxed witness plan at the lectern", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This frame introduces every recurring mortal participant before any optional branch or shared payoff.",
+          "Borren's reset key, dedicated key coffer, and seal remain distinct from Maelin's shallow return bowl; Eiravel's plan, Tavra's hammer, and Pip's route chalk remain distinct props."
+        ]
+      },
+      {
+        "visual_scene_id": "hallowshaft_returned_gift",
+        "ink_anchor": "preparation_choice.prime_returned_gift",
+        "base_image_prompt": "Close-medium offering frame on the south gallery: a sturdy dwarf journeyworker with copper-brown skin, black braided hair, and a blue-gray work coat places a warm uncut blue-white crystal into a shallow black iron shrine bowl held by a soot-robed dwarf priest. A broad dwarf Master with brass civic seal watches the crystal leave the tally, while a lean goblin route keeper points toward a district reserve gauge dropping near amber. The pale living mineral Crown glows across the lower chamber behind them.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "placing the crystal with both hands", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "maelin_ash", "default_stance": "supporting the black iron bowl", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "borren_keld", "default_stance": "watching beside the reserve gauge", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "pip_underrail", "default_stance": "pointing from bowl to reserve gauge", "visual_ref": "visual_character_refs.characters.pip_underrail"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_divided_key",
+        "ink_anchor": "preparation_choice.divide_reset_custody",
+        "base_image_prompt": "Object-custody close frame beside a carved-stone reset cabinet. A broad dwarf farm Master lays a long iron memory-reset key into a dedicated rectangular iron coffer with a hinged lid. A soot-robed dwarf shrine keeper closes the coffer with a heavy brass farm seal through one eye. A tall elf witness threads green braided cord through a second eye and ties a distinct knot. A sturdy dwarf journeyworker stands between them with one open hand indicating the two separate controls. Amber lamp light catches iron, brass, cord, and the tense faces clearly.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "between bowl and cabinet with an open hand", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "borren_keld", "default_stance": "releasing the key with reluctant control", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "maelin_ash", "default_stance": "closing the iron lid under the farm seal", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "eiravel_senn", "default_stance": "tightening the green witness-cord knot", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_living_boundary_map",
+        "ink_anchor": "preparation_choice.prime_independent_witness",
+        "base_image_prompt": "High-angle mapping frame from the south brass rail into the lower answering bowl. A lean adult goblin in a patched tunnel vest points with a long brush handle to three damp mineral cracks: one reaches from the blue-lit north-wall Crown toward the east gate, one vanishes under the west harvest sluice, and one crosses beneath the upper gallery floor. A tall elf in a moss-green coat copies the cracks onto waxed cloth at the lectern. A dwarf journeyworker kneels at the rail following the route with focused dark eyes. The building plan shows clean straight boundaries while the visible cracks ignore them.",
+        "visible_characters": [
+          {"agent_id": "pip_underrail", "default_stance": "kneeling and pointing into the bowl with a brush handle", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "eiravel_senn", "default_stance": "copying cracks onto waxed cloth", "visual_ref": "visual_character_refs.characters.eiravel_senn"},
+          {"agent_id": "tavra_nineknocks", "default_stance": "kneeling at the rail to follow the routes", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_winter_harvest",
+        "ink_anchor": "preparation_choice.prime_winter_reserve",
+        "base_image_prompt": "Physical work frame at the west harvest bay of an underground crystal farm. A sturdy dwarf woman lifts a barred iron sluice grate while a lean goblin worker rakes loose blue-white crystals into a rectangular iron district bin. A broad dwarf Master marks a contract board beside a rising reserve gauge. Across the brass rail, a tall elf witness watches pale blue channels in the living north-wall Crown follow the rake motion. Crystal dust, iron teeth, canvas gloves, and strain in both workers' bodies make the yield concrete.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "braced under the raised sluice grate", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "raking crystal into the district bin", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "marking the contract beside the reserve gauge", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "eiravel_senn", "default_stance": "watching the Crown follow the tool", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_preparation_fold",
+        "ink_anchor": "preparation_fold",
+        "base_image_prompt": "Wide prepared-hearing view across the entire bowl-shaped chamber. The west meal hopper and harvest sluice are closed; the east iron gate stands one handspan open; three offering plinths sit inside a yellow mineral boundary below; the pale living Crown spreads across the north wall. A dwarf shrine keeper draws a cold blue null rune right-to-left on a black slate. A dwarf tender and goblin route keeper stand at the stair and gate controls. A dwarf Master remains between reserve gauge and reset cabinet, where a dedicated lidded iron key coffer sits beneath the brass farm seal. An elf witness stands beside the route-book lectern and wax plan. Every hand and major prop is visible.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "at the grated stair with listening hammer visible", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "at the east gate brake pawl", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "between gauge and reset cabinet", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "maelin_ash", "default_stance": "drawing null on the black slate", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "eiravel_senn", "default_stance": "beside open witness plan and route book", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "core_trust >= 4", "modifier_prompt": "An uncut blue-white crystal rests visibly in the black iron bowl on the middle plinth."},
+          {"trigger": "district_reserve >= 4", "modifier_prompt": "The iron district bin is full and the reserve gauge stands safely above amber."},
+          {"trigger": "district_reserve <= 1", "modifier_prompt": "The iron district bin is sparse and the reserve gauge touches its amber lower band."},
+          {"trigger": "reset_custody >= 4", "modifier_prompt": "The dedicated key coffer sits on the reset shelf with a brass farm seal through one eye and taut green witness cord through the other."},
+          {"trigger": "witness_independence >= 3", "modifier_prompt": "The waxed witness plan shows three damp living cracks extending beyond the clean property diagram."},
+          {"trigger": "ritual_integrity <= 1", "modifier_prompt": "Fresh crystal dust fills the contracted bin and clings to the workers' sleeves beside the newly nulled harvest slate."}
+        ]
+      },
+      {
+        "visual_scene_id": "hallowshaft_prepared_question",
+        "ink_anchor": "first_question",
+        "base_image_prompt": "Floor-level ritual tableau in the lower mineral bowl. A sturdy dwarf journeyworker stands just outside a yellow crystal boundary around three knee-high plinths. A worn iron delver piton rests on the east plinth, a sealed gray season-stone on the west, and an uncut blue-white crystal in a black iron bowl at the middle. On the upper south gallery, a soot-robed dwarf shrine keeper asks the question, a tall elf witness watches with wax plan, a goblin route keeper guards the east-gate brake, and a broad dwarf Master stands by the red-leaning reserve gauge. The pale Crown fills the north wall with quiet blue channels.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "alone at the yellow boundary below", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "at the east-gate brake on the upper gallery", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "beside the reserve gauge", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "maelin_ash", "default_stance": "speaking from the upper rail with hands clear", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "eiravel_senn", "default_stance": "observing from the lectern", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_crown_darkens",
+        "ink_anchor": "crown_answer",
+        "base_image_prompt": "Pivotal close-wide frame of the north wall in an underground answering chamber at the instant every cold blue mana channel in the fan-shaped pale mineral Crown goes dark. The three lower offering plinths remain lit only by amber shrine lamps: sealed season-stone west, uncut crystal in black iron bowl center, worn piton east. A sturdy dwarf tender stands motionless at the yellow boundary in the foreground, face turned toward the sudden mineral darkness.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "motionless at the boundary facing the dark Crown", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_fourth_channel",
+        "ink_anchor": "crown_answer",
+        "base_image_prompt": "Numinous reveal in the lower answering bowl. One cold blue line wakes in the highest fold of a pale living mineral Crown on the north wall, travels down a damp crack, turns the worn iron piton on the east plinth toward the heavy side-passage gate, then buds into a completely new fourth channel across the floor. The new channel stops exactly at the yellow boundary before the boots of a sturdy dwarf tender. The returned crystal in its black iron bowl emits one visible ring of blue light. Amber lamps leave the surrounding cavern in reverent shadow.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "at the boundary with boots inches from the new channel", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The fourth channel is a new living mineral growth from Crown to yellow line, distinct from carved industrial runes and prepared floor marks.",
+          "The piton rotates on the east plinth while the season-stone remains on the west plinth."
+        ]
+      },
+      {
+        "visual_scene_id": "hallowshaft_familiar_knocks",
+        "ink_anchor": "answer_choice.answer_with_familiar_keeper",
+        "base_image_prompt": "Close-medium relationship test at the yellow boundary. A sturdy dwarf journeyworker kneels with a small iron listening hammer and taps a nine-beat pattern into the mineral floor. Nine pale pulses climb the living north-wall Crown in answer. A tall elf witness at the upper rail pauses over her wax plan, and a broad dwarf Master by the reserve gauge watches with skeptical tension. The iron piton still points toward the east passage gate.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "kneeling with listening hammer at the boundary", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "eiravel_senn", "default_stance": "paused over the wax plan", "visual_ref": "visual_character_refs.characters.eiravel_senn"},
+          {"agent_id": "borren_keld", "default_stance": "watching beside the falling gauge", "visual_ref": "visual_character_refs.characters.borren_keld"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_changed_witness",
+        "ink_anchor": "answer_choice.answer_through_independent_witness",
+        "base_image_prompt": "Controlled repeat test in the lower answering bowl. A tall elf witness in a moss-green travel coat stands at the yellow boundary speaking with open empty hands. The worn iron piton has moved to the west plinth and the sealed gray season-stone to the east. A sturdy dwarf tender stands clear beside the grated stair; a soot-robed dwarf shrine keeper remains silent at the upper rail; a lean goblin route keeper holds both hands visibly above the east-gate brake. Cold blue light from the living Crown ignores the old position and finds the moved piton.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "standing clear beside the grated stair", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "hands visible above the gate brake", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "maelin_ash", "default_stance": "silent at the upper rail", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "eiravel_senn", "default_stance": "speaking at the boundary with open hands", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_real_route",
+        "ink_anchor": "answer_choice.answer_with_real_route",
+        "base_image_prompt": "Gate-opening action at the east side of the underground chamber. A sturdy dwarf journeyworker leans back on a chain winch while a lean goblin route keeper catches the iron brake pawl at waist height. The heavy vertical gate rises to dwarf shoulder height, revealing a cold fungal side passage with wet stone, pale mushrooms, and a many-legged cave silhouette retreating beyond amber lamp reach. Blue light from the living north-wall Crown turns across the floor toward the opening. A broad dwarf Master grips his brass seal while a soot-robed priest watches the route become physically dangerous.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "braced on the gate winch", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "controlling the brake pawl", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "holding his seal near the gate", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "maelin_ash", "default_stance": "watching from the rail with solemn attention", "visual_ref": "visual_character_refs.characters.maelin_ash"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_patient_growth",
+        "ink_anchor": "answer_choice.answer_without_forcing",
+        "base_image_prompt": "Quiet time-pressure frame across the answering bowl. Every mortal hand is visibly still. A sturdy dwarf tender stands at the yellow boundary while a new blue mineral channel grows to the line, turns around her boots, and buds toward a damp crack beneath the upper gallery. On the gallery a broad dwarf Master watches the district reserve gauge drop into red; a goblin route keeper, dwarf shrine keeper, and elf witness watch the slow growth instead. Amber lamps, pale mineral, and a small mechanical shortage hammer hold the frame in suspended ritual silence.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "still at the yellow boundary", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "hands clear near the east-gate brake", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "watching the reserve gauge", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "maelin_ash", "default_stance": "hands folded around an empty offering cloth", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "eiravel_senn", "default_stance": "watching with charcoal poised above wax", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_winter_pressure",
+        "ink_anchor": "answer_fold",
+        "base_image_prompt": "Wide confrontation between revelation and infrastructure in a bowl-shaped crystal farm. The living Crown and its new blue floor channel occupy the north half; the south gallery holds the five witnesses between a red district reserve gauge, a three-strike shortage hammer, a lidded iron key coffer, a public route book, and the east passage gate. A sturdy dwarf tender stands at the stair head, a goblin route keeper at the gate, a broad dwarf Master by the gauge, a soot-robed priest beside the shallow return bowl, and a tall elf witness beside wax rubbings. The frame makes the answer and its material bill equally visible.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "at the stair head between chamber and gallery", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "at the east gate with route chalk", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "between red gauge and reset cabinet", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "maelin_ash", "default_stance": "beside the lidded return bowl", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "eiravel_senn", "default_stance": "beside wax plan and route book", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "crown_response >= 2", "modifier_prompt": "Nine blue-white pulses remain bright in the upper folds of the Crown."},
+          {"trigger": "answer_evidence >= 3", "modifier_prompt": "The wax plan shows moved token positions, a fourth channel rubbing, and separate route marks."},
+          {"trigger": "answer_evidence <= 0", "modifier_prompt": "The wax plan remains mostly blank while the familiar participants stare at one beautiful unrecorded pattern."},
+          {"trigger": "route_openness >= 3", "modifier_prompt": "The east gate stands at shoulder height with cold fungal passage visibly open."},
+          {"trigger": "route_openness <= 1", "modifier_prompt": "The east gate remains a narrow handspan slit with the heavy barrier dominating the offered route."},
+          {"trigger": "district_reserve <= 1", "modifier_prompt": "The district reserve gauge is deep red and the shortage hammer is raised for another three-strike call."}
+        ]
+      },
+      {
+        "visual_scene_id": "hallowshaft_custody_pressure",
+        "ink_anchor": "custody_choice",
+        "base_image_prompt": "Medium-wide choice frame on the south service gallery. A lidded rectangular iron key coffer sits under a brass farm seal between a broad dwarf Master and tall elf witness; its empty second eye and the witness's loose green cord remain plainly visible. A wax rubbing and route-book copy lie on the lectern. The east gate, chain winch, and blank route tag stand to the right; the west one-channel harvest control and district crystal bin stand to the left. A sturdy dwarf tender occupies the center with reachable paths to coffer, evidence, gate, and harvest control. A lean goblin route keeper waits by the gate brake and a soot-robed priest guards the null slate.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "centered between four material choices", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "waiting by the gate brake and blank tag", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "at the seal end of the key coffer", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "maelin_ash", "default_stance": "guarding the null slate", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "eiravel_senn", "default_stance": "beside the wax evidence with loose green witness cord ready", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "reset_custody >= 4", "modifier_prompt": "The key coffer is visibly secured by both brass seal and taut green witness cord."},
+          {"trigger": "answer_evidence >= 2", "modifier_prompt": "A crisp charcoal rubbing of the fourth channel lies beside moved-token notes on the lectern."},
+          {"trigger": "route_openness >= 3", "modifier_prompt": "The east gate stands high with a blank route tag hanging from its chain."}
+        ]
+      },
+      {
+        "visual_scene_id": "hallowshaft_final_threshold",
+        "ink_anchor": "final_state",
+        "base_image_prompt": "Whole-chamber final threshold from the south-west gallery corner. The full bowl-shaped room is legible: closed west hopper and harvest sluice, central grated stair, three lower plinths and yellow boundary, north-wall living Crown with fourth blue channel, east passage gate and winch, south reset cabinet, lidded iron key coffer, shallow return bowl, route-book lectern, wax evidence, district crystal bin, reserve gauge, and shortage hammer. The sturdy dwarf tender stands between chamber floor and gallery controls while goblin route keeper, dwarf Master, dwarf shrine keeper, and elf witness occupy their established stations. The composition balances personhood evidence, route risk, divided authority, and winter supply.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "centered at the stair head facing the four possible next acts", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "by the gate with route chalk and blank tag", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "beside reserve gauge with seal visible", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "maelin_ash", "default_stance": "beside null slate and return bowl", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "eiravel_senn", "default_stance": "beside witness plan and public route book", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "ritual_integrity >= 4", "modifier_prompt": "The null slate is dark, the yellow line intact, and the time board shows a full quiet interval."},
+          {"trigger": "ritual_integrity <= 1", "modifier_prompt": "A full fresh crystal bin and dust-coated harvest tools crowd the newly quiet ritual space."},
+          {"trigger": "district_reserve >= 4", "modifier_prompt": "The district bin is full enough for the gauge to stand above amber."},
+          {"trigger": "district_reserve <= 0", "modifier_prompt": "The district bin is empty, the gauge is pinned red, and the shortage hammer is raised for a fourth call."},
+          {"trigger": "master_support >= 4", "modifier_prompt": "Borren stands beside the hearing record with his heavy brass seal presented toward the next bounded act."},
+          {"trigger": "master_support <= 0", "modifier_prompt": "Borren has moved toward the reset cabinet with closed posture and the seal held close to his body."},
+          {"trigger": "reset_custody >= 4", "modifier_prompt": "Separate hands visibly hold the brass-seal ring and green-cord end of the closed key coffer."},
+          {"trigger": "core_trust >= 4", "modifier_prompt": "Blue light gathers toward Tavra, the returned crystal, and the open route while the harvest sluice remains dark."},
+          {"trigger": "core_trust <= 1", "modifier_prompt": "The Crown's outer mineral folds close tightly around the blue line leading to the harvest sluice."},
+          {"trigger": "answer_evidence >= 3", "modifier_prompt": "Wax rubbing, changed token diagram, and living crack map form three distinct inspectable records at the lectern."},
+          {"trigger": "route_openness >= 3", "modifier_prompt": "The east passage is open to dwarf shoulder height with cold fungi and wet stone visible beyond."},
+          {"trigger": "crown_response >= 2", "modifier_prompt": "Nine remembered lights wait in the Crown's upper folds."}
+        ]
+      },
+      {
+        "visual_scene_id": "hallowshaft_ending_recognition",
+        "ink_anchor": "ending_recognition|ending_recognition_cost",
+        "base_image_prompt": "Recognition aftermath at the route-book lectern above the answering bowl. A sturdy dwarf journeyworker writes the place-name and proposed terms beneath a farm number in a thick public book. A soot-robed dwarf shrine keeper stands beside the returned-crystal bowl. A tall elf witness studies the living crack crossing the property plan. A broad dwarf Master marks a winter shortfall on a separate allocation slate. A lean goblin route keeper holds a feed measure. Across the chamber, the pale Crown and east gate remain visible as active parties to the unresolved bargain.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "writing at the route-book lectern", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "holding the next feed measure", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "recording the winter shortfall", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "maelin_ash", "default_stance": "beside the return bowl", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "eiravel_senn", "default_stance": "studying the crack beyond the property plan", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_ending_moot",
+        "ink_anchor": "ending_moot|ending_moot_cost",
+        "base_image_prompt": "Wide local moot under a carved stone district roof. A sturdy dwarf journeyworker carries a shallow black iron return bowl holding untallied blue-white crystal, a tall elf witness holds a charcoal wax rubbing, and a lean goblin route keeper carries a copied route map with living cracks. Around them gather compact dwarves, goblins, humans, elves, and halflings in kitchen aprons, cold-store coats, rail leathers, delver gear, shrine robes, and workshop clothes. Copper heat cans, a red service gauge, several brass civic seals, and portable charcoal braziers make the winter cost visible. The evidence table is the composition's sole focal center.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "at the evidence table with the crystal-bearing return bowl", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "holding the route-book copy before the crowd", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "eiravel_senn", "default_stance": "presenting the wax rubbing", "visual_ref": "visual_character_refs.characters.eiravel_senn"},
+          {"agent_id": "district_moot", "default_stance": "gathered in a loose ring around the evidence table", "visual_ref": "visual_character_refs.groups.district_moot"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_ending_exchange",
+        "ink_anchor": "ending_exchange|ending_exchange_cost",
+        "base_image_prompt": "Bounded-exchange aftermath spanning both sides of Hallowshaft's south gallery. At the west bay, a broad dwarf Master seals one narrow harvest channel while a sturdy dwarf journeyworker measures three blue-white crystals into the district bin. At the east bay, a lean goblin route keeper ties a blank route contract beside the heavy passage gate while three mixed-species delvers in worn mail, layered cloaks, packs, lamps, and practical weapons wait to learn whether the opening is usable. Beyond the bars, a cold fungal corridor bends past pale growth toward a narrow mineral seam above a harder path. The living Crown glows on the north wall, linking two visibly hazardous and conditional exchanges.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "measuring crystal at the west bin", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "hanging the blank route contract at the east gate", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "sealing the one-channel harvest control", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "delving_party", "default_stance": "studying the open fungal route with room to retreat", "visual_ref": "visual_character_refs.groups.delving_party"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hallowshaft_ending_silence",
+        "ink_anchor": "ending_silence|ending_silence_cost",
+        "base_image_prompt": "Quiet closure aftermath in the bowl-shaped cultivation vault after the work lamps dim. A sturdy dwarf journeyworker seats a dark null bar across the west harvest sluice. At the south reset station, a lidded iron key coffer, brass farm seal, second lock eye, and green witness cord remain fully visible between a broad dwarf Master and tall elf witness. A soot-robed dwarf shrine keeper writes the observed question and response at the lectern. A lean goblin route keeper leaves a meal measure beside the east gate, which remains open one handspan onto a breathing fungal passage. In the lower bowl, one pale blue channel from the living north-wall Crown follows the yellow boundary through deep shadow.",
+        "visible_characters": [
+          {"agent_id": "tavra_nineknocks", "default_stance": "seating the null bar at the west sluice", "visual_ref": "visual_character_refs.characters.tavra_nineknocks"},
+          {"agent_id": "pip_underrail", "default_stance": "setting feed beside the east gate", "visual_ref": "visual_character_refs.characters.pip_underrail"},
+          {"agent_id": "borren_keld", "default_stance": "at the brass farm seal side of the reset station", "visual_ref": "visual_character_refs.characters.borren_keld"},
+          {"agent_id": "maelin_ash", "default_stance": "writing the no-verdict record", "visual_ref": "visual_character_refs.characters.maelin_ash"},
+          {"agent_id": "eiravel_senn", "default_stance": "at the second-eye side of the reset station with green cord visible", "visual_ref": "visual_character_refs.characters.eiravel_senn"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "hold_reset_in_common_visual",
+        "trigger": "branch_label == hold_reset_in_common",
+        "apply_to_visual_scene_ids": ["hallowshaft_custody_pressure", "hallowshaft_final_threshold", "hallowshaft_ending_silence"],
+        "modifier_prompt": "Tavra holds the green cord below Eiravel's knot while Borren holds the sealed coffer lid by its brass ring, stretching the closed key coffer visibly between separate hands."
+      },
+      {
+        "modifier_id": "widen_the_witness_visual",
+        "trigger": "branch_label == widen_the_witness",
+        "apply_to_visual_scene_ids": ["hallowshaft_custody_pressure", "hallowshaft_final_threshold", "hallowshaft_ending_moot"],
+        "modifier_prompt": "Fresh charcoal wax rubbings are separated into multiple copies; Pip carries one toward the public route book while Eiravel keeps the original plan at the lectern."
+      },
+      {
+        "modifier_id": "preserve_core_contest_visual",
+        "trigger": "branch_label == preserve_core_contest",
+        "apply_to_visual_scene_ids": ["hallowshaft_custody_pressure", "hallowshaft_final_threshold", "hallowshaft_ending_exchange"],
+        "modifier_prompt": "A blank route tag hangs from the raised east-gate chain; cold fungal air moves the tag while the passage remains visibly wide enough for a delver."
+      },
+      {
+        "modifier_id": "answer_winter_need_visual",
+        "trigger": "branch_label == answer_winter_need",
+        "apply_to_visual_scene_ids": ["hallowshaft_custody_pressure", "hallowshaft_final_threshold", "hallowshaft_ending_exchange"],
+        "modifier_prompt": "Three narrow blue-white crystals lie in the district bin under a one-channel brass seal; the reserve gauge rises while the Crown's fourth floor channel dims."
+      },
+      {
+        "modifier_id": "ending_recognition_success_visual",
+        "trigger": "ending_label == bargaining_person_recognized",
+        "apply_to_visual_scene_ids": ["hallowshaft_ending_recognition"],
+        "modifier_prompt": "Nine pale lights descend the Crown toward the yellow line, and the east gate lifts another finger-width while the open route book shows one bold place-name above four compact term marks."
+      },
+      {
+        "modifier_id": "ending_recognition_cost_visual",
+        "trigger": "ending_label == bargaining_person_claim_exceeds_evidence",
+        "apply_to_visual_scene_ids": ["hallowshaft_ending_recognition"],
+        "modifier_prompt": "The Crown is dark, the returned-crystal bowl is empty or unlit, and Maelin closes the route book across Tavra's unfinished line while Pip leaves a full feed measure nearby."
+      },
+      {
+        "modifier_id": "ending_moot_success_visual",
+        "trigger": "ending_label == distributed_public_hearing",
+        "apply_to_visual_scene_ids": ["hallowshaft_ending_moot"],
+        "modifier_prompt": "Three independently held evidence objects occupy the table: shallow return bowl with untallied crystal, wax channel rubbing, and living-crack route copy; workshop seals gather around them while service workers point to separate heat, food, and rail marks."
+      },
+      {
+        "modifier_id": "ending_moot_cost_visual",
+        "trigger": "ending_label == public_hearing_with_private_proof",
+        "apply_to_visual_scene_ids": ["hallowshaft_ending_moot"],
+        "modifier_prompt": "The evidence table holds one dramatic but incomplete wax mark, the reserve gauge is red, portable braziers burn low, and the crowd has split into skeptical clusters around competing seal holders."
+      },
+      {
+        "modifier_id": "ending_exchange_success_visual",
+        "trigger": "ending_label == bounded_winter_exchange",
+        "apply_to_visual_scene_ids": ["hallowshaft_ending_exchange"],
+        "modifier_prompt": "The district bin holds a measured crystal share, one harvest channel carries a narrow sealed blue flow, and the open route shows fungal growth diverting delvers from the obvious mineral seam while their retreat stays clear."
+      },
+      {
+        "modifier_id": "ending_exchange_cost_visual",
+        "trigger": "ending_label == winter_bargain_without_two_sides",
+        "apply_to_visual_scene_ids": ["hallowshaft_ending_exchange"],
+        "modifier_prompt": "The district bin holds only three taken crystals, the east gate is too narrow for the waiting delvers, Pip removes the blank route tag, and the Crown closes pale outer folds around the harvest line."
+      },
+      {
+        "modifier_id": "ending_silence_success_visual",
+        "trigger": "ending_label == uncertainty_preserved_under_divided_custody",
+        "apply_to_visual_scene_ids": ["hallowshaft_ending_silence"],
+        "modifier_prompt": "The key coffer remains taut between seal and green cord, the null bar sits flush across the harvest sluice, the east gate breathes through one handspan, and one pale boundary channel stays lit in darkness."
+      },
+      {
+        "modifier_id": "ending_silence_cost_visual",
+        "trigger": "ending_label == sealed_chamber_without_preserved_authority",
+        "apply_to_visual_scene_ids": ["hallowshaft_ending_silence"],
+        "modifier_prompt": "Guards with hooded lamps stand at the west sluice, the reset key hangs from a single owner's cabinet hook, the east gate is a narrow blocked slit, and thick pale mineral folds crowd the Crown around stored blue mana."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "hallowshaft_answering_chamber.scene_set.required",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "One bowl-shaped cultivation vault: a straight upper service gallery spans the south rim; a grated central stair descends northward into the lower answering bowl; west harvest equipment and east passage gate face each other across the gallery; three plinths stand below inside a yellow boundary; the Listening Crown occupies the north wall opposite the gallery.",
+      "fixed_zones": [
+        {"zone_id": "south_service_gallery", "visible_form": "straight carved-stone gallery with brass rail, amber lamps, west harvest bay, central stair opening, east gate controls, and north-facing sightline", "used_for": "ordinary work, witness staging, reset custody, reserve pressure, and final choice"},
+        {"zone_id": "lower_answering_bowl", "visible_form": "shallow mineral floor below the gallery, reached by one grated stair and bounded by a yellow crystal line around three plinths", "used_for": "prepared question, fourth-channel growth, and Tavra's floor-level actions"},
+        {"zone_id": "listening_crown_north_wall", "visible_form": "fan of pale living mineral folds with healing, budding cold-blue mana channels integrated into the north wall", "used_for": "all observable core responses"},
+        {"zone_id": "west_feed_and_harvest_bay", "visible_form": "iron fungal-meal hopper above a barred crystal sluice, district bin, one-channel control, null bar, and dust-catching teeth", "used_for": "feeding, routine cleaning, harvest, returned yield cost, and bounded service"},
+        {"zone_id": "east_contested_route_gate", "visible_form": "heavy vertical iron gate, chain winch, waist-height brake pawl, blank route-tag hook, and cold fungal passage beyond", "used_for": "symbolic and physically opened delving route"},
+        {"zone_id": "reset_custody_station", "visible_form": "locked stone-and-iron reset cabinet beside a shelf for the dedicated lidded key coffer, brass seal ring, and green witness cord", "used_for": "memory-reset authority and divided custody"},
+        {"zone_id": "witness_lectern_and_reserve", "visible_form": "north-facing stone lectern with route book, wax plan, charcoal, time board, district reserve gauge, and three-strike shortage hammer", "used_for": "independent evidence, public record, and winter pressure"},
+        {"zone_id": "three_offering_plinths", "visible_form": "west, middle, and east knee-high mineral plinths visible from gallery and floor, holding season-stone, returned crystal bowl, and delver piton in changing positions", "used_for": "meaning-transfer test and object continuity"}
+      ],
+      "camera_slots": [
+        {"camera_id": "southwest_gallery_wide", "supports_visual_scene_ids": ["hallowshaft_establishing", "hallowshaft_preparation_fold", "hallowshaft_winter_pressure", "hallowshaft_final_threshold"]},
+        {"camera_id": "west_harvest_medium", "supports_visual_scene_ids": ["hallowshaft_morning_tending", "hallowshaft_returned_gift", "hallowshaft_winter_harvest"]},
+        {"camera_id": "reset_station_close", "supports_visual_scene_ids": ["hallowshaft_divided_key", "hallowshaft_custody_pressure", "hallowshaft_ending_silence"]},
+        {"camera_id": "rail_to_bowl_high_angle", "supports_visual_scene_ids": ["hallowshaft_living_boundary_map", "hallowshaft_prepared_question", "hallowshaft_changed_witness"]},
+        {"camera_id": "north_crown_floor_level", "supports_visual_scene_ids": ["hallowshaft_crown_darkens", "hallowshaft_fourth_channel", "hallowshaft_familiar_knocks", "hallowshaft_patient_growth"]},
+        {"camera_id": "east_gate_medium", "supports_visual_scene_ids": ["hallowshaft_real_route", "hallowshaft_ending_exchange"]},
+        {"camera_id": "lectern_aftermath_medium", "supports_visual_scene_ids": ["hallowshaft_ending_recognition"]},
+        {"camera_id": "district_moot_wide", "supports_visual_scene_ids": ["hallowshaft_ending_moot"]}
+      ],
+      "routes": [
+        {"route_id": "gallery_to_answering_floor", "path": "south service gallery -> central grated stair -> yellow boundary edge in lower bowl", "access": "Tavra descends during the prepared question; witnesses remain on the gallery unless a repeat test calls Eiravel down"},
+        {"route_id": "gallery_work_line", "path": "west harvest bay -> central stair head -> witness lectern and reset station -> east gate controls", "access": "all five participants can traverse the gallery; tools remain in their named bays"},
+        {"route_id": "east_delving_route", "path": "gallery gate controls -> raised iron gate -> cold fungal side passage -> unseen bend", "access": "a party can enter only when gate height reaches shoulder level; retreat remains through the same gate"},
+        {"route_id": "district_exit", "path": "southwest service door -> upper freight corridor -> district moot and service streets", "access": "evidence, crystal bins, and workers leave Hallowshaft through the gallery service door"}
+      ],
+      "staging_slots": [
+        {"slot_id": "tender_harvest_station", "position": "west gallery bay within dwarf reach of sluice grate, one-channel control, district bin, and return crystal", "supports": "Tavra's cleaning, harvest, returned gift, null-bar, and bounded service actions"},
+        {"slot_id": "tender_boundary_station", "position": "lower bowl immediately south of the yellow mineral line with clear view of all three plinths and Crown", "supports": "Tavra's question, nine-knock pattern, waiting, and fourth-channel encounter"},
+        {"slot_id": "goblin_gate_brake_station", "position": "east gallery beside waist-high brake pawl and blank route-tag hook", "supports": "Pip's gate assistance, route custody, and safe access to the work line"},
+        {"slot_id": "master_reserve_station", "position": "south gallery between reserve gauge, reset cabinet, and one-channel harvest control", "supports": "Borren's seal, key, reserve observation, and bounded harvest authority"},
+        {"slot_id": "shrine_null_station", "position": "central gallery rail above the middle plinth with black null slate and return-bowl shelf", "supports": "Maelin's question, null casting, bowl custody, and record"},
+        {"slot_id": "witness_lectern_station", "position": "south-east gallery at the route-book lectern with view of plinths, Crown, east gate, reserve gauge, and key coffer", "supports": "Eiravel's independent map, wax rubbing, cord custody, and repeat question"}
+      ],
+      "occluders": [
+        {"occluder_id": "south_gallery_slab", "effect": "blocks floor-level view under the gallery; living cracks passing beneath it must be observed from rail edge or lower bowl"},
+        {"occluder_id": "west_harvest_casing", "effect": "blocks a person at the west bay from seeing the east passage bend while leaving gate height and Crown visible"},
+        {"occluder_id": "east_passage_bend", "effect": "prevents gallery witnesses from seeing creatures or route changes beyond the first fungal corridor"}
+      ],
+      "object_state_anchors": [
+        {"object_id": "memory_reset_key", "states": ["master_hand", "coffer_under_master_seal", "coffer_divided", "held_in_common", "returned_near_cabinet"]},
+        {"object_id": "reset_key_coffer", "states": ["open_on_shelf", "farm_seal_closed", "farm_seal_and_witness_cord", "held_between_authorities"]},
+        {"object_id": "black_iron_return_bowl", "states": ["holds_yesterday_shard", "holds_two_uncut_crystals", "carried_to_moot"]},
+        {"object_id": "east_passage_gate", "states": ["one_handspan", "shoulder_height", "marked_with_blank_route_tag", "narrow_blocked_slit"]},
+        {"object_id": "district_crystal_bin", "states": ["sparse", "contract_full", "three_crystal_bounded_yield", "empty"]},
+        {"object_id": "witness_record", "states": ["clean_property_plan", "living_cracks_added", "fourth_channel_rubbing", "distributed_copies", "private_incomplete_mark"]},
+        {"object_id": "listening_crown", "states": ["routine_blue_flow", "fully_dark", "piton_answer", "fourth_boundary_channel", "nine_pulse_response", "closed_harvest_folds", "thickened_stored_mana"]},
+        {"object_id": "offering_tokens", "states": ["piton_east_season_west", "piton_west_season_east", "return_bowl_center_with_crystal"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "tavra_nineknocks": "Tavra Nineknocks: adult dwarf woman core tender, sturdy compact build, copper-brown skin, broad practical face, dark attentive eyes, black hair in two short work braids threaded with iron beads, blue-gray canvas-and-leather journeyworker coat over dark wool, thick gloves tucked at belt, small iron listening hammer, chalk pouch, crystal dust on cuffs, grounded stance shaped by heavy tools and low tunnels.",
+      "pip_underrail": "Pip Underrail: adult goblin route keeper, short lean humanoid build, green-brown skin, large amber eyes, long swept ears, dark cropped hair under a soft gray work cap, patched charcoal-and-blue tunnel vest with many narrow pockets, knee guards, chalk loops, long brush handle and blank route tags, quick balanced crouch and openly skeptical expression.",
+      "borren_keld": "Master Borren Keld: middle-aged dwarf man, broad square build, deep umber skin, iron-gray beard cut close and bound once at the chin, heavy brown farm coat reinforced at shoulders, rectangular brass workshop seal on a thick belt chain, long iron reset key or allocation slate depending on scene, controlled posture that turns worry into arithmetic.",
+      "maelin_ash": "Sister Maelin Ash: older dwarf woman Forge-shrine keeper, compact upright build, warm brown skin, silver hair covered by a soot-black linen hood, layered charcoal robes with a rust-red work apron, two soot-dark fingertips, shallow black iron return bowl and black null slate, patient face with the severity of someone who expects prayers to survive contact with tools.",
+      "eiravel_senn": "Eiravel Senn: adult elf spirit-law witness, tall slender humanoid build, tawny skin, long angular face, dark green eyes, black hair braided into a single narrow cord, moss-green travel coat over practical cream layers, waxed-cloth plan tube, charcoal block, green braided witness cord, still observant posture that keeps hands visible during tests."
+    },
+    "groups": {
+      "district_moot": "Hallowshaft district moot: mixed adults from the Greathold including compact dwarves, lean goblins, humans, elves, and halflings; kitchen aprons, quilted cold-store coats, oil-dark rail leathers, delver mail and cloaks, shrine work robes, and workshop belts with a few heavy brass seals; gathered in a loose accountable ring around evidence and service gauges.",
+      "delving_party": "Hallowshaft contract delvers: three mixed-species adult adventurers in worn mail, layered wool cloaks, leather packs, hooded amber lamps, ropes, chalk, short practical weapons, and retreat gear; cautious stance facing a cold fungal stone passage while leaving the gate behind them clear."
+    }
+  },
+  "review_notes": [
+    "Four required reviewer verdicts are recorded in the training sidecar after artifact revision.",
+    "The visual plan supplies a draft scene-set map with fixed zones, camera slots, routes, staging, occluders, and branch-persistent object states; a camera-specific plan view or 3D blockout remains required before replay-ready multi-angle rendering.",
+    "All base prompts restate visible geometry and use affirmative descriptions; recurring named characters and visible groups have stable refs, and off-frame refs are excluded from each scene.",
+    "No images were generated. The BFL manifest is a deferred rendering batch only."
+  ]
+}

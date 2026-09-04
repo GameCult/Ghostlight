@@ -1,0 +1,488 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "numen-first-answer-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/delvehold/numen-first-answer-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/numen-first-answer-v0.v0.json",
+  "scene_id": "numen-first-answer-v0.hallowshaft-final-hearing",
+  "protagonist_agent_id": "tavra_nineknocks",
+  "npc_agent_ids": [
+    "pip_underrail",
+    "borren_keld",
+    "maelin_ash",
+    "eiravel_senn",
+    "hallowshaft_core_uncertain"
+  ],
+  "purpose": "Numen-mandate branch-and-fold fixture dramatizing the final shift of Hallowshaft Farm's First Answer hearing from the familiar core tender's bounded perspective.",
+  "local_awareness_summary": [
+    {
+      "text": "Tavra knows Hallowshaft's feeding, harvest, route, reset, and nine-knock tending routines, but cannot know which nested mind produces the Listening Crown's response.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/numen-first-answer-v0.v0.json",
+        "Delvehold/Lore/Ontology/Dungeon Cores.md"
+      ]
+    },
+    {
+      "text": "The hearing is valid only if the harvest is nulled, refusal remains possible, witnesses change position and tokens, and the offered delving route becomes materially contestable.",
+      "source_refs": [
+        "Delvehold/Lore/Ontology/Dungeon Cores.md",
+        "Delvehold/Lore/Dungeon Ecology/Dungeon Lifecycle.md"
+      ]
+    },
+    {
+      "text": "Tavra can see the district reserve gauge and knows which public services use the missing crystals; she cannot allocate district service or exercise Borren's workshop seal.",
+      "source_refs": [
+        "Delvehold/Lore/Industry/Dwarven Industry.md",
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+      ]
+    },
+    {
+      "text": "Tavra recognizes the fourth channel and nine-pulse response as new relative to routine, while Eiravel, Maelin, Pip, and Borren interpret the same material signs through different traditions and interests.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/numen-first-answer-v0.v0.json"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Tavra's embodied dwarf journeyworker view from the service gallery, grated stair, offering line, return bowl, key coffer, harvest sluice, and east-gate winch. Choices use reachable objects, witnessed speech, waiting, mapping, custody, and route work rather than omniscient magic.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/numen-first-answer-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes feeding, cleaning, tallying, reserve pressure, workplace humor, and character roles before the Listening Crown produces the unprepared fourth channel.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      },
+      {
+        "text": "Tonal mode is ritual quiet with warm shop-floor wit, widening into economic and numinous unease without turning every beat into crisis procedure.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Tavra may return farm material, operate assigned chamber tools, make proposals, carry evidence, and withhold her cooperation; she cannot stamp Borren's seal, determine citizenship, declare divinity, or prove the speaking mind's boundary.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Ontology/Dungeon Cores.md",
+          "Delvehold/Lore/Ontology/Nested Dungeons.md"
+        ]
+      },
+      {
+        "text": "Borren's workshop seal can admit a bounded farm operation but cannot privately settle personhood or retake divided reset custody without visible breach.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Ontology/Dungeon Cores.md"
+        ]
+      },
+      {
+        "text": "The core receives no authored internal monologue. Its apparent actions are observable light, mineral growth, object movement, gate pressure, route change, and silence; every interpretation remains attributed to a witness.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Dungeon Cores.md",
+          "Delvehold/Lore/Ontology/Nested Dungeons.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The uncut crystal, shallow black iron return bowl, lidded reset-key coffer, reset key, farm seal, witness cord, wax rubbing, route-book copy, piton, season-stone, null slate, and east-gate tag have explicit holders and later consequence surfaces.",
+        "source_refs": [
+          "examples/ink/delvehold/numen-first-answer-v0.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "Reset custody is materially divided only when the key is sealed in its dedicated coffer and separate parties retain the seal end and witness-cord end; mere good intent does not create divided authority.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Dungeon Cores.md",
+          "examples/ink/delvehold/numen-first-answer-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "A successful answer begins negotiation and obligation; it does not make Hallowshaft a god, citizen, innocent creature, or proven local-scale mind.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Dungeon Cores.md",
+          "Delvehold/Lore/Ontology/Gods and Religion.md",
+          "Delvehold/Lore/Ontology/Nested Dungeons.md"
+        ]
+      },
+      {
+        "text": "Every final priority must preserve the conflict between cognition evidence, core refusal, winter infrastructure, distributed witness, and reset authority instead of supplying a clean moral exit.",
+        "source_refs": [
+          "Delvehold/Lore/Crisis/World Without a Villain.md",
+          "Delvehold/Lore/Dungeon Ecology/Dungeon Lifecycle.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make one beautiful runic pattern conclusive proof of a soul, god, or harmless ally.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Dungeon Cores.md",
+          "Delvehold/Lore/Ontology/Gods and Religion.md"
+        ]
+      },
+      {
+        "text": "Do not let permanent closure cure the dungeon lifecycle or let resumed extraction count as a bargain when only the farm can change the price.",
+        "source_refs": [
+          "Delvehold/Lore/Dungeon Ecology/Dungeon Lifecycle.md",
+          "Delvehold/Lore/Ontology/Dungeon Cores.md"
+        ]
+      },
+      {
+        "text": "Do not grant Tavra, Maelin, Eiravel, Pip, or Borren private access to the core's intent or the scale of the responding mind.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Nested Dungeons.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through ordinary hearing preparation, the unprepared fourth channel, winter custody pressure, and four state-gated interpretations of what the answer requires.",
+    "choice_layers": [
+      "ordinary_hearing_preparation",
+      "answer_under_uncertainty",
+      "answer_and_material_cost",
+      "meaning_of_the_first_answer"
+    ],
+    "variables": [
+      "ritual_integrity",
+      "answer_evidence",
+      "core_trust",
+      "district_reserve",
+      "master_support",
+      "witness_independence",
+      "reset_custody",
+      "route_openness",
+      "crown_response"
+    ],
+    "ending_gates": [
+      "ending_recognition",
+      "ending_recognition_cost",
+      "ending_moot",
+      "ending_moot_cost",
+      "ending_exchange",
+      "ending_exchange_cost",
+      "ending_silence",
+      "ending_silence_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_returned_gift",
+      "ink_path": "preparation_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Make the hearing cost the keepers a real unit of winter fuel before asking for an answer.",
+      "state_basis": [
+        "Tavra has custody of the first uncut crystal before Borren tallies it.",
+        "The First Answer calls for a returned uncut crystal and admits material cost as part of the question."
+      ],
+      "reviewed_consequences": [
+        "Raises core_trust and ritual_integrity while lowering district_reserve; later strengthens recognition and weakens winter-service margins."
+      ],
+      "training_hooks": [
+        "costly_ritual_choice",
+        "returned_ecological_share",
+        "wonder_with_ledger_cost"
+      ]
+    },
+    {
+      "branch_id": "divide_reset_custody",
+      "ink_path": "preparation_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Prevent one workshop owner from silently erasing an unwelcome answer.",
+      "state_basis": [
+        "Borren holds the reset key and farm seal at the upper gallery cabinet.",
+        "The shrine's dedicated key coffer and Eiravel's witness cord can create a visible two-party lock."
+      ],
+      "reviewed_consequences": [
+        "Raises reset_custody and ritual_integrity while lowering master_support; later unlocks the divided-custody pressure choice and silence success."
+      ],
+      "training_hooks": [
+        "authority_division",
+        "ritual_as_material_custody",
+        "managerial_cost"
+      ]
+    },
+    {
+      "branch_id": "prime_independent_witness",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Record living cracks beyond the prepared sign system and property plan.",
+      "state_basis": [
+        "Pip knows which cracks are active and Eiravel controls a separate witness plan."
+      ],
+      "reviewed_consequences": [
+        "Raises witness_independence, answer_evidence, and route_openness; later improves the public-hearing gate and makes the boundary dispute visible."
+      ],
+      "training_hooks": [
+        "goblin_local_knowledge",
+        "independent_evidence",
+        "property_boundary_failure"
+      ]
+    },
+    {
+      "branch_id": "prime_winter_reserve",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Protect immediate district heat and food storage before the chamber falls quiet.",
+      "state_basis": [
+        "Tavra and Pip can complete the open harvest run before Maelin draws null."
+      ],
+      "reviewed_consequences": [
+        "Raises district_reserve and master_support while lowering ritual_integrity; later strengthens bounded winter exchange and weakens recognition or silence gates."
+      ],
+      "training_hooks": [
+        "infrastructure_before_revelation",
+        "compromised_ritual_integrity",
+        "no_clean_villain"
+      ]
+    },
+    {
+      "branch_id": "answer_with_familiar_keeper",
+      "ink_path": "answer_choice",
+      "action_type": "use_object",
+      "actor_intent": "Test memory and relationship through Tavra's private nine-knock tending rhythm.",
+      "state_basis": [
+        "Tavra carries a listening hammer and knows the private tending rhythm.",
+        "The core has a long encounter history with Tavra."
+      ],
+      "reviewed_consequences": [
+        "Raises core_trust and crown_response while lowering witness_independence; creates strong relationship evidence and weak public independence."
+      ],
+      "training_hooks": [
+        "familiarity_as_signal_and_bias",
+        "nonverbal_relationship",
+        "bounded_core_response"
+      ]
+    },
+    {
+      "branch_id": "answer_through_independent_witness",
+      "ink_path": "answer_choice",
+      "action_type": "mixed",
+      "actor_intent": "Test whether the apparent choice survives moved signs, a new speaker, and a different ritual register.",
+      "state_basis": [
+        "Eiravel can repeat the question after Tavra exchanges the piton and season-stone."
+      ],
+      "reviewed_consequences": [
+        "Raises answer_evidence and witness_independence while lowering core_trust; later strengthens the moot path at a relationship cost."
+      ],
+      "training_hooks": [
+        "repeatable_meaning",
+        "changed_observer",
+        "testing_can_be_intrusion"
+      ]
+    },
+    {
+      "branch_id": "answer_with_real_route",
+      "ink_path": "answer_choice",
+      "action_type": "use_object",
+      "actor_intent": "Make the offered delving route physically usable so the core can alter its risk and price.",
+      "state_basis": [
+        "Tavra can operate the east-gate winch while Pip controls the reachable brake pawl."
+      ],
+      "reviewed_consequences": [
+        "Raises route_openness and answer_evidence while lowering district_reserve and master_support; later enables route-marking and strengthens genuine exchange."
+      ],
+      "training_hooks": [
+        "ritual_symbol_becomes_route",
+        "bounded_contest",
+        "physical_risk_of_bargain"
+      ]
+    },
+    {
+      "branch_id": "answer_without_forcing",
+      "ink_path": "answer_choice",
+      "action_type": "wait",
+      "actor_intent": "Preserve the core's unprompted growth even while the reserve clock runs.",
+      "state_basis": [
+        "The fourth channel is still growing and no immediate safety failure requires intervention."
+      ],
+      "reviewed_consequences": [
+        "Raises ritual_integrity and crown_response while lowering district_reserve; later strengthens recognition and silence at a public-service cost."
+      ],
+      "training_hooks": [
+        "waiting_as_action",
+        "silence_admitted",
+        "slow_magic_fast_economy"
+      ]
+    },
+    {
+      "branch_id": "hold_reset_in_common",
+      "ink_path": "custody_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Keep urgent district need from returning the memory-reset key to one deciding hand.",
+      "state_basis": [
+        "Available only when the reset key is already sealed beneath separate farm and witness controls."
+      ],
+      "reviewed_consequences": [
+        "Raises reset_custody and witness_independence while lowering master_support; makes the silence path materially defensible."
+      ],
+      "training_hooks": [
+        "shared_custody_under_pressure",
+        "authority_cannot_be_willed",
+        "winter_conflict"
+      ]
+    },
+    {
+      "branch_id": "widen_the_witness",
+      "ink_path": "custody_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Keep the answer from becoming private shrine, college, or farm property.",
+      "state_basis": [
+        "Available only after enough response evidence exists to press into wax and annotate."
+      ],
+      "reviewed_consequences": [
+        "Raises answer_evidence and witness_independence while lowering master_support; materially improves the public-moot ending."
+      ],
+      "training_hooks": [
+        "distributed_evidence_custody",
+        "public_route_book",
+        "institutional_exposure"
+      ]
+    },
+    {
+      "branch_id": "preserve_core_contest",
+      "ink_path": "custody_choice",
+      "action_type": "use_object",
+      "actor_intent": "Convert the hearing's route offer into a bounded path the core can accept, divert, or make dangerous.",
+      "state_basis": [
+        "Available only when the east gate is already high enough to admit a living party."
+      ],
+      "reviewed_consequences": [
+        "Raises route_openness and core_trust while lowering district_reserve; strengthens recognition and exchange while worsening the winter margin."
+      ],
+      "training_hooks": [
+        "delving_route_as_bargain",
+        "refusal_power",
+        "no_quota_before_terms"
+      ]
+    },
+    {
+      "branch_id": "answer_winter_need",
+      "ink_path": "custody_choice",
+      "action_type": "use_object",
+      "actor_intent": "Protect immediate services through one sealed channel without restoring the whole farm cycle.",
+      "state_basis": [
+        "Borren can seal a one-channel exception and Tavra can operate the smallest harvest rune."
+      ],
+      "reviewed_consequences": [
+        "Raises district_reserve and master_support while lowering route_openness and core_trust; strengthens winter exchange if enough contest remains and weakens recognition."
+      ],
+      "training_hooks": [
+        "bounded_service_compromise",
+        "core_trust_cost",
+        "partial_infrastructure_relief"
+      ]
+    },
+    {
+      "branch_id": "recognize_bargaining_person",
+      "ink_path": "final_choice",
+      "action_type": "mixed",
+      "actor_intent": "Treat the answer as the start of negotiation while refusing unsupported godhood, citizenship, or innocence claims.",
+      "state_basis": [
+        "Success depends on core_trust, ritual_integrity, an observable crown_response, and divided reset_custody."
+      ],
+      "reviewed_consequences": [
+        "Routes to supported bargaining-person recognition or to an explicitly failed claim that preserves uncertainty."
+      ],
+      "training_hooks": [
+        "personhood_creates_obligation",
+        "state_gated_recognition",
+        "no_ontological_victory_lap"
+      ]
+    },
+    {
+      "branch_id": "seek_public_hearing",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Let the district bearing the heat cost inspect evidence before naming the speaker.",
+      "state_basis": [
+        "Success depends on distributed answer_evidence and witness_independence."
+      ],
+      "reviewed_consequences": [
+        "Routes to a material local moot or to a famous but weakly evidenced hearing under rationing pressure."
+      ],
+      "training_hooks": [
+        "jurisdiction_follows_consequence",
+        "public_uncertainty",
+        "evidence_before_title"
+      ]
+    },
+    {
+      "branch_id": "bargain_through_service_and_delve",
+      "ink_path": "final_choice",
+      "action_type": "mixed",
+      "actor_intent": "Keep essential services alive while restoring the core's ability to alter the price through a real delve.",
+      "state_basis": [
+        "Success depends on district_reserve, master_support, route_openness, and divided reset_custody."
+      ],
+      "reviewed_consequences": [
+        "Routes to a two-sided winter exchange or exposes a one-sided harvest still being called a bargain."
+      ],
+      "training_hooks": [
+        "delving_exchange",
+        "infrastructure_dependency",
+        "price_both_sides_can_change"
+      ]
+    },
+    {
+      "branch_id": "honor_unresolved_silence",
+      "ink_path": "final_choice",
+      "action_type": "silence",
+      "actor_intent": "Refuse forced personhood and forced instability while preserving evidence and divided reset custody.",
+      "state_basis": [
+        "Success depends on reset_custody and ritual_integrity."
+      ],
+      "reviewed_consequences": [
+        "Routes to an honest costly quiet shift or exposes closure without durable authority or ecological exchange."
+      ],
+      "training_hooks": [
+        "uncertainty_as_discipline",
+        "silence_not_convenience",
+        "closure_not_cure"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Conditional option availability",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Any promotion of one ending into canonical Hallowshaft history",
+      "Durable character memory, relationship, or civic-standing updates",
+      "Any conclusion about the identity or scale of the mind using the Listening Crown",
+      "Any universal Greathold personhood law inferred from Hallowshaft custom",
+      "Acceptance into a model-training corpus"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex root elaborator applying the four required Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality reviewer: accepted. Scores — reader orientation 5, coherence 5, pacing 4, voice 5, tonal fit 5, IF playability 5. Required revisions from the pass were applied: token placement now occurs once in a stageable sequence, all recurring characters are introduced before branching, branch-only state is conditional after folds, and recognition or exchange cannot succeed while reset authority remains unilateral.",
+      "Lore grounding reviewer: accepted. Scores — source coverage 5, canon fit 5, grounding quality 5, vault backfill value 5. The pass checked every source listed in the grounding digest, clarified sealed reset pause versus divided custody in the authored Dungeon Cores elaboration, and preserves uncertainty over whether the local core, a deeper neighbour, or an entangled system answered.",
+      "Visual scene continuity reviewer: accepted with minor revisions. Scores — segmentation 4, visual prompts 5, character visibility 5, branch visual continuity 5, website replay 4. Applied repairs split the crystal-return bowl from the reset-key coffer, removed success-state gate and cord conditions from shared base frames, made every prompt affirmative and standalone, and aligned 21 scene ids with 21 BFL prompts. A camera-specific plan view or 3D blockout remains a pre-render requirement for multi-angle replay; rendering is deferred by this pass.",
+      "Spatial-geometric cohesion reviewer: accepted. Scores — layout cohesion 5, sightlines 5, body affordances 4, movement access 5, object-system geometry 5, branch spatial state 5. Applied repairs establish the three-person token-setting descent, Tavra's shared return to the gallery, distinct offering and reset stations, reachable dwarf- and goblin-height controls, and conditional gate, coffer, evidence, and harvest states.",
+      "Ink was not compiled because this swarm pass forbids installing or invoking an Ink compiler. Static verification found 9 variables, 16 choices, 16 standard action/branch headers matching 16 sidecar branch records, 8 ending knots, 21 unique visual scene ids, 21 unique BFL prompts, and reachable success and cost variants for all four ending families."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

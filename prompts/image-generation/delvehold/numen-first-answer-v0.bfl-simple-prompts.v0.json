@@ -1,0 +1,96 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "numen-first-answer-v0.bfl-simple-v0",
+  "fixture_id": "numen-first-answer-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured high-fantasy industrial storybook illustration, precise ink lines, restrained watercolor, worn brass and dark carved stone, pale living mineral folds, warm amber lamps against cold blue mana, readable silhouettes, humane facial acting, bounded numinous wonder, practical machinery, unlettered surfaces.",
+  "prompts": [
+    {
+      "id": "01_hallowshaft_establishing",
+      "prompt": "Bowl-shaped underground crystal farm: straight brass-railed service gallery above three offering plinths, west hopper and harvest sluice, east iron passage gate, north wall covered by a fan of living pale mineral folds threaded with blue rune-like channels."
+    },
+    {
+      "id": "02_morning_tending",
+      "prompt": "Five high-fantasy workers at morning tending: sturdy dwarf woman brushing crystal teeth, lean goblin feeding fungal meal, broad dwarf Master holding an iron key beside a dedicated key coffer, soot-robed dwarf priest with a shallow crystal-return bowl, tall elf witness opening a wax plan."
+    },
+    {
+      "id": "03_returned_gift",
+      "prompt": "Dwarf crystal tender sets one warm uncut blue-white crystal into a black iron return bowl while priest supports it, farm Master watches the lost tally, and goblin points toward an amber reserve gauge."
+    },
+    {
+      "id": "04_divided_key",
+      "prompt": "Memory-reset key lowered into a dedicated rectangular lidded iron coffer: broad dwarf Master fixes a brass seal through one eye, tall elf witness knots green cord through another, dwarf tender stands between the separate controls."
+    },
+    {
+      "id": "05_living_boundary_map",
+      "prompt": "High angle over brass rail: lean goblin points with brush handle to wet mineral cracks crossing a clean property plan; tall elf copies them onto waxed cloth; dwarf tender studies where stone ignores ownership."
+    },
+    {
+      "id": "06_winter_harvest",
+      "prompt": "Dwarf worker braces under a heavy crystal sluice while goblin rakes blue-white shards into iron district bin; Master marks contract; elf watches living blue channels follow the tool from across the chamber."
+    },
+    {
+      "id": "07_preparation_fold",
+      "prompt": "Whole answering chamber prepared: harvest dark, east gate one handspan open, three plinths below yellow boundary, priest drawing null rune, tender at grated stair, goblin at brake, Master beside reserve gauge and sealed key coffer, elf at witness lectern."
+    },
+    {
+      "id": "08_prepared_question",
+      "prompt": "Floor-level ritual tableau: dwarf tender at yellow mineral line facing three plinths holding delver piton, sealed season-stone, and returned crystal bowl; living mineral Crown fills north wall; four witnesses remain on gallery above."
+    },
+    {
+      "id": "09_crown_darkens",
+      "prompt": "Pivotal silence: every cold blue channel in a fan-shaped living mineral Crown goes dark; three offerings remain under amber lamps; solitary dwarf tender faces the sudden mineral darkness from the yellow line."
+    },
+    {
+      "id": "10_fourth_channel",
+      "prompt": "Numinous mineral answer: one blue line wakes in pale north-wall Crown, turns iron piton toward east gate, then buds into a new floor channel that stops exactly at dwarf tender's boots outside yellow boundary."
+    },
+    {
+      "id": "11_familiar_knocks",
+      "prompt": "Dwarf tender kneels with small iron hammer and taps a nine-beat pattern; nine pale pulses climb the living Crown; elf pauses over wax plan while dwarf Master watches the falling reserve gauge."
+    },
+    {
+      "id": "12_changed_witness",
+      "prompt": "Tall elf asks the question at yellow line after piton and season-stone exchange plinths; blue light ignores old position and finds moved piton; dwarf tender stands clear, priest silent, goblin hands visible at gate brake."
+    },
+    {
+      "id": "13_real_route",
+      "prompt": "Dwarf tender hauls chain winch while goblin catches brake pawl; east iron gate rises to reveal cold fungal passage and retreating many-legged silhouette; living blue channel turns toward physically open danger."
+    },
+    {
+      "id": "14_patient_growth",
+      "prompt": "Everyone holds still as a blue mineral channel slowly grows around dwarf tender's boots toward a crack under the gallery; farm Master watches reserve gauge enter red; amber lamps suspend the chamber in quiet."
+    },
+    {
+      "id": "15_winter_pressure",
+      "prompt": "Wide chamber conflict: glowing living Crown and fourth channel below; five witnesses above between red reserve gauge, three-strike shortage hammer, sealed iron key coffer, shallow crystal-return bowl, route book, crystal bin, and open passage gate."
+    },
+    {
+      "id": "16_custody_choice",
+      "prompt": "Dwarf tender centered between four material choices on stone gallery: sealed iron key coffer with visible second lock eye, copied wax evidence, heavy passage gate with blank route tag, and one-channel harvest control; goblin, Master, priest, and elf hold established stations."
+    },
+    {
+      "id": "17_final_threshold",
+      "prompt": "Whole Hallowshaft decision visible at once: harvest bay, grated stair, offering plinths, living Crown, fourth blue channel, east gate, sealed iron key coffer, shallow crystal-return bowl, route book, wax evidence, district bin, red gauge, and five tense witnesses."
+    },
+    {
+      "id": "18_recognition_end",
+      "prompt": "Dwarf tender writes Hallowshaft and proposed terms in thick route book; priest stands by return bowl, elf traces property-crossing crack, Master records winter shortfall, goblin holds next feed measure, nine lights descend living Crown."
+    },
+    {
+      "id": "19_district_moot_end",
+      "prompt": "Open stone district moot around evidence table: dwarf with shallow return bowl holding untallied blue-white crystal, elf with wax channel rubbing, goblin with living-crack map, mixed kitchen, cold-store, rail, delver, shrine, and workshop workers under red service gauge."
+    },
+    {
+      "id": "20_bounded_exchange_end",
+      "prompt": "Split work of a two-sided bargain: one sealed harvest channel fills measured crystal bin while raised east gate admits cautious delvers into cold fungal route reshaped by pale growth; living Crown glows between service and danger."
+    },
+    {
+      "id": "21_preserved_silence_end",
+      "prompt": "Dark quiet chamber: dwarf seats null bar across harvest sluice, Master and elf stand at opposite sides of a sealed iron key coffer with brass seal and green witness cord, priest writes the observed question beneath an unfilled verdict line, goblin leaves feed beside gate open one handspan, one pale channel follows yellow boundary."
+    }
+  ]
+}
