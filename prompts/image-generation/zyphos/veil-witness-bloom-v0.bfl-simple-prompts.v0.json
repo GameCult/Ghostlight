@@ -1,0 +1,60 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "veil-witness-bloom-v0.bfl-simple-v0",
+  "fixture_id": "veil-witness-bloom-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly speculative-biopunk noir storybook frame, restrained gouache and ink texture, low-energy bioluminescence, damp root-grown architecture, precise six-limbed alien anatomy, readable ecological interfaces, muted mineral greens and bruised violet against amber fungal light, intimate bureaucratic tension, cinematic interactive-fiction composition.",
+  "prompts": [
+    {
+      "id": "01_sluice_nine_establishing",
+      "prompt": "Wide root-grown checkpoint hall with aligned outer and inner arches, central low rinse dais over a slotted drain, amber fungal grate, silver-green living mat strip, pale supervisor membrane, recessed incinerator, and a russet six-limbed reptilian groomer arranging tools with two small lower hands while a large upper claw braces on a wall rib."
+    },
+    {
+      "id": "02_checkpoint_roles",
+      "prompt": "Medium checkpoint work scene: slim russet six-limbed groomer at a low dais with mineral cups and combs, broad umber six-limbed supervisor behind a raised translucent membrane, root ribs, amber floor fungi, silver-green drain mat, and cold living record light."
+    },
+    {
+      "id": "03_routine_preparation",
+      "prompt": "Overhead close work view of two small blunt alien hands choosing among a salt-charged mineral cup, a silver-green living test strip, clean tissue peelings beside amber fungal beads, and a translucent blank record nodule on a low root dais."
+    },
+    {
+      "id": "04_oru_arrival",
+      "prompt": "Travel-worn charcoal-blue six-limbed reptilian alien enters a rooted checkpoint carrying an ochre tool sling in two large clawed upper arms, smaller lower hands displayed empty, warm treatment nodule at the throat, mud between paired foot-talons, while a russet groomer waits across the central rinse dais."
+    },
+    {
+      "id": "05_witness_bloom_reveal",
+      "prompt": "Tight closeup of a hand-sized mobile plant uncurling from beneath an alien shoulder plate, clasping roots and sensory filaments exposed, flat leaves flashing yellow then violet then colorless pale above mineral runoff, with small grooming hands frozen beside it and large upper claws tightening around a tool sling."
+    },
+    {
+      "id": "06_bloom_response_choice",
+      "prompt": "Overhead decision at a low rinse dais: russet six-limbed groomer reaches with two small lower hands among a charged mineral cup, damp seed-catching cloth, yellow-violet runoff leading to a living mat, and a warm throat nodule while a charcoal-blue returner carries a bright burden flower under one shoulder plate."
+    },
+    {
+      "id": "07_supervisor_entry",
+      "prompt": "Broad umber six-limbed supervisor enters through the inner root arch beside a hot oval incinerator, peeling a pale disposal seal with one small lower hand; russet groomer and charcoal-blue returner face each other across a central dais while a yellow-violet-pale mobile flower grips the returner's shoulder plate."
+    },
+    {
+      "id": "08_disclosure_threshold",
+      "prompt": "Wide side view of three six-limbed reptilian aliens around a living treatment ledger on a low central dais, outer forest-road arch and inner imperial arch aligned behind them, amber fungal beads below the arrival-side grate, silver-green mat trace by the drain, hot incinerator beside the inner arch, and a bright mobile flower attached to the returner between jurisdictions."
+    },
+    {
+      "id": "09_living_witness_aftermath",
+      "prompt": "Outer-threshold aftermath: charcoal-blue six-limbed returner walks through a grown-root arch toward an old forest road carrying an intact yellow-violet burden flower under one shoulder plate, amber fungal beads marking the route while a russet groomer watches from the checkpoint dais."
+    },
+    {
+      "id": "10_body_courier_aftermath",
+      "prompt": "Inner-threshold suspense: russet six-limbed groomer approaches an imperial arch with one small lower hand guarding a wrapped wrist plate that hides a glossy black seed bead, charcoal-blue returner already beyond the arch, broad umber supervisor watching beside a recessed incinerator."
+    },
+    {
+      "id": "11_record_aftermath",
+      "prompt": "Object-centered checkpoint scene: small blunt alien hands press a warm translucent treatment nodule against a silver-green living mat with a violet mismatch edge while a supervisor hand holds a flexible luminous ledger at the contact point and the corrected returner watches across the low dais."
+    },
+    {
+      "id": "12_silence_aftermath",
+      "prompt": "Quiet inner-checkpoint aftermath: admitted charcoal-blue six-limbed worker pauses beside a russet groomer with empty lower hands, black plant ash and charred cloth remain in the recessed incinerator, pale root marks show beneath one shoulder plate, and a broad supervisor waits near a clean living ledger."
+    }
+  ]
+}

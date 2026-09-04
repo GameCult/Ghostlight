@@ -1,0 +1,438 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "veil-witness-bloom-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/zyphos/veil-witness-bloom-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/veil-witness-bloom-v0.v0.json",
+  "scene_id": "veil-witness-bloom-v0.sluice-nine-return-processing",
+  "protagonist_agent_id": "sivren_return_groomer",
+  "npc_agent_ids": [
+    "oru_returned_line_grafter",
+    "nahl_checkpoint_supervisor",
+    "oru_witness_flower",
+    "sluice_nine_prismwake_strip",
+    "sluice_nine_fungal_road"
+  ],
+  "purpose": "Interactive Fiction Weaver compilation of a Zyphos branch-and-fold checkpoint scene about a burden flower retaining body-state traces across imperial memory editing.",
+  "local_awareness_summary": [
+    {
+      "text": "Sivren knows Sluice Nine's return-processing routine, official hygiene language, local tools, Nahl's inspection habits, and Oru's earlier familiarity, but not the memory removed from Oru.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/veil-witness-bloom-v0.v0.json",
+        "Eusocial Interbeing/Technologies/Imperial Biopunk Infrastructure.md"
+      ]
+    },
+    {
+      "text": "Sivren can read broad Airawa plate-seam light, posture, official nodule output, burden-flower color and root tension, fungal beads, and prismwake flashes; none exposes a complete hidden proposition.",
+      "source_refs": [
+        "Eusocial Interbeing/Species/Airawa.md",
+        "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+        "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+      ]
+    },
+    {
+      "text": "The checkpoint can admit, delay, isolate, destroy a flower, or revise a record; those actions do not make its interpretation true and cannot recover erased memory.",
+      "source_refs": [
+        "Eusocial Interbeing/Technologies/Biological Memetic Engine.md",
+        "Eusocial Interbeing/Civilizations/Airawa Empire.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Sivren's six-limbed Airawa viewpoint. Upper clawed arms and taloned feet brace and climb; smaller blunt lower hands groom, conceal, touch records, and transfer small objects.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Airawa.md",
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      },
+      {
+        "text": "The opening choice performs routine checkpoint preparation before Oru arrives and the witness bloom creates pressure.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The burden flower owns its retained chemical trace. Sivren, Nahl, Oru, the mat, and the fungal road can react to that trace but cannot turn it into recovered semantic memory by interpretation alone.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md"
+        ]
+      },
+      {
+        "text": "Nahl owns checkpoint commands and imperial record admission locally, not the truth of Oru's lost memory or the independent state of external ecologies.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Airawa Empire.md",
+          "Eusocial Interbeing/Technologies/Imperial Biopunk Infrastructure.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Oru's burden flower begins attached beneath a shoulder plate; its seed bead, shed leaf, disposal cloth, treatment nodule, mineral cup, and mat trace change custody explicitly across branches.",
+        "source_refs": [
+          "examples/ink/zyphos/veil-witness-bloom-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every disclosure route must preserve uncertainty and impose a cost on a host, worker, witness organism, official record, or ecological route.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+          "Eusocial Interbeing/Themes/Memory as Hostage.md"
+        ]
+      },
+      {
+        "text": "Endings distinguish living-witness quarantine, concealed embodied rumor, official contradiction, and immediate host safety purchased through witness destruction.",
+        "source_refs": [
+          "examples/lore-grounding/zyphos/veil-witness-bloom-v0.v0.json"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let the flower replay Oru's erased proposition, identify the editor, or function as infallible testimony.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+        ]
+      },
+      {
+        "text": "Do not make resistance reception, fungal-road delivery, or archive reform automatic consequences of one local act.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Disconnected Tree Networks.md",
+          "Eusocial Interbeing/Conflicts/Resistance of the Disconnected Networks.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through one witness-bloom incident and select one of eight state-gated endings.",
+    "choice_layers": [
+      "routine_preparation",
+      "witness_bloom_response",
+      "disclosure_under_supervision",
+      "disclosure_path"
+    ],
+    "variables": [
+      "witness_clarity",
+      "flower_integrity",
+      "host_safety",
+      "worker_cover",
+      "ecology_trust",
+      "record_contradiction",
+      "checkpoint_suspicion",
+      "route_exposure",
+      "seed_custody",
+      "mat_testimony"
+    ],
+    "ending_gates": [
+      "ending_living_witness_success",
+      "ending_living_witness_cost",
+      "ending_body_courier_success",
+      "ending_body_courier_cost",
+      "ending_record_success",
+      "ending_record_cost",
+      "ending_silence_success",
+      "ending_silence_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_flower_feed",
+      "ink_path": "routine_hub",
+      "action_type": "use_object",
+      "actor_intent": "Prepare mineral food that lets an arriving burden flower display with less hunger distortion.",
+      "state_basis": [
+        "Burden flowers feed on trace minerals and their credibility changes with host care and hunger.",
+        "Nahl can observe unusual generosity through the supervisor membrane."
+      ],
+      "reviewed_consequences": [
+        "Raises witness_clarity and flower_integrity while increasing checkpoint_suspicion; later living-witness gates and supervisor callbacks read those states."
+      ],
+      "training_hooks": [
+        "routine_ecological_care",
+        "witness_fidelity_has_metabolic_cost",
+        "care_increases_visibility"
+      ]
+    },
+    {
+      "branch_id": "prime_mat_witness",
+      "ink_path": "routine_hub",
+      "action_type": "touch_object",
+      "actor_intent": "Restore the prismwake strip's ability to distinguish today's body chemistry from old traffic.",
+      "state_basis": [
+        "Prismwake mats remember visitor chemistry and act as fallible public ledgers."
+      ],
+      "reviewed_consequences": [
+        "Raises mat_testimony and ecology_trust, enabling stronger later comparison and an official-record route."
+      ],
+      "training_hooks": [
+        "public_ledger_maintenance",
+        "routine_before_pressure"
+      ]
+    },
+    {
+      "branch_id": "prime_road_credit",
+      "ink_path": "routine_hub",
+      "action_type": "transfer_object",
+      "actor_intent": "Feed the old fungal road clean material and preserve a possible non-imperial disclosure route.",
+      "state_basis": [
+        "Candle fungal roads reward clean offerings and remember handling.",
+        "Any activated route can also expose the checkpoint and receiver."
+      ],
+      "reviewed_consequences": [
+        "Raises ecology_trust enough to gate the shed-leaf transfer while increasing route_exposure."
+      ],
+      "training_hooks": [
+        "ecological_route_bargain",
+        "disclosure_route_exposes_receiver"
+      ]
+    },
+    {
+      "branch_id": "prime_worker_cover",
+      "ink_path": "routine_hub",
+      "action_type": "use_object",
+      "actor_intent": "Create bureaucratic cover by pre-filing the outcome the checkpoint expects.",
+      "state_basis": [
+        "Imperial infrastructure uses living records to produce administratively clean reality."
+      ],
+      "reviewed_consequences": [
+        "Raises worker_cover and lowers initial suspicion, improving the concealed body-courier and clean-admission gates."
+      ],
+      "training_hooks": [
+        "bureaucratic_prediction_as_cover",
+        "record_leverage"
+      ]
+    },
+    {
+      "branch_id": "clarify_witness_bloom",
+      "ink_path": "bloom_choice",
+      "action_type": "use_object",
+      "actor_intent": "Feed the flower so its stored mismatch repeats clearly in public.",
+      "state_basis": [
+        "A fed flower can display a retained trace more clearly but makes the host and witness more visible."
+      ],
+      "reviewed_consequences": [
+        "Raises witness_clarity, flower_integrity, and checkpoint_suspicion while lowering host_safety."
+      ],
+      "training_hooks": [
+        "clarity_safety_tradeoff",
+        "chemical_witness"
+      ]
+    },
+    {
+      "branch_id": "shelter_flower_trace",
+      "ink_path": "bloom_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Protect the living flower and catch a seed bead without claiming to know its hidden meaning.",
+      "state_basis": [
+        "Airawa lower hands can perform close grooming and conceal a small seed in cloth.",
+        "The flower remains an independent body rather than Sivren's data object."
+      ],
+      "reviewed_consequences": [
+        "Raises seed_custody and flower_integrity while reducing worker_cover."
+      ],
+      "training_hooks": [
+        "small_hand_custody",
+        "witness_protection_costs_cover"
+      ]
+    },
+    {
+      "branch_id": "create_mat_testimony",
+      "ink_path": "bloom_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Give runoff to a second ecological witness that can preserve a mismatch rather than a verdict.",
+      "state_basis": [
+        "The local prismwake strip can compare chemical traces and retains its own interests and error modes."
+      ],
+      "reviewed_consequences": [
+        "Raises mat_testimony, record_contradiction, and checkpoint_suspicion; enables the local two-body-hold pressure branch."
+      ],
+      "training_hooks": [
+        "plural_witnessing",
+        "mat_affidavit_not_truth"
+      ]
+    },
+    {
+      "branch_id": "ask_edited_host",
+      "ink_path": "bloom_choice",
+      "action_type": "speak",
+      "actor_intent": "Test the gap between Oru's trained sentence and involuntary body posture.",
+      "state_basis": [
+        "Oru can report the official treatment narrative while their body still displays tension."
+      ],
+      "reviewed_consequences": [
+        "Raises record_contradiction and witness_clarity while lowering host_safety through direct scrutiny."
+      ],
+      "training_hooks": [
+        "edited_host_voice",
+        "body_sentence_mismatch"
+      ]
+    },
+    {
+      "branch_id": "mask_and_keep_seed",
+      "ink_path": "pressure_choice",
+      "action_type": "mixed",
+      "actor_intent": "Use official language as cover while moving a seed into Sivren's bodily custody.",
+      "state_basis": [
+        "Sivren has a seed or can gather one during disposal, and official language can reduce immediate scrutiny without making the claim true."
+      ],
+      "reviewed_consequences": [
+        "Raises worker_cover and seed_custody while damaging flower_integrity."
+      ],
+      "training_hooks": [
+        "mask_as_action",
+        "embodied_disclosure_path"
+      ]
+    },
+    {
+      "branch_id": "force_official_comparison",
+      "ink_path": "pressure_choice",
+      "action_type": "speak",
+      "actor_intent": "Use the mat's independent trace to invoke Sluice Nine's local two-body hold and force a pause in the treatment record.",
+      "state_basis": [
+        "Available only when mat_testimony is high enough to make the second living report visible.",
+        "The two-body hold is a fixture-local Sluice Nine procedure, not a universal imperial law."
+      ],
+      "reviewed_consequences": [
+        "Raises record_contradiction, host_safety, and checkpoint_suspicion; strengthens the official-record ending gate."
+      ],
+      "training_hooks": [
+        "procedural_leverage",
+        "plural_body_testimony"
+      ]
+    },
+    {
+      "branch_id": "seed_chemical_rumor",
+      "ink_path": "pressure_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Give a shed leaf to a fungal road that can remember and route the chemical mismatch.",
+      "state_basis": [
+        "Available only after sufficient road credit.",
+        "The road accepts material and may report it, but delivery and interpretation remain unresolved."
+      ],
+      "reviewed_consequences": [
+        "Raises route_exposure and seed_custody while reducing flower_integrity; later endings show the doubled disclosure risk."
+      ],
+      "training_hooks": [
+        "chemical_rumor",
+        "route_is_party_not_pipe"
+      ]
+    },
+    {
+      "branch_id": "obey_flower_destruction",
+      "ink_path": "pressure_choice",
+      "action_type": "use_object",
+      "actor_intent": "Destroy the living witness to improve Oru's immediate admission odds and Sivren's cover.",
+      "state_basis": [
+        "The checkpoint incinerator can destroy the flower and its seed custody locally."
+      ],
+      "reviewed_consequences": [
+        "Sets flower_integrity, seed_custody, and record_contradiction to zero while raising host_safety and worker_cover; this is required for the clean-silence success gate."
+      ],
+      "training_hooks": [
+        "knowledge_destruction_as_protection",
+        "imperial_hygiene_choice"
+      ]
+    },
+    {
+      "branch_id": "prioritize_living_witness",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Keep Oru and the flower together outside the imperial interior so other witnesses can compare them.",
+      "state_basis": [
+        "Success depends on witness_clarity, flower_integrity, and host_safety."
+      ],
+      "reviewed_consequences": [
+        "Routes to living-witness preservation or compromised exile based on accumulated state."
+      ],
+      "training_hooks": [
+        "quarantine_preserves_uncertainty",
+        "state_gated_ending"
+      ]
+    },
+    {
+      "branch_id": "prioritize_body_courier",
+      "ink_path": "final_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Move a seed through the doctrine arch inside Sivren's own plate seam while admitting Oru.",
+      "state_basis": [
+        "Success depends on seed_custody and worker_cover."
+      ],
+      "reviewed_consequences": [
+        "Routes to embodied rumor or bodily inspection and re-treatment."
+      ],
+      "training_hooks": [
+        "disclosure_through_bodies",
+        "concealment_state_gate"
+      ]
+    },
+    {
+      "branch_id": "prioritize_official_contradiction",
+      "ink_path": "final_choice",
+      "action_type": "use_object",
+      "actor_intent": "Bind a plural embodied mismatch into the imperial treatment record.",
+      "state_basis": [
+        "Success depends on mat_testimony and record_contradiction."
+      ],
+      "reviewed_consequences": [
+        "Routes to a durable official contradiction or reclassification as minor parasite noise."
+      ],
+      "training_hooks": [
+        "archive_seam",
+        "state_gated_record_outcome"
+      ]
+    },
+    {
+      "branch_id": "prioritize_host_over_disclosure",
+      "ink_path": "final_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Choose Oru's immediate admission and safety after destroying the witness.",
+      "state_basis": [
+        "Success depends on complete flower destruction, adequate host_safety, and worker_cover."
+      ],
+      "reviewed_consequences": [
+        "Routes to clean admission with knowledge loss or to renewed treatment after failed concealment."
+      ],
+      "training_hooks": [
+        "safety_truth_tradeoff",
+        "ending_reads_destroyed_evidence"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Choice availability from mat and road thresholds",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Any durable history for Sivren, Oru, Nahl, or Sluice Nine",
+      "Any claim that a disconnected network receives the shed-leaf rumor",
+      "Character memory, relationship, employment, exile, or treatment updates",
+      "Promotion of fixture-local checkpoint geometry beyond this visual plan"
+    ]
+  },
+  "audit": {
+    "reviewer": "Veil elaborator self-review using the four required Ghostlight reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality — accepted (orientation 5/5, coherence 5/5, pacing 5/5, voice 5/5, tonal fit 5/5, IF playability 5/5). The detected mode is bureaucratic noir with intimate body horror and dry workplace wit. Routine work, body affordances, Oru's erased familiarity, and the four disclosure costs are introduced before payoff; no branch-only onboarding or cosmetic choice remained.",
+      "Lore grounding — accepted (source coverage 5/5, canon fit 5/5, grounding quality 5/5, vault backfill value 5/5). Review checked mutable memory, burden flowers, the memetic engine, imperial infrastructure and society, Airawa anatomy, mats, fungal roads, mirror amoebae, disconnected networks, memory-hostage pressure, eclipse rhythm, and low-energy biosphere cues. The draft was revised so the two-body mismatch hold is explicitly local to story-local Sluice Nine rather than universal imperial law.",
+      "Visual continuity — accepted for B-level illustrated replay (segmentation 5/5, visual prompts 5/5, character visibility 5/5, branch continuity 5/5, website replay 4/5). Review added conditional flower visual refs, made the silence base frame branch-neutral, tied every material branch and ending to a visible modifier, and retained the authored fixed-axis scene_set map. A hand-built plan or 3D blockout remains the promotion step for high-consistency final website art.",
+      "Spatial cohesion — accepted (layout 5/5, sightlines 5/5, body affordances 5/5, movement/access 5/5, object geometry 5/5, branch spatial state 5/5). The inferred layout is a one-level twelve-body-length hall aligned arrival arch to drain/dais to doctrine arch. Review replaced an impossible rotating-dais sentence with a quarantine marker on the fixed dais and clarified Nahl's upper-claw brace and lower-hand inspection reach."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true
+    }
+  }
+}

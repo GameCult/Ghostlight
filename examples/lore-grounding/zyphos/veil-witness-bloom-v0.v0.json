@@ -1,0 +1,636 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.veil-witness-bloom-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "source_grounded_original_setting",
+  "source_refs": [
+    {
+      "source_id": "zyphos-index",
+      "path": "Eusocial Interbeing/index.md",
+      "title": "Zyphos",
+      "line_start": 1,
+      "line_end": 35,
+      "relevance": "World premise: mutable memory, graded sentience, ecological contracts, and imperial use of the Biological Memetic Engine."
+    },
+    {
+      "source_id": "umbros-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds frequent eclipse rhythm, dim primary, low-energy ecology, and the post-eclipse timing used for the checkpoint's ordinary shift opening."
+    },
+    {
+      "source_id": "biosphere-examples",
+      "path": "Eusocial Interbeing/Ecology/Zyphos Biosphere Examples.md",
+      "title": "Zyphos Biosphere Examples",
+      "line_start": 1,
+      "line_end": 81,
+      "relevance": "Grounds restrained low-energy visual language, brief biological color signals, amber fungal routes, and burden flowers as warning and reputation actors."
+    },
+    {
+      "source_id": "mutable-memory",
+      "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+      "title": "Mutable Memory Endosymbiosis",
+      "line_start": 1,
+      "line_end": 123,
+      "relevance": "Grounds memory-bearing cells, partial autonomy, immune boundary politics, and the limit that no organism or signal supplies universal truth."
+    },
+    {
+      "source_id": "burden-flowers",
+      "path": "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+      "title": "Burden Flowers",
+      "line_start": 1,
+      "line_end": 52,
+      "relevance": "Primary subject source and authored elaboration: body attachment, mineral hunger, host-state display, disclosure incentives, witness blooming across memory edits, and rumor failure modes."
+    },
+    {
+      "source_id": "biological-memetic-engine",
+      "path": "Eusocial Interbeing/Technologies/Biological Memetic Engine.md",
+      "title": "Biological Memetic Engine",
+      "line_start": 1,
+      "line_end": 27,
+      "relevance": "Grounds engineered organisms and ritual payloads that alter memory emphasis, emotional association, taboo, recognition, desire, and obedience."
+    },
+    {
+      "source_id": "imperial-biopunk-infrastructure",
+      "path": "Eusocial Interbeing/Technologies/Imperial Biopunk Infrastructure.md",
+      "title": "Imperial Biopunk Infrastructure",
+      "line_start": 1,
+      "line_end": 20,
+      "relevance": "Grounds immune checkpoints, controlled parasites, memory nodules, public-health ideological hygiene, and living historical revision."
+    },
+    {
+      "source_id": "airawa-empire",
+      "path": "Eusocial Interbeing/Civilizations/Airawa Empire.md",
+      "title": "Airawa Empire",
+      "line_start": 1,
+      "line_end": 62,
+      "relevance": "Grounds imperial topology, tuned autonomy, inherited compliance, eugenics, engineered borders, and denial of disconnected networks."
+    },
+    {
+      "source_id": "airawa-body",
+      "path": "Eusocial Interbeing/Species/Airawa.md",
+      "title": "Airawa",
+      "line_start": 1,
+      "line_end": 96,
+      "relevance": "Grounds six-limbed anatomy, digitigrade taloned feet, clawed upper arms, blunt opposing lower hands, plate seams, body signaling, and imperial bioengineering pressure."
+    },
+    {
+      "source_id": "prismwake-mats",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Prismwake Mats.md",
+      "title": "Prismwake Mats",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds fallible wetland public ledgers that compare visitor chemistry, remember treatment, and treat burden-flower signals as affidavits rather than truth."
+    },
+    {
+      "source_id": "candle-fungal-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds material ingestion, route memory, strict contamination pressure, reporting behavior, clean-offering credit, and imperial conflict over standardized route behavior."
+    },
+    {
+      "source_id": "mirror-amoebae",
+      "path": "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Mirror Amoebae.md",
+      "title": "Mirror Amoebae",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds distorted copied states, false familiarity, wound-level memory contamination, and the need to keep witness blooms fallible."
+    },
+    {
+      "source_id": "disconnected-networks",
+      "path": "Eusocial Interbeing/Civilizations/Disconnected Tree Networks.md",
+      "title": "Disconnected Tree Networks",
+      "line_start": 1,
+      "line_end": 18,
+      "relevance": "Grounds secret memory preservation, rumor paths, ecological misdirection, and the political danger of evidence that imperial consensus is manufactured."
+    },
+    {
+      "source_id": "resistance",
+      "path": "Eusocial Interbeing/Conflicts/Resistance of the Disconnected Networks.md",
+      "title": "Resistance of the Disconnected Networks",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds counter-signals, secret memory preservation, false trails, and the empire's need to deny living resistance."
+    },
+    {
+      "source_id": "memory-as-hostage",
+      "path": "Eusocial Interbeing/Themes/Memory as Hostage.md",
+      "title": "Memory as Hostage",
+      "line_start": 1,
+      "line_end": 7,
+      "relevance": "Grounds memory as a bargaining object and the engine's conversion of memory custody into imperial infrastructure."
+    },
+    {
+      "source_id": "airawa-continent",
+      "path": "Eusocial Interbeing/World/Airawa Home Continent.md",
+      "title": "Airawa Home Continent",
+      "line_start": 1,
+      "line_end": 28,
+      "relevance": "Grounds the imperial quarter, surviving native nations, old ecological routes, and propaganda that depicts living borders as unified territory."
+    },
+    {
+      "source_id": "xenophobic-campaign",
+      "path": "Eusocial Interbeing/Conflicts/Xenophobic Memetic Campaign.md",
+      "title": "Xenophobic Memetic Campaign",
+      "line_start": 1,
+      "line_end": 19,
+      "relevance": "Grounds the imperial habit of recoding contradiction and dissent as foreign memetic contamination; used as context, not as a dated scene event."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Undated mature Airawa Empire; the scene does not require whether continental contact with the Sa'ueia has occurred.",
+    "location": "Sluice Nine, a story-local living return-processing checkpoint between an old forest road and imperial interior streets on the Airawa home continent.",
+    "summary": "A return-processing groomer must decide what happens when a burden flower attached before doctrinal treatment displays a broad chemical mismatch that the edited host no longer remembers.",
+    "public_facts": [
+      {
+        "text": "Imperial infrastructure uses immune checkpoints, controlled organisms, memory nodules, and public-health language to keep bodies and doctrine legible.",
+        "source_refs": [
+          "imperial-biopunk-infrastructure",
+          "airawa-empire"
+        ]
+      },
+      {
+        "text": "Burden flowers read host sweat, immune state, emotional chemistry, and memory residue; their displays can warn, gossip, exaggerate, or expose a host.",
+        "source_refs": [
+          "burden-flowers"
+        ]
+      },
+      {
+        "text": "The Biological Memetic Engine can alter recognition, fear association, memory emphasis, and taboo response without creating perfect control outside compatible imperial topology.",
+        "source_refs": [
+          "biological-memetic-engine",
+          "airawa-empire"
+        ]
+      },
+      {
+        "text": "Frequent eclipse cycles and scarce light make post-eclipse biological work windows ordinary material timing rather than spectacle.",
+        "source_refs": [
+          "umbros-system",
+          "biosphere-examples"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A witness bloom can indicate that a body's broad state changed across an edit, but it does not restore an erased thought or identify the editor.",
+        "source_refs": [
+          "burden-flowers",
+          "mutable-memory"
+        ]
+      },
+      {
+        "text": "Imperial hygiene has reason to destroy unmanaged witness organisms before treatment and to classify later displays as parasite sickness.",
+        "source_refs": [
+          "burden-flowers",
+          "imperial-biopunk-infrastructure"
+        ]
+      },
+      {
+        "text": "Moving a trace through a mat, fungal road, record, seed, or second host preserves some evidence while exposing the receiving body or route to punishment and distortion.",
+        "source_refs": [
+          "burden-flowers",
+          "prismwake-mats",
+          "candle-fungal-roads",
+          "resistance"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "imperial-return-processing",
+      "label": "Imperial return-processing staff",
+      "group_type": "biopunk_checkpoint_labor",
+      "institutional_logic": [
+        "Turn edited returning bodies, symbionts, and records into one administratively consistent admission state."
+      ],
+      "material_incentives": [
+        "Keep interior networks legible, prevent foreign memory traffic, maintain useful worker autonomy, and avoid incidents that imply correction can leave witnesses behind."
+      ],
+      "internal_virtues": [
+        "Clean handoff",
+        "Rapid contradiction classification",
+        "Controlled symbiont removal",
+        "Records that match admitted bodies"
+      ],
+      "internal_shames": [
+        "Unmanaged bloom",
+        "Worker hesitation",
+        "A corrected citizen showing forbidden recognition",
+        "Old infrastructure bargaining in public"
+      ],
+      "prestige_markers": [
+        "Short queues",
+        "Quiet plate seams",
+        "No open route alerts",
+        "No treatment record returned for contradiction"
+      ],
+      "taboo_triggers": [
+        "Calling correction an edit",
+        "Treating parasite display as political testimony",
+        "Admitting that the body and record can disagree"
+      ],
+      "emotional_display_norms": [
+        "Alarm is translated into hygiene language; uncertainty is acceptable only after being assigned a contamination category."
+      ],
+      "trust_defaults": [
+        "Trusts imperial nodules and managed bodies; distrusts unmanaged symbionts, old roads, and plural witnesses that cannot be centrally revised."
+      ],
+      "speech_register_cues": [
+        "Correction",
+        "Residual display",
+        "Admission state",
+        "Parasite sickness",
+        "Treatment relevance"
+      ],
+      "source_refs": [
+        "imperial-biopunk-infrastructure",
+        "airawa-empire",
+        "biological-memetic-engine"
+      ]
+    },
+    {
+      "group_id": "checkpoint-ecological-witnesses",
+      "label": "Burden flower, prismwake strip, and old fungal road",
+      "group_type": "contested_ecological_infrastructure",
+      "institutional_logic": [
+        "Preserve their own feeding, memory, route, and credibility interests while responding to body chemistry the checkpoint wants normalized."
+      ],
+      "material_incentives": [
+        "Receive minerals and clean matter, avoid contamination, maintain useful traffic, and keep enough reporting credibility to influence future access."
+      ],
+      "internal_virtues": [
+        "Repeatable signal",
+        "Material provenance",
+        "Bounded admission",
+        "Remembered exchange"
+      ],
+      "internal_shames": [
+        "Exaggeration that loses hosts",
+        "A false route report",
+        "Identity leakage",
+        "Being reduced to passive state equipment"
+      ],
+      "prestige_markers": [
+        "Signals confirmed by another body",
+        "Routes still used after warning",
+        "A host that continues feeding the witness"
+      ],
+      "taboo_triggers": [
+        "Forced replay",
+        "Starvation",
+        "Imperial standardization",
+        "Being destroyed after truthful disclosure"
+      ],
+      "emotional_display_norms": [
+        "Interests appear as color, scent, root tension, bitterness, bead light, route opening, and material acceptance."
+      ],
+      "trust_defaults": [
+        "Trust is metabolic, situated, and historical; one accurate signal does not make any witness neutral."
+      ],
+      "speech_register_cues": [
+        "Color sequence",
+        "Tightening rootlets",
+        "Silver-violet mat flash",
+        "Amber fungal bead path"
+      ],
+      "source_refs": [
+        "burden-flowers",
+        "prismwake-mats",
+        "candle-fungal-roads"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "imperial-return-processing.one-admission-state",
+      "applies_to": [
+        "imperial-return-processing"
+      ],
+      "pressure_type": "memetic_legibility",
+      "summary": "The checkpoint is rewarded for making body, symbiont, and record agree, so conflicting testimony is pressure to classify or erase rather than investigate freely.",
+      "projection_use": "Give Nahl commands that divide corrected host from unreliable parasite and give Sivren only narrow procedural, bodily, and ecological seams for dissent.",
+      "source_refs": [
+        "airawa-empire",
+        "imperial-biopunk-infrastructure"
+      ]
+    },
+    {
+      "field_id": "checkpoint-ecological-witnesses.truth-has-appetite",
+      "applies_to": [
+        "checkpoint-ecological-witnesses"
+      ],
+      "pressure_type": "witness_fidelity",
+      "summary": "A chemical trace becomes more useful through feeding, comparison, and provenance, but every such act changes incentives, visibility, and custody.",
+      "projection_use": "Keep the flower, mat, and road distinct; each should preserve a different material trace and impose a different cost.",
+      "source_refs": [
+        "burden-flowers",
+        "prismwake-mats",
+        "candle-fungal-roads"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "imperial-return-processing",
+      "target_group_id": "checkpoint-ecological-witnesses",
+      "observer_read": [
+        "Parasite sickness",
+        "Residual treatment noise",
+        "Route contamination",
+        "Worker-fed exaggeration"
+      ],
+      "target_self_read": [
+        "Not available as one collective interpretation; each body responds through its own appetite and memory scale."
+      ],
+      "misread_patterns": [
+        "Treats every mismatch as pathology",
+        "Treats feeding as evidence tampering",
+        "Treats a controlled label as causal explanation"
+      ],
+      "likely_insults": [
+        "residual",
+        "unmanaged",
+        "sick display",
+        "old-road noise"
+      ],
+      "projection_use": "Let Nahl interpret contradiction through the checkpoint's need for legibility rather than cartoon cruelty or private omniscience.",
+      "source_refs": [
+        "airawa-empire",
+        "burden-flowers",
+        "imperial-biopunk-infrastructure"
+      ]
+    },
+    {
+      "observer_group_id": "checkpoint-ecological-witnesses",
+      "target_group_id": "imperial-return-processing",
+      "observer_read": [
+        "Bodies providing salt, waste, pressure, heat, injury, and altered memory residues"
+      ],
+      "target_self_read": [
+        "Competent officials protecting civil ecology from contamination"
+      ],
+      "misread_patterns": [
+        "A flower cannot distinguish policy from grooming",
+        "A mat cannot infer why a body changed",
+        "A road may route a useful trace without sharing Sivren's intent"
+      ],
+      "likely_insults": [
+        "bitter strip",
+        "closed beads",
+        "loud bloom"
+      ],
+      "projection_use": "Keep ecological response concrete and nonhuman; no witness inherits the narrator's political analysis.",
+      "source_refs": [
+        "mutable-memory",
+        "burden-flowers",
+        "prismwake-mats",
+        "candle-fungal-roads"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "return-processing-groomer",
+      "summary": "A lower-status Airawa worker who can change object custody, bodily concealment, ecological feeding, and record linkage without controlling the checkpoint or knowing erased content.",
+      "obligations": [
+        "Keep arrivals physically safe",
+        "Remove declared hazards",
+        "Maintain clean tools",
+        "File legible outcomes",
+        "Remain useful enough to keep access"
+      ],
+      "available_masks": [
+        "Routine grooming",
+        "Official hygiene language",
+        "Bureaucratic prediction",
+        "Minor worker error"
+      ],
+      "failure_modes": [
+        "Turning one bloom into certainty",
+        "Exposing an ecological route",
+        "Losing object custody",
+        "Protecting evidence in a body that can itself be edited"
+      ],
+      "source_refs": [
+        "airawa-body",
+        "imperial-biopunk-infrastructure",
+        "burden-flowers"
+      ]
+    },
+    {
+      "role_id": "corrected-returner",
+      "summary": "An Airawa worker whose official calm, involuntary posture, old relationship, attached flower, and lost recognition no longer form one accessible self-account.",
+      "obligations": [
+        "Submit to processing",
+        "Carry the treatment nodule",
+        "Keep tools sealed",
+        "Accept the official interpretation of corrected fear"
+      ],
+      "available_masks": [
+        "Courteous unfamiliarity",
+        "Treatment vocabulary",
+        "Worker patience",
+        "Visible bodily compliance"
+      ],
+      "failure_modes": [
+        "Being re-treated",
+        "Being exiled with a contaminated label",
+        "Having immediate safety traded for another person's need for proof"
+      ],
+      "source_refs": [
+        "biological-memetic-engine",
+        "airawa-empire",
+        "memory-as-hostage"
+      ]
+    },
+    {
+      "role_id": "checkpoint-supervisor",
+      "summary": "An imperial Airawa official responsible for producing one safe admission state from contradictory living signals.",
+      "obligations": [
+        "Protect imperial interior networks",
+        "Enforce organism removal",
+        "Preserve treatment credibility",
+        "Control record relevance"
+      ],
+      "available_masks": [
+        "Clinical certainty",
+        "Host protection",
+        "Parasite management",
+        "Procedural choice"
+      ],
+      "failure_modes": [
+        "Creating a more durable contradiction by suppressing it visibly",
+        "Letting an old route receive material",
+        "Mistaking administrative control for complete memetic control"
+      ],
+      "source_refs": [
+        "imperial-biopunk-infrastructure",
+        "airawa-empire"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "sivren_return_groomer",
+      "known_context": [
+        {
+          "text": "Sivren knows local processing routine, Oru's former familiarity, Nahl's categories, checkpoint geometry, and the broad meanings of visible chemical signals.",
+          "source_refs": [
+            "airawa-body",
+            "burden-flowers",
+            "imperial-biopunk-infrastructure"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Sivren suspects the mismatch matters and understands that custody determines whether it can be compared later.",
+          "source_refs": [
+            "burden-flowers",
+            "memory-as-hostage"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Sivren may overvalue an old personal relationship as evidence that Oru's edited recognition was politically important.",
+          "source_refs": [
+            "mutable-memory"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Sivren must not know what proposition Oru forgot, who ordered the edit, whether the flower is fully accurate, or whether any disconnected network will receive a routed trace.",
+          "source_refs": [
+            "burden-flowers",
+            "disconnected-networks"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "oru_returned_line_grafter",
+      "known_context": [
+        {
+          "text": "Oru knows the official account that treatment corrected an irrational foreign-root response and knows their present tools and processing obligations.",
+          "source_refs": [
+            "biological-memetic-engine",
+            "imperial-biopunk-infrastructure"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Oru has reason to treat the flower as an unmanaged organism making processing more dangerous, even while their claws show involuntary tension.",
+          "source_refs": [
+            "burden-flowers",
+            "airawa-empire"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Oru may read Sivren's concern as inappropriate familiarity because the relationship that would explain it is no longer accessible.",
+          "source_refs": [
+            "memory-as-hostage"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Oru must not suddenly recover the lost memory from seeing the bloom or receive author-level certainty that they were edited coercively.",
+          "source_refs": [
+            "burden-flowers",
+            "biological-memetic-engine"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "nahl_checkpoint_supervisor",
+      "known_context": [
+        {
+          "text": "Nahl knows the official treatment record, the checkpoint's admission powers, Sivren's logged actions, and the visible flower and mat displays.",
+          "source_refs": [
+            "imperial-biopunk-infrastructure",
+            "airawa-empire"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Nahl treats unmanaged witness blooming as a parasite-control problem because one admission state protects the imperial topology and Nahl's role inside it.",
+          "source_refs": [
+            "airawa-empire",
+            "burden-flowers"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Nahl may mistake classification power for proof that the chemical mismatch is meaningless.",
+          "source_refs": [
+            "imperial-biopunk-infrastructure"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Nahl must not know whether Sivren's routed material will be preserved, believed, or connected to resistance outside the checkpoint.",
+          "source_refs": [
+            "disconnected-networks",
+            "resistance"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Sluice Nine's two-body mismatch hold, staff roles, and exact checkpoint geometry are story-local elaborations for this fixture, not universal imperial procedure or named vault canon.",
+      "source_refs": [
+        "imperial-biopunk-infrastructure",
+        "airawa-empire"
+      ]
+    },
+    {
+      "text": "The erased proposition, treatment order, and truth of Oru's foreign-root contact remain unresolved; the fixture proves only a broad body-state mismatch and contested custody.",
+      "source_refs": [
+        "burden-flowers",
+        "mutable-memory"
+      ]
+    },
+    {
+      "text": "Sivren, Oru, Nahl, Sluice Nine, and this incident are story-local inventions and are not promoted as named historical canon by the witness-bloom elaboration.",
+      "source_refs": [
+        "airawa-body",
+        "imperial-biopunk-infrastructure"
+      ]
+    },
+    {
+      "text": "A shed leaf entering the fungal road is a disclosure possibility, not confirmation that a disconnected network receives or believes it.",
+      "source_refs": [
+        "candle-fungal-roads",
+        "disconnected-networks"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What exact rank and procedure taxonomy governs ordinary Airawa imperial immune checkpoints?",
+      "blocks_training": false,
+      "notes": "The fixture stays local to a groomer, supervisor, living record, treatment nodule, and admission arches; it does not canonize a ministry or empire-wide form set."
+    },
+    {
+      "question": "Which memory-edit patterns can burden flowers distinguish reliably from hunger, host transfer, mirror-amoeba contamination, or ordinary fear change?",
+      "blocks_training": false,
+      "notes": "The elaboration deliberately limits witness blooming to a broad mismatch that requires feeding, provenance, and comparison."
+    }
+  ]
+}

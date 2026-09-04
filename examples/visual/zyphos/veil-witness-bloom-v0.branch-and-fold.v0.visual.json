@@ -1,0 +1,743 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "veil-witness-bloom-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/veil-witness-bloom-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/veil-witness-bloom-v0.branch-and-fold.v0.training.json",
+  "scene_id": "veil-witness-bloom-v0.sluice-nine-return-processing",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for an Airawa imperial checkpoint witness-bloom fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for routine return processing, Oru's arrival, the witness bloom, ecological comparison, supervisor pressure, the final custody threshold, and four ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for checkpoint establishment, roles, routine tools, returner arrival, the one-sentence bloom reveal, response choices, supervisor entry, final record threshold, and each ending family. The reveal remains a separate replay beat before the player acts.",
+    "prompting_rule": "Each base image prompt describes a complete visible frame with concrete alien anatomy, room geometry, materials, light, interfaces, and props. Prompt assembly adds only visible character refs plus triggered state or branch deltas.",
+    "global_style_cue": "Style: painterly speculative-biopunk noir storybook frame, restrained gouache and ink texture, low-energy bioluminescence, damp root-grown architecture, precise alien anatomy, readable ecological interfaces, muted mineral greens and bruised violet against amber fungal light, intimate bureaucratic tension, cinematic interactive-fiction composition.",
+    "prompt_assembly_rule": "Assemble every image from global_style_cue, the selected scene base_image_prompt, visual refs only for named characters and organisms whose visibility_condition is satisfied in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Keep visual_continuity_notes in tooling and use the authored scene_set coordinates for every camera.",
+    "scene_set_guidance": {
+      "current_mode": "authored_scene_set_map",
+      "scope_reason": "The fixture stays inside one twelve-body-length checkpoint hall and its two threshold routes. The authored plan fixes axes, zones, occlusion, entry paths, and camera slots for B-level replay continuity.",
+      "future_scene_set_need": "For high-consistency final website art, lower this map into a hand-built plan view or simple 3D blockout before painterly image generation."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "veil_sluice_nine_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide arrivalward-to-doctrineward view of Sluice Nine, a narrow living checkpoint hall grown from dark braided roots. An outer arrival arch opens behind the camera-side end; an inner doctrine arch stands at the far end beneath a translucent pale supervisor membrane. A low oval rinse dais straddles a crosswise slotted floor drain at mid-hall. Amber candle-fungus beads glow through a grate on the arrival side of the drain; a thin silver-green prismwake mat borders the doctrine side; a recessed fleshy ceramic incinerator throat sits beside the far arch. Root ribs provide claw holds along both walls and the ceiling. One six-limbed Airawa groomer works at the dais: long digitigrade legs with paired grasping foot-talons, two large clawed upper arms, two smaller blunt four-digit lower hands, tiny soft scales, grown plate sections with faint luminous seams, practical gray-green apron and wrist wraps.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "braced at the rinse dais, one upper claw on a wall rib while both lower hands arrange tools",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The hall long axis always runs from arrival arch through the central drain and dais to the doctrine arch.",
+          "The fungal grate stays arrivalward of the drain; the prismwake strip stays doctrineward of the drain; the incinerator remains beside the doctrine arch."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_checkpoint_roles",
+        "ink_anchor": "routine_roles",
+        "base_image_prompt": "Medium view along a twelve-body-length root-grown checkpoint hall. Sivren, a slim russet-brown six-limbed reptilian Airawa in a gray-green grooming apron, braces a large clawed upper hand on a root rib and arranges mineral cups, combs, disposal cloths, and translucent record nodules with two small blunt lower hands at the central rinse dais. At the doctrineward end, Supervisor Nahl stands visible behind an elevated translucent membrane above the inner arch: a broader umber Airawa with polished dark plate sections, pale green seam light, a rigid indigo mantle, and both lower hands folded over a living treatment ledger. Amber fungal beads glow under the arrivalward floor grate; the silver-green prismwake strip borders the drain.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "working at the central dais with lower hands",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          },
+          {
+            "agent_id": "nahl_checkpoint_supervisor",
+            "default_stance": "upright behind the elevated doctrine-side membrane, lower hands folded on the ledger",
+            "visual_ref": "visual_character_refs.characters.nahl_checkpoint_supervisor"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Nahl observes routine work from the raised membrane and later enters at floor level through the doctrine arch."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_routine_preparation_hub",
+        "ink_anchor": "routine_hub",
+        "base_image_prompt": "Overhead close work view of the low oval rinse dais in a damp root-grown checkpoint: four ordinary preparations surround Sivren's two small blunt lower hands—clear mineral cups with salt crystals, a silver-green living prismwake test strip along a slotted drain, clean pale tissue peelings beside an amber-lit fungal grate, and a translucent blank record nodule touching Sivren's faintly glowing wrist seam. Sivren's large clawed upper hand grips a wall root outside the work circle; paired taloned feet anchor on damp floor seams. The arrival arch and doctrine arch align beyond opposite ends of the dais.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "folded low around the dais with both lower hands choosing a routine task",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_oru_arrival",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Medium-wide view from the central dais toward the outer arrival arch of a root-grown checkpoint. Oru, a travel-worn six-limbed Airawa line-grafter with charcoal-blue scales, dull blue plate seams, sealed ochre tool sling, mud between hooked foot-talons, and a warm translucent treatment nodule at the throat, stands inside the arrival arch with two large upper arms carrying the sling and two smaller lower hands held visibly empty. Sivren, a russet Airawa groomer in gray-green apron, faces Oru across the low rinse dais. At the far doctrine end, Nahl's umber silhouette remains behind the pale supervisor membrane. Amber fungal beads glow beneath the near grate; a silver-green mat strip lies beside the central drain.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "at the dais, body angled toward the returning worker",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          },
+          {
+            "agent_id": "oru_returned_line_grafter",
+            "default_stance": "inside the arrival arch, upper arms carrying sealed tool sling, lower hands empty",
+            "visual_ref": "visual_character_refs.characters.oru_returned_line_grafter"
+          },
+          {
+            "agent_id": "nahl_checkpoint_supervisor",
+            "default_stance": "small doctrineward silhouette behind the raised membrane",
+            "visual_ref": "visual_character_refs.characters.nahl_checkpoint_supervisor"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "worker_cover >= 3",
+            "modifier_prompt": "A pre-filed clean record line glows pale green inside the treatment ledger above the doctrine arch."
+          },
+          {
+            "trigger": "ecology_trust >= 3",
+            "modifier_prompt": "The arrivalward fungal grate shows an orderly line of open amber beads oriented toward Sivren."
+          },
+          {
+            "trigger": "mat_testimony >= 1",
+            "modifier_prompt": "The cleaned prismwake strip beside the drain separates into crisp silver and blue bands."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "veil_witness_bloom_reveal",
+        "ink_anchor": "mandatory_rinse",
+        "base_image_prompt": "Tight pivotal closeup at the central rinse dais: a hand-sized mobile plant with clasping rootlets uncurls from beneath the shoulder plate of a charcoal-blue six-limbed Airawa returner. Its flat leaves run yellow, then violet, then abruptly colorless pale while sensory filaments lift through clear mineral runoff. Oru's small lower hands remain empty and still; large upper claws tighten around an ochre tool sling. Sivren's two blunt lower hands hover beside the flower, grooming comb and cup paused. The pale supervisor membrane at the doctrineward end turns inspection white; amber fungal beads and a silver-green mat strip frame the slotted drain below.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "lower hands paused beside the revealed flower",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          },
+          {
+            "agent_id": "oru_returned_line_grafter",
+            "default_stance": "standing on the dais with upper claws tightening around the tool sling",
+            "visual_ref": "visual_character_refs.characters.oru_returned_line_grafter"
+          },
+          {
+            "agent_id": "oru_witness_flower",
+            "default_stance": "rooted beneath Oru's shoulder plate, leaves open in yellow-violet-pale sequence",
+            "visual_ref": "visual_character_refs.characters.oru_witness_flower"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This is a separate replay screen. The player sees the full bloom sequence before choosing a response."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_bloom_response_hub",
+        "ink_anchor": "bloom_choice",
+        "base_image_prompt": "Medium overhead decision frame at a low rinse dais straddling a slotted drain in a narrow root-grown hall. Sivren, russet six-limbed groomer, reaches with two small blunt lower hands among four visible affordances: a charged clear mineral cup, a damp disposal cloth ready to cup a seed, yellow-violet runoff leading to a silver-green prismwake strip, and Oru's warm throat nodule above the flower. Oru, charcoal-blue and travel-worn, stands opposite with tool sling held by the large clawed upper arms. The hand-sized flower remains attached beneath Oru's shoulder plate, sensory filaments open; the doctrineward membrane glows white at the far end.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "folded close to the dais with both lower hands between cup, cloth, mat, and host",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          },
+          {
+            "agent_id": "oru_returned_line_grafter",
+            "default_stance": "opposite Sivren, tool sling braced in upper claws",
+            "visual_ref": "visual_character_refs.characters.oru_returned_line_grafter"
+          },
+          {
+            "agent_id": "oru_witness_flower",
+            "default_stance": "attached beneath Oru's shoulder plate, open toward the work objects",
+            "visual_ref": "visual_character_refs.characters.oru_witness_flower"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_supervisor_entry",
+        "ink_anchor": "supervisor_arrival",
+        "base_image_prompt": "Doctrineward-facing confrontation inside a narrow damp root-grown checkpoint hall. The inner doctrine arch beside a recessed fleshy ceramic incinerator is open at floor level. Nahl, a broad umber six-limbed Airawa supervisor with polished dark plates, pale green seam light, rigid indigo mantle, strong upper claws on wall ribs, and one small lower hand peeling a disposal seal, enters toward the central dais. Sivren, a slim russet groomer in gray-green apron, stands arrivalward of the dais with lower hands near a disposal cloth. Oru, charcoal-blue and mud-marked, stands on the dais with the yellow-violet-pale burden flower rooted under a shoulder plate. A silver-green prismwake strip and amber fungal grate flank the crosswise drain.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "arrivalward of the dais, lower hands near cloth and flower",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          },
+          {
+            "agent_id": "oru_returned_line_grafter",
+            "default_stance": "centered on the rinse dais",
+            "visual_ref": "visual_character_refs.characters.oru_returned_line_grafter"
+          },
+          {
+            "agent_id": "nahl_checkpoint_supervisor",
+            "default_stance": "entering through doctrine arch at floor level with disposal seal",
+            "visual_ref": "visual_character_refs.characters.nahl_checkpoint_supervisor"
+          },
+          {
+            "agent_id": "oru_witness_flower",
+            "default_stance": "attached beneath Oru's shoulder plate, damaged leaves still open",
+            "visual_ref": "visual_character_refs.characters.oru_witness_flower"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "witness_clarity >= 4",
+            "modifier_prompt": "The flower's leaves form a crisp repeated yellow, violet, and colorless-pale sequence with sensory filaments erect."
+          },
+          {
+            "trigger": "witness_clarity <= 2",
+            "modifier_prompt": "The flower's leaf colors break into muddy irregular yellow-violet patches and its filaments droop with hunger and damage."
+          },
+          {
+            "trigger": "mat_testimony >= 2",
+            "modifier_prompt": "The prismwake strip beside the drain holds a sharp violet-edged blue-white mismatch pattern."
+          },
+          {
+            "trigger": "seed_custody >= 1",
+            "modifier_prompt": "A single glossy black seed bead is caught inside the fold of Sivren's damp grooming cloth."
+          },
+          {
+            "trigger": "checkpoint_suspicion >= 3",
+            "modifier_prompt": "The outer arrival arch shows a sealed pale membrane and Nahl's attention fixes on Sivren's lower hands."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "veil_disclosure_threshold",
+        "ink_anchor": "disclosure_threshold",
+        "base_image_prompt": "Wide side view of the final record threshold in Sluice Nine. The twelve-body-length root hall aligns the outer arrival arch, central low rinse dais, and inner doctrine arch. Nahl stands doctrineward and places a translucent living treatment ledger on the dais. Sivren stands arrivalward with one upper claw braced on a rib and two smaller lower hands held over cloth and nodule. Oru remains centered with mud-marked digitigrade feet gripping the dais, ochre tool sling in upper arms, and a treatment nodule at the throat. The hand-sized burden flower clings beneath one shoulder plate. The slotted drain crosses below them, with amber fungal grate arrivalward, silver-green prismwake strip doctrineward, and recessed incinerator beside the inner arch.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "arrivalward of the ledger, lower hands visible",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          },
+          {
+            "agent_id": "oru_returned_line_grafter",
+            "default_stance": "centered on the dais between both arches",
+            "visual_ref": "visual_character_refs.characters.oru_returned_line_grafter"
+          },
+          {
+            "agent_id": "nahl_checkpoint_supervisor",
+            "default_stance": "doctrineward of the ledger, controlling access to the inner arch",
+            "visual_ref": "visual_character_refs.characters.nahl_checkpoint_supervisor"
+          },
+          {
+            "agent_id": "oru_witness_flower",
+            "default_stance": "rooted beneath Oru's shoulder plate with leaves open",
+            "visual_ref": "visual_character_refs.characters.oru_witness_flower",
+            "visibility_condition": "flower_integrity > 0"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "flower_integrity <= 0",
+            "modifier_prompt": "Replace the attached flower with a fresh pale root mark beneath Oru's shoulder plate; show black plant ash and a charred disposal cloth inside the incinerator mouth."
+          },
+          {
+            "trigger": "flower_integrity >= 3",
+            "modifier_prompt": "The burden flower grips firmly beneath Oru's shoulder plate with intact yellow-violet leaves and taut rootlets."
+          },
+          {
+            "trigger": "record_contradiction >= 3",
+            "modifier_prompt": "The treatment nodule, ledger, and prismwake strip display three visibly different color patterns joined by one violet mismatch edge."
+          },
+          {
+            "trigger": "route_exposure >= 2",
+            "modifier_prompt": "A line of amber fungal beads runs from the floor grate toward the open old-road side of the arrival arch."
+          },
+          {
+            "trigger": "worker_cover >= 3",
+            "modifier_prompt": "A pale green pre-filed clean line remains active on the translucent treatment ledger."
+          },
+          {
+            "trigger": "checkpoint_suspicion >= 4",
+            "modifier_prompt": "Nahl stands within lower-hand reach of Sivren, polished upper claws blocking the straight route to the doctrine arch."
+          }
+        ],
+        "visual_continuity_notes": [
+          "If flower_integrity is zero, prompt assembly excludes the flower visual ref and uses the destruction modifier.",
+          "The arrival and doctrine arches stay visible in opposite directions so every final route has legible geography."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_ending_living_witness",
+        "ink_anchor": "ending_living_witness_success|ending_living_witness_cost",
+        "base_image_prompt": "Outer-threshold aftermath seen from inside Sluice Nine toward the old forest road. The root-grown arrival arch is open. Oru, a charcoal-blue six-limbed Airawa with mud-marked taloned feet and ochre tool sling, walks arrivalward carrying a hand-sized burden flower rooted beneath one shoulder plate. Sivren, a russet Airawa groomer in gray-green apron, remains at the central rinse dais behind Oru. Amber candle-fungus beads mark a route outside while the silver-green prismwake strip and treatment ledger stay inside the checkpoint. The composition presents quarantine as bodily return along an open ecological route.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "inside at the rinse dais, watching Oru leave arrivalward",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          },
+          {
+            "agent_id": "oru_returned_line_grafter",
+            "default_stance": "walking through the arrival arch toward the old road",
+            "visual_ref": "visual_character_refs.characters.oru_returned_line_grafter"
+          },
+          {
+            "agent_id": "oru_witness_flower",
+            "default_stance": "attached beneath Oru's shoulder plate while leaving",
+            "visual_ref": "visual_character_refs.characters.oru_witness_flower"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_ending_body_courier",
+        "ink_anchor": "ending_body_courier_success|ending_body_courier_cost",
+        "base_image_prompt": "Doctrine-threshold aftermath inside a narrow root-grown checkpoint. Sivren, a slim russet six-limbed Airawa groomer, approaches the inner doctrine arch with one small lower hand held close to a wrapped wrist plate and one large upper claw gripping a wall rib. A glossy black burden-flower seed bead makes a small bulge beneath the damp wrap. Oru, charcoal-blue and travel-worn, is one body-length beyond the doctrine arch with tool sling and warm throat nodule. Nahl, a broad umber supervisor in rigid indigo mantle, stands beside the recessed incinerator and watches Sivren's wrist. The central dais and outer arrival arch remain aligned behind them.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "approaching the doctrine arch with one guarded wrist",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          },
+          {
+            "agent_id": "oru_returned_line_grafter",
+            "default_stance": "just beyond the doctrine arch after admission",
+            "visual_ref": "visual_character_refs.characters.oru_returned_line_grafter"
+          },
+          {
+            "agent_id": "nahl_checkpoint_supervisor",
+            "default_stance": "beside the incinerator, eyes on Sivren's wrist",
+            "visual_ref": "visual_character_refs.characters.nahl_checkpoint_supervisor"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "route_exposure >= 2",
+            "modifier_prompt": "In the distant aligned arrivalward background, amber fungal beads carry a second trace toward the old road."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The intact flower is off-frame in this ending family; prompt assembly excludes its visual ref."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_ending_record",
+        "ink_anchor": "ending_record_success|ending_record_cost",
+        "base_image_prompt": "Object-centered aftermath at the central rinse dais: Sivren's two small blunt lower hands press Oru's warm translucent treatment nodule against a silver-green prismwake strip showing a violet-edged mismatch, while Nahl's smaller hand holds a living ledger membrane at the contact point. Oru's charcoal-blue torso and empty lower hands remain visible across the dais; their large upper claws grip the ochre tool sling. The amber fungal grate lies arrivalward of the drain, the doctrine arch behind Nahl, and the outer arrival arch behind Sivren. The composition centers three incompatible biological records touching one material surface.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "lower hands joining nodule and mat trace",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          },
+          {
+            "agent_id": "oru_returned_line_grafter",
+            "default_stance": "opposite the record contact, upper claws gripping tool sling",
+            "visual_ref": "visual_character_refs.characters.oru_returned_line_grafter"
+          },
+          {
+            "agent_id": "nahl_checkpoint_supervisor",
+            "default_stance": "holding the ledger doctrineward of the contact point",
+            "visual_ref": "visual_character_refs.characters.nahl_checkpoint_supervisor"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_ending_silence",
+        "ink_anchor": "ending_silence_success|ending_silence_cost",
+        "base_image_prompt": "Quiet threshold aftermath facing the inner doctrine arch of Sluice Nine. Oru, a charcoal-blue six-limbed Airawa with ochre tool sling and warm throat nodule, pauses beside Sivren at the edge of admission. Sivren, russet-scaled in a gray-green grooming apron, stands at the central dais with two small lower hands visible. The recessed fleshy ceramic incinerator sits beside the doctrine arch; Nahl waits near the living treatment ledger. Amber fungal beads remain dim beneath the distant arrivalward grate and the silver-green mat strip borders the drain. The aligned root arches and central dais make the possible admission and return routes readable.",
+        "visible_characters": [
+          {
+            "agent_id": "sivren_return_groomer",
+            "default_stance": "beside Oru with empty lower hands",
+            "visual_ref": "visual_character_refs.characters.sivren_return_groomer"
+          },
+          {
+            "agent_id": "oru_returned_line_grafter",
+            "default_stance": "paused just inside the doctrine arch",
+            "visual_ref": "visual_character_refs.characters.oru_returned_line_grafter"
+          },
+          {
+            "agent_id": "nahl_checkpoint_supervisor",
+            "default_stance": "near the treatment ledger and incinerator",
+            "visual_ref": "visual_character_refs.characters.nahl_checkpoint_supervisor"
+          },
+          {
+            "agent_id": "oru_witness_flower",
+            "default_stance": "attached beneath Oru's shoulder plate when still living",
+            "visual_ref": "visual_character_refs.characters.oru_witness_flower",
+            "visibility_condition": "flower_integrity > 0"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "flower_integrity <= 0",
+            "modifier_prompt": "A fresh pale root mark occupies the skin beneath Oru's shoulder plate; black plant ash and a charred disposal cloth sit inside the incinerator."
+          },
+          {
+            "trigger": "flower_integrity > 0",
+            "modifier_prompt": "A damaged hand-sized flower with yellow-violet leaves and clasping roots remains attached beneath Oru's shoulder plate."
+          },
+          {
+            "trigger": "mat_testimony >= 2",
+            "modifier_prompt": "The prismwake strip beside the drain holds a sharp violet-edged mismatch pattern."
+          },
+          {
+            "trigger": "seed_custody >= 1",
+            "modifier_prompt": "Sivren's damp wrist wrap or folded grooming cloth shows a small glossy black seed bulge."
+          }
+        ],
+        "visual_continuity_notes": [
+          "State modifiers establish which remnant prevents or permits a clean admission; ending-label modifiers establish Nahl's response."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_flower_feed_visual",
+        "trigger": "branch_label == prime_flower_feed",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_preparation_hub",
+          "veil_witness_bloom_reveal",
+          "veil_supervisor_entry"
+        ],
+        "modifier_prompt": "The mineral cup contains a visible clean ring of pale salt crystals; the flower's later leaves are firm and its sensory filaments stand upright."
+      },
+      {
+        "modifier_id": "prime_mat_witness_visual",
+        "trigger": "branch_label == prime_mat_witness",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_preparation_hub",
+          "veil_bloom_response_hub",
+          "veil_disclosure_threshold"
+        ],
+        "modifier_prompt": "The prismwake strip along the doctrineward edge of the drain is clean and separates silver, blue, and violet traces into crisp bands."
+      },
+      {
+        "modifier_id": "prime_road_credit_visual",
+        "trigger": "branch_label == prime_road_credit",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_preparation_hub",
+          "veil_supervisor_entry",
+          "veil_disclosure_threshold"
+        ],
+        "modifier_prompt": "Clean pale peelings rest among open amber fungal beads beneath the arrivalward grate, which form an attentive route line toward Sivren."
+      },
+      {
+        "modifier_id": "prime_worker_cover_visual",
+        "trigger": "branch_label == prime_worker_cover",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_preparation_hub",
+          "veil_oru_arrival",
+          "veil_disclosure_threshold"
+        ],
+        "modifier_prompt": "A pre-filed clean-shift line glows pale green in the translucent treatment ledger."
+      },
+      {
+        "modifier_id": "clarify_witness_bloom_visual",
+        "trigger": "branch_label == clarify_witness_bloom",
+        "apply_to_visual_scene_ids": [
+          "veil_bloom_response_hub",
+          "veil_supervisor_entry"
+        ],
+        "modifier_prompt": "Sivren holds the charged mineral cup beneath the flower's filaments; the leaves repeat crisp yellow, violet, and pale bands while Oru's claws tighten."
+      },
+      {
+        "modifier_id": "shelter_flower_trace_visual",
+        "trigger": "branch_label == shelter_flower_trace",
+        "apply_to_visual_scene_ids": [
+          "veil_bloom_response_hub",
+          "veil_supervisor_entry",
+          "veil_disclosure_threshold"
+        ],
+        "modifier_prompt": "Sivren cups a damp disposal cloth around the flower with both lower hands; one glossy black seed bead catches inside the cloth fold."
+      },
+      {
+        "modifier_id": "create_mat_testimony_visual",
+        "trigger": "branch_label == create_mat_testimony",
+        "apply_to_visual_scene_ids": [
+          "veil_bloom_response_hub",
+          "veil_supervisor_entry",
+          "veil_disclosure_threshold"
+        ],
+        "modifier_prompt": "Yellow-violet runoff connects Sivren's two lower fingertips to a prismwake strip displaying blue-white calm split by a hard violet mismatch edge."
+      },
+      {
+        "modifier_id": "ask_edited_host_visual",
+        "trigger": "branch_label == ask_edited_host",
+        "apply_to_visual_scene_ids": [
+          "veil_bloom_response_hub",
+          "veil_supervisor_entry"
+        ],
+        "modifier_prompt": "Oru looks toward Sivren with courteous blankness while both large upper claws visibly tighten around the sealed tool sling."
+      },
+      {
+        "modifier_id": "mask_and_keep_seed_visual",
+        "trigger": "branch_label == mask_and_keep_seed",
+        "apply_to_visual_scene_ids": [
+          "veil_supervisor_entry",
+          "veil_disclosure_threshold",
+          "veil_ending_body_courier"
+        ],
+        "modifier_prompt": "Sivren's damp wrist wrap hides a small glossy black seed bulge; one damaged flower leaf is caught in Nahl's disposal seal."
+      },
+      {
+        "modifier_id": "force_official_comparison_visual",
+        "trigger": "branch_label == force_official_comparison",
+        "apply_to_visual_scene_ids": [
+          "veil_supervisor_entry",
+          "veil_disclosure_threshold",
+          "veil_ending_record"
+        ],
+        "modifier_prompt": "Nahl turns toward a crisp violet-edged prismwake trace while Sivren points one lower hand between host nodule and mat."
+      },
+      {
+        "modifier_id": "seed_chemical_rumor_visual",
+        "trigger": "branch_label == seed_chemical_rumor",
+        "apply_to_visual_scene_ids": [
+          "veil_supervisor_entry",
+          "veil_disclosure_threshold",
+          "veil_ending_living_witness",
+          "veil_ending_body_courier"
+        ],
+        "modifier_prompt": "A shed yellow-violet leaf drops through the arrivalward grate and a three-body-length line of amber fungal beads closes over it toward the old road."
+      },
+      {
+        "modifier_id": "obey_flower_destruction_visual",
+        "trigger": "branch_label == obey_flower_destruction",
+        "apply_to_visual_scene_ids": [
+          "veil_disclosure_threshold",
+          "veil_ending_silence"
+        ],
+        "modifier_prompt": "Replace the attached flower with a fresh pale root mark beneath Oru's shoulder plate; show black plant ash and a charred disposal cloth inside the incinerator; show Sivren's lower hands open and empty."
+      },
+      {
+        "modifier_id": "ending_living_witness_success_visual",
+        "trigger": "ending_label == living_witness_preserved",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_living_witness"
+        ],
+        "modifier_prompt": "Oru and the intact flower move together along a deliberate amber fungal route outside the arrival arch; the flower's display remains crisp enough for later comparison."
+      },
+      {
+        "modifier_id": "ending_living_witness_cost_visual",
+        "trigger": "ending_label == living_witness_compromised",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_living_witness"
+        ],
+        "modifier_prompt": "A pale imperial quarantine seal crosses Oru's tool sling; the flower's leaves are torn and muddy in color; the fungal route outside remains mostly dark."
+      },
+      {
+        "modifier_id": "ending_body_courier_success_visual",
+        "trigger": "ending_label == embodied_rumor_carried",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_body_courier"
+        ],
+        "modifier_prompt": "Sivren passes the doctrine arch with the guarded wrist plate intact while Nahl's gaze remains on the clean ledger."
+      },
+      {
+        "modifier_id": "ending_body_courier_cost_visual",
+        "trigger": "ending_label == embodied_rumor_seized",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_body_courier"
+        ],
+        "modifier_prompt": "Nahl's large upper claw pins a root rib beside Sivren while one smaller lower hand peels back the wrist plate and exposes the black seed bead; Oru is turned back toward the rinse dais."
+      },
+      {
+        "modifier_id": "ending_record_success_visual",
+        "trigger": "ending_label == official_record_contradicted",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_record"
+        ],
+        "modifier_prompt": "A violet mismatch edge joins treatment nodule, prismwake strip, and living ledger in one durable luminous chain."
+      },
+      {
+        "modifier_id": "ending_record_cost_visual",
+        "trigger": "ending_label == official_record_absorbs_contradiction",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_record"
+        ],
+        "modifier_prompt": "The living ledger contracts the violet trace into a tiny gray-green residue mark while the larger treatment line remains clean."
+      },
+      {
+        "modifier_id": "ending_silence_success_visual",
+        "trigger": "ending_label == host_admitted_witness_destroyed",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_silence"
+        ],
+        "modifier_prompt": "Oru stands safely beyond the doctrine arch; Sivren's empty hands hang low; the incinerator ash and pale shoulder root mark are the only evidence left."
+      },
+      {
+        "modifier_id": "ending_silence_cost_visual",
+        "trigger": "ending_label == silence_fails_to_protect_host",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_silence"
+        ],
+        "modifier_prompt": "Nahl turns Oru back toward the central rinse dais; a pale treatment membrane closes across the doctrine arch while the incinerator remains warm."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "sluice_nine_checkpoint.scene_set.v0",
+      "geometry_authority_level": "authored_text_plan_with_fixed_axes_and_camera_slots",
+      "room_model": "A twelve-Airawa-body-length by four-body-width root-grown hall on one level. Its long axis runs arrivalward to doctrineward; the central drain and low rinse dais divide the two jurisdictions.",
+      "fixed_zones": [
+        {
+          "zone_id": "arrival_arch",
+          "visible_form": "broad grown-root arch at the outer end opening onto an old forest road, sealable by a pale living membrane",
+          "used_for": "returner entry, outer quarantine, fungal-route exposure"
+        },
+        {
+          "zone_id": "arrival_fungal_grate",
+          "visible_form": "crosswise slotted floor grate immediately arrivalward of the central drain with amber candle-fungus beads below",
+          "used_for": "clean offerings, accepted shed leaf, old-road signal"
+        },
+        {
+          "zone_id": "rinse_dais",
+          "visible_form": "low oval pale-root work platform straddling the central drain, reachable by Airawa lower hands from either long side",
+          "used_for": "grooming, mineral rinse, record contact, final custody choice"
+        },
+        {
+          "zone_id": "prismwake_strip",
+          "visible_form": "thin silver-green living mat bordering the doctrineward edge of the central drain",
+          "used_for": "runoff comparison and independent mismatch trace"
+        },
+        {
+          "zone_id": "doctrine_arch",
+          "visible_form": "inner grown-root arch at the far end opening toward imperial streets and controlled by a pale living membrane",
+          "used_for": "admission, Nahl's floor-level entry, bodily courier route"
+        },
+        {
+          "zone_id": "incinerator_throat",
+          "visible_form": "recessed oval of fleshy ceramic and heat-darkened root beside the doctrine arch at lower-hand height",
+          "used_for": "flower destruction and ash continuity"
+        },
+        {
+          "zone_id": "supervisor_membrane",
+          "visible_form": "translucent raised observation membrane spanning the upper doctrine wall above the arch",
+          "used_for": "routine oversight, status color, Nahl introduction"
+        },
+        {
+          "zone_id": "root_rib_bracing",
+          "visible_form": "braided load-bearing roots along both walls and ceiling with claw and foot anchor seams",
+          "used_for": "Airawa upper-arm bracing, taloned movement, Nahl's physical interception"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "arrival_to_doctrine_wide",
+          "supports_visual_scene_ids": [
+            "veil_sluice_nine_establishing",
+            "veil_disclosure_threshold"
+          ]
+        },
+        {
+          "camera_id": "dais_overhead_tools",
+          "supports_visual_scene_ids": [
+            "veil_routine_preparation_hub",
+            "veil_bloom_response_hub",
+            "veil_ending_record"
+          ]
+        },
+        {
+          "camera_id": "dais_to_arrival_medium",
+          "supports_visual_scene_ids": [
+            "veil_oru_arrival",
+            "veil_ending_living_witness"
+          ]
+        },
+        {
+          "camera_id": "flower_macro",
+          "supports_visual_scene_ids": [
+            "veil_witness_bloom_reveal"
+          ]
+        },
+        {
+          "camera_id": "dais_to_doctrine_medium",
+          "supports_visual_scene_ids": [
+            "veil_checkpoint_roles",
+            "veil_supervisor_entry",
+            "veil_ending_body_courier",
+            "veil_ending_silence"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "supervisor_to_dais",
+          "path": "raised supervisor membrane -> doctrine arch -> complete dais top; Oru's torso and disposal cloth can briefly occlude Sivren's lower hands",
+          "supports": [
+            "prime_worker_cover",
+            "shelter_flower_trace",
+            "mask_and_keep_seed"
+          ]
+        },
+        {
+          "lane_id": "dais_to_old_road",
+          "path": "rinse dais -> arrival fungal grate -> arrival arch -> old forest road",
+          "supports": [
+            "prime_road_credit",
+            "seed_chemical_rumor",
+            "prioritize_living_witness"
+          ]
+        },
+        {
+          "lane_id": "dais_to_imperial_interior",
+          "path": "rinse dais -> doctrine arch beside incinerator -> imperial streets",
+          "supports": [
+            "prioritize_body_courier",
+            "prioritize_host_over_disclosure"
+          ]
+        }
+      ],
+      "branch_persistent_object_states": [
+        {
+          "object_id": "witness_flower",
+          "states": [
+            "attached_intact",
+            "attached_damaged",
+            "quarantined_with_oru",
+            "destroyed_to_ash"
+          ]
+        },
+        {
+          "object_id": "black_seed_bead",
+          "states": [
+            "absent",
+            "in_grooming_cloth",
+            "under_sivren_wrist_plate",
+            "seized",
+            "destroyed"
+          ]
+        },
+        {
+          "object_id": "mat_trace",
+          "states": [
+            "ordinary_traffic",
+            "weak_mismatch",
+            "crisp_violet_mismatch",
+            "linked_to_ledger"
+          ]
+        },
+        {
+          "object_id": "fungal_route_trace",
+          "states": [
+            "dim",
+            "fed_and_open",
+            "shed_leaf_accepted",
+            "visible_toward_old_road"
+          ]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and organism visual identities for prompt assembly. Include only refs for bodies visible in a scene.",
+    "characters": {
+      "sivren_return_groomer": "Sivren: adult Airawa return-processing groomer, slim six-limbed reptilian-adjacent body with tiny russet-brown soft scales, long digitigrade legs, four-toed grasping feet arranged as two opposing pairs with hooked climbing talons, two large clawed upper arms, two smaller lower arms ending in blunt four-digit hands arranged as opposing pairs, minimal slit nose and ears, grown shoulder and wrist plates with muted amber bioluminescent seams, gray-green scale-safe grooming apron, mineral-stained wrist wraps, precise lower-hand work and habitually braced upper-claw posture.",
+      "oru_returned_line_grafter": "Oru: adult Airawa line-grafter, sturdy six-limbed reptilian-adjacent body with charcoal-blue soft scales, long digitigrade legs, paired grasping foot-talons, two large clawed upper arms carrying a sealed ochre tool sling, two smaller blunt lower hands, grown dark shoulder and throat plates with unusually dull blue seam light, mud between foot-talons, warm translucent imperial treatment nodule attached at the throat, courteous stillness interrupted by involuntary upper-claw tension.",
+      "nahl_checkpoint_supervisor": "Nahl: senior Airawa checkpoint supervisor, broad umber six-limbed reptilian-adjacent body, long digitigrade legs and paired grasping foot-talons, powerful clawed upper arms, smaller blunt lower hands, polished dark plate sections with narrow pale green seam light, rigid indigo mantle with ranked grown-resin fasteners, measured still posture, one lower hand usually holding a disposal seal or living treatment ledger.",
+      "oru_witness_flower": "Oru's witness flower: hand-sized mobile plant attached beneath Oru's shoulder plate by many fine clasping rootlets, flat overlapping leaves capable of crisp yellow, violet, and colorless-pale bands, central cup of hair-thin sensory filaments, small glossy black seed beads under the leaf bases, slow gripping movement, visible wilting and muddy colors when hungry or damaged."
+    },
+    "groups": {}
+  },
+  "review_notes": [
+    "Visual continuity self-review accepted the plan for B-level illustrated replay after adding conditional flower visibility, a branch-neutral silence frame, explicit state remnants, and modifiers for all material branches and endings.",
+    "Spatial cohesion self-review accepted the authored fixed-axis scene_set map after replacing a rotating-dais implication with a fixed quarantine marker and clarifying supervisor entry and limb reach.",
+    "The authored scene_set map is the geometry authority for this fixture; image generation remains deferred, and final high-consistency website art should begin from a hand-built plan or 3D blockout."
+  ]
+}
