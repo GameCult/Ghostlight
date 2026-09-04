@@ -110,7 +110,8 @@ wrong and is amended. Do not re-cut the scale target as fixture noise.
   creation, approval, activation, canonical controller assignments, affordance
   grants, revision-bound opportunities, and one shared human/autonomous action
   reducer all commit through one aggregate and journal. One mailbox serializes
-  submission and snapshot access. Eighteen focused tests prove lifecycle,
+  submission and snapshot access. Eighteen focused tests at that commit (43 in
+  `world/*.rs` at `d87cad8`) prove lifecycle,
   controller and opportunity fail-closed behavior, restart, idempotency,
   one-owner, authentication, non-commit, mailbox cancellation, lost replies,
   immutable genesis, and journal forgery rejection.
@@ -227,11 +228,21 @@ nine implementation passes, none landed; kernel source is still Speak-only
 opportunities. Run 115's vocabulary-shaped root cause and the v2 decisions are
 the last two records in `state/evidence.jsonl`.
 
-1. Land plan step 6 pass 1: typed ID namespaces, `Ref<Id>` draft handles,
-   closed-patch resolution, and the complete mismatch set against an otherwise
-   empty ontology, with tests, before pass 2. Eight elaborators are one
-   `OperationalAgent` loop whose tool catalog is a projection of the operation
-   set; no elaborator gets a tool the reducer cannot validate.
+1. Plan step 6 pass 1 is in progress via a faculty fan-out, nothing landed in
+   `crates/` yet. Modeling (source shape) and Imagination (target shape) run
+   read-only in parallel on the sealed kernel; their maps are session
+   scratchpad files `modeling-pass1.md` and `imagination-pass1.md`, not
+   `state/`. Hands cuts pass 1 (typed ID namespaces, `Ref<Id>` draft handles,
+   closed-patch resolution, complete mismatch set) in an isolated git worktree;
+   Soul verifies there; the coordinator integrates onto
+   `codex/ghostlight-dungeon-mvp`. Baseline before the cut at `d87cad8`:
+   `AffordanceKind` is still `{ Speak }`, and `crates/ghostlight-dungeon/src/world/*.rs`
+   holds 43 test functions (mod 16, controllers 12, mailbox 12, journal 3; 83
+   across the whole crate). If `git log` shows no pass-1 commit and
+   `git worktree list` shows only the main tree, the cut has not landed. Eight
+   elaborators are one `OperationalAgent` loop whose tool catalog is a
+   projection of the operation set; no elaborator gets a tool the reducer
+   cannot validate.
 2. Four detached Codex CLI world workers are live on the prose plus
    illustration Ink fixture path (relaunched 2026-09-04T16:17:56 local). PIDs
    and per-run stderr paths: `C:\Users\Meta\.claude\worlds\logs\pids-worlds.csv`
