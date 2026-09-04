@@ -35,40 +35,51 @@ not from a model agreeing that the world is deep.
 
 ## Current mechanism
 
-Passes 1 and 2 of the widening are landed (`d74d6ad`, `9ddc21f`, `5e53beb`,
-`24addfb`, `e99af63`). The sealed kernel holds subjects with a label and a
-kind (`Person | Institution | Population`), a `positions` partition with
-`Position`, entities with `container` under containment acyclicity, and
-`Route` as an `EdgeRecord` variant in the `edges` partition carrying
-`AccessKind { Public, Restricted }`, a minute `Cost` in `1..=525_600`, and an
-open flag. The action vocabulary is still one affordance (`Speak`) and one
-action (`Speak { text }`); there is no resource, relation, fact, commitment,
-or pressure, no precondition on any action, and no effect beyond the
-`DecisionEvent`.
+Passes 1 through 3 of the widening are landed (`5e53beb`, `e99af63`,
+`d2805fe`). The sealed kernel holds subjects with a label and a kind
+(`Person | Institution | Population`); a `positions` partition with
+`Position`; entities with `container` under containment acyclicity; `Route` as
+an `EdgeRecord` variant carrying `AccessKind { Public, Restricted }`, a minute
+`Cost` in `1..=525_600`, and an open flag; subject-keyed `holdings` of
+`Quantity(u64)` per entity, where absence means zero at every layer and all
+arithmetic is checked with u128 ledger accumulators; and subject-keyed
+`dependencies` on `DependencyTarget { Resource, Route, Subject }`. The action
+vocabulary is still one affordance (`Speak`) and one action (`Speak { text }`);
+there is no relation, fact, commitment, or pressure, no precondition on any
+action, and no effect beyond the `DecisionEvent`.
 
 `world/patch.rs` owns typed `SubjectId`/`EntityId`/`EdgeId` namespaces,
 `Ref<Id>` with `DraftHandle`, and a closed `resolve_patch` that resolves
-declarations, then operations, and returns the complete `Vec<Mismatch>`
-before any canonical ID allocates; `derive_id` is deterministic over world,
-command, and handle. `ComponentOp` is inhabited by `Relocate`, `OpenRoute`,
-`CloseRoute`, and `AlterCost`. `CommandBody::AdmitPatch` is Draft-only, its
-`answers` type is uninhabited, and it emits `WorldEffect::PatchAdmitted`
-through the one `admit_resolved` insertion owner shared with genesis.
-`KernelError::PatchRejected(Vec<Mismatch>)` is the structural rejection
-shape.
+declarations, then operations, and returns the complete `Vec<Mismatch>` before
+any canonical ID allocates; `derive_id` is deterministic over world, command,
+and handle. The ten inhabited operations are `Relocate`, `OpenRoute`,
+`CloseRoute`, `AlterCost`, `Transfer`, `Transform` (one-to-one; no unit, rate,
+or recipe field exists), `Consume`, `Admit` (its evidence must be present in
+the same patch and is recorded in the commit effect), `Bind`, and `Release`.
+Conservation is checked at one site, `patch::check_ledger`, which the closed
+operation set makes unreachable by construction; it is kept as the named
+check. `CommandBody::AdmitPatch` is Draft-only, its `answers` type is
+uninhabited, and it emits `WorldEffect::PatchAdmitted` through the one
+`admit_resolved` insertion owner shared with genesis.
+`KernelError::PatchRejected(Vec<Mismatch>)` is the structural rejection shape.
+No production ingress authors a `WorldPatch` today; `EvidenceRef::new` is
+`#[cfg(test)]` and the effective gate is that nothing deserializes a
+`WorldPatch`.
 
-Opportunities bind to a `ScopeDigest` over controller assignment, grants,
-position, and incident routes, not to a revision. `reduce` checks phase,
-controller identity, affordance grant, and scope: a proposal commits at any
-later revision where its scope is unchanged and is rejected with
-`KernelError::ScopeChanged` otherwise. The mailbox owner task stamps
-`expected_revision` for opportunity-bearing commands (`submit_stamped`);
-`PersonaTurnBinding` carries the scope digest. The snapshot exposes ordered
-places, routes, and `SubjectSnapshot.position`; a controller's typed view
-shows only its own place and incident routes. State schema is
-`world_state.topology.v1`, commit schema `world_commit.topology.v1`; earlier
-stores are refused. `authority_scope` is gone from subjects; jurisdiction
-returns in pass 5 as `Authority`. Passes 3 through 9 add custody, dependency,
+Opportunities bind to a `ScopeDigest` over one `scope_components` owner:
+controller assignment, grants, position, incident routes, own holdings, and
+own dependencies. A proposal commits at any later revision where its scope is
+unchanged and is rejected with `KernelError::ScopeChanged` otherwise. The
+mailbox owner task stamps `expected_revision` for opportunity-bearing commands
+(`submit_stamped`); `PersonaTurnBinding` carries the scope digest. The
+snapshot exposes ordered places, routes, and per-subject position, holdings,
+and dependencies from the same `scope_components` owner; a controller's typed
+view shows only its own place, incident routes, holdings, and dependencies.
+State schema is `world_state.custody.v1`, commit schema
+`world_commit.custody.v1`; earlier stores are refused. `authority_scope` is
+gone from subjects; jurisdiction returns in pass 5 as `Authority`. Ghostlight
+owns a conserved narrative ledger; Delvehold owns the economy
+(`delvehold-forced-ontology-integration.md`). Passes 4 through 9 add
 affordance data, authority, knowledge, boundaries, and scale intent as
 described below.
 

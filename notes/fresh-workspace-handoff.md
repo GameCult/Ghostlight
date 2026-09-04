@@ -225,38 +225,41 @@ outcome bands, four derived `CausalBoundary` kinds, scope-digest binding, one
 are teardown evidence. Plan step 6 is nine implementation passes; pass 1 is
 landed, passes 2 through 9 are not.
 
-1. Ontology tip is `e99af63` on `codex/ghostlight-dungeon-mvp`, pushed: pass 2
-   (Hands `24addfb`, Soul `e99af63`, on top of `489913f`) over pass 1 and its
-   follow-ups (`5e53beb`). Pass 2 adds the `positions` partition and
-   `Position`; `EntityRecord.container` with containment acyclicity; `Route`
-   as an `EdgeRecord` variant in the existing `edges` partition with
-   `AccessKind { Public, Restricted }`, `Cost` in minutes `1..=525_600`, and an
-   open flag; `ComponentOp` is inhabited (`Relocate`, `OpenRoute`,
-   `CloseRoute`, `AlterCost`); `resolve_patch` replaces `resolve_declarations`
-   and resolves operations after declarations; `authority_scope` is deleted
-   from subjects (jurisdiction returns in pass 5 as `Authority`).
-   `DecisionOpportunity.state_digest` is replaced by `scope_digest:
-   ScopeDigest` over controller assignment, grants, position, and incident
-   routes: a proposal commits at any later revision where its scope is
-   unchanged and is rejected with `KernelError::ScopeChanged` otherwise.
-   `expected_revision` stamping for opportunity-bearing commands lives in the
-   mailbox owner task (`submit_stamped`); `PersonaTurnBinding` carries the
-   scope digest; the two `runtime.rs` freshness comparisons are gone. The
-   snapshot exposes ordered places, routes, and `SubjectSnapshot.position`; a
-   controller's typed view shows only its own place and incident routes.
-   Schemas are `world_state.topology.v1` and `world_commit.topology.v1`;
-   pre-topology stores are refused. The action vocabulary is still
-   `AffordanceKind::Speak` and `DecisionAction::Speak`; pass 4 replaces that.
-   Baseline for pass 3 at `e99af63`: 77 test functions in `world/*.rs`, 116
-   across the crate source, plus one integration test. Pass 3 (`Custody`,
-   `Dependency`, conservation, evidenced admission) is with Hands in a fresh
-   worktree from the session-scratchpad spec `imagination-pass3.md`
-   (`modeling-pass3.md` beside it), preceded by four small Soul follow-ups as
-   a separate commit. Witness: a worktree in `git worktree list` at or above
-   `e99af63`. At the time of writing the only locked worktree,
-   `.claude/worktrees/agent-aec48972e44c24596`, sits at `8cad6b9`, a
-   pre-rebuild commit that does not descend from `e99af63`; it is not the
-   pass-3 tree. Nothing from pass 3 is in the main tree.
+1. Ontology tip is `6a4f42a` on `codex/ghostlight-dungeon-mvp`, pushed: pass 3
+   (`db8eb0b` pass-2 follow-ups, Hands `48de96b`, Soul `d2805fe`) plus the
+   boundary-doc commit `6a4f42a`, over passes 1 and 2 (`5e53beb`, `e99af63`).
+   Pass 3 adds subject-keyed `holdings: BTreeMap<SubjectId, BTreeMap<EntityId,
+   Quantity>>` and `dependencies` partitions; `Quantity(u64)` with absence
+   meaning zero at every layer, checked arithmetic, and u128 ledger
+   accumulators; `ComponentOp`/`ResolvedOp` `Transfer`, `Transform` (1:1, no
+   unit, rate, or recipe field anywhere), `Consume`, `Admit` (evidence must be
+   present in the same patch and is recorded in the commit effect), `Bind`,
+   `Release`; `DependencyTarget { Resource, Route, Subject }`; conservation
+   owner `patch::check_ledger`, structurally dead by construction of the
+   closed op set but kept as the single named check site; one
+   `scope_components` owner feeding both the scope digest and the snapshot
+   (`typed_incident_routes` deleted); `ScopePreimage` includes own holdings
+   and dependencies. `EvidenceRef::new` is `#[cfg(test)]` because no patch
+   ingress exists yet: the whole ten-op surface has no production author
+   today, `EvidenceRef` deserializes, and the real gate is that nothing
+   deserializes a `WorldPatch`. Watch that gate when an ingress lands.
+   Schemas are `world_state.custody.v1` and `world_commit.custody.v1`; earlier
+   stores are refused. `docs/architecture/delvehold-forced-ontology-integration.md`
+   now states that Ghostlight owns a conserved narrative ledger and Delvehold
+   owns the economy. The action vocabulary is still `AffordanceKind::Speak`
+   and `DecisionAction::Speak`. Baseline for pass 4 at `6a4f42a`: 98 test
+   functions in `world/*.rs`, 137 across the crate source, plus one
+   integration test. Pass 4 (affordance catalog, `action.rs`,
+   `ActionMismatch`, kernel-entropy band draw, derived `OperationalAgent` tool
+   catalog; deletes `DecisionAction`, `AffordanceKind`, and three hard-coded
+   permission surfaces) is with Hands in the locked worktree
+   `.claude/worktrees/agent-a8828a054fe108277` (branched from `6a4f42a`) from
+   the session-scratchpad spec `imagination-pass4.md`; its first commit
+   extracts `apply_operations` as the one owner of operation application and
+   conservation. Pass 5 (`Authority`, `Selection`, `Redress`, institutional
+   affordances) is specifying: `modeling-pass5.md` landed, `imagination-pass5.md`
+   in flight, both in the session scratchpad. Nothing from pass 4 or 5 is in
+   the main tree; `git log` past `6a4f42a` is the witness.
 2. First-generation world fixtures are banked and pushed, one per world, each
    with Ink, training sidecar, visual plan, lore grounding, and BFL manifest,
    reviewer-accepted except visual replay, which waits on a scene-set
@@ -272,18 +275,22 @@ landed, passes 2 through 9 are not.
      on Kalsa `codex/ghostlight-worlds` at `c9f4c5c`.
    The first-generation `Invoke-Worlds.ps1` loop is retired (file still on
    disk, do not launch it). The live fan-out is the 32-slot titled-elaborator
-   scheduler `C:\Users\Meta\.claude\worlds\Invoke-Elaborators.ps1` (detached,
-   PID 39500 at launch), config `worlds.config.psd1`, prompt
-   `elaborator-prompt.md`. Workers never run git: the Codex workspace-write
+   scheduler `C:\Users\Meta\.claude\worlds\Invoke-Elaborators.ps1`, config
+   `worlds.config.psd1`, prompt `elaborator-prompt.md`. Since 18:17 the prompt
+   is a creative brief: vault ideas, no Ink. Each slot publishes its ledger to
+   the base branch under `experiments/elaboration/<world>/ledger/<stamp>-<title>.md`
+   on `codex/world-<world>`. First two ideas: Aetheria Hearth "Keeping The
+   Quarrel" (ledger commit `cead2d5` on `codex/world-aetheria`) and Delvehold
+   Ember null-rune immune response (ledger commit `ad4fcec` on
+   `codex/world-delvehold`). Workers never run git: the Codex workspace-write
    sandbox keeps `.git` read-only even inside the writable root. The scheduler
    commits and pushes each slot clone on exit to `slot/<world>/<title>/<stamp>`
    branches in both the Ghostlight world clone and the lore clone and records
-   each completion in `logselab-done.csv`. As of 2026-09-04T17:32 that file
-   records 26 completed slot passes on 26 distinct `slot/...` branches (the
-   coordinator's count of twelve is superseded by the file). The scheduler's
-   own log file stopped appending, a logger defect fixed for the next
-   instance; `elab-done.csv` is the witness, not the log. Integration into `codex/world-<world>` and
-   `codex/ghostlight-worlds` is a deliberate later pass. Clone paths:
+   each completion in `logs\elab-done.csv`, 44 rows as of this
+   writing; that file is the witness, not the scheduler log. Integration of
+   slot branches into `codex/world-<world>` and `codex/ghostlight-worlds`
+   beyond the published ledgers is a deliberate later pass.
+   Clone paths:
    `F:\Projects\Ghostlight-worlds\<world>` and
    `F:\Projects\<Lore>-worktrees\ghostlight-worlds` (full clones despite the
    name). Image rendering is deferred: the BFL key drive E: is gone, workers
