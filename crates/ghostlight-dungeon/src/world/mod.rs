@@ -34,8 +34,7 @@ pub(crate) use patch::{
 #[cfg(test)]
 use patch::{
     AffordanceDeclaration, AudienceRef, AudienceSpec, ChannelDeclaration, ComponentOp,
-    DependencyRef, FactDeclaration, FactStandingRef, PreconditionRef, PressureSourceRef, ReachRef,
-    RouteDeclaration,
+    DependencyRef, FactDeclaration, FactStandingRef, ReachRef, RouteDeclaration,
 };
 #[cfg(test)]
 pub(crate) use patch::{AuthorityGrantRef, AuthorityTargetRef};
@@ -3306,20 +3305,29 @@ fn derive_scale_deficit(state: &WorldState) -> Result<Vec<ScaleDeficitRow>, Kern
         }
         match state.positions.get(subject_id) {
             // A subject under nested roots counts toward both: layered
-            // jurisdiction applied to counting.
+            // jurisdiction applied to counting. A subject standing somewhere
+            // no declared root covers still counts, in `Uncovered`, so the
+            // deficit stays total over every qualifying subject.
             Some(position) => {
+                let mut covered = false;
                 for root in state.scale_intent.jurisdictions.keys() {
                     if patch::covers_place(&state.entities, *root, position.place) {
+                        covered = true;
                         *counted
                             .entry((JurisdictionKey::PlaceSubtree(*root), subject.kind))
                             .or_default() += 1;
                     }
                 }
+                if !covered {
+                    *counted
+                        .entry((JurisdictionKey::Uncovered, subject.kind))
+                        .or_default() += 1;
+                }
             }
             // Counted, visible, and reducing no target.
             None => {
                 *counted
-                    .entry((JurisdictionKey::Unplaced, subject.kind))
+                    .entry((JurisdictionKey::Uncovered, subject.kind))
                     .or_default() += 1;
             }
         }
@@ -10761,7 +10769,7 @@ mod clock_tests {
             refuse(
                 &mut kernel,
                 declaring(
-                    Some(PatchAnswer::Deficit(JurisdictionKey::Unplaced)),
+                    Some(PatchAnswer::Deficit(JurisdictionKey::Uncovered)),
                     "no-deficit"
                 )
             ),
@@ -10796,7 +10804,7 @@ mod clock_tests {
             refuse(
                 &mut draft_kernel,
                 declaring(
-                    Some(PatchAnswer::Deficit(JurisdictionKey::Unplaced)),
+                    Some(PatchAnswer::Deficit(JurisdictionKey::Uncovered)),
                     "in-draft"
                 )
             ),
@@ -10896,6 +10904,105 @@ mod clock_tests {
         );
         let row = deficit(&kernel, JurisdictionKey::PlaceSubtree(commons)).unwrap();
         assert_eq!((row.target, row.qualified, row.deficit), (3, 0, 3));
+    }
+
+    /// A qualifying subject standing somewhere no declared root covers still
+    /// counts, in the `Uncovered` row, rather than vanishing from the deficit
+    /// entirely: the count is total over every qualifying subject.
+    #[test]
+    fn a_subject_placed_outside_every_root_counts_as_uncovered() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut creation = creation_with_intent(
+            CommandId::new(),
+            "Uncovered",
+            intent(super::tests::COMMONS, 3, 1000),
+        );
+        creation
+            .patch
+            .declarations
+            .push(Declaration::Entity(EntityDeclaration {
+                handle: DraftHandle::new("elsewhere"),
+                label: "The Elsewhere".into(),
+                kind: EntityKind::Place,
+                container: None,
+            }));
+        creation
+            .patch
+            .declarations
+            .push(Declaration::Route(RouteDeclaration {
+                handle: DraftHandle::new("bridge"),
+                label: "The Elsewhere Bridge".into(),
+                from: Ref::Draft(DraftHandle::new(super::tests::COMMONS)),
+                to: Ref::Draft(DraftHandle::new("elsewhere")),
+                access: AccessKind::Public,
+                cost: Cost(1),
+            }));
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation,
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let active = activate(&mut kernel);
+        let subject_count = kernel.state.subjects.len() as u32;
+        assert_eq!(subject_count, 3, "the base fixture declares three subjects");
+
+        // Every subject qualifies, so the deficit's row counts must sum to
+        // the whole subject count.
+        let goal = |subject: SubjectId| ComponentOp::CreateCommitment {
+            subject: Ref::Existing(subject),
+            counterparty: None,
+            kind: CommitmentKind::Goal,
+            due: FictionalMinutes(500),
+            period: None,
+            checks: Vec::new(),
+        };
+        let subject_ids: Vec<SubjectId> =
+            active.subjects.iter().map(|subject| subject.id).collect();
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(subject_ids.iter().copied().map(goal).collect()),
+        );
+
+        let moved = active
+            .subjects
+            .iter()
+            .find(|subject| subject.kind == SubjectKind::Person)
+            .expect("the fixture world has a person")
+            .id;
+        let bridge = active
+            .routes
+            .iter()
+            .find(|route| route.label == "The Elsewhere Bridge")
+            .expect("the declared route")
+            .id;
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::Relocate {
+                subject: Ref::Existing(moved),
+                via: Ref::Existing(bridge),
+            }]),
+        );
+
+        let rows = derive_scale_deficit(&kernel.state).unwrap();
+        let uncovered = rows
+            .iter()
+            .find(|row| {
+                row.jurisdiction == JurisdictionKey::Uncovered && row.kind == SubjectKind::Person
+            })
+            .expect("the relocated subject counts as uncovered");
+        assert_eq!(uncovered.qualified, 1);
+
+        let counted_total: u32 = rows.iter().map(|row| row.qualified).sum();
+        assert_eq!(
+            counted_total, subject_count,
+            "the deficit is total over every qualifying subject"
+        );
     }
 
     /// Weights distribute the target and never raise it, and a root must be a

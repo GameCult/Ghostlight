@@ -609,13 +609,15 @@ pub(crate) struct WorldScaleIntentRef {
     pub(crate) jurisdictions: BTreeMap<DraftHandle, u32>,
 }
 
-/// One counted region of the scale deficit. `Unplaced` is the residual: a
-/// subject standing nowhere is counted and visible while reducing no target.
+/// One counted region of the scale deficit. `Uncovered` is the residual: a
+/// subject with no jurisdiction root covering it — standing nowhere, or
+/// standing somewhere outside every declared root's subtree — is counted and
+/// visible while reducing no target.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(tag = "jurisdiction", content = "root", rename_all = "snake_case")]
 pub(crate) enum JurisdictionKey {
     PlaceSubtree(EntityId),
-    Unplaced,
+    Uncovered,
 }
 
 /// What must already be true of committed state before an invocation is

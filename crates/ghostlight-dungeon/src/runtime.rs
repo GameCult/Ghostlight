@@ -1446,8 +1446,23 @@ async fn maintain_mesh_projection(state: AppState) {
 const CLOCK_TICK_INTERVAL: Duration = Duration::from_secs(60);
 const CLOCK_TICK_MINUTES: u32 = 60;
 
-/// The world clock's only driver. A refused tick — no world yet, a Draft world,
-/// a stale revision — is logged and skipped: the next tick re-reads live state.
+/// One tick's work, apart from the wall clock that decides when to run it: ask
+/// `submit` for the outcome of one `minutes`-wide `AdvanceTime`, and log
+/// (never propagate) a refusal — no world yet, a Draft world, a stale
+/// revision. `submit` is a narrow port over [`WorldMailbox::submit_clock`], so
+/// a test can capture what one tick submits without driving tokio's timer.
+async fn submit_clock_tick<F, Fut>(minutes: TickMinutes, submit: F)
+where
+    F: FnOnce(CommandId, TickMinutes) -> Fut,
+    Fut: std::future::Future<Output = Result<SubmitReceipt, MailboxError>>,
+{
+    match submit(CommandId::new(), minutes).await {
+        Ok(_) => {}
+        Err(error) => tracing::debug!(%error, "world clock tick was not admitted"),
+    }
+}
+
+/// The world clock's only driver.
 async fn advance_world_clock(state: AppState) {
     let Some(minutes) = TickMinutes::new(CLOCK_TICK_MINUTES) else {
         tracing::error!("the configured clock tick is outside one year of minutes");
@@ -1458,10 +1473,7 @@ async fn advance_world_clock(state: AppState) {
     interval.tick().await;
     loop {
         interval.tick().await;
-        match state.world.submit_clock(CommandId::new(), minutes).await {
-            Ok(_) => {}
-            Err(error) => tracing::debug!(%error, "world clock tick was not admitted"),
-        }
+        submit_clock_tick(minutes, |id, minutes| state.world.submit_clock(id, minutes)).await;
     }
 }
 
@@ -2335,5 +2347,26 @@ mod tests {
                 .unwrap()
                 .contains("payload may not supply caller authority")
         );
+    }
+
+    /// One tick submits exactly the configured span, and nothing else: the
+    /// captured argument is the `TickMinutes` `submit_clock_tick` was given,
+    /// with no measured elapsed duration — no `Duration`, no `Instant` — ever
+    /// constructed along the way. Driven through the narrow port rather than
+    /// `advance_world_clock` itself, so the assertion holds without waiting on
+    /// tokio's timer.
+    #[tokio::test]
+    async fn advance_world_clock_tick_submits_the_configured_span_and_nothing_measured() {
+        let minutes = TickMinutes::new(CLOCK_TICK_MINUTES).expect("a valid configured tick");
+        let captured: std::sync::Arc<std::sync::Mutex<Option<TickMinutes>>> =
+            std::sync::Arc::new(std::sync::Mutex::new(None));
+        let sink = captured.clone();
+        submit_clock_tick(minutes, move |_id, submitted| {
+            *sink.lock().unwrap() = Some(submitted);
+            std::future::ready(Ok(SubmitReceipt::AlreadyApplied(controller_commit())))
+        })
+        .await;
+        let submitted = captured.lock().unwrap().expect("the tick submitted a span");
+        assert_eq!(submitted.minutes(), CLOCK_TICK_MINUTES);
     }
 }

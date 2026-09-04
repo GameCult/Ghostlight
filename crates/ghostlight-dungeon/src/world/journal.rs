@@ -642,6 +642,9 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
     for (subject_id, held) in &state.commitments {
         let commitment_is_canonical = |commitment: &super::Commitment| {
             (commitment.kind == super::CommitmentKind::Routine) == commitment.period.is_some()
+                && commitment.period.is_none_or(|period| {
+                    (1..=super::patch::MAX_ROUTE_COST).contains(&period.minutes())
+                })
                 && (commitment.kind == super::CommitmentKind::Routine
                     || commitment.checks.is_empty())
                 && match commitment.counterparty {
@@ -2416,15 +2419,13 @@ mod custody_tests {
         let _ = subject;
     }
 
-    /// Soul falsification, reported as a bounded gap: `TickMinutes` is
-    /// `#[serde(transparent)]`, so a hand-written store row can carry a period
-    /// of zero — a routine that re-arms on the same minute forever — and
-    /// `verify_state_shape` admits it, because the shape check reads
-    /// `period.is_some()` and never the span bound the constructor enforces.
-    /// The commit chain still refuses the row, so the gap is bounded to a store
-    /// whose commits were forged to match.
+    /// `TickMinutes` is `#[serde(transparent)]`, so a hand-written store row
+    /// can carry a period of zero — a routine that re-arms on the same minute
+    /// forever — without ever passing through `TickMinutes::new`. The shape
+    /// check now enforces the same `1..=MAX_ROUTE_COST` span bound the
+    /// constructor enforces, so the forged row is refused directly.
     #[test]
-    fn soul_a_zero_period_passes_the_shape_check_and_is_caught_only_by_the_chain() {
+    fn soul_a_zero_period_is_refused_by_the_shape_check() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
         let (kernel, subject, _) = ticking_world(&path);
@@ -2449,13 +2450,13 @@ mod custody_tests {
             .unwrap()
             .period = Some(zero);
 
-        // The gap: the shape check admits it.
+        // The shape check refuses the forged span bound directly.
         assert!(
-            verify_state_shape(&forged).is_ok(),
-            "verify_state_shape gained a span bound"
+            matches!(verify_state_shape(&forged), Err(JournalError::Corrupt(_))),
+            "verify_state_shape admitted a period outside 1..=MAX_ROUTE_COST"
         );
 
-        // The bound: the commit chain does not.
+        // The commit chain refuses it too.
         let commits: Vec<CultCacheEnvelope> = kernel
             .journal
             .commits
