@@ -2,9 +2,9 @@
 
 ## Current Subgoal
 
-Plan step 6: pass 1 landed (`d74d6ad` + `9ddc21f`); three Soul follow-ups in
-flight (schema literals, subject-less genesis Mismatch, UnknownCanonical), then
-pass 2. Faculty maps for pass 1 are in the session scratchpad, not here.
+Plan step 6 pass 2 (`Position`, `Route`, containment, scope-digest binding) with
+Hands in `.claude/worktrees/agent-a9c33487c7161e8d2` from scratchpad
+`imagination-pass2.md`; tip `5e53beb` carries pass 1 plus follow-ups.
 
 ## Working Notes
 
