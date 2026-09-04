@@ -1384,9 +1384,7 @@ mod custody_tests {
         // An empty target set is the second representation of nothing, and there
         // is only supposed to be one.
         let mut emptied = kernel.state.clone();
-        emptied
-            .dependencies
-            .insert(custody.holder, BTreeSet::new());
+        emptied.dependencies.insert(custody.holder, BTreeSet::new());
         assert!(matches!(
             verify_state_shape(&emptied),
             Err(JournalError::Corrupt(_))

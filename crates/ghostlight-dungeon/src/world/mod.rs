@@ -1282,18 +1282,32 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
             }
         }
     }
-    // A forged `PatchAdmitted` reaches this function without ever passing the
-    // resolver, so conservation is re-derived here over the committed
-    // partitions, against the same equation, with `before` read from state
-    // rather than from anything the effect asserts.
+    apply_operations(state, &resolved.operations, &resolved.evidence)
+}
+
+/// The component writer for every lane: snapshot the before-totals for every
+/// resource the operations name, apply each operation, accumulate the ledger
+/// deltas, and prove conservation once. Declaration admission calls it after its
+/// declaration loops; an exercised affordance's lowered effects call it
+/// directly. One writer, one conservation statement.
+///
+/// A forged effect reaches this function without ever passing the resolver, so
+/// conservation is re-derived over the committed partitions, against the same
+/// equation, with `before` read from state rather than from anything the effect
+/// asserts.
+fn apply_operations(
+    state: &mut WorldState,
+    operations: &[ResolvedOp],
+    evidence: &[EvidenceRef],
+) -> Result<(), KernelError> {
     let mut deltas: BTreeMap<EntityId, LedgerDelta> = BTreeMap::new();
-    for operation in &resolved.operations {
+    for operation in operations {
         for resource in operation_resources(operation) {
             deltas.entry(resource).or_default().before = resource_total(state, resource);
         }
     }
-    for operation in &resolved.operations {
-        apply_operation(state, operation, &resolved.evidence)?;
+    for operation in operations {
+        apply_operation(state, operation, evidence)?;
         match operation {
             ResolvedOp::Transform {
                 from_resource,
