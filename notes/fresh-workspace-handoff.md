@@ -225,28 +225,38 @@ outcome bands, four derived `CausalBoundary` kinds, scope-digest binding, one
 are teardown evidence. Plan step 6 is nine implementation passes; pass 1 is
 landed, passes 2 through 9 are not.
 
-1. Ontology tip is `5e53beb` on `codex/ghostlight-dungeon-mvp`, pushed: pass 1
-   (Hands `d74d6ad`, Soul `9ddc21f`) plus the three follow-up cuts (one schema
-   owner: `mesh.rs` and `idunn_health.rs` read `STATE_SCHEMA`, no
-   `foundation.v0` literal remains; subject-less genesis is
-   `Mismatch::NoDecisionSubject`, not a journal fault; named referrer/referent
-   fields replace the `UnknownCanonical` handle-field ambiguity).
-   `crates/ghostlight-dungeon/src/world/patch.rs` owns
-   `SubjectId`/`EntityId`/`EdgeId` namespaces, `Ref<Id>` with `DraftHandle`,
-   closed `resolve_declarations` returning the complete `Vec<Mismatch>`, and
-   deterministic `derive_id`. `CommandBody::AdmitPatch` is Draft-only and
-   answers `uninhabited`; `WorldEffect::PatchAdmitted` is its effect; one
-   `admit_resolved` insertion owner is shared with genesis. `STATE_SCHEMA` is
-   `foundation.v1`, `COMMIT_SCHEMA` is `foundation.v2`, old stores refused.
-   The action vocabulary is still `AffordanceKind::Speak` and
-   `DecisionAction::Speak`; pass 4 replaces that. Pass 2 (`Position`, `Route`,
-   containment, topology admission, scope-digest binding for opportunities) is
-   with Hands in the isolated worktree
-   `.claude/worktrees/agent-a9c33487c7161e8d2` (locked, branched from
-   `5e53beb`), cutting from the session-scratchpad spec
-   `imagination-pass2.md` with `modeling-pass2.md` beside it. Nothing from
-   pass 2 is in the main tree; `git log` on `codex/ghostlight-dungeon-mvp`
-   past `5e53beb` is the witness.
+1. Ontology tip is `e99af63` on `codex/ghostlight-dungeon-mvp`, pushed: pass 2
+   (Hands `24addfb`, Soul `e99af63`, on top of `489913f`) over pass 1 and its
+   follow-ups (`5e53beb`). Pass 2 adds the `positions` partition and
+   `Position`; `EntityRecord.container` with containment acyclicity; `Route`
+   as an `EdgeRecord` variant in the existing `edges` partition with
+   `AccessKind { Public, Restricted }`, `Cost` in minutes `1..=525_600`, and an
+   open flag; `ComponentOp` is inhabited (`Relocate`, `OpenRoute`,
+   `CloseRoute`, `AlterCost`); `resolve_patch` replaces `resolve_declarations`
+   and resolves operations after declarations; `authority_scope` is deleted
+   from subjects (jurisdiction returns in pass 5 as `Authority`).
+   `DecisionOpportunity.state_digest` is replaced by `scope_digest:
+   ScopeDigest` over controller assignment, grants, position, and incident
+   routes: a proposal commits at any later revision where its scope is
+   unchanged and is rejected with `KernelError::ScopeChanged` otherwise.
+   `expected_revision` stamping for opportunity-bearing commands lives in the
+   mailbox owner task (`submit_stamped`); `PersonaTurnBinding` carries the
+   scope digest; the two `runtime.rs` freshness comparisons are gone. The
+   snapshot exposes ordered places, routes, and `SubjectSnapshot.position`; a
+   controller's typed view shows only its own place and incident routes.
+   Schemas are `world_state.topology.v1` and `world_commit.topology.v1`;
+   pre-topology stores are refused. The action vocabulary is still
+   `AffordanceKind::Speak` and `DecisionAction::Speak`; pass 4 replaces that.
+   Baseline for pass 3 at `e99af63`: 77 test functions in `world/*.rs`, 116
+   across the crate source, plus one integration test. Pass 3 (`Custody`,
+   `Dependency`, conservation, evidenced admission) is with Hands in a fresh
+   worktree from the session-scratchpad spec `imagination-pass3.md`
+   (`modeling-pass3.md` beside it), preceded by four small Soul follow-ups as
+   a separate commit. Witness: a worktree in `git worktree list` at or above
+   `e99af63`. At the time of writing the only locked worktree,
+   `.claude/worktrees/agent-aec48972e44c24596`, sits at `8cad6b9`, a
+   pre-rebuild commit that does not descend from `e99af63`; it is not the
+   pass-3 tree. Nothing from pass 3 is in the main tree.
 2. First-generation world fixtures are banked and pushed, one per world, each
    with Ink, training sidecar, visual plan, lore grounding, and BFL manifest,
    reviewer-accepted except visual replay, which waits on a scene-set
@@ -268,8 +278,11 @@ landed, passes 2 through 9 are not.
    sandbox keeps `.git` read-only even inside the writable root. The scheduler
    commits and pushes each slot clone on exit to `slot/<world>/<title>/<stamp>`
    branches in both the Ghostlight world clone and the lore clone and records
-   each completion in `logs\elab-done.csv`; no slot has finished yet, so that
-   file does not exist. Integration into `codex/world-<world>` and
+   each completion in `logselab-done.csv`. As of 2026-09-04T17:32 that file
+   records 26 completed slot passes on 26 distinct `slot/...` branches (the
+   coordinator's count of twelve is superseded by the file). The scheduler's
+   own log file stopped appending, a logger defect fixed for the next
+   instance; `elab-done.csv` is the witness, not the log. Integration into `codex/world-<world>` and
    `codex/ghostlight-worlds` is a deliberate later pass. Clone paths:
    `F:\Projects\Ghostlight-worlds\<world>` and
    `F:\Projects\<Lore>-worktrees\ghostlight-worlds` (full clones despite the
