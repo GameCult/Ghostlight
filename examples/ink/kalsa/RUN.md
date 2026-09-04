@@ -60,3 +60,29 @@
   - Spatial cohesion: `accepted`; the room, routes, sightlines, body positions, object custody, and folded spatial state are stageable. The reviewer also requires the declared scene set before replay promotion.
 - Verification: all four JSON files parse; `tools/validate_lore_grounding.py` passes; all 16 sidecar branch ids map to Ink labels and knots; all 10 Ink variables have later reads; 14 visual scene ids and 20 global modifier targets are unique and valid; every visible named character resolves to a stable visual ref; affirmative-prompt checks pass. Ink was not compiled because no compiler is installed and installation is forbidden for this run.
 - Next: choose a different institution and ordinary routine. Best current candidate is the basin-table allocation and black-door descent preparation at Low Sere, provided source reading exposes a narrow locality gap worth canonizing.
+
+## grey-beds-first-water-v0 — active fixture selection
+
+- Status: selected; source reading complete, prose not yet written.
+- Locality: the lower Grey Beds head-sluice at Low Sere, downstream of household drinking and washing claims.
+- Institution and routine: Grey Bed workers and a household water witness conduct the first-water delivery—sample temperature, taste, ash, and sound; compare the marked delivery vessel with crop stress; then accept, divert, or return the flow under the basin table's crop compact.
+- Tonal mode: damp agrarian workplace comedy with domestic warmth and creeping technical dread.
+- Concrete pressure: reduced intake service sends a hotter, ash-heavy first flow while lower-step rooms are losing heat and the medicinal moss is already drying. A Cistern House runner brings a cut order that preserves minimum household heat but may ruin one bed before the next work-watch.
+- Lore gap: `Kalsa/Spoilers/Places/Low Sere.md` owns Grey Bed work and water allocation but does not yet furnish the head-sluice geometry, sample surface, or witnessed first-water handoff.
+- Intended patch: add one fixture-marked, locality-bounded elaboration under Low Sere's Grey Beds section; do not establish a universal bed layout, currency, office title, valve design, crop threshold, or post-descent outcome.
+- Next: patch and commit that owner note, then compile the five fixture artifacts and run the four reviewer passes.
+
+## grey-beds-first-water-v0 — stopped at lore commit
+
+- Status: blocked before prose or fixture emission.
+- Locality: the lower Grey Beds head-sluice at Low Sere.
+- Files written in Ghostlight: `examples/ink/kalsa/RUN.md` only; no Ink, training, visual, lore-grounding, or BFL artifact was emitted for this fixture.
+- Lore notes read:
+  - Public tier: `Kalsa/Public/index.md`, `Kalsa/Public/Places/Low Sere.md`, `Kalsa/Public/Sources/At the Basin Table.md`, `Kalsa/Public/World/Relics and Ruins.md`.
+  - Spoilers/author tier: `Kalsa/Spoilers/index.md`, `Kalsa/Spoilers/Dungeons/index.md`, `Kalsa/Spoilers/Places/Low Sere.md`, `Kalsa/Spoilers/Dungeons/The Ashen Intake.md`, `Kalsa/Spoilers/Events/The Grey Scald.md`, `Kalsa/Spoilers/Institutions/Relic Custody.md`.
+- Lore patch drafted: `Kalsa/Spoilers/Places/Low Sere.md` contains a fixture-marked, locality-bounded lower head-sluice elaboration: covered header, sampling apron, paired marked vessels, ash filters, reed floats, work-watch tile board, three reachable stop boards, and the witnessed accept/divert/return handoff. It explicitly does not establish a universal Grey Beds plan or allocation formula.
+- Lore commit attempt: `git -c safe.directory=F:/Projects/Kalsa-worktrees/ghostlight-worlds -C F:\Projects\Kalsa-worktrees\ghostlight-worlds add -- "Kalsa/Spoilers/Places/Low Sere.md"` and the required commit could not create the worktree index lock.
+- Exact error: `fatal: Unable to create 'F:/Projects/Kalsa-worktrees/ghostlight-worlds/.git/index.lock': Permission denied`.
+- Reviewer verdicts: not run; the fixture was not written.
+- Stop reason: the run contract says that if `git commit` itself fails, record the exact error in the ledger and stop. Continuing would put prose ahead of an uncommitted canonical elaboration.
+- Next after unblock: bank the Low Sere lore edit on branch `codex/ghostlight-worlds` with message `Lore: ground grey-beds-first-water-v0 head-sluice`, record its hash here, then resume the Weaver pass for this locality.
