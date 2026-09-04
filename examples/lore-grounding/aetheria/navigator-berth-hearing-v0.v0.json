@@ -1,0 +1,663 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.navigator-berth-hearing-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "cetacean-navigators",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cetacean Navigators.md",
+      "title": "Cetacean Navigators",
+      "line_start": 1,
+      "line_end": 28,
+      "relevance": "Primary authority for corridor government, berth allocation, courts, hazard records, wet/dry station life, multimodal route boards, low-resource access failures, revenue, and the fixture-marked Brineglass hearing-room elaboration."
+    },
+    {
+      "source_id": "lightsail-express",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Lightsail Express.md",
+      "title": "Lightsail Express",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds a carrier whose value and political leverage come from dependable bulk movement, corridor reputation, and delivery of food, data, and refugees."
+    },
+    {
+      "source_id": "ganymede-route-compact",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ganymede Route Compact.md",
+      "title": "Ganymede Route Compact",
+      "line_start": 1,
+      "line_end": 12,
+      "relevance": "Grounds the recognized legal position of Navigator councils in convoy arbitration, shared hazard ledgers, rescue obligations, and route-steward representation."
+    },
+    {
+      "source_id": "uplift",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+      "title": "Uplift",
+      "line_start": 1,
+      "line_end": 13,
+      "relevance": "Grounds uplift as nonhuman biological lineages with cognition and institutional access shaped by interfaces, habitat scaffolds, labor history, and contested recognition."
+    },
+    {
+      "source_id": "territories",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+      "title": "Territories",
+      "line_start": 1,
+      "line_end": 58,
+      "relevance": "Grounds territory as route, dock, life-support, record, and maintenance custody; Ganymede as route-law junction; and outer-system authority through waystations, rescue capacity, and long supply intervals."
+    },
+    {
+      "source_id": "identity-abyss",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Identity Abyss.md",
+      "title": "Identity Abyss",
+      "line_start": 1,
+      "line_end": 31,
+      "relevance": "Places the 2671 fixture in the 2500-2750 Pre-Elysium period and keeps its institutions, physics, and evidence problems inside late-Sol material constraints."
+    },
+    {
+      "source_id": "narrative-themes",
+      "path": "Aetheria/Narrative Themes.md",
+      "title": "Narrative Themes",
+      "line_start": 1,
+      "line_end": 56,
+      "relevance": "Grounds usable evidence, institutional plurality, material care, disability access, records, rescue capacity, and the risk that maintenance or accommodation authority exports costs to the person who needs it."
+    },
+    {
+      "source_id": "pirate-metagame-cast-bible",
+      "path": "Aetheria/Brainstorming/Stories/Pirate Metagame Novella/Cast Bible.md",
+      "title": "Pirate Metagame Novella Cast Bible",
+      "line_start": 190,
+      "line_end": 191,
+      "relevance": "A 2671 continuity example establishes a bottlenose uplifted Navigator as a Corridor Court and Rescue Ledger witness. This fixture uses only the lineage and institutional compatibility, not the named character or that story's plot."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Identity Abyss era, 2671",
+    "location": "Brineglass Waystation, a small low-resource stop in the Cetacean Navigator outer-corridor network; the fixture does not assign it a more precise canonical orbit.",
+    "summary": "A routine local berth hearing tests a Lightsail Express hazard-diversion claim. The shared route board loses the pressure-pulse channel at the decisive interval, forcing the wet-side clerk to choose how accessibility, evidence custody, docking time, cargo movement, and claimant testimony share the cost.",
+    "public_facts": [
+      {
+        "text": "Navigator Waystation Councils allocate berths and local maintenance while Corridor Courts arbitrate broken convoy commitments and related claims.",
+        "source_refs": [
+          "cetacean-navigators"
+        ]
+      },
+      {
+        "text": "Navigator route authority rests on common records, rescue obligations, certification, convoy guarantees, arbitration, and reciprocal dependency rather than continuous territorial ownership.",
+        "source_refs": [
+          "cetacean-navigators",
+          "ganymede-route-compact",
+          "territories"
+        ]
+      },
+      {
+        "text": "Brineglass's hearing room shares one record across wet and dry circulation using light, sound, pressure pulse, and raised notation, with evidence slates transferred through a sealed drawer.",
+        "source_refs": [
+          "cetacean-navigators"
+        ]
+      },
+      {
+        "text": "A clerk may pause the berth clock for manual translation, but the delay consumes docking time and records the requesting party.",
+        "source_refs": [
+          "cetacean-navigators"
+        ]
+      },
+      {
+        "text": "Lightsail Express depends on corridor reputation and reliable delivery across routes where trust is scarce.",
+        "source_refs": [
+          "lightsail-express"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Low-resource station improvisation makes access failures ordinary and politically consequential rather than exceptional malice.",
+        "source_refs": [
+          "cetacean-navigators",
+          "narrative-themes"
+        ]
+      },
+      {
+        "text": "A rescue diversion can protect lives while imposing fuel, schedule, bond, berth, and cargo costs that still need an accountable record.",
+        "source_refs": [
+          "cetacean-navigators",
+          "ganymede-route-compact",
+          "lightsail-express"
+        ]
+      },
+      {
+        "text": "Recognition and access are infrastructural: a formal right to participate is thin when the required interface or translation is unavailable at the decision point.",
+        "source_refs": [
+          "uplift",
+          "narrative-themes"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "brineglass-waystation",
+      "label": "Brineglass Waystation hearing staff and local council",
+      "group_type": "corridor_waystation",
+      "institutional_logic": [
+        "Keep a low-resource wet/dry station usable by making berth, rescue, maintenance, and evidence decisions other corridor participants will accept."
+      ],
+      "material_incentives": [
+        "Turn scarce docking minutes, translation labor, and working interface channels into defensible local decisions."
+      ],
+      "internal_virtues": [
+        "Recorded reasons",
+        "Cross-channel agreement",
+        "Competent improvisation",
+        "Decisions that travel with their evidence"
+      ],
+      "internal_shames": [
+        "A hearing completed only because one participant could not access it",
+        "Losing a berth window to avoidable maintenance",
+        "Pretending a diagnostic is a repair"
+      ],
+      "prestige_markers": [
+        "A difficult hearing that remains legible to wet and dry participants",
+        "A pause with a clear owner and reason",
+        "A record accepted at the next station"
+      ],
+      "taboo_triggers": [
+        "Treating one body-specific interface as optional decoration",
+        "Claiming rich-hub standards while billing poor-station delays to users"
+      ],
+      "emotional_display_norms": [
+        "Frustration is compressed into dry procedure, small jokes, and exact correction rather than theatrical outrage."
+      ],
+      "trust_defaults": [
+        "Trust synchronized records and visible provenance first; trust expertise when its boundary is marked; distrust urgency that asks evidence to become simpler."
+      ],
+      "speech_register_cues": [
+        "Concise docket language",
+        "Low workplace humor",
+        "Explicit provenance",
+        "Short decisions tied to material effects"
+      ],
+      "source_refs": [
+        "cetacean-navigators",
+        "narrative-themes"
+      ]
+    },
+    {
+      "group_id": "lightsail-carrier-crew",
+      "label": "Lightsail Express carrier crew",
+      "group_type": "bulk_carrier",
+      "institutional_logic": [
+        "Remain the dependable carrier by making rescue, delay, and deviation legible inside route and bond records."
+      ],
+      "material_incentives": [
+        "Preserve berth access, bond standing, delivery schedules, and the credibility required for future convoy work."
+      ],
+      "internal_virtues": [
+        "Arrival",
+        "Boring reliability",
+        "Rescue that does not abandon the rest of the convoy",
+        "Records insurers cannot dismiss"
+      ],
+      "internal_shames": [
+        "A late ship without an admissible reason",
+        "A rescue story that looks like careless routing",
+        "Cargo waiting while procedure repeats itself"
+      ],
+      "prestige_markers": [
+        "A bond that survives a real diversion",
+        "A crew and cargo delivered through a disputed corridor",
+        "A hazard record accepted beyond the originating port"
+      ],
+      "taboo_triggers": [
+        "Being treated as unreliable after spending resources on rescue",
+        "A station exporting its equipment failure into the carrier's record"
+      ],
+      "emotional_display_norms": [
+        "Fear and anger appear as schedule arithmetic, compressed summaries, and controlled challenges to the record."
+      ],
+      "trust_defaults": [
+        "Trust route institutions because other carriers do, while contesting any local process that threatens the reputation those institutions certify."
+      ],
+      "speech_register_cues": [
+        "Cargo and timing shorthand",
+        "Insurer-ready summaries",
+        "Professional irritation",
+        "Rare direct appeals to the lives behind the ledger"
+      ],
+      "source_refs": [
+        "lightsail-express",
+        "cetacean-navigators",
+        "ganymede-route-compact"
+      ]
+    },
+    {
+      "group_id": "navigator-uplift-participants",
+      "label": "Uplifted Navigator participants",
+      "group_type": "uplifted_lineage_and_polity",
+      "institutional_logic": [
+        "Turn trained route cognition, shared records, habitat interfaces, and irreplaceable coordination into political authority answerable to other corridor participants."
+      ],
+      "material_incentives": [
+        "Maintain wet-side access, recognized testimony, route work, and the infrastructure that makes participation more than a legal promise."
+      ],
+      "internal_virtues": [
+        "Certified competence",
+        "Reliable rescue memory",
+        "Cross-body etiquette",
+        "Expertise whose evidence can be challenged"
+      ],
+      "internal_shames": [
+        "Letting embodied skill be used as an excuse for inaccessible records",
+        "Allowing dependence to harden into unanswerable authority"
+      ],
+      "prestige_markers": [
+        "Hazard models other crews accept",
+        "Rescue records that change route standing",
+        "A hearing conducted through shared interfaces"
+      ],
+      "taboo_triggers": [
+        "Reduction to specialized assets",
+        "Dryside access treated as the default form of reality"
+      ],
+      "emotional_display_norms": [
+        "Body orientation, timing, low clicks, movement through water, and concise translated speech carry as much social meaning as human facial expression."
+      ],
+      "trust_defaults": [
+        "Trust demonstrated competence and common records; remain alert to carriers, ports, and courts that value Navigator cognition while externalizing its habitat and access costs."
+      ],
+      "speech_register_cues": [
+        "Short translated statements",
+        "Timing metaphors",
+        "Route and current vocabulary",
+        "Visible pauses before claims that exceed the evidence"
+      ],
+      "source_refs": [
+        "uplift",
+        "cetacean-navigators",
+        "pirate-metagame-cast-bible"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "brineglass-waystation.access-cost-owner",
+      "applies_to": [
+        "brineglass-waystation",
+        "navigator-uplift-participants"
+      ],
+      "pressure_type": "access_and_time",
+      "summary": "A low-resource station can provide a real accommodation while still making the requester publicly own the delay and its docking cost.",
+      "projection_use": "Prompt staff and claimants to argue through clocks, requester fields, translation labor, and cargo consequences instead of abstract inclusion speeches.",
+      "source_refs": [
+        "cetacean-navigators",
+        "narrative-themes"
+      ]
+    },
+    {
+      "field_id": "lightsail-carrier-crew.reliability-under-rescue",
+      "applies_to": [
+        "lightsail-carrier-crew"
+      ],
+      "pressure_type": "reputation_and_bond",
+      "summary": "A carrier can do the humane thing during transit and still need to prove the deviation was operationally justified to keep future work.",
+      "projection_use": "Make Halden protect the bond and cargo schedule without erasing the damaged tender crew or inventing evidence he does not possess.",
+      "source_refs": [
+        "lightsail-express",
+        "cetacean-navigators"
+      ]
+    },
+    {
+      "field_id": "navigator-uplift-participants.expertise-is-not-channel-redundancy",
+      "applies_to": [
+        "navigator-uplift-participants"
+      ],
+      "pressure_type": "embodied_evidence",
+      "summary": "Embodied route expertise can support an inference, but it cannot make a missing interface channel retroactively present.",
+      "projection_use": "Let Sere reconstruct a bounded interval only when the record labels it as inference and preserves the channel failure.",
+      "source_refs": [
+        "cetacean-navigators",
+        "narrative-themes"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "lightsail-carrier-crew",
+      "target_group_id": "brineglass-waystation",
+      "observer_read": [
+        "A poor station turning maintenance debt into claimant delay",
+        "A hearing clerk protecting procedure before cargo"
+      ],
+      "target_self_read": [
+        "A local court preserving a record that another corridor node can trust",
+        "Staff refusing to call partial access complete"
+      ],
+      "misread_patterns": [
+        "May treat a pause as obstruction because the schedule cost is immediate",
+        "May treat manual translation as repetition rather than new access"
+      ],
+      "likely_insults": [
+        "queue theater",
+        "station-made delay",
+        "expensive redundancy with one working channel"
+      ],
+      "projection_use": "Halden may resent the process without being written as hostile to uplift personhood or indifferent to rescue.",
+      "source_refs": [
+        "lightsail-express",
+        "cetacean-navigators"
+      ]
+    },
+    {
+      "observer_group_id": "brineglass-waystation",
+      "target_group_id": "lightsail-carrier-crew",
+      "observer_read": [
+        "A claimant trying to convert reputation and urgency into evidentiary weight",
+        "A carrier whose real rescue may still have an inaccurate account"
+      ],
+      "target_self_read": [
+        "A dependable crew being punished for spending time and propellant on another vessel",
+        "A carrier trying to keep necessary cargo moving"
+      ],
+      "misread_patterns": [
+        "Staff may mistake compressed operational speech for dishonesty",
+        "A correct insistence on provenance may underweight cargo and dependent costs"
+      ],
+      "likely_insults": [
+        "claimant framing",
+        "insurer voice",
+        "schedule as evidence"
+      ],
+      "projection_use": "Keep Sere's skepticism bounded to the record; he must not infer selfish motive from Halden's urgency alone.",
+      "source_refs": [
+        "lightsail-express",
+        "narrative-themes"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "wet-side-hearing-clerk",
+      "summary": "An uplifted cetacean clerk with local pause and disposition authority whose own access to the decisive record depends on station equipment.",
+      "obligations": [
+        "Keep the hearing legible across bodies",
+        "Preserve evidence provenance",
+        "Allocate or withhold the berth locally",
+        "Mark inference as inference",
+        "Avoid claiming corridor-wide authority"
+      ],
+      "available_masks": [
+        "Dry procedural humor",
+        "Expert calm",
+        "Compressed translated speech",
+        "Body stillness in the pool"
+      ],
+      "failure_modes": [
+        "Admitting a record he could not access",
+        "Rejecting thin evidence while exporting all cost to others",
+        "Using expertise to hide a failed channel",
+        "Requesting accommodation after allocation authority has already bitten"
+      ],
+      "source_refs": [
+        "cetacean-navigators",
+        "uplift",
+        "narrative-themes"
+      ]
+    },
+    {
+      "role_id": "dryside-docket-clerk",
+      "summary": "A baseline staffer who owns console operation, evidence transfer, manual translation, and the exact wording that will travel with the local decision.",
+      "obligations": [
+        "Keep custody marks attached",
+        "Translate without upgrading testimony into sensor fact",
+        "Expose the clock and request owner",
+        "Preserve the channel diagnostic"
+      ],
+      "available_masks": [
+        "Clerical patience",
+        "Deadpan machinery commentary",
+        "Deliberate refusal to mirror claimant panic"
+      ],
+      "failure_modes": [
+        "Becoming the invisible human authority behind Sere's nominal decision",
+        "Letting translation labor disappear from the record",
+        "Treating a diagnostic receipt as restored access"
+      ],
+      "source_refs": [
+        "cetacean-navigators",
+        "narrative-themes"
+      ]
+    },
+    {
+      "role_id": "carrier-claimant",
+      "summary": "A Lightsail captain who needs a rescue diversion admitted before a berth window and bond review close.",
+      "obligations": [
+        "Deliver food and clinic filters",
+        "Account for formation break and propellant spend",
+        "Protect crew and carrier standing",
+        "Keep claimant testimony distinguishable from the sealed trace"
+      ],
+      "available_masks": [
+        "Insurer-ready summary",
+        "Controlled professionalism",
+        "Cargo urgency",
+        "Direct appeal to the saved tender crew"
+      ],
+      "failure_modes": [
+        "Using urgency as proof",
+        "Treating access work as station delay",
+        "Selecting timestamps that help the bond",
+        "Winning a berth through a record the clerk could not inspect"
+      ],
+      "source_refs": [
+        "lightsail-express",
+        "cetacean-navigators"
+      ]
+    },
+    {
+      "role_id": "carrier-apprentice",
+      "summary": "A junior dryside participant who can learn the trace through the tactile rail and become a witness to either shared practice or procedural exclusion.",
+      "obligations": [
+        "Hold the duplicate trace",
+        "Follow timestamps without claiming authority",
+        "Notice which channels disagree",
+        "Carry the practical lesson into later watches"
+      ],
+      "available_masks": [
+        "Concentrated silence",
+        "Over-careful slate custody",
+        "Brief delight when the cross-body pattern clicks"
+      ],
+      "failure_modes": [
+        "Confusing mirrored numbers with independent evidence",
+        "Learning that access is optional whenever a schedule is tight"
+      ],
+      "source_refs": [
+        "cetacean-navigators"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "sere_in_return",
+      "known_context": [
+        {
+          "text": "Sere knows Brineglass's board, pool, paddle, evidence drawer, local clock rule, his own sensory limits, and the public stakes of this berth claim.",
+          "source_refs": [
+            "cetacean-navigators"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Sere believes a decision must preserve which parts came from sensors, translation, claimant testimony, and embodied inference.",
+          "source_refs": [
+            "cetacean-navigators",
+            "narrative-themes"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Sere may read Halden's compressed insurer language as stronger evidence of self-protection than it is.",
+          "source_refs": [
+            "lightsail-express",
+            "narrative-themes"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Sere must not know whether Halden selected false timestamps or what later bond reviewers will decide.",
+          "source_refs": [
+            "cetacean-navigators"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "mina_osei",
+      "known_context": [
+        {
+          "text": "Mina knows dryside console state, custody marks, clock behavior, claimant submissions, and the manual translation workflow she performs.",
+          "source_refs": [
+            "cetacean-navigators"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Mina treats exact labels and visible costs as the tools available to a poor station.",
+          "source_refs": [
+            "cetacean-navigators",
+            "narrative-themes"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Mina may underread Halden's cargo pressure because the console presents it as one more impatient claim.",
+          "source_refs": [
+            "lightsail-express"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Mina must not silently decide the berth while presenting Sere as the owner of the ruling.",
+          "source_refs": [
+            "cetacean-navigators"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "halden_roe",
+      "known_context": [
+        {
+          "text": "Halden knows his ship's maneuver, cargo, propellant spend, duplicate timestamps, bond exposure, and the shrinking berth margin.",
+          "source_refs": [
+            "lightsail-express",
+            "cetacean-navigators"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Halden believes saving the tender and arriving with the cargo should make the hazard diversion operationally legible.",
+          "source_refs": [
+            "lightsail-express",
+            "ganymede-route-compact"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Halden may interpret the clock pause as Sere protecting procedure at the carrier's expense rather than protecting the evidence boundary.",
+          "source_refs": [
+            "cetacean-navigators"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Halden must not know how Sere experiences the missing pressure interval except through Sere's words and actions.",
+          "source_refs": [
+            "uplift"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "toma_pell",
+      "known_context": [
+        {
+          "text": "Toma knows the duplicate trace, the working raised notation, and any cross-channel pattern Sere explicitly teaches before the failure.",
+          "source_refs": [
+            "cetacean-navigators"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Toma begins by treating careful custody as holding the slate correctly and may learn that provenance includes who could access the replay.",
+          "source_refs": [
+            "cetacean-navigators",
+            "narrative-themes"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Toma may mistake a claimant timestamp matching the rail for independent confirmation.",
+          "source_refs": [
+            "cetacean-navigators"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Toma must not infer the missing pressure channel or Sere's private confidence without a visible label or statement.",
+          "source_refs": [
+            "uplift"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Brineglass is canonically a small outer-corridor stop with the fixture-marked room geometry, but its exact orbit, population, and later history remain unspecified.",
+      "source_refs": [
+        "cetacean-navigators"
+      ]
+    },
+    {
+      "text": "Sere, Mina, Halden, Toma, Dawn Ledger, the damaged tender, and this hearing outcome are fixture-local draft elements, not promoted historical canon.",
+      "source_refs": [
+        "cetacean-navigators",
+        "lightsail-express"
+      ]
+    },
+    {
+      "text": "The fixture may use a bottlenose Navigator in 2671 because the same-era continuity contains one, but it must not import Choir-Speaker Nacre-in-Current or the pirate novella's events into Brineglass.",
+      "source_refs": [
+        "pirate-metagame-cast-bible"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Where exactly is Brineglass Waystation in the outer-corridor network?",
+      "blocks_training": false,
+      "notes": "The owning lore note intentionally calls it a small outer-corridor stop. The fixture does not assign an orbit or route endpoint."
+    },
+    {
+      "question": "Which cetacean lineages and personal naming traditions are common at Brineglass?",
+      "blocks_training": false,
+      "notes": "The fixture uses one story-local bottlenose character and does not generalize the name Sere-in-Return into a coalition-wide convention."
+    },
+    {
+      "question": "How are berth minutes, convoy bonds, and local delay costs represented in the future Aetheria economy schema?",
+      "blocks_training": false,
+      "notes": "The fixture keeps them as coarse local variables and material consequences rather than inventing a currency or universal tariff."
+    }
+  ]
+}

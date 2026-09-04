@@ -1,0 +1,829 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "navigator-berth-hearing-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/navigator-berth-hearing-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/navigator-berth-hearing-v0.branch-and-fold.v0.training.json",
+  "scene_id": "navigator-berth-hearing-v0.brineglass-berth-claim",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for a low-resource Cetacean Navigator wet/dry berth hearing.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the Brineglass hearing-room routine, four preparation paths, pressure-channel failure, four responses, shared disposition threshold, and three ending families.",
+    "segmentation_rule": "Use a separate visual_scene_id for the room, docket routine, each preparation action, the complete trace, the one-sentence pressure-channel failure, each response action, the disposition threshold, and each ending family.",
+    "prompting_rule": "Every base prompt is a complete visible frame for a general image model. Fictional interfaces are described by geometry, materials, lights, water effects, screens, rail movement, and body position. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: humane retro-industrial science-fiction storybook illustration, precise ink linework under translucent gouache color, teal pool light against rust-orange work lamps, readable silhouettes and interfaces, tactile worn materials, restrained facial expression, cinematic composition sized for illustrated interactive fiction.",
+    "prompt_assembly_rule": "Assemble each render from global_style_cue plus the scene base_image_prompt plus visual refs only for named characters actually listed in visible_characters plus triggered state or global branch modifiers. A camera-specific blockout from the declared scene_set is required for multi-angle website rendering.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_spec_present_blockout_missing",
+      "scope_reason": "The story returns to one wet/dry chamber from wide, side, pool-level, rail-level, and object-closeup cameras. Sightlines, the pressure wall, the sealed drawer, body-specific controls, and dry/wet access affect choices.",
+      "future_scene_set_need": "Build a durable plan view or simple 3D blockout for Brineglass's berth-hearing chamber using the fixed zones, routes, occluders, camera slots, and staging slots below. Until that exists, the prompts are concept-ready but the fixture is not high-consistency illustrated-replay-ready."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "brineglass_room_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view from the dry entrance of a long rectangular space-station hearing chamber divided lengthwise by a waist-high pressure wall. The left half is a turquoise orientation pool with shallow entry shelf, deep blue working lane, black acoustic emitter discs, and a low rubberized paddle at dolphin rostrum height. The right half is a grated metal gallery with six folding seats, a waist-high tactile rail, and a compact clerk console. A broad route board spans both halves overhead, projecting white route lines while submerged emitters make visible ripples and small pins rise along the dry rail. A sealed stainless evidence drawer sits beneath the board through the dividing wall. Teal underwater light meets rust-orange task lamps on worn steel, rubber seals, and fogged glass. Sere-in-Return, a slate-gray bottlenose dolphin, swims in the working lane; Mina Osei stands at the console; Halden Roe and Toma Pell wait beside the rail.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "swimming broadside in the deep working lane, one eye on the board",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "standing behind the dryside clerk console",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "upright beside the tactile rail, shoulders held tight",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "holding a duplicate slate with both hands near the rail",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The pool and dry gallery run parallel along the room, separated by one waist-high pressure wall with no visual break between participants.",
+          "The route board spans both zones; the sealed drawer passes through the wall directly below it."
+        ]
+      },
+      {
+        "visual_scene_id": "brineglass_docket_routine",
+        "ink_anchor": "routine",
+        "base_image_prompt": "Medium-wide diagonal view across a rectangular wet/dry hearing room: a stainless evidence drawer passes through the waist-high pool wall under a luminous route board. Mina Osei, a compact middle-aged Black woman in a worn orange station vest, pushes a violet-sealed witness slate into the drawer from the grated dry gallery. Sere-in-Return circles in the turquoise pool, slate-gray bottlenose body catching teal light. Halden Roe waits in a creased blue carrier coat beside a white berth countdown on the clerk console. Young apprentice Toma Pell grips a duplicate slate by the tactile rail. Rust-orange work lamps expose repaired cable covers and mineral scale around black underwater emitters.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "circling once in the working lane",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "one hand feeding the sealed slate into the evidence drawer",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "waiting close to the berth display",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "holding the duplicate slate too carefully",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The evidence drawer stays beneath the route board at the pressure wall.",
+          "The berth countdown is part of Mina's console facing both wet and dry participants."
+        ]
+      },
+      {
+        "visual_scene_id": "brineglass_channel_test",
+        "ink_anchor": "preparation_choice.prepare_full_channel_test",
+        "base_image_prompt": "Pool-level action view in a wet/dry hearing chamber: Sere-in-Return, a slate-gray bottlenose dolphin with pale jaw scars and a brass clerk transponder behind the dorsal fin, presses a low rubber paddle with his rostrum. A white route line races across the overhead board, the dry tactile rail lifts a sequence of metal pins, and three evenly spaced pressure ripples cross turquoise water against his flank. Mina Osei walks two fingertips across the raised rail from the grated gallery. Halden Roe and Toma Pell watch beside an amber berth countdown. Worn steel, black emitter discs, orange task lamps, and teal underwater light make the channel test physically legible.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "rostrum on paddle, flank broadside to three visible water ridges",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "fingertips following the dry tactile rail",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "looking toward the berth countdown",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "watching the rail and pool together",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brineglass_carrier_summary",
+        "ink_anchor": "preparation_choice.prepare_carrier_summary",
+        "base_image_prompt": "Medium dry-gallery view across a waist-high pool wall: Halden Roe, a tall lean carrier captain with brown skin, close-cropped silver hair, and a creased blue Lightsail work coat, gives a precise summary while four small route icons hover over his open palm: debris wake, formation break, tumbling tender, rescue burn. Sere-in-Return floats at the waterline facing him, only slate-gray head, curved back, and brass dorsal transponder visible. Toma Pell holds the duplicate slate beside the tactile rail; Mina Osei remains at the console near a generous white berth countdown. The room's route board, stainless evidence drawer, teal pool, orange work lights, and repaired cable covers are fully visible.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "floating at the wall with one eye on Halden",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "speaking with one hand open beneath four route icons",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "holding duplicate slate beside rail",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "watching from the clerk console",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brineglass_apprentice_mirror",
+        "ink_anchor": "preparation_choice.prepare_apprentice_mirror",
+        "base_image_prompt": "Close-medium cross-body lesson at the pressure wall of a rectangular station hearing room. Toma Pell, a wiry young adult with olive skin, dark curls, a gray carrier undershirt, and a yellow apprentice sash, places both palms on a waist-high steel tactile rail as four rounded pins rise beneath their fingers. In the parallel turquoise pool, Sere-in-Return sends pressure rings from a black emitter by touching the low wet paddle; his slate-gray bottlenose body lies broadside to the waves. Toma's third attempt matches one long ripple, two short ripples, and one long ripple. Halden Roe watches the amber clock; Mina Osei watches the alignment. Teal water reflections stripe the grated floor and rust-orange lamps.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "broadside in the pool beside the wet paddle",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "both palms open on four raised rail pins, beginning to grin",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "glancing toward the berth clock",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "watching pool and rail alignment",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brineglass_evidence_drawer",
+        "ink_anchor": "preparation_choice.prepare_evidence_custody",
+        "base_image_prompt": "Object closeup across the wet/dry pressure wall: a stainless evidence drawer with thick rubber seals contains a flat witness slate glowing violet. Three luminous custody marks hover directly above it: carrier hull, damaged tender, rescue ledger. Through the wet inspection window, one black eye and the pale-scarred rostrum of Sere-in-Return align with the marks. On the grated dry gallery, Mina Osei's brown fingers point to the same three symbols while Halden Roe and Toma Pell wait out of focus near the tactile rail. Teal pool light and orange task light meet on scratched metal, condensation, and seal wear.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "submerged with one eye level to the drawer window",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "dryside fingers indicating the three custody marks",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "waiting out of focus by the rail",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "holding duplicate slate out of focus",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brineglass_trace_replay",
+        "ink_anchor": "evidence_replay",
+        "base_image_prompt": "Wide lateral view of a multimodal route replay in a long wet/dry hearing chamber. Six white ship lines bend across the overhead board around a cloud of silver micrometeoroid points; six low sound notes appear as narrow luminous bands; a sequence of raised metal pins travels along the dry tactile rail; visible pressure ridges cross the turquoise pool. Sere-in-Return swims parallel to the ridges with scarred jaw tilted toward the board. Mina Osei operates the console beneath an amber berth countdown. Halden Roe watches with arms close to his blue coat; Toma Pell follows the rail. The stainless evidence drawer below the board shows violet custody marks.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "swimming parallel to the trace in the working lane",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "operating the clerk console",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "watching the route board, arms held close",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "fingertips moving along the tactile rail",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "record_confidence >= 3",
+            "modifier_prompt": "All four representations align visibly at the start: route light, sound band, pool ridge, and raised rail pins share one timing marker."
+          },
+          {
+            "trigger": "apprentice_understanding >= 2",
+            "modifier_prompt": "Toma's fingertips track the raised sequence accurately and their gaze moves between the pool and the rail."
+          },
+          {
+            "trigger": "evidence_custody >= 3",
+            "modifier_prompt": "Three bright violet custody marks remain visible over the sealed drawer."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The six white lines represent ships on the board, not literal craft in the room.",
+          "The trace travels from the entrance end toward the clerk-console end across every channel."
+        ]
+      },
+      {
+        "visual_scene_id": "brineglass_pressure_failure",
+        "ink_anchor": "channel_failure",
+        "base_image_prompt": "Pivotal pool-level frame in a wet/dry station hearing room: a white route line bends across the overhead board and the dry tactile rail lifts one clear pin, while the corresponding turquoise pool surface stays unnaturally flat around Sere-in-Return. A single red diagnostic bead glows above one black underwater pressure emitter. The slate-gray bottlenose clerk has snapped broadside toward the silent emitter, pale jaw scars visible. Mina Osei reaches toward the berth-clock control; Halden Roe reaches toward his duplicate slate; Toma Pell keeps both palms on the working rail. Orange task lamps and teal pool light freeze the instant of disagreement.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "broadside to the flat water, one eye fixed on the red bead",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "hand moving toward the clock control",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "hand moving toward duplicate slate",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "both palms planted on the tactile rail",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The failure is absence of one water ridge plus one red diagnostic bead; the light, sound, and dry rail continue."
+        ]
+      },
+      {
+        "visual_scene_id": "brineglass_clock_pause",
+        "ink_anchor": "failure_choice.respond_pause_clock",
+        "base_image_prompt": "Low action view along the turquoise pool in a rectangular hearing chamber. Sere-in-Return strikes the rubberized wet paddle with his rostrum; his slate-gray bottlenose body curves through the water, brass dorsal transponder and pale jaw scars visible. Across the waist-high pressure wall, a large amber berth countdown freezes and a fresh requester field glows beside it. Mina Osei watches Halden Roe from the clerk console. Halden reads the requester field beside the tactile rail; Toma Pell keeps their hands on the raised pins. The failed pressure emitter retains one red diagnostic light under the water.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "rostrum pressed hard into the pause paddle",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "still at console, looking toward Halden",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "reading the frozen clock with tight shoulders",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "hands remaining on the rail",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brineglass_manual_translation",
+        "ink_anchor": "failure_choice.respond_manual_translation",
+        "base_image_prompt": "Medium-wide work frame inside a long wet/dry hearing chamber. Mina Osei drags raw timing blocks across a compact dryside console; each block produces a white light segment on the overhead route board, a cluster of steel pins under Toma Pell's open hands on the tactile rail, and a broad pressure ripple through the turquoise pool. Sere-in-Return answers from the pool beside a small speaker grille, rostrum raised and slate-gray flank aligned with the wave. Halden Roe stands by an amber countdown showing one minute. Scratched steel, repaired cable housings, black underwater emitters, orange task lamps, and teal reflections make the manual labor visible.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "flank aligned with the replacement pulse, rostrum near speaker grille",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "both hands working separate timing blocks at the console",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "standing under the one-minute countdown",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "palms open as translated pins rise beneath them",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brineglass_embodied_inference",
+        "ink_anchor": "failure_choice.respond_embodied_inference",
+        "base_image_prompt": "Close pool-level view of embodied route inference in a wet/dry hearing chamber. Sere-in-Return, a slate-gray bottlenose dolphin with pale scars along the left jaw and a brass clerk transponder behind the dorsal fin, turns fully broadside in the deep turquoise lane. Surviving pressure ripples touch rostrum, jaw, flank, pectoral fin, and scarred tissue at visibly different points. Above him, the route board shows one missing interval outlined by a thin amber bracket labeled as inference through a simple icon. Mina Osei enters the mark at the dry console while Halden Roe and Toma Pell watch from the tactile rail. The failed emitter glows red under orange task lights.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "motionless broadside across the surviving water ridges",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "entering an inference mark at the console",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "watching from the rail with controlled impatience",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "watching Sere and the marked gap",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brineglass_carrier_account",
+        "ink_anchor": "failure_choice.respond_carrier_account",
+        "base_image_prompt": "Rail-level view in a wet/dry berth-hearing chamber. Halden Roe places a flat duplicate slate directly on the steel tactile rail and points to three luminous timestamps. Toma Pell's fingers stop over the second raised mark. In the parallel turquoise pool, Sere-in-Return floats at the pressure wall, slate-gray bottlenose head turned so one eye can compare the slate, rail, and overhead route board. Mina Osei stands at the console, where the three timestamps appear inside a blue claimant bracket. The failed pool emitter carries one red light; the berth countdown remains white; orange lamps reflect from scratched steel and damp seals.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "floating at the wall with one eye on the three evidence surfaces",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "standing at console beside the claimant bracket",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "one hand on duplicate slate, one finger indicating timestamps",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "fingers stopped over the second rail mark",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brineglass_disposition_threshold",
+        "ink_anchor": "disposition_fold",
+        "base_image_prompt": "Wide symmetrical threshold frame of a long wet/dry hearing chamber after a failed pressure replay. Sere-in-Return waits in the turquoise working lane before three illuminated rostrum-height paddles for admit, reject, and adjourn. Across the waist-high pressure wall, Mina Osei stands at the clerk console, Halden Roe waits beside the tactile rail in a creased blue carrier coat, and Toma Pell holds both hands open over the raised notation. The overhead route board shows six ship lines beside a red gap in the pressure channel. A stainless evidence drawer glows violet under the board. The amber berth clock, black emitter discs, orange work lamps, damp seals, repaired cables, and grated gallery are all readable.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "facing three decision paddles in the pool",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "waiting at the clerk console",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "waiting beside the rail with arms close",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "both hands open on the tactile rail",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "clock_paused == 1",
+            "modifier_prompt": "Freeze the amber berth digits at their current value and show a small requester marker linked to Sere's brass clerk transponder symbol."
+          },
+          {
+            "trigger": "manual_translation == 1",
+            "modifier_prompt": "Show the once-missing interval aligned across white light, raised rail pins, speaker waveform, and a restored broad pool ripple."
+          },
+          {
+            "trigger": "embodied_inference == 1",
+            "modifier_prompt": "Outline the missing interval with a thin amber inference bracket distinct from the solid sensor traces."
+          },
+          {
+            "trigger": "carrier_account_used == 1",
+            "modifier_prompt": "Place Halden's three timestamps inside a blue claimant bracket on the route board."
+          },
+          {
+            "trigger": "evidence_custody >= 3",
+            "modifier_prompt": "Keep all three violet custody marks bright over the sealed evidence drawer."
+          },
+          {
+            "trigger": "witness_access <= 0",
+            "modifier_prompt": "Keep the pool water flat at the decisive route gap while the dry rail and light track remain active."
+          }
+        ],
+        "visual_continuity_notes": [
+          "All three decision paddles are in Sere's wet-side reach and do not imply Mina owns the ruling.",
+          "Halden and Toma remain on the claimant side of the dry rail; Mina remains inside the clerk-console zone."
+        ]
+      },
+      {
+        "visual_scene_id": "brineglass_ending_admit",
+        "ink_anchor": "ending_admit_grounded|ending_admit_cost",
+        "base_image_prompt": "Admission aftermath in a long wet/dry hearing chamber. The admit paddle glows white beside Sere-in-Return in the turquoise pool. Beyond the dry entrance window, two baseline human cargo handlers in lime pressure vests, black utility trousers, and gray work gloves roll sealed food cases and cylindrical clinic-filter canisters toward an opening berth pressure door. Mina Osei commits the local decision at the clerk console; Halden Roe exhales beside the tactile rail; Toma Pell keeps one hand on the final raised notation. The overhead route board holds six white ship lines, the red failed pressure segment, and any evidence qualifiers. Teal water light and rust-orange lamps give the practical relief a provisional, workmanlike mood.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "beside the white admit paddle, watching the full board cycle",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "committing the ruling at the console",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "exhaling beside the rail",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "one hand remaining on final raised notation",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          },
+          {
+            "agent_id": "cargo_handlers",
+            "default_stance": "two workers beyond the dry entrance window pushing cargo toward the berth door",
+            "visual_ref": "visual_character_refs.groups.cargo_handlers"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == admitted_with_shared_record",
+            "modifier_prompt": "Show the critical interval aligned across the board, dry rail, and a broad pool ripple; keep any inference or requester marker attached as a visible qualifier."
+          },
+          {
+            "trigger": "ending_label == admitted_under_access_debt",
+            "modifier_prompt": "Show the cargo door opening while the critical pool interval remains flat and a diagnostic attachment glows beside the admitted record."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "brineglass_ending_reject",
+        "ink_anchor": "ending_reject_grounded|ending_reject_cost",
+        "base_image_prompt": "Rejection aftermath in a worn wet/dry station hearing room. The reject paddle glows amber-red beside Sere-in-Return in the turquoise pool. Through the dry entrance window, the blue-gray carrier hull named by a simple ledger emblem moves away from a white berth marker toward a standby lane; sealed food cases and cylindrical clinic-filter canisters remain behind a closed pressure door. Mina Osei keeps the violet-sealed witness slate inside the stainless evidence drawer. Halden Roe stands rigid at the tactile rail; Toma Pell copies custody marks onto the duplicate slate. The route board retains the failed pressure gap under orange work lights.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "still beside the reject paddle, eye on the retained trace",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "hand on the sealed drawer control",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "rigid beside the rail",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "copying three custody marks onto duplicate slate",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == rejected_with_intact_custody",
+            "modifier_prompt": "Keep three violet custody marks, the red failed segment, and the rescue-ledger icon attached to one coherent retained record."
+          },
+          {
+            "trigger": "ending_label == rejected_from_thin_record",
+            "modifier_prompt": "Dim two custody marks and show the carrier already moving toward standby while the evidence gap remains unresolved."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "brineglass_ending_adjourn",
+        "ink_anchor": "ending_adjourn_grounded|ending_adjourn_cost",
+        "base_image_prompt": "Adjournment aftermath in a rectangular wet/dry berth-hearing chamber. Mina Osei works the manual translation console; Toma Pell stays at the tactile rail; Sere-in-Return holds broadside in the turquoise pool as replacement pressure ridges arrive from black emitters; Halden Roe stands between the rail and dry exit. The overhead route board shows the missing interval being rebuilt through white light blocks, raised pins, a speaker waveform, and pool ripples. A berth indicator beyond the entrance window can remain white or transfer to another convoy through state modifiers. Worn steel, damp seals, teal water light, orange lamps, and repaired cables carry the late-shift labor.",
+        "visible_characters": [
+          {
+            "agent_id": "sere_in_return",
+            "default_stance": "broadside to replacement pressure ridges",
+            "visual_ref": "visual_character_refs.characters.sere_in_return"
+          },
+          {
+            "agent_id": "mina_osei",
+            "default_stance": "working timing blocks at the translator console",
+            "visual_ref": "visual_character_refs.characters.mina_osei"
+          },
+          {
+            "agent_id": "halden_roe",
+            "default_stance": "standing between the rail and exit",
+            "visual_ref": "visual_character_refs.characters.halden_roe"
+          },
+          {
+            "agent_id": "toma_pell",
+            "default_stance": "remaining at the rail to follow each rebuilt interval",
+            "visual_ref": "visual_character_refs.characters.toma_pell"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == adjourned_with_clock_protection",
+            "modifier_prompt": "Keep the berth indicator white for Dawn Ledger and freeze the amber countdown while all four translated channels become aligned."
+          },
+          {
+            "trigger": "ending_label == adjourned_after_margin_spent",
+            "modifier_prompt": "Turn the berth indicator toward another convoy beyond the window while the four participants continue translation inside the chamber."
+          }
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "full_channel_baseline",
+        "trigger": "branch_label == prepare_full_channel_test",
+        "apply_to_visual_scene_ids": [
+          "brineglass_trace_replay",
+          "brineglass_disposition_threshold"
+        ],
+        "modifier_prompt": "Add a small four-channel baseline marker showing aligned light, sound, pool ridge, and rail pins before the red failed segment."
+      },
+      {
+        "modifier_id": "claimant_summary_first",
+        "trigger": "branch_label == prepare_carrier_summary",
+        "apply_to_visual_scene_ids": [
+          "brineglass_trace_replay",
+          "brineglass_disposition_threshold"
+        ],
+        "modifier_prompt": "Place Halden's compact four-icon account in a blue claimant panel near the route trace."
+      },
+      {
+        "modifier_id": "apprentice_cross_body_learning",
+        "trigger": "branch_label == prepare_apprentice_mirror",
+        "apply_to_visual_scene_ids": [
+          "brineglass_trace_replay",
+          "brineglass_pressure_failure",
+          "brineglass_disposition_threshold"
+        ],
+        "modifier_prompt": "Keep Toma's palms accurately aligned with the tactile sequence and their gaze moving between Sere's pool position and the board."
+      },
+      {
+        "modifier_id": "strong_custody_marks",
+        "trigger": "branch_label == prepare_evidence_custody",
+        "apply_to_visual_scene_ids": [
+          "brineglass_trace_replay",
+          "brineglass_disposition_threshold",
+          "brineglass_ending_reject"
+        ],
+        "modifier_prompt": "Keep all three violet custody marks bright above the sealed evidence drawer."
+      },
+      {
+        "modifier_id": "pause_request_visible",
+        "trigger": "branch_label == respond_pause_clock",
+        "apply_to_visual_scene_ids": [
+          "brineglass_disposition_threshold",
+          "brineglass_ending_admit",
+          "brineglass_ending_adjourn"
+        ],
+        "modifier_prompt": "Freeze the berth clock at its current amber value and show a small requester marker carrying Sere's brass transponder symbol."
+      },
+      {
+        "modifier_id": "translation_labor_visible",
+        "trigger": "branch_label == respond_manual_translation",
+        "apply_to_visual_scene_ids": [
+          "brineglass_disposition_threshold",
+          "brineglass_ending_admit",
+          "brineglass_ending_adjourn"
+        ],
+        "modifier_prompt": "Show Mina operating separate timing blocks, Toma following raised pins, and the missing pool ridge restored as visibly staffed translation."
+      },
+      {
+        "modifier_id": "inference_boundary_visible",
+        "trigger": "branch_label == respond_embodied_inference",
+        "apply_to_visual_scene_ids": [
+          "brineglass_disposition_threshold",
+          "brineglass_ending_admit"
+        ],
+        "modifier_prompt": "Outline the reconstructed interval with a thin amber inference bracket distinct from solid sensor traces."
+      },
+      {
+        "modifier_id": "carrier_account_provenance",
+        "trigger": "branch_label == respond_carrier_account",
+        "apply_to_visual_scene_ids": [
+          "brineglass_disposition_threshold",
+          "brineglass_ending_admit",
+          "brineglass_ending_reject"
+        ],
+        "modifier_prompt": "Keep Halden's three selected timestamps inside a blue claimant bracket linked to his duplicate slate."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "brineglass_berth_hearing_chamber.scene_set.spec-v0",
+      "geometry_authority_level": "textual_layout_spec_blockout_required",
+      "room_model": "Long rectangular transfer room, roughly twice as long as it is wide, divided lengthwise into an equal-width orientation pool and grated dry gallery by a waist-high pressure wall. The route board and evidence drawer bridge the division at the room midpoint.",
+      "fixed_zones": [
+        {
+          "zone_id": "wet_orientation_pool",
+          "visible_form": "turquoise pool occupying half the room width, with shallow entrance shelf, deep central working lane, black submerged emitters, low rostrum paddles, and speaker grille",
+          "used_for": "Sere's movement, pressure-pulse access, wet-side pause and disposition controls"
+        },
+        {
+          "zone_id": "pressure_wall_midline",
+          "visible_form": "waist-high sealed divider with wet inspection windows, rubber coping, and the evidence drawer passing through at midpoint",
+          "used_for": "shared sightlines, evidence transfer, and cross-body conversation"
+        },
+        {
+          "zone_id": "dry_gallery",
+          "visible_form": "grated aisle occupying half the room width, with six folding seats, waist-high tactile rail, dry entrance, and view toward the berth pressure door",
+          "used_for": "claimant seating, Toma's rail access, Halden's movement, and cargo-door sightline"
+        },
+        {
+          "zone_id": "route_board_bridge",
+          "visible_form": "broad suspended glass-and-metal board crossing both pool and gallery with white route light, sound bands, diagnostic beads, and synchronized timing marks",
+          "used_for": "shared route trace and provenance labels"
+        },
+        {
+          "zone_id": "clerk_console",
+          "visible_form": "compact repaired console on the dry gallery at the far end, angled toward both pool and claimant rail, with berth countdown and translation panes",
+          "used_for": "Mina's docket, clock, translation, and commit work"
+        },
+        {
+          "zone_id": "evidence_drawer",
+          "visible_form": "stainless sealed drawer beneath the route board with thick rubber seals, wet inspection window, violet slate light, and custody marks",
+          "used_for": "witness-slate custody and provenance"
+        },
+        {
+          "zone_id": "dry_entrance_and_berth_window",
+          "visible_form": "pressure door at the gallery entrance with a narrow reinforced window facing berth indicators and cargo staging",
+          "used_for": "participant arrival, cargo consequence, carrier movement, and other-convoy berth transfer"
+        }
+      ],
+      "routes": [
+        {
+          "route_id": "sere_working_loop",
+          "path": "pool shallow shelf -> deep working lane -> wet paddle bank -> pressure-wall inspection window -> deep working lane",
+          "allowed_agents": [
+            "sere_in_return"
+          ]
+        },
+        {
+          "route_id": "claimant_gallery_route",
+          "path": "dry entrance -> folding seats -> tactile rail claimant side -> dry exit",
+          "allowed_agents": [
+            "halden_roe",
+            "toma_pell"
+          ]
+        },
+        {
+          "route_id": "clerk_gallery_route",
+          "path": "clerk console -> evidence drawer dry face -> tactile rail staff side -> clerk console",
+          "allowed_agents": [
+            "mina_osei"
+          ]
+        }
+      ],
+      "occluders": [
+        {
+          "occluder_id": "route_board_lower_frame",
+          "effect": "Blocks the far-end berth window from object-closeup cameras at the evidence drawer but not from wide or gallery cameras."
+        },
+        {
+          "occluder_id": "pressure_wall",
+          "effect": "Blocks lower-body detail across the wet/dry division while preserving faces, dolphin head and back, hands, rail, and board sightlines."
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_from_dry_entrance",
+          "supports_visual_scene_ids": [
+            "brineglass_room_establishing",
+            "brineglass_disposition_threshold"
+          ]
+        },
+        {
+          "camera_id": "midpoint_diagonal",
+          "supports_visual_scene_ids": [
+            "brineglass_docket_routine",
+            "brineglass_trace_replay",
+            "brineglass_manual_translation"
+          ]
+        },
+        {
+          "camera_id": "pool_level_to_gallery",
+          "supports_visual_scene_ids": [
+            "brineglass_channel_test",
+            "brineglass_pressure_failure",
+            "brineglass_clock_pause",
+            "brineglass_embodied_inference"
+          ]
+        },
+        {
+          "camera_id": "rail_level_to_pool",
+          "supports_visual_scene_ids": [
+            "brineglass_carrier_summary",
+            "brineglass_apprentice_mirror",
+            "brineglass_carrier_account"
+          ]
+        },
+        {
+          "camera_id": "evidence_drawer_close",
+          "supports_visual_scene_ids": [
+            "brineglass_evidence_drawer"
+          ]
+        },
+        {
+          "camera_id": "wide_to_berth_window",
+          "supports_visual_scene_ids": [
+            "brineglass_ending_admit",
+            "brineglass_ending_reject",
+            "brineglass_ending_adjourn"
+          ]
+        }
+      ],
+      "staging_slots": [
+        {
+          "slot_id": "sere_working_lane",
+          "zone_id": "wet_orientation_pool",
+          "body_requirement": "cetacean swimming body with room to turn broadside and reach low rostrum paddles"
+        },
+        {
+          "slot_id": "mina_console",
+          "zone_id": "clerk_console",
+          "body_requirement": "standing human reach to console, drawer route, and staff side of tactile rail"
+        },
+        {
+          "slot_id": "halden_claimant_rail",
+          "zone_id": "dry_gallery",
+          "body_requirement": "standing human position beside rail with clear board and berth-clock sightlines"
+        },
+        {
+          "slot_id": "toma_tactile_rail",
+          "zone_id": "dry_gallery",
+          "body_requirement": "two-handed human access to the rail while keeping the duplicate slate on its top surface"
+        }
+      ],
+      "state_anchors": [
+        {
+          "anchor_id": "pressure_channel_state",
+          "states": [
+            "aligned pressure ridges with dark diagnostics",
+            "flat water at decisive interval with one red diagnostic bead",
+            "staff-rebuilt ridge with translation timing blocks"
+          ]
+        },
+        {
+          "anchor_id": "berth_clock_state",
+          "states": [
+            "white active countdown",
+            "amber low-margin countdown",
+            "frozen amber countdown with requester marker",
+            "berth transferred to another convoy"
+          ]
+        },
+        {
+          "anchor_id": "evidence_provenance_state",
+          "states": [
+            "violet sealed trace with three custody marks",
+            "thin custody display",
+            "amber inference bracket",
+            "blue claimant account bracket"
+          ]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character designs for prompt assembly. Include only refs for characters visible in each scene.",
+    "characters": {
+      "sere_in_return": "Sere-in-Return: uplifted adult bottlenose dolphin, streamlined slate-gray body with pale underside, three pale diagonal scars along the left jaw that continue faintly behind the eye, dark alert eyes, long rostrum, curved dorsal fin, two pectoral fins, powerful tail flukes, small weathered brass clerk transponder clipped to a soft band immediately behind the dorsal fin. Body language uses swimming depth, broadside or head-on orientation, roll, eye alignment, rostrum contact, fin angle, stillness, and distance from the wall. Do-not-change details: anatomically complete slate-gray bottlenose silhouette, three left-jaw scars, brass dorsal transponder.",
+      "mina_osei": "Mina Osei: baseline human dryside docket clerk, compact middle-aged Black woman, close-cropped natural hair threaded with gray, rectangular amber reading lenses, worn rust-orange station vest over a charcoal pressure-work shirt, black utility trousers, soft-soled deck boots, broad capable hands with violet seal ink at two fingertips. Posture is economical and patient at the console. Do-not-change details: orange vest, amber lenses, gray-threaded close hair, violet-stained fingertips.",
+      "halden_roe": "Captain Halden Roe: baseline human Lightsail Express carrier captain, tall lean middle-aged man with brown skin, close-cropped silver hair, narrow lined face, creased cobalt-blue carrier coat over a gray work layer, small silver ledger emblem at the left chest, dark deck shoes. Controlled posture compresses impatience into tight shoulders and precise hand placement. Do-not-change details: silver close hair, creased cobalt coat, silver ledger emblem, no military insignia.",
+      "toma_pell": "Toma Pell: baseline human young-adult carrier apprentice, wiry build, olive skin, thick dark curls tied away from the face, gray carrier undershirt with rolled sleeves, mustard-yellow apprentice sash across the torso, black work trousers, scuffed deck shoes, flat duplicate witness slate usually held with both hands. Curiosity appears through open palms, forward lean, and quick gaze between interfaces. Do-not-change details: dark curls, yellow sash, rolled gray sleeves, duplicate slate."
+    },
+    "groups": {
+      "cargo_handlers": "Cargo handlers: two baseline human station workers in lime pressure vests over charcoal work shirts, black utility trousers, gray work gloves, soft deck boots, pushing a low cargo dolly loaded with sealed rectangular food cases and cylindrical clinic-filter canisters."
+    }
+  },
+  "review_notes": [
+    "A textual scene-set specification records layout, routes, occluders, camera slots, staging slots, and branch-visible anchors.",
+    "A durable plan view or 3D blockout is still required before high-consistency multi-angle website rendering; current prompts are standalone concept frames and the plan does not claim replay-ready geometry.",
+    "All character refs use visible body-specific stance and are included only when those characters appear in frame."
+  ]
+}
