@@ -1,0 +1,284 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.patina-return-shards-v0",
+  "source_status": "reviewed",
+  "fixture_status": "grounded_authored_elaboration",
+  "source_refs": [
+    {
+      "source_id": "canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "canon_tier": "Spoilers/policy",
+      "line_start": 1,
+      "line_end": 129,
+      "relevance": "Defines owner status, knowledge layers, unresolved claims, and the rule that English terms are author-facing unless locally established."
+    },
+    {
+      "source_id": "public-kalsa",
+      "path": "Kalsa/Public/World/Kalsa.md",
+      "title": "Kalsa",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 42,
+      "relevance": "Grounds travel as negotiated access to water, shelter, readable warnings, accepted speech, host oaths, and routes with several owners."
+    },
+    {
+      "source_id": "public-low-sere",
+      "path": "Kalsa/Public/Places/Low Sere.md",
+      "title": "Low Sere",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 47,
+      "relevance": "Public presentation of Low Sere's Upper Shelf, road marker, guest sheds, pack traffic, ash craft, water dependence, and sponsorship rule."
+    },
+    {
+      "source_id": "low-sere-owner",
+      "path": "Kalsa/Spoilers/Places/Low Sere.md",
+      "title": "Low Sere",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 160,
+      "relevance": "Canonical place owner for the Upper Shelf, basin table, water witnesses, grey-ash pottery, local inequality, unresolved trade route, and the authored paired return-shard elaboration."
+    },
+    {
+      "source_id": "language-reckoning",
+      "path": "Kalsa/Spoilers/Foundations/Language and Reckoning.md",
+      "title": "Language and Reckoning",
+      "canon_tier": "Spoilers/backstage",
+      "line_start": 1,
+      "line_end": 95,
+      "relevance": "Keeps Low Sere's language affiliations unresolved and requires English phrases in the fixture to remain translated author-facing renderings."
+    },
+    {
+      "source_id": "world-foundation",
+      "path": "Kalsa/Spoilers/Foundations/World.md",
+      "title": "World",
+      "canon_tier": "Spoilers/backstage",
+      "line_start": 1,
+      "line_end": 41,
+      "relevance": "Grounds Low Sere as a coldward geothermal settlement in a twilight climate without fixing a map, route length, or travel time."
+    },
+    {
+      "source_id": "basin-table-source",
+      "path": "Kalsa/Public/Sources/At the Basin Table.md",
+      "title": "At the Basin Table",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 74,
+      "relevance": "Grounds Low Sere's dry procedural humor, material record habits, bounded claims, work-watch language, and refusal to let records decide more than they show."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Low Sere's standing present; exact date, calendar, and wider chronology remain unresolved.",
+    "location": "The Upper Shelf at Low Sere: three fixture-bounded guest sheds, the trader road marker, a witness bench, and the track above the warm basin.",
+    "summary": "A travelling small-goods seller attempts the ordinary closing of a hosted stay. The paired return-shards do not fit, forcing traveller, sponsor, and water witness to choose among delay, amended passage, practical search, and departure without false closure.",
+    "public_facts": [
+      {
+        "text": "Low Sere depends on warm grey water from an old intake and uses its mineral ash for pottery, pigment, abrasive work, and trade.",
+        "source_refs": ["public-low-sere", "low-sere-owner"]
+      },
+      {
+        "text": "The Upper Shelf holds guest sheds and the trader road marker; outsiders remain there until a household, work crew, or basin table accepts their water use and safe route out.",
+        "source_refs": ["public-low-sere", "low-sere-owner"]
+      },
+      {
+        "text": "Kalsan travel depends on negotiated water, shelter, readable warnings, accepted threshold speech, and obligations carried by hosts.",
+        "source_refs": ["public-kalsa"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Return-shards split one hosting claim between marker and traveller so neither party can privately close or rewrite it.",
+        "source_refs": ["low-sere-owner"]
+      },
+      {
+        "text": "An open shard charges the guest's water use to the sponsor and obliges current warnings, a competent route description, or escort when road marks are unsafe.",
+        "source_refs": ["low-sere-owner"]
+      },
+      {
+        "text": "A mismatch proves no crime, but it suspends new sponsorship until witnesses separate water, guidance, delay, and loss.",
+        "source_refs": ["low-sere-owner"]
+      },
+      {
+        "text": "Low Sere's unequal basin-table standing means a visible custom can preserve disagreement without guaranteeing an equal hearing.",
+        "source_refs": ["low-sere-owner", "public-low-sere"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "upper-shelf-travellers-and-sponsors",
+      "label": "Upper Shelf travellers and local sponsors",
+      "group_type": "hosted_route_relationship",
+      "institutional_logic": ["Make temporary access to scarce water and a promised exit legible without treating hospitality as permanent jurisdiction."],
+      "material_incentives": ["Close water obligations", "Reach a safe onward route", "Preserve trading time", "Remain eligible to host or return"],
+      "internal_virtues": ["Named obligation", "Current warning", "A cleanly closed pair", "Humor that leaves room for correction"],
+      "internal_shames": ["A substituted path", "A conveniently missing half", "Using departure pressure to force false closure"],
+      "prestige_markers": ["A return-shard that fits after a difficult stay", "A host who walks an unsafe mark", "A traveller who leaves water and route accounts separable"],
+      "taboo_triggers": ["One person pocketing both halves", "Treating sponsorship as ownership", "Calling a mismatch proof of guilt"],
+      "emotional_display_norms": ["Suspicion is compressed into object handling, route readback, practical jokes, and insistence that the pieces remain visible."],
+      "trust_defaults": ["Trusts matched fracture, witnessed custody, separate water accounting, and present route knowledge more than a smooth recollection."],
+      "speech_register_cues": ["Short material descriptions", "Translated local idiom", "Dry jokes about water and clay", "Named limits"],
+      "source_refs": ["low-sere-owner", "public-low-sere", "public-kalsa", "basin-table-source"]
+    },
+    {
+      "group_id": "low-sere-water-witnesses",
+      "label": "Low Sere water witnesses acting at the Upper Shelf",
+      "group_type": "local_resource_witness",
+      "institutional_logic": ["Keep water use, sponsorship, route warning, and unresolved claims visible to the basin table without deciding motive from the marker."],
+      "material_incentives": ["Protect scarce water", "Keep outsiders from disappearing into household accounts", "Prevent sponsors from accumulating hidden claims", "Return disputed pieces for review"],
+      "internal_virtues": ["Separate custody", "Public comparison", "A route repeated before it changes", "No guilt inferred from pottery alone"],
+      "internal_shames": ["A private closure", "A richer sponsor's memory replacing the break", "An open claim lost in the marker"],
+      "prestige_markers": ["Two halves kept apart until their relation is witnessed", "Water settled even when route responsibility remains open"],
+      "taboo_triggers": ["Forcing the pieces to fit", "Breaking a substitute pair that silently overwrites an earlier obligation"],
+      "emotional_display_norms": ["Concern appears as careful hands, literal sentences, patient obstruction, and jokes delivered without surrendering custody."],
+      "trust_defaults": ["Trusts the material state and separately attributed accounts; distrusts urgency presented as proof."],
+      "speech_register_cues": ["Procedural brevity", "Witnessed repetition", "Concrete nouns", "Understated correction"],
+      "source_refs": ["low-sere-owner", "basin-table-source"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "upper-shelf-travellers-and-sponsors.let-the-break-remember",
+      "applies_to": ["upper-shelf-travellers-and-sponsors"],
+      "pressure_type": "reciprocal_suspicion",
+      "summary": "The pair exists because either host or traveller may later improve the story; dignity comes from putting the claim where both can contest it.",
+      "projection_use": "Give both parties practical reasons to hurry and equal permission to preserve the mismatch without turning mutual suspicion into constant hostility.",
+      "source_refs": ["low-sere-owner"]
+    },
+    {
+      "field_id": "low-sere-water-witnesses.open-claim-cost",
+      "applies_to": ["low-sere-water-witnesses"],
+      "pressure_type": "resource_and_standing",
+      "summary": "Cheap clay can keep an expensive water and route obligation open; the witness must make that cost visible without inventing guilt.",
+      "projection_use": "Let delay, extra water, escort, and sponsorship standing change outcomes while the cause of the mismatch remains unresolved.",
+      "source_refs": ["low-sere-owner", "public-low-sere"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "upper-shelf-travellers-and-sponsors",
+      "target_group_id": "low-sere-water-witnesses",
+      "observer_read": ["A person turning a missed departure into procedure", "A local gatekeeper protecting the marker's dignity"],
+      "target_self_read": ["A witness keeping water, route, custody, and motive from collapsing into one convenient account"],
+      "misread_patterns": ["Mistakes delay for accusation", "Treats literal custody as distrust of the person rather than distrust of unilateral memory"],
+      "likely_insults": ["shard-counter", "dry-seat witness", "friend of the missing half"],
+      "projection_use": "Keep Sava's impatience legible while allowing Nemi's obstruction to protect Sava from a false closure too.",
+      "source_refs": ["low-sere-owner", "basin-table-source"]
+    },
+    {
+      "observer_group_id": "low-sere-water-witnesses",
+      "target_group_id": "upper-shelf-travellers-and-sponsors",
+      "observer_read": ["People whose timetable invites them to merge distinct obligations", "Two narrators each holding a useful half"],
+      "target_self_read": ["A host and traveller trying to preserve work, route, reputation, and an ordinary relationship"],
+      "misread_patterns": ["Can underweight missed trade or onward company", "Can mistake humor for agreement"],
+      "likely_insults": ["pocket archive", "fast-fit host", "road-before-record traveller"],
+      "projection_use": "Keep Nemi from treating procedure as costless or reading either person's urgency as guilt.",
+      "source_refs": ["low-sere-owner", "public-kalsa"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "departing-traveller",
+      "summary": "A hosted outsider who controls one shard half, needs an onward route, and can refuse false closure without owning the marker or local hearing.",
+      "obligations": ["Present the carried half", "Separate water settlement from route dispute", "Name delay and custody", "Choose whether departure is worth an open claim"],
+      "available_masks": ["Trader's humor", "Practical impatience", "Material inspection", "Polite refusal"],
+      "failure_modes": ["Letting the timetable certify a substitute", "Pocketing evidence", "Calling solitary departure a safe route"],
+      "source_refs": ["low-sere-owner", "public-kalsa"]
+    },
+    {
+      "role_id": "local-sponsor",
+      "summary": "A Low Sere worker whose water allotment and standing carry the guest's use and promised exit until the pair closes.",
+      "obligations": ["Bear the guest's water", "Give current warnings", "Name or walk the promised route", "Accept suspension while the claim remains open"],
+      "available_masks": ["Helpful competence", "Defensive familiarity", "Workplace humor", "Urgency about local standing"],
+      "failure_modes": ["Substituting a fresh shard for an unresolved claim", "Using familiarity to take both halves", "Letting embarrassment replace route knowledge"],
+      "source_refs": ["low-sere-owner", "public-low-sere"]
+    },
+    {
+      "role_id": "upper-shelf-water-witness",
+      "summary": "A local witness who compares pieces and accounts, keeps disputed custody visible, and routes unresolved claims to the basin table.",
+      "obligations": ["Keep halves attributable", "Record water separately", "Repeat route terms", "Infer no crime from a mismatch"],
+      "available_masks": ["Literal calm", "Dry interruption", "Object-first attention", "Refusal to hurry the break"],
+      "failure_modes": ["Treating procedure as free", "Letting a powerful sponsor dominate the account", "Allowing a replacement pair to erase the first"],
+      "source_refs": ["low-sere-owner", "basin-table-source"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "sava_ren",
+      "known_context": [
+        {"text": "Sava knows the carried half, the water used, the route named at arrival, the approaching departure group, and what each person says in the scene.", "source_refs": ["low-sere-owner"]}
+      ],
+      "beliefs": [
+        {"text": "Sava believes a useful custom must preserve a refusal without making every delay into guilt.", "source_refs": ["low-sere-owner"]}
+      ],
+      "misreads": [
+        {"text": "Sava may read careful witness work as local attachment to procedure when it also protects the traveller's account.", "source_refs": ["low-sere-owner", "basin-table-source"]}
+      ],
+      "must_not_know": [
+        {"text": "Sava must not know who moved, lost, traded, or mismatched a half unless a branch discovers direct evidence.", "source_refs": ["canon-policy", "low-sere-owner"]}
+      ]
+    },
+    {
+      "speaker_id": "olan_ves",
+      "known_context": [
+        {"text": "Olan knows the water mark, sponsorship obligations, routes he can presently describe or escort, and whether the marker half matches his memory.", "source_refs": ["low-sere-owner"]}
+      ],
+      "beliefs": [
+        {"text": "Olan believes practical escort can preserve the relationship even when the marker fails to close it.", "source_refs": ["low-sere-owner", "public-kalsa"]}
+      ],
+      "misreads": [
+        {"text": "Olan may treat custody offered to him as trust when it also makes later attribution more difficult.", "source_refs": ["low-sere-owner"]}
+      ],
+      "must_not_know": [
+        {"text": "Olan must not know why the pieces differ merely because he sponsored the stay.", "source_refs": ["canon-policy", "low-sere-owner"]}
+      ]
+    },
+    {
+      "speaker_id": "nemi_cal",
+      "known_context": [
+        {"text": "Nemi knows the marker's current sockets, the visible pieces, the guest-water account, the route terms stated in witness, and the basin-table path for an open claim.", "source_refs": ["low-sere-owner"]}
+      ],
+      "beliefs": [
+        {"text": "Nemi believes the ritual is useful only if a mismatch stays visible and motive stays undecided.", "source_refs": ["low-sere-owner"]}
+      ],
+      "misreads": [
+        {"text": "Nemi may underweight the material cost of Sava missing onward company.", "source_refs": ["public-kalsa", "low-sere-owner"]}
+      ],
+      "must_not_know": [
+        {"text": "Nemi must not infer guilt, intent, or a universal route law from the shard alone.", "source_refs": ["canon-policy", "low-sere-owner"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Return-shards are a Low Sere elaboration, not a universal Kalsan road law, currency, language family, measure, or divine rite.",
+      "source_refs": ["low-sere-owner", "language-reckoning", "canon-policy"]
+    },
+    {
+      "text": "The phrase 'let the break remember' is an author-facing English rendering of local advice; it establishes no spelling, grammar, etymology, or mutual intelligibility.",
+      "source_refs": ["low-sere-owner", "language-reckoning"]
+    },
+    {
+      "text": "The fixture's three named people, three-shed layout, departure group, and mismatched pieces are scene-bounded and do not become standing event canon.",
+      "source_refs": ["canon-policy", "low-sere-owner"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Who physically maintains and inventories the Upper Shelf marker across work-watches?",
+      "blocks_training": false,
+      "notes": "The elaboration uses an existing water witness or current guest-shed tender and does not found a separate office."
+    },
+    {
+      "question": "How are travellers without a sponsor supplied, refused, redirected, or represented at Low Sere?",
+      "blocks_training": false,
+      "notes": "The owner note explicitly identifies unsponsored travellers as a failure edge; this fixture begins after sponsorship and does not settle it."
+    },
+    {
+      "question": "Which wider trade routes and language affiliations connect Low Sere to neighboring settlements?",
+      "blocks_training": false,
+      "notes": "Both remain unresolved in the canonical place note. The fixture uses only the local shelf track, a high cut, and author-facing English."
+    }
+  ]
+}

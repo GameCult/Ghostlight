@@ -1,0 +1,612 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "patina-return-shards-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/patina-return-shards-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/patina-return-shards-v0.branch-and-fold.v0.training.json",
+  "scene_id": "patina-return-shards-v0.upper-shelf-departure",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for one ordinary Low Sere return-shard closing. This is website collateral and a visual lore stress test, not canonical event state.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for the Upper Shelf, ordinary water-and-shard closure, the failed fit, witnessed comparison, final allocation of cost, and four outcome families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the wide Upper Shelf, the three-person routine, the preparation choice, the ordinary fold, the one-sentence mismatch, the comparison choice, the open-claim fold, the final threshold, and each ending family. The failed fit stands alone before dispute.",
+    "prompting_rule": "Each base prompt states complete visible geometry, materials, light, weather, bodies, tools, and props for a general image model. Fictional terms are described visibly. Continuity notes remain reviewer constraints and never enter prompt assembly.",
+    "global_style_cue": "Hand-painted high-fantasy interactive-fiction illustration, gouache and fine ink on textured paper, restrained twilight palette of cold slate, grey clay, faded moss green, warm amber, and mineral white, tactile working surfaces, expressive human posture, legible object-centered staging, dry humane mood, unlettered abstract marks.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the scene base_image_prompt, visual refs only for named characters or groups actually visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Omit absent refs. Use the scene_set camera slot or a camera-specific blockout for consistent replay.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture uses several angles in one small outdoor work area. The structured map fixes sheds, awning, marker, bench, water vessel, upper track, basin stair, and search zones for draft replay.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a plan view or simple 3D blockout from this map and render each named camera slot as image-generation input."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "patina_upper_shelf_establishing",
+        "ink_anchor": "start",
+        "camera_slot": "wide_from_upper_track",
+        "base_image_prompt": "Wide view down onto a narrow stone shelf above a misty high-fantasy settlement in permanent twilight. Three squat guest sheds of dark fitted stone lean into the uphill slope beneath one patched grey awning. A waist-high dark road marker stands at the exposed shelf lip beside a worn track; its face has rows of shallow sockets holding broken grey pottery halves. A low witness bench, a covered grey-clay water vessel, a parked two-wheeled handcart, coils of load cord, rivets, lamp hooks, and repaired pans make the shelf a working traveller halt. Warm white mist rises from covered cistern roofs and stepped dwellings below. A small departure group of three cloaked human travellers tightens straps on two handcarts along the upper track.",
+        "visible_characters": [
+          {
+            "agent_id": "upper_shelf_departure_group",
+            "default_stance": "three distant cloaked adults tightening handcart loads on the upper track",
+            "visual_ref": "visual_character_refs.groups.upper_shelf_departure_group"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The three sheds occupy the uphill/back edge. The marker and bench occupy the exposed/downhill lip. The upper track crosses behind the marker; a basin stair descends beyond the bench.",
+          "Permanent twilight provides cool ambient light. One hooded shelf lamp provides warm local light at the marker."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_people_and_custom",
+        "ink_anchor": "people_and_custom",
+        "camera_slot": "medium_marker_triangle",
+        "base_image_prompt": "Medium three-person staging under a patched awning on a narrow stone shelf. Sava Ren, a lean brown-skinned adult traveller with short black curls, weathered ochre cloak, layered grey travel clothes, and a small pottery half on a neck cord, stands roadward beside a two-wheeled handcart. Olan Ves, a sturdy dark-skinned adult Grey Bed worker in a faded moss-green work wrap with grey mineral stains on broad hands and cuffs, lifts a covered guest water vessel. Nemi Cal, a compact light-brown-skinned adult water witness with one long dark braid, slate-blue wool layers, and a narrow belt carrying a stylus and small marked cup, sits at a low bench beside a clean square cloth. Between them stands a waist-high dark stone marker with shallow sockets and grey broken pottery halves. Cool mist rises from the basin below; a hooded amber lamp lights their hands.",
+        "visible_characters": [
+          {
+            "agent_id": "sava_ren",
+            "default_stance": "standing roadward with shard at throat and travel roll near the handcart",
+            "visual_ref": "visual_character_refs.characters.sava_ren"
+          },
+          {
+            "agent_id": "olan_ves",
+            "default_stance": "lifting the covered guest vessel beside the bench",
+            "visual_ref": "visual_character_refs.characters.olan_ves"
+          },
+          {
+            "agent_id": "nemi_cal",
+            "default_stance": "seated at the witness bench with clean cloth ready",
+            "visual_ref": "visual_character_refs.characters.nemi_cal"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Sava begins with the carried half on a neck cord. Olan begins with the guest vessel. Nemi begins with the clean cloth at the bench."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_departure_preparation",
+        "ink_anchor": "departure_preparation",
+        "camera_slot": "overhead_bench_and_marker",
+        "base_image_prompt": "Slightly overhead choice frame centered on the Upper Shelf witness bench and road marker. Four reachable objects form a clear work circuit: Sava's thumb-long grey pottery half on a cord, Nemi's clean square cloth, Olan's covered guest vessel with shallow fill marks, and the road marker whose shallow sockets face the worn upper track. Sava stands at the roadward corner, Olan beside the vessel, Nemi behind the bench; all three human figures are fully visible from waist up. Repaired pans and small iron goods sit in an open handcart at frame edge. A distant departure group secures loads on the upper track under cold twilight.",
+        "visible_characters": [
+          {
+            "agent_id": "sava_ren",
+            "default_stance": "one hand near the neck cord, attention divided between cloth, vessel, marker, and track",
+            "visual_ref": "visual_character_refs.characters.sava_ren"
+          },
+          {
+            "agent_id": "olan_ves",
+            "default_stance": "beside the covered vessel with one stained hand on its lid",
+            "visual_ref": "visual_character_refs.characters.olan_ves"
+          },
+          {
+            "agent_id": "nemi_cal",
+            "default_stance": "behind the bench, hands clear of all objects",
+            "visual_ref": "visual_character_refs.characters.nemi_cal"
+          },
+          {
+            "agent_id": "upper_shelf_departure_group",
+            "default_stance": "small background figures loading handcarts",
+            "visual_ref": "visual_character_refs.groups.upper_shelf_departure_group"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "patina_preparation_fold",
+        "ink_anchor": "preparation_fold",
+        "camera_slot": "medium_marker_triangle",
+        "base_image_prompt": "Ordinary departure closing beneath the Upper Shelf awning: Sava, a lean brown-skinned traveller in an ochre cloak, stands beside the low witness bench; Olan, a sturdy dark-skinned worker in moss-green stained work cloth, holds the grey-clay guest vessel; Nemi, a compact braided water witness in slate-blue wool, reaches toward the dark stone road marker. The marker's shallow sockets hold several pottery halves. A clean cloth lies open on the bench. The upper-track departure group begins pulling loaded handcarts away. Warm amber lamp light touches hands and greyware while cold basin mist beads on the awning edge.",
+        "visible_characters": [
+          {
+            "agent_id": "sava_ren",
+            "default_stance": "waiting at the bench with travel roll ready",
+            "visual_ref": "visual_character_refs.characters.sava_ren"
+          },
+          {
+            "agent_id": "olan_ves",
+            "default_stance": "beside the guest vessel",
+            "visual_ref": "visual_character_refs.characters.olan_ves"
+          },
+          {
+            "agent_id": "nemi_cal",
+            "default_stance": "drawing a marker half from one shallow socket",
+            "visual_ref": "visual_character_refs.characters.nemi_cal"
+          },
+          {
+            "agent_id": "upper_shelf_departure_group",
+            "default_stance": "moving away with two loaded handcarts on the upper track",
+            "visual_ref": "visual_character_refs.groups.upper_shelf_departure_group"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "shard_clarity >= 3",
+            "modifier_prompt": "Sava's carried shard lies on the clean cloth with jagged break edge, shallow water mark, and route scratch clearly visible."
+          },
+          {
+            "trigger": "water_settled == 1",
+            "modifier_prompt": "The guest vessel stands open, empty, and counted beside a small ash-scrubbing tool."
+          },
+          {
+            "trigger": "route_support >= 1",
+            "modifier_prompt": "Nemi's stylus points from the route scratch toward the worn upper track while Olan follows the indicated line."
+          },
+          {
+            "trigger": "mutual_face >= 3",
+            "modifier_prompt": "Sava and Olan share restrained smiles while Nemi's expression nearly breaks into one."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "patina_mismatch_reveal",
+        "ink_anchor": "mismatch_reveal",
+        "camera_slot": "close_shard_fit",
+        "base_image_prompt": "Extreme close view of two thumb-long grey pottery halves touching over a square of clean cloth on a low stone bench. Matching shallow abstract water marks cross both faces and route scratches lean in the same direction, but the jagged fired edges meet at only two points and leave a narrow mouth-shaped gap. Three sets of human hands remain distinct around the cloth: Sava's travel-worn narrow fingers at the left edge, Olan's broad grey-stained worker hands held back at the top, and Nemi's compact clean witness hand steadying the cloth at the right. A dark stone marker with empty shallow sockets rises blurred behind them; one hooded amber lamp reflects along the fracture.",
+        "visible_characters": [
+          {
+            "agent_id": "sava_ren",
+            "default_stance": "only travel-worn left hand visible beside carried half",
+            "visual_ref": "visual_character_refs.characters.sava_ren"
+          },
+          {
+            "agent_id": "olan_ves",
+            "default_stance": "only broad mineral-stained hands visible, held away from the pieces",
+            "visual_ref": "visual_character_refs.characters.olan_ves"
+          },
+          {
+            "agent_id": "nemi_cal",
+            "default_stance": "only compact right hand visible, steadying the cloth",
+            "visual_ref": "visual_character_refs.characters.nemi_cal"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The pieces visibly fail to fit. Matching surface marks do not bridge the physical gap.",
+          "Each person's hands remain attributable and no one holds both halves in this base frame."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_mismatch_choice",
+        "ink_anchor": "mismatch_choice",
+        "camera_slot": "overhead_bench_and_marker",
+        "base_image_prompt": "Overhead-medium decision frame at the Upper Shelf marker. Two mismatched grey pottery halves lie apart on a clean cloth between a dark socketed road marker, an empty marker socket, a covered guest vessel, and an open path toward three guest sheds. Sava, the ochre-cloaked traveller, can reach the carried half or the shed path; Olan, the moss-green-clad worker with grey-stained hands, can receive a half or point toward the road; Nemi, the braided slate-blue witness, can place pieces into separate sockets or inspect them under the hooded lamp. The loaded departure group is beginning to leave along the upper track in the background.",
+        "visible_characters": [
+          {
+            "agent_id": "sava_ren",
+            "default_stance": "at left side of cloth, one hand open near carried half",
+            "visual_ref": "visual_character_refs.characters.sava_ren"
+          },
+          {
+            "agent_id": "olan_ves",
+            "default_stance": "at top of bench, palms visible near roadward side",
+            "visual_ref": "visual_character_refs.characters.olan_ves"
+          },
+          {
+            "agent_id": "nemi_cal",
+            "default_stance": "at right side between marker sockets and lamp",
+            "visual_ref": "visual_character_refs.characters.nemi_cal"
+          },
+          {
+            "agent_id": "upper_shelf_departure_group",
+            "default_stance": "background figures starting up the track with loaded handcarts",
+            "visual_ref": "visual_character_refs.groups.upper_shelf_departure_group"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "patina_open_claim_fold",
+        "ink_anchor": "mismatch_fold",
+        "camera_slot": "medium_marker_triangle",
+        "base_image_prompt": "Medium view under the patched awning after a failed return-shard comparison. The dark road marker, low bench, clean cloth, covered vessel, and three guest sheds remain in one coherent frame. Sava in an ochre cloak watches the upper track; Olan in faded moss-green work cloth faces marker and road; Nemi in slate-blue layers lifts the clean cloth by its corners beside the marker. Cold mist beads on the marker top. The last loaded handcart of a three-person departure group approaches the upper bend.",
+        "visible_characters": [
+          {
+            "agent_id": "sava_ren",
+            "default_stance": "angled between disputed pieces and departing handcart",
+            "visual_ref": "visual_character_refs.characters.sava_ren"
+          },
+          {
+            "agent_id": "olan_ves",
+            "default_stance": "facing the marker with embarrassed practical attention",
+            "visual_ref": "visual_character_refs.characters.olan_ves"
+          },
+          {
+            "agent_id": "nemi_cal",
+            "default_stance": "holding the clean cloth beside separate marker sockets",
+            "visual_ref": "visual_character_refs.characters.nemi_cal"
+          },
+          {
+            "agent_id": "upper_shelf_departure_group",
+            "default_stance": "last cart and three cloaked figures nearly around the upper bend",
+            "visual_ref": "visual_character_refs.groups.upper_shelf_departure_group"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "claim_custody == 1",
+            "modifier_prompt": "The two mismatched halves sit in adjacent separate marker sockets with the mouth-shaped gap plainly visible between them."
+          },
+          {
+            "trigger": "claim_custody == 2",
+            "modifier_prompt": "Both halves rest returned on Nemi's cloth while Olan's two open hands remain visibly grey with road grit from inspection."
+          },
+          {
+            "trigger": "claim_custody == 0",
+            "modifier_prompt": "Sava holds one half at chest height while the other remains on Nemi's cloth, preserving divided custody."
+          },
+          {
+            "trigger": "shard_clarity >= 4",
+            "modifier_prompt": "One break edge shows fine black soot and the other shows packed pale road grit under the amber lamp."
+          },
+          {
+            "trigger": "route_support >= 3",
+            "modifier_prompt": "Olan points toward a visible face-down warning stone on the upper track and then toward the longer basin stair."
+          },
+          {
+            "trigger": "departure_margin <= 0",
+            "modifier_prompt": "The upper bend is empty; only wheel tracks and settling cord dust remain."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "patina_final_threshold",
+        "ink_anchor": "final_choice",
+        "camera_slot": "wide_from_upper_track",
+        "base_image_prompt": "Whole Upper Shelf at the final decision: three dark stone guest sheds beneath a patched awning at the uphill edge; a waist-high socketed road marker and low witness bench at the exposed lip; a covered guest vessel and square cloth beside two mismatched grey pottery halves; a parked handcart near the middle shed; a worn upper track curving around a bend; and a narrow basin stair descending into warm mist. Sava, a lean ochre-cloaked traveller, stands between travel roll, sheds, and track. Olan, a sturdy moss-green-clad worker, stands between marker and both exit routes. Nemi, a compact braided witness in slate-blue wool, controls the cloth and a blank grey-ash tally. The geometry visibly offers hearing, amended travel, search, or independent exit.",
+        "visible_characters": [
+          {
+            "agent_id": "sava_ren",
+            "default_stance": "centered between marker, shed search path, and upper track",
+            "visual_ref": "visual_character_refs.characters.sava_ren"
+          },
+          {
+            "agent_id": "olan_ves",
+            "default_stance": "between marker and route junction, able to escort",
+            "visual_ref": "visual_character_refs.characters.olan_ves"
+          },
+          {
+            "agent_id": "nemi_cal",
+            "default_stance": "at bench with cloth, disputed halves, and blank tally",
+            "visual_ref": "visual_character_refs.characters.nemi_cal"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "claim_custody == 1",
+            "modifier_prompt": "The disputed pieces remain in separate public sockets on the road marker."
+          },
+          {
+            "trigger": "water_settled == 1",
+            "modifier_prompt": "The guest vessel stands open and empty with its counted lid beside it."
+          },
+          {
+            "trigger": "route_support >= 3",
+            "modifier_prompt": "Olan's stance and pointing hand clearly connect the marker to the face-down warning stone and the longer basin stair."
+          },
+          {
+            "trigger": "departure_margin >= 1",
+            "modifier_prompt": "The rear wheel of the departure group's last handcart remains visible at the upper bend."
+          },
+          {
+            "trigger": "departure_margin <= 0",
+            "modifier_prompt": "The upper bend is empty and damp wheel marks are the only sign of the departed group."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ending_hearing",
+        "ink_anchor": "ending_hearing_success|ending_hearing_cost",
+        "camera_slot": "medium_marker_triangle",
+        "base_image_prompt": "Hearing-path aftermath at the Upper Shelf road marker. Two mismatched grey pottery halves sit in separate shallow sockets beneath Olan's abstract water mark, covered by a clean cloth tied loosely across the marker face so the gap remains visible. Nemi, the braided witness in slate-blue wool, knots the cloth. Sava, the lean traveller in an ochre cloak, sits on the low bench with travel roll still packed. Olan, the sturdy worker in moss-green stained cloth, stands beside the covered guest vessel. The upper track is empty. Cool mist and warm shelf-lamp light make the delay tangible.",
+        "visible_characters": [
+          {
+            "agent_id": "sava_ren",
+            "default_stance": "seated on bench beside packed travel roll",
+            "visual_ref": "visual_character_refs.characters.sava_ren"
+          },
+          {
+            "agent_id": "olan_ves",
+            "default_stance": "standing beside guest vessel and open marker claim",
+            "visual_ref": "visual_character_refs.characters.olan_ves"
+          },
+          {
+            "agent_id": "nemi_cal",
+            "default_stance": "tying witness cloth across separate sockets",
+            "visual_ref": "visual_character_refs.characters.nemi_cal"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "patina_ending_departure",
+        "ink_anchor": "ending_departure_success|ending_departure_cost",
+        "camera_slot": "route_junction_from_marker",
+        "base_image_prompt": "Amended-departure aftermath seen from the Upper Shelf marker toward two routes: a worn high track passes a face-down warning stone just above the patched awning, while a longer stone stair descends into warm basin mist beside covered cistern roofs. In the foreground Nemi, a compact braided witness in slate-blue layers, holds one whole blank grey-ash tally beside the clean cloth and the old mismatched halves. Sava, a lean ochre-cloaked traveller with a packed roll, and Olan, a sturdy moss-green-clad worker, stand at the route junction ready to walk or visibly stalled. The marker, bench, sheds, and both routes remain spatially legible.",
+        "visible_characters": [
+          {
+            "agent_id": "sava_ren",
+            "default_stance": "at route junction with travel roll",
+            "visual_ref": "visual_character_refs.characters.sava_ren"
+          },
+          {
+            "agent_id": "olan_ves",
+            "default_stance": "beside Sava, able to point or escort",
+            "visual_ref": "visual_character_refs.characters.olan_ves"
+          },
+          {
+            "agent_id": "nemi_cal",
+            "default_stance": "foreground at marker with fresh tally and old pieces",
+            "visual_ref": "visual_character_refs.characters.nemi_cal"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "patina_ending_search",
+        "ink_anchor": "ending_search_success|ending_search_cost",
+        "camera_slot": "search_zones_from_middle_shed",
+        "base_image_prompt": "Practical-search aftermath among the Upper Shelf's fixed search zones: the shallow stone rain hood above the socketed road marker, three dark guest-shed doorways and gutters, the joints beneath the low witness bench, ash around the covered guest vessel, and a parked two-wheeled handcart. Sava, the ochre-cloaked traveller, crouches near the bench; Olan, the moss-green worker, searches the middle shed threshold; Nemi, the slate-blue braided witness, keeps the clean cloth and disputed halves beside the marker. Cold twilight and one amber lamp make small objects readable against grey stone.",
+        "visible_characters": [
+          {
+            "agent_id": "sava_ren",
+            "default_stance": "crouched checking bench joints",
+            "visual_ref": "visual_character_refs.characters.sava_ren"
+          },
+          {
+            "agent_id": "olan_ves",
+            "default_stance": "searching the middle guest-shed threshold",
+            "visual_ref": "visual_character_refs.characters.olan_ves"
+          },
+          {
+            "agent_id": "nemi_cal",
+            "default_stance": "beside marker protecting cloth and halves",
+            "visual_ref": "visual_character_refs.characters.nemi_cal"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "patina_ending_independent",
+        "ink_anchor": "ending_independent_success|ending_independent_cost",
+        "camera_slot": "route_junction_from_marker",
+        "base_image_prompt": "Independent-exit aftermath from the Upper Shelf. Sava, a lean brown-skinned traveller in a weathered ochre cloak with packed travel roll, walks alone from the dark socketed road marker toward a worn track and a face-down warning stone. Behind at the low bench, Nemi, a compact braided witness in slate-blue wool, holds both mismatched pottery halves separately on a clean cloth. Olan, a sturdy dark-skinned worker in faded moss-green work cloth, remains beside the covered guest vessel and marker. Warm basin mist rises below; cold twilight opens ahead; the distance between traveller, witness, and sponsor is visible.",
+        "visible_characters": [
+          {
+            "agent_id": "sava_ren",
+            "default_stance": "walking alone toward first doubtful road mark",
+            "visual_ref": "visual_character_refs.characters.sava_ren"
+          },
+          {
+            "agent_id": "olan_ves",
+            "default_stance": "remaining at marker beside guest vessel",
+            "visual_ref": "visual_character_refs.characters.olan_ves"
+          },
+          {
+            "agent_id": "nemi_cal",
+            "default_stance": "remaining at bench with separated halves on cloth",
+            "visual_ref": "visual_character_refs.characters.nemi_cal"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prepare_visible_shard_visual",
+        "trigger": "branch_label == prepare_visible_shard",
+        "apply_to_visual_scene_ids": ["patina_preparation_fold"],
+        "modifier_prompt": "The carried half lies break-edge forward on the clean cloth, with mark and route scratch exposed to all three people."
+      },
+      {
+        "modifier_id": "settle_water_first_visual",
+        "trigger": "branch_label == settle_water_first",
+        "apply_to_visual_scene_ids": ["patina_preparation_fold", "patina_final_threshold"],
+        "modifier_prompt": "The guest vessel is open and empty beside an ash-scrubbing tool, showing that water use has been counted separately."
+      },
+      {
+        "modifier_id": "prepare_route_readback_visual",
+        "trigger": "branch_label == prepare_route_readback",
+        "apply_to_visual_scene_ids": ["patina_preparation_fold"],
+        "modifier_prompt": "Nemi's stylus aligns the shard's route scratch with the worn upper track while Olan points to the same exit."
+      },
+      {
+        "modifier_id": "preserve_mutual_face_visual",
+        "trigger": "branch_label == preserve_mutual_face",
+        "apply_to_visual_scene_ids": ["patina_preparation_fold", "patina_open_claim_fold"],
+        "modifier_prompt": "Sava and Olan keep restrained, familiar smiles; Nemi remains literal but visibly amused."
+      },
+      {
+        "modifier_id": "place_claim_in_witness_visual",
+        "trigger": "branch_label == place_claim_in_witness",
+        "apply_to_visual_scene_ids": ["patina_open_claim_fold", "patina_final_threshold"],
+        "modifier_prompt": "The mismatched halves occupy two adjacent separate marker sockets, equally visible and held by neither private pocket."
+      },
+      {
+        "modifier_id": "let_host_inspect_visual",
+        "trigger": "branch_label == let_host_inspect",
+        "apply_to_visual_scene_ids": ["patina_open_claim_fold"],
+        "modifier_prompt": "Olan's open grey-stained hands hover above both pieces after returning them to Nemi's cloth; Sava and Nemi watch the hands as well as the clay."
+      },
+      {
+        "modifier_id": "inspect_material_difference_visual",
+        "trigger": "branch_label == inspect_material_difference",
+        "apply_to_visual_scene_ids": ["patina_open_claim_fold", "patina_ending_hearing"],
+        "modifier_prompt": "The two fracture edges show distinct traces under amber light: fine black cooking soot on one, packed pale road grit on the other."
+      },
+      {
+        "modifier_id": "test_present_route_visual",
+        "trigger": "branch_label == test_present_route",
+        "apply_to_visual_scene_ids": ["patina_open_claim_fold", "patina_final_threshold"],
+        "modifier_prompt": "Olan points first to a face-down warning stone on the high track and then to the longer marked stair descending toward the basin."
+      },
+      {
+        "modifier_id": "ending_hearing_success_visual",
+        "trigger": "ending_label == witnessed_hearing_success",
+        "apply_to_visual_scene_ids": ["patina_ending_hearing"],
+        "modifier_prompt": "The witness cloth is neatly tied across two separate sockets while soot, grit, and the gap remain readable; all three postures are irritated but composed."
+      },
+      {
+        "modifier_id": "ending_hearing_cost_visual",
+        "trigger": "ending_label == witnessed_hearing_cost",
+        "apply_to_visual_scene_ids": ["patina_ending_hearing"],
+        "modifier_prompt": "The pieces show only a visible bad fit; Sava slumps beside the packed roll, Olan stands apart from the vessel, and Nemi faces a thin record."
+      },
+      {
+        "modifier_id": "ending_departure_success_visual",
+        "trigger": "ending_label == amended_departure_success",
+        "apply_to_visual_scene_ids": ["patina_ending_departure"],
+        "modifier_prompt": "Nemi's whole blank tally has become a fresh matching pair: one half sits in the marker and one hangs on Sava's cord. Nemi keeps the old mismatch separately under cloth while Olan leads Sava down the longer stair."
+      },
+      {
+        "modifier_id": "ending_departure_cost_visual",
+        "trigger": "ending_label == amended_departure_cost",
+        "apply_to_visual_scene_ids": ["patina_ending_departure"],
+        "modifier_prompt": "The blank tally remains whole in Nemi's hand; Sava and Olan stand stalled between two routes while the old mismatch stays open."
+      },
+      {
+        "modifier_id": "ending_search_success_visual",
+        "trigger": "ending_label == practical_search_success",
+        "apply_to_visual_scene_ids": ["patina_ending_search"],
+        "modifier_prompt": "Nemi lifts a newly found half from behind the marker's rain hood; it fits Sava's carried piece, while one unrelated unmatched half remains in a separate socket. The last handcart is still visible at the upper bend."
+      },
+      {
+        "modifier_id": "ending_search_cost_visual",
+        "trigger": "ending_label == practical_search_cost",
+        "apply_to_visual_scene_ids": ["patina_ending_search"],
+        "modifier_prompt": "A bent hook, two old cords, and a small beetle sit on the bench instead of a matching shard; the upper track is empty and all three searchers look tired."
+      },
+      {
+        "modifier_id": "ending_independent_success_visual",
+        "trigger": "ending_label == independent_exit_success",
+        "apply_to_visual_scene_ids": ["patina_ending_independent"],
+        "modifier_prompt": "The empty counted guest vessel stands open; Nemi holds both disputed halves apart; Sava walks under clearly repeated route marks while Olan remains responsible at the marker."
+      },
+      {
+        "modifier_id": "ending_independent_cost_visual",
+        "trigger": "ending_label == independent_exit_cost",
+        "apply_to_visual_scene_ids": ["patina_ending_independent"],
+        "modifier_prompt": "Sava reaches the face-down warning stone alone and pauses; Olan remains far behind at the marker beside the covered water vessel and unresolved halves."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "low_sere_upper_shelf_return_shards.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "A narrow open stone shelf above the basin, with three guest sheds against the uphill edge, one patched awning over the marker work area, an upper track along the exposed lip, and a basin stair descending beyond the witness bench.",
+      "fixed_zones": [
+        {
+          "zone_id": "guest_sheds",
+          "visible_form": "three squat dark-stone sheds with shallow thresholds, narrow gutters, and one shared patched awning",
+          "used_for": "ordinary lodging, stored travel goods, practical-search branches"
+        },
+        {
+          "zone_id": "road_marker",
+          "visible_form": "waist-high dark stone slab with rows of shallow sockets, a shallow rain hood, abstract water marks, and broken grey pottery halves",
+          "used_for": "public half custody, fit comparison, open-claim display"
+        },
+        {
+          "zone_id": "witness_bench",
+          "visible_form": "low stone bench between marker and sheds with a clean cloth and hooded amber shelf lamp",
+          "used_for": "three-person comparison, object transfer, material inspection"
+        },
+        {
+          "zone_id": "guest_water_station",
+          "visible_form": "covered grey-clay vessel beside the bench with shallow fill marks and an ash-scrubbing tool",
+          "used_for": "separate water accounting"
+        },
+        {
+          "zone_id": "upper_track",
+          "visible_form": "worn stone-and-grit road passing behind the marker and curving around an upper bend",
+          "used_for": "departure group timing, independent exit, high-cut route"
+        },
+        {
+          "zone_id": "basin_stair",
+          "visible_form": "longer marked stone stair descending from the shelf into warm mist beside covered cistern roofs",
+          "used_for": "amended escorted route"
+        },
+        {
+          "zone_id": "trade_goods_and_handcart",
+          "visible_form": "two-wheeled handcart with rivets, hooks, repaired pans, rolled cloth, and load cords near the middle shed",
+          "used_for": "Sava's ordinary trade and departure pressure"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_from_upper_track",
+          "supports_visual_scene_ids": ["patina_upper_shelf_establishing", "patina_final_threshold"]
+        },
+        {
+          "camera_id": "medium_marker_triangle",
+          "supports_visual_scene_ids": ["patina_people_and_custom", "patina_preparation_fold", "patina_open_claim_fold", "patina_ending_hearing"]
+        },
+        {
+          "camera_id": "overhead_bench_and_marker",
+          "supports_visual_scene_ids": ["patina_departure_preparation", "patina_mismatch_choice"]
+        },
+        {
+          "camera_id": "close_shard_fit",
+          "supports_visual_scene_ids": ["patina_mismatch_reveal"]
+        },
+        {
+          "camera_id": "route_junction_from_marker",
+          "supports_visual_scene_ids": ["patina_ending_departure", "patina_ending_independent"]
+        },
+        {
+          "camera_id": "search_zones_from_middle_shed",
+          "supports_visual_scene_ids": ["patina_ending_search"]
+        }
+      ],
+      "movement_routes": [
+        {
+          "route_id": "marker_to_upper_track",
+          "path": "witness_bench -> road_marker -> upper_track -> upper bend",
+          "supports": ["departure group", "independent exit", "high-cut escort"]
+        },
+        {
+          "route_id": "marker_to_basin_stair",
+          "path": "witness_bench -> road_marker -> basin_stair -> misty basin",
+          "supports": ["longer amended escort"]
+        },
+        {
+          "route_id": "marker_search_loop",
+          "path": "road_marker rain hood -> witness bench joints -> guest water station -> three guest-shed thresholds -> road_marker",
+          "supports": ["practical search"]
+        }
+      ],
+      "shard_states": [
+        {
+          "label": "ordinary_divided_pair",
+          "visible_form": "one grey pottery half on Sava's neck cord and one matching half in a marker socket"
+        },
+        {
+          "label": "mismatched_pair",
+          "visible_form": "two similarly marked grey pottery halves whose jagged edges leave a narrow mouth-shaped gap"
+        },
+        {
+          "label": "witnessed_open_claim",
+          "visible_form": "mismatched halves in separate adjacent marker sockets under a loosely tied clean cloth"
+        },
+        {
+          "label": "amended_new_pair",
+          "visible_form": "one freshly broken matching pair for a newly named route, kept visibly separate from the old mismatch"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable scene-bounded visual identities for recurring named characters and the departure group. Include only refs for people visible in a frame.",
+    "characters": {
+      "sava_ren": "Sava Ren: baseline human travelling small-goods seller, lean adult build, medium height, brown skin, short close black curls, narrow expressive face, weathered ochre outer cloak over layered grey travel clothes, sturdy dark boots, packed travel roll, cord at the throat carrying one thumb-long grey pottery half, practical quick hands, posture often divided between the road and the object under discussion.",
+      "olan_ves": "Olan Ves: baseline human Grey Bed worker and local sponsor, sturdy broad adult build, dark brown skin, short tightly curled hair threaded with grey, faded moss-green wrap over practical dark work layers, cuffs and broad hands stained with pale mineral ash and plant residue, grounded stance, embarrassment shown by looking toward work or road before speaking.",
+      "nemi_cal": "Nemi Cal: baseline human Low Sere water witness, compact adult build, light brown skin with wind-reddened cheeks, one long dark braid, slate-blue wool layers under a short grey shoulder cape, narrow belt with stylus and small marked cup, careful clean fingertips, still posture that keeps each object attributable."
+    },
+    "groups": {
+      "upper_shelf_departure_group": "Upper Shelf departure group: three baseline human adult travellers in layered charcoal, muted blue, and brown road cloaks, faces mostly shadowed by practical hoods, pulling two low two-wheeled handcarts bound with woven cords and grey blankets; small distant silhouettes used as a visible clock, never the owners of the shard dispute."
+    }
+  },
+  "review_notes": [
+    "Draft scene_set map fixes the Upper Shelf geometry, routes, search loop, prop locations, camera slots, and shard states for B-level illustrated replay planning.",
+    "A hand-built plan view or simple blockout remains required before high-consistency multi-angle website rendering.",
+    "All base prompts are standalone visible descriptions and use character refs only for people present in the frame.",
+    "Final reviewer verdicts are recorded in the training annotation audit."
+  ]
+}

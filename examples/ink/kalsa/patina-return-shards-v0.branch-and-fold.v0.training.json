@@ -1,0 +1,424 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "patina-return-shards-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/kalsa/patina-return-shards-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/patina-return-shards-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/patina-return-shards-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "patina-return-shards-v0.upper-shelf-departure",
+  "protagonist_agent_id": "sava_ren",
+  "npc_agent_ids": [
+    "olan_ves",
+    "nemi_cal",
+    "upper_shelf_departure_group"
+  ],
+  "purpose": "Interactive Fiction Weaver draft of a Low Sere Upper Shelf departure from a hosted traveller's bounded perspective, with ordinary return-shard handling before a mismatched pair creates low-stakes pressure.",
+  "tonal_mode": "Dry domestic comedy with civic unease: routine work, reciprocal suspicion, and mildly expensive delay rather than crisis escalation.",
+  "local_awareness_summary": [
+    {
+      "text": "Sava is a travelling small-goods seller who knows the carried return-shard, the hosted water used, the route named on arrival, the visible departure group, and only the accounts spoken or materially exposed in scene.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/patina-return-shards-v0.v0.json",
+        "Kalsa/Spoilers/Places/Low Sere.md"
+      ]
+    },
+    {
+      "text": "The scene begins during an ordinary Upper Shelf departure closure: water is counted, a paired shard should be rejoined, and the sponsor remains responsible for warnings or escort until the claim closes.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/patina-return-shards-v0.v0.json",
+        "Kalsa/Public/Places/Low Sere.md"
+      ]
+    },
+    {
+      "text": "Sava cannot know who caused the mismatch. The player can preserve custody, inspect material traces, ask for present route support, spend time searching, accept an amended promise, or depart with the old claim explicitly open.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/patina-return-shards-v0.v0.json",
+        "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Sava's embodied human viewpoint on the Upper Shelf. Choices use speech, object placement, vessel work, inspection, route questions, search, and departure rather than privileged access to the basin table or private motives.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/kalsa/patina-return-shards-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes guest-shed routine, water accounting, joking familiarity, the marker, the carried shard, and onward travel cost before the pieces fail to fit.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "Kalsa/Spoilers/Places/Low Sere.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Sava owns the carried half and the choice to refuse false closure. Nemi owns witnessed comparison and routing an open claim. Olan owns only the water and route obligations he accepted, not the traveller or the hearing.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "examples/lore-grounding/kalsa/patina-return-shards-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The paired shard can establish fit, mismatch, custody, surface traces, and an open sponsorship claim. It cannot establish motive, crime, universal custom, or the safety of a road.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Sava's carried half, the marker half, Nemi's clean cloth, the covered guest vessel, a blank replacement tally, and the marker's separate sockets remain materially distinct; custody changes are visible and later endings read them.",
+        "source_refs": [
+          "examples/ink/kalsa/patina-return-shards-v0.branch-and-fold.v0.ink",
+          "examples/lore-grounding/kalsa/patina-return-shards-v0.v0.json"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every ending must preserve the rule that a mismatch proves no crime and closes no claim; practical repair, amended travel, hearing, and independent departure may allocate costs differently without retroactive certainty.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md"
+        ]
+      },
+      {
+        "text": "The custom's cost must appear as water, escort, missed company, witness time, sponsor standing, or a continuing open claim rather than abstract cultural flavor.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not identify the person who mismatched the halves unless a branch finds direct material evidence; no branch may promote suspicion into guilt.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      },
+      {
+        "text": "Do not universalize return-shards beyond Low Sere or resolve the settlement's wider polity, trade route, language family, currency, calendar, or measures.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Foundations/Language and Reckoning.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through an ordinary departure, a mismatched-shard comparison, and a final allocation of delay, route support, custody, and open-claim cost into eight state-gated endings.",
+    "choice_layers": [
+      "ordinary_departure_preparation",
+      "mismatched_return_shards",
+      "claim_or_departure"
+    ],
+    "variables": [
+      "shard_clarity",
+      "host_trust",
+      "witness_confidence",
+      "departure_margin",
+      "route_support",
+      "claim_custody",
+      "mutual_face",
+      "water_settled"
+    ],
+    "ending_gates": [
+      "ending_hearing_success",
+      "ending_hearing_cost",
+      "ending_departure_success",
+      "ending_departure_cost",
+      "ending_search_success",
+      "ending_search_cost",
+      "ending_independent_success",
+      "ending_independent_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_visible_shard",
+      "ink_path": "departure_preparation",
+      "action_type": "use_object",
+      "actor_intent": "Put the carried half in shared view before anyone narrates it.",
+      "state_basis": ["Sava controls the carried half and can place its fracture, mark, and route scratch on Nemi's clean cloth."],
+      "reviewed_consequences": ["Raises shard_clarity and witness_confidence; later hearing gates strengthen and the preparation fold exposes the shard's full material surface."],
+      "training_hooks": ["object_before_account", "shared_visibility", "reciprocal_suspicion"]
+    },
+    {
+      "branch_id": "settle_water_first",
+      "ink_path": "departure_preparation",
+      "action_type": "touch_object",
+      "actor_intent": "Separate the guest's water account from whatever happens to the shard.",
+      "state_basis": ["Low Sere records water by marked vessels and work-watches; Sava and Olan can compare the guest vessel and completed ash-scrubbing work."],
+      "reviewed_consequences": ["Sets water_settled, raises host_trust and witness_confidence, and spends departure_margin; later independent departure can preserve the separately witnessed account."],
+      "training_hooks": ["resource_accounting", "routine_work", "time_cost"]
+    },
+    {
+      "branch_id": "prepare_route_readback",
+      "ink_path": "departure_preparation",
+      "action_type": "speak",
+      "actor_intent": "Make the promised route and sponsor duty explicit before closure.",
+      "state_basis": ["The carried shard has a route scratch and the sponsor owes current warnings, route description, or escort."],
+      "reviewed_consequences": ["Raises route_support and witness_confidence; later route questions and independent departure have a usable prior statement."],
+      "training_hooks": ["route_readback", "host_duty", "warning_before_travel"]
+    },
+    {
+      "branch_id": "preserve_mutual_face",
+      "ink_path": "departure_preparation",
+      "action_type": "speak",
+      "actor_intent": "Use a local joke to preserve enough dignity for later disagreement.",
+      "state_basis": ["Sava and Olan have an ordinary hosted relationship and Low Sere's public source supports dry material humor."],
+      "reviewed_consequences": ["Raises mutual_face and host_trust; later search can remain cooperative rather than turning immediately accusatory."],
+      "training_hooks": ["humor_as_social_capacity", "ordinary_relationship", "low_stakes_tone"]
+    },
+    {
+      "branch_id": "place_claim_in_witness",
+      "ink_path": "mismatch_choice",
+      "action_type": "move_object",
+      "actor_intent": "Keep both nonmatching halves in public, separately attributable custody.",
+      "state_basis": ["Nemi controls the marker sockets and Sava controls the carried half."],
+      "reviewed_consequences": ["Sets claim_custody to witness, raises shard_clarity and witness_confidence, and spends departure_margin; the strong hearing ending becomes available."],
+      "training_hooks": ["separate_custody", "delay_for_evidence", "marker_as_public_memory"]
+    },
+    {
+      "branch_id": "let_host_inspect",
+      "ink_path": "mismatch_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Let Olan test the mismatch and accept attribution for handling both pieces.",
+      "state_basis": ["Sava can transfer the carried half; Olan has material familiarity but no power to make the pair fit."],
+      "reviewed_consequences": ["Sets claim_custody to sponsor, raises host_trust and mutual_face, lowers witness_confidence, and makes Olan's inspection a later callback."],
+      "training_hooks": ["trust_with_custody_risk", "sponsor_not_archive", "handling_attribution"]
+    },
+    {
+      "branch_id": "inspect_material_difference",
+      "ink_path": "mismatch_choice",
+      "action_type": "inspect_object",
+      "actor_intent": "Increase material clarity before assigning an account.",
+      "state_basis": ["The fired shards can visibly retain soot, road grit, scored marks, and fracture geometry."],
+      "reviewed_consequences": ["Raises shard_clarity and witness_confidence while spending departure_margin; later hearing distinguishes two material histories without naming a culprit."],
+      "training_hooks": ["material_trace_not_motive", "evidence_costs_time", "bounded_inference"]
+    },
+    {
+      "branch_id": "test_present_route",
+      "ink_path": "mismatch_choice",
+      "action_type": "speak",
+      "actor_intent": "Test what safe exit obligation Olan can actually perform now.",
+      "state_basis": ["The sponsor owes current warnings, a competent route description, or escort when marks are unsafe."],
+      "reviewed_consequences": ["Raises route_support and host_trust; later amended departure can proceed without erasing the old mismatch."],
+      "training_hooks": ["present_capacity_over_recollection", "escort_obligation", "route_change"]
+    },
+    {
+      "branch_id": "prioritize_witnessed_hearing",
+      "ink_path": "final_choice",
+      "action_type": "speak",
+      "actor_intent": "Spend time and sponsor standing to preserve a reviewable open claim.",
+      "state_basis": ["Success requires witness custody and high shard clarity."],
+      "reviewed_consequences": ["Routes to a hearing success or cost ending; both miss onward company, keep the sponsor suspended, and refuse to turn mismatch into guilt."],
+      "training_hooks": ["witnessed_dispute", "institutional_cost", "state_gated_ending"]
+    },
+    {
+      "branch_id": "prioritize_amended_departure",
+      "ink_path": "final_choice",
+      "action_type": "use_object",
+      "actor_intent": "Make a fresh pair for a newly explicit route while leaving the first pair open.",
+      "state_basis": ["Success requires strong route support and host trust; a replacement tally can record only a new promise."],
+      "reviewed_consequences": ["Routes to amended departure success or cost; the success adds a second visible pair without editing the first, while the cost refuses an ambiguous replacement."],
+      "training_hooks": ["amendment_not_overwrite", "route_escort", "second_promise"]
+    },
+    {
+      "branch_id": "prioritize_practical_search",
+      "ink_path": "final_choice",
+      "action_type": "search",
+      "actor_intent": "Spend remaining time and social patience looking for the correct mate.",
+      "state_basis": ["Success requires departure margin and mutual face; the marker hood, sheds, bench, and vessel are reachable search zones."],
+      "reviewed_consequences": ["Routes to search success or cost; success closes Sava's pair while exposing an unrelated open half, and cost spends the departure window without forcing an answer."],
+      "training_hooks": ["mundane_search", "repair_can_expose_more_state", "honest_failure"]
+    },
+    {
+      "branch_id": "prioritize_independent_exit",
+      "ink_path": "final_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Refuse false closure and leave the carried half in witness before departing without sponsor escort.",
+      "state_basis": ["Success requires water already settled, adequate witness confidence, and a route readback."],
+      "reviewed_consequences": ["Routes to independent exit success or cost; both preserve the open claim, while only the strong path separates water and route obligations enough to avoid treating departure as confession."],
+      "training_hooks": ["refusal_without_false_closure", "autonomy_has_route_cost", "separated_obligations"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Promotion of Sava, Olan, Nemi, the mismatch event, or the three-shed geometry into standing Kalsa canon",
+      "Durable character memory or relationship updates",
+      "Expansion of return-shards beyond Low Sere",
+      "Any use of the fixture as core social-model training signal rather than reviewed illustrated replay and lore stress-test material"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex titled elaborator applying four repository reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review found independent_exit_success unreachable because water settlement and route support came from mutually exclusive first-layer choices. Witnessed vessel counting now also raises witness_confidence, making the strong independent path reachable without weakening its gate.",
+      "Branch audit removed search_effort and open_claim_pressure because neither owned a consequential later decision.",
+      "Lore review accepted the fixture after checking the Public and Spoilers owner layers. The custom remains local to Low Sere; language, polity, route network, motive, and event canon remain unresolved.",
+      "Visual review found an ambiguous 'blank or freshly broken' base prompt. The base now owns one whole blank tally and the success modifier owns the visible broken replacement pair.",
+      "Spatial review found the route account placing a third warning stone in a near sightline and making the successful basin-stair route also pass that high-track stone. The live map now uses the first stone above the awning, and the two exits remain separate.",
+      "JSON artifacts parsed successfully. Ink branch labels and training branches match 12-for-12; all eight ending labels have visual modifiers; all eight state-gated ending variants are reachable.",
+      "Ink was not compiled, as required by the dispatch. Syntax and branch structure were checked textually against the reference fixture."
+    ],
+    "review_passes": {
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation_score": 5,
+          "coherence_score": 5,
+          "pacing_score": 5,
+          "voice_score": 5,
+          "tonal_fit_score": 5,
+          "if_playability_score": 4
+        },
+        "detected_tonal_mode": "Dry domestic comedy with civic unease and object-centered reciprocal suspicion.",
+        "findings": [
+          {
+            "severity": "major",
+            "status": "resolved",
+            "location": "final_choice.prioritize_independent_exit",
+            "problem": "The success gate originally required a combination no three-layer playthrough could produce.",
+            "fix": "Witnessed guest-vessel counting now raises witness_confidence; water settlement followed by present-route testing reaches the strong independent ending."
+          }
+        ],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_branch_callback",
+          "strong_character_voice",
+          "strong_material_lore",
+          "strong_tonal_control",
+          "strong_wit_with_stakes",
+          "strong_quiet_scene"
+        ],
+        "acceptance_notes": [
+          "The reader meets place, people, object, custom, and departure cost before the mismatch.",
+          "Every optional setup changes a later fold, gate, ending, or visible state; no folded scene assumes optional character onboarding."
+        ]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage_score": 5,
+          "canon_fit_score": 5,
+          "grounding_quality_score": 5,
+          "vault_backfill_value_score": 5
+        },
+        "findings": [],
+        "sources_checked": [
+          "Kalsa/Public/World/Kalsa.md",
+          "Kalsa/Public/Places/Low Sere.md",
+          "Kalsa/Public/Sources/At the Basin Table.md",
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Foundations/World.md",
+          "Kalsa/Spoilers/Foundations/Language and Reckoning.md",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate",
+          "visual_design_backfill_candidate"
+        ],
+        "acceptance_notes": [
+          "The owning Spoilers place note now contains the durable custom before the fixture uses it.",
+          "Scene-bounded people, layout, and mismatch remain fixture facts rather than adopted history."
+        ]
+      },
+      "visual_continuity": {
+        "verdict": "accepted",
+        "scores": {
+          "segmentation_score": 5,
+          "visual_prompt_score": 5,
+          "character_visibility_score": 5,
+          "branch_visual_continuity_score": 5,
+          "website_replay_score": 4
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "status": "resolved",
+            "location": "patina_ending_departure.base_image_prompt",
+            "problem": "The base prompt described a tally as blank or broken, collapsing mutually exclusive branch states.",
+            "fix": "The base frame now contains one whole blank tally; the successful ending modifier alone changes it into a new matching pair."
+          }
+        ],
+        "missing_scene_set_needs": [
+          {
+            "status": "deferred_until_rendering",
+            "needed_artifact": "Hand-built plan view or simple 3D blockout from the embedded scene_set map",
+            "reason": "High-consistency multi-angle website art needs camera-specific geometry input; this dispatch defers rendering."
+          }
+        ],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity"
+        ],
+        "acceptance_notes": [
+          "The pivotal failed fit has its own close-up screen.",
+          "Every base prompt is standalone and every visible named person or group has a stable ref limited to present frames."
+        ]
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion_score": 5,
+          "sightline_score": 5,
+          "body_affordance_score": 5,
+          "movement_access_score": 5,
+          "object_system_geometry_score": 5,
+          "branch_spatial_state_score": 5
+        },
+        "inferred_layout_summary": "Three guest sheds and a shared awning line the uphill edge; marker and witness bench sit at the exposed lip; the upper track passes above the awning and around a bend; a separate longer stair descends into the basin; marker, bench, vessel, sheds, and hood form one reachable search loop.",
+        "findings": [
+          {
+            "severity": "major",
+            "status": "resolved",
+            "location": "mismatch_choice.test_present_route and ending_departure_success",
+            "problem": "The initial route wording made a third warning stone visible from the shelf and made the longer basin route also traverse the doubtful high-track stone.",
+            "fix": "The doubtful stone is now the first one above the awning, and the amended success route descends the separate clean basin stair while the stone remains above."
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state"
+        ],
+        "acceptance_notes": [
+          "Every movement choice begins from a staged position and reaches a named route or search zone.",
+          "Object custody and shard state remain spatially legible through every fold and ending family."
+        ]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "kalsa_lore_content_readable": true,
+      "all_declared_variables_read_later": true,
+      "all_branch_ids_mapped": true,
+      "all_ending_families_reachable": true,
+      "all_ending_visual_modifiers_present": true,
+      "all_json_artifacts_parsed": true,
+      "ink_compiled": false
+    }
+  }
+}

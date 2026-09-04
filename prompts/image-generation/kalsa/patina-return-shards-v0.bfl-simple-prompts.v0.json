@@ -1,0 +1,60 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-patina-return-shards-v0.bfl-simple-v0",
+  "fixture_id": "patina-return-shards-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy interactive-fiction illustration, gouache and fine ink on textured paper, restrained twilight palette of cold slate, grey clay, faded moss green, warm amber, and mineral white, tactile working surfaces, expressive human posture, legible object-centered staging, dry humane mood, unlettered abstract marks.",
+  "prompts": [
+    {
+      "id": "01_upper_shelf_establishing",
+      "prompt": "Narrow stone traveller shelf above a misty geothermal basin in permanent twilight: three squat guest sheds beneath a patched awning, waist-high dark road marker with shallow sockets and broken grey pottery halves, low witness bench, covered clay water vessel, two-wheeled handcart, repaired pans and iron goods, three cloaked travellers pulling loaded handcarts along an upper track."
+    },
+    {
+      "id": "02_people_and_custom",
+      "prompt": "Three people under a patched shelf awning beside a socketed road marker: lean brown-skinned traveller in weathered ochre cloak with pottery half on neck cord, sturdy dark-skinned worker in faded moss-green wrap lifting a covered guest vessel, compact braided water witness in slate-blue wool seated by clean cloth and amber lamp."
+    },
+    {
+      "id": "03_departure_preparation",
+      "prompt": "Slight overhead choice frame at a stone bench: grey pottery half on cord, clean square cloth, marked covered water vessel, dark socketed road marker, upper track, repaired pans in handcart; ochre-cloaked traveller, moss-green worker, and braided slate-blue witness each poised near a different object while loaded carts wait in the distance."
+    },
+    {
+      "id": "04_preparation_fold",
+      "prompt": "Ordinary departure closing at twilight: ochre-cloaked traveller beside low bench, moss-green worker counting a guest water vessel, braided witness drawing a pottery half from a dark road marker, clean cloth under amber lamp, cold basin mist, last travel carts beginning to leave along the upper track."
+    },
+    {
+      "id": "05_mismatch_reveal",
+      "prompt": "Extreme close view of two similarly marked grey pottery halves on clean cloth; jagged fired edges touch at two points but leave a narrow mouth-shaped gap; three distinct sets of human hands stay apart around the evidence; dark marker sockets and warm hooded lamp blur behind."
+    },
+    {
+      "id": "06_mismatch_choice",
+      "prompt": "Overhead decision at an outdoor witness bench: mismatched shard halves, separate marker sockets, clean cloth, covered water vessel, amber lamp, route toward guest sheds and upper track; traveller, sponsor, and witness hold open hands near different levers while a departure group starts away."
+    },
+    {
+      "id": "07_open_claim_fold",
+      "prompt": "Three-person dispute beneath a patched awning: mismatched pottery halves kept visibly separate beside a socketed marker, traveller watching the last handcart, embarrassed worker facing road and clay, still braided witness lifting the clean cloth, cold mist beading on dark stone."
+    },
+    {
+      "id": "08_final_threshold",
+      "prompt": "Whole Upper Shelf decision geometry: three guest sheds, patched awning, socketed road marker, witness bench, covered guest vessel, disputed pottery halves, parked handcart, upper track around a bend, stair descending into warm basin mist; traveller between road and sheds, sponsor between two exits, witness holding cloth and blank tally."
+    },
+    {
+      "id": "09_hearing_end",
+      "prompt": "Delayed hearing aftermath at the road marker: two mismatched shard halves in separate sockets beneath a loosely tied clean cloth, braided witness knotting it, ochre-cloaked traveller seated by packed roll, moss-green worker beside guest vessel, empty upper track under cold twilight."
+    },
+    {
+      "id": "10_amended_departure_end",
+      "prompt": "Route junction seen from the marker: worn high track with one face-down warning stone just above the awning and longer stair into warm basin mist; witness holds one whole blank grey-ash tally beside old mismatched halves, traveller and local sponsor either begin an escorted route or remain stalled between paths."
+    },
+    {
+      "id": "11_search_end",
+      "prompt": "Practical search among a marker rain hood, three dark guest-shed thresholds, bench joints, vessel ash, and parked handcart; ochre-cloaked traveller crouches at bench, moss-green worker searches middle shed, braided witness protects separated shard halves under amber light."
+    },
+    {
+      "id": "12_independent_exit_end",
+      "prompt": "Twilight departure with visible social distance: ochre-cloaked traveller walks alone toward a face-down warning stone, braided witness remains at bench holding two shard halves apart on cloth, moss-green sponsor stands by covered water vessel and dark marker, warm basin mist below."
+    }
+  ]
+}
