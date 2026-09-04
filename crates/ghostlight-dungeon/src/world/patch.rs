@@ -903,4 +903,143 @@ mod tests {
         .unwrap();
         assert_eq!(first, second);
     }
+
+    /// The durable half of "a rejected patch mints nothing": the store on disk,
+    /// not just the in-memory head, carries no row and no byte of any ID the
+    /// rejected patch would have allocated.
+    #[test]
+    fn a_rejected_patch_leaves_no_row_and_no_id_in_the_store() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            creation(CommandId::new(), "Kharad"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let before = kernel.snapshot().unwrap();
+        let command_id = CommandId::new();
+        let handle = DraftHandle::new("rhythm-authority");
+
+        let error = kernel
+            .submit(
+                command(
+                    &before,
+                    command_id,
+                    CallerId::Principal(owner()),
+                    admit(patch_of(vec![institution(
+                        "rhythm-authority",
+                        "The Rhythm Authority",
+                        Some(Ref::Draft(DraftHandle::new("kharad-rhythm-road"))),
+                    )])),
+                ),
+                &auth_principal(owner()),
+            )
+            .unwrap_err();
+        assert!(matches!(error, KernelError::PatchRejected(_)));
+
+        // Every ID the patch would have allocated, had resolution closed.
+        let would_be = [
+            derive_id(SUBJECT_NAMESPACE, before.world_id, command_id, &handle, None),
+            derive_id(
+                CONTROLLER_NAMESPACE,
+                before.world_id,
+                command_id,
+                &handle,
+                None,
+            ),
+            derive_id(
+                AFFORDANCE_NAMESPACE,
+                before.world_id,
+                command_id,
+                &handle,
+                Some("speak"),
+            ),
+        ];
+
+        drop(kernel);
+        let raw = std::fs::read(&path).unwrap();
+        for id in would_be {
+            assert!(
+                !raw.windows(16).any(|window| window == id.as_bytes()),
+                "a rejected patch left {id} in the store"
+            );
+        }
+
+        let mut reopened = WorldKernel::open(&path, before.world_id).unwrap();
+        assert_eq!(reopened.snapshot().unwrap(), before);
+        assert_eq!(reopened.journal.commit_count(), 1);
+        assert!(reopened.state.entities.is_empty());
+        assert!(!reopened.state.subjects.contains_key(&SubjectId(would_be[0])));
+    }
+
+    /// The `PatchAdmitted` arm is not a trusting applier. A forged effect, a
+    /// replayed one, a non-owner caller, and the Active phase each die inside
+    /// `apply_effect`, without the journal's reduce-equality check running.
+    #[test]
+    fn apply_effect_rejects_a_forged_stale_unauthorized_or_active_patch_effect() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = draft_world(directory.path());
+        let before = kernel.snapshot().unwrap();
+        let patch = patch_of(vec![
+            entity("rhythm-road", "The Rhythm Road", EntityKind::Place),
+            institution(
+                "rhythm-authority",
+                "The Rhythm Authority",
+                Some(Ref::Draft(DraftHandle::new("rhythm-road"))),
+            ),
+        ]);
+        let resolved = resolve_declarations(
+            &kernel.state.subjects,
+            &kernel.state.entities,
+            before.world_id,
+            CommandId::new(),
+            &patch,
+            false,
+        )
+        .unwrap();
+        let honest = super::super::WorldEffect::PatchAdmitted {
+            resolved: resolved.clone(),
+        };
+
+        // Forged: the jurisdiction names a place no partition holds, and the
+        // effect no longer carries the entity that would have created it.
+        let mut forged = resolved.clone();
+        forged.entities.clear();
+        forged.subjects[0].subject.authority_scope = Some(super::super::EntityId::issue());
+        let mut candidate = kernel.state.clone();
+        let forged_error = super::super::apply_effect(
+            &mut candidate,
+            &CallerId::Principal(owner()),
+            &super::super::WorldEffect::PatchAdmitted { resolved: forged },
+        )
+        .unwrap_err();
+        assert!(matches!(forged_error, KernelError::Invariant(_)));
+
+        // Stale: the honest effect applied twice collides on its own IDs.
+        let mut candidate = kernel.state.clone();
+        super::super::apply_effect(&mut candidate, &CallerId::Principal(owner()), &honest).unwrap();
+        let stale_error =
+            super::super::apply_effect(&mut candidate, &CallerId::Principal(owner()), &honest)
+                .unwrap_err();
+        assert!(matches!(stale_error, KernelError::Invariant(_)));
+
+        // A non-owner caller never reaches admission.
+        let mut candidate = kernel.state.clone();
+        let unauthorized =
+            super::super::apply_effect(&mut candidate, &CallerId::Principal(player()), &honest)
+                .unwrap_err();
+        assert!(matches!(unauthorized, KernelError::Invariant(_)));
+        assert_eq!(candidate, kernel.state);
+
+        // And the Active phase is refused before any partition is touched.
+        let active = activate(&mut kernel);
+        assert_eq!(active.revision, before.revision + 3);
+        let mut candidate = kernel.state.clone();
+        let wrong_phase =
+            super::super::apply_effect(&mut candidate, &CallerId::Principal(owner()), &honest)
+                .unwrap_err();
+        assert!(matches!(wrong_phase, KernelError::Invariant(_)));
+        assert_eq!(candidate, kernel.state);
+    }
 }
