@@ -1,0 +1,60 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "tangle-pollen-escrow-v0.bfl-simple-v0",
+  "fixture_id": "tangle-pollen-escrow-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly ecological science-fantasy storybook illustration, tactile alien bark and resin, restrained low-energy dusk violet, cold blue, fungal amber and quarantine white, crisp silhouettes, precise alien anatomy, cinematic interactive-fiction frame, purely pictorial composition.",
+  "prompts": [
+    {
+      "id": "01_saddle_establishing",
+      "prompt": "Wide arboreal saddle beneath a huge stationary planet in a violet eclipse sky: immense west root wall with amber-folded gestation hollow, central lantern tree with hanging cold-blue knots and cargo roost, elevated east root bridge, braided amber fungal road descending to a reflective fen, ribbon-vane gliding couriers overhead."
+    },
+    {
+      "id": "02_ordinary_escrow_work",
+      "prompt": "Six-limbed moss-gray Airawa clerk anchored to a lantern-tree branch by two clawed upper arms and hooked grasping feet, two smaller four-digit lower hands sorting translucent cargo sleeves, pale witness fibers, mineral-and-dung road ration and dead fungal beads; red-vane courier overhead, amber fungal beads below, three root-sugar pearls beside cold-blue light knots."
+    },
+    {
+      "id": "03_service_courier",
+      "prompt": "Close grooming action: six-limbed Airawa clerk braces on layered bark with large upper claws and taloned feet while delicate lower hands remove a clasping parasite from one crimson sensory ribbon of a rust-brown threadwing courier; pale shed witness fiber rests in the clerk's palm, blue lantern knots above and amber fungal beads below."
+    },
+    {
+      "id": "04_service_road",
+      "prompt": "Low view below an arboreal handoff roost: six-limbed Airawa clerk hangs from a root and divides clean dark grazer dung and pale minerals among three amber fungal fruiting beads on a braided mycelial road; elevated east bridge overhead, cold-blue lantern knots, immense west roots, reflective fen below."
+    },
+    {
+      "id": "05_service_lantern",
+      "prompt": "Airawa clerk with four climbing anchors and two delicate lower hands presses one pearl of root sugar into a split cold-blue bioluminescent lantern knot; restored blue light forms a corridor across an elevated east root bridge, two sugar pearls remain in a west cup, red-vane courier watches overhead."
+    },
+    {
+      "id": "06_rival_arrival",
+      "prompt": "Charcoal-teal six-limbed Airawa archive nurse climbs an elevated root bridge carrying a translucent oval gestation sleeve in two smaller lower hands; pale plates glow green at the seams, clawed upper arms and hooked feet grip bark; gray-brown cargo courier glides behind, moss-gray clerk waits at the central lantern roost, crimson-vane escrow courier brushes its longest sensory ribbon across the sleeve's outer seal."
+    },
+    {
+      "id": "07_quarantine_ring",
+      "prompt": "Ecological quarantine at an arboreal roost: bitter-white fungal ring surrounds an Airawa nurse's grasping feet and translucent gestation sleeve, east lantern knots are dark while west knots glow cold blue, immense Matriarch roots close amber living folds over a gestation hollow, pollen clerk faces the nurse, red-vane courier circles overhead."
+    },
+    {
+      "id": "08_evidence_fold",
+      "prompt": "Political evidence converges at a saddle roost: pale courier witness fiber, cold-blue lantern light bands and a line of amber fungal beads all point from a sealed gestation sleeve toward reddish residue in a west root-sugar cup; two six-limbed Airawa workers stand at a white quarantine ring between closed Matriarch roots and an east retreat bridge."
+    },
+    {
+      "id": "09_minimum_traffic_end",
+      "prompt": "Public birth-route crossing during eclipse: six-limbed Airawa clerk spans an amber fungal boundary with a translucent gestation sleeve in two lower hands, rival nurse guides it, crimson-vane courier lays pale witness fiber over the clerk's wrist, hard cold-blue lantern corridor reaches an immense west gestation hollow whose amber living folds begin to open."
+    },
+    {
+      "id": "10_private_sugar_end",
+      "prompt": "Private ecological payment at a dark saddle roost: Airawa clerk measures two glowing root-sugar pearls into amber fungal braid and cold-blue lantern knots while rival nurse holds a translucent gestation sleeve at the ring edge; crimson-vane courier watches above, west gestation hollow and east escape bridge frame the bargain."
+    },
+    {
+      "id": "11_embargo_end",
+      "prompt": "Reproductive embargo seen toward the east bridge: rival six-limbed Airawa nurse withdraws with translucent gestation sleeve protected in both lower hands, red-vane courier chooses a perch beside the nurse, thin amber fungal route and blue lantern light guide the retreat, pollen clerk remains isolated beside a white ring and dark west roots."
+    },
+    {
+      "id": "12_food_web_realigns",
+      "prompt": "Wide eclipse aftermath at an arboreal political border: closed west Matriarch gestation hollow in darkness, empty central cargo ring, courier and Airawa nurse moving east with the viable sleeve, amber fungal road and cold-blue lantern knots visibly redirecting traffic away from the western roots toward a reflective fen."
+    }
+  ]
+}

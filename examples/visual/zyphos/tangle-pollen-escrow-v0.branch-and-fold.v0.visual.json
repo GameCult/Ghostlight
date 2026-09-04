@@ -1,0 +1,558 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "tangle-pollen-escrow-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/tangle-pollen-escrow-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/tangle-pollen-escrow-v0.branch-and-fold.v0.training.json",
+  "scene_id": "tangle-pollen-escrow-v0.umbros-saddle-handoff",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a Matriarch pollination-escrow dispute on Zyphos.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the Umbros-facing saddle, ordinary escrow work, three relationship-service choices, rival cargo arrival, quarantine, evidence, and three ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the establishing slope, body-specific routine work, each service choice, the rival arrival, the quarantine power shift, the evidence fold, and each ending family. The quarantine ring and the moment aligned route parties force the gestation hollow open receive their own replay frames.",
+    "prompting_rule": "Each base image prompt is a complete standalone frame for a general image model. It describes the saddle geometry, materials, low-energy light, alien bodies, tools, and positions in visible language. Continuity notes remain tooling constraints outside prompt assembly.",
+    "global_style_cue": "Style: painterly ecological science-fantasy storybook illustration, tactile alien bark and resin, restrained low-energy palette of dusk violet, cold bioluminescent blue, fungal amber and quarantine white, crisp readable silhouettes, precise six-limbed Airawa anatomy, expressive nonhuman posture, cinematic interactive-fiction framing, purely pictorial composition.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the scene base_image_prompt, visual refs only for characters actually listed as visible in that scene, and triggered state_image_modifiers or global_branch_image_modifiers. Each assembled prompt restates the visible geometry; continuity never depends on a previous generated image.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one outdoor saddle from several angles and uses sightlines, climbing routes, a cargo crossing, and branch-persistent light and quarantine states. The included draft map fixes those relationships for B-level replay planning.",
+      "future_scene_set_need": "Before high-consistency website art, build a plan view or simple 3D blockout with west Matriarch root wall and gestation hollow, central lantern-tree handoff roost, east root bridge, fungal road and fen descent, overhead courier perches, cargo staging cup, and the quarantine-ring boundary."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "tangle_saddle_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of an alien arboreal saddle on Zyphos beneath Umbros, a huge stationary neighboring planet filling part of a dim violet sky as eclipse shadow approaches. On the west uphill side, the receiving Matriarch appears as an immense living wall of layered dark bark and arching roots around a shallow oval gestation hollow sealed by translucent amber living folds. In the center, a smaller lantern tree leans over a broad forked-branch handoff roost, with cold blue bioluminescent knots hanging below its canopy and a stone-resin cargo cup built into the bark. An elevated root bridge reaches the roost from the east. Below it, a braided fungal road climbs from a shallow reflective fen, marked by small amber fruiting beads. Threadwing couriers circle above as small tapered gliding animals with long ribbonlike sensory vanes and gripping feet; one rust-brown courier carries a single crimson sensory ribbon. The composition makes west root wall, central roost, east bridge, lower road, fen, and sky readable at once.",
+        "visible_characters": [
+          {
+            "agent_id": "red_vane_courier",
+            "default_stance": "circling above the central roost, crimson sensory vane visible",
+            "visual_ref": "visual_character_refs.characters.red_vane_courier"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Local coordinates remain fixed: receiving Matriarch west and uphill; rival approach east; handoff roost center; fungal road and fen below; courier perches overhead.",
+          "Umbros remains fixed in the same sector of sky while eclipse shadow advances across the fen from east toward the saddle."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ordinary_work",
+        "ink_anchor": "ordinary_work",
+        "base_image_prompt": "Medium-wide view at the central handoff roost before crisis. A six-limbed Airawa pollen clerk with moss-gray fine scales, ochre grown plate sections, blue-white glowing plate seams, two large clawed upper arms, two smaller four-digit lower hands, long digitigrade legs and four-toed grasping feet hangs securely from the lantern tree. Both upper claws and both hooked feet anchor to bark while the lower hands sort translucent sealed cargo sleeves, braided witness cords of shed ribbon fiber, a clean ration of dark grazer dung and pale mineral crumbs, and dead fungal beads on a stone-resin work ledge. A compact rust-brown threadwing with long dark ribbon vanes and one crimson vane waits on an overhead branch while a small clasping parasite grips that red ribbon. Three amber fungal fruiting beads rise below the clerk. Cold blue lantern knots hang beneath the canopy beside a shallow cup holding three pearl-like measures of root sugar. West Matriarch roots and the east bridge frame the background.",
+        "visible_characters": [
+          {
+            "agent_id": "saddle_pollen_clerk",
+            "default_stance": "upper claws and feet anchored to the lantern tree, lower hands sorting escrow materials",
+            "visual_ref": "visual_character_refs.characters.saddle_pollen_clerk"
+          },
+          {
+            "agent_id": "red_vane_courier",
+            "default_stance": "waiting on an overhead branch with one parasitized crimson vane lowered",
+            "visual_ref": "visual_character_refs.characters.red_vane_courier"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The clerk's large upper hands are clawed climbing limbs; the smaller lower hands have four soft digits in two opposing pairs; the feet are grasping and taloned.",
+          "The work ledge consistently holds cargo sleeves, witness fibers, road ration, dead fungal beads, and the western sugar cup."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_service_courier",
+        "ink_anchor": "service_choice.service_courier",
+        "base_image_prompt": "Close action frame on the central lantern-tree roost. A moss-gray six-limbed Airawa clerk with ochre plates, blue-white glowing seams, large clawed upper arms and taloned grasping feet braces securely against layered bark. The two smaller four-digit lower hands delicately peel a dark clasping parasite from the crimson sensory ribbon of a rust-brown threadwing courier. The courier is a compact gliding animal with a tapered body, broad flexible flight surfaces edged by long dark ribbonlike sensory vanes, one bright crimson vane, and small gripping feet; it lowers the red ribbon toward the clerk and leaves a pale shed witness fiber across one lower palm. Cold blue lantern knots hang above, amber fungal beads glow below, and the massive west Matriarch roots occupy the distance.",
+        "visible_characters": [
+          {
+            "agent_id": "saddle_pollen_clerk",
+            "default_stance": "anchored by upper claws and feet, lower hands grooming the courier",
+            "visual_ref": "visual_character_refs.characters.saddle_pollen_clerk"
+          },
+          {
+            "agent_id": "red_vane_courier",
+            "default_stance": "crimson vane lowered for parasite removal",
+            "visual_ref": "visual_character_refs.characters.red_vane_courier"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The witness fiber originates from the courier's crimson vane and remains courier testimony, not clerk property."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_service_road",
+        "ink_anchor": "service_choice.service_road",
+        "base_image_prompt": "Low medium view from below the central roost toward the fungal road. A moss-gray six-limbed Airawa clerk with ochre body plates and blue-white glowing seams hangs from a descending lantern root, large upper claws and hooked grasping feet holding weight while two smaller lower hands divide a clean ration of dark grazer dung and pale mineral crumbs among three amber fungal fruiting beads. The fungal road is a braided band of fine mycelium, mineral threads, borrowed root sheaths, and bead-shaped amber fruiting bodies running downhill toward a reflective fen. Two ration pieces sink into the braid while one remains deliberately visible. Cold blue lantern knots glow overhead; the west Matriarch root wall and east approach bridge remain readable behind.",
+        "visible_characters": [
+          {
+            "agent_id": "saddle_pollen_clerk",
+            "default_stance": "hanging below the roost and pressing clean ration into three fungal beads",
+            "visual_ref": "visual_character_refs.characters.saddle_pollen_clerk"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The fungal road connects the eastern fen to the central roost and remains below the elevated root bridge."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_service_lantern",
+        "ink_anchor": "service_choice.service_lantern",
+        "base_image_prompt": "Close-medium view under the lantern-tree canopy at the saddle handoff roost. A moss-gray six-limbed Airawa clerk with ochre plates and blue-white glowing seams braces with both hooked feet and one large clawed upper arm while a second upper claw opens a bark seal. The two smaller four-digit lower hands press one pearl of amber root sugar into a split bioluminescent knot. Fine cold-blue filaments close around the sugar and brighten a visible corridor across the elevated east root bridge. Two sugar pearls remain in the shallow western cup. The receiving Matriarch's layered root wall rises uphill to the west, amber fungal beads climb from the fen below, and a compact rust-brown threadwing with long sensory ribbon vanes, one crimson ribbon, and small gripping feet watches from an overhead branch.",
+        "visible_characters": [
+          {
+            "agent_id": "saddle_pollen_clerk",
+            "default_stance": "feet and upper arm anchored, lower hands repairing a cold-blue light knot",
+            "visual_ref": "visual_character_refs.characters.saddle_pollen_clerk"
+          },
+          {
+            "agent_id": "red_vane_courier",
+            "default_stance": "watching from an overhead branch",
+            "visual_ref": "visual_character_refs.characters.red_vane_courier"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The repair consumes one of three visible western sugar measures and illuminates the east approach bridge."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Medium-wide routine frame at a Zyphos pollination-escrow roost as eclipse approaches. A moss-gray six-limbed Airawa clerk with ochre plates and glowing blue-white seams stands anchored at the central forked branch, two large clawed upper arms on bark, smaller lower hands above the cargo ledge, taloned grasping feet locked to the branch. A rust-brown threadwing with one crimson ribbon vane occupies the overhead perch. Cold blue lantern knots illuminate the elevated root bridge from the east, amber fungal beads end in a sampling cup below the work ledge, and the receiving Matriarch's immense west roots tighten around a shallow three-pearl sugar cup. The large fixed planet Umbros hangs in dim violet sky beyond the canopy.",
+        "visible_characters": [
+          {
+            "agent_id": "saddle_pollen_clerk",
+            "default_stance": "anchored at the central branch and watching the east bridge",
+            "visual_ref": "visual_character_refs.characters.saddle_pollen_clerk"
+          },
+          {
+            "agent_id": "red_vane_courier",
+            "default_stance": "overhead at the witness perch",
+            "visual_ref": "visual_character_refs.characters.red_vane_courier"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "courier_trust >= 4",
+            "modifier_prompt": "Place one pale clean witness fiber visibly between the red-vane courier's gripping feet."
+          },
+          {
+            "trigger": "road_credit >= 4",
+            "modifier_prompt": "Open a pale fungal sampling cup beside the amber road beads below the work ledge."
+          },
+          {
+            "trigger": "lantern_credit >= 4",
+            "modifier_prompt": "Make the cold blue lantern corridor across the east root bridge steady and complete."
+          },
+          {
+            "trigger": "matriarch_sugar <= 2",
+            "modifier_prompt": "Show the western Matriarch tightening a dark root around a sugar cup containing only two pearl-like measures."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Only the serviced relationship receives its high-credit visual state in this frame."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_rival_arrival",
+        "ink_anchor": "arrival",
+        "base_image_prompt": "Medium-wide arrival frame centered on the elevated east root bridge and central handoff roost under a dim violet eclipse sky. A charcoal-teal six-limbed Airawa archive nurse with pale bone-colored plates, green bioluminescent seams, two large clawed upper arms, two smaller four-digit lower hands, digitigrade legs and hooked grasping feet climbs onto the roost. Upper claws and feet anchor to bark while both lower hands cradle a translucent oval gestation sleeve containing pale gel and fine sealed route cords. A compact gray-brown cargo threadwing with layered dark ribbon vanes and gripping feet glides behind the nurse. On the central roost, a moss-gray Airawa clerk with ochre plates, blue-white seams, two large clawed upper arms, two smaller four-digit lower hands, and taloned grasping feet waits beside the cargo cup. A compact rust-brown escrow courier with long ribbonlike sensory vanes, one crimson ribbon, and small gripping feet lowers that ribbon to brush the sleeve's outer route seal in a welcome assay. The west Matriarch root hollow, blue lantern knots, amber fungal road, and reflective fen are all visible.",
+        "visible_characters": [
+          {
+            "agent_id": "saddle_pollen_clerk",
+            "default_stance": "waiting on the central roost beside the cargo cup",
+            "visual_ref": "visual_character_refs.characters.saddle_pollen_clerk"
+          },
+          {
+            "agent_id": "rival_archive_nurse",
+            "default_stance": "climbing from the east bridge with both lower hands around the sealed sleeve",
+            "visual_ref": "visual_character_refs.characters.rival_archive_nurse"
+          },
+          {
+            "agent_id": "red_vane_courier",
+            "default_stance": "lowering its crimson sensory ribbon to brush the sleeve's outer seal",
+            "visual_ref": "visual_character_refs.characters.red_vane_courier"
+          },
+          {
+            "agent_id": "cargo_courier",
+            "default_stance": "gliding just behind the nurse over the east bridge",
+            "visual_ref": "visual_character_refs.characters.cargo_courier"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The rival nurse owns and carries the gestation sleeve at arrival; the clerk has not touched it.",
+          "The east bridge is elevated above the fungal road and approaches the central roost from downhill."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_quarantine_ring",
+        "ink_anchor": "accusation",
+        "base_image_prompt": "Confrontation frame at the central saddle roost during eclipse ingress. A charcoal-teal Airawa nurse with pale plates, green glowing seams, two large clawed upper arms, two smaller four-digit lower hands, and taloned grasping feet is anchored beside a translucent sealed gestation sleeve held in both lower hands. A bitter white ring of raised fungal tissue surrounds the nurse's feet and the cargo staging cup. The lantern tree has extinguished the eastern half of its hanging knots, leaving a sharp boundary between cold blue west light and dim violet east shadow. The receiving Matriarch's enormous layered roots close translucent amber living folds across the west gestation hollow. A moss-gray Airawa pollen clerk with ochre plates, blue-white seams, two large clawed upper arms, two smaller four-digit lower hands, and taloned grasping feet grips the central branch opposite the ring. A compact rust-brown threadwing with long ribbonlike sensory vanes, one crimson ribbon, and small gripping feet circles the sleeve overhead. A compact gray-brown cargo courier with dark ribbon vanes waits on the east bridge behind the nurse. The image shows separate root closure, lantern dimming, fungal quarantine, courier attention, and Airawa custody as distinct actions.",
+        "visible_characters": [
+          {
+            "agent_id": "saddle_pollen_clerk",
+            "default_stance": "anchored outside the white ring, facing the nurse and west roots",
+            "visual_ref": "visual_character_refs.characters.saddle_pollen_clerk"
+          },
+          {
+            "agent_id": "rival_archive_nurse",
+            "default_stance": "inside the white ring with the sleeve protected in both lower hands",
+            "visual_ref": "visual_character_refs.characters.rival_archive_nurse"
+          },
+          {
+            "agent_id": "red_vane_courier",
+            "default_stance": "circling the cargo above the ring",
+            "visual_ref": "visual_character_refs.characters.red_vane_courier"
+          },
+          {
+            "agent_id": "cargo_courier",
+            "default_stance": "waiting on the east bridge with vanes drawn tight",
+            "visual_ref": "visual_character_refs.characters.cargo_courier"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The white quarantine ring surrounds the nurse's foothold and cargo cup; it does not surround the entire station.",
+          "The nurse retains sleeve custody through the evidence choice unless a branch explicitly transfers or exposes it."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_evidence_fold",
+        "ink_anchor": "evidence_fold",
+        "base_image_prompt": "Wide-medium evidence frame at the pollination-escrow roost as eclipse shadow crosses the fen below. West is an immense dark Matriarch root wall with a closed amber gestation hollow and a shallow root-sugar cup. Center is a forked lantern-tree roost divided by hanging cold-blue light knots. East is an elevated root bridge where a charcoal-teal Airawa nurse with pale plates, green glowing seams, two large clawed upper arms, two smaller four-digit lower hands, and taloned grasping feet holds a translucent gestation sleeve. A moss-gray Airawa pollen clerk with ochre plates, blue-white seams, two large clawed upper arms, two smaller four-digit lower hands, and taloned grasping feet anchors at the center. A compact rust-brown threadwing with long ribbonlike sensory vanes, one crimson ribbon, and small gripping feet occupies the witness perch overhead. A fungal road of braided mycelium and amber beads climbs from the fen and raises a white quarantine ring around the cargo position. The public witness braid, sugar cup, sleeve surface, light bands, fungal beads, and east retreat route are all clearly visible.",
+        "visible_characters": [
+          {
+            "agent_id": "saddle_pollen_clerk",
+            "default_stance": "at the center between west roots and the nurse",
+            "visual_ref": "visual_character_refs.characters.saddle_pollen_clerk"
+          },
+          {
+            "agent_id": "rival_archive_nurse",
+            "default_stance": "at the ring edge with the sleeve ready to cross or withdraw",
+            "visual_ref": "visual_character_refs.characters.rival_archive_nurse"
+          },
+          {
+            "agent_id": "red_vane_courier",
+            "default_stance": "on the overhead witness perch",
+            "visual_ref": "visual_character_refs.characters.red_vane_courier"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "route_witness >= 2",
+            "modifier_prompt": "Make the evidence converge visibly on the west sugar cup: a pale courier fiber, a line of amber fungal beads, and cold blue light bands all point toward a reddish residue inside the cup."
+          },
+          {
+            "trigger": "route_witness == 1",
+            "modifier_prompt": "Show cold blue lantern bands tracing the sequence from clean east seal to reddish residue at the west nectar stop, while courier fiber and fungal confirmation remain absent."
+          },
+          {
+            "trigger": "cargo_integrity <= 2",
+            "modifier_prompt": "Add condensation pearls along a carefully cut outer travel wrapper while the inner pale-gel capsule remains sealed."
+          },
+          {
+            "trigger": "gestation_time <= 1",
+            "modifier_prompt": "Make the sleeve's pale internal warmth dim and let eclipse shadow reach the cargo cup."
+          },
+          {
+            "trigger": "rival_trust >= 2",
+            "modifier_prompt": "Position the rival nurse beside the clerk at the ring edge, both bodies oriented toward the west roots."
+          },
+          {
+            "trigger": "rival_trust <= 0",
+            "modifier_prompt": "Shift the rival nurse and sleeve toward the east bridge in a prepared withdrawal stance."
+          },
+          {
+            "trigger": "public_breach_record >= 1",
+            "modifier_prompt": "Illuminate a braided public witness cord with pale fiber, amber bead light, and cold blue bands that can be read from the east approach."
+          },
+          {
+            "trigger": "matriarch_leverage >= 4",
+            "modifier_prompt": "Tighten the west roots around the closed amber gestation hollow and leave the western sugar cup partly hidden in their grip."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Evidence channels remain visually distinct even when they align: pale courier fiber, cold blue lantern bands, and amber fungal beads.",
+          "The final choice happens at the central ring edge with both west hollow and east retreat route reachable by Airawa climbing movement."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_floor",
+        "ink_anchor": "ending_floor_holds|ending_floor_breaks",
+        "base_image_prompt": "Public-passage ending frame on the Zyphos saddle during deep eclipse. The receiving Matriarch's layered west roots and amber gestation hollow dominate the uphill side; cold-blue lantern knots line the central lantern-tree roost at varied brightness; a braided fungal road meets the cargo crossing in pale fruiting tissue; the east bridge leads back toward a shadowed fen. A moss-gray Airawa clerk with ochre plates, blue-white seams, two large clawed upper arms, two smaller four-digit lower hands, and taloned grasping feet spans the crossing while both lower hands carry a translucent oval gestation sleeve. A charcoal-teal Airawa archive nurse with pale plates, green seams, two large clawed upper arms, two smaller four-digit lower hands, and taloned grasping feet braces beside the clerk. A compact rust-brown threadwing with long ribbonlike sensory vanes, one crimson ribbon, and small gripping feet circles above the witness perch. The sleeve, fungal boundary, lantern knots, courier perch, west hollow, and east retreat bridge occupy distinct readable layers of the frame.",
+        "visible_characters": [
+          {
+            "agent_id": "saddle_pollen_clerk",
+            "default_stance": "spanning the quarantine boundary with the sleeve in both lower hands",
+            "visual_ref": "visual_character_refs.characters.saddle_pollen_clerk"
+          },
+          {
+            "agent_id": "rival_archive_nurse",
+            "default_stance": "braced beside the clerk and guiding the sleeve",
+            "visual_ref": "visual_character_refs.characters.rival_archive_nurse"
+          },
+          {
+            "agent_id": "red_vane_courier",
+            "default_stance": "circling above the witness perch and crossing",
+            "visual_ref": "visual_character_refs.characters.red_vane_courier"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The clerk receives sleeve custody only for the final public crossing.",
+          "Success and cost share one camera but use mutually exclusive ending-label modifiers."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_private",
+        "ink_anchor": "ending_private_bargain_holds|ending_private_bargain_cost",
+        "base_image_prompt": "Private-payment ending frame at the central handoff roost under eclipse-dark violet sky. The receiving Matriarch's west root wall holds a shallow sugar cup with visible pearl-like reserves beside two round measure sockets and a closed amber gestation hollow. A braided amber fungal road, cold-blue lantern knots, and a high courier roost form three payment channels around the work ledge. A moss-gray Airawa clerk with ochre plates, blue-white seams, two large clawed upper arms, two smaller four-digit lower hands, and taloned grasping feet opens the sugar cup with one upper claw while the lower hands reach toward the measure sockets. A charcoal-teal Airawa archive nurse with pale plates, green seams, two large clawed upper arms, two smaller four-digit lower hands, and taloned grasping feet keeps both lower hands around the translucent gestation sleeve at the ring edge. A compact rust-brown threadwing with long ribbonlike sensory vanes, one crimson ribbon, and small gripping feet watches from above. The elevated east bridge, lower fungal road, and gestation hollow are clearly visible as the alternative exit, payment channel, and destination.",
+        "visible_characters": [
+          {
+            "agent_id": "saddle_pollen_clerk",
+            "default_stance": "measuring western root sugar into the route channels",
+            "visual_ref": "visual_character_refs.characters.saddle_pollen_clerk"
+          },
+          {
+            "agent_id": "rival_archive_nurse",
+            "default_stance": "holding the sleeve at the ring edge",
+            "visual_ref": "visual_character_refs.characters.rival_archive_nurse"
+          },
+          {
+            "agent_id": "red_vane_courier",
+            "default_stance": "watching from the overhead roost",
+            "visual_ref": "visual_character_refs.characters.red_vane_courier"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Sugar pearls visibly diminish according to ending state; the nurse keeps sleeve custody until passage succeeds."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_embargo",
+        "ink_anchor": "ending_embargo_holds|ending_embargo_breaks",
+        "base_image_prompt": "Embargo ending frame looking from the central roost toward the elevated east bridge and reflective fen during eclipse. Thick dark roots from the west receiving Matriarch occupy the left frame edge around a closed amber gestation hollow; the central roost is divided by a white fungal quarantine ring and cold-blue lantern knots. A charcoal-teal Airawa nurse with pale plates, green seams, two large clawed upper arms, two smaller four-digit lower hands, and taloned grasping feet withdraws east with the translucent gestation sleeve held in both lower hands. A compact rust-brown threadwing with long ribbonlike sensory vanes, one crimson ribbon, and small gripping feet chooses a perch near the nurse. A moss-gray Airawa pollen clerk with ochre plates, blue-white seams, two large clawed upper arms, two smaller four-digit lower hands, and taloned grasping feet remains at the central branch. Precise amber fungal account beads trace a short feeder toward the west roots and a thin retreat route toward the east bridge. The composition makes constituency movement away from the west archive visibly legible.",
+        "visible_characters": [
+          {
+            "agent_id": "saddle_pollen_clerk",
+            "default_stance": "remaining at the central branch beside the closed ring",
+            "visual_ref": "visual_character_refs.characters.saddle_pollen_clerk"
+          },
+          {
+            "agent_id": "rival_archive_nurse",
+            "default_stance": "withdrawing east with the sleeve protected in both lower hands",
+            "visual_ref": "visual_character_refs.characters.rival_archive_nurse"
+          },
+          {
+            "agent_id": "red_vane_courier",
+            "default_stance": "choosing a perch near the withdrawing nurse",
+            "visual_ref": "visual_character_refs.characters.red_vane_courier"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "road_credit >= 3",
+            "modifier_prompt": "Keep the amber fungal account beads precise and intact while the western feeder strand visibly darkens."
+          },
+          {
+            "trigger": "lantern_credit >= 3",
+            "modifier_prompt": "Leave one cold-blue lantern knot lit over the departing sleeve while the clerk's western side falls dark."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The nurse withdraws along the same elevated east bridge used at arrival; the fungal road remains below it."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "courier_testimony_visual",
+        "trigger": "branch_label == take_courier_testimony",
+        "apply_to_visual_scene_ids": ["tangle_evidence_fold"],
+        "modifier_prompt": "Place the red-vane courier on the witness perch with a pale shed fiber stretched across the public braid; run cold light along the fiber toward reddish residue in the west sugar cup."
+      },
+      {
+        "modifier_id": "road_resample_visual",
+        "trigger": "branch_label == buy_road_resample",
+        "apply_to_visual_scene_ids": ["tangle_evidence_fold"],
+        "modifier_prompt": "Show the clerk inside the white ring beside a carefully cut outer sleeve wrapper; grow a line of amber fungal beads from the condensation sample toward the west sugar cup."
+      },
+      {
+        "modifier_id": "lantern_replay_visual",
+        "trigger": "branch_label == spend_lantern_credit",
+        "apply_to_visual_scene_ids": ["tangle_evidence_fold"],
+        "modifier_prompt": "Display a cold-blue sequence in separate light bands across the roost: clean east seal, clean courier silhouette, then reddish western nectar residue; keep the east corridor brightly lit."
+      },
+      {
+        "modifier_id": "quarantine_procedure_visual",
+        "trigger": "branch_label == uphold_quarantine",
+        "apply_to_visual_scene_ids": ["tangle_evidence_fold"],
+        "modifier_prompt": "Keep the fungal ring bitter white, place one amber bead pointed at the clerk outside it, lift the red-vane courier away from the roost, and shift the nurse toward the east bridge."
+      },
+      {
+        "modifier_id": "floor_success_visual",
+        "trigger": "ending_label == minimum_traffic_success",
+        "apply_to_visual_scene_ids": ["tangle_ending_floor"],
+        "modifier_prompt": "Open the amber living folds of the west gestation hollow; turn the fungal ring fully amber; align pale courier fiber, cold-blue lantern corridor, and amber road beads around the sleeve; place clerk and nurse shoulder plates close while guiding the cargo inward."
+      },
+      {
+        "modifier_id": "floor_cost_visual",
+        "trigger": "ending_label == minimum_traffic_cost",
+        "apply_to_visual_scene_ids": ["tangle_ending_floor"],
+        "modifier_prompt": "Keep the west gestation folds closed, leave the fungal ring white, dim the cold-blue corridor after one weak pulse, and turn the nurse and sleeve back toward the east bridge."
+      },
+      {
+        "modifier_id": "private_success_visual",
+        "trigger": "ending_label == private_sugar_success",
+        "apply_to_visual_scene_ids": ["tangle_ending_private"],
+        "modifier_prompt": "Dissolve two bright sugar pearls into the amber road and cold-blue lantern knots; thin the quarantine ring to amber; open the west gestation folds just enough for the nurse to guide the intact sleeve inside."
+      },
+      {
+        "modifier_id": "private_cost_visual",
+        "trigger": "ending_label == private_sugar_cost",
+        "apply_to_visual_scene_ids": ["tangle_ending_private"],
+        "modifier_prompt": "Show an almost empty western sugar cup, one hungry fungal strand, lantern knots dimming before the ring, condensation bright on the sleeve wrapper, and the nurse withdrawing east with the cargo."
+      },
+      {
+        "modifier_id": "embargo_success_visual",
+        "trigger": "ending_label == embargo_leverage_success",
+        "apply_to_visual_scene_ids": ["tangle_ending_embargo"],
+        "modifier_prompt": "Keep the west gestation hollow tightly closed and its roots visibly dominant; show the nurse carrying the viable sleeve east, the courier removing pale witness fiber from the public braid, the western fungal feeder darkening, and one lantern knot lighting only the departure route."
+      },
+      {
+        "modifier_id": "embargo_backfire_visual",
+        "trigger": "ending_label == embargo_leverage_backfire",
+        "apply_to_visual_scene_ids": ["tangle_ending_embargo"],
+        "modifier_prompt": "Align the red-vane courier beside the nurse, open a thin amber fungal route down the east slope, illuminate the retreat with cold-blue lantern knots, and leave the clerk isolated beside dark west roots and a white empty ring."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "umbros_saddle_pollination_escrow.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Outdoor arboreal saddle with a west-uphill Matriarch root wall, central lantern-tree handoff roost, elevated east approach bridge, fungal road and fen below, and overhead threadwing perches.",
+      "fixed_zones": [
+        {
+          "zone_id": "west_matriarch_root_wall",
+          "visible_form": "immense layered dark bark and arching roots around a shallow amber-folded gestation hollow and three-measure sugar cup",
+          "used_for": "gestation admission, root pulses, sugar custody, Matriarch leverage"
+        },
+        {
+          "zone_id": "central_lantern_roost",
+          "visible_form": "forked load-bearing branch beneath hanging cold-blue lantern knots with a stone-resin work ledge and cargo cup",
+          "used_for": "ordinary clerk work, handoff, evidence display, final crossing"
+        },
+        {
+          "zone_id": "east_root_bridge",
+          "visible_form": "elevated rough-bark bridge wide enough for one anchored Airawa and a carried sleeve, approaching the roost from downhill east",
+          "used_for": "rival arrival and retreat"
+        },
+        {
+          "zone_id": "fungal_road_descent",
+          "visible_form": "braided mycelium, mineral threads, borrowed roots, and amber fruiting beads climbing below the bridge from the fen",
+          "used_for": "route payment, sampling, quarantine ring, constituency realignment"
+        },
+        {
+          "zone_id": "courier_witness_perch",
+          "visible_form": "thin high branch over the cargo cup with room for threadwing landing and shed-fiber display",
+          "used_for": "courier grooming, testimony, defection"
+        },
+        {
+          "zone_id": "quarantine_ring_boundary",
+          "visible_form": "branch-width ring of raised fungal tissue around the cargo cup and nurse foothold, white when closed and amber when admitted",
+          "used_for": "custody boundary and final crossing state"
+        },
+        {
+          "zone_id": "eastern_fen",
+          "visible_form": "shallow reflective wetland below the saddle, crossed by advancing eclipse shadow",
+          "used_for": "light clock, fungal-road origin, depth and sky reflection"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_saddle_map",
+          "supports_visual_scene_ids": ["tangle_saddle_establishing", "tangle_evidence_fold"]
+        },
+        {
+          "camera_id": "central_roost_medium",
+          "supports_visual_scene_ids": ["tangle_ordinary_work", "tangle_routine_fold", "tangle_quarantine_ring"]
+        },
+        {
+          "camera_id": "courier_groom_close",
+          "supports_visual_scene_ids": ["tangle_service_courier"]
+        },
+        {
+          "camera_id": "road_low_angle",
+          "supports_visual_scene_ids": ["tangle_service_road"]
+        },
+        {
+          "camera_id": "lantern_knot_close",
+          "supports_visual_scene_ids": ["tangle_service_lantern"]
+        },
+        {
+          "camera_id": "east_bridge_arrival",
+          "supports_visual_scene_ids": ["tangle_rival_arrival", "tangle_ending_embargo"]
+        },
+        {
+          "camera_id": "west_hollow_crossing",
+          "supports_visual_scene_ids": ["tangle_ending_floor", "tangle_ending_private"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "public_braid_to_west_sugar",
+          "path": "courier_witness_perch -> public witness braid on central roost -> west sugar cup",
+          "supports": ["take_courier_testimony", "spend_lantern_credit", "enforce_minimum_traffic"]
+        },
+        {
+          "lane_id": "road_sample_to_west_sugar",
+          "path": "cargo cup inside quarantine ring -> amber bead line under central roost -> west sugar cup",
+          "supports": ["buy_road_resample", "enforce_minimum_traffic"]
+        },
+        {
+          "lane_id": "east_retreat",
+          "path": "cargo cup -> ring edge -> central fork -> elevated east root bridge -> fen-side route",
+          "supports": ["uphold_quarantine", "hold_embargo", "minimum_traffic_cost", "private_sugar_cost"]
+        }
+      ],
+      "cargo_states": [
+        {
+          "value": 3,
+          "label": "fully_wrapped",
+          "visible_form": "translucent oval sleeve with intact outer travel wrapper, sealed inner pale gel, and unbroken route cords"
+        },
+        {
+          "value": 2,
+          "label": "outer_wrapper_sampled",
+          "visible_form": "one careful cut in the outer wrapper with condensation pearls; inner gel and route cords remain sealed"
+        }
+      ],
+      "quarantine_states": [
+        {
+          "label": "closed",
+          "visible_form": "raised bitter-white fungal tissue surrounding cargo cup and nurse foothold"
+        },
+        {
+          "label": "admitted",
+          "visible_form": "lower amber fungal beads marking a passable crossing toward the west hollow"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable fixture-character visual identities for prompt assembly. Include only refs for characters visible in a scene; role handles remain non-Weksa translation scaffolds.",
+    "characters": {
+      "saddle_pollen_clerk": "Saddle pollen clerk: mature six-limbed Airawa with moss-gray tiny soft scales, ochre grown plate sections, fine blue-white bioluminescent seams, minimal slit-like nose and ears, two large strong clawed upper arms for climbing and bracing, two smaller lower arms ending in soft four-digit hands arranged as two opposing pairs, long digitigrade legs, four-toed grasping feet and hooked climbing talons. Wears a short violet contract mantle, amber fungal-thread waist bindings, pale lantern-knot filigree, and a low cargo harness that leaves all six limbs free. Work posture uses upper claws and feet as anchors while lower hands handle delicate objects.",
+      "rival_archive_nurse": "Rival archive nurse: mature six-limbed Airawa with charcoal-teal tiny soft scales, pale bone-colored grown plate sections, fine green bioluminescent seams, minimal slit-like nose and ears, two large clawed upper climbing arms, two smaller four-digit lower manipulator hands, long digitigrade legs and hooked grasping feet. Wears a russet-red contract mantle fastened with pale shed courier-fiber cords and a padded lower-hand cargo sling. Protective posture keeps both lower hands around the gestation sleeve while upper claws and feet maintain escape-ready anchors.",
+      "red_vane_courier": "Red-vane courier: compact rust-brown threadwing gliding animal with a tapered body, broad flexible flight surfaces edged by many long dark ribbonlike sensory vanes, one unmistakable crimson sensory vane on the left flight edge, small black eyes, narrow mouthparts, and paired gripping feet. Body language uses vane spread, circling, landing distance, fiber shedding, and refusal to land.",
+      "cargo_courier": "Cargo courier: compact gray-brown threadwing gliding animal with a tapered body, layered flexible flight surfaces edged by long charcoal ribbonlike sensory vanes, small black eyes, narrow mouthparts, and paired gripping feet. Flight posture stays close to the gestation sleeve, with vanes tight around cargo warmth and route residue."
+    },
+    "groups": {}
+  },
+  "review_notes": [
+    "The visual plan includes a draft scene_set map because the fixture revisits one saddle from multiple angles and branch outcomes alter light, route, custody, and access.",
+    "A hand-built plan view or 3D blockout remains required before high-consistency website art; generated images are presentation renders, not geometry authority.",
+    "Every base prompt restates concrete environment geometry and visible body anatomy, while branch modifiers describe only explicit deltas.",
+    "No images were generated; the BFL prompt manifest is deferred-render input only."
+  ]
+}

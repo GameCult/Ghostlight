@@ -1,0 +1,288 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.tangle-pollen-escrow-v0.v0",
+  "source_status": "authored_elaboration",
+  "fixture_status": "grounded_draft",
+  "source_refs": [
+    {
+      "source_id": "matriarch-trees",
+      "path": "Eusocial Interbeing/Species/Matriarch Trees.md",
+      "title": "Matriarch Trees",
+      "line_start": 1,
+      "line_end": 69,
+      "relevance": "Primary authority for Matriarch archival power, Airawa gestation, and the authored pollination-escrow elaboration dramatized by the fixture."
+    },
+    {
+      "source_id": "airawa",
+      "path": "Eusocial Interbeing/Species/Airawa.md",
+      "title": "Airawa",
+      "line_start": 1,
+      "line_end": 96,
+      "relevance": "Grounds the six-limbed Airawa body plan, public gestation contract, pollinator leverage, and contract craft."
+    },
+    {
+      "source_id": "threadwing-couriers",
+      "path": "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+      "title": "Threadwing Couriers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds courier sensory vanes, route memory, independent grudges, pollination work, payments, and refusal tactics."
+    },
+    {
+      "source_id": "lantern-trees",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+      "title": "Umbros-Facing Lantern Trees",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds cold eclipse route light, memory cambium, neighborhood taxation, pollinator traffic, and alliance with fungal roads."
+    },
+    {
+      "source_id": "candle-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds fungal logistics, amber fruiting beacons, payment memory, disease reporting, quarantine rings, and route refusal."
+    },
+    {
+      "source_id": "preimperial-airawa",
+      "path": "Eusocial Interbeing/Civilizations/Pre-Imperial Airawa Tribes.md",
+      "title": "Pre-Imperial Airawa Tribes",
+      "line_start": 1,
+      "line_end": 34,
+      "relevance": "Grounds regional Matriarch politics, ecological intermediaries, and craft as readable treaty evidence."
+    },
+    {
+      "source_id": "nation-scale-interbeings",
+      "path": "Eusocial Interbeing/Ecology/Nation Scale Interbeings.md",
+      "title": "Nation Scale Interbeings",
+      "line_start": 1,
+      "line_end": 135,
+      "relevance": "Grounds reproductive access as foreign policy, granular treaty channels, and mother-tree archival polities."
+    },
+    {
+      "source_id": "zyphos-umbros-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds fixed Umbros, frequent eclipse pressure, low available energy, and political rationing of light."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Pre-imperial Airawa pattern; no absolute date established in the vault.",
+    "location": "A pollination-escrow handoff roost on an Umbros-facing saddle between two rival Matriarch root territories, above an eastern fen.",
+    "summary": "An Airawa pollen clerk tends a multispecies birth route before a rival lineage's gamete cargo is quarantined. The route witnesses reveal that the receiving Matriarch marked the cargo through nectar residue to manufacture delay and political leverage.",
+    "public_facts": [
+      {
+        "text": "Matriarch trees gestate Airawa young and bind birth into lineage, memory, and ecological obligation.",
+        "source_refs": ["matriarch-trees", "airawa"]
+      },
+      {
+        "text": "Contracted pollinators carry Airawa gametes and retain political leverage because broken courier contracts can interrupt continuity.",
+        "source_refs": ["airawa", "threadwing-couriers"]
+      },
+      {
+        "text": "Lantern trees can meter eclipse route light, while candle fungal roads can quarantine traffic, report offenders, and reroute social life.",
+        "source_refs": ["lantern-trees", "candle-roads"]
+      },
+      {
+        "text": "The authored escrow pattern divides a reproductive crossing among Matriarch admission, courier testimony, lantern-tree light, and fungal-road trace accounting.",
+        "source_refs": ["matriarch-trees"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Eclipse ingress is a physical deadline because route light and cargo warmth are scarce rather than decorative atmosphere.",
+        "source_refs": ["zyphos-umbros-system", "lantern-trees"]
+      },
+      {
+        "text": "A Matriarch can pressure a rival lineage through selective delay, but doing so also burdens courier broods, lantern saplings, fungal routes, and Airawa households.",
+        "source_refs": ["matriarch-trees", "nation-scale-interbeings"]
+      },
+      {
+        "text": "Route parties store different kinds of evidence, so a public account requires aligned testimony rather than one omniscient ecological voice.",
+        "source_refs": ["threadwing-couriers", "lantern-trees", "candle-roads"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "receiving-matriarch-polity",
+      "label": "Receiving Matriarch archival polity",
+      "group_type": "mother_tree_archive",
+      "institutional_logic": ["Admit births that strengthen archive continuity while retaining authority over access and precedent."],
+      "material_incentives": ["Secure tenders, defenders, compatible lineages, root sugar, and control over gestation timing."],
+      "internal_virtues": ["Long memory", "Continuity", "Protection of gestation tissue", "Measured permeability"],
+      "internal_shames": ["Being overruled by dependent route organisms", "Losing tenders to a rival archive", "Having a private sanction become public law"],
+      "prestige_markers": ["A full gestation hollow", "Reliable courier claims", "Route bodies willing to carry its memory"],
+      "taboo_triggers": ["Forced deep-archive access", "Unverified foreign tissue", "Public evidence that delay was manufactured"],
+      "emotional_display_norms": ["Preference, anger, and refusal appear as root pressure, sugar release, chamber closure, and route pulses rather than human speech."],
+      "trust_defaults": ["Trusts long-standing local contracts and its own archive; treats outsiders as channel-specific permissions."],
+      "speech_register_cues": ["Slow root pulses", "Gestation-hollow opening or closure", "Sugar rationing", "Archive precedent"],
+      "source_refs": ["matriarch-trees", "nation-scale-interbeings"]
+    },
+    {
+      "group_id": "rival-lineage-constituency",
+      "label": "Rival archive household and nurse",
+      "group_type": "airawa_lineage_constituency",
+      "institutional_logic": ["Move compatible gametes through the agreed crossing without surrendering the lineage's standing to the receiving archive."],
+      "material_incentives": ["Keep the cargo viable, complete gestation on time, and preserve future access to cross-grove births."],
+      "internal_virtues": ["Visible contract compliance", "Careful cargo custody", "Refusal to confuse dependency with ownership"],
+      "internal_shames": ["Returning spoiled cargo", "Trading away future courier access under duress", "Letting private anxiety become confiscation leverage"],
+      "prestige_markers": ["Intact route seals", "Witness-backed passage", "A child accepted without erased provenance"],
+      "taboo_triggers": ["Manufactured contamination findings", "Seizure disguised as quarantine", "Mockery of a waiting household"],
+      "emotional_display_norms": ["Fear is compressed into exact custody language and dry procedural insult while bodies remain anchored for quick withdrawal."],
+      "trust_defaults": ["Trusts route witnesses more than a rival Matriarch's self-certification."],
+      "speech_register_cues": ["Exact contract terms", "Domestic stakes made procedural", "Dry challenge", "Minimal pleading"],
+      "source_refs": ["airawa", "preimperial-airawa", "matriarch-trees"]
+    },
+    {
+      "group_id": "saddle-route-coalition",
+      "label": "Threadwing-lantern-road route coalition",
+      "group_type": "multispecies_infrastructure_alliance",
+      "institutional_logic": ["Keep reproductive traffic credible enough that every member continues receiving food, shelter, movement, and memory value."],
+      "material_incentives": ["Courier roosts and grooming", "Lantern sugar and pollination", "Fungal nutrients and spores", "Continued traffic through the saddle"],
+      "internal_virtues": ["Channel-specific truth", "Minimum traffic", "Remembered payment", "Refusal within owned authority"],
+      "internal_shames": ["Becoming a Matriarch's silent weapon", "Accepting false route signals", "Letting one sanction collapse the whole crossing"],
+      "prestige_markers": ["A bright honest route", "Witness fibers that survive dispute", "Quarantines that identify rather than merely delay"],
+      "taboo_triggers": ["Forced memory editing", "Poisoned nectar", "Unpaid light or diagnostics", "Attack on courier broods"],
+      "emotional_display_norms": ["The coalition does not share one voice: couriers land or leave, lantern knots light or dim, and fungal beads open, sour, or reroute."],
+      "trust_defaults": ["Trust remains local, metabolic, and revocable; aligned action must be earned across species."],
+      "speech_register_cues": ["Vane fibers", "Cold light bands", "Amber or white fruiting rings", "Route refusal"],
+      "source_refs": ["threadwing-couriers", "lantern-trees", "candle-roads", "matriarch-trees"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "receiving-matriarch-polity.birth-as-border-policy",
+      "applies_to": ["receiving-matriarch-polity"],
+      "pressure_type": "reproductive_sovereignty",
+      "summary": "Admitting a cargo is both gestation care and foreign-policy permeability, so medical caution and political leverage can occupy the same root pulse.",
+      "projection_use": "Make the Matriarch act through chamber access, nectar marking, and route pressure rather than human-style decrees.",
+      "source_refs": ["matriarch-trees", "nation-scale-interbeings"]
+    },
+    {
+      "field_id": "rival-lineage-constituency.viability-clock",
+      "applies_to": ["rival-lineage-constituency"],
+      "pressure_type": "custody_deadline",
+      "summary": "Every procedural delay consumes warmth and route protection from cargo that represents a future person and a waiting household.",
+      "projection_use": "Keep political abstraction attached to the nurse's grip, the cooling sleeve, and the option to withdraw.",
+      "source_refs": ["airawa", "matriarch-trees"]
+    },
+    {
+      "field_id": "saddle-route-coalition.minimum-traffic",
+      "applies_to": ["saddle-route-coalition"],
+      "pressure_type": "infrastructure_reputation",
+      "summary": "The coalition remains valuable only if feuds cannot turn every crossing into arbitrary confiscation.",
+      "projection_use": "Let each species withhold only what it owns, then show alliance through aligned but distinct refusals.",
+      "source_refs": ["matriarch-trees", "threadwing-couriers", "lantern-trees", "candle-roads"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "receiving-matriarch-polity",
+      "target_group_id": "saddle-route-coalition",
+      "observer_read": ["Dependent couriers", "Fed road", "Taxable light", "Replaceable service organs"],
+      "target_self_read": ["Owners of testimony, passage, and illumination", "A coalition sustained by traffic rather than obedience"],
+      "misread_patterns": ["The archive mistakes repeated payment for permanent loyalty", "It discounts the ability of route bodies to redirect constituencies"],
+      "likely_insults": ["outer service", "borrowed memory", "hungry route"],
+      "projection_use": "Expose Matriarch overreach through the moment the route bodies align against a patron without becoming one merged mind.",
+      "source_refs": ["matriarch-trees", "lantern-trees", "candle-roads", "threadwing-couriers"]
+    },
+    {
+      "observer_group_id": "rival-lineage-constituency",
+      "target_group_id": "receiving-matriarch-polity",
+      "observer_read": ["Host archive manufacturing caution", "Rival trying to turn a birth into seasonal leverage"],
+      "target_self_read": ["Sovereign gestator managing contamination and precedent"],
+      "misread_patterns": ["The nurse may treat every valid immune hesitation as political sabotage after this breach"],
+      "likely_insults": ["closed hollow", "sweetened verdict", "borrowed parent"],
+      "projection_use": "Keep the nurse incisive but not omniscient; proof must come from route testimony, not intuition.",
+      "source_refs": ["matriarch-trees", "airawa"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "saddle-pollen-clerk",
+      "summary": "An Airawa escrow worker who can service routes, interpret public signals, and commit local resources but cannot command the Matriarch or speak for other species.",
+      "obligations": ["Keep cargo viable", "Maintain witness custody", "Pay route parties honestly", "Preserve the minimum traffic promise"],
+      "available_masks": ["Dry clerkly procedure", "Neutral caretaker", "Loyal Matriarch tender", "Exhausted practical competence"],
+      "failure_modes": ["Letting procedure hide a political decision", "Spending another species' loyalty as if owned", "Buying secrecy with an exhausted food web"],
+      "source_refs": ["airawa", "preimperial-airawa", "matriarch-trees"]
+    },
+    {
+      "role_id": "rival-archive-nurse",
+      "summary": "An Airawa custodian responsible for one viable cross-grove gamete cargo and the household waiting behind it.",
+      "obligations": ["Protect the sleeve", "Preserve route seals", "Refuse confiscatory remedies", "Withdraw before custody becomes spoilage"],
+      "available_masks": ["Exact contract language", "Dry contempt", "Visible readiness to leave"],
+      "failure_modes": ["Cutting the wrapper too far", "Staying through a dead window", "Trading a future corridor under immediate fear"],
+      "source_refs": ["airawa", "matriarch-trees"]
+    },
+    {
+      "role_id": "route-witness",
+      "summary": "A threadwing, lantern tree, or candle road exposing only the evidence channel its body can remember.",
+      "obligations": ["Protect its own reproduction and food access", "Keep route reputation credible", "Refuse false signals"],
+      "available_masks": ["Silence", "Dimming", "Quarantine", "Fiber testimony", "Rerouting"],
+      "failure_modes": ["Being bribed into another body's feud", "Overstating partial evidence", "Collapsing traffic needed for its own continuity"],
+      "source_refs": ["threadwing-couriers", "lantern-trees", "candle-roads"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "saddle_pollen_clerk",
+      "known_context": [
+        {"text": "The clerk knows saddle routines, current credits, public route signals, cargo handling, and the receiving Matriarch's explicit root pulse.", "source_refs": ["airawa", "matriarch-trees", "preimperial-airawa"]}
+      ],
+      "beliefs": [
+        {"text": "The clerk believes minimum traffic keeps every party's dependencies survivable even when Matriarchs feud.", "source_refs": ["matriarch-trees"]}
+      ],
+      "misreads": [
+        {"text": "The clerk may confuse institutional procedure with neutrality or assume old route credit can purchase consent indefinitely.", "source_refs": ["matriarch-trees", "candle-roads"]}
+      ],
+      "must_not_know": [
+        {"text": "The clerk must not know the residue source until a courier, road, or lantern witness exposes it.", "source_refs": ["threadwing-couriers", "lantern-trees", "candle-roads"]}
+      ]
+    },
+    {
+      "speaker_id": "rival_archive_nurse",
+      "known_context": [
+        {"text": "The nurse knows the cargo seals, agreed window, household stakes, and the rival relationship between archives.", "source_refs": ["airawa", "matriarch-trees"]}
+      ],
+      "beliefs": [
+        {"text": "The nurse suspects delay is leverage but requires public route evidence before treating suspicion as fact.", "source_refs": ["preimperial-airawa", "matriarch-trees"]}
+      ],
+      "misreads": [
+        {"text": "After a manufactured trace, the nurse may underrate genuine contamination risk in later crossings.", "source_refs": ["nation-scale-interbeings"]}
+      ],
+      "must_not_know": [
+        {"text": "The nurse cannot know which route party will defect from the receiving Matriarch until it acts.", "source_refs": ["threadwing-couriers", "lantern-trees", "candle-roads"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The fixture is an illustrative authored elaboration of a pre-imperial political pattern, not a dated canonical historical event.",
+      "source_refs": ["matriarch-trees", "preimperial-airawa"]
+    },
+    {
+      "text": "No Weksa-derived proper names are assigned; English role handles and functional place descriptions remain translation scaffolds.",
+      "source_refs": ["airawa"]
+    },
+    {
+      "text": "The story must preserve separate agency for Matriarch, threadwing, lantern tree, fungal road, and Airawa participants rather than resolving them into one ecosystem mind.",
+      "source_refs": ["matriarch-trees", "threadwing-couriers", "lantern-trees", "candle-roads", "nation-scale-interbeings"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "How do Matriarch gestation chambers look and regulate viable Airawa gamete cargo at room scale?",
+      "blocks_training": false,
+      "notes": "The fixture uses a shallow root hollow with living folds as local visual scaffolding, not a universal anatomical declaration."
+    },
+    {
+      "question": "How widespread is pollination escrow among Matriarch polities outside Umbros-facing saddles?",
+      "blocks_training": false,
+      "notes": "The authored lore deliberately scopes the practice to some saddles and avoids turning one alliance pattern into continental law."
+    }
+  ]
+}

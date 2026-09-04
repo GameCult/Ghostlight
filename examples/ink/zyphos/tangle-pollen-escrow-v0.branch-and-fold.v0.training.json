@@ -1,0 +1,368 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "tangle-pollen-escrow-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/zyphos/tangle-pollen-escrow-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/tangle-pollen-escrow-v0.v0.json",
+  "scene_id": "tangle-pollen-escrow-v0.umbros-saddle-handoff",
+  "protagonist_agent_id": "saddle_pollen_clerk",
+  "npc_agent_ids": [
+    "rival_archive_nurse",
+    "red_vane_courier",
+    "cargo_courier",
+    "handoff_lantern_tree",
+    "saddle_candle_road",
+    "receiving_matriarch"
+  ],
+  "purpose": "Authored branch-and-fold fixture dramatizing how rival Matriarch polities use multispecies reproductive infrastructure as alliance, constituency, evidence system, and leverage.",
+  "local_awareness_summary": [
+    {
+      "text": "The pollen clerk is an Airawa escrow worker at one handoff roost. The clerk knows local route credits, cargo handling, visible ecological signals, and explicit Matriarch root pulses, but not hidden intent or unoffered species memory.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/tangle-pollen-escrow-v0.v0.json",
+        "Eusocial Interbeing/Species/Airawa.md"
+      ]
+    },
+    {
+      "text": "The clerk can anchor and haul with two large clawed upper arms and taloned feet while using two smaller four-digit lower hands for delicate cargo and witness work.",
+      "source_refs": [
+        "Eusocial Interbeing/Species/Airawa.md"
+      ]
+    },
+    {
+      "text": "The scene begins during ordinary escrow maintenance before a cross-grove Airawa gamete cargo arrives under an eclipse deadline.",
+      "source_refs": [
+        "examples/ink/zyphos/tangle-pollen-escrow-v0.branch-and-fold.v0.ink",
+        "Eusocial Interbeing/World/Zyphos Umbros Binary System.md"
+      ]
+    },
+    {
+      "text": "Threadwing testimony, lantern light, fungal trace readings, Matriarch sugar, cargo warmth, and rival trust are separate levers whose owners can refuse the clerk.",
+      "source_refs": [
+        "Eusocial Interbeing/Species/Matriarch Trees.md",
+        "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+        "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+        "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains the saddle pollen clerk's locally embodied viewpoint at the handoff roost. Choices use climbing anchors, lower manipulators, cargo custody, feeding, grooming, public witness, and resource transfer.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Eusocial Interbeing/Species/Airawa.md"
+        ]
+      },
+      {
+        "text": "Tonal mode is dry workplace comedy with ecological political stakes and ritual quiet. Routine labor must establish the relationships before the quarantine creates pressure.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "examples/ink/zyphos/tangle-pollen-escrow-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The clerk may spend admitted sugar, perform cargo-handling acts, and invoke published route promises. The clerk cannot open the Matriarch's gestation hollow, manufacture another species' testimony, or declare one organism's record equivalent to all evidence.",
+        "source_refs": [
+          "examples/lore-grounding/zyphos/tangle-pollen-escrow-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The receiving Matriarch owns gestation admission but not courier landing, lantern illumination, fungal routing, or the rival nurse's custody decision.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The rival archive nurse initially holds the sealed gestation sleeve. The clerk touches or carries it only on branches that explicitly expose, purchase passage for, or publicly cross the cargo.",
+        "source_refs": [
+          "examples/ink/zyphos/tangle-pollen-escrow-v0.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "The red-vane courier owns its witness fiber; the receiving Matriarch owns the western sugar reserve; the road and lantern tree decide how offered resources alter their own services.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every routine-service choice must create later access to a different evidence path or alter a material final cost.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      },
+      {
+        "text": "The disputed cargo must reveal constituencies beyond the two Matriarchs: Airawa household, courier brood, lantern saplings, fungal fruiting bodies, and route-dependent tenders.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md"
+        ]
+      },
+      {
+        "text": "Endings must distinguish public minimum-traffic enforcement, private resource purchase, and reproductive embargo, each with a state-gated success or cost outcome.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/ink/zyphos/tangle-pollen-escrow-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not resolve the ecology as one telepathic planetary mind or let the Airawa clerk command the route species.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+        ]
+      },
+      {
+        "text": "Do not treat Airawa reproduction as a private pair-bond event or the Matriarch as symbolic scenery; gestation and access remain ecological contracts.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Airawa.md",
+          "Eusocial Interbeing/Species/Matriarch Trees.md"
+        ]
+      },
+      {
+        "text": "Do not assign Weksa proper names or promote this illustrative dispute into dated historical canon.",
+        "source_refs": [
+          "examples/lore-grounding/zyphos/tangle-pollen-escrow-v0.v0.json"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through routine service, a multispecies trace dispute, and a final reproductive bargain into six state-gated endings.",
+    "choice_layers": [
+      "routine_constituency_service",
+      "trace_dispute",
+      "succession_bargain"
+    ],
+    "variables": [
+      "courier_trust",
+      "road_credit",
+      "lantern_credit",
+      "route_witness",
+      "cargo_integrity",
+      "gestation_time",
+      "matriarch_sugar",
+      "rival_trust",
+      "public_breach_record",
+      "matriarch_leverage"
+    ],
+    "ending_gates": [
+      "ending_floor_holds",
+      "ending_floor_breaks",
+      "ending_private_bargain_holds",
+      "ending_private_bargain_cost",
+      "ending_embargo_holds",
+      "ending_embargo_breaks"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "service_courier",
+      "ink_path": "service_choice",
+      "action_type": "preen_symbiont",
+      "actor_intent": "Invest routine labor in courier trust before the reproductive crossing.",
+      "state_basis": [
+        "Airawa lower hands can perform precise grooming while upper arms and feet anchor the body.",
+        "Threadwings accept parasite care as contract payment and own their shed vane fibers."
+      ],
+      "reviewed_consequences": [
+        "Raises courier_trust, which visibly places a witness fiber in the fold and unlocks voluntary courier testimony."
+      ],
+      "training_hooks": [
+        "routine_care_as_political_credit",
+        "airawa_body_affordance",
+        "courier_testimony_access"
+      ]
+    },
+    {
+      "branch_id": "service_road",
+      "ink_path": "service_choice",
+      "action_type": "feed_route",
+      "actor_intent": "Keep the fungal route solvent enough to request a costly resampling later.",
+      "state_basis": [
+        "Candle roads are paid through clean dead matter, dung, minerals, and reliable traffic."
+      ],
+      "reviewed_consequences": [
+        "Raises road_credit, visibly opens a sampling cup, and unlocks independent cargo resampling."
+      ],
+      "training_hooks": [
+        "nourishment_as_route_credit",
+        "decomposer_as_infrastructure"
+      ]
+    },
+    {
+      "branch_id": "service_lantern",
+      "ink_path": "service_choice",
+      "action_type": "repair_light_contract",
+      "actor_intent": "Buy reliable eclipse light by spending the receiving Matriarch's sugar reserve.",
+      "state_basis": [
+        "Lantern trees exchange route light for sugar, careful tending, and disciplined traffic."
+      ],
+      "reviewed_consequences": [
+        "Raises lantern_credit and lowers matriarch_sugar; the credit unlocks a route-light replay while the sugar cost can later make private passage fail."
+      ],
+      "training_hooks": [
+        "light_tax_and_resource_cost",
+        "ordinary_repair_as_alliance"
+      ]
+    },
+    {
+      "branch_id": "take_courier_testimony",
+      "ink_path": "evidence_choice",
+      "action_type": "request_testimony",
+      "actor_intent": "Let the courier expose route memory at the cost of time and public entanglement.",
+      "state_basis": [
+        "Available only when prior grooming raised courier_trust.",
+        "Vane residues and shed fibers can preserve route testimony."
+      ],
+      "reviewed_consequences": [
+        "Raises route_witness, public_breach_record, and rival_trust while lowering gestation_time; exposes western nectar residue."
+      ],
+      "training_hooks": [
+        "pollinator_testimony_against_patron",
+        "time_cost_of_public_truth"
+      ]
+    },
+    {
+      "branch_id": "buy_road_resample",
+      "ink_path": "evidence_choice",
+      "action_type": "expose_cargo_surface",
+      "actor_intent": "Spend road credit and cargo protection for an independent trace reading.",
+      "state_basis": [
+        "Available only when the road was fed and opened a sampling cup.",
+        "The nurse keeps inner cargo gel sealed while allowing an outer-wrapper sample."
+      ],
+      "reviewed_consequences": [
+        "Spends road_credit and cargo_integrity while raising route_witness, public_breach_record, and rival_trust; the road points the trace west."
+      ],
+      "training_hooks": [
+        "decomposer_as_forensic_constituency",
+        "proof_costs_custody_margin"
+      ]
+    },
+    {
+      "branch_id": "spend_lantern_credit",
+      "ink_path": "evidence_choice",
+      "action_type": "invoke_light_credit",
+      "actor_intent": "Preserve the gestation window while forcing the light authority to replay its route sensing.",
+      "state_basis": [
+        "Available only when prior repair raised lantern_credit.",
+        "Lantern trees read pollen taste and courier route reports and may meter light."
+      ],
+      "reviewed_consequences": [
+        "Spends lantern_credit and matriarch_sugar; raises route_witness, public_breach_record, and gestation_time; produces a partial public sequence."
+      ],
+      "training_hooks": [
+        "infrastructure_truth_without_human_speech",
+        "energy_as_deadline"
+      ]
+    },
+    {
+      "branch_id": "uphold_quarantine",
+      "ink_path": "evidence_choice",
+      "action_type": "enforce_procedure",
+      "actor_intent": "Preserve the receiving Matriarch's leverage by treating the first reading as final.",
+      "state_basis": [
+        "The Matriarch has issued an explicit root pulse that the clerk can repeat but not independently validate."
+      ],
+      "reviewed_consequences": [
+        "Raises matriarch_leverage while lowering rival_trust and gestation_time; creates no route witness and is marked by route bodies as a political decision."
+      ],
+      "training_hooks": [
+        "archive_authority_hiding_inside_procedure",
+        "delay_as_reproductive_leverage"
+      ]
+    },
+    {
+      "branch_id": "enforce_minimum_traffic",
+      "ink_path": "final_choice",
+      "action_type": "carry_cargo",
+      "actor_intent": "Make the route coalition enforce the reproductive floor against the receiving Matriarch.",
+      "state_basis": [
+        "Success requires strong independent witness and sufficient gestation time."
+      ],
+      "reviewed_consequences": [
+        "Adds a public breach record, lowers Matriarch leverage, raises rival trust, and routes to public-passage success or failed-principle cost."
+      ],
+      "training_hooks": [
+        "route_coalition_checks_archive_power",
+        "state_gated_public_accountability"
+      ]
+    },
+    {
+      "branch_id": "purchase_private_passage",
+      "ink_path": "final_choice",
+      "action_type": "transfer_resource",
+      "actor_intent": "Save the cargo through private ecological payment while protecting the Matriarch's public standing.",
+      "state_basis": [
+        "Success requires enough western root sugar after prior service and enough intact cargo protection."
+      ],
+      "reviewed_consequences": [
+        "Spends two measures of matriarch_sugar, raises rival_trust, and routes to a saved birth with preserved coercive precedent or an exhausted-food-web failure."
+      ],
+      "training_hooks": [
+        "birth_saved_reputation_preserved",
+        "resource_gate",
+        "private_bargain_preserves_future_threat"
+      ]
+    },
+    {
+      "branch_id": "hold_embargo",
+      "ink_path": "final_choice",
+      "action_type": "withhold_access",
+      "actor_intent": "Convert the delay into direct leverage over the rival archive's reproductive route.",
+      "state_basis": [
+        "Embargo succeeds only if earlier procedure has accumulated enough Matriarch leverage; route credits still determine visible defections and costs."
+      ],
+      "reviewed_consequences": [
+        "Raises Matriarch leverage, lowers rival trust, and routes to a one-generation political win with food-web costs or an immediate constituency realignment."
+      ],
+      "training_hooks": [
+        "one_generation_win_food_web_cost",
+        "unsupported_embargo_realigns_constituencies"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Evidence-path availability",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Promotion of this illustrative dispute into dated Zyphos history",
+      "Durable Airawa character memory or relationship updates",
+      "Universalization of pollination escrow beyond its scoped saddles",
+      "Vault backfill for Matriarch gestation-hollow anatomy"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Tangle elaborator using the four required reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Ink was authored from the reference shape and was not compiled, per the pass constraint.",
+      "Narrative quality reviewer verdict: accepted. Scores: reader orientation 5/5, coherence 5/5, pacing 4/5, voice 5/5, tonal fit 5/5, IF playability 5/5. Routine precedes pressure; both Airawa roles are introduced before shared payoff; all three choice layers preserve consequences in later gates, callbacks, and endings.",
+      "Lore grounding reviewer verdict: accepted. Scores: source coverage 5/5, canon fit 5/5, grounding quality 5/5, vault backfill value 5/5. The central nectar-marking maneuver was promoted into the authored Matriarch Trees elaboration; gestation-hollow appearance remains explicitly scoped as fixture visual scaffolding.",
+      "Visual scene continuity reviewer verdict: accepted. Scores: segmentation 5/5, visual prompts 5/5, character visibility 5/5, branch continuity 5/5, website replay 4/5. Twelve visual anchors, stable character refs, affirmative standalone base prompts, ten branch/ending modifiers, and a draft scene-set map support B-level replay; high-consistency rendering still needs a blockout.",
+      "Spatial geometric cohesion reviewer verdict: accepted. Scores: layout 5/5, sightlines 5/5, body affordances 5/5, movement and access 5/5, object geometry 5/5, branch spatial state 5/5. West root wall, central roost, elevated east bridge, lower fungal road, quarantine ring, and custody transfers remain stageable across folds.",
+      "Applied review repairs: clarified that the local red-vane escrow courier transfers the marked western nectar residue during the ordinary welcome assay; kept the rival nurse in cargo custody during road sampling; removed success-only route alignment and sugar availability from shared ending base prompts; made the west root wall's embargo-frame position explicit."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true
+    }
+  }
+}
