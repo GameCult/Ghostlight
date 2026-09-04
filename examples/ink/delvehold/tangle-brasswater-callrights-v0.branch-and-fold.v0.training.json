@@ -1,0 +1,445 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "tangle-brasswater-callrights-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/delvehold/tangle-brasswater-callrights-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/tangle-brasswater-callrights-v0.v0.json",
+  "scene_id": "tangle-brasswater-callrights-v0.winter-call-hearing",
+  "protagonist_agent_id": "lysa_harrow",
+  "npc_agent_ids": [
+    "dori_pike",
+    "sava_copper",
+    "yorrin_bale",
+    "brasswater_public_gallery"
+  ],
+  "purpose": "Interactive Fiction Weaver-style compilation of a Delvehold branch-and-fold fixture about a reserve-house keeper deciding whether to call, hold, roll, or release a disputed crystal shipment while public services, mine wages, temple insurance, and foreign contracts pull in different directions.",
+  "local_awareness_summary": [
+    {
+      "text": "Lysa is the Master keeper of Brasswater Reserve House. She may execute its existing charter with the house's single civic seal, but affected workshops must gather their own seals to alter protected schedules, thresholds, or repayment terms.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/tangle-brasswater-callrights-v0.v0.json",
+        "Delvehold/Lore/Industry/Dwarven Industry.md",
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+      ]
+    },
+    {
+      "text": "Lysa can see the public days-of-service gauge, three reserve cells, the forked rail and switch lever, the weighbridge, the temple assay niche, Sava's hold token, Yorrin's contract, and Dori's crew positions; she cannot determine from appearance alone whether the responsive crystal filaments are harmless pressure memory or ecological danger.",
+      "source_refs": [
+        "Delvehold/Lore/Industry/Dwarven Industry.md",
+        "Delvehold/Lore/Industry/Deep Mining.md",
+        "Delvehold/Lore/Dungeon Ecology/Ecological Responses.md"
+      ]
+    },
+    {
+      "text": "The immediate stakes are reciprocal dependencies: households need water, kitchens, lifts, and heat; the Deep Company needs export revenue and payroll; the reserve needs future deliveries; warrant holders need later tariff repayment; rail crews and the Commerce temple can make movement or insurance fail without owning the civic decision.",
+      "source_refs": [
+        "Delvehold/Lore/Industry/Dwarven Industry.md",
+        "Delvehold/Lore/Crisis/World Without a Villain.md",
+        "Delvehold/Lore/Crisis/Industrial Escalation.md",
+        "Delvehold/Lore/Ontology/Gods and Religion.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Lysa's keeper-local viewpoint across Brasswater's counting gallery and connected lower rail bay. Choices use the civic seal, public ledger, reachable switch lever, cell key, assay evidence, ration schedule, contract pages, and custody transfers.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/tangle-brasswater-callrights-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes weekly counting, breakfast, staff habits, and ordinary public accountability before the disputed wagon converts routine into a call hearing.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "AGENTS.md"
+        ]
+      },
+      {
+        "text": "Tonal mode is warm civic workplace comedy turning into winter debt-noir; jokes expose legal and economic pressure without making lost heat, water, wages, or ecological hazard trivial.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Lysa owns execution of the reserve charter, not sovereign authority over the Hold. Sava owns temple assay and insurance marks, Dori and the rail crews own safe physical movement, Yorrin owns the company's offer and can report its losses, and a wider gathering of affected workshop seals owns charter change.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "No branch may make the pale crystal filaments conclusive proof of dungeon or World-Spirit intent. They are repeatable local evidence inside an unresolved hazard and political dispute.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Deep Mining.md",
+          "Delvehold/Lore/Dungeon Ecology/Ecological Responses.md",
+          "Delvehold/Lore/Crisis/World Without a Villain.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Brasswater's civic seal, the iron switch key, Sava's ash-grey hold token, the outward-facing public ledger, Yorrin's roll page, the three wagons, and the barred reserve cells have distinct owners and later branch effects.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "examples/ink/delvehold/tangle-brasswater-callrights-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every ending must preserve that reserve release pays one current obligation by creating or exposing another cost in export, wages, insurance, public trust, rationing, future debt, or ecological risk.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "Delvehold/Lore/Crisis/World Without a Villain.md"
+        ]
+      },
+      {
+        "text": "Call-rights must read as emergency diversion clauses purchased through earlier public advances; winter warrants must read as debts repaid through future power surcharges, not as abstract fantasy finance decoration.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Dwarven Industry.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not resolve the crisis by discovering a hidden villain, free replacement energy, or an authority that can command every constituency without cost.",
+        "source_refs": [
+          "Delvehold/Lore/Crisis/World Without a Villain.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "Do not let temple insurance, company contract, worker refusal, or Lysa's civic seal silently replace the distributed workshop franchise as the owner of wider policy.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through the disputed-wagon hearing and select one of eight state-gated endings.",
+    "choice_layers": [
+      "ordinary_reserve_count",
+      "call_right_threshold",
+      "constituency_bargain",
+      "winter_priority"
+    ],
+    "variables": [
+      "reserve_days",
+      "public_trust",
+      "company_leverage",
+      "temple_cover",
+      "rail_solidarity",
+      "evidence_quality",
+      "deep_debt",
+      "export_breach",
+      "ration_cost",
+      "cargo_state"
+    ],
+    "ending_gates": [
+      "ending_call_legible",
+      "ending_call_brittle",
+      "ending_roll_bounded",
+      "ending_roll_captured",
+      "ending_moot_credible",
+      "ending_moot_cold",
+      "ending_reserve_bridge",
+      "ending_reserve_exhausted"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_public_schedule",
+      "ink_path": "ordinary_count_choice",
+      "action_type": "speak",
+      "actor_intent": "Read the protected services aloud and make the stock count answerable to the people and crews who use them.",
+      "state_basis": [
+        "The reserve charter publishes service-days and the rail delegate is present on the public gallery."
+      ],
+      "reviewed_consequences": [
+        "Raises public_trust and rail_solidarity; later supports a credible wider moot and a physically shared hold."
+      ],
+      "training_hooks": [
+        "constituency_visibility",
+        "public_metric_as_claim"
+      ]
+    },
+    {
+      "branch_id": "prime_temple_assay",
+      "ink_path": "ordinary_count_choice",
+      "action_type": "inspect_object",
+      "actor_intent": "Establish independent assay practice before the disputed train arrives.",
+      "state_basis": [
+        "Sava has a visible assay niche and insurer-facing temple role."
+      ],
+      "reviewed_consequences": [
+        "Raises temple_cover and evidence_quality while adding ration_cost through delay."
+      ],
+      "training_hooks": [
+        "ritual_as_material_verification",
+        "evidence_time_cost"
+      ]
+    },
+    {
+      "branch_id": "prime_private_clause",
+      "ink_path": "ordinary_count_choice",
+      "action_type": "inspect_contract",
+      "actor_intent": "Learn the company's disaster escape route before contesting it.",
+      "state_basis": [
+        "Yorrin carries the Deep Company's call-right contract and disaster clause."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence_quality and company_leverage while lowering public_trust because the company gains the appearance of private consultation."
+      ],
+      "training_hooks": [
+        "private_information_public_cost",
+        "contractual_leverage"
+      ]
+    },
+    {
+      "branch_id": "prime_immediate_service",
+      "ink_path": "ordinary_count_choice",
+      "action_type": "release_resource",
+      "actor_intent": "Protect morning pumps and kitchens before finishing the count.",
+      "state_basis": [
+        "Lysa can open the oldest cell under the existing ration charter."
+      ],
+      "reviewed_consequences": [
+        "Lowers reserve_days and raises public_trust and ration_cost; the reduced gauge alters later threshold pressure and reserve-only endings."
+      ],
+      "training_hooks": [
+        "immediate_service_tradeoff",
+        "visible_public_buffer"
+      ]
+    },
+    {
+      "branch_id": "seize_full_call",
+      "ink_path": "cargo_choice",
+      "action_type": "move_cargo",
+      "actor_intent": "Execute the public call before the company can narrow the emergency definition.",
+      "state_basis": [
+        "The public gauge is below the sealed fourteen-day trigger and Lysa can reach the switch lever."
+      ],
+      "reviewed_consequences": [
+        "Moves all wagons to municipal custody, sharply raises export_breach, lowers company_leverage, and raises public_trust."
+      ],
+      "training_hooks": [
+        "direct_civic_actuation",
+        "export_cost_of_public_service"
+      ]
+    },
+    {
+      "branch_id": "hold_for_public_assay",
+      "ink_path": "cargo_choice",
+      "action_type": "place_hold",
+      "actor_intent": "Preserve title and hazard evidence before either release or export.",
+      "state_basis": [
+        "Sava's hold token can immobilize the weighbridge without deciding final title or use."
+      ],
+      "reviewed_consequences": [
+        "Holds the train, raises temple_cover and evidence_quality, and adds ration_cost while nobody receives the cargo."
+      ],
+      "training_hooks": [
+        "inspection_without_sovereignty",
+        "delay_has_bodies"
+      ]
+    },
+    {
+      "branch_id": "accept_early_roll",
+      "ink_path": "cargo_choice",
+      "action_type": "negotiate_split",
+      "actor_intent": "Buy one immediate wagon without breaking the entire export contract.",
+      "state_basis": [
+        "Yorrin has prepared split-movement and debt-roll papers."
+      ],
+      "reviewed_consequences": [
+        "Splits the cargo, raises reserve_days, deep_debt, company_leverage, and export_breach; the roll remains unsigned until the final choice."
+      ],
+      "training_hooks": [
+        "prepared_mercy_as_leverage",
+        "future_extraction_debt"
+      ]
+    },
+    {
+      "branch_id": "spend_reserve_for_peace",
+      "ink_path": "cargo_choice",
+      "action_type": "preserve_contract",
+      "actor_intent": "Keep the disputed load moving while public stock carries today's services.",
+      "state_basis": [
+        "Brasswater still has releasable stock and the rail switch remains aligned for export."
+      ],
+      "reviewed_consequences": [
+        "Leaves cargo outbound, lowers reserve_days and public_trust, and raises company_leverage and ration_cost."
+      ],
+      "training_hooks": [
+        "certainty_burns_buffer",
+        "contract_continuity"
+      ]
+    },
+    {
+      "branch_id": "publish_assay_and_clause",
+      "ink_path": "bargaining_choice",
+      "action_type": "publish_evidence",
+      "actor_intent": "Deny both temple and company a private definition of hazard.",
+      "state_basis": [
+        "Available when Lysa has at least one assay or contract evidence mark."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence_quality and public_trust while lowering company_leverage; later supports legible call or moot endings."
+      ],
+      "training_hooks": [
+        "public_contract_reading",
+        "evidence_changes_authority"
+      ]
+    },
+    {
+      "branch_id": "rail_refusal_pending_moot",
+      "ink_path": "bargaining_choice",
+      "action_type": "transfer_custody",
+      "actor_intent": "Make physical movement depend on the workers bearing its risk.",
+      "state_basis": [
+        "Available when earlier public practice has raised rail_solidarity."
+      ],
+      "reviewed_consequences": [
+        "Transfers the switch key to Dori, holds the train, raises rail_solidarity, lowers company_leverage, and adds ration_cost."
+      ],
+      "training_hooks": [
+        "worker_refusal_as_ownership",
+        "custody_transfer"
+      ]
+    },
+    {
+      "branch_id": "cap_the_roll",
+      "ink_path": "bargaining_choice",
+      "action_type": "counteroffer",
+      "actor_intent": "Trade future delivery claims without surrendering household tariffs.",
+      "state_basis": [
+        "Lysa can propose terms but cannot make the company directors accept them."
+      ],
+      "reviewed_consequences": [
+        "Creates a partial cargo split, raises reserve_days, deep_debt, company_leverage, and export_breach, and makes a bounded roll ending possible."
+      ],
+      "training_hooks": [
+        "bounded_debt_terms",
+        "counteroffer_not_resolution"
+      ]
+    },
+    {
+      "branch_id": "house_carries_disputed_loss",
+      "ink_path": "bargaining_choice",
+      "action_type": "assume_risk",
+      "actor_intent": "Secure the crystal without letting temple insurance decide civic release.",
+      "state_basis": [
+        "Brasswater can self-insure segregated receipt under its keeper's seal."
+      ],
+      "reviewed_consequences": [
+        "Moves all cargo into segregated municipal custody, raises reserve_days and evidence_quality, lowers temple_cover, and raises export_breach."
+      ],
+      "training_hooks": [
+        "insurance_boundary",
+        "public_institution_carries_loss"
+      ]
+    },
+    {
+      "branch_id": "prioritize_current_services",
+      "ink_path": "final_choice",
+      "action_type": "execute_call",
+      "actor_intent": "Secure present water, food, transport, and heat despite export and insurance costs.",
+      "state_basis": [
+        "Success depends on strong public evidence plus rail or temple support."
+      ],
+      "reviewed_consequences": [
+        "Routes to a legible or brittle full-call ending based on evidence_quality, rail_solidarity, and temple_cover."
+      ],
+      "training_hooks": [
+        "state_gated_public_power",
+        "shared_evidence"
+      ]
+    },
+    {
+      "branch_id": "prioritize_negotiated_supply",
+      "ink_path": "final_choice",
+      "action_type": "sign_contract",
+      "actor_intent": "Preserve wages and partial supply by accepting future extraction debt.",
+      "state_basis": [
+        "Success depends on prior reduction of company leverage and keeping cumulative deep_debt bounded."
+      ],
+      "reviewed_consequences": [
+        "Routes to a bounded or captured roll ending based on company_leverage and deep_debt."
+      ],
+      "training_hooks": [
+        "debt_as_political_string",
+        "deep_mine_constituency"
+      ]
+    },
+    {
+      "branch_id": "prioritize_public_moot",
+      "ink_path": "final_choice",
+      "action_type": "widen_jurisdiction",
+      "actor_intent": "Preserve evidence and distribute the delay to the constituencies who must decide.",
+      "state_basis": [
+        "Success depends on high public_trust and evidence_quality; delay always raises ration_cost."
+      ],
+      "reviewed_consequences": [
+        "Routes to a credible or cold wider moot and keeps the train held."
+      ],
+      "training_hooks": [
+        "jurisdiction_follows_consequence",
+        "delay_with_named_cost"
+      ]
+    },
+    {
+      "branch_id": "prioritize_contract_continuity",
+      "ink_path": "final_choice",
+      "action_type": "spend_reserve",
+      "actor_intent": "Avoid disputed cargo and export breach by burning down the public buffer.",
+      "state_basis": [
+        "Success depends on sufficient reserve_days and bounded ration_cost after the final release."
+      ],
+      "reviewed_consequences": [
+        "Routes to a temporary reserve bridge or exhaustion ending based on reserve_days and ration_cost."
+      ],
+      "training_hooks": [
+        "public_buffer_as_contract_subsidy",
+        "state_gated_service_failure"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Promotion of the Brasswater hearing into canonical event history",
+      "Durable character memory or relationship updates",
+      "Any wider-moot charter change or company default beyond this fixture",
+      "Acceptance into any model-training corpus"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex applying the four required Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted. Reader orientation 5/5, coherence 5/5, pacing 4/5, voice 4/5, tonal fit 5/5, and IF playability 5/5. Review added a plain-language warrant explanation, made Lysa's opening public count a speech action, and made stair movement explicit before shared scenes depended on it.",
+      "Lore grounding verdict: accepted. Source coverage 5/5, canon fit 5/5, grounding quality 5/5, and vault backfill value 5/5. All ten cited Delvehold notes were checked; the owner note now explicitly places Brasswater in Cistern House Nine's warm-sea terrace Hold, and the fixture keeps mana-eating mould within the source's unresolved ecological interpretations.",
+      "Visual continuity verdict: accepted_with_minor_revisions as an illustrated-IF scaffold. Segmentation 5/5, visual prompts 5/5, character visibility 5/5, branch visual continuity 5/5, and website replay 4/5. Twenty-two unique scene anchors match twenty-two BFL prompts, every base prompt stands alone, visible named characters have stable refs, and branch deltas are explicit. A durable plan-view or 3D blockout remains required before multi-angle rendering.",
+      "Spatial-geometric cohesion verdict: accepted_with_minor_revisions as a stageable text plan. Layout, sightlines, body affordances, movement access, object geometry, and branch-spatial state each score 5/5 after the map made the three-wagon weighbridge length, south-stair travel, fixed upper seal desk, brake roster, cargo states, routes, and public sightlines explicit. The same blockout requirement remains for replay-ready art.",
+      "Ink was not compiled or installed, as required by the swarm contract. Final checks parsed all four JSON artifacts, matched sixteen Ink branch handles to sixteen sidecar receipts, matched eight ending knots to eight declared gates, confirmed every declared variable is read after declaration, found both speech and non-speech actions, and found no missing or duplicate visual scene ids."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

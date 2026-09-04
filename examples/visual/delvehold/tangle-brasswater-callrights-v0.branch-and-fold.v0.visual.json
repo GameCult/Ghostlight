@@ -1,0 +1,1086 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "tangle-brasswater-callrights-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/tangle-brasswater-callrights-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/tangle-brasswater-callrights-v0.branch-and-fold.v0.training.json",
+  "scene_id": "tangle-brasswater-callrights-v0.winter-call-hearing",
+  "purpose": "Illustrated Ink replay segmentation and visual continuity controls for the Brasswater Reserve House call-right hearing.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the weekly reserve count, disputed Deep Company wagon, public constituency hearing, final winter priority, and state-gated aftermaths.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the two-level establishing view, constituency introduction, each ordinary count choice, routine fold, train arrival, each cargo action, hearing fold, each constituency bargain, final threshold, and each ending family. The mould assay reveal and the final whole-room threshold receive their own replay frames.",
+    "prompting_rule": "Each base image prompt restates the visible room geometry, materials, light, props, and every visible character in plain visual language. Continuity notes are reviewer constraints only. Prompt assembly adds the global style cue, then only the visual refs for characters visible in that frame, then triggered modifiers.",
+    "global_style_cue": "Style: richly textured high-fantasy industrial storybook illustration, precise dark ink linework, restrained gouache and watercolor, carved basalt and worn brass, amber oil lamps against cold blue runic light, readable silhouettes, humane facial acting, practical heavy machinery, unlettered surfaces, cinematic composition designed for illustrated interactive fiction.",
+    "prompt_assembly_rule": "Assemble every generated prompt from global_style_cue, the selected scene base_image_prompt, visual refs only for visible named characters or groups, and triggered state_image_modifiers or global_branch_image_modifiers. Keep visual_continuity_notes outside the assembled prompt. Use the scene_set camera blockout as visual input before multi-angle rendering.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one two-level rail-and-counting hall from several angles and makes sightlines, switch access, cargo position, cell custody, and public visibility mechanically consequential.",
+      "future_scene_set_need": "Build a simple plan view or 3D blockout of Brasswater Reserve House before image generation: north inbound arch, south export arch, central weighbridge, west municipal siding and three cells, east upper counting gallery, south stair, gallery switch lever, seal desk, assay niche, wall gauge, yellow public line, brake roster, and all camera slots."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "brasswater_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide cutaway establishing view of a two-level fantasy-industrial reserve house carved as a long wedge in dark basalt. On the lower floor, an iron freight rail enters a tall north arch, crosses a blue-rune-lit weighbridge, then exits a south export arch; a switch forks west toward three barred crystal storage cells. On the upper east wall, a public counting gallery overlooks the rails behind a waist-high bronze safety rail, with a large service-days gauge, black slate, heavy seal desk, small brass assay niche, yellow queue line, and stone stair descending at the south end. Amber oil lamps warm worn brass and wet stone while cold blue runes shine under the track. Dwarf householders in winter work clothes hold bread and copper service tokens behind the yellow line; rail hands in orange coats stand near the lower brake line.",
+        "visible_characters": [
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "householders and protected-service workers queue behind the yellow line while rail crews occupy the lower brake line",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The lower track runs north to south. The municipal siding branches west toward three cells. The upper public gallery occupies the east wall and connects to the lower bay only by the south stone stair.",
+          "The service-days gauge, public ledger, seal desk, assay niche, switch lever, yellow line, weighbridge, brake roster, and barred cells retain fixed positions."
+        ]
+      },
+      {
+        "visual_scene_id": "brasswater_weekly_count",
+        "ink_anchor": "introduce_constituencies",
+        "base_image_prompt": "Medium-wide view along the upper counting gallery of the basalt reserve house. Master Lysa Harrow, a broad middle-aged dwarf woman with iron-grey braided hair, square spectacles, an indigo padded counting coat, chalk-stained fingers, and a heavy brass civic seal at her belt, stands at the seal desk. Dori Pike, a compact dwarf rail delegate with rust-dark braids under an orange cap, an orange canvas rail coat, black leather bracers, and an iron switch key, studies the cells below. Weigh-priest Sava Copper, an older dwarf woman with cropped silver hair, warm brown skin, a soot-white balance-embroidered stole over leather work clothes, brass weights, and a flat ash-grey token, sits at the assay niche. Yorrin Bale, a lean dwarf man with a narrow black beard, immaculate plum travelling coat, polished boots, and a brass contract tube, waits beside the desk. Behind a yellow floor line, dwarf pump hands, kitchen workers, lift mechanics, elders, and householders share rye bread under a wall gauge showing thirteen service days. Lower rails and three barred crystal cells remain visible beyond the bronze rail.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "standing at the seal desk with chalk and civic seal visible",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "at the bronze rail looking down toward cell bars and switch path",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "seated at the brass assay niche with weights and grey token",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "beside the seal desk holding a contract tube",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "orderly bread queue behind the yellow line",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_prime_public_schedule",
+        "ink_anchor": "ordinary_count_choice.prime_public_schedule",
+        "base_image_prompt": "Medium civic tableau on the upper gallery of a two-level basalt reserve house. A broad middle-aged dwarf keeper with iron-grey braids, square spectacles, indigo padded coat, chalk-stained fingers, and a brass civic seal reads four public schedules aloud while marking a large service-days gauge. A compact dwarf rail delegate with rust-dark braids, orange cap, orange canvas rail coat, and black leather bracers leans over the bronze rail to repeat each schedule to crews below. Dwarf pump hands, kitchen workers, lift mechanics, elders, and householders repeat the count from behind a yellow line while the lower weighbridge, forked rail, and three barred crystal cells remain visible.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "reading the service list aloud while marking the wall gauge",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "repeating each service over the bronze rail to crews below",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "attentive behind the yellow line with bread and service tokens",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_prime_temple_assay",
+        "ink_anchor": "ordinary_count_choice.prime_temple_assay",
+        "base_image_prompt": "Close-medium fantasy assay scene in a brass niche on an upper basalt gallery overlooking freight rails. An older dwarf weigh-priest with cropped silver hair, warm brown skin, soot-white embroidered stole, leather work clothes, brass weights, and an ash-grey token balances three cloudy mana crystals over a gold-threaded rune plate. The blue test light looks tired and uneven. A broad dwarf keeper in an indigo padded coat watches with chalk ready. Amber oil lamps, worn brass drawers, a black public ledger, and barred crystal cells below make the ritual practical and accountable.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "beside the niche with chalk and ledger",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "weighing three crystals above the rune plate",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_prime_private_clause",
+        "ink_anchor": "ordinary_count_choice.prime_private_clause",
+        "base_image_prompt": "Tight two-character view at a heavy seal desk on an upper public counting gallery. A broad middle-aged dwarf keeper with iron-grey braids, square spectacles, indigo padded coat, chalk-stained fingers, and brass civic seal reads a long contract beside a lean dwarf company factor with narrow black beard, immaculate plum coat, polished boots, and open brass contract tube. Tiny clause boxes and seal impressions cover the parchment as abstract unlettered marks. The yellow public line and waiting dwarf householders appear behind them, visibly noticing the private consultation; lower rails and blue runes show through the bronze gallery rail.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "leaning over the disaster clause with spectacles low",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "presenting the contract with controlled courtesy",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "watching the private reading from behind the yellow line",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_prime_immediate_service",
+        "ink_anchor": "ordinary_count_choice.prime_immediate_service",
+        "base_image_prompt": "Low-angle action view of the west municipal siding and three barred crystal cells inside a two-level basalt reserve house. A broad middle-aged dwarf keeper with iron-grey braids, square spectacles, indigo padded counting coat, chalked fingers, and brass seal turns a large cell key. A compact orange-coated dwarf rail delegate and two sturdy dwarf store hands load blue-white crystals into iron baskets marked by pump and kitchen symbols. Above them the wall gauge visible on the east gallery drops toward eleven days; householders behind the yellow line relax slightly while amber lamps reflect on worn brass bars.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "turning the oldest cell key at the barred door",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "lifting a crystal basket beside two store hands",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "store hands below and householders watching above",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Warm ordinary-work frame on the upper counting gallery of a carved basalt reserve house. A broad dwarf keeper in an indigo padded coat stamps a weekly count at the heavy desk; an older silver-haired dwarf priest in a soot-white stole warms her hands over a small gold-blue assay lamp; a compact dwarf rail delegate in an orange coat chews a stolen rye crust by the bronze rail; a lean dwarf factor in a plum travelling coat brushes flour from a brass contract tube. The yellow-line public queue, thirteen-day wall gauge, forked rail, central weighbridge, and three barred crystal cells remain visible under amber lamps and cold blue runic light.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "stamping the weekly count at the desk",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "chewing rye beside the bronze rail",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "warming both hands above the assay lamp",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "polishing flour from the contract tube",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "waiting behind the yellow line with bread and tokens",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "public_trust >= 4",
+            "modifier_prompt": "Several waiting residents point together from the service-days gauge toward pump, kitchen, lift, and heat tokens, visibly sharing the count."
+          },
+          {
+            "trigger": "public_trust <= 1",
+            "modifier_prompt": "Residents cluster into whispering knots while watching the private seal desk."
+          },
+          {
+            "trigger": "temple_cover >= 2",
+            "modifier_prompt": "The assay niche is active with balanced crystals, warm gold test lines, and a witnessed grey hold token."
+          },
+          {
+            "trigger": "reserve_days <= 11",
+            "modifier_prompt": "The oldest barred cell has a visibly lowered crystal stack and the service-days gauge sits near its red band."
+          },
+          {
+            "trigger": "rail_solidarity >= 2",
+            "modifier_prompt": "Orange-coated rail workers stand in a connected line from the gallery switch lever to the lower brake roster."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "brasswater_disputed_wagon",
+        "ink_anchor": "disputed_wagon",
+        "base_image_prompt": "Pivotal wide view of a Deep Company train stopped on the central rune-lit weighbridge inside a two-level basalt reserve house. Three heavy iron wagons sit between the north inbound arch and south export arch; black canvas is peeled from the lead wagon, revealing bright mana crystals webbed with pale mould. The nearest blue weighbridge rune dims while the mould brightens around a gold assay line. On the lower bay floor, an older silver-haired dwarf priest in a soot-white stole holds a brass rune plate near the cargo; a compact orange-coated dwarf rail delegate watches from the brake line. On the upper east gallery, a broad indigo-coated dwarf keeper grips the bronze rail, a lean plum-coated dwarf factor raises one defensive hand, and dwarf householders crowd behind the yellow line beneath a wall gauge entering the red band.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "at the gallery rail looking down at the opened wagon",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "on the lower brake line facing the moulded cargo",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "beside the lead wagon lowering a rune plate toward the crystals",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "at the upper rail with contract tube and defensive gesture",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "crowding behind the yellow line and watching the assay",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_seize_full_call",
+        "ink_anchor": "cargo_choice.seize_full_call",
+        "base_image_prompt": "Dynamic high-to-low view from the east gallery switch station inside a basalt rail reserve. A broad middle-aged dwarf keeper with iron-grey braids, square spectacles, indigo padded coat, chalked fingers, and brass civic seal pulls a tall worn-brass switch lever. Below, iron points grind west and three mould-webbed crystal wagons turn from the south export rail toward barred municipal cells. A compact orange-coated dwarf rail delegate gives a firm hand signal from the brake line. A lean dwarf company factor in an immaculate plum coat stands rigid beside the seal desk above, holding an open contract tube, while the public queue watches the visible diversion under amber lamps and cold blue track runes.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "pulling the gallery switch lever",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "on the lower brake line giving a turn signal",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "rigid at the seal desk with contract open",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "watching behind the yellow line",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_hold_for_assay",
+        "ink_anchor": "cargo_choice.hold_for_public_assay",
+        "base_image_prompt": "Close-low view of the central weighbridge in a dark basalt freight hall. An older dwarf weigh-priest with cropped silver hair, warm brown skin, soot-white balance stole, leather work clothes, brass weights, and a flat ash-grey token presses the token into a square socket between the rails. Cold blue rail runes fade to charcoal beneath three iron crystal wagons; pale mould on the open lead cargo glows faintly. A compact orange-coated dwarf rail delegate stands with hands clear of the brakes. Above on the east gallery, a broad indigo-coated dwarf keeper and a lean plum-coated factor look down from opposite sides of a bronze rail while householders watch the immobilized train.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "above the weighbridge watching the hold",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "beside the brake line with hands clear",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "kneeling to seat the grey token between the rails",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "watching from the upper rail with contract tube",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "visible behind the yellow line above",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_accept_early_roll",
+        "ink_anchor": "cargo_choice.accept_early_roll",
+        "base_image_prompt": "Medium view across a heavy seal desk on the upper east gallery of a two-level basalt reserve house. A lean dwarf factor with narrow black beard, immaculate plum coat, polished boots, and brass contract tube unrolls a prepared page marked by two deep-shaft symbols, two future wagon seals, and a municipal surcharge device. A broad middle-aged dwarf keeper with iron-grey braids, square spectacles, indigo padded coat, chalked fingers, and brass civic seal signs only a narrow split-movement strip. Through the bronze rail behind them, one iron crystal wagon turns west toward barred cells while two remain aligned with the south export arch; cold blue runes divide the tracks.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "signing a narrow movement strip while holding the debt page apart",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "presenting prepared roll terms across the seal desk",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_spend_reserve_for_peace",
+        "ink_anchor": "cargo_choice.spend_reserve_for_peace",
+        "base_image_prompt": "Wide diagonal view through a two-level basalt reserve hall. Three Deep Company iron wagons remain on the straight south export rail under cold blue runes. On the west municipal siding, dwarf store hands open Brasswater's oldest barred cell and load blue-white crystals into pump and kitchen baskets. Above on the east gallery, a broad indigo-coated dwarf keeper watches the wall gauge fall while a lean plum-coated company factor relaxes beside his brass contract tube. Dwarf householders behind the yellow line stare from the departing train to the visibly emptier cell.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "watching the lowered gauge from the upper rail",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "relaxing beside the seal desk",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "store hands loading baskets below and worried residents above",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_public_hearing",
+        "ink_anchor": "hearing_fold",
+        "base_image_prompt": "Wide political tableau inside a long two-level basalt reserve house. The upper east counting gallery holds a heavy seal desk, brass assay niche, wall service gauge, outward-facing black ledger, yellow public line, and four dwarf principals: a broad iron-grey-braided keeper in an indigo padded coat at the seal desk; a compact orange-coated rail delegate by the switch key and brake roster; an older silver-haired weigh-priest in a soot-white stole beside brass weights and a grey hold token; and a lean black-bearded company factor in a plum coat holding a contract tube. Dwarf pump, kitchen, lift, rail, elder, and household representatives fill the public line. Below, the central weighbridge, straight export rail, west municipal siding, three iron wagons, and barred crystal cells remain simultaneously readable under amber lamps and blue runes.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "centered at the seal desk above the forked rail",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "between switch lever and brake roster",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "at the assay niche with token and weights",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "opposite Lysa with contract clock and tube",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "affected constituencies behind the yellow line and rail crews below",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "cargo_state == 2",
+            "modifier_prompt": "All three iron wagons occupy the west municipal siding directly before the barred cells; the straight export track is visibly empty."
+          },
+          {
+            "trigger": "cargo_state == 1",
+            "modifier_prompt": "All three wagons remain centered on the weighbridge with dark rail runes and the ash-grey token seated between the wheels."
+          },
+          {
+            "trigger": "cargo_state == 3",
+            "modifier_prompt": "One wagon occupies the west siding while two wagons point toward the south export arch; an unsigned roll page lies open at the seal desk."
+          },
+          {
+            "trigger": "cargo_state == 0",
+            "modifier_prompt": "All three wagons align with the south export arch while store hands empty Brasswater's oldest cell into municipal baskets."
+          },
+          {
+            "trigger": "export_breach >= 2",
+            "modifier_prompt": "A brass contract timer beside Yorrin shows an urgent red breach indicator, with a mine payroll packet placed beside it."
+          },
+          {
+            "trigger": "deep_debt >= 2",
+            "modifier_prompt": "The open roll page shows two future-wagon seal medallions connected by brass chains to a dark deep-shaft symbol."
+          },
+          {
+            "trigger": "ration_cost >= 2",
+            "modifier_prompt": "The public ration slate shows an amber evening-heat row while residents tighten coats and study the gauge."
+          },
+          {
+            "trigger": "public_trust >= 4",
+            "modifier_prompt": "The gallery crowd holds a single orderly line with shared service tokens raised toward the public ledger."
+          },
+          {
+            "trigger": "company_leverage >= 3",
+            "modifier_prompt": "Yorrin occupies more of the seal desk with open contract pages while Lysa's working space narrows visibly."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "brasswater_publish_evidence",
+        "ink_anchor": "bargaining_choice.publish_assay_and_clause",
+        "base_image_prompt": "Medium front view of an outward-facing black ledger at the yellow public line of a basalt reserve gallery. An older silver-haired dwarf weigh-priest in a soot-white embroidered stole points with a brass assay stylus to three visible symbols: full weight, pale mana-eating mould, and unresolved hazard. A broad indigo-coated dwarf keeper turns the disaster-clause parchment outward beside the ledger. Dwarf kitchen, pump, lift, rail, elder, and household representatives lean forward to inspect the marks while a lean plum-coated company factor stands behind the desk with tightened jaw; the held crystal train and forked rails remain visible below the bronze rail.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "turning the contract outward beside the public ledger",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "pointing to assay marks with a brass stylus",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "behind the seal desk with controlled anger",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "inspecting the outward-facing evidence from the yellow line",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_rail_refusal",
+        "ink_anchor": "bargaining_choice.rail_refusal_pending_moot",
+        "base_image_prompt": "Medium-wide custody transfer on the upper east gallery above a darkened weighbridge. A broad middle-aged dwarf keeper with iron-grey braids, square spectacles, indigo padded coat, chalked fingers, and brass seal passes a large iron switch key to a compact dwarf rail delegate with rust-dark braids, orange cap, orange rail coat, and black bracers. The delegate hangs the key on a public brake roster beside the gallery switch lever. Below, orange-coated dwarf rail crews stand in a visible line with hands clear of three immobilized wagons; above, a lean plum-coated company factor protests and householders watch from behind the yellow line.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "passing the switch key across the gallery work space",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "receiving and hanging the switch key at the brake roster",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "protesting from beside the seal desk",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "rail crew line below and household witnesses above",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_cap_roll",
+        "ink_anchor": "bargaining_choice.cap_the_roll",
+        "base_image_prompt": "Close contract-counteroffer scene at a heavy seal desk on an upper basalt gallery. A broad iron-grey-braided dwarf keeper in square spectacles and an indigo padded coat draws a hard scoring line through a brass-chain household-tariff symbol on a long debt page, leaving two future wagon seals connected to a deep-shaft emblem. A lean black-bearded dwarf company factor in an immaculate plum coat reads the altered page with both hands braced on the desk. An older silver-haired weigh-priest in a soot-white stole watches the erasure while one wagon on the west siding and two wagons on the south export rail remain visible below.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "scoring out the household tariff lien",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "witnessing the altered term from the assay side",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "braced over the changed contract",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_self_insure",
+        "ink_anchor": "bargaining_choice.house_carries_disputed_loss",
+        "base_image_prompt": "Medium-wide risk-assumption scene across both levels of a basalt reserve hall. On the upper east gallery, a broad middle-aged dwarf keeper with iron-grey braids, square spectacles, indigo padded counting coat, chalked fingers, and brass civic seal stamps a narrow receipt at the fixed heavy seal desk; beside her, an older silver-haired dwarf weigh-priest in a soot-white stole lifts an ash-grey insurance token away from the receipt. Below on the west municipal siding, three mould-webbed crystal wagons enter separate barred cells while a compact orange-coated rail delegate directs crews wearing thick gloves and face wraps to close segregation gates. Householders watch from behind the upper yellow line under amber lamps and cold blue rune light.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "stamping a segregated-receipt order at the fixed upper seal desk",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "directing protected crews at separate cell gates",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "lifting the grey insurance token away from the receipt at the upper desk",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "protected rail crews below and resident witnesses above",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_final_threshold",
+        "ink_anchor": "decision_threshold",
+        "base_image_prompt": "Whole-room final decision frame in a long two-level basalt reserve house, composed so every political lever is visible. The lower floor shows the north inbound arch, central weighbridge, south export arch, west municipal siding, three iron wagons, switch points, brake line, and three barred crystal cells. The upper east gallery shows the brass switch lever, iron key hook, heavy seal desk, outward-facing assay ledger, ash-grey temple token, open debt-roll page, service-days wall gauge, amber ration slate, and yellow public line. A broad indigo-coated dwarf keeper stands between desk and lever; a compact orange-coated rail delegate guards the key and crew line; an older silver-haired weigh-priest in a soot-white stole stands by ledger and token; a lean plum-coated company factor holds the roll page; dwarf pump, kitchen, lift, rail, elder, and household representatives watch from the public line. Amber oil light and cold blue runes divide the room into current service, export, evidence, and future debt.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "between civic seal desk and switch lever",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "by the key hook and visible crew line",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "beside outward-facing assay ledger and grey token",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "holding the open debt-roll page at the desk",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "affected workshop and household representatives behind the yellow line, rail crews below",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "evidence_quality >= 3",
+            "modifier_prompt": "The outward-facing ledger clearly displays three assay icons and an opened disaster clause, with several residents pointing to the same entries."
+          },
+          {
+            "trigger": "rail_solidarity >= 3",
+            "modifier_prompt": "Orange-coated rail workers form an unbroken visible chain from the upper key hook to the lower brake line."
+          },
+          {
+            "trigger": "temple_cover >= 2",
+            "modifier_prompt": "The ash-grey hold token remains seated in a lit brass frame beside witnessed assay weights."
+          },
+          {
+            "trigger": "temple_cover <= 0",
+            "modifier_prompt": "The grey insurance token rests apart inside a closed brass box while Brasswater's seal remains on the cargo receipt."
+          },
+          {
+            "trigger": "reserve_days <= 9",
+            "modifier_prompt": "The service-days wall gauge points deep into a red band and the oldest cell is nearly bare."
+          },
+          {
+            "trigger": "deep_debt >= 3",
+            "modifier_prompt": "Multiple future-wagon seals and power-surcharge chains crowd the open roll page around a dark deep-shaft emblem."
+          },
+          {
+            "trigger": "export_breach >= 2",
+            "modifier_prompt": "A red breach timer and mine payroll packet occupy the export side of the seal desk."
+          },
+          {
+            "trigger": "ration_cost >= 3",
+            "modifier_prompt": "Residents button heavy coats while an amber evening-heat row dominates the public ration slate."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "brasswater_ending_call",
+        "ink_anchor": "ending_call_legible|ending_call_brittle",
+        "base_image_prompt": "Full-call aftermath in a two-level basalt reserve house. Three iron crystal wagons occupy the west municipal siding before separate barred cells; their bright cargo carries pale mould and stays behind segregation gates. The straight south export track is empty under blue runes. A broad dwarf keeper in an indigo padded coat posts a service ledger beneath the wall gauge while a compact orange-coated rail delegate locks the switch key to the brake roster, an older silver-haired weigh-priest in a soot-white stole stands by assay marks, a lean plum-coated company factor holds a red breach packet, and dwarf service representatives watch from the yellow line.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "posting the service and cost ledger below the gauge",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "locking the key to the public brake roster",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "beside the assay ledger",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "holding the red export-breach and payroll packet",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "reading the posted outcome behind the yellow line",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_ending_roll",
+        "ink_anchor": "ending_roll_bounded|ending_roll_captured",
+        "base_image_prompt": "Debt-roll aftermath at the seal desk of a two-level basalt reserve house. Through the bronze gallery rail, one iron crystal wagon sits on the west municipal siding while two wagons depart through the south export arch. A broad iron-grey-braided dwarf keeper in an indigo padded coat and a lean black-bearded dwarf company factor in an immaculate plum coat hold opposite ends of a long signed contract page showing two future wagon seals, a dark deep-shaft emblem, and brass claim chains. An older silver-haired weigh-priest in a soot-white stole witnesses beside the assay niche; a compact orange-coated rail delegate posts delivery dates at the brake roster; householders study the service gauge behind the yellow line.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "holding the public end of the signed roll",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "posting delivery dates beside the brake roster",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "witnessing the roll at the assay side",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "holding the company end of the signed contract",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "watching the contract and departing wagons",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_ending_moot",
+        "ink_anchor": "ending_moot_credible|ending_moot_cold",
+        "base_image_prompt": "Wider-moot aftermath beginning inside and beyond Brasswater Reserve House. Three iron wagons remain dark on the central weighbridge under an ash-grey hold. A broad dwarf keeper in an indigo counting coat carries a posted ration slate from the upper gallery toward the south stone stair; an older silver-haired dwarf priest in a soot-white stole carries a large assay ledger; a compact orange-coated rail delegate carries the iron switch key on a public cord. Dwarf kitchen, pump, lift, rail, warrant, elder, and household representatives gather with workshop seals and petitions near the south arch while a lean plum-coated company factor follows with an export-breach packet. Amber lamps make heavy coats and cooling breath visible.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "descending the south stair with the ration slate",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "carrying the switch key on a visible cord",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "carrying the outward-facing assay ledger",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "following with the breach and payroll packet",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "affected workshops gathering seals and petitions near the south arch",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "brasswater_ending_reserve",
+        "ink_anchor": "ending_reserve_bridge|ending_reserve_exhausted",
+        "base_image_prompt": "Reserve-only aftermath across the forked rails of a two-level basalt storehouse. Three Deep Company wagons pass through the south export arch on the straight blue-rune track. On the west siding, Brasswater's barred cells stand open while dwarf store hands carry crystal baskets marked with pump, kitchen, lift, and heat symbols. On the upper east gallery, a broad indigo-coated dwarf keeper posts the lowered service-days gauge and daily contract record; a compact orange-coated rail delegate watches the departing train; an older silver-haired weigh-priest closes the assay niche; a lean plum-coated factor leaves with brass contract tube; householders in winter coats study the remaining crystal stacks behind the yellow line.",
+        "visible_characters": [
+          {
+            "agent_id": "lysa_harrow",
+            "default_stance": "posting reduced service days beneath the gauge",
+            "visual_ref": "visual_character_refs.characters.lysa_harrow"
+          },
+          {
+            "agent_id": "dori_pike",
+            "default_stance": "watching the train depart from the bronze rail",
+            "visual_ref": "visual_character_refs.characters.dori_pike"
+          },
+          {
+            "agent_id": "sava_copper",
+            "default_stance": "closing the brass assay drawers",
+            "visual_ref": "visual_character_refs.characters.sava_copper"
+          },
+          {
+            "agent_id": "yorrin_bale",
+            "default_stance": "walking toward the south stair with the contract tube",
+            "visual_ref": "visual_character_refs.characters.yorrin_bale"
+          },
+          {
+            "agent_id": "brasswater_public_gallery",
+            "default_stance": "store hands carrying baskets below and residents counting remaining stock above",
+            "visual_ref": "visual_character_refs.groups.brasswater_public_gallery"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_public_schedule_visual",
+        "trigger": "branch_label == prime_public_schedule",
+        "apply_to_visual_scene_ids": [
+          "brasswater_routine_fold",
+          "brasswater_public_hearing",
+          "brasswater_final_threshold"
+        ],
+        "modifier_prompt": "The public service-days gauge has four freshly chalked service icons, and residents hold matching pump, kitchen, lift, and heat tokens in one orderly line."
+      },
+      {
+        "modifier_id": "prime_temple_assay_visual",
+        "trigger": "branch_label == prime_temple_assay",
+        "apply_to_visual_scene_ids": [
+          "brasswater_routine_fold",
+          "brasswater_disputed_wagon",
+          "brasswater_public_hearing"
+        ],
+        "modifier_prompt": "Sava's gold-threaded assay plate is already warm beside three witnessed cloudy crystals and the ash-grey hold token."
+      },
+      {
+        "modifier_id": "prime_private_clause_visual",
+        "trigger": "branch_label == prime_private_clause",
+        "apply_to_visual_scene_ids": [
+          "brasswater_routine_fold",
+          "brasswater_public_hearing"
+        ],
+        "modifier_prompt": "The disaster-clause page lies open nearest Yorrin while small resident groups watch the private seal desk with guarded posture."
+      },
+      {
+        "modifier_id": "prime_immediate_service_visual",
+        "trigger": "branch_label == prime_immediate_service",
+        "apply_to_visual_scene_ids": [
+          "brasswater_routine_fold",
+          "brasswater_public_hearing",
+          "brasswater_final_threshold"
+        ],
+        "modifier_prompt": "The oldest cell holds a visibly shorter crystal stack, municipal baskets are already gone, and the service-days gauge points closer to red."
+      },
+      {
+        "modifier_id": "seize_full_call_visual",
+        "trigger": "branch_label == seize_full_call",
+        "apply_to_visual_scene_ids": [
+          "brasswater_public_hearing",
+          "brasswater_final_threshold"
+        ],
+        "modifier_prompt": "All three iron wagons stand on the west municipal siding before the barred cells; the south export track is empty and a red breach timer sits by Yorrin."
+      },
+      {
+        "modifier_id": "hold_for_public_assay_visual",
+        "trigger": "branch_label == hold_for_public_assay",
+        "apply_to_visual_scene_ids": [
+          "brasswater_public_hearing",
+          "brasswater_final_threshold"
+        ],
+        "modifier_prompt": "Three wagons remain immobile on the central weighbridge with dark rail runes and the ash-grey token seated visibly between the wheels."
+      },
+      {
+        "modifier_id": "accept_early_roll_visual",
+        "trigger": "branch_label == accept_early_roll",
+        "apply_to_visual_scene_ids": [
+          "brasswater_public_hearing",
+          "brasswater_final_threshold"
+        ],
+        "modifier_prompt": "One wagon occupies the municipal siding, two point toward export, and a prepared roll page shows two future claims chained to a dark deep-shaft emblem."
+      },
+      {
+        "modifier_id": "spend_reserve_for_peace_visual",
+        "trigger": "branch_label == spend_reserve_for_peace",
+        "apply_to_visual_scene_ids": [
+          "brasswater_public_hearing",
+          "brasswater_final_threshold"
+        ],
+        "modifier_prompt": "The company train stays aligned for export while Brasswater's oldest cell empties into municipal baskets and residents watch the gauge fall."
+      },
+      {
+        "modifier_id": "publish_assay_visual",
+        "trigger": "branch_label == publish_assay_and_clause",
+        "apply_to_visual_scene_ids": [
+          "brasswater_final_threshold",
+          "brasswater_ending_call",
+          "brasswater_ending_moot"
+        ],
+        "modifier_prompt": "The assay ledger and opened disaster clause face outward, with weight, mana-eating mould, unresolved hazard, and coin-only remedy shown as shared visual symbols."
+      },
+      {
+        "modifier_id": "rail_refusal_visual",
+        "trigger": "branch_label == rail_refusal_pending_moot",
+        "apply_to_visual_scene_ids": [
+          "brasswater_final_threshold",
+          "brasswater_ending_call",
+          "brasswater_ending_moot"
+        ],
+        "modifier_prompt": "The iron switch key hangs on the public brake roster and orange-coated rail workers hold an unbroken line with hands clear of every control."
+      },
+      {
+        "modifier_id": "cap_roll_visual",
+        "trigger": "branch_label == cap_the_roll",
+        "apply_to_visual_scene_ids": [
+          "brasswater_final_threshold",
+          "brasswater_ending_roll"
+        ],
+        "modifier_prompt": "A hard scoring line crosses the household-tariff chain on the roll page while two named future wagon seals remain attached to the deep-shaft symbol."
+      },
+      {
+        "modifier_id": "self_insure_visual",
+        "trigger": "branch_label == house_carries_disputed_loss",
+        "apply_to_visual_scene_ids": [
+          "brasswater_final_threshold",
+          "brasswater_ending_call"
+        ],
+        "modifier_prompt": "The moulded cargo sits behind separate segregation gates under Brasswater's seal, while Sava's grey insurance token rests apart inside a closed brass box."
+      },
+      {
+        "modifier_id": "ending_call_legible_visual",
+        "trigger": "ending_label == full_call_legible",
+        "apply_to_visual_scene_ids": [
+          "brasswater_ending_call"
+        ],
+        "modifier_prompt": "Two locks secure each segregation gate, assay and breach costs face outward on the ledger, and pump, kitchen, lift, and heat representatives read the same entries."
+      },
+      {
+        "modifier_id": "ending_call_brittle_visual",
+        "trigger": "ending_label == full_call_brittle",
+        "apply_to_visual_scene_ids": [
+          "brasswater_ending_call"
+        ],
+        "modifier_prompt": "The cells are full while the gallery fractures into separate knots: company papers raised, temple token withdrawn, rail workers arguing at the key, and residents watching different ledgers."
+      },
+      {
+        "modifier_id": "ending_roll_bounded_visual",
+        "trigger": "ending_label == roll_bounded",
+        "apply_to_visual_scene_ids": [
+          "brasswater_ending_roll"
+        ],
+        "modifier_prompt": "The household-tariff chain is visibly scored away, two dated wagon seals are posted publicly, and Lysa, Sava, and Dori each hold a witnessed copy."
+      },
+      {
+        "modifier_id": "ending_roll_captured_visual",
+        "trigger": "ending_label == roll_captured",
+        "apply_to_visual_scene_ids": [
+          "brasswater_ending_roll"
+        ],
+        "modifier_prompt": "Brass claim chains run from the deep-shaft emblem across future wagon seals to the service-days gauge, while Yorrin controls most of the signed page."
+      },
+      {
+        "modifier_id": "ending_moot_credible_visual",
+        "trigger": "ending_label == wider_moot_credible",
+        "apply_to_visual_scene_ids": [
+          "brasswater_ending_moot"
+        ],
+        "modifier_prompt": "Workshop representatives carry aligned copies of the assay, ration, brake, and breach records together with civic seals toward the south arch."
+      },
+      {
+        "modifier_id": "ending_moot_cold_visual",
+        "trigger": "ending_label == wider_moot_cold",
+        "apply_to_visual_scene_ids": [
+          "brasswater_ending_moot"
+        ],
+        "modifier_prompt": "The departing crowd splits into suspicious groups carrying mismatched rumor broadsheets, while cold breath and dark evening-heat tokens show the ration cost."
+      },
+      {
+        "modifier_id": "ending_reserve_bridge_visual",
+        "trigger": "ending_label == reserve_only_bridge",
+        "apply_to_visual_scene_ids": [
+          "brasswater_ending_reserve"
+        ],
+        "modifier_prompt": "All four municipal basket types remain full, the gauge stays above its red band, and Lysa posts the reduced reserve days beside the intact export record."
+      },
+      {
+        "modifier_id": "ending_reserve_exhausted_visual",
+        "trigger": "ending_label == reserve_only_exhausted",
+        "apply_to_visual_scene_ids": [
+          "brasswater_ending_reserve"
+        ],
+        "modifier_prompt": "The oldest cell is bare, the gauge points deep red, evening-heat tokens are dark, and a fresh company advance page waits open on the seal desk."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "brasswater_reserve_house.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Long wedge-shaped basalt hall with a lower north-south freight route and an upper east-wall public counting gallery. The central weighbridge precedes a west-branching municipal siding and a straight south export exit.",
+      "fixed_zones": [
+        {
+          "zone_id": "north_inbound_arch",
+          "visible_form": "tall basalt freight arch with inbound bell, steam, and blue approach runes",
+          "used_for": "Deep Company train arrival"
+        },
+        {
+          "zone_id": "central_weighbridge",
+          "visible_form": "long iron rail platform with blue measurement runes, grey hold-token socket near the lead axle, and enough length for the short three-wagon train",
+          "used_for": "cargo assay, temple hold, and immobilized-train state"
+        },
+        {
+          "zone_id": "south_export_arch",
+          "visible_form": "straight continuation of the main rail through a basalt arch with a brass contract timer",
+          "used_for": "foreign export route and breach pressure"
+        },
+        {
+          "zone_id": "west_municipal_siding",
+          "visible_form": "short iron siding branching left after the weighbridge and ending before three barred cells",
+          "used_for": "called, split, or segregated municipal cargo"
+        },
+        {
+          "zone_id": "three_reserve_cells",
+          "visible_form": "three iron-barred basalt vault mouths with independent locks, crystal stacks, and municipal basket bays",
+          "used_for": "reserve-days state, public stock release, and disputed-cargo segregation"
+        },
+        {
+          "zone_id": "east_counting_gallery",
+          "visible_form": "upper stone gallery along the east wall behind a bronze safety rail, overlooking weighbridge, fork, siding, cells, and export road",
+          "used_for": "public hearing, principal staging, and visible custody"
+        },
+        {
+          "zone_id": "gallery_switch_station",
+          "visible_form": "tall brass lever above the track fork with an iron key hook, public brake-roster board, and clear view of rail points",
+          "used_for": "Lysa's call actuation and Dori's key custody"
+        },
+        {
+          "zone_id": "seal_desk_and_assay_niche",
+          "visible_form": "heavy desk near the gallery center and recessed brass balance station above the weighbridge approach",
+          "used_for": "charter execution, contract bargaining, assay publication, and insurance marks"
+        },
+        {
+          "zone_id": "public_gauge_and_yellow_line",
+          "visible_form": "large service-days gauge and outward-facing slate on the east wall, with a yellow floor line leaving a clear working aisle by desk and rail",
+          "used_for": "constituency witness, ration consequences, and public trust"
+        },
+        {
+          "zone_id": "south_stone_stair",
+          "visible_form": "broad stone stair descending from the gallery's south end to the brake line and south arch apron",
+          "used_for": "Sava's lower-bay assay, crew access, and wider-moot departure"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "northwest_high_cutaway",
+          "supports_visual_scene_ids": [
+            "brasswater_establishing",
+            "brasswater_public_hearing",
+            "brasswater_final_threshold"
+          ]
+        },
+        {
+          "camera_id": "east_gallery_medium",
+          "supports_visual_scene_ids": [
+            "brasswater_weekly_count",
+            "brasswater_prime_public_schedule",
+            "brasswater_routine_fold",
+            "brasswater_publish_evidence",
+            "brasswater_rail_refusal"
+          ]
+        },
+        {
+          "camera_id": "assay_niche_close",
+          "supports_visual_scene_ids": [
+            "brasswater_prime_temple_assay",
+            "brasswater_prime_private_clause",
+            "brasswater_cap_roll"
+          ]
+        },
+        {
+          "camera_id": "west_cell_low",
+          "supports_visual_scene_ids": [
+            "brasswater_prime_immediate_service",
+            "brasswater_self_insure",
+            "brasswater_ending_call",
+            "brasswater_ending_reserve"
+          ]
+        },
+        {
+          "camera_id": "weighbridge_centerline",
+          "supports_visual_scene_ids": [
+            "brasswater_disputed_wagon",
+            "brasswater_hold_for_assay"
+          ]
+        },
+        {
+          "camera_id": "switch_overlook",
+          "supports_visual_scene_ids": [
+            "brasswater_seize_full_call",
+            "brasswater_accept_early_roll",
+            "brasswater_spend_reserve_for_peace",
+            "brasswater_ending_roll"
+          ]
+        },
+        {
+          "camera_id": "south_arch_departure",
+          "supports_visual_scene_ids": [
+            "brasswater_ending_moot"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "public_to_decision_surfaces",
+          "path": "yellow public line -> wall gauge and outward ledger -> seal desk and switch lever -> lower rail fork and cargo",
+          "supports": [
+            "prime_public_schedule",
+            "publish_assay_and_clause",
+            "prioritize_public_moot"
+          ]
+        },
+        {
+          "lane_id": "keeper_to_cargo_routes",
+          "path": "seal desk -> gallery switch lever -> central weighbridge -> west siding or south export arch",
+          "supports": [
+            "seize_full_call",
+            "accept_early_roll",
+            "spend_reserve_for_peace"
+          ]
+        },
+        {
+          "lane_id": "assay_to_public_ledger",
+          "path": "lower lead wagon -> south stair -> assay niche -> outward-facing public ledger",
+          "supports": [
+            "hold_for_public_assay",
+            "publish_assay_and_clause"
+          ]
+        }
+      ],
+      "cargo_states": [
+        {
+          "value": 0,
+          "label": "export_aligned",
+          "visible_form": "all three wagons on the straight main rail pointing through the south export arch"
+        },
+        {
+          "value": 1,
+          "label": "held_on_weighbridge",
+          "visible_form": "three wagons centered on dark weighbridge runes with the grey hold token seated"
+        },
+        {
+          "value": 2,
+          "label": "full_municipal_call",
+          "visible_form": "all three wagons on the west siding before separate barred reserve cells"
+        },
+        {
+          "value": 3,
+          "label": "split_call",
+          "visible_form": "one wagon on the west siding and two wagons on the straight export rail"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and public-group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "lysa_harrow": "Master Lysa Harrow: broad middle-aged dwarf woman, iron-grey hair in two heavy braids, square brass spectacles, weathered fair-brown face, padded indigo counting coat over dark wool, chalk stains on the index and middle fingers of her right hand, heavy circular brass civic seal at her belt, grounded square stance, expressions compressed into eyebrow angle and careful hand placement.",
+      "dori_pike": "Dori Pike: compact adult dwarf woman, rust-dark hair braided under an orange rail cap, copper-brown face, orange canvas rail coat with soot-dark seams, black leather forearm bracers, heavy work boots, iron switch key or brake roster nearby, stance planted wide and hands visibly clear of controls when refusing movement.",
+      "sava_copper": "Weigh-priest Sava Copper: older dwarf woman, cropped silver hair, warm brown skin, precise lined face, soot-white temple stole embroidered with a small bronze balance over practical brown leather work clothes, brass assay weights and gold-threaded rune plate, flat ash-grey hold token, gestures narrow and deliberate.",
+      "yorrin_bale": "Yorrin Bale: lean adult dwarf man, narrow black beard tied once at the chin, immaculate plum travelling coat with black wool collar, polished dark boots, brass contract tube and tidy parchment pages, courteous upright silhouette that becomes visibly rigid when leverage fails."
+    },
+    "groups": {
+      "brasswater_public_gallery": "Brasswater public gallery and crews: dwarf pump hands in blue waterproof aprons, public-kitchen workers in flour-marked brown coats, lift mechanics with iron tool belts, orange-coated rail crews with gloves and brake lamps, elders and householders in layered winter wool carrying rye bread, copper service tokens, baskets, petitions, and occasional workshop seals; sturdy varied dwarf bodies and faces, orderly or fractured posture depending on public trust."
+    }
+  },
+  "review_notes": [
+    "The visual plan includes a draft scene_set map with fixed levels, routes, sightlines, camera slots, custody surfaces, and four cargo states.",
+    "A plan view or simple 3D blockout remains required before multi-angle rendering; text prompts and generated concept art are not geometry authority.",
+    "Base prompts restate visible geometry and character appearance, and branch modifiers describe concrete deltas tied to Ink state.",
+    "Image rendering is explicitly deferred by the swarm fixture contract."
+  ]
+}

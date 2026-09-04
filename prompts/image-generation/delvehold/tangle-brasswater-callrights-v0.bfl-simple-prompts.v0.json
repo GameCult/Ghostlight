@@ -1,0 +1,100 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "tangle-brasswater-callrights-v0.bfl-simple-v0",
+  "fixture_id": "tangle-brasswater-callrights-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured high-fantasy industrial storybook illustration, precise dark ink lines, restrained gouache and watercolor, carved basalt and worn brass, amber oil lamps against cold blue runic light, readable silhouettes, humane facial acting, practical heavy machinery, unlettered surfaces.",
+  "prompts": [
+    {
+      "id": "01_brasswater_establishing",
+      "prompt": "Wide cutaway of a two-level basalt reserve house: upper public counting gallery with gauge, ledger and yellow queue line; lower rail entering a weighbridge, forking toward three barred crystal cells or a south export arch."
+    },
+    {
+      "id": "02_weekly_count",
+      "prompt": "Four dwarf principals at a public reserve count: indigo-coated keeper with brass seal, orange-coated rail delegate, soot-white-stoled weigh-priest, plum-coated company factor; householders share rye bread beneath a thirteen-day gauge."
+    },
+    {
+      "id": "03_public_schedule",
+      "prompt": "Iron-grey-braided dwarf keeper reads water, kitchens, lifts and heat aloud while marking a public gauge; orange-coated rail delegate repeats each service to crews below and winter-clad householders raise matching tokens."
+    },
+    {
+      "id": "04_temple_assay",
+      "prompt": "Older silver-haired dwarf weigh-priest balances three cloudy mana crystals over a gold-threaded rune plate in a brass assay niche; indigo-coated keeper records the tired blue light."
+    },
+    {
+      "id": "05_private_clause",
+      "prompt": "Indigo-coated dwarf keeper and immaculate plum-coated company factor read a long disaster clause at a heavy seal desk while suspicious householders watch from behind a yellow line."
+    },
+    {
+      "id": "06_immediate_service",
+      "prompt": "Dwarf keeper unlocks a barred crystal cell while orange-coated rail worker and store hands fill pump and kitchen baskets; the public service-days gauge drops toward red."
+    },
+    {
+      "id": "07_routine_fold",
+      "prompt": "Warm reserve-house routine: keeper stamps the count, priest warms hands over assay lamp, rail delegate eats stolen rye, company factor dusts flour from a brass contract tube; rails and cells wait below."
+    },
+    {
+      "id": "08_disputed_wagon",
+      "prompt": "Three iron crystal wagons stop on a blue-rune weighbridge; black canvas reveals bright crystals webbed with pale mana-eating mould; assay light gutters as workers and householders watch from two levels."
+    },
+    {
+      "id": "09_full_call",
+      "prompt": "Iron-grey-braided dwarf keeper pulls a tall brass switch lever; three crystal wagons grind from the export track onto a municipal siding as an orange-coated rail delegate signals below."
+    },
+    {
+      "id": "10_public_hold",
+      "prompt": "Silver-haired dwarf weigh-priest seats an ash-grey token between rails; weighbridge runes darken under three wagons while rail workers hold clear and public witnesses look down."
+    },
+    {
+      "id": "11_early_roll",
+      "prompt": "Plum-coated dwarf factor presents a prepared debt page with two future wagon seals and a deep-shaft emblem; keeper signs only a split strip while one wagon turns municipal and two face export."
+    },
+    {
+      "id": "12_spend_reserve",
+      "prompt": "Company train remains aligned for export while dwarf store hands empty a public crystal cell into municipal baskets; keeper watches the service gauge fall and the factor relaxes."
+    },
+    {
+      "id": "13_public_hearing",
+      "prompt": "Whole two-level reserve-house hearing: keeper at seal desk, rail delegate at key, priest at assay niche, factor with contract, household constituencies behind yellow line, wagons and forked rails visible below."
+    },
+    {
+      "id": "14_publish_evidence",
+      "prompt": "Silver-haired weigh-priest points to full-weight, pale mould and unresolved-hazard symbols on an outward ledger while keeper displays the disaster clause and workers inspect the shared evidence."
+    },
+    {
+      "id": "15_rail_refusal",
+      "prompt": "Dwarf keeper passes an iron switch key to an orange-coated rail delegate, who hangs it on a public brake roster; crews stand together with hands clear of an immobilized train."
+    },
+    {
+      "id": "16_capped_roll",
+      "prompt": "Indigo-coated keeper scores a brass household-tariff chain from a debt contract while leaving two future wagon seals tied to a dark deep-shaft emblem; plum-coated factor braces over the desk."
+    },
+    {
+      "id": "17_self_insure",
+      "prompt": "Keeper stamps segregated municipal receipt at the fixed upper seal desk while priest withdraws grey insurance token; below, three moulded crystal wagons enter separate barred cells and protected rail crews close iron gates."
+    },
+    {
+      "id": "18_final_threshold",
+      "prompt": "Every winter lever visible in one basalt hall: wagons, forked rail, barred cells, switch and key, seal, assay ledger, grey token, debt page, red service gauge, ration slate, workers and householders."
+    },
+    {
+      "id": "19_full_call_end",
+      "prompt": "Three moulded crystal wagons secured behind segregated municipal bars; export track empty; keeper posts service and breach costs while rail delegate, priest, company factor and public read the outcome."
+    },
+    {
+      "id": "20_roll_end",
+      "prompt": "One wagon municipal and two departing to export; keeper and factor hold opposite ends of a signed future-delivery contract while priest witnesses and rail delegate posts delivery dates."
+    },
+    {
+      "id": "21_moot_end",
+      "prompt": "Held train dark on weighbridge as keeper carries ration slate, priest carries assay ledger, rail delegate carries switch key, and affected dwarf workshops gather seals and petitions toward the south arch."
+    },
+    {
+      "id": "22_reserve_end",
+      "prompt": "Company wagons depart through the export arch while public crystal cells stand open for pump, kitchen, lift and heat baskets; householders study the lowered red gauge above."
+    }
+  ]
+}
