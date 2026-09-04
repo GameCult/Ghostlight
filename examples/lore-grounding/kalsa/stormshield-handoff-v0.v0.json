@@ -1,0 +1,364 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.stormshield-handoff-v0.v0",
+  "source_status": "reviewed",
+  "fixture_status": "procedural_branch",
+  "source_refs": [
+    {
+      "source_id": "public-kalsa",
+      "path": "Kalsa/Public/World/Kalsa.md",
+      "title": "Kalsa",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 42,
+      "relevance": "Reader-facing world, permanent twilight, southern-gulf storm geography, roads, warning marks, and Crown City context."
+    },
+    {
+      "source_id": "public-magic",
+      "path": "Kalsa/Public/World/Magic and Miracles.md",
+      "title": "Magic and Miracles",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 97,
+      "relevance": "Reader-facing account of shamanic bonds as sustained material commitments and of crowded workings that can redirect pressure."
+    },
+    {
+      "source_id": "public-peoples",
+      "path": "Kalsa/Public/World/Peoples and Polities.md",
+      "title": "Peoples and Polities",
+      "canon_tier": "Public",
+      "line_start": 48,
+      "line_end": 75,
+      "relevance": "Reader-facing Papsenai context: overlapping Stormshield watches, incoming contact before release, observed comparison, and relief drawn from protected households."
+    },
+    {
+      "source_id": "public-narrow-shield",
+      "path": "Kalsa/Public/Sources/The Narrow Shield.md",
+      "title": "The Narrow Shield",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 62,
+      "relevance": "Situated public record of outer-road exposure, recursively changed pressure, delayed relief, central warning, and losses borne outside a narrowed defense."
+    },
+    {
+      "source_id": "canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 129,
+      "relevance": "Controls canon status, knowledge layers, author-only mechanics, unresolved claims, and the boundary between public observation and backstage constraint."
+    },
+    {
+      "source_id": "world-foundation",
+      "path": "Kalsa/Spoilers/Foundations/World.md",
+      "title": "World",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 41,
+      "relevance": "Owns the tidally locked planet, southern-gulf storm front, Crown City infrastructure, and the rule that climate constrains power."
+    },
+    {
+      "source_id": "kaos-foundation",
+      "path": "Kalsa/Spoilers/Foundations/Kaos.md",
+      "title": "Kaos",
+      "canon_tier": "Spoilers/backstage",
+      "line_start": 1,
+      "line_end": 126,
+      "relevance": "Backstage constraint that magic steers reachable causal systems using available energy, material levers, time, potential, and bounded contact."
+    },
+    {
+      "source_id": "oracle-ecology",
+      "path": "Kalsa/Spoilers/Foundations/Oracle Ecology.md",
+      "title": "Oracle Ecology",
+      "canon_tier": "Spoilers/backstage",
+      "line_start": 1,
+      "line_end": 340,
+      "relevance": "Backstage account of shamanic bonds, crowded horizons, recursive intervention, and the absence of an omniscient view outside the weather system."
+    },
+    {
+      "source_id": "institutions-index",
+      "path": "Kalsa/Spoilers/Institutions/index.md",
+      "title": "Institutions",
+      "canon_tier": "Spoilers/navigation",
+      "line_start": 1,
+      "line_end": 42,
+      "relevance": "Routes authority to Stormshield Circles and distinguishes operational, political, technical, and evidentiary ownership."
+    },
+    {
+      "source_id": "stormshield-circles",
+      "path": "Kalsa/Spoilers/Institutions/Stormshield Circles.md",
+      "title": "Stormshield Circles",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 182,
+      "relevance": "Primary institution owner for continuous shield labor, training, handoff, exhaustion, warning, authority, failure protocol, and the fixture-authored outer-road room."
+    },
+    {
+      "source_id": "papsenai-polity",
+      "path": "Kalsa/Spoilers/Polities/Shamanism - Papsenai.md",
+      "title": "Shamanism — Papsenai",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 126,
+      "relevance": "Owns Papsenai material life, tribal and household pressure, varied bodies and temperaments, shamanic work, and Ti'asantatca's shield burden."
+    },
+    {
+      "source_id": "narrow-shield-event",
+      "path": "Kalsa/Spoilers/Events/The Narrow Shield.md",
+      "title": "The Narrow Shield",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 110,
+      "relevance": "Owns an adopted history in which competent local workings recursively worsened a storm and a central order saved refuges while abandoning outer futures."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Kalsa's standing present; the exact date and calendar remain unresolved.",
+    "location": "One fixture-bounded outer-road Stormshield station at Ti'asantatca, reached from an exposed approach and a sheltered cityward stair.",
+    "summary": "An incoming shaman attempts an ordinary witnessed handoff while the expected relief cohort is cut off below the station. The scene tests whether continuity, honest target scope, bodily recovery, and public warning can remain distinct obligations when the weather makes them compete.",
+    "public_facts": [
+      {
+        "text": "Ti'asantatca survives beside a persistent southern-gulf storm because Stormshield workers maintain overlapping watches.",
+        "source_refs": ["public-kalsa", "public-peoples"]
+      },
+      {
+        "text": "An incoming shaman takes hold before an outgoing worker releases, while observers compare their accounts against the weather.",
+        "source_refs": ["public-peoples"]
+      },
+      {
+        "text": "Relief workers and material support come from the same households, fields, and roads the barrier protects; a missing replacement extends the outgoing worker's burden.",
+        "source_refs": ["public-peoples", "public-narrow-shield"]
+      },
+      {
+        "text": "Stormshield work can protect one admitted target while transferring danger toward a road, field, drainage line, or population outside it.",
+        "source_refs": ["public-magic", "public-narrow-shield"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Continuous protection depends on overlap, food, water, dry rest, attendants, observation, signals, safe paths, and replacement capacity rather than heroic trance alone.",
+        "source_refs": ["stormshield-circles", "papsenai-polity"]
+      },
+      {
+        "text": "A witnessed handoff must preserve uncertainty when worker accounts or observed weather disagree; a neat record cannot manufacture shared contact.",
+        "source_refs": ["stormshield-circles", "kaos-foundation"]
+      },
+      {
+        "text": "Exhaustion spent now removes future shield capacity and should enter the record as system debt before it is blamed on a collapsing individual.",
+        "source_refs": ["stormshield-circles"]
+      },
+      {
+        "text": "Public warnings and central coordination can create real safety while transferring cost and evidentiary control toward the people already holding signals and records.",
+        "source_refs": ["narrow-shield-event", "oracle-ecology"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "outer-road-station-watch",
+      "label": "Outer-road Stormshield station watch",
+      "group_type": "protective_infrastructure_cohort",
+      "institutional_logic": ["Maintain a continuous, bounded shield target through witnessed overlap, explicit disagreement, recovery, and warning."],
+      "material_incentives": ["Keep the road and cityward gate survivable", "Preserve rested future capacity", "Produce a record that later review can test"],
+      "internal_virtues": ["Honest limits", "Clean handoff", "Timely warning", "Care treated as operational work"],
+      "internal_shames": ["A false transfer", "Exhaustion hidden as bravery", "A warning delayed for administrative neatness"],
+      "prestige_markers": ["A released worker who reaches recovery awake", "A disagreement recorded before it becomes failure", "A target both holders can actually name"],
+      "taboo_triggers": ["Moving a marker as if it moved the weather", "Calling an unheld target safely transferred", "Turning bodily collapse into public theater"],
+      "emotional_display_norms": ["Fear is compressed into target descriptions, procedural jokes, hands on rails, and arguments over what can honestly be promised."],
+      "trust_defaults": ["Trusts converging worker accounts, observation, material traces, and bounded transfer more than confident rank or beautiful ritual."],
+      "speech_register_cues": ["Concrete target language", "Dry workroom humor", "Short corrections", "Named uncertainty"],
+      "source_refs": ["stormshield-circles", "papsenai-polity"]
+    },
+    {
+      "group_id": "road-relief-and-users",
+      "label": "Road relief cohort, runners, gate workers, and exposed road users",
+      "group_type": "distributed_dependents_and_workers",
+      "institutional_logic": ["Reach the station, carry reports, keep or close the approach, and survive decisions made above the road."],
+      "material_incentives": ["Pass intact paving", "Receive warnings before entering exposed ground", "Avoid being divided from trance carriers, carts, or households"],
+      "internal_virtues": ["Firsthand report", "Fast carrying", "Refusal to let distant procedure erase visible damage"],
+      "internal_shames": ["Arriving after the held section fails", "Being recorded as merely late when a route was lost"],
+      "prestige_markers": ["A warning delivered before a crossing", "A slate whose marks survive rain and review"],
+      "taboo_triggers": ["Being treated as noise outside the ritual floor", "An open-road order based on a station's untested confidence"],
+      "emotional_display_norms": ["Urgency arrives as soaked bodies, damaged route evidence, clipped reports, and impatience with distinctions whose consequences the road will bear."],
+      "trust_defaults": ["Trusts material road evidence and timely bells; may misread trance stillness or careful uncertainty as disregard."],
+      "speech_register_cues": ["Route landmarks", "Visible damage", "Who can cross", "What the gate needs now"],
+      "source_refs": ["stormshield-circles", "public-narrow-shield", "narrow-shield-event"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "outer-road-station-watch.continuity-without-false-certainty",
+      "applies_to": ["outer-road-station-watch"],
+      "pressure_type": "infrastructure_continuity",
+      "summary": "The watch must preserve continuous protection while refusing to make a disputed target look settled merely because an exhausted body needs release.",
+      "projection_use": "Give the incoming shaman choices among deeper contact, honest scope, extended overlap, warning, and compassionate overreach; every choice must spend a different real capacity.",
+      "source_refs": ["stormshield-circles", "kaos-foundation"]
+    },
+    {
+      "field_id": "road-relief-and-users.warning-before-entry",
+      "applies_to": ["road-relief-and-users"],
+      "pressure_type": "route_access",
+      "summary": "People below the station need an actionable road state before the station can achieve perfect explanatory confidence.",
+      "projection_use": "Let warning reduce immediate exposure while increasing public uncertainty and later political scrutiny.",
+      "source_refs": ["public-narrow-shield", "narrow-shield-event"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "road-relief-and-users",
+      "target_group_id": "outer-road-station-watch",
+      "observer_read": ["Officials discovering procedure while the road washes away", "Ritual silence ignoring firsthand testimony"],
+      "target_self_read": ["Workers separating observed damage from the exact future pressure carried by a magical bond"],
+      "misread_patterns": ["Mistakes bounded uncertainty for disbelief", "Treats the transfer peg as permission rather than evidence"],
+      "likely_insults": ["table-watchers", "dry boots", "peg counters"],
+      "projection_use": "Allow Ket to misread Nala's stillness without giving either side privileged access to the other's intent.",
+      "source_refs": ["stormshield-circles", "canon-policy"]
+    },
+    {
+      "observer_group_id": "outer-road-station-watch",
+      "target_group_id": "road-relief-and-users",
+      "observer_read": ["Urgent witnesses with partial geometry", "A route report that can change warning state but cannot define the bond"],
+      "target_self_read": ["The people physically present where the station's target becomes broken stone and moving water"],
+      "misread_patterns": ["Can reduce a soaked runner to one input among many", "Can treat a delayed cohort as a scheduling problem rather than divided bodies"],
+      "likely_insults": ["wet evidence", "stair alarm", "late relief"],
+      "projection_use": "Keep station expertise bounded and make physical road evidence bite the handoff record.",
+      "source_refs": ["stormshield-circles", "narrow-shield-event"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "incoming-shaman",
+      "summary": "A rested worker who must take only the target her bond and the witnessed account can support.",
+      "obligations": ["Enter contact before release", "Name inaccessible pressure", "Preserve the outgoing worker's chance to recover", "Refuse a false total claim"],
+      "available_masks": ["Ritual stillness", "Technical brevity", "Competent calm", "Workroom humor"],
+      "failure_modes": ["Mistaking compassion for reach", "Mistaking material evidence for complete magical contact", "Letting another person's exhaustion force a false claim"],
+      "source_refs": ["stormshield-circles", "kaos-foundation", "papsenai-polity"]
+    },
+    {
+      "role_id": "outgoing-shaman",
+      "summary": "An exhausted worker whose report, limits, and right to recovery remain part of the shield.",
+      "obligations": ["Describe the held target", "Preserve corrections and uncertainty", "Release only after contact", "Report bodily limit"],
+      "available_masks": ["Precision", "Dry jokes", "A hard grip hiding tremor"],
+      "failure_modes": ["Smoothing a moving target", "Concealing exhaustion", "Hearing a bounded handoff as personal refusal"],
+      "source_refs": ["stormshield-circles"]
+    },
+    {
+      "role_id": "station-observer",
+      "summary": "A witness who aligns accounts, weather observations, markers, and the transfer peg without becoming owner of the shield target.",
+      "obligations": ["Keep disagreements visible", "Admit relevant evidence", "Place the peg only after supported agreement", "Preserve copies for review"],
+      "available_masks": ["Procedural calm", "Literal correction", "Silence while others overclaim"],
+      "failure_modes": ["Neat-record bias", "Letting a marker impersonate the target", "Delaying warning until certainty theater is complete"],
+      "source_refs": ["stormshield-circles", "narrow-shield-event"]
+    },
+    {
+      "role_id": "station-tender",
+      "summary": "A care worker whose broth, water, screening, dry route, and privacy preserve future operational capacity.",
+      "obligations": ["Receive released workers", "Keep recovery out of the roadward sightline", "Notice tremor and confusion", "Make care available before detailed questioning"],
+      "available_masks": ["Domestic authority", "Understated jokes", "Practical interruption"],
+      "failure_modes": ["Care delayed by procedure", "Exhaustion displayed as warning", "A cup treated as reward rather than necessary support"],
+      "source_refs": ["stormshield-circles"]
+    },
+    {
+      "role_id": "road-runner",
+      "summary": "A firsthand witness who can bring material route evidence to the boundary but cannot enter the trance floor unadmitted or define a shamanic target.",
+      "obligations": ["Name the last intact route", "Carry a reviewable report", "Tell the gate what answer returns"],
+      "available_masks": ["Impatience", "Material certainty", "Refusal to soften visible damage"],
+      "failure_modes": ["Conflating broken paving with complete target knowledge", "Reading stillness as disbelief", "Crossing a work boundary under urgency"],
+      "source_refs": ["stormshield-circles", "public-narrow-shield"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "nala_ter",
+      "known_context": [
+        {"text": "Nala knows station handoff practice, the named outer-road markers, Orin's observable condition, the runner's admitted report, and only the pressure her own bond reaches.", "source_refs": ["stormshield-circles", "kaos-foundation"]}
+      ],
+      "beliefs": [
+        {"text": "Nala believes a smaller honest promise can protect more people than a total claim her body cannot carry.", "source_refs": ["stormshield-circles"]}
+      ],
+      "misreads": [
+        {"text": "Nala may treat a procedural distinction as legible to Ket or Orin when they experience it as delay or refusal.", "source_refs": ["canon-policy", "stormshield-circles"]}
+      ],
+      "must_not_know": [
+        {"text": "Nala must not know the actual future of the road, drainage line, or relief cohort beyond the bounded pressure and evidence available in scene.", "source_refs": ["oracle-ecology", "kaos-foundation"]}
+      ]
+    },
+    {
+      "speaker_id": "orin_vesh",
+      "known_context": [
+        {"text": "Orin knows the section he has held, the interventions he attempted, his bodily strain, and the overlap he can directly feel.", "source_refs": ["stormshield-circles"]}
+      ],
+      "beliefs": [
+        {"text": "Orin believes release is safe only when another worker has the target he means, not merely its marker.", "source_refs": ["stormshield-circles"]}
+      ],
+      "misreads": [
+        {"text": "Exhaustion can make Orin hear Nala's bounded target statement as refusal of him rather than refusal of an unsupported scope.", "source_refs": ["stormshield-circles"]}
+      ],
+      "must_not_know": [
+        {"text": "Orin must not know Ket's road report before it is spoken or admitted, and must not identify the moving pressure's ultimate cause from sensation alone.", "source_refs": ["oracle-ecology", "canon-policy"]}
+      ]
+    },
+    {
+      "speaker_id": "ema_sai",
+      "known_context": [
+        {"text": "Ema knows the watch record, visible weather, signal meanings, both spoken accounts, admitted material evidence, and the procedural threshold for placing the peg.", "source_refs": ["stormshield-circles"]}
+      ],
+      "beliefs": [
+        {"text": "Ema believes an exposed disagreement is safer than a confident record that later readers cannot falsify.", "source_refs": ["stormshield-circles", "narrow-shield-event"]}
+      ],
+      "misreads": [
+        {"text": "Ema may underweight the runner's need for an immediate gate answer while protecting evidentiary order.", "source_refs": ["narrow-shield-event"]}
+      ],
+      "must_not_know": [
+        {"text": "Ema must not translate markers, slates, or the peg into direct knowledge of the magical bond.", "source_refs": ["stormshield-circles", "kaos-foundation"]}
+      ]
+    },
+    {
+      "speaker_id": "ket_oru",
+      "known_context": [
+        {"text": "Ket knows the washed paving, the divided relief cohort, the exposed approach, and the gate crew's unanswered question.", "source_refs": ["stormshield-circles"]}
+      ],
+      "beliefs": [
+        {"text": "Ket believes material damage should be enough to make the station issue an immediate road state.", "source_refs": ["public-narrow-shield"]}
+      ],
+      "misreads": [
+        {"text": "Ket may read trance stillness and careful comparison as disbelief or official delay.", "source_refs": ["canon-policy", "stormshield-circles"]}
+      ],
+      "must_not_know": [
+        {"text": "Ket must not know what Nala or Orin senses through the bond unless they speak it.", "source_refs": ["canon-policy", "kaos-foundation"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Kaos and oracle ecology are backstage models. Characters may describe pressure, bond, target, warning, and observed conflict but do not inherit the author vocabulary of causal branches, axes, or timeline capture.",
+      "source_refs": ["canon-policy", "kaos-foundation", "oracle-ecology"]
+    },
+    {
+      "text": "The fixture room is one explicit local elaboration, not a universal Stormshield floor plan, office list, rank system, or station count.",
+      "source_refs": ["stormshield-circles"]
+    },
+    {
+      "text": "The exact medical pattern of repeated service, the barrier's spatial form, and common law for refusal remain unresolved; prose may show a particular tremor and local practice without universalizing either.",
+      "source_refs": ["stormshield-circles", "canon-policy"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What visible phenomenon, if any, marks the shield itself at room scale?",
+      "blocks_training": false,
+      "notes": "The fixture keeps magic perceptible to the shamans as bodily pressure and shows only weather, signals, worker posture, and material consequences to other observers. It does not invent a visible dome, aura, or light effect."
+    },
+    {
+      "question": "Which named office owns station warnings and transfer certification across Ti'asantatca?",
+      "blocks_training": false,
+      "notes": "The fixture uses plain functional roles—observer, incoming shaman, outgoing shaman, tender, runner—and makes Ema's bell action local to this station rather than naming a universal rank."
+    },
+    {
+      "question": "What common medical vocabulary describes tremor, fixation, confusion, and recovery after trance?",
+      "blocks_training": false,
+      "notes": "The scene observes Orin's particular tremor and preserves recovery debt without declaring a diagnosis or universal symptom sequence."
+    }
+  ]
+}

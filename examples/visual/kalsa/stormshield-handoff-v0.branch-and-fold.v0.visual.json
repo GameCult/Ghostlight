@@ -1,0 +1,462 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "kalsa-stormshield-handoff-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/stormshield-handoff-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/stormshield-handoff-v0.branch-and-fold.v0.training.json",
+  "scene_id": "stormshield-handoff-v0.outer-road-watch-change",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for one Kalsa outer-road Stormshield watch handoff. This is website collateral and a visual lore stress test, not simulation state or model-training signal.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for the station approach, handoff room, target record, routine preparation, runner arrival, disputed overlap, final commitment, and four outcome families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for every change of place, focal object, arrival, physical evidence reveal, target disagreement, commitment threshold, and aftermath family. Branch actions that remain in one camera zone use explicit additive modifiers; success and cost endings use separate visible deltas.",
+    "prompting_rule": "Each base prompt names complete visible geometry, materials, light, weather, body placement, interfaces, tools, and important props for a general image model. Setting terms appear only after their visible form is described. Continuity notes remain reviewer constraints and never enter prompt assembly.",
+    "global_style_cue": "Style: hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, strong readable silhouettes, storm-muted blue-gray stone and cloth, warm amber lamplight and broth steam, restrained magical ambiguity, humane facial detail, cinematic staging with practical work objects, abstract unlettered marks on all record surfaces.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, visual refs only for named characters actually visible in that frame, the complete scene base_image_prompt, and triggered state_image_modifiers or global_branch_image_modifiers. Every text-only generation restates room geometry. A later replay render must also receive the declared camera-specific scene-set image once that blockout exists.",
+    "replay_readiness": "prompt_manifest_ready_scene_set_required_before_replay_ready",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_required_missing",
+      "scope_reason": "The fixture returns to one room from roadward, table, mat, boundary, curtain, and aftermath angles. Character routes, the visitor rail, shutter sightline, recovery privacy, and object custody alter choices, so text prompts cannot own spatial continuity.",
+      "required_scene_set": "Build a plan view or simple 3D blockout of the outer-road station with the covered visitor stair, roadward shutter bay, three runoff channels beyond, low visitor rail and latch, scored table, wall hooks, two side-by-side trance mats, continuous grip rail, inner curtain, recovery bench, dry cityward stair, fixed lamp positions, and named camera slots below.",
+      "promotion_rule": "Until that durable geometry artifact exists, accept the fixture as prose/IF scaffold and BFL prompt batch only; do not label illustrated replay ready."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "stormshield_station_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide exterior-to-interior establishing view of a squat thick-walled stone watch station built against a storm-lashed road above a dark southern gulf. A covered stone stair rises from the lower left through diagonal rain to a recessed visitor doorway. Three runoff channels cut past the exposed paving toward the gulf. Through deep shutter slats, warm amber lamplight reveals a compact workroom: a low interior rail, a waist-high scored table, two woven floor mats, and heavy timber supports. The unmoving sun is a dim fixed glow behind storm cloud, while rain and wind dominate the cold blue-gray scene.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The covered road stair is the only visitor route and ends outside the low interior rail.",
+          "The dry cityward stair is behind the recovery curtain and does not share the visitor entrance.",
+          "The shield itself has no invented visible dome, aura, or light wall."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_handoff_room",
+        "ink_anchor": "handoff_room",
+        "base_image_prompt": "Wide interior view of a compact rectangular stone station room. On the roadward wall at left, thick wooden shutters with narrow slats show rain and three bright runoff channels outside. A low waist-high wooden rail divides the visitor stair landing from the work floor. Center frame, a waist-high table has a scored map surface with fired-clay marker pieces, waxed slates, colored signal tiles, knotted wind cords, and several differently sized bronze handbells hanging on wall hooks. At right, two woven trance mats lie side by side beside one continuous polished wooden grip rail. Behind them, a heavy woven curtain conceals a small recovery alcove. Four workers occupy distinct stations: Nala kneels on the empty incoming mat, Orin grips the rail on the roadward mat, Ema stands at the scored table, and Tava watches from the curtain with a covered clay cup.",
+        "visible_characters": [
+          {"agent_id": "nala_ter", "default_stance": "kneeling upright on the cityward mat with hands resting open above the shared rail", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "kneeling heavily on the roadward mat with one hand locked around the shared rail", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "standing behind the scored table with slate stylus ready", "visual_ref": "visual_character_refs.characters.ema_sai"},
+          {"agent_id": "tava_en", "default_stance": "half visible at the inner curtain holding a covered clay cup", "visual_ref": "visual_character_refs.characters.tava_en"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Roadward shutters, visitor rail, scored table, two mats, grip rail, and recovery curtain retain these relative positions in every station view.",
+          "The two mats are adjacent and share one rail so overlapping contact is physically plausible.",
+          "The curtain blocks the recovery bench from the roadward shutter and visitor sightline."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_target_record_closeup",
+        "ink_anchor": "before_contact",
+        "base_image_prompt": "Close overhead view of the station's evidence table under one amber oil lamp. A scored clay-coated surface shows four simple raised landmark shapes: covered road stair, branching drainage line, square station, and arched cityward gate. Separate fired-clay pieces sit on those marks. A plain undecorated wooden transfer peg rests alone at the table edge. Two waxed observation slates preserve different lines and corrections; knotted cords tug toward the shutter draft; colored ceramic signal tiles and bronze handbells hang above. Ema's square hand holds a stylus over the first account while Nala and Orin remain visible out of focus on adjacent mats beyond the table.",
+        "visible_characters": [
+          {"agent_id": "ema_sai", "default_stance": "one hand writing at the table while the body remains behind it", "visual_ref": "visual_character_refs.characters.ema_sai"},
+          {"agent_id": "nala_ter", "default_stance": "soft-focus figure on the empty incoming mat", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "soft-focus figure gripping the rail on the roadward mat", "visual_ref": "visual_character_refs.characters.orin_vesh"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The fired-clay markers and transfer peg are record objects, not magical controls.",
+          "The map is a local scored table, not a complete city plan.",
+          "Marks may be abstract shapes but contain no readable writing in generated art."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_preparation_choice",
+        "ink_anchor": "preparation_choice",
+        "base_image_prompt": "Medium-wide choice frame from the table side of the same compact stone station. At right, Nala kneels beside Orin at two woven mats and one continuous grip rail. At center, Ema points between the clay road marker and a wax slate. At left, shutter slats expose snapping knotted wind cords and an empty rain-beaten approach. At rear right, Tava waits by the recovery curtain with a lidded steaming clay cup. The composition presents four physical affordances at once: spoken account at the table, bodily contact at the rail, visual observation at the shutters, and recovery care at the curtain.",
+        "visible_characters": [
+          {"agent_id": "nala_ter", "default_stance": "kneeling between the table sightline and the grip rail, poised to choose", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "holding the roadward mat and watching Nala", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "pointing from target marker to slate", "visual_ref": "visual_character_refs.characters.ema_sai"},
+          {"agent_id": "tava_en", "default_stance": "beside the curtain with lidded cup and broth steam", "visual_ref": "visual_character_refs.characters.tava_en"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "handoff_alignment >= 3", "modifier_prompt": "Ema aligns the road marker with two visible slate account lines while Orin repeats the section and Nala watches his correction."},
+          {"trigger": "incoming_contact >= 3", "modifier_prompt": "Nala closes both hands around the grip rail; her shoulders settle while Orin's breathing visibly catches during overlap."},
+          {"trigger": "relief_status >= 1", "modifier_prompt": "Nala stands at the shutter bay looking down an empty covered approach as the knotted cords snap toward the drainage channels."},
+          {"trigger": "cup_heat >= 3", "modifier_prompt": "Tava fits a clay lid over the steaming cup while Orin's clenched posture eases for one brief laugh."}
+        ],
+        "visual_continuity_notes": [
+          "Only one branch modifier is applied for this choice result frame.",
+          "Nala's changed position follows the chosen affordance; other bodies keep their established stations."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_routine_fold",
+        "ink_anchor": "preparation_fold",
+        "base_image_prompt": "Calm work-routine view inside the same stone station. Ema reads from a waxed slate at the scored table. Orin corrects her with one strained gesture from the roadward mat. Nala has returned to the cityward mat and reaches toward the shared grip rail. Tava's lidded cup waits on a small shelf inside the recovery curtain. Rain lines the shutter slats; the low rail remains empty; the transfer peg still lies beside the clay road and drainage markers. The atmosphere is ordinary concentration with bodily fatigue held just below the surface.",
+        "visible_characters": [
+          {"agent_id": "nala_ter", "default_stance": "kneeling on the cityward mat and reaching toward the rail", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "making one small correction while gripping the rail", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "reading back the watch slate at the table", "visual_ref": "visual_character_refs.characters.ema_sai"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "outgoing_load >= 4", "modifier_prompt": "A fine tremor runs visibly through Orin's rail hand; sweat darkens his rain-clung collar despite the cold room."},
+          {"trigger": "observer_confidence >= 2", "modifier_prompt": "Ema keeps the corrected first account exposed beside the clean second slate instead of scraping it smooth."}
+        ],
+        "visual_continuity_notes": [
+          "The peg remains unplaced before the disputed handoff.",
+          "The first cup stays behind the curtain until Orin releases."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_runner_arrival",
+        "ink_anchor": "runner_arrival",
+        "base_image_prompt": "Pivotal arrival frame from inside the same station toward the visitor boundary. Ket stands on the covered stair behind the waist-high rail, soaked from loose dark curls to leather boot wraps, one hand striking the rail and the other gripping a rain-slick waxed road slate. Cold blue storm light pours through the visitor doorway around their body. Beyond the shutters, three runoff channels flash white with water. Nala and Orin remain on the side-by-side mats at right; Ema turns from the table toward Ket; the transfer peg lies visibly unplaced. The frame freezes the moment ordinary handoff becomes route emergency.",
+        "visible_characters": [
+          {"agent_id": "ket_oru", "default_stance": "outside the rail, soaked and braced, road slate held high", "visual_ref": "visual_character_refs.characters.ket_oru"},
+          {"agent_id": "nala_ter", "default_stance": "turned from the incoming mat toward the arrival", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "still gripping the roadward rail during the interruption", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "turning from the scored table toward the visitor latch", "visual_ref": "visual_character_refs.characters.ema_sai"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Ket begins on the visitor side of the rail and never enters the trance-floor side.",
+          "The road slate remains in Ket's custody until a branch admits or inspects it."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_road_report_choice",
+        "ink_anchor": "road_report_choice",
+        "base_image_prompt": "Medium-wide boundary-and-mat view of the compact station during the urgent road report. Ket waits behind the low rail at left with the wet wax slate. Ema stands at the rail latch and scored table in the center, with bronze warning bells above her. Nala kneels at the incoming mat at right with the grip rail within reach and the shutter bay visible behind her. Orin remains fixed on the roadward mat. Four actionable objects form a visual circuit: visitor rail latch, broad warning bell, shared grip rail, and wet road slate under the lamp.",
+        "visible_characters": [
+          {"agent_id": "ket_oru", "default_stance": "behind the low rail holding the wet slate", "visual_ref": "visual_character_refs.characters.ket_oru"},
+          {"agent_id": "nala_ter", "default_stance": "on the incoming mat between rail contact and boundary evidence", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "on the roadward mat with a tightening grip", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "between table and boundary latch under the warning bells", "visual_ref": "visual_character_refs.characters.ema_sai"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "runner_evidence >= 2", "modifier_prompt": "The rail latch is open and Ket lays the wet slate beside the fired-clay road marker while rainwater pools only on the visitor side of the floor."},
+          {"trigger": "warning_state >= 2", "modifier_prompt": "Ema strikes the broad bronze warning bell; its cord is taut and a red-brown signal tile sits beside a fresh watch entry."},
+          {"trigger": "incoming_contact >= 3", "modifier_prompt": "Nala stays on the mat with both hands on the grip rail while Ket reports through the boundary; Ema writes the spoken route landmarks."},
+          {"trigger": "runner_evidence >= 3 && incoming_contact <= 1", "modifier_prompt": "Nala stands at the boundary turning Ket's slate under the lamp; pale paving grit is visibly embedded in black wax while Orin strains alone at the rail behind her."}
+        ],
+        "visual_continuity_notes": [
+          "Branch movement never carries Ket past the low rail.",
+          "Rainwater and wet equipment remain on the visitor/table side, away from the mats.",
+          "Only one branch-result modifier should establish Nala's position for this beat."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_disputed_accounts",
+        "ink_anchor": "report_fold",
+        "base_image_prompt": "Triangular staging inside the same station: Nala and Orin kneel side by side at the grip rail on the right, each speaking toward Ema at the scored table in the center, while Ket waits behind the visitor rail at left. On the table, the clay road marker points toward the covered stair and split channel; the drainage marker has shifted slightly toward the cityward gate; two wax slates carry visibly different line patterns; the plain transfer peg remains untouched between them. Rain lashes the shutter slats behind the table. Orin's white-knuckled grip and Nala's closed eyes make the bodily disagreement the center of the frame.",
+        "visible_characters": [
+          {"agent_id": "nala_ter", "default_stance": "kneeling with both hands on the rail, eyes closed while naming pressure", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "kneeling with one white-knuckled hand locked to the rail", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "standing over two disagreeing slates and the untouched peg", "visual_ref": "visual_character_refs.characters.ema_sai"},
+          {"agent_id": "ket_oru", "default_stance": "waiting behind the rail and watching the still shamans", "visual_ref": "visual_character_refs.characters.ket_oru"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "warning_state >= 2", "modifier_prompt": "The broad warning bell still sways slightly above the table and its colored tile remains beside the open record."},
+          {"trigger": "outgoing_load >= 4", "modifier_prompt": "Orin hides a visible forearm tremor by clamping the wooden rail harder; his shoulders sag toward the roadward mat."},
+          {"trigger": "runner_evidence >= 3", "modifier_prompt": "Ket's wet slate lies under the lamp with pale broken-paving grit caught in the wax beside the road marker."}
+        ],
+        "visual_continuity_notes": [
+          "The drainage marker may move on the table while the physical storm remains represented only by rain, water, cords, and bodies.",
+          "Ket sees the shamans' posture and hears speech but does not receive their private sensed imagery."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_disagreement_choice",
+        "ink_anchor": "disagreement_choice",
+        "base_image_prompt": "Medium close view across the two woven mats toward the evidence table. Nala is foreground on the cityward mat, broad hands near the continuous grip rail. Orin is beside her on the roadward mat, exhausted and rain-dark. Ema waits beyond them at the table with the plain transfer peg centered between the road and drainage markers. Ket's soaked figure is visible behind the low rail in the background. Tava stands at the recovery curtain with a folded blanket and clay cup. The lamp isolates four possible actions: Nala speaking a bounded target, both shamans comparing bodily accounts, Nala laying a hand beside the unused peg, or Nala asking Ema to place the peg for a full transfer.",
+        "visible_characters": [
+          {"agent_id": "nala_ter", "default_stance": "foreground on the cityward mat with hands poised between rail and table", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "beside Nala on the roadward mat, strained and attentive", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "behind the table waiting with stylus and unplaced peg", "visual_ref": "visual_character_refs.characters.ema_sai"},
+          {"agent_id": "ket_oru", "default_stance": "background behind the rail, wet and impatient", "visual_ref": "visual_character_refs.characters.ket_oru"},
+          {"agent_id": "tava_en", "default_stance": "waiting at the recovery curtain with a folded blanket and clay cup", "visual_ref": "visual_character_refs.characters.tava_en"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "transfer_scope == 1", "modifier_prompt": "Nala speaks with one hand on the road marker sightline while Ema moves the drainage piece away from the peg's empty place; Orin looks toward Nala with tired hurt."},
+          {"trigger": "handoff_alignment >= 5 && transfer_scope == 0", "modifier_prompt": "Nala and Orin keep contact at the rail while Orin indicates pressure at eye, teeth, and cityward direction; Ema preserves two visibly different slate diagrams."},
+          {"trigger": "transfer_scope == -1", "modifier_prompt": "Nala lays one broad hand flat on the table edge beside the untouched transfer peg; Ema follows the gesture while Orin's rail hand trembles."},
+          {"trigger": "transfer_scope == 2", "modifier_prompt": "Ema places the peg confidently between road and drainage markers as Orin collapses backward toward Tava's waiting support and Nala grips the rail alone."}
+        ],
+        "visual_continuity_notes": [
+          "Transfer-scope modifiers are mutually exclusive.",
+          "Tava appears only in the full-transfer modifier because only that branch brings Orin to the curtain during this beat.",
+          "Ema moves the peg; Nala may request or refuse certification but never telekinetically controls it."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_final_threshold",
+        "ink_anchor": "final_threshold",
+        "base_image_prompt": "Wide final-threshold view of the entire compact station from the roadward shutter corner. The low rail divides Ket and the cold visitor stair from the warm work floor. Ema stands at the scored table under bells and slate hooks. Nala and Orin remain by the adjacent mats and shared rail. Tava waits at the recovery curtain with blankets, water crock, broth pot, and first cup visible beyond. The target table holds road and drainage markers, two accounts, a wet slate or copied report, and a transfer peg whose exact position is controlled by branch state. Rain and channel water flash through the shutters; every exit and obligation is visible in one coherent frame.",
+        "visible_characters": [
+          {"agent_id": "nala_ter", "default_stance": "at the incoming mat and rail, facing the final commitment", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "on or immediately beside the roadward mat depending on transfer state", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "at the table preserving all accounts", "visual_ref": "visual_character_refs.characters.ema_sai"},
+          {"agent_id": "tava_en", "default_stance": "inside the curtain beside recovery bench and cup", "visual_ref": "visual_character_refs.characters.tava_en"},
+          {"agent_id": "ket_oru", "default_stance": "behind the visitor rail ready to carry the next signal", "visual_ref": "visual_character_refs.characters.ket_oru"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "transfer_scope == 2", "modifier_prompt": "The plain peg sits between road and drainage markers; Orin has moved to Tava's support at the curtain while Nala alone grips the rail."},
+          {"trigger": "transfer_scope == 1", "modifier_prompt": "The drainage marker sits clear of the road piece and the peg waits beside the bounded road marker; both shamans remain in overlap."},
+          {"trigger": "transfer_scope == -1", "modifier_prompt": "The peg remains untouched beneath Nala's flat hand while Orin continues the roadward hold."},
+          {"trigger": "cup_heat >= 3", "modifier_prompt": "The lidded first cup sends a strong curl of steam beside Tava's blankets and water crock."},
+          {"trigger": "cup_heat <= 1", "modifier_prompt": "The cool clay cup has a matte surface and sits in still air beside the broth pot."}
+        ],
+        "visual_continuity_notes": [
+          "The branch-selected peg position, Nala and Orin staging, warning bell state, road-slate custody, and cup steam must carry into any ending image.",
+          "A camera-specific blockout is mandatory for this wide frame before replay promotion."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_ending_honest_scope",
+        "ink_anchor": "ending_honest_scope_success|ending_honest_scope_cost",
+        "base_image_prompt": "Aftermath centered on the scored table and adjacent mats in the same stone station. The drainage marker stands at a clear hand's width from the road marker. The plain transfer peg sits close beside the bounded road piece. Nala grips the rail on the cityward mat while Ema copies the unresolved drainage pressure onto a separate wax slate. Orin remains near the roadward mat and Tava waits at the recovery curtain with cup and blanket. Rain and surging runoff beyond the shutter slats keep the road visibly threatened.",
+        "visible_characters": [
+          {"agent_id": "nala_ter", "default_stance": "holding the bounded road contact at the cityward mat", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "releasing toward the curtain or remaining in partial overlap according to outcome", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "copying the separate drainage disagreement at the table", "visual_ref": "visual_character_refs.characters.ema_sai"},
+          {"agent_id": "tava_en", "default_stance": "waiting at the curtain with cup and blanket, ready to receive Orin", "visual_ref": "visual_character_refs.characters.tava_en"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The road marker and drainage marker remain visibly separate in both variants.",
+          "The cost variant keeps Orin at the rail; the success variant moves him behind the curtain toward Tava."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_ending_continuity",
+        "ink_anchor": "ending_continuity_success|ending_continuity_cost",
+        "base_image_prompt": "Aftermath focused on continued overlap in the same station. Nala and Orin remain side by side on the two woven mats with both bodies connected to the continuous grip rail. Ema writes an extra line on the watch slate at the scored table. Ket waits behind the visitor rail with a dry-wrapped copied slate ready for the covered stair. The recovery curtain stays open enough to show Tava's blankets, water crock, broth pot, and waiting cup. The composition makes extended labor, delayed release, and a possible relief route materially visible.",
+        "visible_characters": [
+          {"agent_id": "nala_ter", "default_stance": "sharing the held interval from the cityward mat", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "still working on the roadward mat with visible fatigue", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "recording the extra interval and recovery debt", "visual_ref": "visual_character_refs.characters.ema_sai"},
+          {"agent_id": "tava_en", "default_stance": "waiting at the curtain with the first cup", "visual_ref": "visual_character_refs.characters.tava_en"},
+          {"agent_id": "ket_oru", "default_stance": "waiting behind the rail with a dry-wrapped copied slate", "visual_ref": "visual_character_refs.characters.ket_oru"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Ket is present only in the success modifier that shows departure with copied evidence; prompt assembly must omit Ket's ref in the cost variant.",
+          "The cost variant leaves the cup untouched and intensifies Orin's tremor."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_ending_recovery",
+        "ink_anchor": "ending_recovery_success|ending_recovery_cost",
+        "base_image_prompt": "Aftermath spanning the shared rail and recovery curtain in the same station. Nala remains alone at the trance rail, both broad hands braced on polished wood. Tava supports Orin through the inner curtain toward a bench with blankets, water crock, broth pot, and clay cup. Ema stands at the scored table with two accounts still visible and the full-target peg between road and drainage pieces. Ket waits behind the visitor rail as the broad warning bell hangs within reach. The room shows bodily care transferring the work into Nala's next hours.",
+        "visible_characters": [
+          {"agent_id": "nala_ter", "default_stance": "alone at the rail carrying the disputed pressure", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "leaning into Tava's support inside the recovery curtain", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "at the table preserving both accounts", "visual_ref": "visual_character_refs.characters.ema_sai"},
+          {"agent_id": "tava_en", "default_stance": "supporting Orin toward the recovery bench", "visual_ref": "visual_character_refs.characters.tava_en"},
+          {"agent_id": "ket_oru", "default_stance": "behind the rail ready to carry a warning", "visual_ref": "visual_character_refs.characters.ket_oru"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The peg remains at full target in both variants because the earlier transfer claim occurred.",
+          "Success and cost differ in Nala's posture, the bell action, and the visible behavior of runoff beyond the shutters rather than in invented magic light."
+        ]
+      },
+      {
+        "visual_scene_id": "stormshield_ending_warning",
+        "ink_anchor": "ending_warning_success|ending_warning_cost",
+        "base_image_prompt": "Aftermath centered on public warning inside the same station. Nala stands at the broad bronze bell near the scored table, one hand on the bell cord. Ema aligns two shaman accounts with Ket's wet road slate or a thinner copied report. Ket waits at the visitor rail ready to run down the covered stair. Orin and the two mats remain visible in the background, proving the overlap is unresolved. Cold storm light enters through shutters while a colored warning tile and moving bell catch the warm lamp.",
+        "visible_characters": [
+          {"agent_id": "nala_ter", "default_stance": "standing at the broad warning bell with hand on its cord", "visual_ref": "visual_character_refs.characters.nala_ter"},
+          {"agent_id": "orin_vesh", "default_stance": "still in overlap on the roadward mat", "visual_ref": "visual_character_refs.characters.orin_vesh"},
+          {"agent_id": "ema_sai", "default_stance": "aligning route evidence and two accounts at the table", "visual_ref": "visual_character_refs.characters.ema_sai"},
+          {"agent_id": "ket_oru", "default_stance": "behind the rail poised to carry the answer", "visual_ref": "visual_character_refs.characters.ket_oru"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The overlap stays visibly unresolved in both warning endings.",
+          "The success variant uses the wet slate and ordered copies; the cost variant uses incomplete evidence and returned questions."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prepare_account_visual",
+        "trigger": "branch_label == prepare_by_account",
+        "apply_to_visual_scene_ids": ["stormshield_preparation_choice", "stormshield_routine_fold"],
+        "modifier_prompt": "Ema points to each clay road landmark while Orin repeats the section; the first corrected slate stays visibly beside the second account."
+      },
+      {
+        "modifier_id": "prepare_contact_visual",
+        "trigger": "branch_label == prepare_by_contact",
+        "apply_to_visual_scene_ids": ["stormshield_preparation_choice", "stormshield_routine_fold"],
+        "modifier_prompt": "Nala grips the continuous wooden rail with both hands and settles into the incoming mat while Orin's breath catches beside her."
+      },
+      {
+        "modifier_id": "prepare_observation_visual",
+        "trigger": "branch_label == prepare_by_observation",
+        "apply_to_visual_scene_ids": ["stormshield_preparation_choice", "stormshield_routine_fold"],
+        "modifier_prompt": "Nala stands at the shutter bay; snapping cords, white runoff, and an empty exposed approach fill her sightline while the incoming mat sits vacant behind her."
+      },
+      {
+        "modifier_id": "prepare_recovery_visual",
+        "trigger": "branch_label == prepare_by_recovery",
+        "apply_to_visual_scene_ids": ["stormshield_preparation_choice", "stormshield_routine_fold"],
+        "modifier_prompt": "Tava covers the steaming clay cup at the inner curtain and Orin's clenched shoulders ease during a brief laugh."
+      },
+      {
+        "modifier_id": "admit_runner_visual",
+        "trigger": "branch_label == admit_runner_evidence",
+        "apply_to_visual_scene_ids": ["stormshield_road_report_choice", "stormshield_disputed_accounts"],
+        "modifier_prompt": "The rail latch is open; Ket stands at the table-side boundary and lays a rain-slick wax slate beside the road marker, with water pooling away from the mats."
+      },
+      {
+        "modifier_id": "warn_early_visual",
+        "trigger": "branch_label == warn_before_certainty",
+        "apply_to_visual_scene_ids": ["stormshield_road_report_choice", "stormshield_disputed_accounts", "stormshield_final_threshold"],
+        "modifier_prompt": "The broad bronze bell swings above Ema's fresh slate entry and a colored warning tile sits at the road marker."
+      },
+      {
+        "modifier_id": "preserve_contact_visual",
+        "trigger": "branch_label == preserve_contact_boundary",
+        "apply_to_visual_scene_ids": ["stormshield_road_report_choice", "stormshield_disputed_accounts"],
+        "modifier_prompt": "Nala remains on the incoming mat with both hands on the rail while Ket reports from behind the visitor boundary and Ema copies route landmarks."
+      },
+      {
+        "modifier_id": "inspect_grit_visual",
+        "trigger": "branch_label == inspect_material_trace",
+        "apply_to_visual_scene_ids": ["stormshield_road_report_choice", "stormshield_disputed_accounts"],
+        "modifier_prompt": "Nala turns the wet slate under the lamp, revealing pale broken-paving grit embedded in dark wax; Orin grips the rail alone behind her."
+      },
+      {
+        "modifier_id": "partial_contact_visual",
+        "trigger": "branch_label == name_partial_contact",
+        "apply_to_visual_scene_ids": ["stormshield_disagreement_choice", "stormshield_final_threshold", "stormshield_ending_honest_scope"],
+        "modifier_prompt": "Ema separates the drainage marker from the road piece while Nala names the smaller scope and Orin watches with tired hurt."
+      },
+      {
+        "modifier_id": "compare_accounts_visual",
+        "trigger": "branch_label == compare_embodied_accounts",
+        "apply_to_visual_scene_ids": ["stormshield_disagreement_choice", "stormshield_final_threshold"],
+        "modifier_prompt": "Both shamans keep contact at the rail while Orin indicates eye, teeth, and cityward pressure; Ema preserves two different diagrams on separate slates."
+      },
+      {
+        "modifier_id": "withhold_peg_visual",
+        "trigger": "branch_label == withhold_transfer_peg",
+        "apply_to_visual_scene_ids": ["stormshield_disagreement_choice", "stormshield_final_threshold"],
+        "modifier_prompt": "Nala's hand lies flat beside the untouched peg; Orin's forearm trembles at the rail and Ket waits behind the boundary."
+      },
+      {
+        "modifier_id": "full_transfer_visual",
+        "trigger": "branch_label == accept_full_target_for_recovery",
+        "apply_to_visual_scene_ids": ["stormshield_disagreement_choice", "stormshield_final_threshold", "stormshield_ending_recovery"],
+        "modifier_prompt": "The peg bridges road and drainage markers; Nala grips the rail alone as Tava catches Orin at the recovery curtain."
+      },
+      {
+        "modifier_id": "honest_scope_success_visual",
+        "trigger": "ending_label == honest_scope_success",
+        "apply_to_visual_scene_ids": ["stormshield_ending_honest_scope"],
+        "modifier_prompt": "Orin releases toward Tava and receives the steaming cup while Nala holds the road alone; Ema sends a separate drainage slate toward the cityward stair."
+      },
+      {
+        "modifier_id": "honest_scope_cost_visual",
+        "trigger": "ending_label == honest_scope_cost",
+        "apply_to_visual_scene_ids": ["stormshield_ending_honest_scope"],
+        "modifier_prompt": "Both shamans remain at the rail across separated target markers; the peg is bounded but the overlap continues under dangerous strain."
+      },
+      {
+        "modifier_id": "continuity_success_visual",
+        "trigger": "ending_label == continuity_success",
+        "apply_to_visual_scene_ids": ["stormshield_ending_continuity"],
+        "modifier_prompt": "Ket descends the covered stair with a dry-wrapped copied slate; both shamans share the rail while Tava holds the hot cup near Orin's face."
+      },
+      {
+        "modifier_id": "continuity_cost_visual",
+        "trigger": "ending_label == continuity_cost",
+        "apply_to_visual_scene_ids": ["stormshield_ending_continuity"],
+        "modifier_prompt": "Orin's tremor climbs visibly into one shoulder, the first cup sits untouched with no steam, and Ema records an extra debt line while both mats remain occupied."
+      },
+      {
+        "modifier_id": "recovery_success_visual",
+        "trigger": "ending_label == recovery_priority_success",
+        "apply_to_visual_scene_ids": ["stormshield_ending_recovery"],
+        "modifier_prompt": "Nala remains upright and focused alone at the rail; Ema keeps both disputed accounts exposed while Tava places the hot cup in Orin's shaking hands behind the curtain."
+      },
+      {
+        "modifier_id": "recovery_cost_visual",
+        "trigger": "ending_label == recovery_priority_cost",
+        "apply_to_visual_scene_ids": ["stormshield_ending_recovery"],
+        "modifier_prompt": "Nala bends hard over the rail as white runoff surges toward the cityward channel outside; Ema reaches for the warning bell while Tava supports Orin behind the curtain."
+      },
+      {
+        "modifier_id": "warning_success_visual",
+        "trigger": "ending_label == public_warning_success",
+        "apply_to_visual_scene_ids": ["stormshield_ending_warning"],
+        "modifier_prompt": "The bell swings above an orderly evidence chain: wet road slate, two distinct shaman accounts, separated markers, and untouched peg; Ket turns down the stair with a copied record."
+      },
+      {
+        "modifier_id": "warning_cost_visual",
+        "trigger": "ending_label == public_warning_cost",
+        "apply_to_visual_scene_ids": ["stormshield_ending_warning"],
+        "modifier_prompt": "The bell swings above incomplete copied marks and an unaligned wet slate; Ket faces returned questions from below while both shamans remain half-joined at the rail."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "kalsa_outer_road_stormshield_station.scene_set.required",
+      "geometry_authority_level": "textual_map_only_not_render_authority",
+      "room_model": "Compact rectangular stone room. Roadward wall on the west has shutters and a covered visitor stair landing; a low rail runs north-south between landing and work floor. The scored table stands immediately east of the rail. Two mats and their east-west grip rail occupy the sheltered eastern half. A curtain on the east wall opens to recovery and the dry cityward stair.",
+      "fixed_zones": [
+        {"zone_id": "covered_visitor_stair", "visible_form": "roofed stone stair rising from exposed paving to a recessed doorway", "used_for": "Ket's arrival, departure, and gateward signals"},
+        {"zone_id": "roadward_shutter_bay", "visible_form": "deep stone opening with thick slatted shutters facing approach and three runoff channels", "used_for": "weather observation and empty-relief sightline"},
+        {"zone_id": "visitor_rail_boundary", "visible_form": "waist-high wooden rail with one latched opening at the table", "used_for": "admission, wet-equipment control, and Ket's bounded testimony"},
+        {"zone_id": "scored_evidence_table", "visible_form": "waist-high timber table with scored map surface, clay markers, peg, slates, cords, tiles, and wall-mounted bells", "used_for": "account comparison, record custody, warnings, and transfer evidence"},
+        {"zone_id": "paired_trance_mats", "visible_form": "two woven mats side by side on the sheltered stone floor", "used_for": "incoming and outgoing overlap"},
+        {"zone_id": "continuous_grip_rail", "visible_form": "one polished wooden rail running beside both mats at reachable hand height", "used_for": "bodily support during trance contact"},
+        {"zone_id": "recovery_curtain", "visible_form": "heavy woven curtain blocking the roadward sightline", "used_for": "private transfer from ritual floor to recovery"},
+        {"zone_id": "recovery_alcove", "visible_form": "bench, blankets, water crock, broth pot, cup shelf, and dry stair", "used_for": "Tava's care and cityward worker access"}
+      ],
+      "camera_slots": [
+        {"camera_id": "exterior_approach_wide", "supports_visual_scene_ids": ["stormshield_station_establishing"]},
+        {"camera_id": "workroom_wide_from_visitor_corner", "supports_visual_scene_ids": ["stormshield_handoff_room", "stormshield_final_threshold"]},
+        {"camera_id": "table_overhead_close", "supports_visual_scene_ids": ["stormshield_target_record_closeup"]},
+        {"camera_id": "table_side_medium", "supports_visual_scene_ids": ["stormshield_preparation_choice", "stormshield_routine_fold", "stormshield_disagreement_choice"]},
+        {"camera_id": "visitor_boundary_inward", "supports_visual_scene_ids": ["stormshield_runner_arrival", "stormshield_road_report_choice", "stormshield_ending_warning"]},
+        {"camera_id": "mats_to_table_medium", "supports_visual_scene_ids": ["stormshield_disputed_accounts", "stormshield_ending_honest_scope"]},
+        {"camera_id": "curtain_to_mats_medium", "supports_visual_scene_ids": ["stormshield_ending_continuity", "stormshield_ending_recovery"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "shutters_to_approach", "path": "paired_trance_mats -> scored_evidence_table edge -> roadward_shutter_bay -> exposed approach", "supports": ["prepare_by_observation", "relief_status callbacks"]},
+        {"lane_id": "visitor_to_mats", "path": "covered_visitor_stair -> visitor_rail_boundary -> scored_evidence_table edge -> paired_trance_mats", "supports": ["Ket's visible misread of Nala's stillness"]},
+        {"lane_id": "roadward_to_recovery_occluded", "path": "covered_visitor_stair -> visitor rail -> table, terminated by recovery curtain", "supports": ["private examination and first-cup practice"]}
+      ],
+      "staging_slots": [
+        {"slot_id": "incoming_mat", "default_agent": "nala_ter"},
+        {"slot_id": "outgoing_mat", "default_agent": "orin_vesh"},
+        {"slot_id": "observer_table", "default_agent": "ema_sai"},
+        {"slot_id": "recovery_curtain", "default_agent": "tava_en"},
+        {"slot_id": "visitor_rail", "default_agent": "ket_oru"}
+      ],
+      "branch_persistent_state_anchors": [
+        "transfer peg position",
+        "road and drainage marker separation",
+        "wet road slate custody and paving grit",
+        "warning bell and signal tile state",
+        "Nala and Orin mat or recovery positions",
+        "first-cup lid and steam",
+        "visible runoff and route closure evidence"
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for recurring named characters. Include only refs for characters visible in a frame.",
+    "characters": {
+      "nala_ter": "Nala Ter: tall broad-built human woman in her early thirties with warm brown skin, a broad nose, heavy jaw, two short blunt horn nubs at the hairline, thick black hair braided close for work, dark amber eyes, and large square hands. She wears an undyed layered wool tunic, storm-blue woven shoulder wrap, ochre sash, dark loose trousers, and soft-soled leather foot wraps. Her silhouette is grounded and wide through shoulders and hips; attentive posture is expressed through hand placement, jaw tension, and controlled breath.",
+      "orin_vesh": "Orin Vesh: broad-backed human man in his late fifties with deep brown skin, a wide weathered face, broad nose, one worn horn nub and one broken close to the hairline, iron-gray hair tied at the neck, gray stubble, and tired dark eyes. He wears a rain-dark charcoal wool wrap over a faded rust tunic, thick belt, loose work trousers, and damp leather foot wraps. His silhouette leans toward the grip rail; fatigue appears as white knuckles, forearm tremor, sagging shoulders, and delayed focus.",
+      "ema_sai": "Ema Sai: compact human adult in their forties with umber skin, square cheeks, close-cropped salt-and-black hair, small symmetrical horn nubs, and bare narrow attentive eyes. They wear a fitted moss-brown wool coat with rolled sleeves, a clay-red recording sash, wax-stained fingertips, dark trousers, and dry leather shoes. Their silhouette stays upright behind the table; authority appears through exact stylus movement, marker placement, and stillness.",
+      "tava_en": "Tava En: stocky human woman in her sixties with dark brown skin, rounded face, broad nose, short silver curls around two smooth horn nubs, and strong forearms. She wears a warm saffron-brown quilted vest over a cream work tunic, a dark green apron with cup cloth and spoon loops, loose trousers, and dry indoor wraps. Her silhouette is sturdy and forward-leaning, usually carrying a clay cup, blanket, ladle, or another practical care object.",
+      "ket_oru": "Ket Oru: lean long-legged human adult in their twenties with copper-brown skin, narrow face, broad nostrils, tiny horn buds at the temples, loose dark curls plastered by rain, and alert hazel eyes. They wear a soaked slate-blue hooded road cloak thrown back from the face, a short belted brown tunic, close work trousers, wrapped calves, and mud-dark leather boots. Their silhouette braces against wind with one shoulder forward; one hand protects a rectangular waxed road slate."
+    }
+  },
+  "review_notes": [
+    "No images were generated. This plan and its BFL batch are the complete visual deliverables for the fixture.",
+    "The room is multi-angle and branch-persistent, so a durable scene-set blockout is required before illustrated replay can be called ready.",
+    "The textual scene_set records current geometry intent for a future builder but is not itself render authority.",
+    "Papsenai-associated bovine features are individualized and remain human; the plan does not treat physique, temperament, intelligence, or docility as a universal ethnic fact.",
+    "Magic remains visually ambiguous: image prompts show storm, material traces, records, posture, and workload rather than an unsupported glowing shield."
+  ]
+}

@@ -1,0 +1,349 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "kalsa-stormshield-handoff-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/stormshield-handoff-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/stormshield-handoff-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/stormshield-handoff-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "stormshield-handoff-v0.outer-road-watch-change",
+  "protagonist_agent_id": "nala_ter",
+  "npc_agent_ids": [
+    "orin_vesh",
+    "ema_sai",
+    "tava_en",
+    "ket_oru"
+  ],
+  "purpose": "Interactive Fiction Weaver compile of a Kalsa outer-road Stormshield handoff from the incoming shaman's bounded perspective, with ordinary station work preceding a relief-route interruption.",
+  "tonal_mode": "Workplace warmth and dry institutional comedy under weather pressure.",
+  "artifact_role": "Playable illustrated-fiction website collateral and lore stress test; not simulation state and not core model-training signal.",
+  "local_awareness_summary": [
+    {
+      "text": "Nala is the rested incoming shaman. She can feel only the pressure reached through her own bond, observe the room and roadward shutters, hear spoken reports, touch the grip rail and target objects, and decide what target claim her body will accept.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/stormshield-handoff-v0.v0.json",
+        "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+      ]
+    },
+    {
+      "text": "Orin is the outgoing shaman and has not yet released the road target. His words, breathing, grip, tremor, and release are observable; his private intention and complete sensed field are not available to Nala.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/stormshield-handoff-v0.v0.json"
+      ]
+    },
+    {
+      "text": "Ket's wet slate and spoken report can establish damaged paving and a divided relief cohort, but neither becomes direct knowledge of the magical target or the road's future.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/stormshield-handoff-v0.v0.json",
+        "Kalsa/Spoilers/Foundations/Kaos.md"
+      ]
+    },
+    {
+      "text": "The transfer peg, clay markers, slates, wind cords, signal tiles, bells, covered cup, rail, mats, shutters, and visitor boundary are local physical affordances rather than magical authorities.",
+      "source_refs": [
+        "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Nala's embodied incoming-shaman viewpoint inside the station. Narration may translate institutional stakes for the reader but cannot provide the road's objective future.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/kalsa/stormshield-handoff-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening must establish room geometry, routine handoff, worker roles, and the first-cup recovery practice before Ket interrupts with the road report.",
+        "source_refs": [
+          "AGENTS.md",
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Nala owns whether she accepts a bond and how she describes her reached target; she does not own Ema's observations, Orin's account, the gate crew, city evacuation, or the weather itself.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+        ]
+      },
+      {
+        "text": "Ema may observe, record, admit evidence, operate local signals, and place the transfer peg under the station procedure. Marker movement and peg placement remain evidence of a decision, not causal control of the shield.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+        ]
+      },
+      {
+        "text": "Ket may carry route evidence to the visitor boundary but cannot enter the trance floor unadmitted or make a shamanic target true by urgency.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Ema controls the low rail latch, transfer peg, scored table, clay target pieces, watch slates, signal tiles, and bells; Ket initially controls the wet road slate; Tava controls the first cup and recovery space; each shaman controls their own contact with the grip rail and trance mat.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md",
+          "examples/ink/kalsa/stormshield-handoff-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every branch must distinguish material observation, worker account, bonded pressure, record state, warning state, and bodily capacity rather than collapsing them into one omniscient truth variable.",
+        "source_refs": [
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+          "Kalsa/Spoilers/Foundations/Oracle Ecology.md"
+        ]
+      },
+      {
+        "text": "Endings must make honest scope, continuous protection, outgoing-worker recovery, and public warning produce different costs instead of treating any one value as the correct universal answer.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+        ]
+      },
+      {
+        "text": "Orin's first cup, tremor, extra overlap, and recorded recovery debt must remain operational consequences rather than decorative tenderness.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make the transfer peg, target pieces, wind cords, or bells control the shield directly.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+        ]
+      },
+      {
+        "text": "Do not reveal a visible magic dome, universal symptom sequence, fixed office title, shift length, station count, or city map that the vault leaves unresolved.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md",
+          "examples/lore-grounding/kalsa/stormshield-handoff-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Do not make Nala know Orin's, Ema's, Ket's, or the road's private truth; listener misreads remain interpretations unless observable action corrects them.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through the routine handoff, road report, disputed target, and watch commitment, then select one of eight state-gated endings.",
+    "choice_layers": [
+      "handoff_preparation",
+      "urgent_road_report",
+      "disputed_target_overlap",
+      "watch_commitment"
+    ],
+    "variables": [
+      "handoff_alignment",
+      "incoming_contact",
+      "outgoing_load",
+      "road_exposure",
+      "relief_status",
+      "observer_confidence",
+      "warning_state",
+      "transfer_scope",
+      "cup_heat",
+      "runner_evidence"
+    ],
+    "ending_gates": [
+      "ending_honest_scope_success",
+      "ending_honest_scope_cost",
+      "ending_continuity_success",
+      "ending_continuity_cost",
+      "ending_recovery_success",
+      "ending_recovery_cost",
+      "ending_warning_success",
+      "ending_warning_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_by_account",
+      "ink_path": "preparation_choice",
+      "action_type": "speak",
+      "actor_intent": "Align Orin's spoken target account with Ema's clay markers before deepening the bond.",
+      "state_basis": ["Nala can ask for a repeated account and observe both the correction and Orin's effort."],
+      "reviewed_consequences": ["Raises handoff_alignment and observer_confidence while increasing outgoing_load; later shared prose exposes both the cleaner road scope and the cost of making Orin repeat."],
+      "training_hooks": ["account_alignment", "exhaustion_cost", "bounded_observation"]
+    },
+    {
+      "branch_id": "prepare_by_contact",
+      "ink_path": "preparation_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Use the shared grip rail to establish embodied contact before asking for more explanation.",
+      "state_basis": ["Incoming contact must begin before outgoing release; the grip rail is a stable bodily support, not a magical switch."],
+      "reviewed_consequences": ["Raises incoming_contact and road_exposure; later options can safely accept more target pressure, while early focus leaves less external observation."],
+      "training_hooks": ["embodied_magic", "contact_before_release", "attention_tradeoff"]
+    },
+    {
+      "branch_id": "prepare_by_observation",
+      "ink_path": "preparation_choice",
+      "action_type": "move",
+      "actor_intent": "Compare the shutter-bay wind cords and exposed approach with the expected relief arrival.",
+      "state_basis": ["Nala can leave the mat before full contact and inspect visible weather and route state."],
+      "reviewed_consequences": ["Raises relief_status and observer_confidence while reducing incoming_contact; the empty approach becomes recorded evidence but the bond starts thinner."],
+      "training_hooks": ["material_observation", "route_visibility", "contact_cost"]
+    },
+    {
+      "branch_id": "prepare_by_recovery",
+      "ink_path": "preparation_choice",
+      "action_type": "speak",
+      "actor_intent": "Protect Orin's first cup and use routine humor to reduce panic before overlap.",
+      "state_basis": ["Recovery support is part of shield work and the first cup follows release before detailed questions."],
+      "reviewed_consequences": ["Raises cup_heat and observer_confidence while reducing outgoing_load; the cup later changes recovery imagery and whether extended overlap visibly spends care."],
+      "training_hooks": ["care_as_infrastructure", "workplace_humor", "recovery_resource"]
+    },
+    {
+      "branch_id": "admit_runner_evidence",
+      "ink_path": "road_report_choice",
+      "action_type": "speak",
+      "actor_intent": "Admit Ket to the rail so the wet road slate can be aligned with the target record.",
+      "state_basis": ["A runner may enter through the visitor stair but cannot cross the low rail without admission."],
+      "reviewed_consequences": ["Raises runner_evidence, relief_status, handoff_alignment, and road_exposure; later folds show the slate beside the markers and unlock stronger warning evidence."],
+      "training_hooks": ["boundary_admission", "material_trace", "listener_misread"]
+    },
+    {
+      "branch_id": "warn_before_certainty",
+      "ink_path": "road_report_choice",
+      "action_type": "speak",
+      "actor_intent": "Ask Ema to close the approach before the target account is complete.",
+      "state_basis": ["The local bell can carry a copied watch meaning; the lower gate needs an actionable road state."],
+      "reviewed_consequences": ["Raises warning_state and relief_status, lowers road_exposure and observer_confidence, closes traffic early, and increases later political ambiguity."],
+      "training_hooks": ["warning_under_uncertainty", "safety_scrutiny_tradeoff", "public_signal"]
+    },
+    {
+      "branch_id": "preserve_contact_boundary",
+      "ink_path": "road_report_choice",
+      "action_type": "wait",
+      "actor_intent": "Keep the bond continuous while making Ket report through the visitor boundary.",
+      "state_basis": ["Nala can hear Ket from the mat; only Ema owns admission across the rail."],
+      "reviewed_consequences": ["Raises incoming_contact, runner_evidence, observer_confidence, and road_exposure; Ket's misread survives while the bond becomes more useful."],
+      "training_hooks": ["wait_as_action", "boundary_preserved", "misread_without_omniscience"]
+    },
+    {
+      "branch_id": "inspect_material_trace",
+      "ink_path": "road_report_choice",
+      "action_type": "use_object",
+      "actor_intent": "Inspect paving grit embedded in Ket's wet slate as a material trace of route failure.",
+      "state_basis": ["Nala can cross to the boundary and handle the admitted slate, but doing so interrupts contact."],
+      "reviewed_consequences": ["Raises runner_evidence, relief_status, and outgoing_load while lowering incoming_contact; later warning gates strengthen as Orin visibly deteriorates."],
+      "training_hooks": ["object_evidence", "embodied_attention_cost", "route_failure"]
+    },
+    {
+      "branch_id": "name_partial_contact",
+      "ink_path": "disagreement_choice",
+      "action_type": "speak",
+      "actor_intent": "Name the road as held and the drainage edge as inaccessible rather than certifying a total transfer.",
+      "state_basis": ["A shaman must describe pressure honestly and may refuse a target that feels inaccessible."],
+      "reviewed_consequences": ["Raises handoff_alignment, observer_confidence, warning_state, and sets transfer_scope to partial; Orin can misread the statement as personal refusal while the record uses it as a bounded target."],
+      "training_hooks": ["honest_scope", "refusal_not_sabotage", "asymmetric_interpretation"]
+    },
+    {
+      "branch_id": "compare_embodied_accounts",
+      "ink_path": "disagreement_choice",
+      "action_type": "speak",
+      "actor_intent": "Compare Orin's bodily pressure description with Nala's contact without letting shared marker vocabulary force agreement.",
+      "state_basis": ["Workers report sensed pressure and what they do not understand; observers retain contradictions."],
+      "reviewed_consequences": ["Raises incoming_contact, handoff_alignment, outgoing_load, and runner_evidence; the route becomes more legible while the outgoing worker spends more capacity."],
+      "training_hooks": ["embodied_account", "uncertainty_preservation", "comparison_cost"]
+    },
+    {
+      "branch_id": "withhold_transfer_peg",
+      "ink_path": "disagreement_choice",
+      "action_type": "gesture",
+      "actor_intent": "Use a visible hand beside the unused peg to refuse certification without claiming authority over Ema's record.",
+      "state_basis": ["The peg is placed only after supported agreement; Nala controls whether she accepts the bond."],
+      "reviewed_consequences": ["Sets transfer_scope to refused, raises observer_confidence, outgoing_load, and road_exposure; later prose and endings preserve the untouched peg and dangerous overlap."],
+      "training_hooks": ["non_speech_refusal", "evidence_interface", "continuity_cost"]
+    },
+    {
+      "branch_id": "accept_full_target_for_recovery",
+      "ink_path": "disagreement_choice",
+      "action_type": "speak",
+      "actor_intent": "Claim the full target so Orin can release into recovery immediately.",
+      "state_basis": ["Nala may accept a target, but care cannot enlarge her actual causal reach."],
+      "reviewed_consequences": ["Sets transfer_scope to full, reduces outgoing_load, incoming_contact, observer_confidence, and cup_heat; later imagery shows a confident peg and the endings test whether compassion overreached."],
+      "training_hooks": ["merciful_overclaim", "recovery_priority", "reach_constraint"]
+    },
+    {
+      "branch_id": "prioritize_honest_scope",
+      "ink_path": "final_choice",
+      "action_type": "speak",
+      "actor_intent": "Accept only the road section supported by account and contact, leaving the drainage disagreement explicit.",
+      "state_basis": ["Success depends on handoff_alignment and incoming_contact."],
+      "reviewed_consequences": ["Routes to an honest-scope success or cost ending; either preserves the disagreement, while only the strong state releases Orin cleanly."],
+      "training_hooks": ["bounded_target", "state_gated_ending", "uncertainty_carryover"]
+    },
+    {
+      "branch_id": "prioritize_continuity",
+      "ink_path": "final_choice",
+      "action_type": "wait",
+      "actor_intent": "Keep the overlap until another competent holder or central instruction reaches the station.",
+      "state_basis": ["Success depends on manageable outgoing_load and a known relief route problem."],
+      "reviewed_consequences": ["Routes to continuity success with a material relief plan or continuity cost that converts extra service into recorded exhaustion debt."],
+      "training_hooks": ["overlap_continuity", "future_capacity_cost", "care_callback"]
+    },
+    {
+      "branch_id": "prioritize_recovery",
+      "ink_path": "final_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Take the full pressure through the grip rail and release Orin to Tava's care.",
+      "state_basis": ["Success depends on deep incoming_contact and enough observer_confidence to retain the dispute."],
+      "reviewed_consequences": ["Routes to an explicit disputed transfer with manageable debt or to a failure in which compassion cannot make the drainage pressure reachable."],
+      "training_hooks": ["care_as_choice", "capacity_limit", "observer_record"]
+    },
+    {
+      "branch_id": "prioritize_warning",
+      "ink_path": "final_choice",
+      "action_type": "use_object",
+      "actor_intent": "Refuse certification and strike the road warning so downstream people can act on the station's uncertainty.",
+      "state_basis": ["Success depends on assembled runner evidence and an already established warning state."],
+      "reviewed_consequences": ["Routes to a well-grounded public warning or a politically vulnerable alarm with incomplete evidence; neither silently resolves the handoff."],
+      "training_hooks": ["public_uncertainty", "signal_as_action", "evidence_threshold"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose and option gates",
+      "Ending selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable relationship or memory update for Nala, Orin, Ema, Tava, or Ket",
+      "Any promotion of this fictional watch into Kalsa historical canon",
+      "Any universalization of the outer-road station plan, roles, symptoms, or signal meanings",
+      "Any use of the fixture as model-training signal rather than reviewed website collateral and lore stress-test material"
+    ]
+  },
+  "audit": {
+    "reviewer": "Detached Codex world worker applying four repository reviewer prompts as separate passes",
+    "review_status": "needs_revision",
+    "review_notes": [
+      "Weaver compile complete; narrative, lore, visual continuity, and spatial-geometric review passes are pending."
+    ],
+    "review_passes": {
+      "narrative_quality": {"verdict": "pending", "scores": {}, "findings": []},
+      "lore_grounding": {"verdict": "pending", "scores": {}, "findings": []},
+      "visual_continuity": {"verdict": "pending", "scores": {}, "findings": []},
+      "spatial_cohesion": {"verdict": "pending", "scores": {}, "findings": []}
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
