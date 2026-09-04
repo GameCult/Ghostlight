@@ -1,0 +1,72 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "numen-answering-cut-v0.bfl-simple-v0",
+  "fixture_id": "numen-answering-cut-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Style: high-fantasy industrial storybook illustration, hand-painted gouache and fine ink linework, luminous mineral magic, soot-dark dwarven stonework, tactile brass machinery, restrained jewel colors, expressive faces and posture, clear interactive-fiction staging, numinous wonder held beside practical labor.",
+  "prompts": [
+    {
+      "id": "01_three_bell_gate_establishing",
+      "prompt": "Wide eastward view through a twenty-four-meter dwarven basalt gate hall: west freight lift, bright brass withdrawal strip across the floor, offering bench and bead gauges on the side walls, then three eastern arches holding black stone bells. A blue-crystal direct pump and folded rune cutter stand behind brass rails before the broad central crystal face; a narrow left gallery bends north and a small right rest alcove is sealed. Amber oil lamps reveal damp stone, old route marks, iron grates, and mineral seams."
+    },
+    {
+      "id": "02_offering_routine",
+      "prompt": "Workplace ritual at a basalt offering bench: a stocky brown-skinned dwarf woman with copper-ringed black braid, soot-blue coat, brass seal chain, and scarred hands weighs three mana crystals beside three loaves and dried mushroom twists. A lean green-gold goblin with long ears, amber eyes, copper-dusted vest, and soft boots studies the scale. A tall dark-skinned human woman in worn leather scale armor checks three delvers' straps. A russet-bearded dwarf man in an iron-grey coat waits by a blue pump dial. Three stone bells and a brass withdrawal line frame the background."
+    },
+    {
+      "id": "03_preparation_choice",
+      "prompt": "Interactive choice tableau in a dwarven basalt gate hall: a stocky dwarf priest with soot-blue coat and brass seal stands among an offering scale with three portions, a goblin listener's low stair toward a left gallery, an iron pump-isolation wedge on a hook, and a soft slate ready for witness marks. A tall armored human captain waits with three packed delvers at a brass floor line while a russet-bearded assessor holds a schedule beside blue-lit machinery. Three arched bellways face them from the east wall."
+    },
+    {
+      "id": "04_party_return",
+      "prompt": "Four mud-marked delvers return west across a brass withdrawal line inside a long basalt gate hall; one sleeve bears a narrow blood stain and two pairs of boots are wet. A stocky dwarf priest in a soot-blue coat closes the waist-high gate, a tall dark-skinned armored captain counts her companions, a green-gold goblin listens from a raised niche above the left arch, and a russet-bearded company assessor watches the direct-pump gauge. Three dark stone bells hang over the eastern arches behind an idle folded cutter."
+    },
+    {
+      "id": "05_first_answer",
+      "prompt": "A black stone bell swings inside a sealed right-hand alcove while its rope hangs slack. Far west of a bright brass floor line, a stocky dwarf priest, lean green-gold goblin listener, tall armored human captain, russet-bearded dwarf assessor, and three delvers freeze together as witnesses. The long basalt chamber shows the west lift, central pump gauge at zero, folded cutter, broad crystal face, narrow left arch, and amber lamps around the impossible bell motion."
+    },
+    {
+      "id": "06_answering_organ",
+      "prompt": "Numinous reveal across three basalt arches: warm stone scales seal the central crystal face; a narrow left gallery exhales pale mist; around the right bell grows a living organ of dark fungus, translucent mineral skin, root-fine copper and silver filaments, and warm stone. The organ lifts copied route marks into the wall: a central path closed by a right-to-left null stroke, an open left branch, and three glowing high-water notches. A dwarf priest, goblin listener, human delver captain, and company assessor watch from behind brass rails."
+    },
+    {
+      "id": "07_interpretation_choice",
+      "prompt": "A stocky brown-skinned dwarf priest in a soot-blue coat faces a glowing fungal-metal answering organ with route book, ink stylus, and wax sheets ready. Beside her, a lean green-gold goblin smells the changed air and points toward the open left gallery; a tall dark-skinned human captain holds a timing watch and nicked helmet; a russet-bearded dwarf assessor poises his stylus over a company form. Behind a brass withdrawal line, the centre face is stone-sealed, the direct pump is dark, and the right bell glows inside copper-silver roots."
+    },
+    {
+      "id": "08_answer_hearing",
+      "prompt": "A practical hearing in the western half of a long basalt gate hall: route book, soft slate, wax impressions, scent-note tokens, and company form share a stone desk beside a vertical colored-bead district gauge and knocking brass messenger tube. A stocky dwarf priest stands at the book, a lean green-gold goblin listener watches the left route, a tall human delver captain studies the open gallery, and a russet-bearded assessor catches rolled demand slips. Beyond the brass line, a sealed central face and copper-silver answering organ remain visibly alive."
+    },
+    {
+      "id": "09_company_demand",
+      "prompt": "Confrontation beside a brass machine rail: a compact russet-bearded dwarf assessor in a tailored iron-grey coat unhooks a heavy cutter key while facing a stocky brown-skinned dwarf priest with copper-ringed braid, soot-blue coat, brass civic seal, and scarred casting hand. A tall dark-skinned human captain in worn scale armor leans on the rail toward an open left gallery. A green-gold goblin listener watches the fungal-metal organ around the right bell. The zeroed blue-crystal pump, folded cutter, district gauge, three arches, and west lift remain clear."
+    },
+    {
+      "id": "10_commitment_threshold",
+      "prompt": "Final-choice tableau in a long dwarven basalt gate hall: a stocky dwarf Master holds a cutter key over an open route book and civic seal. Around her wait four material paths: a sealed rest alcove and westbound reserve tube; an open left gallery with retreat bell and delver packs; three wax evidence packets aimed toward public lift, temple satchel, and goblin route bag; and a company assessor's outstretched hand beside the folded cutter. The goblin listener, armored human captain, three delvers, and russet-bearded assessor hold distinct positions around a glowing answering organ and dark central null mark."
+    },
+    {
+      "id": "11_rest_ending",
+      "prompt": "Quiet aftermath at a dwarven gate hearing desk: a stocky brown-skinned dwarf woman in a soot-blue coat presses a brass civic seal into warm wax over a closed route book. The heavy cutter key rests inside a sealed right-hand alcove beyond the brass line. A lean green-gold goblin listener stands beside her. The central face remains covered in warm stone scales, the left arch is open, and a copper-silver fungal organ curls around the right bell. An amber reserve tube and vertical bead gauge show the household cost while pump and cutter sit dark."
+    },
+    {
+      "id": "12_alternate_delve",
+      "prompt": "Bounded expedition at the narrow left gallery of a basalt gate hall: a tall dark-skinned human captain in worn leather scale armor leads three compactly packed delvers under chalk handholds with a black stone retreat bell. A lean green-gold goblin in a copper-dusted vest points to a recessed safety pocket and warm-air seam. A stocky dwarf priest holds a rewritten contract west of the brass line. Small luminous crystals bud along the defended route; the centre face remains stone-sealed and the copper-silver answering organ glows around the right bell."
+    },
+    {
+      "id": "13_evidence_departure",
+      "prompt": "Evidence leaves a dwarven deep gate: at a square west freight lift, a stocky dwarf priest in a soot-blue coat divides wax impressions and route pages into three sealed packets. A tall dark-skinned armored captain takes the delver-hall packet; a lean green-gold goblin tucks another into a route bag; a temple satchel receives the third. A russet-bearded dwarf assessor holds a competing company report beside a messenger tube. Across the long basalt hall, the sealed centre face, open left arch, three bells, and living copper-silver organ remain visible."
+    },
+    {
+      "id": "14_forced_cut",
+      "prompt": "A rune cutter bites warm stone scales sealing the central arch of a dwarven basalt gate hall. The fungal-metal answering organ tears from the right bell in whipping copper and silver roots while black water bursts across the service floor and twists a blue-crystal pump inside brass rails. A stocky dwarf priest reaches toward the casing with a scarred casting hand; a tall dark-skinned captain pulls three delvers west across a brass line; a green-gold goblin retreats on the listening stair; a russet-bearded assessor stands at the cutter key housing."
+    },
+    {
+      "id": "15_last_echo",
+      "prompt": "Empty Three-Bell Gate after the decision: a long dark basalt hall runs from a closed west freight lift to three shadowed eastern arches. Amber oil lamps reflect across the brass withdrawal strip, idle blue-crystal pump, folded rune cutter, offering bench, open route book, colored-bead gauge, and three heavy stone bells. The centre face, left gallery, right rest alcove, and answering-organ anchor remain clearly visible while damp mineral light gathers in the stone and warm-sea water glints through floor grates."
+    }
+  ]
+}

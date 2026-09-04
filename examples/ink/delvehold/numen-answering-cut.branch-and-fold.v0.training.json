@@ -1,0 +1,418 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "numen-answering-cut-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/delvehold/numen-answering-cut.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/numen-answering-cut.v0.json",
+  "scene_id": "numen-answering-cut-v0.three-bell-gate",
+  "protagonist_agent_id": "nera_ashmark",
+  "npc_agent_ids": [
+    "pekk_wet_stone",
+    "dorrik_vane",
+    "sava_tern",
+    "sava_delving_party",
+    "three_bell_core"
+  ],
+  "purpose": "Branch-and-fold illustrated Ink fixture dramatizing the Answering Cut at Three-Bell Gate from the perspective of the workshop Master and mine priest responsible for making an old core's refusal change work.",
+  "local_awareness_summary": [
+    {
+      "text": "Nera is the Master of the Three-Bell Gate workshop, its mine priest, and holder of its civic seal. She can stop or admit workshop machinery, release its district reserve, seal the route book, and issue or replace a local delving contract.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/numen-answering-cut.v0.json",
+        "Delvehold/Lore/Peoples/Dwarves.md",
+        "Delvehold/Lore/The Greathold.md"
+      ]
+    },
+    {
+      "text": "Nera knows the old rite's public grammar and the gate's recent closures. She does not know the core's private motive, full body boundary, moral character, or relationship to deeper minds.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/numen-answering-cut.v0.json",
+        "Delvehold/Lore/Ontology/Dungeon Cores.md",
+        "Delvehold/Lore/Ontology/Nested Dungeons.md"
+      ]
+    },
+    {
+      "text": "The direct pump and cutter serve a contracted centre face whose forecast feeds lift water and cold stores on the warm-sea terraces; stopping them consumes district reserve and exposes the workshop to complaints under its own seal.",
+      "source_refs": [
+        "Delvehold/Lore/Industry/Dwarven Industry.md",
+        "Delvehold/Lore/Industry/Deep Mining.md",
+        "Delvehold/Lore/The Greathold.md"
+      ]
+    },
+    {
+      "text": "Pekk can read route breath, fungi, water, and animal movement; Sava's party can enter contested space and retreat; Dorrik can classify and report but cannot apply Nera's workshop seal or know the core's intent.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/numen-answering-cut.v0.json",
+        "Delvehold/Lore/Peoples/Goblins.md",
+        "Delvehold/Lore/Dungeon Ecology/Adventurers.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Nera's embodied position inside the listening chamber. Choices use scales, offerings, route movement, pump controls, speech, wax copying, keys, slates, contracts, and the civic seal.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/numen-answering-cut.v0.json"
+        ]
+      },
+      {
+        "text": "The tonal mode is ritual wonder braided with dry workplace comedy and material dread. Routine weighing, countersigning, maintenance, and reserve arithmetic precede the answering organ and forced choice.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "AGENTS.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Nera can bind her workshop and local gate practice. She cannot settle Greathold-wide personhood law, divine ontology, Rune College doctrine, company policy, or the core's inner truth.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Ontology/Gods and Religion.md",
+          "examples/lore-grounding/delvehold/numen-answering-cut.v0.json"
+        ]
+      },
+      {
+        "text": "The core's agency is shown only through persistent observed acts: route closure, alternate opening, bell timing, borrowed marks, self-correction, crystal offering, and defensive response. Narration never enters its private consciousness.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Dungeon Cores.md",
+          "Delvehold/Lore/Ontology/Mana and Pattern.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The three offerings, reserve key, isolation wedge, cutter key, route slate, route book, workshop seal, wax copies, retreat bell, pump, cutter, and answering organ remain material objects whose custody and state alter later options.",
+        "source_refs": [
+          "examples/ink/delvehold/numen-answering-cut.branch-and-fold.v0.ink",
+          "examples/lore-grounding/delvehold/numen-answering-cut.v0.json"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Recognition must change work. A ritual that leaves the direct pump running, blocks the alternate, or ignores rest is visibly compromised and cannot establish an honest bargain.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Dungeon Cores.md",
+          "Delvehold/Lore/Dungeon Ecology/Dungeon Lifecycle.md"
+        ]
+      },
+      {
+        "text": "The core may be a person and remain dangerous. The left route retains defended ecology, uncertain intent, and the delvers' right to retreat.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/index.md",
+          "Delvehold/Lore/Dungeon Ecology/Adventurers.md"
+        ]
+      },
+      {
+        "text": "Every final priority must expose a different cost: household shortage, bodily risk, evidence custody, insurance pressure, pump destruction, or loss of the answering organ.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "examples/lore-grounding/delvehold/numen-answering-cut.v0.json"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let one glyph, priestly title, or Rune College instrument settle the core's full personhood, divine rank, or relation to the World-Spirit.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Gods and Religion.md",
+          "Delvehold/Lore/Ontology/World-Spirit.md"
+        ]
+      },
+      {
+        "text": "Do not make Dorrik malicious without material reason, Pekk infallible, Nera omniscient, Sava expendable, or the core benevolent because it communicates.",
+        "source_refs": [
+          "Delvehold/Lore/Crisis/World Without a Villain.md",
+          "Delvehold/Lore/Ontology/index.md",
+          "examples/lore-grounding/delvehold/numen-answering-cut.v0.json"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold preparation and interpretation state into four final commitments, producing eight state-gated endings and one shared final echo.",
+    "choice_layers": [
+      "rite_preparation",
+      "interpret_the_answer",
+      "bind_the_answer"
+    ],
+    "variables": [
+      "ritual_integrity",
+      "district_reserve",
+      "goblin_trust",
+      "company_pressure",
+      "alternate_route",
+      "witness_chain",
+      "core_recognition",
+      "answering_organ_intact",
+      "crew_safety",
+      "bargain_quality",
+      "rest_honored"
+    ],
+    "ending_gates": [
+      "ending_rest_kept",
+      "ending_rest_cost",
+      "ending_bargain_kept",
+      "ending_bargain_cost",
+      "ending_recognition_kept",
+      "ending_recognition_cost",
+      "ending_force_evacuated",
+      "ending_force_caught"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_equal_offerings",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Make the three offered choices materially equal even though doing so consumes district reserve.",
+      "state_basis": [
+        "Nera controls the gate reserve key and offering scale.",
+        "The rite's validity depends on real choices rather than a decorative alternate."
+      ],
+      "reviewed_consequences": [
+        "Raises ritual_integrity and witness_chain while lowering district_reserve; later rest and publication outcomes read both the stronger rite and thinner reserve."
+      ],
+      "training_hooks": [
+        "ritual_cost_as_state",
+        "equal_offering_object_action",
+        "reserve_tradeoff"
+      ]
+    },
+    {
+      "branch_id": "survey_alternate_with_pekk",
+      "ink_path": "preparation_choice",
+      "action_type": "move",
+      "actor_intent": "Use Pekk's route knowledge to make the alternate a survivable material option before asking the core to choose.",
+      "state_basis": [
+        "Pekk can read breath, fungi, water, and structural signs that a survey wand misses.",
+        "Nera can walk the first bend before the withdrawal begins."
+      ],
+      "reviewed_consequences": [
+        "Raises alternate_route, goblin_trust, crew_safety, and company_pressure; unlocks and strengthens the bounded-delve ending."
+      ],
+      "training_hooks": [
+        "route_knowledge_as_affordance",
+        "goblin_expertise",
+        "delay_buys_safety"
+      ]
+    },
+    {
+      "branch_id": "preserve_pump_margin",
+      "ink_path": "preparation_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Keep district service stable for one more hour by delaying pump isolation.",
+      "state_basis": [
+        "Nera controls the isolation wedge.",
+        "The terraces depend on the pump, while a running direct draw compromises the core's room to answer."
+      ],
+      "reviewed_consequences": [
+        "Raises district_reserve and reduces company_pressure while sharply lowering ritual_integrity and witness_chain; later prose exposes the coerced answer."
+      ],
+      "training_hooks": [
+        "infrastructure_dependency",
+        "invalid_rite_by_actuation",
+        "short_term_margin"
+      ]
+    },
+    {
+      "branch_id": "countersign_goblin_witness",
+      "ink_path": "preparation_choice",
+      "action_type": "speak",
+      "actor_intent": "Place Pekk's testimony in the record before priestly and company interpretation can subtract it.",
+      "state_basis": [
+        "Nera owns the sequencing of marks on the soft route slate.",
+        "Goblin knowledge is useful and institutionally easy to exclude."
+      ],
+      "reviewed_consequences": [
+        "Raises goblin_trust, witness_chain, and company_pressure; strengthens public-recognition evidence and changes Pekk's folded position."
+      ],
+      "training_hooks": [
+        "witness_sequence",
+        "epistemic_inclusion",
+        "precedent_pressure"
+      ]
+    },
+    {
+      "branch_id": "record_core_answer",
+      "ink_path": "interpretation_choice",
+      "action_type": "write",
+      "actor_intent": "Use person-like grammar in the route book and preserve Pekk's reading beside Nera's own.",
+      "state_basis": [
+        "The organ has closed the main face, opened the alternate, touched the high-water tally three times, and copied the workshop seal.",
+        "Pekk supplies a sensory route reading without access to the core's private mind."
+      ],
+      "reviewed_consequences": [
+        "Raises core_recognition, goblin_trust, bargain_quality, and company_pressure; enables stronger publication and bargaining paths."
+      ],
+      "training_hooks": [
+        "grammar_as_recognition",
+        "bounded_interpretation",
+        "record_changes_liability"
+      ]
+    },
+    {
+      "branch_id": "preserve_stroke_evidence",
+      "ink_path": "interpretation_choice",
+      "action_type": "inspect",
+      "actor_intent": "Delay interpretation long enough to preserve the organ's exact changes and timings.",
+      "state_basis": [
+        "Nera has wax sheets, Sava can count intervals, and Pekk can record fungal scent changes.",
+        "The district spends reserve while the gate remains stopped."
+      ],
+      "reviewed_consequences": [
+        "Raises witness_chain and core_recognition while lowering district_reserve; provides stronger but more expensive evidence."
+      ],
+      "training_hooks": [
+        "wonder_as_observation",
+        "evidence_costs_time",
+        "multi_modal_witness"
+      ]
+    },
+    {
+      "branch_id": "ask_for_bounded_work",
+      "ink_path": "interpretation_choice",
+      "action_type": "speak",
+      "actor_intent": "Ask for a kind of work that meets household need while preserving the centre face's rest.",
+      "state_basis": [
+        "The left arch is open and the centre is marked with a null.",
+        "The old delving exchange admits contested walking parties and retreat."
+      ],
+      "reviewed_consequences": [
+        "Raises bargain_quality, alternate_route, ritual_integrity, and company_pressure; the organ offers thumbnail crystals along the delver-marked branch."
+      ],
+      "training_hooks": [
+        "spoken_bargain",
+        "delve_not_bore",
+        "mutual_constraint"
+      ]
+    },
+    {
+      "branch_id": "accept_sensor_fault",
+      "ink_path": "interpretation_choice",
+      "action_type": "withhold_judgment",
+      "actor_intent": "Preserve near-term district service and institutional cover by allowing the company category to stand and admitting company contingency crystal.",
+      "state_basis": [
+        "Dorrik can file sensor coupling immediately.",
+        "Nera can decline to apply person-like grammar or preserve further evidence, and can admit company contingency crystal into the westbound district feed."
+      ],
+      "reviewed_consequences": [
+        "Reduces company_pressure, core_recognition, and witness_chain while raising district_reserve through visible company contingency supply; folded prose shows Pekk withdrawing and the event becoming a workshop fault."
+      ],
+      "training_hooks": [
+        "classification_as_action",
+        "withheld_recognition",
+        "schedule_over_witness"
+      ]
+    },
+    {
+      "branch_id": "honor_core_rest",
+      "ink_path": "commitment_choice",
+      "action_type": "seal_route",
+      "actor_intent": "Bind the gate workshop to three high-water turns of rest and release district reserve.",
+      "state_basis": [
+        "Nera holds the cutter key, route book, seal, and reserve authority.",
+        "Success depends on ritual_integrity and remaining district_reserve."
+      ],
+      "reviewed_consequences": [
+        "Sets rest_honored and routes to reserve-supported or shortage-cost recognition; both versions leave the centre face closed."
+      ],
+      "training_hooks": [
+        "personhood_as_costly_recognition",
+        "household_shortage",
+        "seal_binds_workshop"
+      ]
+    },
+    {
+      "branch_id": "bargain_for_alternate_delve",
+      "ink_path": "commitment_choice",
+      "action_type": "issue_contract",
+      "actor_intent": "Replace the bore with an expedition that can face resistance and retreat through the offered left route.",
+      "state_basis": [
+        "Available only if preparation or dialogue established an alternate route or bargain.",
+        "Success depends on route detail, Pekk's trust, and crew safety."
+      ],
+      "reviewed_consequences": [
+        "Sets rest_honored and routes to a bounded two-pack return or an underread steam-vent injury; the direct centre cut stays closed."
+      ],
+      "training_hooks": [
+        "contract_replacement",
+        "retreat_authority",
+        "ecological_route_cost"
+      ]
+    },
+    {
+      "branch_id": "publish_personhood_claim",
+      "ink_path": "commitment_choice",
+      "action_type": "publish_evidence",
+      "actor_intent": "Move the witnessed answer into institutions before the Deep Company account closes around it.",
+      "state_basis": [
+        "Available only when core recognition or witness chain is sufficient to support a claim.",
+        "Success requires both recognition and a multi-source witness chain while the organ remains intact."
+      ],
+      "reviewed_consequences": [
+        "Sets rest_honored and routes to route-book and insurance recognition or to an outpaced claim preserved mainly by temple and goblin channels."
+      ],
+      "training_hooks": [
+        "evidence_custody",
+        "public_personhood_dispute",
+        "insurance_as_recognition"
+      ]
+    },
+    {
+      "branch_id": "force_the_cut",
+      "ink_path": "commitment_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Return the cutter key to the company and privilege immediate contracted flow over the witnessed reply.",
+      "state_basis": [
+        "Nera can transfer the cutter key.",
+        "Crew safety reflects whether the alternate survey created an early evacuation path."
+      ],
+      "reviewed_consequences": [
+        "Leaves rest_honored false, destroys the answering organ, and routes to evacuated pump loss or a crew-caught flood. The final echo shows broken null-bearing fragments and a newly closed deep route."
+      ],
+      "training_hooks": [
+        "refusal_becomes_defence",
+        "object_custody_as_escalation",
+        "warning_ignored"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional branch availability",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Promotion of any branch-local Three-Bell outcome into durable Delvehold history",
+      "Durable character memory, relationship, or reputation changes",
+      "Greathold-wide legal recognition of a core as person, workshop, claimant, or divine presence",
+      "Acceptance into the training corpus",
+      "Any reusable scene-set geometry beyond the draft fixture map"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex elaborator applying the four required Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted. Reader orientation, coherence, pacing, voice, tonal fit, and IF playability meet the B-level gate after the opening established this as the third consistent watch and the sensor-fault branch gained a visible contingency-crystal consequence. The deliberate mode is ritual wonder braided with dry workplace comedy and material dread.",
+      "Lore grounding verdict: accepted. Seventeen cited Delvehold sources were checked. The fixture derives old-core agency, goblin listening, workshop seals, route books, embodied delving, null practice, direct-pump injury, public reserves, Forge temples, Rune Colleges, unions, and industrial euphemism from their existing owners. The answering organ remains a witnessed route-sensitive response, not proof of benevolence, divine rank, planetary authorship, or a universal core language.",
+      "Visual continuity verdict: accepted_with_minor_revisions as an illustrated-IF scaffold. Fifteen unique visual anchors, fifteen standalone BFL prompts, stable refs for four named characters and one group, sixteen branch or ending modifiers, and a shared global style cue cover the playable state. No prompt uses negative or memory-dependent direction. A plan view or simple 3D blockout remains required before high-consistency multi-angle rendering.",
+      "Spatial-geometric cohesion verdict: accepted_with_minor_revisions as a stageable measured draft. The scene_set fixes a 24-by-9-meter west-east hall, three eastern arches, west lift, withdrawal line and swing gate, offering bench, machine bay, raised listening niche, gauges, staging slots, sightlines, and persistent face, pump, and organ states. Repairs made Sava, not Nera, cross the withdrawal line for wax impressions and routed the force-cut rescue through the swing gate. A durable blockout remains a production prerequisite for replay-ready art.",
+      "No Ink compiler was installed or invoked. The artifact received JSON parse validation, header inspection, knot-anchor validation, branch-id parity checks, variable-use audit, exhaustive preparation-plus-interpretation state enumeration, prompt-language checks, visual-ref checks, and manual Ink structure review."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

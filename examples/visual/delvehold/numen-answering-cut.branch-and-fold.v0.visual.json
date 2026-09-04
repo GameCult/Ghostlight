@@ -1,0 +1,431 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "numen-answering-cut-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/numen-answering-cut.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/numen-answering-cut.branch-and-fold.v0.training.json",
+  "scene_id": "numen-answering-cut-v0.three-bell-gate",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Answering Cut at Three-Bell Gate.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary gate ritual, preparation choices, delver withdrawal, the answering organ, competing interpretations, the binding decision, and four ending families.",
+    "segmentation_rule": "Use separate anchors for the chamber, offering routine, preparation, returned party, first impossible bell, answering-organ reveal, interpretation, company demand, final commitment, each ending family, and the last material echo. The first bell sentence stands alone.",
+    "prompting_rule": "Every base image prompt is a complete frame for a general image model, with visible geometry, materials, light, bodies, clothing, tools, and positions. Continuity notes remain reviewer constraints. Character refs are assembled only for characters visible in the frame.",
+    "global_style_cue": "Style: high-fantasy industrial storybook illustration, hand-painted gouache and fine ink linework, luminous mineral magic, soot-dark dwarven stonework, tactile brass machinery, restrained jewel colors, expressive faces and posture, clear interactive-fiction staging, numinous wonder held beside practical labor.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the complete scene base_image_prompt, visual refs only for named characters and groups listed as visible in that scene, and triggered state_image_modifiers or global_branch_image_modifiers. Keep visual_continuity_notes outside the generated prompt. Use a camera-specific render from the future blockout when high-consistency art is commissioned.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture contains a measured draft map with stable zones, routes, cameras, sightlines, staging positions, and branch-persistent machinery states. This supports review and prompt planning.",
+      "future_scene_set_need": "Build a plan view or simple 3D blockout before multi-angle website rendering. Preserve the west lift, brass withdrawal line, three east arches, raised listening niche, offering bench, central pump and folded cutter, safety rails, gauge wall, messenger tube, and answering-organ anchor."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "three_bell_gate_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view eastward through Three-Bell Gate, a twenty-four-meter-long dwarven listening chamber carved from dark basalt two lift descents below a warm underground sea. A square freight lift fills the west wall behind the camera position; a brass withdrawal strip crosses the black stone floor one third of the room from the west. Three arched passages face the viewer on the east wall: a broad central crystal-working face, a narrow left gallery bending north, and a small sealed right alcove. A heavy dark stone bell hangs in each arch. A direct mana pump with blue crystal pipes and a folded rune cutter sit behind waist-high brass safety rails before the central arch. An offering bench stands along the northwest wall, and a shallow goblin listening niche overlooks the left arch. Amber oil lamps and faint blue rune gauges light damp stone, old route marks, iron grates, and thin mineral seams.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Local frame is west-to-east: lift and public landing west, three arches east, alternate north-left, rest south-right.",
+          "The brass withdrawal line stays west of every arch, the pump, the folded cutter, and the active answering-organ wall."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_offering_routine",
+        "ink_anchor": "offering_bench",
+        "base_image_prompt": "Medium-wide workplace ritual at the northwest offering bench of a dark basalt gate hall. Master Nera Ashmark, a stocky middle-aged dwarf woman with warm brown skin, a square black braid threaded with copper rings, a soot-blue wool work coat, brass civic-seal chain, and scarred hands, weighs three thumbnail mana crystals beside three loaves and three twists of dried mushroom. Pekk-of-Wet-Stone, a lean green-gold goblin adult with long mobile ears, broad nose, amber eyes, copper-dusted leather vest, and soft dark boots, leans from a low listening stair and studies the scales. Captain Sava Tern, a tall dark-brown-skinned human woman with one shaved temple, black curls tied back, worn leather scale armor, iron gauntlets, and a nicked open helmet, checks straps on three armored delvers. Dorrik Vane, a compact pale-brown dwarf man with a trimmed russet beard, tailored iron-grey coat, polished boots, and a brass gauge case, waits beside a blue-lit direct-pump dial. The three eastern stone bells and brass withdrawal line remain visible beyond them under amber lamps.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "weighing offerings at the northwest bench", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "leaning from the listening-niche stair toward the scale", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "checking the delvers' straps beside the withdrawal line", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "dorrik_vane", "default_stance": "waiting beside the direct-pump gauge", "visual_ref": "visual_character_refs.characters.dorrik_vane"},
+          {"agent_id": "sava_delving_party", "default_stance": "three scarred armored delvers preparing packs behind Sava", "visual_ref": "visual_character_refs.groups.sava_delving_party"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The offering bench is west of the withdrawal line and against the north wall.",
+          "Each offering begins as one crystal, one loaf, and one mushroom twist on a soft slate."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_preparation_choice",
+        "ink_anchor": "preparation_choice",
+        "base_image_prompt": "Interactive choice frame in the western third of a long basalt gate hall. Nera, a stocky brown-skinned dwarf woman in a soot-blue coat with copper-ringed black braid and brass seal chain, stands between four practical levers: an offering scale with three crystal-and-food portions on the northwest bench, Pekk's low stair toward the narrow left gallery, a removable iron isolation wedge hanging beside the blue-lit direct pump, and a soft route slate ready for witness marks. Pekk, a lean green-gold goblin in a copper-dusted vest, watches from the stair. Sava, a tall dark-skinned human captain in worn leather scale armor, waits with three packed delvers at the brass withdrawal line. Dorrik, a compact russet-bearded dwarf in an iron-grey coat, holds a schedule slate near the pump gauge. The centre crystal face, left alternate arch, right rest alcove, and three stone bells form a clear east-wall triptych.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "centered between scale, stair, pump wedge, and route slate", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "on the low stair by the alternate arch", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "at the west side of the withdrawal line with party", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "dorrik_vane", "default_stance": "beside the pump gauge with schedule slate", "visual_ref": "visual_character_refs.characters.dorrik_vane"},
+          {"agent_id": "sava_delving_party", "default_stance": "packed and waiting behind Sava", "visual_ref": "visual_character_refs.groups.sava_delving_party"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "All four preparation affordances remain west of or reachable from the withdrawal line before the party enters."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_party_return",
+        "ink_anchor": "withdrawal_line",
+        "base_image_prompt": "Wide return view inside the same basalt gate hall, facing east from near the west freight lift. Four mud-marked delvers have crossed west over the brass withdrawal line; one sleeve carries a narrow fresh blood stain and two pairs of boots are wet. Captain Sava, tall and dark-skinned in worn leather scale armor with iron gauntlets, counts the three companions. Nera, a stocky brown-skinned dwarf woman with copper-ringed black braid and soot-blue coat, closes the waist-high brass gate at the line. Pekk, a lean green-gold goblin in a copper-dusted vest, occupies the raised listening niche above the left alternate arch. Dorrik, a russet-bearded dwarf in an iron-grey coat, watches the zeroing pump gauge. The three eastern bells hang over dark arches; the folded cutter and blue-crystal pump remain behind brass rails at the centre.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "closing the gate at the brass withdrawal line", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "in the listening niche over the left arch", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "counting the returned party west of the line", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "dorrik_vane", "default_stance": "watching the direct-pump gauge", "visual_ref": "visual_character_refs.characters.dorrik_vane"},
+          {"agent_id": "sava_delving_party", "default_stance": "muddy and alive west of the line", "visual_ref": "visual_character_refs.groups.sava_delving_party"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "ritual_integrity >= 4", "modifier_prompt": "Show all three soft offering slates empty, with fine luminous crystal dust tracing three distinct paths into the eastern stone."},
+          {"trigger": "ritual_integrity <= 1", "modifier_prompt": "Show the direct pump vibrating with active blue current and the right stone bell trembling under machine pressure."},
+          {"trigger": "alternate_route >= 2", "modifier_prompt": "Show fresh chalk handholds at the left gallery bend and wet returning bootprints leading through that route."},
+          {"trigger": "witness_chain >= 3", "modifier_prompt": "Show the route slate bearing a copper-dusted goblin thumbprint, a delver mark, and Nera's circular workshop seal."}
+        ],
+        "visual_continuity_notes": [
+          "All living mortals are west of the brass line before the first uncaused bell rings.",
+          "The party always returns as four living figures; injury state is a blood-marked sleeve, not a missing body."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_first_answer",
+        "ink_anchor": "first_answer",
+        "base_image_prompt": "Pivotal still frame inside a long dark basalt listening chamber. The small right-hand rest bell swings and rings from within a sealed stone alcove while its rope hangs motionless. Amber lamps flare on the bell's rough black surface. Far west of a bright brass floor line, Nera the stocky dwarf priest in a soot-blue coat, Pekk the lean green-gold goblin listener, Sava the tall armored human captain, Dorrik the russet-bearded company assessor, and three armored delvers stand frozen in a compact witness group. The central pump gauge reads zero. The broad centre face, narrow left arch, folded cutter, safety rails, offering bench, and west lift establish the full gate geometry around the impossible motion.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "frozen west of the line facing the bell", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "beside Nera with ears angled toward the stone", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "helmet lowered at her side, facing east", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "dorrik_vane", "default_stance": "rigid beside the zero gauge", "visual_ref": "visual_character_refs.characters.dorrik_vane"},
+          {"agent_id": "sava_delving_party", "default_stance": "clustered behind Sava west of the line", "visual_ref": "visual_character_refs.groups.sava_delving_party"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The rest bell is in the right arch and moves before the organ becomes visible.",
+          "The bell rope remains visibly slack to preserve the uncaused motion."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_answering_organ",
+        "ink_anchor": "answering_organ",
+        "base_image_prompt": "Medium-wide numinous reveal at the three east arches of a dwarven basalt gate hall. Warm overlapping stone scales seal the broad central crystal face. The narrow left gallery stands open and exhales pale mist. Around the right rest bell, a living organ of dark fungus, root-fine copper and silver filaments, translucent mineral skin, and warm stone grows across a soft route slate. The filaments lift three copied marks into the wall: a central route closed by a clean right-to-left null stroke, an open left branch, and three illuminated notches on an old high-water tally. A stocky brown-skinned dwarf priest with copper-ringed black braid and soot-blue coat watches beside a lean green-gold goblin listener in a copper-dusted vest; a tall dark-skinned human captain in worn armor lowers her helmet; a compact russet-bearded dwarf assessor in an iron-grey coat grips his slate. Brass safety rails and the zeroed blue-crystal pump remain between witnesses and the living wall.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "nearest the line, reading the copied marks", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "beside Nera sensing air and fungus", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "helmet lowered in both hands", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "dorrik_vane", "default_stance": "holding his schedule slate tightly", "visual_ref": "visual_character_refs.characters.dorrik_vane"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The answering organ anchors around the right rest bell and reaches leftward into the route slate.",
+          "The centre null, open left route, and three high-water marks remain the same semantic sequence across later frames."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_interpretation_choice",
+        "ink_anchor": "interpretation_choice",
+        "base_image_prompt": "Interactive interpretation frame west of the brass withdrawal line in a dark basalt gate hall. Nera, a stocky brown-skinned dwarf woman with copper-ringed braid, soot-blue coat, brass seal chain, ink stylus, wax sheets, and route book, faces the glowing answering organ across the line. Pekk, a lean green-gold goblin with amber eyes and copper-dusted vest, points toward the left gallery while smelling the changed air. Sava, a tall dark-skinned human captain in worn leather scale armor, holds an open timing watch and nicked helmet. Dorrik, a compact russet-bearded dwarf in an iron-grey coat, has already poised his stylus over a company form. Behind brass rails, the zeroed blue-crystal pump and folded cutter sit before the stone-sealed centre face; the open left arch and fungal-metal organ around the right bell shine in restrained copper, silver, and green light.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "at the route book with wax and stylus", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "reading the open left route through scent and air", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "holding helmet and timing watch", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "dorrik_vane", "default_stance": "poised to write on company form", "visual_ref": "visual_character_refs.characters.dorrik_vane"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Interpretive tools stay west of the line; the living organ remains east and physically uncustodied by mortals."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_answer_hearing",
+        "ink_anchor": "answer_fold",
+        "base_image_prompt": "Medium hearing frame in the western half of the same twenty-four-meter basalt gate hall. An open route book, soft slate, wax impressions, and company form share a waist-high stone desk just west of the brass withdrawal line. Nera, a stocky brown-skinned dwarf priest in a soot-blue coat with brass seal chain, stands at the book. Pekk, a lean green-gold goblin in a copper-dusted vest, occupies either her side or the raised niche stair. Sava, a tall dark-skinned human captain in worn scale armor, studies the open left gallery. Dorrik, a compact russet-bearded dwarf in a tailored iron-grey coat, stands near a knocking brass messenger tube and a vertical district gauge with colored beads. Beyond the line, the central face is stone-sealed, the left arch is open, and the copper-silver fungal answering organ glows around the right bell.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "at the shared hearing desk", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "between Nera's side and the listening-niche stair according to trust", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "watching the left gallery", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "dorrik_vane", "default_stance": "beside messenger tube and district gauge", "visual_ref": "visual_character_refs.characters.dorrik_vane"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "core_recognition >= 2", "modifier_prompt": "Show the route-book entry using person-like verbs, with Nera's stylus beside the words answered, offered, and refused."},
+          {"trigger": "core_recognition <= 0", "modifier_prompt": "Show Dorrik's company form headed SENSOR COUPLING in block script while Nera's route-book line remains blank."},
+          {"trigger": "witness_chain >= 3", "modifier_prompt": "Show wax copies, a copper-dusted thumbprint, delver timing marks, and the workshop seal aligned on the desk."},
+          {"trigger": "bargain_quality >= 2", "modifier_prompt": "Show thumbnail mana crystals budding in a narrow luminous line beside the organ's open-left-route mark."},
+          {"trigger": "district_reserve <= 1", "modifier_prompt": "Show a red bead dropped low on the vertical district gauge and an amber ration lamp above it."},
+          {"trigger": "company_pressure >= 4", "modifier_prompt": "Show the brass messenger tube knocking hard, with several tightly rolled demand slips spilling into Dorrik's hand."}
+        ],
+        "visual_continuity_notes": [
+          "The hearing desk holds copied evidence; the original answering organ remains fixed around the right bell east of the line."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_company_demand",
+        "ink_anchor": "company_demand",
+        "base_image_prompt": "Medium confrontation beside the central safety rail of a long dwarven basalt gate hall. Dorrik Vane, a compact pale-brown dwarf man with trimmed russet beard, tailored iron-grey coat, brass gauge case, and polished cutter key chain, unhooks the heavy iron cutter key while facing Nera. Nera, a stocky middle-aged brown-skinned dwarf woman with copper-ringed black braid, soot-blue work coat, brass civic-seal chain, and scarred casting hand, stands between him and the sealed centre face. Captain Sava, a tall dark-skinned human woman in worn leather scale armor and iron gauntlets, leans one gauntlet on the brass rail beside the open left gallery. Pekk, a lean green-gold goblin in a copper-dusted vest, watches the fungal-metal answering organ borrow the rhythm of their breath. The zeroed blue-crystal pump, folded cutter, three bells, district bead gauge, west lift, and brass withdrawal line remain clearly staged.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "between Dorrik and the centre machinery", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "watching the organ from beside the line", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "leaning on the safety rail toward the left route", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "dorrik_vane", "default_stance": "unhooking the cutter key", "visual_ref": "visual_character_refs.characters.dorrik_vane"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Dorrik starts with the cutter key on his chain; Nera controls whether it changes custody in the final choice."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_commitment_threshold",
+        "ink_anchor": "commitment_choice",
+        "base_image_prompt": "Wide final-choice tableau in Three-Bell Gate, a basalt hall with west lift, brass withdrawal line, and three east arches. Nera, a stocky brown-skinned dwarf Master in a soot-blue coat with copper-ringed braid and civic seal, stands at the center holding the heavy cutter key over an open route book. Four consequence paths are visibly available around her: the sealed right rest alcove with warm wax and a district reserve tube leading west; the open left gallery with a retreat bell, delver packs, and thumbnail crystals; three fresh wax copies aimed toward the public lift, temple satchel, and goblin route bag; and Dorrik's outstretched iron-grey sleeve beside the folded rune cutter. Pekk, the lean green-gold goblin listener, stands by the left-route map. Sava, the tall dark-skinned human captain in worn scale armor, holds her nicked helmet near three packed delvers. Dorrik, the compact russet-bearded assessor, waits at the cutter rail. The copper-silver fungal answering organ glows around the right bell and keeps the central null stroke dark.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "center with cutter key, route book, and seal", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "beside the left-route map and goblin route bag", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "near retreat bell and packed party", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "dorrik_vane", "default_stance": "hand extended beside the cutter rail", "visual_ref": "visual_character_refs.characters.dorrik_vane"},
+          {"agent_id": "sava_delving_party", "default_stance": "three packed figures behind Sava at the west side of the line", "visual_ref": "visual_character_refs.groups.sava_delving_party"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "alternate_route >= 2 || bargain_quality >= 2", "modifier_prompt": "Brighten the left route, retreat bell, marked handholds, and compact delver packs as a materially available contract path."},
+          {"trigger": "core_recognition >= 2 || witness_chain >= 3", "modifier_prompt": "Show three complete sealed copies ready for separate public, temple, and goblin custody routes."},
+          {"trigger": "district_reserve <= 1", "modifier_prompt": "Show the westbound reserve tube glowing amber and the district gauge resting on its lowest red bead."}
+        ],
+        "visual_continuity_notes": [
+          "The final-choice affordances are objects and routes Nera can actually reach from west of the line.",
+          "The centre null stays visible until a force-cut ending destroys the answering organ."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_ending_rest",
+        "ink_anchor": "ending_rest_kept|ending_rest_cost",
+        "base_image_prompt": "Aftermath at the western hearing desk of Three-Bell Gate. Nera, a stocky brown-skinned dwarf woman in a soot-blue coat with copper-ringed black braid, presses her brass civic seal into warm wax over a closed route book; the heavy cutter key lies inside the sealed rest alcove beyond the brass withdrawal line. Pekk, a lean green-gold goblin in a copper-dusted vest, watches from Nera's side. The central crystal face remains covered in warm stone scales, the left arch is open, and the copper-silver fungal answering organ curls around the right bell. A westbound district reserve tube and vertical bead gauge show the household cost under amber lamp light. The direct pump and folded cutter are visibly idle behind their brass rail.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "sealing the closed route book", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "watching beside Nera", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The cutter key is visibly inside the sealed rest alcove in both rest endings."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_ending_bargain",
+        "ink_anchor": "ending_bargain_kept|ending_bargain_cost",
+        "base_image_prompt": "Expedition threshold at the narrow left gallery of Three-Bell Gate. The dark basalt hall extends west to a freight lift and east to three arches; the centre face remains stone-sealed and the right answering organ glows around its bell. Captain Sava, a tall dark-skinned human woman with one shaved temple, tied black curls, worn leather scale armor, iron gauntlets, and nicked helmet, stands with three armored delvers beside compact packs and a black stone retreat bell. Pekk, a lean green-gold goblin in a copper-dusted vest and soft boots, points to chalk handholds and a recessed retreat pocket. Nera, a stocky brown-skinned dwarf woman in a soot-blue coat with brass seal chain, holds a rewritten contract west of the brass withdrawal line. Small luminous crystals bud along the contested route under damp green and copper light.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "holding the rewritten contract west of the line", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "pointing to route marks at the left arch", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "leading the party at the left arch", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "sava_delving_party", "default_stance": "three compactly equipped delvers following Sava", "visual_ref": "visual_character_refs.groups.sava_delving_party"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The bounded delve uses only the left gallery; the centre pump and cutter remain idle."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_ending_recognition",
+        "ink_anchor": "ending_recognition_kept|ending_recognition_cost",
+        "base_image_prompt": "Evidence-departure frame at the west freight lift of Three-Bell Gate. Nera, a stocky brown-skinned dwarf priest in a soot-blue coat with copper-ringed black braid and brass civic seal, separates wax impressions and route pages into three packets. Captain Sava, a tall dark-skinned human woman in worn scale armor, holds a delver-hall packet. Pekk, a lean green-gold goblin in a copper-dusted vest, tucks a second packet into a dark route bag. A temple satchel hangs from the public lift gate with a third copy. Dorrik, a compact russet-bearded dwarf in an iron-grey coat, stands beside a rolled company report and brass messenger tube. East across the hall, the stone-sealed centre face, open left arch, three bells, and copper-silver fungal answering organ remain visible beyond the brass withdrawal line.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "dividing three evidence packets at the west lift", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "taking the route-bag copy", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "taking the delver-hall copy", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "dorrik_vane", "default_stance": "holding the competing company report", "visual_ref": "visual_character_refs.characters.dorrik_vane"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Evidence custody splits into three physical packets only in the publication ending family."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_ending_force",
+        "ink_anchor": "ending_force_evacuated|ending_force_caught",
+        "base_image_prompt": "Violent force-cut frame in the eastern half of Three-Bell Gate. The folded rune cutter has extended from its brass carriage and bites the warm stone scales sealing the central face. The answering organ tears away from the right bell in whipping copper and silver roots; translucent fungal skin and fragments of a glowing null stroke fly through black water bursting across the service floor. The blue-crystal direct pump twists inside its safety rails. Nera, a stocky brown-skinned dwarf woman with copper-ringed braid and soaked soot-blue coat, reaches toward the pump casing with a scarred casting hand. Sava, a tall dark-skinned human captain in worn scale armor, pulls her armored party west across the bright brass withdrawal line. Pekk, a lean green-gold goblin in a copper-dusted vest, retreats along the listening-niche stair. Dorrik, a compact russet-bearded dwarf in an iron-grey coat, stands at the cutter key housing under cold blue and black reflections.",
+        "visible_characters": [
+          {"agent_id": "nera_ashmark", "default_stance": "at the pump casing under rising water", "visual_ref": "visual_character_refs.characters.nera_ashmark"},
+          {"agent_id": "pekk_wet_stone", "default_stance": "retreating on the listening-niche stair", "visual_ref": "visual_character_refs.characters.pekk_wet_stone"},
+          {"agent_id": "sava_tern", "default_stance": "pulling the party west across the line", "visual_ref": "visual_character_refs.characters.sava_tern"},
+          {"agent_id": "dorrik_vane", "default_stance": "at the cutter key housing", "visual_ref": "visual_character_refs.characters.dorrik_vane"},
+          {"agent_id": "sava_delving_party", "default_stance": "evacuating under Sava's pull", "visual_ref": "visual_character_refs.groups.sava_delving_party"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Black water originates at the centre face and runs west across the service floor.",
+          "The answering organ is destroyed only in the force-cut ending family."
+        ]
+      },
+      {
+        "visual_scene_id": "three_bell_last_echo",
+        "ink_anchor": "last_echo",
+        "base_image_prompt": "Quiet final frame after the people have left Three-Bell Gate. The long dark basalt hall runs from a closed freight lift in the west to three shadowed arches in the east. Amber oil lamps reflect across a brass withdrawal strip, an idle blue-crystal pump, folded rune cutter, offering bench, open route book, vertical district gauge, and three heavy stone bells. The centre face, left alternate gallery, right rest alcove, and answering-organ anchor remain clearly visible. Damp mineral light gathers in the stone while distant warm-sea water sends a faint sheen through floor grates.",
+        "visible_characters": [],
+        "state_image_modifiers": [
+          {"trigger": "rest_honored == 1", "modifier_prompt": "Show the right rest bell pulsing slowly beneath intact warm stone, with the sealed cutter key visible in wax and the centre machinery dark."},
+          {"trigger": "rest_honored == 0", "modifier_prompt": "Show silent bell stones, a newly sealed black seam in the left deep route, and cold extinguished gauges along the east wall."},
+          {"trigger": "answering_organ_intact == 1", "modifier_prompt": "Show intact copper-silver fungal threads curled around the route slate, warm and skinlike, carrying the complete null stroke."},
+          {"trigger": "answering_organ_intact == 0", "modifier_prompt": "Show broken translucent fungal skin floating in shallow black pump water, each fragment carrying a luminous piece of the null stroke."}
+        ],
+        "visual_continuity_notes": [
+          "This environmental frame reads only final state and includes no character refs.",
+          "The three-arch geometry and west-east orientation remain unchanged across every ending."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "equal_offerings_visible",
+        "trigger": "branch_label == prepare_equal_offerings",
+        "apply_to_visual_scene_ids": ["three_bell_preparation_choice", "three_bell_party_return"],
+        "modifier_prompt": "Show three offerings balanced exactly on the scale and the reserve chest open with one empty crystal slot."
+      },
+      {
+        "modifier_id": "alternate_survey_visible",
+        "trigger": "branch_label == survey_alternate_with_pekk",
+        "apply_to_visual_scene_ids": ["three_bell_preparation_choice", "three_bell_party_return", "three_bell_commitment_threshold"],
+        "modifier_prompt": "Show Nera and Pekk's fresh chalk handholds, a mapped retreat pocket, and a thin warm-air seam along the left gallery bend."
+      },
+      {
+        "modifier_id": "pump_margin_visible",
+        "trigger": "branch_label == preserve_pump_margin",
+        "apply_to_visual_scene_ids": ["three_bell_preparation_choice", "three_bell_party_return"],
+        "modifier_prompt": "Show the isolation wedge still hanging on its hook while blue current moves through the direct pump and vibrates the right bell."
+      },
+      {
+        "modifier_id": "goblin_countersign_visible",
+        "trigger": "branch_label == countersign_goblin_witness",
+        "apply_to_visual_scene_ids": ["three_bell_preparation_choice", "three_bell_party_return", "three_bell_answer_hearing"],
+        "modifier_prompt": "Show Pekk's copper-dusted thumbprint first on the route slate, followed by Sava's expedition mark and Nera's circular seal."
+      },
+      {
+        "modifier_id": "recorded_answer_visible",
+        "trigger": "branch_label == record_core_answer",
+        "apply_to_visual_scene_ids": ["three_bell_interpretation_choice", "three_bell_answer_hearing", "three_bell_commitment_threshold"],
+        "modifier_prompt": "Show Nera's route-book entry with the centre rest, left walking route, and three high-water tally, plus open space beside Pekk's wording."
+      },
+      {
+        "modifier_id": "stroke_evidence_visible",
+        "trigger": "branch_label == preserve_stroke_evidence",
+        "apply_to_visual_scene_ids": ["three_bell_interpretation_choice", "three_bell_answer_hearing", "three_bell_commitment_threshold"],
+        "modifier_prompt": "Show Sava returning west across the brass line with thin wax impressions from the right-hand offering slate, while her timing marks and Pekk's small scent-note tokens wait on the hearing desk."
+      },
+      {
+        "modifier_id": "bounded_work_visible",
+        "trigger": "branch_label == ask_for_bounded_work",
+        "apply_to_visual_scene_ids": ["three_bell_interpretation_choice", "three_bell_answer_hearing", "three_bell_commitment_threshold"],
+        "modifier_prompt": "Show a narrow living branch linking the open left-route mark to Sava's expedition mark, with thumbnail crystals budding beside it."
+      },
+      {
+        "modifier_id": "sensor_fault_visible",
+        "trigger": "branch_label == accept_sensor_fault",
+        "apply_to_visual_scene_ids": ["three_bell_interpretation_choice", "three_bell_answer_hearing"],
+        "modifier_prompt": "Show Dorrik's SENSOR COUPLING report completed in block script, one opened company contingency crystal glowing in the westbound district feed, Nera's pen lowered, and Pekk moving twelve steps back toward the listening niche."
+      },
+      {
+        "modifier_id": "rest_supported_visible",
+        "trigger": "ending_label == rest_honored_with_reserve",
+        "apply_to_visual_scene_ids": ["three_bell_ending_rest"],
+        "modifier_prompt": "Show the reserve tube glowing steady amber above a bead gauge with two beads remaining and the rest seal cleanly impressed over the cutter key."
+      },
+      {
+        "modifier_id": "rest_shortage_visible",
+        "trigger": "ending_label == rest_honored_under_shortage",
+        "apply_to_visual_scene_ids": ["three_bell_ending_rest"],
+        "modifier_prompt": "Show the reserve tube dim, the lowest gauge bead red, several empty water buckets waiting by the west lift, and complaint slips stacked beside Nera's seal."
+      },
+      {
+        "modifier_id": "bargain_kept_visible",
+        "trigger": "ending_label == alternate_delve_agreed",
+        "apply_to_visual_scene_ids": ["three_bell_ending_bargain"],
+        "modifier_prompt": "Show four upright delvers returning through the left arch with two crystal packs, the retreat bell intact, and the marked safety pocket still open behind them."
+      },
+      {
+        "modifier_id": "bargain_cost_visible",
+        "trigger": "ending_label == alternate_delve_underread",
+        "apply_to_visual_scene_ids": ["three_bell_ending_bargain"],
+        "modifier_prompt": "Show steam pouring from the left bend, the retreat bell ringing, one injured delver carried by two companions, and route notes amended at the threshold."
+      },
+      {
+        "modifier_id": "recognition_kept_visible",
+        "trigger": "ending_label == witnessed_core_answer_published",
+        "apply_to_visual_scene_ids": ["three_bell_ending_recognition"],
+        "modifier_prompt": "Show three complete sealed packets leaving by delver hand, goblin route bag, and temple satchel, while an insurer's red hold ribbon crosses the cutter contract."
+      },
+      {
+        "modifier_id": "recognition_outpaced_visible",
+        "trigger": "ending_label == personhood_claim_outpaced",
+        "apply_to_visual_scene_ids": ["three_bell_ending_recognition"],
+        "modifier_prompt": "Show Dorrik's clean company report already inside the rising lift cage while Nera's thinner packets wait below; Pekk's copy disappears into a side route."
+      },
+      {
+        "modifier_id": "force_evacuated_visible",
+        "trigger": "ending_label == forced_cut_after_warning",
+        "apply_to_visual_scene_ids": ["three_bell_ending_force"],
+        "modifier_prompt": "Show all four delvers safely west of the brass line as black water destroys the pump and the severed organ lashes the cutter."
+      },
+      {
+        "modifier_id": "force_caught_visible",
+        "trigger": "ending_label == forced_cut_with_crew_inside",
+        "apply_to_visual_scene_ids": ["three_bell_ending_force"],
+        "modifier_prompt": "Show black water at waist height across the service floor, Sava dragging one delver through the brass swing gate, and Nera drawing a luminous right-to-left null stroke across the pump casing with her bare hand."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "three_bell_gate.scene_set.draft",
+      "geometry_authority_level": "draft_measured_plan_not_3d_blockout",
+      "room_model": "Rectangular basalt hall, 24 meters west-to-east, 9 meters north-to-south, 6 meters high. A public freight lift fills the west wall. A brass withdrawal line crosses the floor 8 meters east of the lift. Three arches occupy the east wall: alternate north-left, main centre, rest south-right.",
+      "fixed_zones": [
+        {"zone_id": "west_lift_landing", "visible_form": "square iron freight-lift gate, public landing, temple satchel hook, and reserve conduit", "used_for": "entry, evidence departure, district service connection, and safe-side staging"},
+        {"zone_id": "northwest_offering_bench", "visible_form": "waist-high dark-stone bench with balance scale, reserve chest, food board, soft slates, wax, route book, and seal space", "used_for": "ordinary rite preparation and hearing evidence"},
+        {"zone_id": "brass_withdrawal_line", "visible_form": "bright brass strip across the full room width with a waist-high swing gate at center", "used_for": "valid ritual withdrawal, safe boundary, flood crossing, and witness staging"},
+        {"zone_id": "alternate_arch_north", "visible_form": "narrow left-hand basalt arch bending north after six meters, with low ceiling, handholds, fungal shelf, warm-air seam, and retreat pocket", "used_for": "goblin survey, walking contract, offered crystals, and delver retreat"},
+        {"zone_id": "main_face_center", "visible_form": "broad central crystal-bearing arch covered by warm overlapping stone scales after the answer", "used_for": "contracted bore, null-marked refusal, and force-cut flood source"},
+        {"zone_id": "rest_alcove_south", "visible_form": "small right-hand sealed alcove with black stone bell and waxable cutter-key recess", "used_for": "rest answer, answering-organ anchor, and key sealing"},
+        {"zone_id": "central_machine_bay", "visible_form": "blue-crystal direct pump and folded rune cutter behind waist-high brass rails between line and main face", "used_for": "supply pressure, key transfer, null shutdown, and flood damage"},
+        {"zone_id": "goblin_listening_niche", "visible_form": "shallow raised niche over the north-left arch reached by a low stair along the north wall", "used_for": "Pekk's sensory work, trust-position callback, and safe retreat from the machine bay"},
+        {"zone_id": "west_gauge_wall", "visible_form": "vertical colored-bead district gauge, blue pump dial, brass messenger tube, and schedule hooks", "used_for": "reserve pressure, company messages, and public consequence"}
+      ],
+      "camera_slots": [
+        {"camera_id": "west_wide_eastward", "supports_visual_scene_ids": ["three_bell_gate_establishing", "three_bell_party_return", "three_bell_first_answer", "three_bell_commitment_threshold", "three_bell_last_echo"]},
+        {"camera_id": "northwest_bench_medium", "supports_visual_scene_ids": ["three_bell_offering_routine", "three_bell_preparation_choice", "three_bell_answer_hearing"]},
+        {"camera_id": "withdrawal_line_east_medium", "supports_visual_scene_ids": ["three_bell_answering_organ", "three_bell_interpretation_choice", "three_bell_company_demand"]},
+        {"camera_id": "rest_alcove_wide", "supports_visual_scene_ids": ["three_bell_ending_rest"]},
+        {"camera_id": "alternate_arch_oblique", "supports_visual_scene_ids": ["three_bell_ending_bargain"]},
+        {"camera_id": "west_lift_inward", "supports_visual_scene_ids": ["three_bell_ending_recognition"]},
+        {"camera_id": "machine_bay_flood", "supports_visual_scene_ids": ["three_bell_ending_force"]}
+      ],
+      "staging_slots": [
+        {"slot_id": "master_at_bench", "zone_id": "northwest_offering_bench", "allowed_agents": ["nera_ashmark"]},
+        {"slot_id": "listener_niche", "zone_id": "goblin_listening_niche", "allowed_agents": ["pekk_wet_stone"]},
+        {"slot_id": "listener_beside_master", "zone_id": "northwest_offering_bench", "allowed_agents": ["pekk_wet_stone"]},
+        {"slot_id": "party_safe_side", "zone_id": "brass_withdrawal_line", "allowed_agents": ["sava_tern", "sava_delving_party"]},
+        {"slot_id": "assessor_gauges", "zone_id": "west_gauge_wall", "allowed_agents": ["dorrik_vane"]},
+        {"slot_id": "assessor_cutter_key", "zone_id": "central_machine_bay", "allowed_agents": ["dorrik_vane"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "safe_side_to_three_answers", "path": "northwest_offering_bench and west gauge wall -> brass withdrawal line -> all three east arches", "supports": ["first_answer", "answering_organ", "interpretation_choice", "commitment_choice"]},
+        {"lane_id": "listener_to_alternate_bend", "path": "goblin listening niche -> alternate arch -> first north bend and fungal shelf", "supports": ["survey_alternate_with_pekk", "bargain_for_alternate_delve"]},
+        {"lane_id": "lift_to_hearing_desk", "path": "west lift landing -> northwest offering bench", "supports": ["publish_personhood_claim", "company messenger arrival"]}
+      ],
+      "persistent_states": [
+        {"state_id": "main_face_open", "visible_form": "crystal-bearing centre face exposed behind idle machinery", "applies_when": "before answering organ"},
+        {"state_id": "main_face_resting", "visible_form": "centre face sealed by overlapping warm stone scales and complete dark null stroke", "applies_when": "after answer through all honored-rest endings"},
+        {"state_id": "answering_organ_intact", "visible_form": "copper-silver fungal and mineral organ attached around right bell and route slate", "applies_when": "answering_organ_intact == 1"},
+        {"state_id": "answering_organ_broken", "visible_form": "translucent fragments and severed metal roots in black pump water", "applies_when": "answering_organ_intact == 0"},
+        {"state_id": "pump_isolated", "visible_form": "zero blue gauge and iron isolation wedge seated or machinery dark", "applies_when": "valid rite and honored answer"},
+        {"state_id": "pump_running_during_rite", "visible_form": "active blue current, vibration, and unseated wedge", "applies_when": "branch_label == preserve_pump_margin"}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for prompt assembly. Include a ref only when its character or group is listed as visible in the rendered scene.",
+    "characters": {
+      "nera_ashmark": "Master Nera Ashmark: stocky middle-aged dwarf woman, warm brown skin, broad square face, black hair in one square-cut braid threaded with three copper rings, soot-blue heavy wool work coat over charcoal leather apron, brass circular civic seal on a short chest chain, reserve and cutter keys at belt, scarred broad hands, deliberate low stance. Keep the three copper braid rings, soot-blue coat, brass seal chain, and scarred casting hand consistent.",
+      "pekk_wet_stone": "Pekk-of-Wet-Stone: lean adult goblin, green-gold skin, long mobile ears, broad flat nose, amber eyes, short dark hair, copper-dusted brown leather vest over moss-green shirt, soft black boots, small scent-note tokens and chalk at belt, alert crouched posture with fingers often touching stone. Keep the green-gold skin, amber eyes, copper-dusted vest, soft boots, and long ears consistent.",
+      "sava_tern": "Captain Sava Tern: tall adult human woman, dark brown skin, strong long face, left temple shaved, black curls tied back high, worn dark-red leather scale coat over mail, iron gauntlets, nicked open-face helmet, broad delver belt, balanced upright stance. Keep the shaved left temple, tied black curls, dark-red scale coat, iron gauntlets, and nicked helmet consistent.",
+      "dorrik_vane": "Dorrik Vane: compact adult dwarf man, pale brown skin, narrow face, trimmed russet beard cut square at the chin, tailored iron-grey knee coat, polished dark boots, brass gauge case, company slate, heavy cutter key on a short chain, precise closed posture. Keep the square russet beard, iron-grey coat, polished boots, brass gauge case, and chained cutter key consistent."
+    },
+    "groups": {
+      "sava_delving_party": "Sava's three companion delvers: three adult figures of varied heights in practical scarred iron-and-leather armor, mud-marked boots, compact framed packs, hooded amber lamps, rope, chalk, and one folded stretcher; tired faces visible through open helmets; cohesive working posture around Sava. Keep the party count at three companions plus Sava."
+    }
+  },
+  "review_notes": [
+    "Visual-continuity self-review accepted this as an illustrated-IF scaffold: fifteen standalone scene prompts, stable visible-character refs, explicit triggers, and affirmative branch deltas cover the playable state.",
+    "Spatial self-review accepted the measured draft map as stageable. A plan view or simple 3D blockout remains required before high-consistency multi-angle image rendering.",
+    "Generated images remain deferred. The BFL simple prompt manifest mirrors the fifteen base visual beats."
+  ]
+}
