@@ -1177,6 +1177,80 @@ mod tests {
         ));
     }
 
+    /// A store written at the schema this pass replaced is refused outright.
+    /// There is no migration adapter, and the refusal is the behaviour.
+    #[test]
+    fn a_store_from_the_knowledge_schema_is_refused() {
+        let row = CultCacheEnvelope {
+            key: "state".into(),
+            r#type: "world_state.knowledge.v1".into(),
+            payload: Vec::new(),
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some("ghostlight.world_state.knowledge.v1".into()),
+        };
+        let error = recover(vec![row], None).unwrap_err();
+        let JournalError::Corrupt(message) = error else {
+            panic!("expected a corrupt store");
+        };
+        assert!(
+            message.contains("unadmitted row type"),
+            "unexpected refusal: {message}"
+        );
+    }
+
+    /// The tick is re-derived at replay by the same function that produced it,
+    /// so a committed motion rewritten after the fact no longer reduces from
+    /// its command. The clock chain refuses a rewritten reading the same way.
+    #[test]
+    fn a_forged_motion_does_not_replay() {
+        use crate::world::tests::{activate, auth_principal, command, owner};
+        use crate::world::{
+            AuthenticatedCaller, CallerId, CommandBody, FictionalMinutes, SystemCapability,
+            TickMinutes,
+        };
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let authenticated = auth_principal(owner());
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            crate::world::tests::creation(CommandId::new(), "Chronicle"),
+            &authenticated,
+        )
+        .unwrap();
+        let active = activate(&mut kernel);
+        let command_id = CommandId::new();
+        let caller = CallerId::System(SystemCapability::Clock);
+        kernel
+            .submit(
+                command(
+                    &active,
+                    command_id,
+                    caller.clone(),
+                    CommandBody::AdvanceTime {
+                        minutes: TickMinutes::new(30).unwrap(),
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .unwrap();
+
+        let mut forged_head = kernel.state.clone();
+        let mut forged_commits = kernel.journal.commits.clone();
+        let forged = forged_commits.get_mut(&command_id).unwrap();
+        let WorldEffect::TimeAdvanced { to, .. } = &mut forged.effect else {
+            panic!("expected a time-advanced effect");
+        };
+        *to = FictionalMinutes(31);
+        forged.digest = commit_digest(forged).unwrap();
+        forged_head.last_commit_digest = Some(forged.digest.clone());
+
+        assert!(matches!(
+            verify_history(&forged_head, &forged_commits),
+            Err(JournalError::Corrupt(_))
+        ));
+    }
+
     /// Replay re-derives the operation half too: a committed relocation rewritten
     /// to move a different subject no longer reduces from its command.
     #[test]

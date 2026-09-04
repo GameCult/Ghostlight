@@ -65,12 +65,6 @@ pub(crate) struct Motion {
     pub(crate) pressed: Vec<PressureWritten>,
 }
 
-impl Motion {
-    pub(crate) fn is_empty(&self) -> bool {
-        self.fulfilled.is_empty() && self.pressed.is_empty()
-    }
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct RoutineFulfilled {

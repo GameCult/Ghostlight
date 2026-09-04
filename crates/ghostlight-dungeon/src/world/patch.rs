@@ -477,7 +477,7 @@ pub(crate) struct PressureMagnitude(pub(crate) u32);
 /// *on* a subject and the typed view shows pressure on self. Source-major has no
 /// reader.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(tag = "from", rename_all = "snake_case")]
+#[serde(tag = "from", content = "of", rename_all = "snake_case")]
 pub(crate) enum PressureSource {
     /// A past-due commitment. Carries the promisor and the structural key.
     Commitment {
@@ -494,7 +494,7 @@ pub(crate) enum PressureSource {
 
 /// The proposal-time twin of [`PressureSource`].
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(tag = "from", rename_all = "snake_case")]
+#[serde(tag = "from", content = "of", rename_all = "snake_case")]
 pub(crate) enum PressureSourceRef {
     Commitment {
         subject: Ref<SubjectId>,

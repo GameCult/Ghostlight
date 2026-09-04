@@ -3844,13 +3844,12 @@ mod tests {
         assert!(decode_controller_work(&row).is_err());
     }
 
-    /// The schema bump to `v5` refuses a prior store rather than migrating it
-    /// silently: `open` walks every row and demands both the row type and the
-    /// schema id match the current constants, so a `controller_work.v4` row
-    /// left over from before the bump is an open-time error, not a quietly
-    /// dropped or reinterpreted checkpoint.
+    /// The schema bump refuses a prior store rather than migrating it silently:
+    /// `open` walks every row and demands both the row type and the schema id
+    /// match the current constants, so a row left over from before the bump is
+    /// an open-time error, not a quietly dropped or reinterpreted checkpoint.
     #[test]
-    fn a_controller_work_v4_row_is_refused_at_open() {
+    fn a_controller_work_row_from_a_prior_schema_is_refused_at_open() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("controller-work.cc");
         let command_id = CommandId::new();
@@ -3866,15 +3865,15 @@ mod tests {
             let mut store = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
             let row = CultCacheEnvelope {
                 key: store_key(command_id).unwrap(),
-                r#type: "controller_work.v4".into(),
+                r#type: "controller_work.v5".into(),
                 payload: rmp_serde::to_vec_named(&work).unwrap(),
                 stored_at: Utc::now().to_rfc3339(),
-                schema_id: Some("ghostlight.controller_work.v4".into()),
+                schema_id: Some("ghostlight.controller_work.v5".into()),
             };
             store.push(&row).unwrap();
         }
         let Err(error) = CultCacheControllerWorkStore::open(&path) else {
-            panic!("a v4 row was accepted by the v5 store");
+            panic!("a v5 row was accepted by the v6 store");
         };
         assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
     }

@@ -9583,3 +9583,1691 @@ mod soul_knowledge_tests {
         }
     }
 }
+
+/// The clock, commitments, pressure, ordered attention, boundaries, and scale.
+#[cfg(test)]
+mod clock_tests {
+    use super::patch::{PreconditionRef, PressureSourceRef, WorldScaleIntentRef};
+    use super::tests::{
+        activate, affordance_named, auth_principal, command, creation, operations, opportunity_for,
+        owner, player, reject_owner, submit_owner,
+    };
+    use super::*;
+    use std::path::Path;
+
+    /// The canonical IDs of the clock fixture: a hall containing a yard, a
+    /// dead end reached by exactly one route, three subjects, a resource, and
+    /// one commitment of each kind.
+    pub(super) struct Clockwork {
+        yard: EntityId,
+        dead_end: EntityId,
+        gate: EdgeId,
+        reeve: SubjectId,
+        farmer: SubjectId,
+        treasury: SubjectId,
+        routine: CommitmentKey,
+        obligation: CommitmentKey,
+        goal: CommitmentKey,
+        deliver: AffordanceId,
+        threaten: AffordanceId,
+    }
+
+    const ROUTINE_DUE: u64 = 60;
+    const LATE_DUE: u64 = 100;
+
+    fn minutes(value: u32) -> TickMinutes {
+        TickMinutes::new(value).expect("a valid span")
+    }
+
+    fn clock_kernel(path: &Path, title: &str) -> (WorldKernel, Clockwork, WorldSnapshot) {
+        let mut kernel = WorldKernel::create(
+            path.join("world.cc"),
+            creation(CommandId::new(), title),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (clockwork, active) = clock_world(&mut kernel);
+        (kernel, clockwork, active)
+    }
+
+    fn clock_world(kernel: &mut WorldKernel) -> (Clockwork, WorldSnapshot) {
+        let before = kernel.snapshot().unwrap();
+        let speak = super::tests::speak_entry(kernel);
+        let person = |handle: &str, label: &str, kind: SubjectKind, place: &str| {
+            Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new(handle),
+                label: label.into(),
+                kind,
+                controller: NewController::NarrativePersona,
+                affordances: BTreeSet::from([
+                    speak.clone(),
+                    Ref::Draft(DraftHandle::new("deliver")),
+                    Ref::Draft(DraftHandle::new("threaten")),
+                ]),
+                position: Some(Ref::Draft(DraftHandle::new(place))),
+            })
+        };
+        let subject = |handle: &str| Ref::Draft(DraftHandle::new(handle));
+        submit_owner(
+            kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    evidence: vec![EvidenceRef::new("vault:harvest")],
+                    declarations: vec![
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("hall"),
+                            label: "The Long Hall".into(),
+                            kind: EntityKind::Place,
+                            container: None,
+                        }),
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("yard"),
+                            label: "The Cavity Yard".into(),
+                            kind: EntityKind::Place,
+                            container: Some(Ref::Draft(DraftHandle::new("hall"))),
+                        }),
+                        // Nothing inside it, nobody in it, and one route out:
+                        // the world has not grown into it yet.
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("dead-end"),
+                            label: "The Unwalked Road".into(),
+                            kind: EntityKind::Place,
+                            container: None,
+                        }),
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("grain"),
+                            label: "Winter Grain".into(),
+                            kind: EntityKind::Resource,
+                            container: None,
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("stair"),
+                            label: "The Yard Stair".into(),
+                            from: Ref::Draft(DraftHandle::new("yard")),
+                            to: Ref::Draft(DraftHandle::new("hall")),
+                            access: AccessKind::Public,
+                            cost: Cost(1),
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("back"),
+                            label: "The Hall Steps".into(),
+                            from: Ref::Draft(DraftHandle::new("hall")),
+                            to: Ref::Draft(DraftHandle::new("yard")),
+                            access: AccessKind::Public,
+                            cost: Cost(1),
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("gate"),
+                            label: "The Field Gate".into(),
+                            from: Ref::Draft(DraftHandle::new("hall")),
+                            to: Ref::Draft(DraftHandle::new("dead-end")),
+                            access: AccessKind::Public,
+                            cost: Cost(1),
+                        }),
+                        // An affordance whose legitimacy is a promise rather
+                        // than a jurisdiction, and one that presses directly.
+                        Declaration::Affordance(AffordanceDeclaration {
+                            handle: DraftHandle::new("deliver"),
+                            kind: AffordanceKindName("deliver".into()),
+                            roles: vec![RoleSpec {
+                                role: Role("creditor".into()),
+                                kind: RefKind::Subject(None),
+                            }],
+                            preconditions: vec![Precondition::Committed {
+                                to: Role("creditor".into()),
+                                kind: CommitmentKind::Obligation,
+                            }],
+                            effect_slots: vec![EffectSlot {
+                                op_kind: ComponentOpKind::CreateCommitment {
+                                    kind: CommitmentKind::Obligation,
+                                    horizon: minutes(1440),
+                                    period: None,
+                                },
+                                roles: vec![Role("actor".into()), Role("creditor".into())],
+                                bounds: Bounds::None,
+                            }],
+                            outcome_bands: vec![OutcomeBand {
+                                weight: 1,
+                                effects: vec![0],
+                            }],
+                            carries_speech: false,
+                        }),
+                        Declaration::Affordance(AffordanceDeclaration {
+                            handle: DraftHandle::new("threaten"),
+                            kind: AffordanceKindName("threaten".into()),
+                            roles: vec![RoleSpec {
+                                role: Role("target".into()),
+                                kind: RefKind::Subject(None),
+                            }],
+                            preconditions: Vec::new(),
+                            effect_slots: vec![EffectSlot {
+                                op_kind: ComponentOpKind::AdvancePressure {
+                                    by: PressureMagnitude(3),
+                                },
+                                roles: vec![Role("target".into())],
+                                bounds: Bounds::None,
+                            }],
+                            outcome_bands: vec![OutcomeBand {
+                                weight: 1,
+                                effects: vec![0],
+                            }],
+                            carries_speech: false,
+                        }),
+                        person("reeve", "The Yard Reeve", SubjectKind::Person, "yard"),
+                        person("farmer", "The Yard Farmer", SubjectKind::Person, "yard"),
+                        person(
+                            "treasury",
+                            "The Hall Treasury",
+                            SubjectKind::Institution,
+                            "hall",
+                        ),
+                    ],
+                    operations: vec![
+                        ComponentOp::Admit {
+                            holder: subject("farmer"),
+                            resource: Ref::Draft(DraftHandle::new("grain")),
+                            qty: Quantity(4),
+                            evidence: EvidenceRef::new("vault:harvest"),
+                        },
+                        // 0: the routine, whose check is where its subject stands.
+                        ComponentOp::CreateCommitment {
+                            subject: subject("farmer"),
+                            counterparty: None,
+                            kind: CommitmentKind::Routine,
+                            due: FictionalMinutes(ROUTINE_DUE),
+                            period: Some(minutes(10)),
+                            checks: vec![PreconditionRef::Present {
+                                at: Ref::Draft(DraftHandle::new("yard")),
+                            }],
+                        },
+                        ComponentOp::CreateCommitment {
+                            subject: subject("farmer"),
+                            counterparty: Some(subject("treasury")),
+                            kind: CommitmentKind::Obligation,
+                            due: FictionalMinutes(LATE_DUE),
+                            period: None,
+                            checks: Vec::new(),
+                        },
+                        ComponentOp::CreateCommitment {
+                            subject: subject("reeve"),
+                            counterparty: None,
+                            kind: CommitmentKind::Goal,
+                            due: FictionalMinutes(LATE_DUE),
+                            period: None,
+                            checks: Vec::new(),
+                        },
+                        ComponentOp::Bind {
+                            subject: subject("reeve"),
+                            target: DependencyRef::Route(Ref::Draft(DraftHandle::new("gate"))),
+                        },
+                    ],
+                },
+            },
+        );
+        let active = activate(kernel);
+        let place = |label: &str| {
+            active
+                .places
+                .iter()
+                .find(|place| place.label == label)
+                .expect("the declared place")
+                .id
+        };
+        let who = |label: &str| {
+            active
+                .subjects
+                .iter()
+                .find(|subject| subject.label == label)
+                .expect("the declared subject")
+                .id
+        };
+        let reeve = who("The Yard Reeve");
+        let farmer = who("The Yard Farmer");
+        let key_of = |subject: SubjectId, kind: CommitmentKind| {
+            *kernel
+                .state
+                .commitments
+                .get(&subject)
+                .expect("the subject holds commitments")
+                .iter()
+                .find(|(_, commitment)| commitment.kind == kind)
+                .expect("the declared commitment")
+                .0
+        };
+        let gate = active
+            .routes
+            .iter()
+            .find(|route| route.label == "The Field Gate")
+            .expect("the declared route")
+            .id;
+        (
+            Clockwork {
+                yard: place("The Cavity Yard"),
+                dead_end: place("The Unwalked Road"),
+                gate,
+                reeve,
+                farmer,
+                treasury: who("The Hall Treasury"),
+                routine: key_of(farmer, CommitmentKind::Routine),
+                obligation: key_of(farmer, CommitmentKind::Obligation),
+                goal: key_of(reeve, CommitmentKind::Goal),
+                deliver: affordance_named(&active, "deliver"),
+                threaten: affordance_named(&active, "threaten"),
+            },
+            active,
+        )
+    }
+
+    fn clock_caller() -> CallerId {
+        CallerId::System(SystemCapability::Clock)
+    }
+
+    fn tick(kernel: &mut WorldKernel, span: u32) -> Result<SubmitReceipt, KernelError> {
+        let snapshot = kernel.snapshot().unwrap();
+        kernel.submit(
+            command(
+                &snapshot,
+                CommandId::new(),
+                clock_caller(),
+                CommandBody::AdvanceTime {
+                    minutes: minutes(span),
+                },
+            ),
+            &AuthenticatedCaller::fixture(clock_caller()),
+        )
+    }
+
+    fn exercise(
+        kernel: &mut WorldKernel,
+        actor: SubjectId,
+        affordance: AffordanceId,
+        bindings: Vec<RoleBinding>,
+    ) -> Result<SubmitReceipt, KernelError> {
+        let snapshot = kernel.snapshot().unwrap();
+        let opportunity = opportunity_for(&snapshot, actor);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        kernel.submit(
+            command(
+                &snapshot,
+                CommandId::new(),
+                caller.clone(),
+                CommandBody::ExerciseDecision {
+                    opportunity,
+                    invocation: DecisionInvocation {
+                        affordance,
+                        bindings,
+                        proposed: vec![ProposedEffect {
+                            slot: 0,
+                            magnitude: Magnitude::None,
+                        }],
+                        speech: None,
+                    },
+                },
+            ),
+            &AuthenticatedCaller::fixture(caller),
+        )
+    }
+
+    fn binding(role: &str, target: Target) -> RoleBinding {
+        RoleBinding {
+            role: Role(role.into()),
+            target,
+        }
+    }
+
+    fn pressure(kernel: &WorldKernel, target: SubjectId, source: PressureSource) -> u32 {
+        kernel
+            .state
+            .pressures
+            .get(&target)
+            .and_then(|held| held.get(&source))
+            .map_or(0, |magnitude| magnitude.0)
+    }
+
+    fn due(kernel: &WorldKernel, subject: SubjectId, key: CommitmentKey) -> FictionalMinutes {
+        kernel
+            .state
+            .commitments
+            .get(&subject)
+            .and_then(|held| held.get(&key))
+            .expect("the live commitment")
+            .due
+    }
+
+    /// Verification 12, both halves: a defaulted commitment advances pressure on
+    /// its subject, and that subject still derives exactly one opportunity.
+    #[test]
+    fn a_defaulted_commitment_advances_pressure_and_the_subject_derives_an_opportunity() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Default");
+        let sourced = PressureSource::Commitment {
+            subject: clockwork.farmer,
+            key: clockwork.obligation,
+        };
+
+        tick(&mut kernel, 120).expect("the tick commits");
+        assert_eq!(pressure(&kernel, clockwork.farmer, sourced), 1);
+        assert_eq!(
+            kernel.state.pressures[&clockwork.farmer].len(),
+            1,
+            "only the past-due obligation pressed the farmer"
+        );
+        let snapshot = kernel.snapshot().unwrap();
+        assert_eq!(
+            snapshot
+                .opportunities
+                .iter()
+                .filter(|opportunity| opportunity.scope.subject_id == clockwork.farmer)
+                .count(),
+            1
+        );
+
+        tick(&mut kernel, 1).expect("the second tick commits");
+        assert_eq!(pressure(&kernel, clockwork.farmer, sourced), 2);
+    }
+
+    /// Verification 19: a due routine fulfils with no inference and no pressure,
+    /// and a blocked one neither rolls nor presses.
+    #[test]
+    fn a_due_routine_auto_fulfils_and_a_blocked_one_does_not() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, active) = clock_kernel(directory.path(), "Routine");
+        let holdings = kernel.state.holdings.clone();
+        let positions = kernel.state.positions.clone();
+        let edges = kernel.state.edges.clone();
+
+        tick(&mut kernel, ROUTINE_DUE as u32).expect("the tick commits");
+        assert_eq!(
+            due(&kernel, clockwork.farmer, clockwork.routine),
+            FictionalMinutes(ROUTINE_DUE + 10)
+        );
+        assert!(
+            kernel.state.pressures.is_empty(),
+            "a routine raises nothing"
+        );
+        assert_eq!(kernel.state.holdings, holdings);
+        assert_eq!(kernel.state.positions, positions);
+        assert_eq!(kernel.state.edges, edges);
+
+        // Out of the yard: the check fails, so the routine neither rolls nor
+        // presses, and it retries on the next tick.
+        let route = |label: &str| {
+            active
+                .routes
+                .iter()
+                .find(|route| route.label == label)
+                .expect("the declared route")
+                .id
+        };
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::Relocate {
+                subject: Ref::Existing(clockwork.farmer),
+                via: Ref::Existing(route("The Yard Stair")),
+            }]),
+        );
+        tick(&mut kernel, 10).expect("the tick commits");
+        assert_eq!(
+            due(&kernel, clockwork.farmer, clockwork.routine),
+            FictionalMinutes(ROUTINE_DUE + 10)
+        );
+        assert!(
+            kernel.state.pressures.is_empty(),
+            "a blocked routine neither rolls nor presses"
+        );
+
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::Relocate {
+                subject: Ref::Existing(clockwork.farmer),
+                via: Ref::Existing(route("The Hall Steps")),
+            }]),
+        );
+        tick(&mut kernel, 1).expect("the tick commits");
+        assert_eq!(
+            due(&kernel, clockwork.farmer, clockwork.routine),
+            FictionalMinutes(ROUTINE_DUE + 20)
+        );
+    }
+
+    /// A tick with nothing due is still a commit: the clock moved, which is a
+    /// canonical change.
+    #[test]
+    fn a_tick_with_nothing_due_moves_only_the_clock() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, _, _) = clock_kernel(directory.path(), "Quiet");
+        let before = kernel.state.clone();
+
+        tick(&mut kernel, 1).expect("the tick commits");
+        assert_eq!(kernel.state.now, FictionalMinutes(1));
+        assert_eq!(kernel.state.revision, before.revision + 1);
+        assert!(kernel.state.pressures.is_empty());
+        assert_eq!(kernel.state.commitments, before.commitments);
+        assert_eq!(kernel.state.holdings, before.holdings);
+        assert_eq!(kernel.state.positions, before.positions);
+        assert_eq!(kernel.state.events, before.events);
+
+        tick(&mut kernel, 2).expect("the tick commits");
+        assert_eq!(kernel.state.now, FictionalMinutes(3));
+    }
+
+    /// A closed route in one place becomes political pressure in another without
+    /// anyone deciding that it should. The tick never reduces; only an operation
+    /// does.
+    #[test]
+    fn an_unavailable_dependency_presses_its_depender() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Dependency");
+        let sourced = PressureSource::Dependency(DependencyTarget::Route(clockwork.gate));
+
+        tick(&mut kernel, 1).expect("the tick commits");
+        assert_eq!(pressure(&kernel, clockwork.reeve, sourced), 0);
+
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::CloseRoute {
+                route: Ref::Existing(clockwork.gate),
+            }]),
+        );
+        tick(&mut kernel, 1).expect("the tick commits");
+        assert_eq!(pressure(&kernel, clockwork.reeve, sourced), 1);
+
+        // Repair stops the pressing but never unwrites what accrued.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::OpenRoute {
+                route: Ref::Existing(clockwork.gate),
+            }]),
+        );
+        tick(&mut kernel, 1).expect("the tick commits");
+        assert_eq!(pressure(&kernel, clockwork.reeve, sourced), 1);
+
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::ResolvePressure {
+                source: PressureSourceRef::Dependency(DependencyRef::Route(Ref::Existing(
+                    clockwork.gate,
+                ))),
+                target: Ref::Existing(clockwork.reeve),
+            }]),
+        );
+        assert!(
+            !kernel.state.pressures.contains_key(&clockwork.reeve),
+            "an emptied target removes its key rather than storing an empty map"
+        );
+    }
+
+    /// The clock moves through exactly one command body.
+    #[test]
+    fn time_advances_only_through_advance_time() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "OnlyTick");
+        tick(&mut kernel, 5).expect("the tick commits");
+        let now = kernel.state.now;
+
+        exercise(
+            &mut kernel,
+            clockwork.reeve,
+            clockwork.threaten,
+            vec![binding("target", Target::Subject(clockwork.farmer))],
+        )
+        .expect("the threat commits");
+        assert_eq!(kernel.state.now, now);
+
+        let snapshot = kernel.snapshot().unwrap();
+        let opportunity = opportunity_for(&snapshot, clockwork.farmer);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        kernel
+            .submit(
+                command(
+                    &snapshot,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::DeclineDecision { opportunity },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .expect("the decline commits");
+        assert_eq!(kernel.state.now, now);
+
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::CloseRoute {
+                route: Ref::Existing(clockwork.gate),
+            }]),
+        );
+        assert_eq!(kernel.state.now, now);
+    }
+
+    /// The clock capability is admitted for one body and nothing else.
+    #[test]
+    fn the_clock_capability_can_do_nothing_else() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Capability");
+        let before = kernel.state.clone();
+        let snapshot = kernel.snapshot().unwrap();
+        let opportunity = opportunity_for(&snapshot, clockwork.reeve);
+
+        for body in [
+            CommandBody::ApproveDraft,
+            CommandBody::ActivateWorld,
+            CommandBody::DeclineDecision {
+                opportunity: opportunity.clone(),
+            },
+            CommandBody::ExerciseDecision {
+                opportunity,
+                invocation: DecisionInvocation {
+                    affordance: clockwork.threaten,
+                    bindings: vec![binding("target", Target::Subject(clockwork.farmer))],
+                    proposed: vec![ProposedEffect {
+                        slot: 0,
+                        magnitude: Magnitude::None,
+                    }],
+                    speech: None,
+                },
+            },
+            operations(vec![ComponentOp::CloseRoute {
+                route: Ref::Existing(clockwork.gate),
+            }]),
+        ] {
+            let error = kernel
+                .submit(
+                    command(&snapshot, CommandId::new(), clock_caller(), body),
+                    &AuthenticatedCaller::fixture(clock_caller()),
+                )
+                .unwrap_err();
+            assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+        }
+        assert_eq!(kernel.state, before);
+        tick(&mut kernel, 1).expect("the same caller may tick");
+    }
+
+    /// Who may tick, when, and how far.
+    #[test]
+    fn advance_time_negatives() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "Negatives"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+
+        // There is no time in Draft.
+        let draft = kernel.snapshot().unwrap();
+        let error = kernel
+            .submit(
+                command(
+                    &draft,
+                    CommandId::new(),
+                    clock_caller(),
+                    CommandBody::AdvanceTime {
+                        minutes: minutes(1),
+                    },
+                ),
+                &AuthenticatedCaller::fixture(clock_caller()),
+            )
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            KernelError::WrongPhase {
+                expected: WorldPhase::Active,
+                actual: WorldPhase::Draft,
+            }
+        ));
+
+        let active = activate(&mut kernel);
+        // A span is constructor-checked, so a malformed one never reaches a
+        // command at all.
+        assert!(TickMinutes::new(0).is_none());
+        assert!(TickMinutes::new(super::patch::MAX_ROUTE_COST + 1).is_none());
+
+        for caller in [
+            CallerId::Principal(player()),
+            CallerId::Controller(active.opportunities[0].controller_id),
+        ] {
+            let error = kernel
+                .submit(
+                    command(
+                        &active,
+                        CommandId::new(),
+                        caller.clone(),
+                        CommandBody::AdvanceTime {
+                            minutes: minutes(1),
+                        },
+                    ),
+                    &AuthenticatedCaller::fixture(caller),
+                )
+                .unwrap_err();
+            assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+        }
+
+        // The owner may tick from Eve.
+        submit_owner(
+            &mut kernel,
+            &active,
+            CommandBody::AdvanceTime {
+                minutes: minutes(7),
+            },
+        );
+        assert_eq!(kernel.state.now, FictionalMinutes(7));
+
+        // And a span that would overflow the clock is refused rather than
+        // wrapping.
+        kernel.state.now = FictionalMinutes(u64::MAX);
+        let snapshot = kernel.snapshot().unwrap();
+        let error = kernel
+            .submit(
+                command(
+                    &snapshot,
+                    CommandId::new(),
+                    clock_caller(),
+                    CommandBody::AdvanceTime {
+                        minutes: minutes(1),
+                    },
+                ),
+                &AuthenticatedCaller::fixture(clock_caller()),
+            )
+            .unwrap_err();
+        assert!(matches!(error, KernelError::Serialization(_)), "{error:?}");
+    }
+
+    /// The whole motion is re-derived at apply, so a forged fulfilment, target,
+    /// magnitude, or clock reading is one comparison.
+    #[test]
+    fn a_forged_motion_does_not_apply() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Forged");
+        let to = FictionalMinutes(120);
+        let honest = clock::derive_motion(&kernel.state, to);
+        assert!(!honest.fulfilled.is_empty() || !honest.pressed.is_empty());
+
+        let forgeries = [
+            // A forged clock reading.
+            WorldEffect::TimeAdvanced {
+                minutes: minutes(120),
+                to: FictionalMinutes(121),
+                motion: honest.clone(),
+            },
+            // A fulfilment nothing derived.
+            WorldEffect::TimeAdvanced {
+                minutes: minutes(120),
+                to,
+                motion: Motion {
+                    fulfilled: vec![clock::RoutineFulfilled {
+                        subject: clockwork.farmer,
+                        key: clockwork.routine,
+                        next_due: FictionalMinutes(9_999),
+                    }],
+                    pressed: honest.pressed.clone(),
+                },
+            },
+            // A forged magnitude.
+            WorldEffect::TimeAdvanced {
+                minutes: minutes(120),
+                to,
+                motion: Motion {
+                    fulfilled: honest.fulfilled.clone(),
+                    pressed: honest
+                        .pressed
+                        .iter()
+                        .map(|written| clock::PressureWritten {
+                            magnitude: PressureMagnitude(written.magnitude.0 + 9),
+                            ..written.clone()
+                        })
+                        .collect(),
+                },
+            },
+            // A pressure row for an untouched subject.
+            WorldEffect::TimeAdvanced {
+                minutes: minutes(120),
+                to,
+                motion: Motion {
+                    fulfilled: honest.fulfilled.clone(),
+                    pressed: honest
+                        .pressed
+                        .iter()
+                        .cloned()
+                        .chain(std::iter::once(clock::PressureWritten {
+                            target: clockwork.treasury,
+                            source: PressureSource::Subject(clockwork.reeve),
+                            magnitude: PressureMagnitude(5),
+                        }))
+                        .collect(),
+                },
+            },
+        ];
+        for forged in forgeries {
+            let mut candidate = kernel.state.clone();
+            let error = apply_effect(&mut candidate, CommandId::issue(), &clock_caller(), &forged)
+                .unwrap_err();
+            assert!(matches!(error, KernelError::Invariant(_)), "{error:?}");
+            assert_eq!(candidate, kernel.state);
+        }
+
+        // The honest one applies.
+        let mut candidate = kernel.state.clone();
+        apply_effect(
+            &mut candidate,
+            CommandId::issue(),
+            &clock_caller(),
+            &WorldEffect::TimeAdvanced {
+                minutes: minutes(120),
+                to,
+                motion: honest,
+            },
+        )
+        .expect("the honest motion applies");
+        assert_eq!(candidate.now, to);
+    }
+
+    /// Replay across a tick is exact, and every envelope is idempotent.
+    #[test]
+    fn restart_replay_across_a_tick_is_exact() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Replay");
+        let world_id = kernel.state.world_id;
+
+        exercise(
+            &mut kernel,
+            clockwork.reeve,
+            clockwork.threaten,
+            vec![binding("target", Target::Subject(clockwork.farmer))],
+        )
+        .expect("the threat commits");
+        tick(&mut kernel, 60).expect("the routine tick commits");
+        tick(&mut kernel, 60).expect("the obligation tick commits");
+        let snapshot = kernel.snapshot().unwrap();
+        let repeat = command(
+            &snapshot,
+            CommandId::new(),
+            CallerId::Principal(owner()),
+            operations(vec![ComponentOp::DischargeCommitment {
+                subject: Ref::Existing(clockwork.farmer),
+                key: clockwork.obligation,
+            }]),
+        );
+        kernel
+            .submit(repeat.clone(), &auth_principal(owner()))
+            .expect("the discharge commits");
+        // Discharge removes every pressure row it sourced.
+        assert_eq!(
+            pressure(
+                &kernel,
+                clockwork.farmer,
+                PressureSource::Commitment {
+                    subject: clockwork.farmer,
+                    key: clockwork.obligation,
+                }
+            ),
+            0
+        );
+
+        let before = kernel.state.clone();
+        let before_snapshot = kernel.snapshot().unwrap();
+        drop(kernel);
+        let mut replayed = WorldKernel::open(&path, world_id).expect("the store replays");
+        assert_eq!(replayed.state, before);
+        assert_eq!(replayed.snapshot().unwrap(), before_snapshot);
+        assert!(matches!(
+            replayed.submit(repeat, &auth_principal(owner())),
+            Ok(SubmitReceipt::AlreadyApplied(_))
+        ));
+    }
+
+    /// The order is total, deterministic, and never a filter.
+    #[test]
+    fn the_attention_order_is_total_and_deterministic() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, clockwork, active) = clock_kernel(directory.path(), "Order");
+        let derived = derive_opportunities(&kernel.state).unwrap();
+
+        let with = |pressures: BTreeMap<SubjectId, u32>,
+                    stamps: BTreeMap<SubjectId, u64>|
+         -> Vec<SubjectId> {
+            let mut state = kernel.state.clone();
+            state.now = FictionalMinutes(1_000);
+            state.pressures = pressures
+                .into_iter()
+                .map(|(subject, magnitude)| {
+                    (
+                        subject,
+                        BTreeMap::from([(
+                            PressureSource::Subject(subject),
+                            PressureMagnitude(magnitude),
+                        )]),
+                    )
+                })
+                .collect();
+            state.last_opportunity_at = stamps
+                .into_iter()
+                .map(|(subject, stamp)| (subject, FictionalMinutes(stamp)))
+                .collect();
+            order_opportunities(&state, derived.clone())
+                .into_iter()
+                .map(|opportunity| opportunity.scope.subject_id)
+                .collect()
+        };
+
+        // Pressure dominates.
+        let ordered = with(
+            BTreeMap::from([(clockwork.farmer, 5), (clockwork.reeve, 3)]),
+            BTreeMap::new(),
+        );
+        assert_eq!(ordered[0], clockwork.farmer);
+        assert_eq!(ordered[1], clockwork.reeve);
+
+        // Equal pressure orders by debt, and a subject never attended outranks
+        // every subject that has.
+        let stamped: BTreeMap<SubjectId, u64> = active
+            .subjects
+            .iter()
+            .map(|subject| (subject.id, 900))
+            .collect();
+        let mut earlier = stamped.clone();
+        earlier.insert(clockwork.treasury, 100);
+        let ordered = with(BTreeMap::new(), earlier);
+        assert_eq!(ordered[0], clockwork.treasury);
+
+        // Never a filter: the same length and the same set, whatever the terms.
+        for pressures in [
+            BTreeMap::new(),
+            BTreeMap::from([(clockwork.reeve, 1)]),
+            BTreeMap::from([(clockwork.farmer, 9), (clockwork.treasury, 9)]),
+        ] {
+            let ordered = with(pressures, stamped.clone());
+            assert_eq!(ordered.len(), derived.len());
+            assert_eq!(
+                ordered.iter().copied().collect::<BTreeSet<_>>(),
+                derived
+                    .iter()
+                    .map(|opportunity| opportunity.scope.subject_id)
+                    .collect::<BTreeSet<_>>()
+            );
+        }
+    }
+
+    /// The debt term rotates: with no pressure anywhere, every subject reaches
+    /// the head within one pass, and standing pressure holds the head until it
+    /// is resolved.
+    #[test]
+    fn every_subject_reaches_the_head_within_bounded_ticks() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, clockwork, _) = clock_kernel(directory.path(), "Rotation");
+        let derived = derive_opportunities(&kernel.state).unwrap();
+        let count = derived.len();
+
+        let mut state = kernel.state.clone();
+        let mut seen = BTreeSet::new();
+        for step in 0..count {
+            state.now = FictionalMinutes(u64::try_from(step).unwrap() + 1);
+            let head = order_opportunities(&state, derived.clone())[0]
+                .scope
+                .subject_id;
+            seen.insert(head);
+            state.last_opportunity_at.insert(head, state.now);
+        }
+        assert_eq!(seen.len(), count, "every subject reached the head");
+
+        // Standing pressure holds the head; the others still rotate among
+        // themselves once it is resolved.
+        state.pressures.insert(
+            clockwork.farmer,
+            BTreeMap::from([(
+                PressureSource::Subject(clockwork.reeve),
+                PressureMagnitude(4),
+            )]),
+        );
+        for step in 0..count {
+            state.now = FictionalMinutes(1_000 + u64::try_from(step).unwrap());
+            let head = order_opportunities(&state, derived.clone())[0]
+                .scope
+                .subject_id;
+            assert_eq!(head, clockwork.farmer);
+            state.last_opportunity_at.insert(head, state.now);
+        }
+        state.pressures.remove(&clockwork.farmer);
+        assert_ne!(
+            order_opportunities(&state, derived.clone())[0]
+                .scope
+                .subject_id,
+            clockwork.farmer
+        );
+    }
+
+    /// Verification 14, first half: a dead end is derived, answered once, and
+    /// then no longer derived. Nothing clears one but the predicate failing.
+    #[test]
+    fn an_unelaborated_destination_is_derived_and_answered_exactly_once() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "DeadEnd");
+        let boundaries = derive_boundaries(&kernel.state).unwrap();
+        let destinations: Vec<_> = boundaries
+            .iter()
+            .filter(|boundary| matches!(boundary, CausalBoundary::UnelaboratedDestination { .. }))
+            .collect();
+        assert_eq!(destinations.len(), 1);
+        let answered = destinations[0].clone();
+        assert!(matches!(
+            answered,
+            CausalBoundary::UnelaboratedDestination { route, place, .. }
+                if route == clockwork.gate && place == clockwork.dead_end
+        ));
+
+        let snapshot = kernel.snapshot().unwrap();
+        assert!(snapshot.boundaries.contains(&answered));
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered.clone())),
+                patch: WorldPatch {
+                    declarations: vec![Declaration::Entity(EntityDeclaration {
+                        handle: DraftHandle::new("shed"),
+                        label: "The Roadside Shed".into(),
+                        kind: EntityKind::Place,
+                        container: Some(Ref::Existing(clockwork.dead_end)),
+                    })],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        assert!(
+            !derive_boundaries(&kernel.state)
+                .unwrap()
+                .contains(&answered)
+        );
+
+        // Answering it again names a boundary the kernel no longer derives.
+        let snapshot = kernel.snapshot().unwrap();
+        let error = kernel
+            .submit(
+                command(
+                    &snapshot,
+                    CommandId::new(),
+                    CallerId::Principal(owner()),
+                    CommandBody::AdmitPatch {
+                        answers: Some(PatchAnswer::Boundary(answered)),
+                        patch: WorldPatch {
+                            declarations: vec![Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("byre"),
+                                label: "The Roadside Byre".into(),
+                                kind: EntityKind::Place,
+                                container: Some(Ref::Existing(clockwork.dead_end)),
+                            })],
+                            operations: Vec::new(),
+                            evidence: Vec::new(),
+                        },
+                    },
+                ),
+                &auth_principal(owner()),
+            )
+            .unwrap_err();
+        assert!(matches!(error, KernelError::AnswerNotDerived), "{error:?}");
+    }
+
+    /// A promise the counterparty can neither command nor litigate is a missing
+    /// structure, and either repair clears it. A goal never derives one.
+    #[test]
+    fn a_commitment_with_no_authority_or_redress_derives_missing_structure() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Structure");
+        let missing = CausalBoundary::MissingStructure {
+            subject: clockwork.farmer,
+            key: clockwork.obligation,
+            scope: BoundaryDigest(String::new()),
+        };
+        let derives = |kernel: &WorldKernel| {
+            derive_boundaries(&kernel.state)
+                .unwrap()
+                .into_iter()
+                .any(|boundary| match (&boundary, &missing) {
+                    (
+                        CausalBoundary::MissingStructure { subject, key, .. },
+                        CausalBoundary::MissingStructure {
+                            subject: expected_subject,
+                            key: expected_key,
+                            ..
+                        },
+                    ) => subject == expected_subject && key == expected_key,
+                    _ => false,
+                })
+        };
+        assert!(derives(&kernel));
+        // A goal is a promise to oneself and needs no forum.
+        assert!(!derive_boundaries(&kernel.state).unwrap().iter().any(
+            |boundary| matches!(boundary, CausalBoundary::MissingStructure { key, .. } if *key == clockwork.goal)
+        ));
+
+        // Jurisdiction over the promisor's ground clears it.
+        let snapshot = kernel.snapshot().unwrap();
+        let grant = ComponentOp::GrantAuthority {
+            holder: Ref::Existing(clockwork.treasury),
+            grant: AuthorityGrantRef {
+                kind: AuthorityKindName("command".into()),
+                over: AuthorityTargetRef::PlaceSubtree(Ref::Existing(clockwork.yard)),
+            },
+        };
+        submit_owner(&mut kernel, &snapshot, operations(vec![grant.clone()]));
+        assert!(!derives(&kernel));
+
+        // Revoke it, and a forum whose standing covers the counterparty clears
+        // it the other way.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::RevokeAuthority {
+                holder: Ref::Existing(clockwork.treasury),
+                grant: AuthorityGrantRef {
+                    kind: AuthorityKindName("command".into()),
+                    over: AuthorityTargetRef::PlaceSubtree(Ref::Existing(clockwork.yard)),
+                },
+            }]),
+        );
+        assert!(derives(&kernel));
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::OpenForum {
+                grievance: GrievanceKindName("debt".into()),
+                forum: Ref::Existing(clockwork.reeve),
+                standing: AuthorityTargetRef::Subject(Ref::Existing(clockwork.treasury)),
+            }]),
+        );
+        assert!(!derives(&kernel));
+    }
+
+    /// Verification 14, second half: an answer must be derived, and the commit
+    /// must satisfy what it answered.
+    #[test]
+    fn an_answer_must_be_derived_and_must_be_satisfied() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Answers");
+        let before = kernel.state.clone();
+        let declaring = |answers: Option<PatchAnswer>, handle: &str| CommandBody::AdmitPatch {
+            answers,
+            patch: WorldPatch {
+                declarations: vec![Declaration::Entity(EntityDeclaration {
+                    handle: DraftHandle::new(handle),
+                    label: "A Later Room".into(),
+                    kind: EntityKind::Place,
+                    container: None,
+                })],
+                operations: Vec::new(),
+                evidence: Vec::new(),
+            },
+        };
+        let refuse = |kernel: &mut WorldKernel, body: CommandBody| {
+            let snapshot = kernel.snapshot().unwrap();
+            kernel
+                .submit(
+                    command(
+                        &snapshot,
+                        CommandId::new(),
+                        CallerId::Principal(owner()),
+                        body,
+                    ),
+                    &auth_principal(owner()),
+                )
+                .unwrap_err()
+        };
+
+        // Declaring in Active without answering.
+        assert!(matches!(
+            refuse(&mut kernel, declaring(None, "unanswered")),
+            KernelError::AnswerRequired
+        ));
+        // The two declared-but-never-derived variants.
+        for boundary in [
+            CausalBoundary::PolityInCausalRange {
+                subject: clockwork.reeve,
+                scope: BoundaryDigest(String::new()),
+            },
+            CausalBoundary::IndividuationRequired {
+                population: clockwork.reeve,
+                scope: BoundaryDigest(String::new()),
+            },
+        ] {
+            assert!(matches!(
+                refuse(
+                    &mut kernel,
+                    declaring(Some(PatchAnswer::Boundary(boundary)), "underived")
+                ),
+                KernelError::AnswerNotDerived
+            ));
+        }
+        // A jurisdiction with no deficit.
+        assert!(matches!(
+            refuse(
+                &mut kernel,
+                declaring(
+                    Some(PatchAnswer::Deficit(JurisdictionKey::Unplaced)),
+                    "no-deficit"
+                )
+            ),
+            KernelError::AnswerNotDerived
+        ));
+        // A derived boundary answered by a patch that leaves the predicate
+        // holding.
+        let destination = derive_boundaries(&kernel.state)
+            .unwrap()
+            .into_iter()
+            .find(|boundary| matches!(boundary, CausalBoundary::UnelaboratedDestination { .. }))
+            .expect("the dead end");
+        assert!(matches!(
+            refuse(
+                &mut kernel,
+                declaring(Some(PatchAnswer::Boundary(destination)), "elsewhere")
+            ),
+            KernelError::AnswerNotSatisfied
+        ));
+        assert_eq!(kernel.state, before);
+
+        // Draft answers nothing.
+        let directory = tempfile::tempdir().unwrap();
+        let mut draft_kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "Draft"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        assert!(matches!(
+            refuse(
+                &mut draft_kernel,
+                declaring(
+                    Some(PatchAnswer::Deficit(JurisdictionKey::Unplaced)),
+                    "in-draft"
+                )
+            ),
+            KernelError::AnswerNotDerived
+        ));
+    }
+
+    fn creation_with_intent(
+        id: CommandId,
+        title: &str,
+        intent: WorldScaleIntentRef,
+    ) -> CreateWorld {
+        let mut creation = creation(id, title);
+        creation.scale_intent = intent;
+        creation
+    }
+
+    fn intent(root: &str, persons: u32, permille: u32) -> WorldScaleIntentRef {
+        WorldScaleIntentRef {
+            targets: BTreeMap::from([(SubjectKind::Person, persons)]),
+            jurisdictions: BTreeMap::from([(DraftHandle::new(root), permille)]),
+        }
+    }
+
+    /// Verification 22, first half: only a qualified subject reduces the
+    /// deficit, and `Goal` carries the whole discrimination.
+    #[test]
+    fn a_subject_counts_toward_the_deficit_only_when_qualified() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation_with_intent(
+                CommandId::new(),
+                "Scale",
+                intent(super::tests::COMMONS, 3, 1000),
+            ),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let commons = kernel
+            .state
+            .scale_intent
+            .jurisdictions
+            .keys()
+            .copied()
+            .next()
+            .expect("the declared root");
+        let active = activate(&mut kernel);
+        let counted = active
+            .subjects
+            .iter()
+            .find(|subject| subject.kind == SubjectKind::Person)
+            .expect("the fixture world has a person")
+            .id;
+
+        let deficit = |kernel: &WorldKernel, jurisdiction: JurisdictionKey| {
+            derive_scale_deficit(&kernel.state)
+                .unwrap()
+                .into_iter()
+                .find(|row| row.jurisdiction == jurisdiction && row.kind == SubjectKind::Person)
+        };
+        let row = deficit(&kernel, JurisdictionKey::PlaceSubtree(commons))
+            .expect("a target of three persons");
+        assert_eq!((row.target, row.qualified, row.deficit), (3, 0, 3));
+
+        // A controller and a grant are not enough; a `Goal` is what counts.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::CreateCommitment {
+                subject: Ref::Existing(counted),
+                counterparty: None,
+                kind: CommitmentKind::Goal,
+                due: FictionalMinutes(500),
+                period: None,
+                checks: Vec::new(),
+            }]),
+        );
+        let goal = *kernel.state.commitments[&counted]
+            .keys()
+            .next()
+            .expect("the goal");
+        let row = deficit(&kernel, JurisdictionKey::PlaceSubtree(commons)).unwrap();
+        assert_eq!((row.target, row.qualified, row.deficit), (3, 1, 2));
+
+        // Discharging it raises the deficit again.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::DischargeCommitment {
+                subject: Ref::Existing(counted),
+                key: goal,
+            }]),
+        );
+        let row = deficit(&kernel, JurisdictionKey::PlaceSubtree(commons)).unwrap();
+        assert_eq!((row.target, row.qualified, row.deficit), (3, 0, 3));
+    }
+
+    /// Weights distribute the target and never raise it, and a root must be a
+    /// declared place.
+    #[test]
+    fn scale_weights_distribute_and_never_raise() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let over_whole = WorldScaleIntentRef {
+            targets: BTreeMap::from([(SubjectKind::Person, 10)]),
+            jurisdictions: BTreeMap::from([
+                (DraftHandle::new(super::tests::COMMONS), 700),
+                (DraftHandle::new("player"), 400),
+            ]),
+        };
+        let Err(error) = WorldKernel::create(
+            &path,
+            creation_with_intent(CommandId::new(), "TooMuch", over_whole),
+            &auth_principal(owner()),
+        ) else {
+            panic!("a genesis intent over the whole was admitted");
+        };
+        let KernelError::PatchRejected(mismatches) = error else {
+            panic!("expected a rejected genesis patch");
+        };
+        assert!(mismatches.contains(&Mismatch::ScaleWeightsExceedWhole));
+        // `player` is a subject handle, not a place.
+        assert!(mismatches.contains(&Mismatch::UnknownJurisdictionRoot {
+            handle: DraftHandle::new("player"),
+        }));
+
+        // Half the whole distributes half the target, rounded down.
+        let mut kernel = WorldKernel::create(
+            &path,
+            creation_with_intent(
+                CommandId::new(),
+                "Half",
+                intent(super::tests::COMMONS, 5, 500),
+            ),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        activate(&mut kernel);
+        let rows = derive_scale_deficit(&kernel.state).unwrap();
+        let commons_target: u32 = rows
+            .iter()
+            .filter(|row| matches!(row.jurisdiction, JurisdictionKey::PlaceSubtree(_)))
+            .map(|row| row.target)
+            .sum();
+        assert_eq!(commons_target, 2);
+        assert!(commons_target <= 5);
+    }
+
+    /// A rejected patch mutates nothing, so the deficit it would have reduced
+    /// stays visible.
+    #[test]
+    fn a_rejected_patch_leaves_the_deficit_unchanged_and_visible() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation_with_intent(
+                CommandId::new(),
+                "Rejected",
+                intent(super::tests::COMMONS, 3, 1000),
+            ),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let active = activate(&mut kernel);
+        let before = derive_scale_deficit(&kernel.state).unwrap();
+        let subjects: Vec<SubjectId> = active
+            .subjects
+            .iter()
+            .filter(|subject| subject.kind == SubjectKind::Person)
+            .map(|subject| subject.id)
+            .collect();
+        let goal = |subject: SubjectId, due: u64| ComponentOp::CreateCommitment {
+            subject: Ref::Existing(subject),
+            counterparty: None,
+            kind: CommitmentKind::Goal,
+            due: FictionalMinutes(due),
+            period: None,
+            checks: Vec::new(),
+        };
+
+        // One of the two goals is born past due.
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![goal(subjects[0], 500), goal(subjects[1], 0)]),
+            ),
+            vec![Mismatch::CommitmentDueInThePast { operation: 1 }]
+        );
+        assert_eq!(derive_scale_deficit(&kernel.state).unwrap(), before);
+
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![goal(subjects[0], 500), goal(subjects[1], 600)]),
+        );
+        let after = derive_scale_deficit(&kernel.state).unwrap();
+        let total = |rows: &[ScaleDeficitRow]| -> u32 { rows.iter().map(|row| row.deficit).sum() };
+        assert_eq!(total(&after) + 2, total(&before));
+    }
+
+    /// Every commitment shape check, in one complete sorted set.
+    #[test]
+    fn commitment_declaration_negatives() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, active) = clock_kernel(directory.path(), "Shapes");
+        let before = kernel.state.clone();
+        let create = |kind: CommitmentKind,
+                      counterparty: Option<SubjectId>,
+                      due: u64,
+                      period: Option<TickMinutes>,
+                      checks: Vec<PreconditionRef>| {
+            ComponentOp::CreateCommitment {
+                subject: Ref::Existing(clockwork.farmer),
+                counterparty: counterparty.map(Ref::Existing),
+                kind,
+                due: FictionalMinutes(due),
+                period,
+                checks,
+            }
+        };
+
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![
+                    // 0: a routine with no period.
+                    create(CommitmentKind::Routine, None, 500, None, Vec::new()),
+                    // 1: a goal with a period.
+                    create(
+                        CommitmentKind::Goal,
+                        None,
+                        500,
+                        Some(minutes(10)),
+                        Vec::new()
+                    ),
+                    // 2: checks on a non-routine.
+                    create(
+                        CommitmentKind::Obligation,
+                        Some(clockwork.treasury),
+                        500,
+                        None,
+                        vec![PreconditionRef::Present {
+                            at: Ref::Existing(clockwork.yard),
+                        }],
+                    ),
+                    // 3: born past due.
+                    create(
+                        CommitmentKind::Obligation,
+                        Some(clockwork.treasury),
+                        0,
+                        None,
+                        Vec::new()
+                    ),
+                    // 4: a promise to oneself with a counterparty.
+                    create(
+                        CommitmentKind::Obligation,
+                        Some(clockwork.farmer),
+                        500,
+                        None,
+                        Vec::new()
+                    ),
+                    // 5: a goal with a counterparty.
+                    create(
+                        CommitmentKind::Goal,
+                        Some(clockwork.treasury),
+                        500,
+                        None,
+                        Vec::new()
+                    ),
+                    // 6: a discharge of a key nobody holds.
+                    ComponentOp::DischargeCommitment {
+                        subject: Ref::Existing(clockwork.farmer),
+                        key: CommitmentKey {
+                            command: CommandId::new(),
+                            index: 0,
+                        },
+                    },
+                ]),
+            ),
+            {
+                let mut expected = vec![
+                    Mismatch::CommitmentPeriodMismatch { operation: 0 },
+                    Mismatch::CommitmentPeriodMismatch { operation: 1 },
+                    Mismatch::ChecksOnNonRoutine { operation: 2 },
+                    Mismatch::CommitmentDueInThePast { operation: 3 },
+                    Mismatch::SelfCommitment { operation: 4 },
+                    Mismatch::GoalWithCounterparty { operation: 5 },
+                    Mismatch::UnknownCommitment { operation: 6 },
+                ];
+                expected.sort();
+                expected
+            }
+        );
+        assert_eq!(kernel.state, before);
+
+        // Repairing exactly those commits.
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![
+                create(
+                    CommitmentKind::Routine,
+                    None,
+                    500,
+                    Some(minutes(10)),
+                    Vec::new(),
+                ),
+                create(CommitmentKind::Goal, None, 500, None, Vec::new()),
+                create(
+                    CommitmentKind::Obligation,
+                    Some(clockwork.treasury),
+                    500,
+                    None,
+                    Vec::new(),
+                ),
+                ComponentOp::DischargeCommitment {
+                    subject: Ref::Existing(clockwork.farmer),
+                    key: clockwork.routine,
+                },
+            ]),
+        );
+        assert!(
+            !kernel.state.commitments[&clockwork.farmer].contains_key(&clockwork.routine),
+            "the discharge removed the routine"
+        );
+    }
+
+    /// `Committed` reads the actor's own commitments, and a discharge mid-flight
+    /// rejects the promisor's bound proposal while the counterparty's own
+    /// invocation fails at admission.
+    #[test]
+    fn committed_reads_the_actors_own_commitments() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Committed");
+
+        // The reeve promised the treasury nothing.
+        let error = exercise(
+            &mut kernel,
+            clockwork.reeve,
+            clockwork.deliver,
+            vec![binding("creditor", Target::Subject(clockwork.treasury))],
+        )
+        .unwrap_err();
+        assert!(matches!(
+            error,
+            KernelError::ActionRejected(ref mismatches)
+                if *mismatches == vec![ActionMismatch::NotCommitted { precondition: 0 }]
+        ));
+
+        // The farmer did, so the entry commits and mints a second obligation
+        // whose due date the kernel computed.
+        let before = kernel.state.commitments[&clockwork.farmer].len();
+        exercise(
+            &mut kernel,
+            clockwork.farmer,
+            clockwork.deliver,
+            vec![binding("creditor", Target::Subject(clockwork.treasury))],
+        )
+        .expect("the delivery commits");
+        assert_eq!(
+            kernel.state.commitments[&clockwork.farmer].len(),
+            before + 1
+        );
+
+        // A proposal bound before a discharge is rejected as a scope change for
+        // the promisor: `Committed` reads commitments, so the digest binds them.
+        let snapshot = kernel.snapshot().unwrap();
+        let stale = opportunity_for(&snapshot, clockwork.farmer);
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::DischargeCommitment {
+                subject: Ref::Existing(clockwork.farmer),
+                key: clockwork.obligation,
+            }]),
+        );
+        let caller = CallerId::Controller(stale.controller_id);
+        let after = kernel.snapshot().unwrap();
+        let error = kernel
+            .submit(
+                command(
+                    &after,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        opportunity: stale,
+                        invocation: DecisionInvocation {
+                            affordance: clockwork.deliver,
+                            bindings: vec![binding(
+                                "creditor",
+                                Target::Subject(clockwork.treasury),
+                            )],
+                            proposed: vec![ProposedEffect {
+                                slot: 0,
+                                magnitude: Magnitude::None,
+                            }],
+                            speech: None,
+                        },
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .unwrap_err();
+        assert!(
+            matches!(error, KernelError::ScopeChanged { .. }),
+            "{error:?}"
+        );
+    }
+
+    /// A tick that only advances pressure moves nobody's scope digest; a tick
+    /// that fulfils a routine moves exactly that subject's.
+    #[test]
+    fn a_pressure_tick_moves_no_scope_digest_and_a_routine_tick_moves_one() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Digests");
+        let digests = |kernel: &WorldKernel| -> BTreeMap<SubjectId, ScopeDigest> {
+            derive_opportunities(&kernel.state)
+                .unwrap()
+                .into_iter()
+                .map(|opportunity| (opportunity.scope.subject_id, opportunity.scope_digest))
+                .collect()
+        };
+
+        // Past the obligation and the goal, but the routine is blocked out of
+        // the yard first so only pressure moves.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::DischargeCommitment {
+                subject: Ref::Existing(clockwork.farmer),
+                key: clockwork.routine,
+            }]),
+        );
+        let before = digests(&kernel);
+        tick(&mut kernel, 200).expect("the tick commits");
+        assert!(!kernel.state.pressures.is_empty(), "the tick pressed");
+        assert_eq!(digests(&kernel), before, "pressure binds no proposal");
+
+        // A routine fulfilment moves exactly its own subject's digest.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::CreateCommitment {
+                subject: Ref::Existing(clockwork.reeve),
+                counterparty: None,
+                kind: CommitmentKind::Routine,
+                due: FictionalMinutes(500),
+                period: Some(minutes(60)),
+                checks: Vec::new(),
+            }]),
+        );
+        let before = digests(&kernel);
+        tick(&mut kernel, 400).expect("the tick commits");
+        let after = digests(&kernel);
+        for (subject, digest) in &before {
+            if *subject == clockwork.reeve {
+                assert_ne!(after[subject], *digest, "the fulfilling subject rebinds");
+            } else {
+                assert_eq!(after[subject], *digest, "everyone else still commits");
+            }
+        }
+    }
+}

@@ -7,8 +7,8 @@
 //! draws a band, and the draw goes through the one `digest()` owner.
 
 use super::patch::{
-    self, Affordance, Audience, AudienceSpec, BoundPrecondition, Bounds, CommitmentKind,
-    ComponentOpKind, Cost, Precondition, Quantity, RefKind, Role, WorldPatch,
+    self, Affordance, Audience, AudienceSpec, BoundPrecondition, Bounds, ComponentOpKind, Cost,
+    Precondition, Quantity, RefKind, Role, WorldPatch,
 };
 use super::{
     AffordanceId, AuthorityGrant, AuthorityTarget, CommandId, DecisionEvent, DecisionInvocation,
@@ -2682,7 +2682,15 @@ mod tests {
             }],
             speech: None,
         };
-        let lowered = lower(&entry, 0, &invocation, &bindings).expect("the acquire slot lowers");
+        let lowered = lower(
+            &entry,
+            0,
+            bench.clerk,
+            FictionalMinutes::default(),
+            &invocation,
+            &bindings,
+        )
+        .expect("the acquire slot lowers");
         assert_eq!(
             lowered,
             vec![ComponentOp::AcquireKnowledge {
