@@ -1,0 +1,56 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ledger-nine-water-note-v0.bfl-simple-v0",
+  "fixture_id": "ledger-nine-water-note-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured high-fantasy industrial storybook illustration in a Faerun-like register, precise etched ink lines with restrained painterly gouache, worn basalt and carved stone, hammered brass and dark iron, warm amber oil lamps against cold blue mana light, readable silhouettes, humane facial acting, practical rune machinery, unlettered slates carrying abstract chalk marks and seal shapes, cinematic interactive-fiction composition.",
+  "prompts": [
+    {
+      "id": "01_nine_water_note_establishing",
+      "prompt": "Wide stone street-landing view into an empty compact two-level underground pump house: dry upper rune gallery with yellow public boundary, black slate, tall water gauge, brass rail, accounting ledge, and grated stair; misty black-water chamber below; three brass-and-iron pumps west-to-east; locked blue-lit mana conduit on the north wall; four copper-bound crystal bins and a sealed gray parts crate beside the ledge; maintained room visibly dependent on fuel and records."
+    },
+    {
+      "id": "02_nine_water_note_people",
+      "prompt": "Medium-wide pump-house invoice morning: young brown-skinned dwarf woman apprentice with dark-copper braid, indigo work coat and leather apron sets calibrated weights beside four squat crystal bins on a low iron roller scale; very short square dwarf woman Master in dark green with iron-gray hair and heavy civic seal compares a red-cord contract with a pale-olive dwarf clerk in rust headscarf holding a black slate; stocky fork-bearded dwarf journeyworker kneels by a scarred drive collar; gray red-cord parts crate and three pumps visible."
+    },
+    {
+      "id": "03_nine_water_note_terms",
+      "prompt": "Medium accounting-ledger frame inside a two-level stone pump house: four squat gate-sealed crystal bins on a low iron roller scale under blue mana conduit, calibrated weights, abstract route tickets, black water-rate slate, red-cord debt amendment, scarred drive collar, old brass fitting gauge, and sealed gray parts crate; apprentice, Master, journeyworker, and clerk each positioned beside the material they can touch or authorize; pump row and terrace gauge beyond brass rail."
+    },
+    {
+      "id": "04_nine_water_note_routine_fold",
+      "prompt": "Wide pre-handover pump-house tableau: young dwarf apprentice at central Engine Two; fork-bearded journeyworker hand-turning its shaft; short dwarf Master at accounting ledge with stepped-water seal; rust-headscarf clerk facing public slate toward an orderly dwarf queue with copper cans and bakery trough; crystal bins, sealed parts crate, old gauge, red-cord amendment, tall water gauge, blue-lit conduit, three pumps, grated stair and warm mist all readable."
+    },
+    {
+      "id": "05_nine_water_note_collar_failure",
+      "prompt": "Pivotal close-medium fantasy machinery failure: central pump's dark iron drive collar split in two around a shaft, vertical pump rod motionless above warm mist and black water; public gauge beginning to fall; copper-braided dwarf apprentice and fork-bearded journeyworker keep hands clear; rust-headscarf clerk opens an insurance refusal; square dwarf Master holds red-cord amendment apart from heavy seal; gray certified-parts crate remains closed."
+    },
+    {
+      "id": "06_nine_water_note_failure_choices",
+      "prompt": "Wide post-failure decision frame in two-level stone pump house: broken central Engine Two between two intact pumps; young dwarf apprentice stands within reach of a scarred collar blank beside an old brass gauge, a sealed gray creditor crate, and two sound-engine controls; square dwarf Master guards civic seal; journeyworker waits at the stopped shaft; clerk holds refusal beside public slate; crystal bins, red-cord amendment, falling water gauge, yellow boundary and orderly vessel queue form distinct visible choices."
+    },
+    {
+      "id": "07_nine_water_note_cost_fold",
+      "prompt": "Wide civic consequence tableau in underground pump house: three pumps and flow states below brass rail; remaining crystal bins, gray parts crate, red-cord amendment, old fitting gauge, insurance refusal and outward black slate visible; young dwarf apprentice between machinery and public boundary; short Master sets heavy seal between service book and water note; tired journeyworker rests at rail; clerk faces bakers, laundry workers, infirmary runners, bathhouse workers and water carriers with idle tools and empty vessels."
+    },
+    {
+      "id": "08_nine_water_note_ending_route",
+      "prompt": "Wide district moot in carved-stone terrace hall: copper-braided dwarf apprentice carries metal-sealed route tickets and refusal notice; rust-headscarf clerk carries large public slate; liftworks, kitchen, laundry, Reserve House and route-office dwarf representatives gather around one low basalt table with lifting gloves, flour aprons, wet-work sleeves, locked crystal coffer, route maps, gate tokens and separate civic seals; copper water cans and bakery trough along wall."
+    },
+    {
+      "id": "09_nine_water_note_ending_local",
+      "prompt": "Medium-wide local repair aftermath in stone pump house: central Engine Two, old brass fitting gauge, dark file-marked recut collar, public inspection slate, files, calipers and training board; young dwarf apprentice with marked hands beside gauge; short dark-green-coated Master holds stepped-water seal above inspection slate; fork-bearded journeyworker demonstrates collar fit; gray certified crate closed in background and terrace gauge near landing."
+    },
+    {
+      "id": "10_nine_water_note_ending_borrowed",
+      "prompt": "Wide creditor-repair aftermath in Cistern House Nine: central pump carries bright certified collar; gray parts crate open with felt blocks and cut red cord; short square dwarf Master beside freshly sealed accelerated amendment; young copper-braided dwarf apprentice watches water gauge; rust-headscarf clerk posts future winter claim beside restored level; orderly dwarf queue receives water; remaining crystal bins under blue-lit conduit make present relief and future scarcity share one frame."
+    },
+    {
+      "id": "11_nine_water_note_ending_ration",
+      "prompt": "Wide stepped underground terrace street: public spout, tall gauge, elevated riveted header tank with float bells, bakery, laundry arch, basin-marked bathhouse and lamp-marked infirmary; young dwarf apprentice in indigo carries two copper cans on wooden yoke uphill; rust-headscarf clerk marks water bands on portable slate; diverse dwarf workers wait with cans, jugs, kettles and wheeled bakery trough; steep stairs make carrying labor and unequal water time visible."
+    }
+  ]
+}

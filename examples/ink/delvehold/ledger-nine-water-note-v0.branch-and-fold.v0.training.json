@@ -1,0 +1,375 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ledger-nine-water-note-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/delvehold/ledger-nine-water-note-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/ledger-nine-water-note-v0.v0.json",
+  "scene_id": "ledger-nine-water-note-v0.collar-failure-and-credit-choice",
+  "protagonist_agent_id": "orsa_rill",
+  "npc_agent_ids": [
+    "hessa_cairn",
+    "brin_olt",
+    "dema_sorn",
+    "cistern_house_nine_landing_queue"
+  ],
+  "purpose": "Interactive Fiction Weaver compilation of a Delvehold branch-and-fold fixture about a public pump failure whose parts, fuel, insurance, route deductions, labor, and household losses arrive under different owners.",
+  "local_awareness_summary": [
+    {
+      "text": "Orsa is a dwarven pump-house apprentice who knows Cistern House Nine's machinery, service routine, delivery seals, local repair tools, and the visible consequences of falling terrace gauges.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/ledger-nine-water-note-v0.v0.json",
+        "Delvehold/Lore/The Greathold.md",
+        "Delvehold/Lore/Industry/Runic Engineering.md"
+      ]
+    },
+    {
+      "text": "Orsa may read the workshop's public invoices and perform assigned work, but Master Hessa alone owns the civic seal that can bind the workshop to a repair, debt amendment, or service state.",
+      "source_refs": [
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+        "Delvehold/Lore/The Greathold.md"
+      ]
+    },
+    {
+      "text": "The district has about ten hours of upper-terrace stored water, up to two days below, a late water-note payment, a short crystal delivery, and a certified spare part held under consortium claim.",
+      "source_refs": [
+        "Delvehold/Lore/The Greathold.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Orsa's apprentice-local viewpoint. Choices use reachable bins, scales, files, collars, pumps, slates, notices, and carrying work rather than authority she does not possess.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "The opening establishes routine invoice and maintenance work before Engine Two fails; three choice layers branch locally and fold through shared material state.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      },
+      {
+        "text": "Tonal mode is wry civic workplace comedy under debt pressure: jokes expose accounting, class, and contract absurdity while dry taps and winter claims retain weight.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Orsa can propose, prepare, record, install under supervision, carry evidence, and join rationing; she cannot apply Hessa's civic seal or bind the district herself.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/The Greathold.md"
+        ]
+      },
+      {
+        "text": "Dema owns the public copy of visible figures but not technical diagnosis; Brin owns journeyworker craft judgments but not the civic seal; Hessa owns only the workshop decision, not every route, insurer, creditor, or household consequence.",
+        "source_refs": [
+          "Delvehold/Lore/The Greathold.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Crystal bins and route tickets, the recut collar and old gauge, Basalt Crown's cord-sealed certified collar, Seven Seals' refusal notice, Dema's public slate, Hessa's civic seal, and the last crystal reserve retain distinct custody throughout the folds.",
+        "source_refs": [
+          "Delvehold/Lore/The Greathold.md",
+          "examples/ink/delvehold/ledger-nine-water-note-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every branch must move a material cost among water service, future crystal priority, warranty, route accountability, local skill, worker time, or household loss.",
+        "source_refs": [
+          "Delvehold/Lore/The Greathold.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "Delvehold/Lore/Crisis/Industrial Escalation.md"
+        ]
+      },
+      {
+        "text": "The story must show that a failed cistern costs more than the workshop ledger records and that truthful anomaly reporting can trigger an insurance exclusion without proving the anomaly's cause.",
+        "source_refs": [
+          "Delvehold/Lore/The Greathold.md",
+          "Delvehold/Lore/Industry/Machine-Dungeon.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let Orsa sign debt, apply a civic seal, commandeer route offices, or settle insurance policy for the district.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "Do not diagnose the prior blue reroute as machine-dungeon agency or treat consortium, insurer, route office, Reserve House, workshop, and district as one authority.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Machine-Dungeon.md",
+          "Delvehold/Lore/The Greathold.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three four-option choice layers fold through the collar failure and shared cost ledger, then resolve into eight state-gated endings.",
+    "choice_layers": [
+      "ordinary_invoice_routine",
+      "failed_engine_response",
+      "consequence_owner"
+    ],
+    "variables": [
+      "crystal_stock",
+      "district_buffer",
+      "water_flow",
+      "note_pressure",
+      "warranty_status",
+      "public_record",
+      "local_part",
+      "route_proof",
+      "worker_burden",
+      "district_cost"
+    ],
+    "ending_gates": [
+      "ending_route_reckoning",
+      "ending_route_reckoning_cost",
+      "ending_local_repair",
+      "ending_local_repair_cost",
+      "ending_borrowed_water",
+      "ending_borrowed_water_cost",
+      "ending_rationed_time",
+      "ending_rationed_thirst"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_route_proof",
+      "ink_path": "invoice_choice",
+      "action_type": "weigh_delivery",
+      "actor_intent": "Separate route deductions and unexplained loss from local pump consumption.",
+      "state_basis": [
+        "Orsa can handle the delivery bins and read their seals; Dema can preserve public weights and ticket custody."
+      ],
+      "reviewed_consequences": [
+        "Raises route_proof, public_record, and worker_burden; later enables a source-backed route and insurance hearing."
+      ],
+      "training_hooks": [
+        "commodity_chain_visibility",
+        "custody_before_accusation"
+      ]
+    },
+    {
+      "branch_id": "prime_local_repair",
+      "ink_path": "invoice_choice",
+      "action_type": "shape_part",
+      "actor_intent": "Prepare a locally maintainable replacement before a breakdown makes the certified crate the only apparent option.",
+      "state_basis": [
+        "Brin owns the old workshop gauge and may train Orsa to recut a discarded collar."
+      ],
+      "reviewed_consequences": [
+        "Raises local_part and worker_burden while lowering warranty_status; unlocks the local repair response."
+      ],
+      "training_hooks": [
+        "portable_skill",
+        "warranty_dependency"
+      ]
+    },
+    {
+      "branch_id": "prime_public_terms",
+      "ink_path": "invoice_choice",
+      "action_type": "publish_terms",
+      "actor_intent": "Make arrears, part custody, and exclusions visible before failure changes the bargaining field.",
+      "state_basis": [
+        "The workshop figures are public obligations and Dema maintains the landing slate."
+      ],
+      "reviewed_consequences": [
+        "Raises public_record and note_pressure; improves later accountability while exposing Hessa's late payment."
+      ],
+      "training_hooks": [
+        "public_ledger",
+        "visibility_changes_leverage"
+      ]
+    },
+    {
+      "branch_id": "prime_district_buffer",
+      "ink_path": "invoice_choice",
+      "action_type": "fill_reserve",
+      "actor_intent": "Spend scarce crystal to buy upper-terrace households time before the invoice is settled.",
+      "state_basis": [
+        "Orsa can run Engine One for an assigned measured fill; the public header tank is visible on the gauge."
+      ],
+      "reviewed_consequences": [
+        "Raises district_buffer and water_flow while lowering crystal_stock; materially improves the rationing ending."
+      ],
+      "training_hooks": [
+        "reserve_as_time",
+        "fuel_service_tradeoff"
+      ]
+    },
+    {
+      "branch_id": "use_local_repair",
+      "ink_path": "failure_choice",
+      "action_type": "install_local_part",
+      "actor_intent": "Restore water through supervised local craft while openly surrendering warranty protection.",
+      "state_basis": [
+        "Available only when the recut collar was prepared; Hessa witnesses rather than retroactively certifies it."
+      ],
+      "reviewed_consequences": [
+        "Raises water_flow, worker_burden, and public_record while setting warranty_status to zero."
+      ],
+      "training_hooks": [
+        "local_capacity",
+        "insurance_cost_of_repair"
+      ]
+    },
+    {
+      "branch_id": "borrow_for_water",
+      "ink_path": "failure_choice",
+      "action_type": "accept_accelerated_note",
+      "actor_intent": "Restore immediate service by making Hessa explicitly pledge winter crystal priority.",
+      "state_basis": [
+        "Only Hessa seals the amendment; Orsa cuts the consortium cord after the public reading and stamp."
+      ],
+      "reviewed_consequences": [
+        "Raises water_flow, note_pressure, warranty_status, and public_record while spending crystal_stock; creates a visible future winter claim."
+      ],
+      "training_hooks": [
+        "rational_debt_lock_in",
+        "future_scarcity_claim"
+      ]
+    },
+    {
+      "branch_id": "spend_crystal_reserve",
+      "ink_path": "failure_choice",
+      "action_type": "overload_remaining_pumps",
+      "actor_intent": "Preserve immediate water with higher crystal burn and worker attention instead of taking new debt.",
+      "state_basis": [
+        "Engines One and Three remain operable but running above ordinary draw consumes reserve and requires a watch."
+      ],
+      "reviewed_consequences": [
+        "Raises water_flow, worker_burden, and district_cost while lowering crystal_stock and warranty_status."
+      ],
+      "training_hooks": [
+        "resource_burn",
+        "labor_as_hidden_reserve"
+      ]
+    },
+    {
+      "branch_id": "stop_and_publish",
+      "ink_path": "failure_choice",
+      "action_type": "preserve_denial_record",
+      "actor_intent": "Keep the pumps safely isolated and expose the insurer-creditor bind at immediate district cost.",
+      "state_basis": [
+        "Orsa can seat assigned wedges and transfer the notice to Dema; she cannot settle the policy."
+      ],
+      "reviewed_consequences": [
+        "Raises public_record and district_cost while lowering water_flow, district_buffer, and note_pressure."
+      ],
+      "training_hooks": [
+        "truth_service_tradeoff",
+        "contract_refusal_made_public"
+      ]
+    },
+    {
+      "branch_id": "audit_route_and_policy",
+      "ink_path": "allocation_choice",
+      "action_type": "widen_accounting_jurisdiction",
+      "actor_intent": "Put the route chain, refusal clause, and district cost before seals belonging to each affected owner.",
+      "state_basis": [
+        "Success requires both route_proof and a sufficiently complete public_record."
+      ],
+      "reviewed_consequences": [
+        "Routes to a shared-owner hearing or a cost ending where correct stamps defeat an incomplete accusation."
+      ],
+      "training_hooks": [
+        "jurisdiction_follows_dependency",
+        "state_gated_evidence"
+      ]
+    },
+    {
+      "branch_id": "own_local_repair",
+      "ink_path": "allocation_choice",
+      "action_type": "found_local_maintenance",
+      "actor_intent": "Convert an improvised recut part into inspectable shared skill under Hessa's seal.",
+      "state_basis": [
+        "The option is available only when the local collar was prepared; success further requires surrendered warranty, restored flow, and a worker burden low enough to sustain inspection."
+      ],
+      "reviewed_consequences": [
+        "Routes to local capacity or a cost ending where independence lacks a working part or labor owner."
+      ],
+      "training_hooks": [
+        "dependency_replaced_by_capacity",
+        "labor_limit"
+      ]
+    },
+    {
+      "branch_id": "own_accelerated_debt",
+      "ink_path": "allocation_choice",
+      "action_type": "accept_borrowed_water",
+      "actor_intent": "Keep the certified repair running while making its winter claim visible to the district.",
+      "state_basis": [
+        "The option is available only after an accelerated note was sealed; success further requires restored flow and at least two crystal measures left."
+      ],
+      "reviewed_consequences": [
+        "Routes to immediate water with visible future scarcity or a cost ending where debt cannot replace missing stock."
+      ],
+      "training_hooks": [
+        "borrowed_resilience",
+        "ending_reads_debt_and_stock"
+      ]
+    },
+    {
+      "branch_id": "ration_in_public",
+      "ink_path": "allocation_choice",
+      "action_type": "distribute_water",
+      "actor_intent": "Protect the last crystal and make remaining water time legible by street and use.",
+      "state_basis": [
+        "Success requires stored district buffer or ongoing partial flow."
+      ],
+      "reviewed_consequences": [
+        "Routes to rationed deliberation or a dry ending that itemizes wage, food, care, and cartage losses."
+      ],
+      "training_hooks": [
+        "household_cost_surface",
+        "resource_distribution"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Durable Delvehold canon promotion beyond the authored Nine-water note subsection",
+      "Character memory or relationship updates",
+      "Acceptance into the training corpus",
+      "Any claim that a specific branch outcome happened canonically"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex titled elaborator using the four required reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted. Reader orientation 5/5, coherence 5/5, pacing 4/5, voice 5/5, tonal fit 5/5, and IF playability 5/5. The pass gated final local-repair and accelerated-debt choices behind the objects and prior commitments they require, removing folded paths that referred to absent parts.",
+      "Lore grounding verdict: accepted. Source coverage 5/5, canon fit 5/5, grounding quality 5/5, and vault backfill value 5/5. The pass removed Hessa's personal name from the canonical water-note debtor so the lore owns the workshop seal and the fixture retains character-event authority; it also clarified crystal transit from rail and lift into the conduit-fed pumps.",
+      "Visual continuity verdict: accepted_with_minor_revisions as an illustrated-IF scaffold, not replay-ready art. Segmentation 5/5, prompt quality 5/5, character visibility 5/5, branch continuity 5/5, and website replay 4/5. Eleven unique base scenes and twelve branch modifiers cover every focal shift and branch consequence; memory-dependent wording, off-frame character mention, negative direction, and unstable base-state alternatives were removed. A durable plan view or 3D blockout remains required before high-consistency multi-angle rendering.",
+      "Spatial-geometric cohesion verdict: accepted_with_minor_revisions as a stageable text plan. Layout 5/5, sightlines 5/5, body affordance 5/5, movement and access 5/5, object-system geometry 5/5, and branch spatial state 5/5. The pass replaced unsupported bin lifting with a low roller scale and straight approach, gated absent-part actions, and kept seal, public-record, worker, route, ration, and repair authority at distinct reachable stations. A plan view or simple 3D blockout remains the only replay-readiness gap.",
+      "Per pass constraints, Ink compilation was not attempted and no compiler was installed. JSON parsing, schema-version checks, header inspection, knot-target validation, variable-use counts, branch-to-sidecar coverage, visual-anchor resolution, visual-ref resolution, modifier-target checks, and prompt-language scans were performed."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

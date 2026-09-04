@@ -1,0 +1,767 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ledger-nine-water-note-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/ledger-nine-water-note-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/ledger-nine-water-note-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ledger-nine-water-note-v0.collar-failure-and-credit-choice",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Cistern House Nine water-note fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary invoice work, preparatory choices, the collar failure and refusal notice, service responses, the shared cost ledger, and state-gated aftermaths.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the room, participant introduction, material terms and first choices, the routine fold, the isolated collar break, the response choices, the shared consequence frame, and each ending family. Branch modifiers carry visible deltas into folded frames.",
+    "prompting_rule": "Every base image prompt is a complete standalone frame for a general image model. It restates visible geometry, materials, lighting, bodies, tools, and object state. Continuity notes remain tooling constraints and are excluded from prompt assembly.",
+    "global_style_cue": "Style: richly textured high-fantasy industrial storybook illustration in a Faerun-like register, precise etched ink lines with restrained painterly gouache, worn basalt and carved stone, hammered brass and dark iron, warm amber oil lamps against cold blue mana light, readable silhouettes, humane facial acting, practical rune machinery, unlettered slates carrying abstract chalk marks and seal shapes, cinematic composition for illustrated interactive fiction.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the scene base_image_prompt, visual refs only for named characters or groups actually visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Do not rely on prior generated images for room memory.",
+    "scene_set_guidance": {
+      "current_mode": "existing_text_scene_set_extended",
+      "scope_reason": "This fixture reuses the established Cistern House Nine two-level text layout and adds fixed accounting-ledger, crystal-bin, vendor-crate, old-gauge, and header-tank state anchors.",
+      "future_scene_set_need": "Before high-consistency website rendering, turn the shared text layout into a plan view or simple 3D blockout with the listed camera and staging slots."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "nine_water_note_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view from a stone street landing into an empty compact two-level underground pump house. The dry upper rune gallery has amber oil lamps, a yellow public boundary, a black slate, a tall terrace water gauge, a brass safety rail, an accounting ledge, and a grated stair descending to a wet chamber filled with warm mist and black seawater. Three squat brass-and-iron pump engines stand west-to-east below the rail, each with a vertical glass pressure float, outlet pipe, dark rune slate, and rectangular wedge throat. A locked riveted conduit arch in the north wall carries cold blue mana toward the pump row. Four copper-bound crystal bins and one gray iron parts crate sit beside the accounting ledge. The maintained room is visibly dependent on fuel and records.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Public landing is west, dry gallery is above, wet intake is below, three pumps run west-to-east, and the municipal conduit enters the north wall.",
+          "The accounting ledge, four crystal bins, gray parts crate, and old brass collar gauge occupy the upper gallery, not a second room."
+        ]
+      },
+      {
+        "visual_scene_id": "nine_water_note_people",
+        "ink_anchor": "morning_people",
+        "base_image_prompt": "Medium-wide morning work tableau in the dry gallery of a two-level fantasy pump house. A young adult dwarf apprentice with warm brown skin, one thick dark-copper braid, indigo sleeveless work coat, leather apron, heavy boots, and chalk-stained square fingers sets calibrated brass weights beside a low iron roller scale carrying four squat copper-bound crystal bins. A very short square-shouldered middle-aged dwarf Master with deep brown skin, cropped iron-gray hair, dark green wool coat, and a heavy stepped-water civic seal on a chain compares a red-cord contract sheet with a black public slate. The clerk holding the slate is a sturdy middle-aged dwarf with pale olive skin, rust-red headscarf, charcoal vest, striped brown shirt, and chalk holster. A stocky dwarf journeyworker with ruddy tan skin, forked auburn beard, rolled slate-blue sleeves, and oil-dark apron kneels beside a scarred metal drive collar. A gray iron replacement-parts crate sealed by a taut red cord waits behind the brass rail; three pumps and the terrace gauge remain visible.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "at the balance scale beside the crystal bins",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "at the accounting ledge with seal and contract sheet",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "kneeling beside the scarred collar and old gauge",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "holding the public slate beside Hessa",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This frame introduces all named participants before later folds depend on them.",
+          "The red cord belongs to the gray certified-parts crate and stays intact unless borrow_for_water is selected."
+        ]
+      },
+      {
+        "visual_scene_id": "nine_water_note_terms",
+        "ink_anchor": "routine_terms|invoice_choice",
+        "base_image_prompt": "Medium view along the accounting side of an underground pump-house gallery. Four squat copper-bound crystal bins sit on a low iron roller scale beneath a locked blue-lit mana conduit; each bin carries a different simple metal gate seal. Calibrated brass weights, stacked route tickets with abstract marks, a black water-rate slate, a red-cord debt amendment, a scarred drive collar, an old brass fitting gauge, and a sealed gray replacement-parts crate form a readable chain across one stone ledge. The young dwarf apprentice in indigo work coat stands between scale and old gauge. The square-shouldered dwarf Master in dark green stands between amendment and civic seal. The clerk in a rust-red headscarf holds chalk beside the public slate. The fork-bearded journeyworker waits by the collar. The terrace gauge and three silent pumps remain visible beyond the brass rail.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "between balance scale and old collar gauge",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "between the amendment and her civic seal",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "at the scarred collar with file and gauge",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "beside the black public slate with chalk ready",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The first choice uses four adjacent but distinct object clusters: bin scale, old gauge, public slate, and header-tank valve."
+        ]
+      },
+      {
+        "visual_scene_id": "nine_water_note_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide pre-handover tableau across a compact two-level stone pump house with dry upper gallery, brass rail, grated stair, and warm mist rising from the black-water intake below. The young dwarf apprentice stands at central Engine Two; the fork-bearded journeyworker turns its shaft by hand; the dark-green-coated Master watches from the inspection and accounting ledge with her stepped-water seal; the rust-headscarf clerk faces an outward black slate toward a small orderly landing queue of dwarves carrying copper cans and one wheeled bakery trough. Four copper-bound crystal bins, the sealed gray parts crate, the old brass gauge, the red-cord amendment, the tall terrace water gauge, three pumps, and the blue-lit north-wall conduit are all visible in stable readable positions.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "at Engine Two's upper service position",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "at the inspection and accounting ledge",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "turning Engine Two's shaft by hand",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "beside the outward-facing public slate",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "small orderly group behind the yellow line with cans and bakery trough",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "route_proof >= 2",
+            "modifier_prompt": "The four squat crystal bins line the low roller scale with separate gate-seal tokens and a chalked short-weight column on Dema's slate."
+          },
+          {
+            "trigger": "local_part >= 2",
+            "modifier_prompt": "A freshly recut dark-iron collar cools beside the old brass fitting gauge and a pile of bright metal filings."
+          },
+          {
+            "trigger": "public_record >= 3",
+            "modifier_prompt": "The outward black slate carries several large abstract rows for arrears, exclusions, part custody, and next payment where the queue can see them."
+          },
+          {
+            "trigger": "district_buffer >= 3",
+            "modifier_prompt": "The upper header-tank marker on the terrace gauge stands two bands higher and tiny float bells above the landing are visibly raised."
+          },
+          {
+            "trigger": "crystal_stock <= 2",
+            "modifier_prompt": "One copper-bound crystal bin stands open and visibly shallow while three sealed bins remain beside it."
+          },
+          {
+            "trigger": "worker_burden >= 2",
+            "modifier_prompt": "Orsa's shift board shows an extra chalk block and filings remain on her apron before the handover has begun."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Engine Two is the central pump; Brin can hand-turn its upper shaft from the gallery service position."
+        ]
+      },
+      {
+        "visual_scene_id": "nine_water_note_collar_failure",
+        "ink_anchor": "collar_failure",
+        "base_image_prompt": "Pivotal close-medium view at central Engine Two in a two-level stone pump house. A dark iron drive collar has split cleanly around the turning shaft and its two halves rest against the brass casing. The vertical pump rod hangs motionless above warm mist and black water below. A tall public water gauge visible behind the rail has just begun to fall. The young dwarf apprentice with dark-copper braid and indigo work coat looks directly at the broken metal. The fork-bearded journeyworker has both hands clear of the shaft. At the accounting ledge, the rust-headscarf clerk opens a folded refusal notice while the short square Master holds an unopened red-cord amendment near her heavy civic seal. The gray certified-parts crate remains shut behind the rail.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "at the broken collar, hands clear",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "at the ledge with amendment and seal separated",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "beside Engine Two with hands withdrawn from the shaft",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "opening the insurance refusal notice",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This one-sentence rupture receives its own replay screen.",
+          "The collar breaks at Engine Two; the pump rod stops above the wet intake and the creditor-held spare remains across the gallery behind the rail."
+        ]
+      },
+      {
+        "visual_scene_id": "nine_water_note_failure_choices",
+        "ink_anchor": "failure_choice",
+        "base_image_prompt": "Wide decision frame across Cistern House Nine after central Engine Two has stopped. The broken central collar is visible on the casing; left Engine One and right Engine Three remain intact. On the upper gallery, a young dwarf apprentice in indigo stands where she can reach a scarred collar blank beside the old brass gauge, the gray certified-parts crate, or the two sound-engine controls. A short dwarf Master in dark green guards the civic seal at the accounting ledge. A fork-bearded journeyworker stands ready at Engine Two. A rust-headscarf clerk holds an insurance refusal beside the outward public slate. Four crystal bins, the red-cord amendment, the yellow public boundary, the falling terrace gauge, and an orderly dwarf queue with water vessels are all visible as distinct levers and costs.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "between repair part, creditor crate, and sound-engine controls",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "guarding the seal at the accounting ledge",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "ready at the stopped Engine Two",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "holding refusal notice beside the public slate",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "behind the yellow line with copper cans and work tools",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Orsa can physically carry parts and operate assigned controls; Hessa alone remains at the seal position."
+        ]
+      },
+      {
+        "visual_scene_id": "nine_water_note_cost_fold",
+        "ink_anchor": "cost_fold",
+        "base_image_prompt": "Wide consequence tableau in a compact two-level stone pump house with dry upper gallery, brass rail, grated stair, and warm mist above a black-water intake. Three brass-and-iron pumps stand below the rail; central Engine Two is stopped with a split collar and low pressure float. A tall terrace gauge, remaining copper-bound crystal bins, the gray parts crate, a red-cord amendment, an old fitting gauge, an insurance refusal, and a large outward-facing black slate are all readable. The young dwarf apprentice in indigo stands between machinery and yellow public boundary. The short dark-green-coated Master places her heavy stepped-water civic seal between the open service book and water-note statement. The fork-bearded journeyworker rests both hands on the rail. The rust-headscarf clerk faces the public slate toward bakers, laundry workers, infirmary runners, bathhouse workers, and water carriers waiting with copper cans, a wheeled trough, baskets, and yokes.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "between machinery and public boundary",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "seal set between service book and water note",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "hands resting on the rail after repair work",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "beside the outward public slate",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "affected trades waiting behind the yellow line with vessels and tools",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "water_flow >= 4",
+            "modifier_prompt": "All active outlet pipes run strongly and the terrace gauge rises above red while relief moves through the vessel queue."
+          },
+          {
+            "trigger": "water_flow >= 2 && water_flow < 4",
+            "modifier_prompt": "Only a measured partial stream enters the bakery trough and the terrace gauge climbs slowly near its red band."
+          },
+          {
+            "trigger": "water_flow <= 0",
+            "modifier_prompt": "All pressure floats are low, the pumps are dark, the public spout is dry, and the terrace gauge rests in red."
+          },
+          {
+            "trigger": "note_pressure >= 5",
+            "modifier_prompt": "The red cord is cut, Hessa's fresh seal impression sits on the accelerated amendment, and the winter-priority row is posted on the public slate."
+          },
+          {
+            "trigger": "warranty_status <= 0",
+            "modifier_prompt": "The recut collar runs on Engine Two beside the old brass gauge while a heavy black chalk stroke cancels the warranty row."
+          },
+          {
+            "trigger": "crystal_stock <= 1",
+            "modifier_prompt": "Only one shallow copper-bound crystal bin remains while three empty bin mouths face the viewer."
+          },
+          {
+            "trigger": "public_record >= 4",
+            "modifier_prompt": "The public slate combines abstract rows for note balance, delivery weights, refusal, pump state, and current water level in one large frame."
+          },
+          {
+            "trigger": "worker_burden >= 4",
+            "modifier_prompt": "Brin's hands visibly tremble above the rail and Orsa's shift board is filled through the next day."
+          },
+          {
+            "trigger": "district_cost >= 2",
+            "modifier_prompt": "Bakery, laundry, infirmary, bathhouse, and hand-cart workers crowd the orderly line with idle trade tools and empty vessels."
+          },
+          {
+            "trigger": "district_buffer >= 3",
+            "modifier_prompt": "Raised header-tank markers and ringing float bells show stored water still available to upper streets."
+          }
+        ],
+        "visual_continuity_notes": [
+          "All consequence states remain visible at their owning objects: flow at pipes and gauge, debt at amendment, warranty at part and slate, stock at bins, labor at bodies and shift board, public cost at the queue."
+        ]
+      },
+      {
+        "visual_scene_id": "nine_water_note_ending_route",
+        "ink_anchor": "ending_route_reckoning|ending_route_reckoning_cost",
+        "base_image_prompt": "Wide open district moot in a carved-stone terrace hall. A young dwarf apprentice with dark-copper braid and indigo work coat carries a bundle of metal-sealed route tickets and an insurance refusal. A middle-aged dwarf clerk in a rust-red headscarf carries a large black public slate. Around a low basalt table sit and stand compact dwarf representatives from liftworks, kitchens, laundries, a crystal reserve house, and two route offices; their work clothes, lifting gloves, flour aprons, laundry sleeves, locked crystal coffer, route maps, and distinct civic seals make each interest visually legible. Copper water cans and one bakery trough line the rear wall. Workshop documents on the table carry a stepped-water seal impression.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "carrying route tickets and refusal toward the low table",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "carrying the public slate toward the opposite side of the table",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "affected_district_seals",
+            "default_stance": "distributed around the table with trade tools and separate seals",
+            "visual_ref": "visual_character_refs.groups.affected_district_seals"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == route_reckoning_success",
+            "modifier_prompt": "The route tickets form a complete seal-by-seal chain across the low table; separate representatives point to passage deductions, one unexplained short weight, the refusal clause, and the creditor-held part."
+          },
+          {
+            "trigger": "ending_label == route_reckoning_cost",
+            "modifier_prompt": "Several correct route seals align neatly while an obvious blank gap remains between the last ticket and the short-weight mark; attention shifts toward Hessa's late-payment document."
+          }
+        ],
+        "visual_continuity_notes": [
+          "This is the district moot, reached from the west landing; it is a new locality with one wide camera and does not reuse pump-house geometry."
+        ]
+      },
+      {
+        "visual_scene_id": "nine_water_note_ending_local",
+        "ink_anchor": "ending_local_repair|ending_local_repair_cost",
+        "base_image_prompt": "Medium-wide workshop aftermath in Cistern House Nine. Central Engine Two, the old brass fitting gauge, a dark iron recut collar, a public inspection slate, files, calipers, and a small training board occupy the upper service bay above warm mist. The young dwarf apprentice with copper braid and indigo coat stands beside the gauge with file-marked hands. The square-shouldered dwarf Master in dark green holds her stepped-water civic seal above the inspection slate. The fork-bearded journeyworker in rolled blue sleeves demonstrates the collar fit. The gray certified-parts crate remains closed in the background and the terrace water gauge is visible near the public landing.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "beside the old gauge with file-marked hands",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "holding seal above the inspection slate",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "demonstrating collar fit at Engine Two",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == local_repair_success",
+            "modifier_prompt": "The recut collar turns smoothly on Engine Two, the public gauge shows partial flow, Hessa seals a measured inspection interval, and Orsa's shift board includes a clearly bounded training block."
+          },
+          {
+            "trigger": "ending_label == local_repair_cost",
+            "modifier_prompt": "The recut collar remains on the work ledge beside the old gauge, Engine Two stays dark with an empty shaft seat, and Hessa holds the seal away from the incomplete inspection slate."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The recut collar must read as a functional machine part with fitted teeth and shaft geometry, not jewelry or a symbolic ring."
+        ]
+      },
+      {
+        "visual_scene_id": "nine_water_note_ending_borrowed",
+        "ink_anchor": "ending_borrowed_water|ending_borrowed_water_cost",
+        "base_image_prompt": "Wide creditor-repair aftermath in Cistern House Nine. Central Engine Two carries a smooth bright certified drive collar. The gray iron parts crate stands open with felt fitting blocks and a cut red cord. The short dark-green-coated dwarf Master stands beside a freshly sealed accelerated amendment; the young dwarf apprentice in indigo watches the terrace gauge; the rust-headscarf clerk posts a large public slate beside an orderly dwarf queue holding copper cans and a bakery trough. Remaining crystal bins sit beneath the blue-lit conduit arch. Amber lamps, cold mana light, running outlet pipes, winter-priority seal marks, and household vessels keep present relief and future claim in one frame.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "watching the gauge beside the repaired Engine Two",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "beside the sealed accelerated amendment",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "posting future claim beside present water level",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "receiving water while reading the public slate",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == borrowed_water_success",
+            "modifier_prompt": "The terrace gauge stands high, the bakery trough fills, one crystal bin remains visibly usable, and the public slate gives equal visual weight to restored flow and the winter-priority claim."
+          },
+          {
+            "trigger": "ending_label == borrowed_water_cost",
+            "modifier_prompt": "The certified collar and outlet stream run today, the terrace gauge has recovered, only one shallow crystal bin remains for tomorrow, and the winter-priority seal dominates the posted slate."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The certified collar is bright machined metal and the recut collar is darker file-marked iron; preserve that distinction."
+        ]
+      },
+      {
+        "visual_scene_id": "nine_water_note_ending_ration",
+        "ink_anchor": "ending_rationed_time|ending_rationed_thirst",
+        "base_image_prompt": "Wide stepped underground terrace street outside Cistern House Nine. Carved stone stairs climb past a public spout, a tall water gauge, an elevated riveted header tank with float bells, bakery doors, a laundry arch, a bathhouse sign carved as a simple basin symbol, and an infirmary doorway marked by a lamp. A young dwarf apprentice with dark-copper braid and indigo work coat carries two hammered-copper cans on a wooden yoke. A rust-headscarf dwarf clerk marks remaining water bands on a portable black slate. Dwarves in flour-marked aprons, rolled laundry sleeves, infirmary smocks, and patched terrace clothes wait with copper cans, ceramic jugs, kettles, and one wheeled bakery trough. The rising stairs make upper-street distance and carrying labor visually explicit.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "climbing with two copper cans on a yoke",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "at the public spout with portable slate",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "distributed by trade and street along the steps",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == rationed_time",
+            "modifier_prompt": "A measured stream runs from the public spout, the header-tank float bells stand raised, the bakery trough is partly full, and workers pass cans uphill in an orderly chain."
+          },
+          {
+            "trigger": "ending_label == rationed_thirst",
+            "modifier_prompt": "The public spout is dry, header-tank bells hang low, abandoned dough trays sit outside the bakery, laundry doors are shut, infirmary kettles receive the last clean cans, and hand-cart price tokens accumulate by the steepest stair."
+          }
+        ],
+        "visual_continuity_notes": [
+          "This exterior view establishes the upper terraces as physically higher and costlier to reach, not socially abstract."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_route_proof_visual",
+        "trigger": "branch_label == prime_route_proof",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_terms",
+          "nine_water_note_routine_fold",
+          "nine_water_note_cost_fold",
+          "nine_water_note_ending_route"
+        ],
+        "modifier_prompt": "Show each squat copper-bound crystal bin moving across the low iron roller scale beside a matching gate-seal token and route ticket, with one bin visibly short and a separate unexplained gap marked after the final seal."
+      },
+      {
+        "modifier_id": "prime_local_repair_visual",
+        "trigger": "branch_label == prime_local_repair",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_terms",
+          "nine_water_note_routine_fold",
+          "nine_water_note_failure_choices",
+          "nine_water_note_cost_fold"
+        ],
+        "modifier_prompt": "Show a dark iron collar with fresh file marks fitted around the old brass gauge, bright filings on Orsa's apron, and the gray certified crate still closed nearby."
+      },
+      {
+        "modifier_id": "prime_public_terms_visual",
+        "trigger": "branch_label == prime_public_terms",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_terms",
+          "nine_water_note_routine_fold",
+          "nine_water_note_cost_fold"
+        ],
+        "modifier_prompt": "Dema's outward-facing slate carries large abstract rows for arrears, exclusions, creditor-held replacement part, and next payment date where the public queue can see them."
+      },
+      {
+        "modifier_id": "prime_district_buffer_visual",
+        "trigger": "branch_label == prime_district_buffer",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_routine_fold",
+          "nine_water_note_cost_fold",
+          "nine_water_note_ending_ration"
+        ],
+        "modifier_prompt": "The upper header-tank gauge stands two bands higher, float bells are raised, one crystal bin is open and shallow, and a measured blue mana line runs through Engine One."
+      },
+      {
+        "modifier_id": "use_local_repair_visual",
+        "trigger": "branch_label == use_local_repair",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_failure_choices",
+          "nine_water_note_cost_fold",
+          "nine_water_note_ending_local"
+        ],
+        "modifier_prompt": "Brin seats the dark file-marked recut collar on Engine Two while Orsa holds the old brass gauge and Hessa watches with her seal lowered; a black chalk stroke crosses the warranty row."
+      },
+      {
+        "modifier_id": "borrow_for_water_visual",
+        "trigger": "branch_label == borrow_for_water",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_failure_choices",
+          "nine_water_note_cost_fold",
+          "nine_water_note_ending_borrowed"
+        ],
+        "modifier_prompt": "Hessa's seal impression appears on the accelerated amendment, Orsa cuts the red cord, the gray crate opens, and the bright certified collar moves toward Engine Two."
+      },
+      {
+        "modifier_id": "spend_crystal_reserve_visual",
+        "trigger": "branch_label == spend_crystal_reserve",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_failure_choices",
+          "nine_water_note_cost_fold"
+        ],
+        "modifier_prompt": "Left Engine One and right Engine Three run with intensely bright blue channels and high pressure floats while central Engine Two remains dark; crystal bins stand rapidly emptied and Orsa keeps watch beside a whining right-hand casing."
+      },
+      {
+        "modifier_id": "stop_and_publish_visual",
+        "trigger": "branch_label == stop_and_publish",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_failure_choices",
+          "nine_water_note_cost_fold",
+          "nine_water_note_ending_route",
+          "nine_water_note_ending_ration"
+        ],
+        "modifier_prompt": "All red isolation wedges sit fully seated, every pressure float is low, Dema's slate shows the refusal clause beside the falling gauge, and empty vessels become prominent beyond the yellow line."
+      },
+      {
+        "modifier_id": "audit_route_and_policy_visual",
+        "trigger": "branch_label == audit_route_and_policy",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_ending_route"
+        ],
+        "modifier_prompt": "Orsa and Dema place route tickets, refusal notice, public slate, creditor claim, and water levels before separate trade and route seals around one low table."
+      },
+      {
+        "modifier_id": "own_local_repair_visual",
+        "trigger": "branch_label == own_local_repair",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_ending_local"
+        ],
+        "modifier_prompt": "The old brass gauge, recut dimensions, inspection interval, files, training board, and Hessa's seal form one inspectable local maintenance station."
+      },
+      {
+        "modifier_id": "own_accelerated_debt_visual",
+        "trigger": "branch_label == own_accelerated_debt",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_ending_borrowed"
+        ],
+        "modifier_prompt": "Restored water flow, cut creditor cord, bright certified collar, fresh seal, remaining crystal stock, and posted winter-priority claim all share the frame."
+      },
+      {
+        "modifier_id": "ration_in_public_visual",
+        "trigger": "branch_label == ration_in_public",
+        "apply_to_visual_scene_ids": [
+          "nine_water_note_ending_ration"
+        ],
+        "modifier_prompt": "Water vessels, street-height bands, trade tools, header-tank level, public spout, and carrying route up the stairs make remaining water time visible by street and use."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "cistern_house_nine.water_note_extension.required",
+      "source_scene_set_ref": "examples/visual/delvehold/cistern-house-nine-breaker-test.branch-and-fold.v0.visual.json#visual_scene_plan.scene_set",
+      "geometry_authority_level": "extended_text_layout_not_3d_blockout",
+      "room_model": "Two-level compact pump house: public landing at west; dry rectangular upper gallery above the lower wet intake; rail and grated stair at the south edge; three pumps west-to-east; municipal conduit in the north wall; accounting and parts zone on the north gallery between the landing and Engine Two service bay.",
+      "fixed_zones": [
+        {
+          "zone_id": "public_street_landing",
+          "visible_form": "west entrance with yellow boundary, public slate, terrace gauge, and vessel queue space",
+          "used_for": "public record, district pressure, and ration staging"
+        },
+        {
+          "zone_id": "upper_rune_gallery",
+          "visible_form": "dry stone gallery with amber lamps, inspection stand, tool hooks, brass rail, and safe access to upper pump controls",
+          "used_for": "service work, seal decisions, and worker movement"
+        },
+        {
+          "zone_id": "accounting_and_parts_ledge",
+          "visible_form": "north-gallery stone ledge with calibrated weights, route tickets, water note, refusal notice, old brass gauge, gray creditor-held parts crate, and a low floor-level iron roller scale holding four squat crystal bins",
+          "used_for": "invoice routine, part custody, contract amendments, and evidence comparison"
+        },
+        {
+          "zone_id": "grated_stair_and_hoist",
+          "visible_form": "railed floor opening with grated iron stair and overhead chain hoist",
+          "used_for": "wet-chamber access and vertical equipment movement"
+        },
+        {
+          "zone_id": "wet_intake_chamber",
+          "visible_form": "lower stone chamber with warm black seawater, mist, three pump rods, drains, and service floor",
+          "used_for": "water source and visible pump motion"
+        },
+        {
+          "zone_id": "pump_row",
+          "visible_form": "three squat brass-and-iron engines ordered west-to-east with collars, shafts, rods, pressure floats, outlet pipes, rune slates, and wedge throats",
+          "used_for": "failure, repair, overdraw, and flow states"
+        },
+        {
+          "zone_id": "municipal_conduit_arch",
+          "visible_form": "locked riveted arch in the north wall with blue mana channels branching to the pump row",
+          "used_for": "crystal power feed and stock visibility"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "landing_to_room_wide",
+          "supports_visual_scene_ids": [
+            "nine_water_note_establishing",
+            "nine_water_note_routine_fold",
+            "nine_water_note_failure_choices",
+            "nine_water_note_cost_fold"
+          ]
+        },
+        {
+          "camera_id": "accounting_ledge_medium",
+          "supports_visual_scene_ids": [
+            "nine_water_note_people",
+            "nine_water_note_terms"
+          ]
+        },
+        {
+          "camera_id": "engine_two_collar_close",
+          "supports_visual_scene_ids": [
+            "nine_water_note_collar_failure",
+            "nine_water_note_ending_local"
+          ]
+        },
+        {
+          "camera_id": "district_moot_wide",
+          "supports_visual_scene_ids": [
+            "nine_water_note_ending_route"
+          ]
+        },
+        {
+          "camera_id": "creditor_aftermath_wide",
+          "supports_visual_scene_ids": [
+            "nine_water_note_ending_borrowed"
+          ]
+        },
+        {
+          "camera_id": "upper_terrace_street_wide",
+          "supports_visual_scene_ids": [
+            "nine_water_note_ending_ration"
+          ]
+        }
+      ],
+      "routes": [
+        {
+          "route_id": "public_to_gallery_boundary",
+          "path": "street landing -> yellow line -> public side of brass rail",
+          "access": "Dema and district public remain on the public side during service decisions"
+        },
+        {
+          "route_id": "gallery_worker_path",
+          "path": "accounting ledge -> inspection stand -> Engine One -> Engine Two -> Engine Three -> grated stair",
+          "access": "Orsa, Hessa, and Brin"
+        },
+        {
+          "route_id": "evidence_to_district_moot",
+          "path": "public slate boundary -> west street landing -> terrace moot hall",
+          "access": "Orsa and Dema can carry the physical records after Hessa widens the matter"
+        },
+        {
+          "route_id": "ration_to_upper_terraces",
+          "path": "pump-house public spout -> stepped terrace street -> bakery, laundry, bathhouse, and infirmary landings",
+          "access": "public carriers using cans, yokes, and hand carts"
+        }
+      ],
+      "staging_slots": [
+        {
+          "slot_id": "engine_two_upper_service",
+          "position": "central upper-gallery rail bay above Engine Two's shaft and collar",
+          "supports": "Orsa and Brin handling the broken, recut, or certified collar"
+        },
+        {
+          "slot_id": "master_accounting_stand",
+          "position": "north-gallery ledge between the public boundary and Engine Two",
+          "supports": "Hessa's seal custody and sightlines to crate, amendment, pumps, slate, and gauge"
+        },
+        {
+          "slot_id": "public_slate_boundary",
+          "position": "landing side of the yellow line with slate facing both queue and Hessa",
+          "supports": "Dema's independent public copy"
+        },
+        {
+          "slot_id": "crystal_balance_position",
+          "position": "accounting ledge below the conduit arch with a low roller scale and straight floor approach for four squat bins",
+          "supports": "Orsa's delivery weighing and seal comparison"
+        }
+      ],
+      "occluders": [
+        {
+          "occluder_id": "upper_gallery_slab",
+          "effect": "blocks public view of the wet intake except through the grated stair opening"
+        },
+        {
+          "occluder_id": "pump_casings",
+          "effect": "block lower cross-row sightlines while collars, shafts, rods, and pressure floats remain visible from the gallery"
+        }
+      ],
+      "object_state_anchors": [
+        {
+          "object_id": "engine_two_drive_collar",
+          "states": [
+            "intact_old",
+            "split",
+            "recut_local_fitted",
+            "certified_fitted",
+            "unrepaired"
+          ]
+        },
+        {
+          "object_id": "certified_parts_crate",
+          "states": [
+            "closed_red_cord",
+            "opened_after_seal",
+            "creditor_held"
+          ]
+        },
+        {
+          "object_id": "crystal_stock",
+          "states": [
+            "four_bins",
+            "three_bins",
+            "one_shallow_bin"
+          ]
+        },
+        {
+          "object_id": "public_slate",
+          "states": [
+            "rates_only",
+            "terms_posted",
+            "route_chain_posted",
+            "refusal_posted",
+            "accelerated_claim_posted"
+          ]
+        },
+        {
+          "object_id": "terrace_water_state",
+          "states": [
+            "header_buffered",
+            "full_flow",
+            "partial_flow",
+            "dry"
+          ]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "orsa_rill": "Orsa Rill: young adult dwarf apprentice, compact broad-hipped build, warm brown skin, round face with a small scar through the left eyebrow, dark copper hair in one thick practical braid wrapped in gray cord, short sleeveless indigo work coat over a cream shirt, leather apron, heavy ankle boots, chalk and blue mana stains on square fingertips, alert posture that becomes deliberately still when challenged.",
+      "hessa_cairn": "Master Hessa Cairn: middle-aged dwarf woman, very short and square-shouldered, deep brown skin, iron-gray hair cropped close around a single long temple braid, severe rectangular face, dark green wool workshop coat with brass toggles, heavy civic seal carved with a stepped-water mark on a belt chain, still hands and economical expressions.",
+      "brin_olt": "Brin Olt: adult dwarf journeyworker, stocky muscular build, ruddy tan skin, broad nose, auburn beard divided into two short forks bound with brass rings, rolled slate-blue sleeves, oil-dark leather apron, thick gloves tucked at belt, cautious rail-side stance and practical protective reach.",
+      "dema_sorn": "Dema Sorn: middle-aged dwarf landing clerk, narrow sturdy build, pale olive skin, black hair threaded with gray and tied under a rust-red headscarf, charcoal vest over a striped brown shirt, large chalk holster, black level slate carried against one hip, observant posture oriented toward both gauges and public witnesses."
+    },
+    "groups": {
+      "cistern_house_nine_landing_queue": "Cistern House Nine landing queue: dwarves of varied ages and skin tones in patched terrace work clothes, flour-marked bakery aprons, rolled laundry sleeves, plain infirmary smocks, bathhouse wraps under work coats, and lift-maintenance leathers; they carry hammered-copper cans, wooden yokes, ceramic jugs, kettles, and one low bakery trough on iron wheels; orderly positions behind a painted yellow line, faces tracking gauges, seals, and flowing water.",
+      "affected_district_seals": "Affected district seal holders: compact adult dwarves from liftworks, kitchens, laundries, a crystal Reserve House, and two route offices, visibly distinguished by lifting gloves and chain tools, flour aprons, rolled wet-work sleeves, one small locked crystal coffer, route maps, gate tokens, and separate heavy civic seals; they gather in a level-floor circle around a low basalt moot table with every seat at equal height."
+    }
+  },
+  "review_notes": [
+    "Visual continuity self-review verdict: accepted_with_minor_revisions as an illustrated-IF scaffold. Eleven base scenes, twelve branch modifiers, complete visible-character refs, affirmative standalone prompts, and stable object states cover the playable replay; high-consistency multi-angle art still requires a plan view or blockout.",
+    "Spatial-geometric self-review verdict: accepted_with_minor_revisions as a stageable text plan. The inherited two-level Cistern House Nine layout now includes reachable accounting, roller-scale, part-custody, public-slate, service, moot, and ration routes with fixed cameras, staging slots, occluders, and branch-state anchors."
+  ]
+}

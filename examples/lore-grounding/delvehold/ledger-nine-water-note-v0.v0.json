@@ -1,0 +1,734 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "delvehold.ledger-nine-water-note-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "source_grounded",
+  "source_refs": [
+    {
+      "source_id": "the-greathold",
+      "path": "Delvehold/Lore/The Greathold.md",
+      "title": "The Greathold",
+      "line_start": 1,
+      "line_end": 72,
+      "relevance": "Primary locality and authored economy source: Cistern House Nine geometry, workshop seal, water note, supplier claim, crystal route charges, insurance exclusions, storage horizon, and dry-day costs."
+    },
+    {
+      "source_id": "dwarven-industry",
+      "path": "Delvehold/Lore/Industry/Dwarven Industry.md",
+      "title": "Dwarven industry",
+      "line_start": 1,
+      "line_end": 40,
+      "relevance": "Grounds Forge Consortiums, Hold institutions, reserve houses, freight rationing, guild labor, and public dependence on common crystal contracts."
+    },
+    {
+      "source_id": "runic-engineering",
+      "path": "Delvehold/Lore/Industry/Runic Engineering.md",
+      "title": "Runic engineering",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds pump engines, mana-crystal fuel, service specialization, proprietary labor dependency, runic maintenance, and awakening risk."
+    },
+    {
+      "source_id": "mastership",
+      "path": "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+      "title": "Mastership and citizenship",
+      "line_start": 1,
+      "line_end": 53,
+      "relevance": "Grounds Hessa's sole civic seal, Orsa's apprentice rights and lack of vote, inspectable workshop answerability, and jurisdiction widening with consequence."
+    },
+    {
+      "source_id": "mana-and-pattern",
+      "path": "Delvehold/Lore/Ontology/Mana and Pattern.md",
+      "title": "Mana and pattern",
+      "line_start": 1,
+      "line_end": 45,
+      "relevance": "Grounds crystals as fuel, commodity, strategic reserve, and ecological nutrient rather than interchangeable abstract money."
+    },
+    {
+      "source_id": "industrial-escalation",
+      "path": "Delvehold/Lore/Crisis/Industrial Escalation.md",
+      "title": "Industrial escalation",
+      "line_start": 1,
+      "line_end": 27,
+      "relevance": "Grounds loans, replacement infrastructure, reserve depletion, and the reinforcing loop that begins from the premise that pumps must remain on."
+    },
+    {
+      "source_id": "machine-dungeon",
+      "path": "Delvehold/Lore/Industry/Machine-Dungeon.md",
+      "title": "The machine-dungeon",
+      "line_start": 1,
+      "line_end": 27,
+      "relevance": "Preserves ambiguity around undocumented routing and prevents an insurance clause from becoming proof of network agency."
+    },
+    {
+      "source_id": "world-without-villain",
+      "path": "Delvehold/Lore/Crisis/World Without a Villain.md",
+      "title": "A world without a villain",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Grounds the conflict between ordinary water service, extractive supply, ecological injury, and institutional continuity without a single removable villain."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Industrial Greathold during deep-crystal scarcity; exact year intentionally unspecified.",
+    "location": "Cistern House Nine, a public pump workshop serving the terraces of one unnamed Hold beside a warm underground sea.",
+    "summary": "During routine invoice and maintenance work, Engine Two's drive collar fails. A certified spare is held under the supplier's creditor claim, the machinery insurer refuses an earlier anomaly-linked claim, and the delivered crystal is short after route deductions. Orsa can prepare facts and labor, but Hessa's workshop seal owns the local commitment while district costs spread beyond it.",
+    "public_facts": [
+      {
+        "text": "Cistern House Nine uses three pump engines, visible isolation wedges, pressure floats, outlet valves, a public terrace gauge, and one workshop civic seal for service admission.",
+        "source_refs": [
+          "the-greathold",
+          "mastership"
+        ]
+      },
+      {
+        "text": "Basalt Crown Arrays sold the pumps under a six-year water note and retains first claim on the packed replacement collar after late payments.",
+        "source_refs": [
+          "the-greathold",
+          "dwarven-industry"
+        ]
+      },
+      {
+        "text": "Crystal supply loses one part in forty at each route office as passage share and may carry a Reserve House winter-priority charge.",
+        "source_refs": [
+          "the-greathold",
+          "mana-and-pattern"
+        ]
+      },
+      {
+        "text": "Seven Seals Mutual covers specified ordinary machinery losses while excluding hostile creatures, adaptive feedback, known undocumented behavior, deliberate shutdown, and curtailed power.",
+        "source_refs": [
+          "the-greathold",
+          "machine-dungeon"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Tenants pay the water assessment through rent and apprentices work emergency shifts without either group possessing a civic seal in the debt bargain.",
+        "source_refs": [
+          "the-greathold",
+          "mastership"
+        ]
+      },
+      {
+        "text": "The upper terraces have roughly ten hours of stored water while the lower terraces can stretch to two days, so elevation makes one pump failure arrive as unequal time.",
+        "source_refs": [
+          "the-greathold"
+        ]
+      },
+      {
+        "text": "A truthful service entry can protect public evidence while making a later claim excludable, giving safety reporting and insurance recovery opposite incentives.",
+        "source_refs": [
+          "the-greathold",
+          "machine-dungeon"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "cistern-house-nine-workshop",
+      "label": "Cistern House Nine workshop",
+      "group_type": "sealed_public_works_workshop",
+      "institutional_logic": [
+        "Keep district water flowing through service states that Hessa can honestly seal.",
+        "Maintain portable craft knowledge while working inside consortium parts and warranty dependencies."
+      ],
+      "material_incentives": [
+        "Preserve water flow, crystal stock, parts access, wages, and public trust.",
+        "Avoid losing winter priority or making an uninsured repair the next private fault."
+      ],
+      "internal_virtues": [
+        "Visible attribution",
+        "Repair that survives its maker",
+        "Instruction under pressure",
+        "A boundary made of material rather than reassurance"
+      ],
+      "internal_shames": [
+        "Stamping an unsafe state",
+        "Letting an invoice hide a dry street",
+        "Calling unpaid emergency work ordinary apprenticeship"
+      ],
+      "prestige_markers": [
+        "A true old gauge",
+        "A repair another workshop can reproduce",
+        "A service book that survives dispute"
+      ],
+      "taboo_triggers": [
+        "A creditor-owned part presented as public resilience",
+        "An underwriter treating honest observation as worker fault"
+      ],
+      "emotional_display_norms": [
+        "Fear is compressed into measurements, severe jokes, exact callouts, and more work until the public consequence crosses the rail."
+      ],
+      "trust_defaults": [
+        "Trusts fitted metal, visible flow, distributed records, and named seals more than catalogue claims."
+      ],
+      "speech_register_cues": [
+        "Dry craft correction",
+        "Invoice arithmetic",
+        "Understated care",
+        "Concrete refusal"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "runic-engineering",
+        "mastership"
+      ]
+    },
+    {
+      "group_id": "terrace-district-water-users",
+      "label": "Terrace households and public services",
+      "group_type": "affected_district_public",
+      "institutional_logic": [
+        "Keep households, kitchens, laundries, bathhouses, bakeries, and infirmaries supplied with usable water.",
+        "Move the dispute toward the seals owning routes, reserves, credit, and service when local repair cannot own all of it."
+      ],
+      "material_incentives": [
+        "Preserve stored water and wages before hand-cart prices rise by elevation.",
+        "Prevent pump debt and insurer refusal from appearing only as a workshop account."
+      ],
+      "internal_virtues": [
+        "Public rationing",
+        "Specific complaint",
+        "Use-based priority under shortage"
+      ],
+      "internal_shames": [
+        "Hiding private stock while the public tank empties",
+        "Treating lower streets' extra day as permission to ignore upper streets"
+      ],
+      "prestige_markers": [
+        "A filled public header tank",
+        "A slate that counts hours by street",
+        "Carrying water without converting help into private toll"
+      ],
+      "taboo_triggers": [
+        "Being told the dry tap is merely a warranty matter",
+        "A water assessment rising while the replacement part remains locked inside the house"
+      ],
+      "emotional_display_norms": [
+        "Pressure appears first as vessel counts, closed work, missed firings, queue order, and exact cart prices."
+      ],
+      "trust_defaults": [
+        "Trusts tank bells, gauge movement, posted terms, and public custody of notices."
+      ],
+      "speech_register_cues": [
+        "Resource arithmetic",
+        "Trade-specific loss",
+        "Street-by-street time"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "dwarven-industry",
+        "mastership"
+      ]
+    },
+    {
+      "group_id": "basalt-crown-arrays",
+      "label": "Basalt Crown Arrays",
+      "group_type": "forge_consortium_creditor",
+      "institutional_logic": [
+        "Sell standardized pump systems through long notes and preserve control of certified parts and service intervals."
+      ],
+      "material_incentives": [
+        "Collect arrears, retain replacement-part leverage, preserve model-specific service revenue, and acquire priority over winter crystal."
+      ],
+      "internal_virtues": [
+        "Standard output",
+        "Certified fit",
+        "Payment discipline",
+        "Predictable service liability"
+      ],
+      "internal_shames": [
+        "A local recut part matching certified performance",
+        "A public-work failure traced to creditor custody rather than workshop craft"
+      ],
+      "prestige_markers": [
+        "A smooth certified repair",
+        "A note secured by priority supply",
+        "A service catalogue used across Holds"
+      ],
+      "taboo_triggers": [
+        "Breaking the red creditor cord without a sealed remedy",
+        "Publishing contract leverage beside a dry-water gauge"
+      ],
+      "emotional_display_norms": [
+        "Concern appears in remedies, accelerated terms, support suspension, and possession clauses rather than a representative's feelings."
+      ],
+      "trust_defaults": [
+        "Trusts certified parts, sealed amendments, and recoverable claims over local improvisation."
+      ],
+      "speech_register_cues": [
+        "Catalogue precision",
+        "Remedy clauses",
+        "Future-priority claims"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "dwarven-industry",
+        "runic-engineering"
+      ]
+    },
+    {
+      "group_id": "seven-seals-mutual",
+      "label": "Seven Seals Mutual",
+      "group_type": "workshop_and_house_underwriting_pool",
+      "institutional_logic": [
+        "Pool specified ordinary machinery risks while excluding losses that cannot be priced as bounded equipment failure."
+      ],
+      "material_incentives": [
+        "Preserve premium reserves by distinguishing certified defects from ecological attack, undocumented behavior, shutdown, and power curtailment."
+      ],
+      "internal_virtues": [
+        "Bounded risk",
+        "Complete service records",
+        "Certified maintenance",
+        "A loss category with an owner"
+      ],
+      "internal_shames": [
+        "Paying a claim that expands into route-wide liability",
+        "An exclusion revealed as a subsidy for silence"
+      ],
+      "prestige_markers": [
+        "A narrow loss ratio",
+        "A refusal upheld by several seals",
+        "A policy legible to capital providers"
+      ],
+      "taboo_triggers": [
+        "Calling an exclusion a diagnosis of machine agency",
+        "Treating public need as proof of covered loss"
+      ],
+      "emotional_display_norms": [
+        "Institutional fear appears as category discipline and refusal language."
+      ],
+      "trust_defaults": [
+        "Trusts certified intervals and named ordinary causes; distrusts anomalies whose consequences can cross facilities."
+      ],
+      "speech_register_cues": [
+        "Coverage categories",
+        "Express exclusions",
+        "Loss-cause compression"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "machine-dungeon"
+      ]
+    },
+    {
+      "group_id": "route-and-reserve-offices",
+      "label": "Route offices and the local Reserve House",
+      "group_type": "distributed_logistics_and_stock_authorities",
+      "institutional_logic": [
+        "Maintain the particular arteries and winter stocks each office controls without pretending to own the whole Greathold."
+      ],
+      "material_incentives": [
+        "Collect passage share, preserve lifts and gates, ration reserve crystal, and honor earlier priority claims."
+      ],
+      "internal_virtues": [
+        "Correct seal custody",
+        "Maintained route",
+        "Reserve discipline",
+        "Locally answerable deduction"
+      ],
+      "internal_shames": [
+        "A short delivery that cannot be traced",
+        "Selling priority twice",
+        "Using distributed authority as distributed invisibility"
+      ],
+      "prestige_markers": [
+        "A route open through winter",
+        "A seal chain that survives audit",
+        "Reserve released before catastrophe pricing"
+      ],
+      "taboo_triggers": [
+        "Treating passage maintenance as a free externality",
+        "A district demanding stock without joining the affected seals"
+      ],
+      "emotional_display_norms": [
+        "Conflict appears through weights, seals, queue priority, and which office must widen the moot."
+      ],
+      "trust_defaults": [
+        "Trusts route tickets and local authority; resists claims that collapse every deduction into one distant conspiracy."
+      ],
+      "speech_register_cues": [
+        "Weight and seal chain",
+        "Route maintenance",
+        "Priority order"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "dwarven-industry",
+        "mastership"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "cistern-house-nine-workshop.repair-must-have-an-owner",
+      "applies_to": [
+        "cistern-house-nine-workshop"
+      ],
+      "pressure_type": "civic_accountability",
+      "summary": "An improvised repair becomes public capacity only when dimensions, inspection intervals, labor, and seal responsibility remain inspectable.",
+      "projection_use": "Make local repair spend warranty and worker capacity instead of functioning as costless craft heroism.",
+      "source_refs": [
+        "the-greathold",
+        "mastership",
+        "runic-engineering"
+      ]
+    },
+    {
+      "field_id": "seven-seals-mutual.truth-can-trigger-refusal",
+      "applies_to": [
+        "seven-seals-mutual",
+        "cistern-house-nine-workshop"
+      ],
+      "pressure_type": "insurance_information_conflict",
+      "summary": "Recording undocumented rune behavior protects public evidence while placing later loss inside an express exclusion.",
+      "projection_use": "Keep the refusal causally tied to the service record without treating the exclusion label as a true diagnosis.",
+      "source_refs": [
+        "the-greathold",
+        "machine-dungeon"
+      ]
+    },
+    {
+      "field_id": "terrace-district-water-users.elevation-is-time",
+      "applies_to": [
+        "terrace-district-water-users"
+      ],
+      "pressure_type": "unequal_scarcity",
+      "summary": "Upper streets exhaust stored water first, so the same system gauge creates different deadlines, cart prices, and bargaining power by elevation.",
+      "projection_use": "Show class pressure through tank hours, stairs, closed work, and ration priority rather than an interchangeable angry crowd.",
+      "source_refs": [
+        "the-greathold"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "basalt-crown-arrays",
+      "target_group_id": "cistern-house-nine-workshop",
+      "observer_read": [
+        "Late borrower",
+        "Warranty risk",
+        "Source of uncertified service liability"
+      ],
+      "target_self_read": [
+        "Public works custodian",
+        "Skilled repair owner",
+        "Borrower carrying district need under one seal"
+      ],
+      "misread_patterns": [
+        "The consortium can read local maintenance as moral hazard while the workshop reads certified custody as engineered dependency."
+      ],
+      "likely_insults": [
+        "catalogue dwarf",
+        "arrears improviser"
+      ],
+      "projection_use": "Keep both certified reliability and creditor leverage materially real.",
+      "source_refs": [
+        "the-greathold",
+        "runic-engineering",
+        "dwarven-industry"
+      ]
+    },
+    {
+      "observer_group_id": "terrace-district-water-users",
+      "target_group_id": "seven-seals-mutual",
+      "observer_read": [
+        "Seals paid to explain why this failure belongs to somebody else",
+        "A policy that rewards silence about strange behavior"
+      ],
+      "target_self_read": [
+        "A bounded mutual protecting pooled reserves from unpriceable systemic loss"
+      ],
+      "misread_patterns": [
+        "District users may read every refusal as fraud; underwriters may compress unequal bodily costs into uncovered service interruption."
+      ],
+      "likely_insults": [
+        "dry-seal",
+        "charity claimant"
+      ],
+      "projection_use": "Let public anger target the clause and its incentive rather than proving secret malice or universal fraud.",
+      "source_refs": [
+        "the-greathold",
+        "world-without-villain"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "pump-house-apprentice",
+      "summary": "A skilled apprentice who touches the parts, bins, records, and ration cans but cannot bind the workshop or district with a civic seal.",
+      "obligations": [
+        "Make material states visible",
+        "Work within assigned authority",
+        "Preserve craft knowledge",
+        "Keep service choices attached to household consequences"
+      ],
+      "available_masks": [
+        "Literal apprentice compliance",
+        "Dry invoice humor",
+        "Craft concentration",
+        "Public carrying work"
+      ],
+      "failure_modes": [
+        "Treating unpaid endurance as a repair plan",
+        "Claiming local independence without a fitted part",
+        "Turning evidence into diagnosis",
+        "Letting urgency borrow Hessa's seal"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "mastership",
+        "runic-engineering"
+      ]
+    },
+    {
+      "role_id": "workshop-master-borrower",
+      "summary": "A Master whose seal owns the pump workshop's local service and debt commitments but cannot command the insurer, supplier, routes, reserve, or affected district alone.",
+      "obligations": [
+        "Seal only a material service state",
+        "Read debt amendments publicly",
+        "Train workers rather than consume them as reserve",
+        "Widen jurisdiction when dependency crosses the workshop"
+      ],
+      "available_masks": [
+        "Severe instruction",
+        "Contract compression",
+        "Public accounting",
+        "Refusal to promise several owners with one seal"
+      ],
+      "failure_modes": [
+        "Selling winter priority to solve only today's gauge",
+        "Protecting warranty over water",
+        "Using public need to erase creditor leverage",
+        "Using creditor leverage to erase public need"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "mastership",
+        "dwarven-industry"
+      ]
+    },
+    {
+      "role_id": "public-landing-clerk",
+      "summary": "A clerk who controls the district's copy of weights, notices, rates, and water levels without owning technical diagnosis or a civic seal.",
+      "obligations": [
+        "Keep custody chains legible",
+        "Distinguish observed shortage from alleged theft",
+        "Post future claims beside present relief",
+        "Carry the record to the correct widened moot"
+      ],
+      "available_masks": [
+        "Arithmetic deadpan",
+        "Literal repetition",
+        "Public patience",
+        "Refusal to summarize away a clause"
+      ],
+      "failure_modes": [
+        "Publishing accusation without route proof",
+        "Letting one correct stamp dissolve the whole consequence",
+        "Mistaking custody for technical authority"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "mastership"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "orsa_rill",
+      "known_context": [
+        {
+          "text": "Orsa knows local pump geometry, delivery seals, workshop tools, the public gauge, assigned service procedure, and the documents she physically reads.",
+          "source_refs": [
+            "the-greathold",
+            "runic-engineering",
+            "mastership"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Orsa believes a real alternative to consortium dependency needs a fitted part, teachable dimensions, inspection labor, and a name willing to answer for it.",
+          "source_refs": [
+            "the-greathold",
+            "runic-engineering"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Orsa may read disciplined shortages as deliberate theft before the full seal chain is compared.",
+          "source_refs": [
+            "the-greathold"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Orsa must not know the unseen cause of the short delivery, the private intent of every institution, or whether undocumented rune behavior is alive.",
+          "source_refs": [
+            "machine-dungeon",
+            "the-greathold"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "hessa_cairn",
+      "known_context": [
+        {
+          "text": "Hessa knows her workshop's note, policy, payment state, service obligations, available crystal, and the local decisions her seal can bind.",
+          "source_refs": [
+            "the-greathold",
+            "mastership"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Hessa believes one workshop seal must not impersonate authority over routes, insurance, reserves, creditor rights, and every district loss.",
+          "source_refs": [
+            "the-greathold",
+            "mastership"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Hessa may initially compress household hardship into tank hours because local machinery is the boundary she can directly change.",
+          "source_refs": [
+            "the-greathold"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Hessa cannot settle which route office lost the unexplained crystal or treat an underwriting exclusion as a diagnosis.",
+          "source_refs": [
+            "the-greathold",
+            "machine-dungeon"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "brin_olt",
+      "known_context": [
+        {
+          "text": "Brin knows collar geometry, the old workshop gauge, engine sounds, fit, worker capacity, and whether a repair can be inspected locally.",
+          "source_refs": [
+            "the-greathold",
+            "runic-engineering"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Brin trusts a fitted and teachable repair more than certification alone but knows worker attention is a finite service input.",
+          "source_refs": [
+            "runic-engineering",
+            "dwarven-industry"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Brin may underestimate how quickly loss of warranty becomes a financing problem outside the room.",
+          "source_refs": [
+            "the-greathold"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Brin cannot certify the consortium part, bind Seven Seals, or pledge winter crystal.",
+          "source_refs": [
+            "the-greathold",
+            "mastership"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "dema_sorn",
+      "known_context": [
+        {
+          "text": "Dema knows public rates, visible gauge levels, posted note terms, delivery weights, route tickets, refusal text, and the needs stated on the landing.",
+          "source_refs": [
+            "the-greathold",
+            "mastership"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Dema believes relief and future cost belong in the same public frame if the district is to widen jurisdiction coherently.",
+          "source_refs": [
+            "the-greathold"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Dema may read a complete-looking deduction chain as deliberate coordination when it may be several locally valid claims stacking without a center.",
+          "source_refs": [
+            "the-greathold",
+            "mastership"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Dema cannot infer private motives, technical cause, or whole-route state from public paper alone.",
+          "source_refs": [
+            "machine-dungeon",
+            "the-greathold"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Basalt Crown Arrays, Seven Seals Mutual, the water-note structure, route passage share, storage horizon, and dry-day cost chain are canonical only to the scope stated in the authored Nine-water note subsection; the fixture does not universalize every term across the Greathold.",
+      "source_refs": [
+        "the-greathold"
+      ]
+    },
+    {
+      "text": "The collar failure, short shipment, choices, and endings are branch-fixture events, not canonical history merely because the locality and contract structure are canonical.",
+      "source_refs": [
+        "the-greathold"
+      ]
+    },
+    {
+      "text": "The prior blue reroute remains an observed service-book anomaly. Seven Seals' category is a coverage decision, not proof of cause, cognition, or hostile intent.",
+      "source_refs": [
+        "machine-dungeon",
+        "the-greathold"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which named Hold contains Cistern House Nine?",
+      "blocks_training": false,
+      "notes": "The owning lore keeps the terraced Hold unnamed; this fixture preserves that boundary."
+    },
+    {
+      "question": "What currency and interest conventions do Greathold water notes use?",
+      "blocks_training": false,
+      "notes": "The elaboration specifies term, payment sources, arrears, collateral, and priority claims without inventing a universal coinage or interest table."
+    },
+    {
+      "question": "Where did the unexplained post-deduction crystal shortage occur?",
+      "blocks_training": false,
+      "notes": "The route-audit branch may create a hearing but does not predetermine fraud, leakage, ecological consumption, weighing error, or another owner."
+    }
+  ]
+}
