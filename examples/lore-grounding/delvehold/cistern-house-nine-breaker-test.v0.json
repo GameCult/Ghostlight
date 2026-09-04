@@ -1,0 +1,626 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "delvehold.cistern-house-nine-breaker-test.v0",
+  "source_status": "canonical_with_fixture_elaboration",
+  "fixture_status": "grounded_draft",
+  "source_refs": [
+    {
+      "source_id": "delvehold-index",
+      "path": "Delvehold/index.md",
+      "title": "DELVE/HOLD",
+      "line_start": 1,
+      "line_end": 37,
+      "relevance": "Places HOLD workshop life and shared infrastructure inside the one persistent Delvehold world."
+    },
+    {
+      "source_id": "lore-index",
+      "path": "Delvehold/Lore/index.md",
+      "title": "Lore",
+      "line_start": 1,
+      "line_end": 32,
+      "relevance": "Grounds the world as nested living dungeon ecology and runic industry as ordinary infrastructure under ecological pressure."
+    },
+    {
+      "source_id": "the-greathold",
+      "path": "Delvehold/Lore/The Greathold.md",
+      "title": "The Greathold",
+      "line_start": 1,
+      "line_end": 60,
+      "relevance": "Primary locality and civic source: terraced Holds, warm underground seas, public works, jurisdiction near the affected matter, and the fixture-authored Cistern House Nine geometry and handover routine."
+    },
+    {
+      "source_id": "industry-index",
+      "path": "Delvehold/Lore/Industry/index.md",
+      "title": "Industry",
+      "line_start": 1,
+      "line_end": 20,
+      "relevance": "Connects emancipatory runic infrastructure to dependence on continuous extraction and crystal supply."
+    },
+    {
+      "source_id": "dwarven-industry",
+      "path": "Delvehold/Lore/Industry/Dwarven Industry.md",
+      "title": "Dwarven industry",
+      "line_start": 1,
+      "line_end": 40,
+      "relevance": "Grounds drainage and water as public systems, Hold-level institutions as first responders to shortages, and the material dependence that makes abrupt shutdown costly."
+    },
+    {
+      "source_id": "runic-engineering",
+      "path": "Delvehold/Lore/Industry/Runic Engineering.md",
+      "title": "Runic engineering",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds iterative runes, pump engines, visible rune graphs, the right-to-left null casting rune, live apprentice termination practice, and network awakening risk."
+    },
+    {
+      "source_id": "machine-dungeon",
+      "path": "Delvehold/Lore/Industry/Machine-Dungeon.md",
+      "title": "The machine-dungeon",
+      "line_start": 1,
+      "line_end": 30,
+      "relevance": "Grounds connected civic power and maintenance networks, undocumented rerouting, competing explanations, and the canonical breaker-refusal class of early anomaly."
+    },
+    {
+      "source_id": "peoples-index",
+      "path": "Delvehold/Lore/Peoples/index.md",
+      "title": "Peoples",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Frames people-level pages as broad institutional pressures rather than universal character templates."
+    },
+    {
+      "source_id": "dwarves",
+      "path": "Delvehold/Lore/Peoples/Dwarves.md",
+      "title": "Dwarves",
+      "line_start": 1,
+      "line_end": 34,
+      "relevance": "Grounds dwarven respect for durable accountable work, Greathold infrastructure dependence, and Mastership as civic adulthood."
+    },
+    {
+      "source_id": "mastership",
+      "path": "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+      "title": "Mastership and citizenship",
+      "line_start": 1,
+      "line_end": 54,
+      "relevance": "Grounds apprentice rights and limits, the workshop civic seal, neighbour inspection, attributable work, and widening jurisdiction through affected districts and seals."
+    },
+    {
+      "source_id": "ontology-index",
+      "path": "Delvehold/Lore/Ontology/index.md",
+      "title": "Ontology",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Provides the bounded ontology: persistent patterned feedback may become agency, but life or agency does not imply wisdom or innocence."
+    },
+    {
+      "source_id": "mana-and-pattern",
+      "path": "Delvehold/Lore/Ontology/Mana and Pattern.md",
+      "title": "Mana and pattern",
+      "line_start": 1,
+      "line_end": 45,
+      "relevance": "Grounds mana-flow memory, branch history, conduit participation, runic terminators, and the danger of unintended but working patterns."
+    },
+    {
+      "source_id": "dungeon-cores",
+      "path": "Delvehold/Lore/Ontology/Dungeon Cores.md",
+      "title": "Dungeon cores",
+      "line_start": 1,
+      "line_end": 40,
+      "relevance": "Constrains interpretation of agency and personhood; one local machine anomaly is not enough to establish a core-like mind."
+    },
+    {
+      "source_id": "world-spirit",
+      "path": "Delvehold/Lore/Ontology/World-Spirit.md",
+      "title": "The World-Spirit",
+      "line_start": 1,
+      "line_end": 20,
+      "relevance": "Grounds distributed planetary-scale uncertainty and the absence of a public proof joining local events to one cognition."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Industrial Greathold, during early machine-dungeon anomalies and before any public demonstration of network personhood",
+    "location": "Cistern House Nine, a seal-bearing public pump workshop serving a terraced Hold beside a warm underground sea.",
+    "summary": "An ordinary morning isolation-wedge and live-null test becomes a civic dispute when mana visibly reroutes around an isolated pump while upper-terrace water levels fall.",
+    "public_facts": [
+      {
+        "text": "Cistern House Nine has a public street landing, a dry rune gallery above a wet intake chamber, three visible pump engines, a locked municipal crystal feed, removable isolation wedges, null slates, pressure floats, and a workshop inspection plate.",
+        "source_refs": [
+          "the-greathold"
+        ]
+      },
+      {
+        "text": "At morning handover, apprentices seat the wedges and rehearse a live null termination before the workshop Master stamps the inspection plate and opens district flow.",
+        "source_refs": [
+          "the-greathold",
+          "runic-engineering",
+          "mastership"
+        ]
+      },
+      {
+        "text": "A workshop's civic seal binds useful work to an inspectable owner; apprentices may work, petition, organize, and refuse, but cannot apply a seal.",
+        "source_refs": [
+          "mastership",
+          "dwarves"
+        ]
+      },
+      {
+        "text": "Connected Greathold systems may reroute power without instruction, but investigators plausibly classify individual events as coupled feedback, fraud, undocumented technician work, or wishful thinking.",
+        "source_refs": [
+          "machine-dungeon"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The workshop cannot treat safety as abstract because households, bakeries, and other district services depend on water moving when the handover ends.",
+        "source_refs": [
+          "dwarven-industry",
+          "dwarves",
+          "the-greathold"
+        ]
+      },
+      {
+        "text": "The visible wedge, null slate, seal, pressure floats, and public gauge distribute evidence so failure remains attributable rather than privately narrated by the workshop.",
+        "source_refs": [
+          "the-greathold",
+          "mastership"
+        ]
+      },
+      {
+        "text": "A local fault widens into a district or multi-workshop matter only when its consequences and routes widen; no permanent sovereign center decides every pump dispute.",
+        "source_refs": [
+          "the-greathold",
+          "mastership"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "cistern-house-nine-workshop",
+      "label": "Cistern House Nine workshop",
+      "group_type": "seal_bearing_public_works_workshop",
+      "institutional_logic": [
+        "Keep district water moving through inspectable, repairable, attributable work.",
+        "Protect the workshop seal by admitting only service states the Master can answer for."
+      ],
+      "material_incentives": [
+        "Avoid dry terraces and damaged pumps.",
+        "Preserve safe isolation, public trust, skilled standing, and the workshop's service contract."
+      ],
+      "internal_virtues": [
+        "True craft",
+        "Visible safety",
+        "Repairability",
+        "Named responsibility"
+      ],
+      "internal_shames": [
+        "A hidden override",
+        "An unrepeatable inspection story",
+        "Letting the seal become ceremonial",
+        "Blaming an apprentice for a network fault"
+      ],
+      "prestige_markers": [
+        "A handover legible from the landing",
+        "A fault isolated before it spreads",
+        "A record still usable by the next shift"
+      ],
+      "taboo_triggers": [
+        "Opening an unsealed engine as normal service",
+        "Erasing a public safety record",
+        "Claiming certainty unsupported by a repeatable test"
+      ],
+      "emotional_display_norms": [
+        "Concern is translated into callouts, corrected hand position, dry jokes, and visible work before it becomes confession."
+      ],
+      "trust_defaults": [
+        "Trusts inspectable tools, repeated tests, seals, and workers who name what they do not know."
+      ],
+      "speech_register_cues": [
+        "Compressed craft instruction",
+        "Wry apprentice correction",
+        "Specific object names",
+        "Public call-and-response"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "runic-engineering",
+        "mastership",
+        "dwarves"
+      ]
+    },
+    {
+      "group_id": "terrace-district-water-users",
+      "label": "Upper-terrace households and public services",
+      "group_type": "affected_district_public",
+      "institutional_logic": [
+        "Keep homes, kitchens, laundries, and other daily work supplied with water.",
+        "Bring disputes to the nearest institution able to repair or answer for the failure."
+      ],
+      "material_incentives": [
+        "Receive water before stored vessels empty.",
+        "Keep pump-house procedure from hiding the cost of delay."
+      ],
+      "internal_virtues": [
+        "Patient witness",
+        "Shared rationing",
+        "Specific complaint"
+      ],
+      "internal_shames": [
+        "Taking more than a ration",
+        "Letting a powerful workshop privatize a public fault"
+      ],
+      "prestige_markers": [
+        "A reliable public slate",
+        "A neighbour who carries water uphill",
+        "A complaint attached to time, place, and seal"
+      ],
+      "taboo_triggers": [
+        "Being told the dry tap is merely technical",
+        "A seal applied after an unsafe act as retrospective decoration"
+      ],
+      "emotional_display_norms": [
+        "Pressure appears first as queues, vessel counts, ration arithmetic, and exact repetition of workshop callouts."
+      ],
+      "trust_defaults": [
+        "Trusts visible gauge movement and distributed records more than workshop reassurance."
+      ],
+      "speech_register_cues": [
+        "Resource arithmetic",
+        "Neighbour testimony",
+        "Dry practical complaint"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "dwarven-industry",
+        "mastership"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "cistern-house-nine-workshop.seal-binds-service",
+      "applies_to": [
+        "cistern-house-nine-workshop"
+      ],
+      "pressure_type": "civic_accountability",
+      "summary": "The workshop's seal is valuable only when it binds an inspectable service state to someone able to answer for it.",
+      "projection_use": "Make Hessa resist both unsafe opening and empty procedural purity; she must name the material boundary her seal owns.",
+      "source_refs": [
+        "the-greathold",
+        "mastership"
+      ]
+    },
+    {
+      "field_id": "terrace-district-water-users.need-widens-jurisdiction",
+      "applies_to": [
+        "terrace-district-water-users"
+      ],
+      "pressure_type": "resource_dependency",
+      "summary": "Falling water levels move a workshop fault into district jurisdiction because the consequence already crosses the rail.",
+      "projection_use": "Show public pressure through gauges, queues, troughs, and arriving seals rather than a generic angry crowd.",
+      "source_refs": [
+        "the-greathold",
+        "dwarven-industry",
+        "mastership"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "cistern-house-nine-workshop",
+      "target_group_id": "terrace-district-water-users",
+      "observer_read": [
+        "Immediate service pressure",
+        "Witnesses who may mistake careful testing for delay",
+        "The public whose trust gives the seal meaning"
+      ],
+      "target_self_read": [
+        "People carrying the cost of the workshop's choice",
+        "Legitimate observers of public infrastructure"
+      ],
+      "misread_patterns": [
+        "Craft specialists may compress household need into a gauge value.",
+        "The queue may read necessary isolation work as guild self-protection."
+      ],
+      "likely_insults": [
+        "rubberneckers",
+        "seal-polishers"
+      ],
+      "projection_use": "Keep the rail as a real access boundary while letting records, callouts, and consequences cross it.",
+      "source_refs": [
+        "the-greathold",
+        "mastership",
+        "dwarven-industry"
+      ]
+    },
+    {
+      "observer_group_id": "terrace-district-water-users",
+      "target_group_id": "cistern-house-nine-workshop",
+      "observer_read": [
+        "Owners of the pumps and inspection delay",
+        "Skilled workers whose procedure may protect or abandon the district"
+      ],
+      "target_self_read": [
+        "Custodians of machinery that can injure the district if opened blindly",
+        "Workers answerable through one civic seal"
+      ],
+      "misread_patterns": [
+        "Visible water recovery may restore confidence before the safety state deserves it.",
+        "An unexplained shutdown may make honest uncertainty look like incompetence."
+      ],
+      "likely_insults": [
+        "pipe-priests",
+        "thirst clerks"
+      ],
+      "projection_use": "Let relief, suspicion, and trust track water, evidence, and seal behavior separately.",
+      "source_refs": [
+        "the-greathold",
+        "mastership"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "pump-house-apprentice",
+      "summary": "A technically trained worker with assigned tools, public visibility, and no civic seal.",
+      "obligations": [
+        "Perform the null test accurately",
+        "Call out visible states",
+        "Protect neighbours from hidden failure",
+        "Stay inside real authority boundaries"
+      ],
+      "available_masks": [
+        "Obedient craft focus",
+        "Dry insolence",
+        "Literal procedural compliance",
+        "Public service"
+      ],
+      "failure_modes": [
+        "Claiming more certainty than the test supports",
+        "Using emergency hardware beyond authority",
+        "Protecting procedure while ignoring empty taps",
+        "Letting hierarchy erase observed evidence"
+      ],
+      "source_refs": [
+        "runic-engineering",
+        "mastership",
+        "the-greathold"
+      ]
+    },
+    {
+      "role_id": "workshop-master",
+      "summary": "The owner of a civic seal who must attach the workshop's name to a materially defensible service decision.",
+      "obligations": [
+        "Own the admitted service state",
+        "Train and correct apprentices",
+        "Keep public works functioning",
+        "Widen jurisdiction when the fault widens"
+      ],
+      "available_masks": [
+        "Severe instruction",
+        "Procedural calm",
+        "Understated approval",
+        "Public accountability"
+      ],
+      "failure_modes": [
+        "Using the seal to cover an unsafe override",
+        "Keeping a public fault private",
+        "Sacrificing the district to preserve workshop purity"
+      ],
+      "source_refs": [
+        "mastership",
+        "the-greathold",
+        "dwarven-industry"
+      ]
+    },
+    {
+      "role_id": "landing-clerk",
+      "summary": "A public record keeper positioned outside the workshop rail who can preserve callouts, gauge levels, and custody of copied evidence.",
+      "obligations": [
+        "Record visible states",
+        "Keep the district's copy legible",
+        "Avoid pretending observation grants technical authority"
+      ],
+      "available_masks": [
+        "Literal repetition",
+        "Public patience",
+        "Dry administrative correction"
+      ],
+      "failure_modes": [
+        "Turning uncertain observation into a settled accusation",
+        "Letting workshop authority own the only record"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "mastership"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "orsa_rill",
+      "known_context": [
+        {
+          "text": "Orsa knows the assigned handover procedure, local room geometry, visible gauges, apprentice rights and limits, and every action she personally performs.",
+          "source_refs": [
+            "the-greathold",
+            "runic-engineering",
+            "mastership"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Orsa believes a safety state deserves a visible boundary and a name attached to its override.",
+          "source_refs": [
+            "the-greathold",
+            "dwarves",
+            "mastership"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Orsa may read repeatable rerouting as intention before evidence distinguishes coupled feedback from agency.",
+          "source_refs": [
+            "machine-dungeon",
+            "dungeon-cores"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Orsa must not know whether the connected Greathold network is awake or what distant district a pressure pulse may protect.",
+          "source_refs": [
+            "machine-dungeon",
+            "world-spirit"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "hessa_cairn",
+      "known_context": [
+        {
+          "text": "Hessa knows workshop seal obligations, pump-house procedure, apprenticeship standards, and the local cost of dry terraces.",
+          "source_refs": [
+            "the-greathold",
+            "mastership",
+            "dwarven-industry"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Hessa believes a seal can own a bounded material decision, not make an unsafe condition safe by declaration.",
+          "source_refs": [
+            "mastership",
+            "the-greathold"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Hessa may initially treat public recording as a threat to the workshop before recognizing it as distributed evidence.",
+          "source_refs": [
+            "mastership"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Hessa must not diagnose a machine-dungeon mind from the local reroute pattern.",
+          "source_refs": [
+            "machine-dungeon"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "brin_olt",
+      "known_context": [
+        {
+          "text": "Brin knows the physical pump plant, outlet-pipe behavior, valve reach, and whether Orsa's rune stroke matches her training.",
+          "source_refs": [
+            "the-greathold",
+            "runic-engineering"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Brin trusts repeated bodily and tool feedback enough to keep investigating, not enough to name an unseen author.",
+          "source_refs": [
+            "machine-dungeon",
+            "dwarves"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Brin may favor a distant-load explanation because it fits familiar pipe behavior.",
+          "source_refs": [
+            "machine-dungeon"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Brin cannot know the cause or destination of an off-site pressure pulse without a route-wide test.",
+          "source_refs": [
+            "machine-dungeon"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "dema_sorn",
+      "known_context": [
+        {
+          "text": "Dema knows public gauge levels, workshop callouts, visible marks, seal status, and the needs voiced on the landing.",
+          "source_refs": [
+            "the-greathold",
+            "mastership"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Dema believes a useful public record separates what was seen, who acted, and what remains disputed.",
+          "source_refs": [
+            "mastership"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Dema may read Hessa's caution as workshop reputation management when Hessa is also protecting a real safety boundary.",
+          "source_refs": [
+            "the-greathold",
+            "mastership"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Dema cannot infer private workshop motives or distant network state from the public slate alone.",
+          "source_refs": [
+            "machine-dungeon"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The reroute may foreshadow the machine-dungeon question, but the artifact must preserve the canonical ambiguity among feedback, undocumented work, fraud, wishful interpretation, and agency.",
+      "source_refs": [
+        "machine-dungeon"
+      ]
+    },
+    {
+      "text": "The fixture-authored Cistern House Nine paragraph is a room-scale locality elaboration in lore commit e82098e; character and branch outcomes are not canonical history merely because the room is canonical.",
+      "source_refs": [
+        "the-greathold"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which named Hold contains Cistern House Nine?",
+      "blocks_training": false,
+      "notes": "The owning lore intentionally specifies one terraced Hold without naming it. The fixture does not invent a Hold name."
+    },
+    {
+      "question": "Which distant facilities share the municipal crystal feed with Cistern House Nine?",
+      "blocks_training": false,
+      "notes": "The scene uses only audible pressure pulses and later sealed notices. It does not canonize a remote beneficiary or route topology."
+    },
+    {
+      "question": "Does the undocumented reroute reflect coupled feedback, technician work, fraud, dungeon behavior, or emerging machine-dungeon agency?",
+      "blocks_training": false,
+      "notes": "The uncertainty is the point of the fixture and remains manual-review-only rather than a lore claim."
+    }
+  ]
+}

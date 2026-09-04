@@ -1,0 +1,443 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "cistern-house-nine-breaker-test-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/delvehold/cistern-house-nine-breaker-test.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/cistern-house-nine-breaker-test.v0.json",
+  "scene_id": "cistern-house-nine-breaker-test.morning-handover",
+  "protagonist_agent_id": "orsa_rill",
+  "npc_agent_ids": [
+    "hessa_cairn",
+    "brin_olt",
+    "dema_sorn",
+    "cistern_house_nine_landing_queue"
+  ],
+  "purpose": "Interactive Fiction Weaver compilation of a Delvehold branch-and-fold fixture about an apprentice discovering an undocumented municipal-feed reroute during an ordinary public pump inspection.",
+  "local_awareness_summary": [
+    {
+      "text": "Orsa is a dwarven apprentice who knows the morning isolation-wedge and live-null test, the visible controls of the three local pump engines, and the workshop hierarchy around Master Hessa's civic seal.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/cistern-house-nine-breaker-test.v0.json",
+        "Delvehold/Lore/The Greathold.md",
+        "Delvehold/Lore/Industry/Runic Engineering.md",
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+      ]
+    },
+    {
+      "text": "Orsa can see pressure floats, wedge seams, the district gauge, Dema's public slate, and the blue reroute pattern, but cannot know whether the behavior is coupled feedback, undocumented work, fraud, or emerging agency.",
+      "source_refs": [
+        "Delvehold/Lore/Industry/Machine-Dungeon.md",
+        "Delvehold/Lore/The Greathold.md"
+      ]
+    },
+    {
+      "text": "The immediate stakes are both material and civic: upper-terrace water is falling while an unstamped inspection and uncertain safety boundary leave responsibility unresolved.",
+      "source_refs": [
+        "Delvehold/Lore/The Greathold.md",
+        "Delvehold/Lore/Industry/Dwarven Industry.md",
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Orsa's apprentice-local viewpoint inside Cistern House Nine. Choices use reachable wedges, slates, valves, the rail, the emergency lever, witnessed speech, and public carrying work.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/cistern-house-nine-breaker-test.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes routine and lets the player prime one procedural value before the undocumented reroute appears.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      },
+      {
+        "text": "Tonal mode is warm workplace comedy turning into quiet civic unease; jokes expose craft hierarchy and infrastructure pressure without dissolving the dry-tap stakes.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Orsa may perform assigned apprentice work and reach local controls, but only Master Hessa owns the workshop civic seal and may admit an engine to public service under it.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/The Greathold.md"
+        ]
+      },
+      {
+        "text": "The scene may show repeatable system behavior and competing explanations; it must not let Orsa diagnose machine-dungeon personhood from one pump-house event.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Machine-Dungeon.md",
+          "Delvehold/Lore/Ontology/Dungeon Cores.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Engine Two's removable isolation wedge, Hessa's workshop seal, Dema's public slate, the three pressure floats, and the emergency lever are material controls or records whose state changes later options and endings.",
+        "source_refs": [
+          "Delvehold/Lore/The Greathold.md",
+          "examples/ink/delvehold/cistern-house-nine-breaker-test.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The fixture must keep infrastructure legitimacy attached to visible isolation, seals, records, water service, and the people who bear failure costs.",
+        "source_refs": [
+          "Delvehold/Lore/The Greathold.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "Every ending must preserve uncertainty about the reroute while materially distinguishing service, evidence, jurisdiction, investigation, and public trust outcomes.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Machine-Dungeon.md",
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let an apprentice apply a civic seal, silently make canonical public policy, or convert workshop observation into Greathold-wide truth.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "Do not resolve the blue reroute as a speaking machine, a dungeon-core command, or proof of a unified Greathold mind.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Machine-Dungeon.md",
+          "Delvehold/Lore/Ontology/World-Spirit.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four procedural choice layers fold through the live-null anomaly and select one of eight state-gated aftermaths.",
+    "choice_layers": [
+      "ordinary_handover_role",
+      "undocumented_reroute",
+      "seal_and_service",
+      "attributed_aftermath"
+    ],
+    "variables": [
+      "isolation_integrity",
+      "district_flow",
+      "seal_trust",
+      "anomaly_evidence",
+      "apprentice_standing",
+      "witness_level",
+      "network_pressure"
+    ],
+    "ending_gates": [
+      "ending_bounded_service",
+      "ending_bounded_service_cost",
+      "ending_public_hearing",
+      "ending_public_hearing_cost",
+      "ending_network_trace",
+      "ending_network_trace_cost",
+      "ending_rationed_trust",
+      "ending_rationed_distrust"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_visible_isolation",
+      "ink_path": "pre_test_choice",
+      "action_type": "seat_wedge",
+      "actor_intent": "Make Engine Two's physical safety state publicly legible before live mana enters the test.",
+      "state_basis": [
+        "Orsa has been assigned Engine Two's wedge.",
+        "The handover routine uses visible callouts and public observation."
+      ],
+      "reviewed_consequences": [
+        "Raises isolation_integrity, apprentice_standing, and witness_level; later enables the bounded-service proposal and improves its ending gate."
+      ],
+      "training_hooks": [
+        "safety_state_visibility",
+        "apprentice_craft",
+        "public_callout"
+      ]
+    },
+    {
+      "branch_id": "prime_public_record",
+      "ink_path": "pre_test_choice",
+      "action_type": "request_witness",
+      "actor_intent": "Put the terrace-level record and workshop procedure in one public frame.",
+      "state_basis": [
+        "Dema owns the landing slate and may stand at the public side of the rail."
+      ],
+      "reviewed_consequences": [
+        "Raises witness_level and seal_trust while lowering apprentice_standing; later strengthens public-hearing evidence."
+      ],
+      "training_hooks": [
+        "distributed_record_ownership",
+        "role_boundary_friction"
+      ]
+    },
+    {
+      "branch_id": "prime_null_precision",
+      "ink_path": "pre_test_choice",
+      "action_type": "rehearse_gesture",
+      "actor_intent": "Protect the live termination by spending scarce service time on craft precision.",
+      "state_basis": [
+        "Apprentices learn the null rune before effect-producing runes and practice under supervision."
+      ],
+      "reviewed_consequences": [
+        "Raises apprentice_standing and lowers district_flow, changing Hessa's attention and later ration pressure."
+      ],
+      "training_hooks": [
+        "craft_before_speed",
+        "service_time_cost"
+      ]
+    },
+    {
+      "branch_id": "prime_intake_awareness",
+      "ink_path": "pre_test_choice",
+      "action_type": "inspect_space",
+      "actor_intent": "Ground the test in the wet chamber and detect nonlocal pressure through the physical plant.",
+      "state_basis": [
+        "The grated stair gives Orsa sight and hearing into the wet intake chamber."
+      ],
+      "reviewed_consequences": [
+        "Raises district_flow and network_pressure; primes later distant-load investigation."
+      ],
+      "training_hooks": [
+        "embodied_infrastructure_sensing",
+        "ordinary_anomaly_seed"
+      ]
+    },
+    {
+      "branch_id": "test_repeatable_refusal",
+      "ink_path": "first_anomaly_choice",
+      "action_type": "repeat_termination",
+      "actor_intent": "Distinguish repeatable system behavior from a malformed apprentice stroke.",
+      "state_basis": [
+        "Orsa can repeat the assigned live-null procedure while the wedge remains seated."
+      ],
+      "reviewed_consequences": [
+        "Raises isolation_integrity, anomaly_evidence, and network_pressure while lowering district_flow; enables stronger investigation and evidence endings."
+      ],
+      "training_hooks": [
+        "repeatability_over_revelation",
+        "safety_service_tradeoff"
+      ]
+    },
+    {
+      "branch_id": "make_anomaly_public",
+      "ink_path": "first_anomaly_choice",
+      "action_type": "record_pattern",
+      "actor_intent": "Preserve the blue reroute outside private workshop memory before it fades.",
+      "state_basis": [
+        "Dema's slate is present and visible to the landing."
+      ],
+      "reviewed_consequences": [
+        "Raises anomaly_evidence and witness_level while lowering seal_trust; later enables the public-evidence option."
+      ],
+      "training_hooks": [
+        "public_evidence",
+        "seal_reputation_cost"
+      ]
+    },
+    {
+      "branch_id": "restore_service_early",
+      "ink_path": "first_anomaly_choice",
+      "action_type": "remove_wedge",
+      "actor_intent": "Restore expected flow before the terrace gauge falls further.",
+      "state_basis": [
+        "Orsa can physically remove the wedge but cannot seal the resulting service state."
+      ],
+      "reviewed_consequences": [
+        "Raises district_flow while lowering isolation_integrity, anomaly_evidence, and seal_trust; makes safe bounded service harder and distrust more likely."
+      ],
+      "training_hooks": [
+        "immediate_service_over_evidence",
+        "authority_overreach"
+      ]
+    },
+    {
+      "branch_id": "test_distant_pressure",
+      "ink_path": "first_anomaly_choice",
+      "action_type": "close_valve_and_listen",
+      "actor_intent": "Use reachable valve resistance and pipe knocks to locate whether the pressure originates beyond the house.",
+      "state_basis": [
+        "Orsa can reach Engine Three's long valve handle from the brass rail."
+      ],
+      "reviewed_consequences": [
+        "Raises network_pressure and anomaly_evidence while lowering district_flow; creates a stronger network-trace route without granting diagnosis."
+      ],
+      "training_hooks": [
+        "body_local_inference",
+        "uncertainty_preserved"
+      ]
+    },
+    {
+      "branch_id": "isolate_two_run_one",
+      "ink_path": "seal_choice",
+      "action_type": "propose_bounded_service",
+      "actor_intent": "Preserve a visible Engine Two boundary while restoring partial district water under Hessa's authority.",
+      "state_basis": [
+        "Available only when isolation_integrity is high enough to support a real physical boundary."
+      ],
+      "reviewed_consequences": [
+        "Raises district_flow and seal_trust while lowering network_pressure; materially improves bounded-service and rationed-trust endings."
+      ],
+      "training_hooks": [
+        "bounded_service",
+        "master_seal_authority"
+      ]
+    },
+    {
+      "branch_id": "preserve_public_evidence",
+      "ink_path": "seal_choice",
+      "action_type": "transfer_record",
+      "actor_intent": "Keep the anomaly inspectable even if leaving the plate unstamped worsens rationing.",
+      "state_basis": [
+        "Available only when the anomaly has been observed strongly enough to preserve."
+      ],
+      "reviewed_consequences": [
+        "Raises anomaly_evidence and witness_level while lowering district_flow and apprentice_standing; improves public-hearing success."
+      ],
+      "training_hooks": [
+        "evidence_custody_transfer",
+        "public_cost_of_proof"
+      ]
+    },
+    {
+      "branch_id": "force_seal_accountability",
+      "ink_path": "seal_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Require the Master to own any unsafe override explicitly by withholding the wedge from normal service.",
+      "state_basis": [
+        "Orsa can withhold her assigned tool but cannot decide how Hessa uses the seal."
+      ],
+      "reviewed_consequences": [
+        "Raises seal_trust while lowering apprentice_standing and district_flow; makes procedural legitimacy stronger and immediate service weaker."
+      ],
+      "training_hooks": [
+        "refusal_within_hierarchy",
+        "seal_accountability"
+      ]
+    },
+    {
+      "branch_id": "prioritize_immediate_water",
+      "ink_path": "seal_choice",
+      "action_type": "pull_emergency_lever",
+      "actor_intent": "Accept uncertain network behavior to prevent immediate service failure.",
+      "state_basis": [
+        "The emergency lever is reachable, but using it lifts all three isolation cams before the plate is sealed."
+      ],
+      "reviewed_consequences": [
+        "Raises district_flow and network_pressure while sharply lowering isolation_integrity and seal_trust; produces visible full-flow and broken-boundary consequences."
+      ],
+      "training_hooks": [
+        "resource_emergency",
+        "unsafe_override",
+        "public_relief_private_distrust"
+      ]
+    },
+    {
+      "branch_id": "own_bounded_service",
+      "ink_path": "final_choice",
+      "action_type": "sign_record",
+      "actor_intent": "Accept apprentice-level accountability for the safest service state still supported by the room.",
+      "state_basis": [
+        "Success depends on high isolation_integrity and adequate district_flow."
+      ],
+      "reviewed_consequences": [
+        "Routes to bounded-service success or cost based on physical isolation and water delivery."
+      ],
+      "training_hooks": [
+        "state_gated_service_ending",
+        "attributed_work"
+      ]
+    },
+    {
+      "branch_id": "widen_jurisdiction",
+      "ink_path": "final_choice",
+      "action_type": "carry_evidence",
+      "actor_intent": "Move the dispute to the district bearing the water failure rather than letting the workshop contain it.",
+      "state_basis": [
+        "Success depends on public witness and preserved anomaly evidence."
+      ],
+      "reviewed_consequences": [
+        "Routes to a source-grounded widening moot or to a service-failure hearing where the anomaly remains weak."
+      ],
+      "training_hooks": [
+        "jurisdiction_follows_consequence",
+        "distributed_evidence"
+      ]
+    },
+    {
+      "branch_id": "follow_network_pressure",
+      "ink_path": "final_choice",
+      "action_type": "investigate",
+      "actor_intent": "Trace the boundary of the observed behavior without claiming to know its author.",
+      "state_basis": [
+        "Success depends on network_pressure and anomaly_evidence."
+      ],
+      "reviewed_consequences": [
+        "Routes to a repeatable multi-workshop listening practice or an honestly recorded silence."
+      ],
+      "training_hooks": [
+        "uncertain_machine_dungeon_signal",
+        "negative_evidence"
+      ]
+    },
+    {
+      "branch_id": "accept_district_cost",
+      "ink_path": "final_choice",
+      "action_type": "distribute_resource",
+      "actor_intent": "Keep the procedural dispute attached to the people who pay for it in water and time.",
+      "state_basis": [
+        "Outcome depends on delivered flow or retained seal trust."
+      ],
+      "reviewed_consequences": [
+        "Routes to rationed trust when service or accountability survives, otherwise to visible legitimacy loss."
+      ],
+      "training_hooks": [
+        "infrastructure_cost_on_bodies",
+        "public_trust_ending"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Promotion of the local anomaly into canonical machine-dungeon history",
+      "Durable character memory or relationship updates",
+      "Any Greathold policy or multi-workshop response beyond this fixture",
+      "Acceptance into any model-training corpus"
+    ]
+  },
+  "audit": {
+    "reviewer": "Detached Codex worker applying the four required Ghostlight reviewer prompts as separate passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted. Reader orientation, coherence, pacing, voice, tonal fit, and IF playability each meet the B-level gate after adding a late read for apprentice_standing and correcting the receipt to name four choice layers.",
+      "Lore grounding verdict: accepted. All fourteen cited vault paths and ranges were checked; null practice, seal authority, workshop accountability, widening jurisdiction, infrastructure dependency, and the ambiguous reroute match their source owners.",
+      "Visual continuity verdict: accepted_with_minor_revisions as an illustrated-IF scaffold, not replay-ready art. Twenty-two unique scene anchors and twenty-two BFL prompts cover focal shifts and branch-visible states; one negative prompt construction was rewritten. A durable scene-set blockout remains required before multi-angle rendering.",
+      "Spatial-geometric cohesion verdict: accepted_with_minor_revisions as a stageable text plan. The shared map now fixes two levels, pump order, routes, occluders, valve reach, emergency-lever position, public sightlines, staging slots, and branch-persistent object states. A plan view or simple 3D blockout remains required for replay-ready continuity.",
+      "No Ink compiler was present on PATH. The artifact received JSON parse validation, header inspection, variable-use audit, branch/state review, and manual Ink structure review; compilation was not attempted or installed."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

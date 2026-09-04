@@ -1,0 +1,100 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "cistern-house-nine-breaker-test.bfl-simple-v0",
+  "fixture_id": "cistern-house-nine-breaker-test",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured fantasy-industrial storybook illustration, precise ink lines, restrained watercolor, worn brass and carved stone, warm amber lamps against cold blue mana, readable silhouettes, humane facial acting, practical machinery, unlettered surfaces.",
+  "prompts": [
+    {
+      "id": "01_cistern_establishing",
+      "prompt": "Two-level underground pump house: dry stone gallery above a misty black-water intake, three brass-and-iron pump engines, grated stair, safety rail, chain hoist, arched mana conduit, public gauge and slate."
+    },
+    {
+      "id": "02_morning_handover",
+      "prompt": "Four compact dwarf workers at morning handover: young apprentice holding an iron wedge, stern Master with heavy civic seal, bearded journeyworker reading floats, clerk chalking a public slate beside three silent pumps."
+    },
+    {
+      "id": "03_visible_isolation",
+      "prompt": "Close pump inspection: dwarf apprentice seats a rectangular iron wedge until its red shoulder aligns with the engine casing; journeyworker calls the state; clerk records it beyond a brass rail."
+    },
+    {
+      "id": "04_public_record",
+      "prompt": "Dwarf clerk carries a large black level slate to a yellow public boundary while a young apprentice gestures and a severe Master waits by an unstamped brass plate."
+    },
+    {
+      "id": "05_null_rehearsal",
+      "prompt": "Chalk-stained dwarf hands draw a crisp geometric null rune right-to-left on black slate; an oily rag waits nearby; a glass water gauge approaches red in soft focus."
+    },
+    {
+      "id": "06_wet_intake",
+      "prompt": "High angle through grated iron stair: young dwarf kneels and listens above warm mist, black underground water, three pump rods, a clear chain hoist, and one trembling outlet pipe."
+    },
+    {
+      "id": "07_routine_ready",
+      "prompt": "Public pump test ready: three red wedges seated, Master beside bare inspection plate, apprentice at null slate, journeyworker at pressure floats, clerk and copper cans behind yellow line."
+    },
+    {
+      "id": "08_blue_reroute",
+      "prompt": "Pivotal close-up: pale blue null rune goes dark, then a hair-thin mana line curls around the feed side of a solid iron isolation wedge toward a neighboring pump as its float rises."
+    },
+    {
+      "id": "09_repeat_test",
+      "prompt": "Dwarf apprentice repeats a controlled null stroke; the fully seated red wedge remains dark while the same blue loop reforms around its outside; journeyworker watches with hands clear."
+    },
+    {
+      "id": "10_chalk_public_evidence",
+      "prompt": "Young dwarf rapidly copies a glowing reroute loop onto a clerk's outward-facing black slate while householders watch and a stern Master guards a bare inspection plate."
+    },
+    {
+      "id": "11_restore_early",
+      "prompt": "Dwarf apprentice pulls a heavy isolation wedge from a pump; familiar blue mana fills the conduit and water gauge recovers while the inspection plate remains visibly unstamped."
+    },
+    {
+      "id": "12_listen_to_valve",
+      "prompt": "Young dwarf braces at a brass safety rail and drags shut a long valve handle; bearded worker guards her balance; ripples cross a cup as pipe knocks travel toward a locked wall conduit."
+    },
+    {
+      "id": "13_landing_pressure",
+      "prompt": "Wide civic tableau: orderly dwarves with copper cans and bakery trough behind yellow line, public slate facing them, Master holding a heavy seal, workers and three pump states visible beyond."
+    },
+    {
+      "id": "14_bounded_service_plan",
+      "prompt": "One left pump prepared to run while central pump stays dark behind a flush red wedge; apprentice points between them; Master holds seal over plate; clerk clears a partial-flow row."
+    },
+    {
+      "id": "15_evidence_transfer",
+      "prompt": "Apprentice and clerk exchange a large chalked evidence slate across a yellow line; severe Master stands by a bare plate; empty copper cans and red water gauge crowd the frame."
+    },
+    {
+      "id": "16_wedge_on_plate",
+      "prompt": "Iron isolation wedge lies across a brass inspection plate between apprentice and Master; civic seal held apart; journeyworker and clerk witness the refusal; dry gauge visible behind."
+    },
+    {
+      "id": "17_emergency_water",
+      "prompt": "Apprentice hangs from red emergency lever; linked cams lift three wedges; pump rods strike misty water; blue mana floods channels; Master catches her sleeve as one float rises too high."
+    },
+    {
+      "id": "18_final_threshold",
+      "prompt": "Whole pump-house decision visible at once: three engines, wedges, floats, conduit, seal plate, public slate, red gauge, misty stair, orderly vessel queue, apprentice between machinery and public line."
+    },
+    {
+      "id": "19_bounded_service_end",
+      "prompt": "Left pump carries water, central pump stays isolated, Master stamps a narrow partial-flow record and apprentice marks beneath it; bakery trough receives a measured stream."
+    },
+    {
+      "id": "20_district_moot_end",
+      "prompt": "Open stone district moot: apprentice and clerk carry chalked slate between them; bakers, laundry workers and lift mechanics gather with empty cans while several Masters arrive carrying civic seals."
+    },
+    {
+      "id": "21_network_trace_end",
+      "prompt": "Quiet pump-house investigation: bearded worker straps copper listening cup to arched conduit, young apprentice marks pulse times on a board, Master seals route notices, clerk keeps separate public copy."
+    },
+    {
+      "id": "22_ration_end",
+      "prompt": "Stepped underground terrace street: dwarf apprentice carries copper water can among neighbors, bakery trough and laundry buckets beside public spout, workshop record posted under a wall gauge."
+    }
+  ]
+}
