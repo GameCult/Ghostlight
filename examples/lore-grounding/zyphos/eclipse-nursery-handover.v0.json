@@ -1,0 +1,550 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.eclipse-nursery-handover.v0",
+  "source_status": "draft",
+  "fixture_status": "source_grounded_original_setting",
+  "source_refs": [
+    {
+      "source_id": "zyphos-index",
+      "path": "Eusocial Interbeing/index.md",
+      "title": "Zyphos",
+      "line_start": 1,
+      "line_end": 35,
+      "relevance": "World premise: a low-light close-binary biosphere organized through mutable memory and ecological contracts."
+    },
+    {
+      "source_id": "saueia-body",
+      "path": "Eusocial Interbeing/Species/Sa'ueia.md",
+      "title": "Sa'ueia",
+      "line_start": 1,
+      "line_end": 25,
+      "relevance": "Grounds Sa'ueia mobile social pattern and the fixture-authored, committed hexapod body plan used for movement, posture, tool work, and visual refs."
+    },
+    {
+      "source_id": "saueia-family-units",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+      "title": "Sa'ueia Family Units",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds mobile family units as kin groups, workshops, schools, embassies, and oath groups whose status depends on remembered ecological relations."
+    },
+    {
+      "source_id": "saueia-nomadic-civilization",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md",
+      "title": "Sa'ueia Nomadic Civilization",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Grounds route assemblies, breeding grounds, mobile law and memory, and ecological partners as institutions rather than scenery."
+    },
+    {
+      "source_id": "breeding-grounds",
+      "path": "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+      "title": "Breeding Grounds",
+      "line_start": 1,
+      "line_end": 21,
+      "relevance": "Primary locality source and committed fixture elaboration: open arrival terrace, low graft cradle, testimony exchange, fungal boundary, lantern witnesses, clean and isolation lanes, and non-ownership of passage decisions."
+    },
+    {
+      "source_id": "mutable-memory",
+      "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+      "title": "Mutable Memory Endosymbiosis",
+      "line_start": 1,
+      "line_end": 123,
+      "relevance": "Grounds partial agency and negotiation at cell, tissue, body, organism, route, and ecosystem scales; prevents any signal from becoming universal omniscience."
+    },
+    {
+      "source_id": "reciprocal-ecologies",
+      "path": "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md",
+      "title": "Reciprocal Ecologies",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds material reciprocity, remembered generosity, and ecological refusal as action rather than sentiment."
+    },
+    {
+      "source_id": "biosphere-examples",
+      "path": "Eusocial Interbeing/Ecology/Zyphos Biosphere Examples.md",
+      "title": "Zyphos Biosphere Examples",
+      "line_start": 1,
+      "line_end": 81,
+      "relevance": "Grounds low-energy render language, brief light-return flashes, route glows, timed fungal candles, burden-flower signals, and threadwing courier roles."
+    },
+    {
+      "source_id": "saueia-continent",
+      "path": "Eusocial Interbeing/World/Sa'ueia Continent.md",
+      "title": "Sa'ueia Continent",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds advanced migratory ecological politics and permanent occupation concentrated at breeding grounds rather than cities."
+    },
+    {
+      "source_id": "umbros-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds the fixed planet-scale Umbros sky position, approximately hour-long daily eclipse, dim primary, and light-window pressure."
+    },
+    {
+      "source_id": "saueia-mobile-technology",
+      "path": "Eusocial Interbeing/Technologies/Sa'auei'a Mobile Technologies.md",
+      "title": "Sa'auei'a Mobile Technologies",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Grounds portable archives, route-memory instruments, medical grafts, pattern languages, repairability, and relationship-aware technology."
+    },
+    {
+      "source_id": "burden-flowers",
+      "path": "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+      "title": "Burden Flowers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds Mottled Echo's attachment, sensory filaments, host-state colors, warning value, exaggeration risk, movement, needs, and public reputation pressure."
+    },
+    {
+      "source_id": "lantern-trees",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+      "title": "Umbros-Facing Lantern Trees",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds cold under-canopy guidance knots, eclipse response, nursery shelter, route taxation, warning and invitation sequences, and selective path lighting."
+    },
+    {
+      "source_id": "candle-fungal-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds amber fruiting beacons, tissue digestion, contamination sensing, route credit, quarantine rings, clean offerings, and living road authority."
+    },
+    {
+      "source_id": "glassback-grazers",
+      "path": "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md",
+      "title": "Glassback Grazers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Provides local ecological context for Sa'ueia route bargains, bodily public signaling, heat exchange, burden-flower carriage, and road-spore transport."
+    },
+    {
+      "source_id": "threadwing-couriers",
+      "path": "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+      "title": "Threadwing Couriers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds the external witness's ribbonlike sensory vanes, route-memory and sickness carriage, independent preferences, landing refusal, and knotted-fiber messages."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Undated pre-imperial-contact or early-contact Sa'ueia daily life; no exact year is canonical.",
+    "location": "An open caretaker-handover terrace at a Sa'ueia breeding ground on the sub-Umbros side of the Sa'ueia continent.",
+    "summary": "An outgoing caretaker and incoming medical specialist try to transfer nursery duty during eclipse ingress when a burden flower reports a disputed immune-memory signal and the living road closes its clean lane.",
+    "public_facts": [
+      {
+        "text": "Breeding grounds are reproductive commons, medical centers, legal anchors, and memory reservoirs rather than capitals or private property.",
+        "source_refs": [
+          "breeding-grounds",
+          "saueia-nomadic-civilization"
+        ]
+      },
+      {
+        "text": "Sa'ueia family units move between remembered ecological partners and carry law, craft, care, diplomacy, and portable archives.",
+        "source_refs": [
+          "saueia-body",
+          "saueia-family-units",
+          "saueia-mobile-technology"
+        ]
+      },
+      {
+        "text": "Candle fungal roads and lantern trees can offer, condition, or refuse passage through visible biological signals.",
+        "source_refs": [
+          "candle-fungal-roads",
+          "lantern-trees"
+        ]
+      },
+      {
+        "text": "Umbros remains a fixed enormous sky presence and daily totality is normally measured in roughly an hour, so eclipse work windows are regular but materially constrained.",
+        "source_refs": [
+          "umbros-system"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A breeding ground must protect infants and infirm residents without letting permanent caretakers become sovereign owners of ecological admission.",
+        "source_refs": [
+          "breeding-grounds",
+          "mutable-memory"
+        ]
+      },
+      {
+        "text": "Biological warnings are useful partial testimony whose meaning depends on hunger, host care, old memory, local chemistry, and other witnesses.",
+        "source_refs": [
+          "burden-flowers",
+          "candle-fungal-roads",
+          "mutable-memory"
+        ]
+      },
+      {
+        "text": "Delay protects the nursery but consumes caretaker bodies, graft patients, route congestion, and the eclipse light window.",
+        "source_refs": [
+          "breeding-grounds",
+          "umbros-system",
+          "lantern-trees"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "breeding-ground-caretakers",
+      "label": "Breeding-ground caretaker commons",
+      "group_type": "communal_care_institution",
+      "institutional_logic": [
+        "Protect infancy, infirm care, reproduction, and memory continuity while preserving ecological partners as co-authorities rather than owned infrastructure."
+      ],
+      "material_incentives": [
+        "Keep clean grafts available, prevent identity-bearing contamination, maintain staffed watches, and preserve route access for rotating families."
+      ],
+      "internal_virtues": [
+        "Truthful declaration",
+        "Careful separation",
+        "Continuity without capture",
+        "Staying for an extra watch when needed"
+      ],
+      "internal_shames": [
+        "Smuggling doubtful material through affection",
+        "Treating delay as costless",
+        "Forcing a living boundary",
+        "Turning a commons into caretaker property"
+      ],
+      "prestige_markers": [
+        "A clean handover",
+        "Portable archives another family can actually use",
+        "Long-standing road credit",
+        "Nursery partners that still answer after years"
+      ],
+      "taboo_triggers": [
+        "Hidden sick tissue",
+        "Unwitnessed graft admission",
+        "Claiming sole authority over a route"
+      ],
+      "emotional_display_norms": [
+        "Stress is made legible through throat and flank patches; competence is shown through precise care work, testimony, and restraint rather than denial."
+      ],
+      "trust_defaults": [
+        "Trust is plural, situated, and revocable; familiar persons may still carry doubtful tissue, and alarming organisms may still misread."
+      ],
+      "speech_register_cues": [
+        "Compressed work language",
+        "Dry ritual correction",
+        "Materially specific declarations",
+        "Humor around office and care burdens"
+      ],
+      "source_refs": [
+        "breeding-grounds",
+        "saueia-family-units",
+        "reciprocal-ecologies"
+      ]
+    },
+    {
+      "group_id": "arrival-terrace-ecology",
+      "label": "Fungal road and lantern-grove witnesses",
+      "group_type": "ecological_infrastructure_compact",
+      "institutional_logic": [
+        "Maintain clean traffic, protect root and nursery systems, preserve truthful reports, and condition access on repeated reciprocal conduct."
+      ],
+      "material_incentives": [
+        "Receive clean tissue, minerals, spores, route traffic, and honest disease disclosure while avoiding archive contamination."
+      ],
+      "internal_virtues": [
+        "Reliable signaling",
+        "Selective passage",
+        "Remembered credit",
+        "Quarantine before contamination"
+      ],
+      "internal_shames": [
+        "A careless road becoming an identity leak",
+        "False warning that destroys useful traffic",
+        "Closing so completely that social life reroutes elsewhere"
+      ],
+      "prestige_markers": [
+        "Bright trusted lanes",
+        "Warnings confirmed by other ecologies",
+        "Healthy nursery and pollinator traffic"
+      ],
+      "taboo_triggers": [
+        "Hidden plague",
+        "Trampled beacons",
+        "Forced deep-memory access",
+        "Root injury"
+      ],
+      "emotional_display_norms": [
+        "Pressure is expressed as dimming, colored knots, bitter beads, altered ground, and route geometry."
+      ],
+      "trust_defaults": [
+        "Behavioral history and material testimony matter more than verbal charm."
+      ],
+      "speech_register_cues": [
+        "Amber candle spacing",
+        "Blue-white lantern sequences",
+        "Darkened routes",
+        "Quarantine rings"
+      ],
+      "source_refs": [
+        "candle-fungal-roads",
+        "lantern-trees",
+        "breeding-grounds"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "breeding-ground-caretakers.care-without-custody",
+      "applies_to": [
+        "breeding-ground-caretakers"
+      ],
+      "pressure_type": "communal_care",
+      "summary": "Caretakers must make consequential admission decisions while remaining stewards of a reproductive commons rather than owners of it.",
+      "projection_use": "Give Seyr choices among testimony, separation, delay, route request, and labor cost; exclude unilateral domination as a normal competent action.",
+      "source_refs": [
+        "breeding-grounds",
+        "saueia-nomadic-civilization"
+      ]
+    },
+    {
+      "field_id": "arrival-terrace-ecology.partial-testimony",
+      "applies_to": [
+        "arrival-terrace-ecology"
+      ],
+      "pressure_type": "contamination_risk",
+      "summary": "Ecological witnesses detect real traces through different appetites and timescales, so overlap can justify action without becoming perfect diagnosis.",
+      "projection_use": "Keep road, flower, grove, archive, and courier evidence distinct and visibly fallible.",
+      "source_refs": [
+        "mutable-memory",
+        "burden-flowers",
+        "candle-fungal-roads",
+        "threadwing-couriers"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "breeding-ground-caretakers",
+      "target_group_id": "arrival-terrace-ecology",
+      "observer_read": [
+        "A road warning",
+        "A grove proposal",
+        "A flower's disputed testimony"
+      ],
+      "target_self_read": [
+        "Not available as unified private truth; the organisms remain separate actors and scales."
+      ],
+      "misread_patterns": [
+        "Treating quarantine as moral accusation",
+        "Treating one color pattern as diagnosis",
+        "Mistaking stored road credit for purchased obedience"
+      ],
+      "likely_insults": [
+        "ungrateful road",
+        "dramatic flower",
+        "bureaucratic tree"
+      ],
+      "projection_use": "Let Seyr interpret visible signals cautiously and let Nara experience the same geometry as personal rejection.",
+      "source_refs": [
+        "breeding-grounds",
+        "burden-flowers",
+        "candle-fungal-roads"
+      ]
+    },
+    {
+      "observer_group_id": "arrival-terrace-ecology",
+      "target_group_id": "breeding-ground-caretakers",
+      "observer_read": [
+        "Bodies carrying tissue, residue, pressure, food, damage, and remembered route conduct"
+      ],
+      "target_self_read": [
+        "Skilled mobile persons performing a lawful care transfer"
+      ],
+      "misread_patterns": [
+        "Signals cannot cleanly distinguish host, cargo, old memory, and intention without additional testimony."
+      ],
+      "likely_insults": [
+        "dark lane",
+        "bitter ring",
+        "refusal to land"
+      ],
+      "projection_use": "Make ecological responses precise in action but limited in interpretation.",
+      "source_refs": [
+        "mutable-memory",
+        "candle-fungal-roads",
+        "lantern-trees"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "outgoing-caretaker",
+      "summary": "A tired steward who owns the quality of the handover but not the nursery, road, grove, incoming specialist, or final truth of a disputed biological signal.",
+      "obligations": [
+        "Protect nursery residents",
+        "Transfer usable archives",
+        "Declare uncertainty",
+        "Keep continuity staffed",
+        "Respect living route authority"
+      ],
+      "available_masks": [
+        "Dry competence",
+        "Ritual formality",
+        "Patient witness",
+        "Workplace humor"
+      ],
+      "failure_modes": [
+        "Forcing admission",
+        "Pretending delay has no labor cost",
+        "Turning a warning into blame",
+        "Letting one witness claim the whole event"
+      ],
+      "source_refs": [
+        "breeding-grounds",
+        "saueia-body"
+      ]
+    },
+    {
+      "role_id": "incoming-medical-specialist",
+      "summary": "A route-tired specialist whose body, graft cargo, flower companion, and testimony are being read together under nursery quarantine pressure.",
+      "obligations": [
+        "Declare damaged tools and sick tissue",
+        "Deliver clean grafts",
+        "Submit enough route testimony for safe entry",
+        "Preserve personal dignity while remaining legible"
+      ],
+      "available_masks": [
+        "Professional briskness",
+        "Offended familiarity",
+        "Technical precision",
+        "Fatigue denial"
+      ],
+      "failure_modes": [
+        "Defending dignity by hiding a real trace",
+        "Collapsing person and cargo into one accusation",
+        "Spending bodily capacity to satisfy slow witnesses"
+      ],
+      "source_refs": [
+        "saueia-mobile-technology",
+        "burden-flowers",
+        "breeding-grounds"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "seyr_outgoing_caretaker",
+      "known_context": [
+        {
+          "text": "Seyr knows the terrace layout, nursery routines, recent patients, local road-credit history, lantern signals, archive handling, and Nara's public route testimony.",
+          "source_refs": [
+            "breeding-grounds",
+            "saueia-body",
+            "saueia-mobile-technology"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Seyr believes safe decisions come from bounded overlapping testimony and material separation rather than command or automatic trust.",
+          "source_refs": [
+            "breeding-grounds",
+            "mutable-memory"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Seyr may underestimate how strongly Nara experiences spatial quarantine as a judgment of personhood.",
+          "source_refs": [
+            "burden-flowers",
+            "breeding-grounds"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Seyr must not know the private intentions of the road, grove, flower, courier, or Nara beyond visible signals and prior public conduct.",
+          "source_refs": [
+            "mutable-memory"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "nara_incoming_specialist",
+      "known_context": [
+        {
+          "text": "Nara knows her route, graft preparation, recent sick station, own fatigue, and established working relationship with Seyr and Mottled Echo.",
+          "source_refs": [
+            "saueia-mobile-technology",
+            "burden-flowers"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Nara believes the flower is replaying an old signal and expects professional testimony to keep host and cargo distinct.",
+          "source_refs": [
+            "burden-flowers",
+            "mutable-memory"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Nara may read Seyr's waiting or request for separation as personal distrust rather than care for plural authority.",
+          "source_refs": [
+            "breeding-grounds"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Nara must not know whether the road or lantern grove will accept a proposal before their signals change.",
+          "source_refs": [
+            "candle-fungal-roads",
+            "lantern-trees"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The exact disease or contaminant remains unresolved; the fixture is about admission under partial testimony, not a hidden definitive diagnosis.",
+      "source_refs": [
+        "mutable-memory",
+        "burden-flowers"
+      ]
+    },
+    {
+      "text": "Seyr, Nara, Ili, Mottled Echo, Ledge Station, and this particular handover are story-local inventions and are not promoted as named vault canon by the locality elaboration.",
+      "source_refs": [
+        "breeding-grounds",
+        "saueia-body"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What signal grammar do Sa'ueia facial fans and bare throat or flank patches use across families and regions?",
+      "blocks_training": false,
+      "notes": "The fixture limits them to visible chemical and heat legibility plus broad gestures; it does not canonize a complete language."
+    },
+    {
+      "question": "What exact pathogens or incompatible memory states most often trigger breeding-ground quarantine?",
+      "blocks_training": false,
+      "notes": "The fixture leaves the disputed violet trace unidentified to avoid inventing a disease taxonomy."
+    },
+    {
+      "question": "Does a standard Sa'ueia portable archive have a durable physical form beyond relationship-aware route-memory storage?",
+      "blocks_training": false,
+      "notes": "This fixture uses flexible memory membranes as a bounded local visual elaboration; recurrence should trigger a dedicated technology backfill."
+    }
+  ]
+}

@@ -35,3 +35,14 @@
 - Work completed before the block: added a fixture-marked Sa'ueia body-plan elaboration to `Eusocial Interbeing/Species/Sa'ueia.md` and a fixture-marked caretaker-handover elaboration to `Eusocial Interbeing/Ecology/Breeding Grounds.md`; `git diff --check` passed.
 - Ghostlight commit status: not created. `git add examples/ink/zyphos/RUN.md` cannot create `F:/Projects/Ghostlight/.git/worktrees/zyphos/index.lock` for the same permission reason.
 - Next: grant write access to the two shared Git metadata directories, then commit the existing lore patch before drafting prose. No reviewer pass or fixture artifact was fabricated around the missing commit.
+
+## eclipse-nursery-handover — resumed
+
+- Status: in progress; the prior Git blocker is stale.
+- Locality: a Sa'ueia breeding-ground nursery terrace where a candle fungal road meets an Umbros-facing lantern-tree grove.
+- Institution and routine: the breeding-ground commons during eclipse-ingress caretaker handover; outgoing and incoming specialists feed the road, inspect portable medical grafts, exchange route testimony, and transfer nursery duties.
+- Tonal mode: warm workplace ritual with comic ecological bureaucracy, turning into contained quarantine pressure.
+- Lore patches committed and pushed: `e674a9c` (`Eusocial Interbeing/Species/Sa'ueia.md` and `Eusocial Interbeing/Ecology/Breeding Grounds.md`).
+- Ghostlight ledger commit already pushed: `102efc1`.
+- Reviewer verdicts: narrative pending; lore grounding pending; visual continuity pending; spatial cohesion pending.
+- Next: compile the source-grounded scene and its training, visual, grounding, and BFL manifest artifacts; run the four review passes; revise; commit and push the completed fixture.

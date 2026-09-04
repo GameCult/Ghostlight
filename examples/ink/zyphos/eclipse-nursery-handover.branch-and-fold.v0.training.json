@@ -1,0 +1,453 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "eclipse-nursery-handover-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/zyphos/eclipse-nursery-handover.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/eclipse-nursery-handover.v0.json",
+  "scene_id": "eclipse-nursery-handover.arrival-terrace-quarantine",
+  "protagonist_agent_id": "seyr_outgoing_caretaker",
+  "npc_agent_ids": [
+    "nara_incoming_specialist",
+    "ili_archive_keeper",
+    "mottled_echo_burden_flower",
+    "arrival_terrace_fungal_road",
+    "arrival_terrace_lantern_grove",
+    "witness_threadwing"
+  ],
+  "purpose": "Interactive Fiction Weaver compilation of a Zyphos branch-and-fold nursery handover from outgoing caretaker Seyr's local perspective, with ecological witnesses retaining independent authority.",
+  "local_awareness_summary": [
+    {
+      "text": "Seyr knows the breeding ground's arrival terrace, caretaker-handover routine, nursery patients, road-credit history, portable archive, and the visible signaling conventions of local fungal candles and lantern knots.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/eclipse-nursery-handover.v0.json",
+        "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+      ]
+    },
+    {
+      "text": "Seyr can inspect Nara's visible body state, graft wraps, route testimony, and Mottled Echo's display, but cannot directly know whether the flower reports active sickness, old immune memory, hunger, or opportunism.",
+      "source_refs": [
+        "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+        "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+      ]
+    },
+    {
+      "text": "Seyr reads fungal and lantern signals as situated proposals and refusals, not commands under Sa'ueia ownership.",
+      "source_refs": [
+        "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+        "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective stays with Seyr's long-bodied hexapod sensorium and reach: four locomotor legs, two small chest manipulators, facial chemical fans, low work surfaces, and body-signaling patches.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Sa'ueia.md",
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      },
+      {
+        "text": "The opening choice performs ordinary handover work before Mottled Echo's warning interrupts the routine.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Seyr may offer testimony, clean material, separation, and patience; Seyr cannot force the road or grove to open a route without converting the commons into captured property.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+          "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md"
+        ]
+      },
+      {
+        "text": "The fungal road, burden flower, lantern grove, and threadwing provide partial testimony through their own embodied channels; no single signal is omniscient or automatically decisive.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+          "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The portable archive, medical graft frame, suspect wrap, burden-flower mineral cup, route cords, and clean shed-fiber sample retain explicit custody and placement across folds.",
+        "source_refs": [
+          "examples/ink/zyphos/eclipse-nursery-handover.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Handover outcomes must distinguish admitting a person from admitting doubtful tissue, preserve reproductive-commons authority, and make delay consume light and bodily capacity.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+          "Eusocial Interbeing/World/Zyphos Umbros Binary System.md"
+        ]
+      },
+      {
+        "text": "Branch consequences must remain visible through road brightness, bitter quarantine beads, lantern lanes, archive traces, graft custody, posture, and endings.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "examples/visual/zyphos/eclipse-nursery-handover.branch-and-fold.v0.visual.json"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make Seyr the sovereign owner of the road, grove, nursery, Nara, or burden flower.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+          "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md"
+        ]
+      },
+      {
+        "text": "Do not convert ecological signals into perfect diagnosis or treat quarantine as proof of guilt.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through routine, disputed biological testimony, and a shared eclipse threshold before selecting one of eight state-gated endings.",
+    "choice_layers": [
+      "routine_handover",
+      "quarantine_alarm",
+      "witness_and_route",
+      "caretaker_decision"
+    ],
+    "variables": [
+      "road_credit",
+      "nursery_trust",
+      "graft_readiness",
+      "quarantine_pressure",
+      "lantern_consent",
+      "route_testimony",
+      "flower_credibility",
+      "eclipse_time",
+      "isolation_lane",
+      "incoming_fatigue"
+    ],
+    "ending_gates": [
+      "ending_admission_success",
+      "ending_admission_cost",
+      "ending_isolation_success",
+      "ending_isolation_cost",
+      "ending_defer_success",
+      "ending_defer_cost",
+      "ending_witness_success",
+      "ending_witness_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_road_credit",
+      "ink_path": "routine_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Give the fungal road clean failed tissue and an honest provenance before requesting passage.",
+      "state_basis": [
+        "Candle fungal roads digest failed grafts and remember honest offerings.",
+        "Caretakers declare sick tissue and damaged tools at the arrival terrace."
+      ],
+      "reviewed_consequences": [
+        "Raises road_credit, route_testimony, and graft_readiness; later road imagery and the admission gate read those variables."
+      ],
+      "training_hooks": [
+        "ecological_credit_through_action",
+        "honest_failure_as_infrastructure"
+      ]
+    },
+    {
+      "branch_id": "prime_graft_readiness",
+      "ink_path": "routine_choice",
+      "action_type": "inspect_object",
+      "actor_intent": "Inspect graft seals and memory-admission knots before Nara crosses the boundary.",
+      "state_basis": [
+        "Sa'ueia chest manipulators can perform low-surface graft work.",
+        "Breeding grounds serve as medical centers."
+      ],
+      "reviewed_consequences": [
+        "Raises graft_readiness and nursery_trust while spending eclipse_time; enables later isolation of a suspect graft and strengthens bounded admission."
+      ],
+      "training_hooks": [
+        "body_specific_tool_use",
+        "time_spent_on_care"
+      ]
+    },
+    {
+      "branch_id": "prime_route_testimony",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Transfer Nara's recent route history into the portable archive.",
+      "state_basis": [
+        "Sa'ueia families preserve portable archives and route-memory instruments."
+      ],
+      "reviewed_consequences": [
+        "Raises route_testimony and nursery_trust, lowers incoming_fatigue, and enables the later trace comparison."
+      ],
+      "training_hooks": [
+        "portable_memory_custody",
+        "route_history_as_testimony"
+      ]
+    },
+    {
+      "branch_id": "prime_lantern_consent",
+      "ink_path": "routine_choice",
+      "action_type": "gesture",
+      "actor_intent": "Ask the lantern grove to witness the caretaker transfer before totality.",
+      "state_basis": [
+        "Lantern knots can signal invitation, warning, tax, and closure.",
+        "The grove witnesses handover at the arrival terrace."
+      ],
+      "reviewed_consequences": [
+        "Raises lantern_consent and nursery_trust while spending eclipse_time; enables the later separated isolation route."
+      ],
+      "training_hooks": [
+        "more_than_social_witness",
+        "light_as_civic_resource"
+      ]
+    },
+    {
+      "branch_id": "honor_flower_testimony",
+      "ink_path": "alarm_choice",
+      "action_type": "wait",
+      "actor_intent": "Keep Mottled Echo's warning attached and observable without treating it as a complete diagnosis.",
+      "state_basis": [
+        "Burden flowers display host stress and immune memory but may exaggerate."
+      ],
+      "reviewed_consequences": [
+        "Raises flower_credibility, nursery_trust, and quarantine_pressure; later folded text and the witness ending read flower_credibility."
+      ],
+      "training_hooks": [
+        "partial_nonhuman_testimony",
+        "waiting_without_verdict"
+      ]
+    },
+    {
+      "branch_id": "compare_body_and_tools",
+      "ink_path": "alarm_choice",
+      "action_type": "gesture",
+      "actor_intent": "Compare Nara's visible body state with the medical graft frame without declaring either one guilty.",
+      "state_basis": [
+        "Sa'ueia expose chemical-signaling patches and can inspect graft seals with chest manipulators."
+      ],
+      "reviewed_consequences": [
+        "Raises graft_readiness, route_testimony, quarantine_pressure, and incoming_fatigue; reveals a suspect tray for later separation."
+      ],
+      "training_hooks": [
+        "embodied_diagnostic_comparison",
+        "person_material_distinction"
+      ]
+    },
+    {
+      "branch_id": "isolate_flower_witness",
+      "ink_path": "alarm_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Separate the burden flower from Nara so its signal can be compared against the host body.",
+      "state_basis": [
+        "Burden flowers can release and regrip slowly and can live from mineral access and light."
+      ],
+      "reviewed_consequences": [
+        "Raises isolation_lane and quarantine_pressure while lowering flower_credibility and nursery_trust; later prose preserves the flower in a mineral cup."
+      ],
+      "training_hooks": [
+        "witness_separation_cost",
+        "object_custody_persistence"
+      ]
+    },
+    {
+      "branch_id": "let_road_sample",
+      "ink_path": "alarm_choice",
+      "action_type": "wait",
+      "actor_intent": "Let the road inspect shed fiber, foot pressure, and cradle residue on its own timescale.",
+      "state_basis": [
+        "Candle roads sense foot pressure, tissue chemistry, and carried disease states."
+      ],
+      "reviewed_consequences": [
+        "Raises road_credit, flower_credibility, and incoming_fatigue while spending eclipse_time."
+      ],
+      "training_hooks": [
+        "ecological_timescale",
+        "delay_as_material_cost"
+      ]
+    },
+    {
+      "branch_id": "spend_route_testimony",
+      "ink_path": "pressure_choice",
+      "action_type": "show_object",
+      "actor_intent": "Use the archive to distinguish where a signal began from who carried it.",
+      "state_basis": [
+        "Available only with strong route testimony."
+      ],
+      "reviewed_consequences": [
+        "Spends route_testimony, raises nursery_trust, and lowers quarantine_pressure by linking the violet trace to a prior station."
+      ],
+      "training_hooks": [
+        "provenance_not_blame",
+        "archive_as_fallible_evidence"
+      ]
+    },
+    {
+      "branch_id": "isolate_suspect_graft",
+      "ink_path": "pressure_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Separate one suspect graft wrap while keeping Nara and the clean grafts distinct from it.",
+      "state_basis": [
+        "Available only after enough graft inspection."
+      ],
+      "reviewed_consequences": [
+        "Raises isolation_lane, spends graft_readiness, and lowers quarantine_pressure; the suspect tray remains on the cradle's outer rail."
+      ],
+      "training_hooks": [
+        "material_specific_quarantine",
+        "custody_change"
+      ]
+    },
+    {
+      "branch_id": "request_lantern_separation",
+      "ink_path": "pressure_choice",
+      "action_type": "gesture",
+      "actor_intent": "Request an outer isolation route while leaving nursery access closed.",
+      "state_basis": [
+        "Available only with prior lantern consent.",
+        "Lantern trees can light one traveler or route while refusing another."
+      ],
+      "reviewed_consequences": [
+        "Raises isolation_lane and nursery_trust while spending lantern_consent; makes the outer route visibly continuous."
+      ],
+      "training_hooks": [
+        "separated_route_authority",
+        "consent_spend"
+      ]
+    },
+    {
+      "branch_id": "seek_external_witness",
+      "ink_path": "pressure_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Send a disputed trace to another road through a threadwing courier.",
+      "state_basis": [
+        "Threadwings carry route memory, wound scents, and symbiont cargo between ecologies."
+      ],
+      "reviewed_consequences": [
+        "Raises road_credit and quarantine_pressure, lowers nursery_trust, and spends eclipse_time; opens the possibility but not certainty of a second witness."
+      ],
+      "training_hooks": [
+        "federated_testimony",
+        "external_witness_latency"
+      ]
+    },
+    {
+      "branch_id": "admit_specialist_separate_material",
+      "ink_path": "final_choice",
+      "action_type": "authorize",
+      "actor_intent": "Admit Nara while keeping doubtful material outside the nursery.",
+      "state_basis": [
+        "Success depends on road_credit, graft_readiness, and reduced quarantine_pressure."
+      ],
+      "reviewed_consequences": [
+        "Routes to bounded admission success or a failed attempt that costs road trust."
+      ],
+      "training_hooks": [
+        "person_material_boundary",
+        "state_gated_ending"
+      ]
+    },
+    {
+      "branch_id": "complete_handover_in_isolation",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Preserve institutional continuity in an isolation shelter without forcing nursery entry.",
+      "state_basis": [
+        "Success depends on a continuous isolation lane and remaining lantern consent."
+      ],
+      "reviewed_consequences": [
+        "Routes to a separated handover or a failed movement that damages a clean graft wrap."
+      ],
+      "training_hooks": [
+        "continuity_under_quarantine",
+        "spatial_route_gate"
+      ]
+    },
+    {
+      "branch_id": "defer_handover",
+      "ink_path": "final_choice",
+      "action_type": "refuse",
+      "actor_intent": "Keep the outgoing watch and defer transfer rather than force uncertain admission.",
+      "state_basis": [
+        "Success depends on nursery trust and Nara retaining enough bodily capacity to rest safely."
+      ],
+      "reviewed_consequences": [
+        "Routes to safe delay or an overdrawn-care ending that preserves the boundary while creating new obligations."
+      ],
+      "training_hooks": [
+        "refusal_as_care",
+        "labor_cost_of_safety"
+      ]
+    },
+    {
+      "branch_id": "wait_for_second_witness",
+      "ink_path": "final_choice",
+      "action_type": "wait",
+      "actor_intent": "Hold the boundary until partial witnesses can be compared.",
+      "state_basis": [
+        "Success depends on route testimony, flower credibility, and remaining eclipse time."
+      ],
+      "reviewed_consequences": [
+        "Routes to plural corroboration or a delay that exhausts bodies and congests the route."
+      ],
+      "training_hooks": [
+        "plural_evidence",
+        "waiting_has_teeth"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable memory or relationship update for Seyr, Nara, Ili, Mottled Echo, the road, or the grove",
+      "Promotion of story-local names or events into Zyphos canon",
+      "Any claim that a biological signal provides certain diagnosis",
+      "Website replay readiness before a durable terrace scene_set exists"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex world worker applying the four named Ghostlight reviewer prompts as separate passes",
+    "review_status": "pending",
+    "reviewer_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "verdict": "pending"
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "verdict": "pending"
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "verdict": "pending"
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "verdict": "pending"
+      }
+    ],
+    "review_notes": [],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true
+    }
+  }
+}
