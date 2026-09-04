@@ -1,0 +1,56 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "hearth-brood-companion-handover-v0.bfl-simple-v0",
+  "fixture_id": "hearth-brood-companion-handover-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly speculative-ecology storybook, restrained gouache and ink, readable alien anatomy, low blue bioluminescence and muted amber living-road light, warm domestic observation, quiet moral pressure, purely pictorial composition.",
+  "prompts": [
+    {
+      "id": "01_packing_hollow_establishing",
+      "prompt": "Wide crescent nursery packing hollow under thick living roots: low oval pale-ribbed work cradle in the center, small nest alcoves left, clear mineral basin right, leaf-skin archive pockets, cold blue hanging light knots, and a shallow central ramp rising to two rows of amber fungal candles."
+    },
+    {
+      "id": "02_handover_people",
+      "prompt": "Four long horizontal alien hexapods around a low packing cradle: rust-brown caretaker fitting a flank frame, small tawny juvenile sorting route cords, older slate-gray caretaker spreading flexible archive membranes, dark ochre repair-kin wrestling a shelter roll; a pale green hand-sized mobile flower grips the juvenile's bare left flank."
+    },
+    {
+      "id": "03_routine_care_choice",
+      "prompt": "Close care-work still life with alien chest manipulators: unfinished lit flower sling, mineral brush, violet-edged archive membranes, route cords, three shallow mineral spoons, clear basin, and a pale green burden flower attached to a young six-limbed traveler."
+    },
+    {
+      "id": "04_routine_fold",
+      "prompt": "Warm ordinary packing in a root-lit nursery hollow: rust-brown and dark ochre adult alien hexapods share flower-care work while a tawny juvenile watches, an older slate-gray caretaker records the transfer, and cold blue lantern knots meet patient amber road candles."
+    },
+    {
+      "id": "05_flower_alarm",
+      "prompt": "Pivotal close frame: crouched tawny juvenile alien hexapod with facial sensing fans shut; a hand-sized pale green flower clamps to the bare flank and blooms yellow, violet, and red; older caretaker freezes a mineral brush under one rootlet while two adults hold still; blue root lights flash white and amber road candles narrow up the ramp."
+    },
+    {
+      "id": "06_alarm_response",
+      "prompt": "Care decision geometry around a low oval cradle: rust-brown adult alien hexapod between a crouched juvenile and the route ramp, older caretaker beside open archive membranes, clear mineral basin on the right, red-bloomed mobile flower on the child's flank, narrow amber fungal candles visible uphill."
+    },
+    {
+      "id": "07_route_threshold",
+      "prompt": "Wide nursery route threshold: crescent stone hollow, central work cradle and family frame, nest alcoves left, mineral basin right, shallow ramp to amber fungal road; four long-bodied alien hexapods and one hand-sized plant companion wait under cold blue roots as returning daylight reaches the ramp."
+    },
+    {
+      "id": "08_shared_care_departure",
+      "prompt": "Follow view up a shallow ramp: rust-brown adult alien hexapod carries a balanced care frame beside a tawny juvenile, dark ochre repair-kin follows with second load, pale green plant companion rides on child or lit mineral sling, central violet care archive visible between adult reach, amber living road ahead."
+    },
+    {
+      "id": "09_divided_family_route",
+      "prompt": "Amber fungal road divides across dark mineral ground: bright main lane for dark ochre trade-carrier, slower blue-lit grove lane for rust-brown caretaker, tawny juvenile, and pale green plant companion; matching violet archive strips make one family obligation visible across two routes."
+    },
+    {
+      "id": "10_supported_separation",
+      "prompt": "Long sightline from clear mineral basin to nursery ramp: pale green mobile flower rests under blue root lights beside older slate-gray caretaker; tawny juvenile looks back from the ramp beside rust-brown adult; matching route-cord loops join basin rim and family frame across the central cradle."
+    },
+    {
+      "id": "11_deferred_departure",
+      "prompt": "Safe crowded packing hollow after the amber road closes: rust-brown adult lowers family frame, tawny juvenile rests beside pale green flower, older slate-gray caretaker reopens archive membranes, dark ochre repair-kin sorts route-debt cords and three mineral spoons under returning light and cold blue roots."
+    }
+  ]
+}

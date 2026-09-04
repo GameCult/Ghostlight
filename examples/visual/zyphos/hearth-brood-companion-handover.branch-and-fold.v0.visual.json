@@ -1,0 +1,691 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "hearth-brood-companion-handover-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/hearth-brood-companion-handover.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/hearth-brood-companion-handover.branch-and-fold.v0.training.json",
+  "scene_id": "hearth-brood-companion-handover-v0.first-route-packing-hollow",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for a Sa'ueia child's first-route care handover with a bonded burden flower.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary packing, care instruction, an exposed burden-flower alarm, the route threshold, and four state-gated family outcomes.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the empty locality, character and object introduction, ordinary choice hub, routine fold, pivotal alarm, response hub, final threshold, and each ending family. The alarm appears on its own replay screen.",
+    "prompting_rule": "Each base image prompt describes a complete visible frame for a general image model. Fictional bodies, infrastructure, tools, light, and positions are stated concretely. Continuity notes remain tooling-only.",
+    "global_style_cue": "Painterly speculative-ecology storybook frame, restrained gouache and ink texture, low-energy bioluminescence, readable alien anatomy, precise living infrastructure, deep eclipse blues with muted amber and mineral earth, warm domestic observation under quiet moral pressure, cinematic interactive-fiction composition.",
+    "prompt_assembly_rule": "Assemble each generation prompt from global_style_cue, the scene base_image_prompt, visual refs only for named characters visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Keep continuity notes outside the assembled prompt. Use the scene_set camera slot as geometry authority.",
+    "scene_set_guidance": {
+      "current_mode": "structured_camera_map_authority",
+      "scope_reason": "The visual plan contains a durable single-locality camera map with fixed zones, routes, occluders, staging slots, and prop anchors. It is sufficient for draft multi-angle replay without treating generated art as a floor plan.",
+      "future_scene_set_need": "A simple 3D blockout may replace the structured camera map for high-consistency production art while preserving these zone and camera ids."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "hearth_packing_hollow_establishing",
+        "ink_anchor": "start",
+        "camera_slot": "elevated_hollow_wide",
+        "base_image_prompt": "Wide elevated establishing view of an alien communal nursery packing hollow carved into dark root-bound stone. The room is a shallow crescent around a low oval cradle of pale flexible ribs. Small nest alcoves line the inner left curve; leaf-skin storage pockets line the outer wall; a shallow clear mineral basin sits on the right. Thick living roots cross the low ceiling and carry hanging knots of cold blue bioluminescence. A broad shallow ramp rises from the center toward an outdoor terrace, where two rows of faint amber fungal fruiting beads mark a living road. Flexible route cords, folded shelter tissue, repair rolls, archive membranes, and three mineral spoons rest around the cradle. Low work surfaces and open floor lanes fit long horizontal six-limbed bodies.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Facing up the routeward ramp, nest alcoves remain left, the mineral basin remains right, the oval work cradle remains central, and archive pockets remain on the outer wall.",
+          "The fungal candles begin only at the ramp lip; the lantern knots hang from ceiling roots inside the hollow."
+        ]
+      },
+      {
+        "visual_scene_id": "hearth_handover_people",
+        "ink_anchor": "handover_people",
+        "camera_slot": "cradle_people_medium",
+        "base_image_prompt": "Medium-wide character staging around a low oval work cradle in a root-ceilinged nursery packing hollow. Senn, an adult long horizontal hexapod with rust-brown short fibers, four digitigrade running legs folded beneath the body, two small three-digit chest manipulators, a wedge-shaped head, and paired facial sensing fans, works at a balanced flank frame. Oru, a smaller tawny-gold juvenile of the same six-limbed body plan with oversized facial fans, sorts flexible route cords beside the cradle. A hand-sized mobile plant with pale green leaves, copper-edged sensory filaments, and clasping rootlets grips Oru's bare left flank. Talar, an older slate-gray hexapod with one nicked facial fan and woven care cords, spreads flexible violet-edged archive membranes on the cradle. Daro, a dark ochre adult hexapod with a repair harness, presses a bulky folded shelter roll against the family frame. Cold blue root lights illuminate three mineral spoons and the gently comic packing dispute.",
+        "visible_characters": [
+          {
+            "agent_id": "senn_receiving_caretaker",
+            "default_stance": "folded at the central cradle with chest manipulators on the family flank frame",
+            "visual_ref": "visual_character_refs.characters.senn_receiving_caretaker"
+          },
+          {
+            "agent_id": "oru_first_route_child",
+            "default_stance": "beside the cradle sorting route cords",
+            "visual_ref": "visual_character_refs.characters.oru_first_route_child"
+          },
+          {
+            "agent_id": "talar_outgoing_caretaker",
+            "default_stance": "at the inner side of the cradle spreading archive membranes",
+            "visual_ref": "visual_character_refs.characters.talar_outgoing_caretaker"
+          },
+          {
+            "agent_id": "daro_repair_kin",
+            "default_stance": "at the outer side of the cradle wrestling a shelter roll into the frame",
+            "visual_ref": "visual_character_refs.characters.daro_repair_kin"
+          },
+          {
+            "agent_id": "pale_mica_burden_flower",
+            "default_stance": "rootlets clasped gently to Oru's bare left flank",
+            "visual_ref": "visual_character_refs.characters.pale_mica_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "All Sa'ueia bodies remain long horizontal hexapods with four locomotor legs and two smaller anterior chest manipulators.",
+          "Pale Mica begins attached to Oru's bare left flank."
+        ]
+      },
+      {
+        "visual_scene_id": "hearth_routine_choice",
+        "ink_anchor": "routine_choice",
+        "camera_slot": "cradle_object_close",
+        "base_image_prompt": "Close-medium view across the central pale-ribbed cradle presenting four care affordances. A rust-brown adult alien hexapod can reach a folded repair roll and an unfinished flank sling; a dark ochre adult hexapod watches a fine mineral grooming brush; a tawny-gold juvenile points between flexible archive membranes and the pale green burden flower attached to the juvenile's left flank. Route cords and three shallow mineral spoons divide the foreground. The clear mineral basin glints on the right, cold blue lantern knots hang overhead, and amber fungal candles remain visible at the top of the central ramp.",
+        "visible_characters": [
+          {
+            "agent_id": "senn_receiving_caretaker",
+            "default_stance": "chest manipulators poised between repair roll, archive, and flower sling",
+            "visual_ref": "visual_character_refs.characters.senn_receiving_caretaker"
+          },
+          {
+            "agent_id": "oru_first_route_child",
+            "default_stance": "pointing from archive membranes to Pale Mica",
+            "visual_ref": "visual_character_refs.characters.oru_first_route_child"
+          },
+          {
+            "agent_id": "daro_repair_kin",
+            "default_stance": "watching the mineral brush from the outer side of the cradle",
+            "visual_ref": "visual_character_refs.characters.daro_repair_kin"
+          },
+          {
+            "agent_id": "pale_mica_burden_flower",
+            "default_stance": "attached to Oru with leaves angled toward the work objects",
+            "visual_ref": "visual_character_refs.characters.pale_mica_burden_flower"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hearth_routine_fold",
+        "ink_anchor": "routine_fold",
+        "camera_slot": "cradle_people_medium",
+        "base_image_prompt": "Medium-wide routine packing scene in the crescent nursery hollow. The low oval cradle holds flexible archive membranes, route cords, grooming tools, folded shelter tissue, three mineral spoons, and a balanced family flank frame. Senn, a rust-brown adult alien hexapod, checks the frame with small chest manipulators; Oru, a tawny-gold juvenile hexapod, stands beside the pale green burden flower attached to the bare left flank; Talar, an older slate-gray hexapod, records the handover; Daro, a dark ochre adult hexapod, rehearses care beside the grooming brush. Cold blue lantern knots light the room and faint amber fungal candles mark the open route at the top of the central ramp.",
+        "visible_characters": [
+          {
+            "agent_id": "senn_receiving_caretaker",
+            "default_stance": "checking the frame at the outer cradle edge",
+            "visual_ref": "visual_character_refs.characters.senn_receiving_caretaker"
+          },
+          {
+            "agent_id": "oru_first_route_child",
+            "default_stance": "standing beside the inner cradle edge with route cords",
+            "visual_ref": "visual_character_refs.characters.oru_first_route_child"
+          },
+          {
+            "agent_id": "talar_outgoing_caretaker",
+            "default_stance": "recording the handover on the inner side",
+            "visual_ref": "visual_character_refs.characters.talar_outgoing_caretaker"
+          },
+          {
+            "agent_id": "daro_repair_kin",
+            "default_stance": "rehearsing care at the outer side",
+            "visual_ref": "visual_character_refs.characters.daro_repair_kin"
+          },
+          {
+            "agent_id": "pale_mica_burden_flower",
+            "default_stance": "attached to Oru's left flank",
+            "visual_ref": "visual_character_refs.characters.pale_mica_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "care_capacity >= 3",
+            "modifier_prompt": "A shallow pale-ribbed flower sling is fixed to Senn's flank frame with a mineral pad and a translucent light hood angled toward the ceiling lantern knots."
+          },
+          {
+            "trigger": "family_cohesion >= 4",
+            "modifier_prompt": "Daro confidently holds the mineral brush at the correct low angle while Senn watches from the other side of the cradle."
+          },
+          {
+            "trigger": "privacy_boundary >= 3",
+            "modifier_prompt": "The private archive membranes are visibly folded closed with their violet chemical faces turned toward the stone wall."
+          },
+          {
+            "trigger": "route_credit >= 3",
+            "modifier_prompt": "The amber fungal candles at the ramp lip widen into two patient parallel rows."
+          },
+          {
+            "trigger": "departure_time <= 2",
+            "modifier_prompt": "Returning pale daylight reaches the upper ramp while several amber fungal candles begin to close."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "hearth_bloom_alarm",
+        "ink_anchor": "bloom_alarm",
+        "camera_slot": "alarm_child_close",
+        "base_image_prompt": "Pivotal close-medium alarm frame at the central cradle. Oru, a small tawny-gold long-bodied alien hexapod, crouches low with four running legs folded and oversized facial sensing fans clamped shut. A hand-sized burden flower grips the child's bare left flank; its pale green leaves flare with yellow strain, violet bands, and a bright red center around copper sensory filaments. Talar, an older slate-gray hexapod, holds a fine mineral brush motionless under one rootlet. Senn, a rust-brown adult hexapod, faces the child across the cradle; Daro, a dark ochre adult, turns away from the open violet-edged archive membranes. Cold ceiling lantern knots pulse white, and the amber fungal candles visible up the central ramp tighten into a narrow line.",
+        "visible_characters": [
+          {
+            "agent_id": "senn_receiving_caretaker",
+            "default_stance": "facing Oru across the cradle with chest manipulators lowered",
+            "visual_ref": "visual_character_refs.characters.senn_receiving_caretaker"
+          },
+          {
+            "agent_id": "oru_first_route_child",
+            "default_stance": "crouched low with facial fans shut",
+            "visual_ref": "visual_character_refs.characters.oru_first_route_child"
+          },
+          {
+            "agent_id": "talar_outgoing_caretaker",
+            "default_stance": "holding the mineral brush still beneath a flower rootlet",
+            "visual_ref": "visual_character_refs.characters.talar_outgoing_caretaker"
+          },
+          {
+            "agent_id": "daro_repair_kin",
+            "default_stance": "turning gaze away from the open archive",
+            "visual_ref": "visual_character_refs.characters.daro_repair_kin"
+          },
+          {
+            "agent_id": "pale_mica_burden_flower",
+            "default_stance": "clamped to Oru's flank with leaves fully alarm-bloomed",
+            "visual_ref": "visual_character_refs.characters.pale_mica_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The alarm is bodily and botanical: leaf color, rootlet grip, child posture, light response, and road narrowing remain visible."
+        ]
+      },
+      {
+        "visual_scene_id": "hearth_bloom_response",
+        "ink_anchor": "bloom_choice",
+        "camera_slot": "cradle_route_sightline",
+        "base_image_prompt": "Medium-wide decision frame showing the whole care geometry of the nursery packing hollow. The central oval cradle separates Senn, a rust-brown adult alien hexapod, from Oru, a crouched tawny-gold juvenile carrying a red-yellow-violet burden flower on the bare left flank. Talar waits at the inner cradle edge beside open archive membranes. The clear mineral basin stands on the right within reach. The central shallow ramp rises behind Senn toward narrow amber fungal candles. Senn's long four-legged body could turn broadside across the cradle-to-ramp sightline, while the basin, archive, and ramp offer distinct visible responses to the alarm.",
+        "visible_characters": [
+          {
+            "agent_id": "senn_receiving_caretaker",
+            "default_stance": "between the cradle and ramp, able to fold low, move broadside, or approach the road",
+            "visual_ref": "visual_character_refs.characters.senn_receiving_caretaker"
+          },
+          {
+            "agent_id": "oru_first_route_child",
+            "default_stance": "crouched at the inner cradle edge",
+            "visual_ref": "visual_character_refs.characters.oru_first_route_child"
+          },
+          {
+            "agent_id": "talar_outgoing_caretaker",
+            "default_stance": "beside open archive membranes",
+            "visual_ref": "visual_character_refs.characters.talar_outgoing_caretaker"
+          },
+          {
+            "agent_id": "pale_mica_burden_flower",
+            "default_stance": "alarm-bloomed on Oru's bare left flank",
+            "visual_ref": "visual_character_refs.characters.pale_mica_burden_flower"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hearth_route_threshold",
+        "ink_anchor": "exposed_alarm_fold",
+        "camera_slot": "routeward_threshold_wide",
+        "base_image_prompt": "Wide route-threshold frame from the inner nest side of the crescent packing hollow. The central oval cradle holds the family flank frame, flexible archive membranes, mineral brush, route cords, repair material, and three shallow mineral spoons. The left wall contains small nursery alcoves; the clear mineral basin remains on the right; the shallow central ramp rises toward two rows of amber fungal candles and returning pale daylight. Senn, a rust-brown adult alien hexapod, stands between cradle and ramp. Oru, a tawny-gold juvenile, waits at the inner edge near Talar, an older slate-gray caretaker. Daro, a dark ochre adult with repair harness, lifts the family frame. Pale Mica grips Oru's bare left flank with pale green leaves and copper filaments visible. Cold blue root lights and amber route light make care capacity and departure pressure visible.",
+        "visible_characters": [
+          {
+            "agent_id": "senn_receiving_caretaker",
+            "default_stance": "centered between cradle and ramp",
+            "visual_ref": "visual_character_refs.characters.senn_receiving_caretaker"
+          },
+          {
+            "agent_id": "oru_first_route_child",
+            "default_stance": "at the inner cradle edge",
+            "visual_ref": "visual_character_refs.characters.oru_first_route_child"
+          },
+          {
+            "agent_id": "talar_outgoing_caretaker",
+            "default_stance": "beside Oru at the inner edge",
+            "visual_ref": "visual_character_refs.characters.talar_outgoing_caretaker"
+          },
+          {
+            "agent_id": "daro_repair_kin",
+            "default_stance": "lifting the balanced family frame at the outer edge",
+            "visual_ref": "visual_character_refs.characters.daro_repair_kin"
+          },
+          {
+            "agent_id": "pale_mica_burden_flower",
+            "default_stance": "placed by state between Oru's left flank and the mineral basin",
+            "visual_ref": "visual_character_refs.characters.pale_mica_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "child_trust >= 4",
+            "modifier_prompt": "Oru's oversized facial fans open toward Senn and the child's stance rises from a crouch."
+          },
+          {
+            "trigger": "child_trust <= 1",
+            "modifier_prompt": "Oru's facial fans remain tightly closed and the child's body angles toward Talar."
+          },
+          {
+            "trigger": "flower_credibility >= 4",
+            "modifier_prompt": "Pale Mica holds a restrained copper-yellow leaf pattern with relaxed outer leaves and attentive central filaments."
+          },
+          {
+            "trigger": "privacy_boundary >= 4",
+            "modifier_prompt": "Talar folds the private archive layers shut and turns their colored chemical surfaces toward the inner stone wall."
+          },
+          {
+            "trigger": "route_credit >= 4",
+            "modifier_prompt": "The amber fungal candles widen into a broad departure lane with a small illuminated waiting pocket beside the ramp lip."
+          },
+          {
+            "trigger": "route_credit <= 1",
+            "modifier_prompt": "The amber fungal candles reduce to one narrow single-body line up the ramp."
+          },
+          {
+            "trigger": "flower_attached == 0",
+            "modifier_prompt": "Pale Mica rests one handspan from Oru in the clear right-side mineral basin under an open translucent light hood."
+          },
+          {
+            "trigger": "flower_attached == 1",
+            "modifier_prompt": "Pale Mica remains attached to Oru's bare left flank with clasping rootlets visible."
+          },
+          {
+            "trigger": "departure_time <= 1",
+            "modifier_prompt": "Returning pale daylight reaches halfway down the ramp while the upper fungal candles visibly close."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "hearth_ending_shared_care",
+        "ink_anchor": "ending_shared_care_success|ending_shared_care_cost",
+        "camera_slot": "ramp_departure_follow",
+        "base_image_prompt": "Follow view up the broad shallow ramp from the nursery packing hollow toward an outdoor amber fungal road. Senn, a rust-brown long-bodied alien hexapod with a balanced care frame, travels beside Oru, a smaller tawny-gold juvenile hexapod. Daro, a dark ochre adult with repair harness, carries the second family load behind them. The central care archive is fixed where both adult chest manipulators can reach it. Pale Mica, a hand-sized burden flower with pale green leaves and copper filaments, grips Oru's bare left flank. Cold blue lantern knots recede below while faint amber fungal beads lead across dark ground.",
+        "visible_characters": [
+          {
+            "agent_id": "senn_receiving_caretaker",
+            "default_stance": "walking beside Oru with the care frame",
+            "visual_ref": "visual_character_refs.characters.senn_receiving_caretaker"
+          },
+          {
+            "agent_id": "oru_first_route_child",
+            "default_stance": "walking beside Senn near the outer edge of the lane",
+            "visual_ref": "visual_character_refs.characters.oru_first_route_child"
+          },
+          {
+            "agent_id": "daro_repair_kin",
+            "default_stance": "following with the second load",
+            "visual_ref": "visual_character_refs.characters.daro_repair_kin"
+          },
+          {
+            "agent_id": "pale_mica_burden_flower",
+            "default_stance": "traveling on Oru or in Senn's sling according to state",
+            "visual_ref": "visual_character_refs.characters.pale_mica_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "flower_attached == 0",
+            "modifier_prompt": "Move Pale Mica from Oru's flank into the lit mineral sling on Senn's care frame; show the child's bare left flank clear and the flower's relaxed rootlets resting on the mineral pad."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "hearth_ending_divided_route",
+        "ink_anchor": "ending_divided_route_success|ending_divided_route_cost",
+        "camera_slot": "ramp_route_fork_wide",
+        "base_image_prompt": "Wide exterior view just beyond the packing-hollow ramp where an amber fungal road divides. The bright main lane crosses dark mineral ground; a slower side lane follows low blue lantern knots along a grove edge. Senn, a rust-brown alien hexapod carrying a care frame, stands with Oru, a smaller tawny-gold juvenile, and Pale Mica, a pale green burden flower. Daro, a dark ochre adult hexapod with the trade and repair frame, turns toward the brighter main route. Violet-edged archive fasteners and accessible harness loops on both loads make the pending division of family work readable.",
+        "visible_characters": [
+          {
+            "agent_id": "senn_receiving_caretaker",
+            "default_stance": "turning toward the slower lantern route",
+            "visual_ref": "visual_character_refs.characters.senn_receiving_caretaker"
+          },
+          {
+            "agent_id": "oru_first_route_child",
+            "default_stance": "close to Senn on the slower lane",
+            "visual_ref": "visual_character_refs.characters.oru_first_route_child"
+          },
+          {
+            "agent_id": "daro_repair_kin",
+            "default_stance": "turning toward the bright main lane with the trade frame",
+            "visual_ref": "visual_character_refs.characters.daro_repair_kin"
+          },
+          {
+            "agent_id": "pale_mica_burden_flower",
+            "default_stance": "traveling with Oru and Senn",
+            "visual_ref": "visual_character_refs.characters.pale_mica_burden_flower"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hearth_ending_separation",
+        "ink_anchor": "ending_separation_success|ending_separation_cost",
+        "camera_slot": "basin_to_ramp_sightline",
+        "base_image_prompt": "Long interior sightline from the right-side mineral basin across the crescent nursery packing hollow to the central ramp. Pale Mica, a hand-sized mobile plant with pale green leaves and copper sensory filaments, rests in the clear mineral basin beneath cold blue root lights. Talar, an older slate-gray alien hexapod, stays beside the basin. Oru, a tawny-gold juvenile hexapod, stands partway up the routeward ramp beside Senn, a rust-brown adult carrying the family frame. Loose route cord rests beside the basin and another coil hangs from the frame. The central cradle and folded archive membranes remain between the separated bodies.",
+        "visible_characters": [
+          {
+            "agent_id": "senn_receiving_caretaker",
+            "default_stance": "beside Oru partway up the ramp",
+            "visual_ref": "visual_character_refs.characters.senn_receiving_caretaker"
+          },
+          {
+            "agent_id": "oru_first_route_child",
+            "default_stance": "partway up the ramp looking toward the basin",
+            "visual_ref": "visual_character_refs.characters.oru_first_route_child"
+          },
+          {
+            "agent_id": "talar_outgoing_caretaker",
+            "default_stance": "beside the mineral basin",
+            "visual_ref": "visual_character_refs.characters.talar_outgoing_caretaker"
+          },
+          {
+            "agent_id": "pale_mica_burden_flower",
+            "default_stance": "resting in the mineral basin under blue light",
+            "visual_ref": "visual_character_refs.characters.pale_mica_burden_flower"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hearth_ending_defer",
+        "ink_anchor": "ending_defer_success|ending_defer_cost",
+        "camera_slot": "elevated_hollow_wide",
+        "base_image_prompt": "Wide domestic aftermath in the crescent nursery packing hollow after the route has closed. The amber fungal candles at the top of the central ramp are dim and returning pale daylight reaches the dark stone floor. Senn, a rust-brown adult alien hexapod, lowers the balanced family frame beside the central cradle. Oru, a tawny-gold juvenile, sits beside Pale Mica under the cold blue lantern roots. Talar, an older slate-gray caretaker, reopens flexible care archive membranes. Daro, a dark ochre repair-kin, arranges route testimony near three shallow mineral spoons. Nest alcoves remain on the left, the clear mineral basin on the right, and the scene feels safe, crowded, and materially obligated.",
+        "visible_characters": [
+          {
+            "agent_id": "senn_receiving_caretaker",
+            "default_stance": "lowering the family frame beside the cradle",
+            "visual_ref": "visual_character_refs.characters.senn_receiving_caretaker"
+          },
+          {
+            "agent_id": "oru_first_route_child",
+            "default_stance": "resting beside Pale Mica under root lights",
+            "visual_ref": "visual_character_refs.characters.oru_first_route_child"
+          },
+          {
+            "agent_id": "talar_outgoing_caretaker",
+            "default_stance": "reopening archive membranes at the cradle",
+            "visual_ref": "visual_character_refs.characters.talar_outgoing_caretaker"
+          },
+          {
+            "agent_id": "daro_repair_kin",
+            "default_stance": "arranging route testimony and spoons",
+            "visual_ref": "visual_character_refs.characters.daro_repair_kin"
+          },
+          {
+            "agent_id": "pale_mica_burden_flower",
+            "default_stance": "resting beside Oru with relaxed leaves",
+            "visual_ref": "visual_character_refs.characters.pale_mica_burden_flower"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "fit_flower_sling_visual",
+        "trigger": "branch_label == fit_flower_sling",
+        "apply_to_visual_scene_ids": ["hearth_routine_fold", "hearth_route_threshold", "hearth_ending_shared_care"],
+        "modifier_prompt": "A pale-ribbed flower sling replaces one repair roll on Senn's flank frame; its shallow mineral pad and translucent light hood remain clearly visible."
+      },
+      {
+        "modifier_id": "distribute_flower_care_visual",
+        "trigger": "branch_label == distribute_flower_care",
+        "apply_to_visual_scene_ids": ["hearth_routine_fold", "hearth_route_threshold", "hearth_ending_divided_route"],
+        "modifier_prompt": "Daro carries a fine mineral grooming brush in an accessible harness loop and mirrors Senn's attentive leaf-checking posture."
+      },
+      {
+        "modifier_id": "child_demonstrates_signals_visual",
+        "trigger": "branch_label == child_demonstrates_signals",
+        "apply_to_visual_scene_ids": ["hearth_routine_fold", "hearth_bloom_alarm"],
+            "modifier_prompt": "Oru points with one small chest manipulator while Pale Mica displays narrow controlled bands along the leaf edges; the adults keep their chest manipulators lowered and center their attention on Oru."
+      },
+      {
+        "modifier_id": "bound_care_archive_visual",
+        "trigger": "branch_label == bound_care_archive",
+        "apply_to_visual_scene_ids": ["hearth_routine_fold", "hearth_route_threshold"],
+        "modifier_prompt": "Useful care layers remain open at the archive center while several violet-edged private membranes are folded shut and turned toward the wall."
+      },
+      {
+        "modifier_id": "ask_child_first_visual",
+        "trigger": "branch_label == ask_child_first",
+        "apply_to_visual_scene_ids": ["hearth_bloom_response", "hearth_route_threshold"],
+        "modifier_prompt": "Senn folds low into the cradle's shadow with chest manipulators resting open; Oru's face and sensing fans remain the center of Senn's attention."
+      },
+      {
+        "modifier_id": "offer_supported_release_visual",
+        "trigger": "branch_label == offer_supported_release",
+        "apply_to_visual_scene_ids": ["hearth_bloom_response", "hearth_route_threshold", "hearth_ending_separation"],
+        "modifier_prompt": "The clear mineral basin is moved to the cradle's right edge; Oru supports Pale Mica with both small chest manipulators while the flower's rootlets release into mineral water beneath an open light hood."
+      },
+      {
+        "modifier_id": "shelter_private_signal_visual",
+        "trigger": "branch_label == shelter_private_signal",
+        "apply_to_visual_scene_ids": ["hearth_bloom_response", "hearth_route_threshold"],
+        "modifier_prompt": "Senn stands broadside across the cradle-to-ramp sightline, four running legs forming a living screen; Talar compares a violet archive membrane with the flower display behind Senn."
+      },
+      {
+        "modifier_id": "disclose_to_road_visual",
+        "trigger": "branch_label == disclose_to_road",
+        "apply_to_visual_scene_ids": ["hearth_bloom_response", "hearth_route_threshold"],
+        "modifier_prompt": "Oru and the alarm-bloomed flower stand at the routeward cradle edge in clear view of the ramp; amber fungal candles brighten around visible shed fiber and foot pressure while Oru's body remains rigid."
+      },
+      {
+        "modifier_id": "shared_care_success_visual",
+        "trigger": "ending_label == shared_care_success",
+        "apply_to_visual_scene_ids": ["hearth_ending_shared_care"],
+        "modifier_prompt": "The archive sits at the center of the load, Daro carries the second-watch brush, Oru walks with facial fans open, and Pale Mica's leaves hold a calm copper edge."
+      },
+      {
+        "modifier_id": "shared_care_cost_visual",
+        "trigger": "ending_label == shared_care_cost",
+        "apply_to_visual_scene_ids": ["hearth_ending_shared_care"],
+        "modifier_prompt": "Trade rolls shade the flower hood, Pale Mica blooms yellow under a shelter flap, and the next fungal rest pocket narrows ahead of the family."
+      },
+      {
+        "modifier_id": "divided_route_success_visual",
+        "trigger": "ending_label == divided_route_success",
+        "apply_to_visual_scene_ids": ["hearth_ending_divided_route"],
+        "modifier_prompt": "Matching violet archive strips are secured on both frames; Daro signals the second watch toward Senn before the two route groups separate."
+      },
+      {
+        "modifier_id": "divided_route_cost_visual",
+        "trigger": "ending_label == divided_route_cost",
+        "apply_to_visual_scene_ids": ["hearth_ending_divided_route"],
+        "modifier_prompt": "The mineral brushes and wash-salt pouch are visibly on Daro's departing trade frame while Pale Mica blooms red beside Senn and Oru on the other lane."
+      },
+      {
+        "modifier_id": "separation_success_visual",
+        "trigger": "ending_label == supported_separation_success",
+        "apply_to_visual_scene_ids": ["hearth_ending_separation"],
+        "modifier_prompt": "Matching route-cord loops sit on the basin rim and family frame; Pale Mica shows one narrow copper line and Oru looks back with facial fans partly open."
+      },
+      {
+        "modifier_id": "separation_cost_visual",
+        "trigger": "ending_label == supported_separation_cost",
+        "apply_to_visual_scene_ids": ["hearth_ending_separation"],
+        "modifier_prompt": "Pale Mica's rootlets remain tight in the basin and a bright red bloom reflects across open archive layers; Oru walks up the ramp with facial fans sealed shut."
+      },
+      {
+        "modifier_id": "defer_success_visual",
+        "trigger": "ending_label == protective_delay_success",
+        "apply_to_visual_scene_ids": ["hearth_ending_defer"],
+        "modifier_prompt": "Two adults practice the grooming sequence beside an accepted flower sling while Oru eats from the heavy third mineral spoon with exaggerated ceremony."
+      },
+      {
+        "modifier_id": "defer_cost_visual",
+        "trigger": "ending_label == protective_delay_cost",
+        "apply_to_visual_scene_ids": ["hearth_ending_defer"],
+        "modifier_prompt": "The ramp candles are fully closed, route-debt cords accumulate beside the frame, and crowded nest alcoves make the material cost of five extra bodies visible."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "zyphos_first_route_packing_hollow.scene_set.v0",
+      "geometry_authority_level": "structured_camera_map_authority",
+      "coordinate_frame": "Viewer faces routeward and slightly upslope: nursery alcoves are on frame-left along the inner curve, the mineral basin is frame-right, the oval work cradle is central, and the shallow exit ramp rises through center background to the arrival terrace.",
+      "room_model": "Single shallow crescent packing hollow one ramp below an outdoor breeding-ground arrival terrace; low root ceiling, open central floor, and body-wide circulation for Sa'ueia hexapods.",
+      "fixed_zones": [
+        {
+          "zone_id": "central_work_cradle",
+          "visible_form": "low oval cradle of pale flexible ribs reachable from every side",
+          "used_for": "packing, archive transfer, grooming demonstration, and alarm comparison"
+        },
+        {
+          "zone_id": "inner_nursery_alcoves",
+          "visible_form": "small warm nest recesses along the left inner curve",
+          "used_for": "communal care continuity and Talar's side of the handover"
+        },
+        {
+          "zone_id": "outer_archive_pockets",
+          "visible_form": "leaf-skin storage pockets in the outer wall behind the cradle",
+          "used_for": "portable archive and packing-supply custody"
+        },
+        {
+          "zone_id": "right_mineral_basin",
+          "visible_form": "shallow clear mineral basin under low blue lantern knots on the right",
+          "used_for": "flower washing, supported release, and temporary separation"
+        },
+        {
+          "zone_id": "routeward_ramp",
+          "visible_form": "broad shallow ramp rising from center floor to returning daylight",
+          "used_for": "arrival, departure, road disclosure, and route timing"
+        },
+        {
+          "zone_id": "fungal_candle_lip",
+          "visible_form": "two rows of faint amber fruiting beads beginning at the ramp lip",
+          "used_for": "route width, waiting pocket, credit, and closure"
+        },
+        {
+          "zone_id": "exterior_main_lane",
+          "visible_form": "brighter amber fungal route crossing dark mineral ground beyond the ramp lip",
+          "used_for": "shared departure and the trade half of a divided family route"
+        },
+        {
+          "zone_id": "exterior_grove_lane",
+          "visible_form": "slower side route following low cold-blue lantern knots along a grove edge",
+          "used_for": "nursery-paced travel and the care half of a divided family route"
+        },
+        {
+          "zone_id": "lantern_root_ceiling",
+          "visible_form": "thick living ceiling roots with low-hanging cold blue and white light knots",
+          "used_for": "work light, flower light hood, and neighborhood warning"
+        }
+      ],
+      "movement_routes": [
+        {
+          "route_id": "nursery_to_cradle",
+          "path": "inner_nursery_alcoves -> inner side of central_work_cradle",
+          "body_clearance": "two folded Sa'ueia bodies side by side"
+        },
+        {
+          "route_id": "cradle_to_basin",
+          "path": "right side of central_work_cradle -> right_mineral_basin",
+          "body_clearance": "one adult Sa'ueia carrying the shallow basin with chest manipulators"
+        },
+        {
+          "route_id": "cradle_to_road",
+          "path": "routeward side of central_work_cradle -> routeward_ramp -> fungal_candle_lip",
+          "body_clearance": "family file or four-adult-wide lane according to road state"
+        },
+        {
+          "route_id": "road_to_main_lane",
+          "path": "fungal_candle_lip -> exterior_main_lane",
+          "body_clearance": "full family frame or trade subunit"
+        },
+        {
+          "route_id": "road_to_grove_lane",
+          "path": "fungal_candle_lip -> exterior_grove_lane",
+          "body_clearance": "two adults with one juvenile and care frame at reduced pace"
+        }
+      ],
+      "occluders": [
+        {
+          "occluder_id": "senn_broadside_privacy",
+          "placement": "between routeward side of central_work_cradle and routeward_ramp",
+          "effect": "Senn's long body blocks direct ramp-lip view of Oru, Pale Mica, and archive comparison while leaving the basin and nursery side accessible"
+        },
+        {
+          "occluder_id": "central_cradle_ribs",
+          "placement": "low around central_work_cradle",
+          "effect": "partial low-body and object occlusion only; facial fans, flower leaves, and adult chest manipulators remain visible"
+        }
+      ],
+      "staging_slots": [
+        {"slot_id": "receiving_outer_cradle", "zone_id": "central_work_cradle", "default_occupant": "senn_receiving_caretaker"},
+        {"slot_id": "child_inner_cradle", "zone_id": "central_work_cradle", "default_occupant": "oru_first_route_child"},
+        {"slot_id": "outgoing_nursery_side", "zone_id": "central_work_cradle", "default_occupant": "talar_outgoing_caretaker"},
+        {"slot_id": "repair_outer_frame", "zone_id": "outer_archive_pockets", "default_occupant": "daro_repair_kin"},
+        {"slot_id": "flower_host_left_flank", "zone_id": "central_work_cradle", "default_occupant": "pale_mica_burden_flower"},
+        {"slot_id": "flower_basin", "zone_id": "right_mineral_basin", "default_occupant": null}
+      ],
+      "prop_anchors": [
+        {"prop_id": "family_flank_frame", "zone_id": "central_work_cradle", "state_uses": ["care_capacity", "fit_flower_sling", "ending loads"]},
+        {"prop_id": "care_archive_membranes", "zone_id": "central_work_cradle", "state_uses": ["privacy_boundary", "shared care", "paired archives"]},
+        {"prop_id": "three_mineral_spoons", "zone_id": "central_work_cradle", "state_uses": ["ordinary routine", "defer ending callback"]},
+        {"prop_id": "mineral_brush", "zone_id": "central_work_cradle", "state_uses": ["distributed care", "bloom alarm", "divided-route supply failure"]},
+        {"prop_id": "route_cords", "zone_id": "central_work_cradle", "state_uses": ["child routine", "supported separation"]}
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "elevated_hollow_wide",
+          "supports_visual_scene_ids": ["hearth_packing_hollow_establishing", "hearth_ending_defer"]
+        },
+        {
+          "camera_id": "cradle_people_medium",
+          "supports_visual_scene_ids": ["hearth_handover_people", "hearth_routine_fold"]
+        },
+        {
+          "camera_id": "cradle_object_close",
+          "supports_visual_scene_ids": ["hearth_routine_choice"]
+        },
+        {
+          "camera_id": "alarm_child_close",
+          "supports_visual_scene_ids": ["hearth_bloom_alarm"]
+        },
+        {
+          "camera_id": "cradle_route_sightline",
+          "supports_visual_scene_ids": ["hearth_bloom_response"]
+        },
+        {
+          "camera_id": "routeward_threshold_wide",
+          "supports_visual_scene_ids": ["hearth_route_threshold"]
+        },
+        {
+          "camera_id": "ramp_departure_follow",
+          "supports_visual_scene_ids": ["hearth_ending_shared_care"]
+        },
+        {
+          "camera_id": "ramp_route_fork_wide",
+          "supports_visual_scene_ids": ["hearth_ending_divided_route"]
+        },
+        {
+          "camera_id": "basin_to_ramp_sightline",
+          "supports_visual_scene_ids": ["hearth_ending_separation"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "cradle_to_road_witness",
+          "path": "child_inner_cradle -> routeward side of central_work_cradle -> routeward_ramp -> fungal_candle_lip",
+          "supports": ["shelter_private_signal", "disclose_to_road"]
+        },
+        {
+          "lane_id": "basin_to_departure",
+          "path": "right_mineral_basin -> central_work_cradle -> routeward_ramp",
+          "supports": ["offer_supported_release", "support_temporary_separation"]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character visual identities for prompt assembly. Include only refs for bodies visible in a scene.",
+    "characters": {
+      "senn_receiving_caretaker": "Senn: adult Sa'ueia route caretaker, long horizontal hexapod body covered in short rust-brown insulating fibers over darker hide, four tall digitigrade locomotor legs in two pairs, smaller anterior chest pair ending in three soft opposing digits, flexible neck, wedge-shaped head, paired fanlike chemical sensors on the cheeks, bare throat and flank signaling patches, balanced flank frame, attentive posture that becomes broadside protection under pressure.",
+      "oru_first_route_child": "Oru: juvenile Sa'ueia, smaller long horizontal hexapod body with tawny-gold short fibers, four slim digitigrade running legs, two small three-digit chest manipulators, flexible neck, wedge-shaped head, oversized paired facial chemical fans, bare left flank patch carrying Pale Mica at scene start, body language through fan opening, low crouch, foot placement, and exact pointing.",
+      "talar_outgoing_caretaker": "Talar: older Sa'ueia nursery caretaker, long slate-gray fibered hexapod body, four folded digitigrade legs, two practiced three-digit chest manipulators, wedge head, one visibly nicked facial sensing fan, bare throat signaling patch, woven care cords on a light flank harness, steady low working posture.",
+      "daro_repair_kin": "Daro: adult Sa'ueia repair-kin, long dark ochre fibered hexapod body, four sturdy digitigrade running legs, two small three-digit chest manipulators, wedge-shaped head, broad paired facial sensing fans, practical repair harness with pale rolls, brushes, and cord loops, posture that makes heavy loads look like personal criticism.",
+      "pale_mica_burden_flower": "Pale Mica: hand-sized mobile plant analogue with clasping rootlets, flat pale green photosynthetic leaves, a central cup of copper-edged sensory filaments, and visible color bands of yellow strain, violet old immune memory, red alarm, or restrained copper calm; starts attached to Oru's bare left flank and may rest in a shallow clear mineral basin or a lit flank sling."
+    },
+    "groups": {}
+  },
+  "review_notes": [
+    "The four required self-review passes accepted the repaired fixture with no remaining blocker or major finding.",
+    "The structured camera map is the geometry authority for draft replay; generated images remain presentation outputs.",
+    "Visual review repaired state-dependent flower placement and removed success-only route-cord and archive-strip states from shared ending base prompts.",
+    "Spatial review added the immediate exterior main lane and slower grove lane to the scene_set before accepting the divided-route ending."
+  ]
+}

@@ -1,0 +1,357 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.hearth-brood-companion-handover.v0",
+  "source_status": "canonical_vault_with_authored_elaboration",
+  "fixture_status": "grounded_draft",
+  "source_refs": [
+    {
+      "source_id": "saueia-family-units",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+      "title": "Sa'ueia Family Units",
+      "line_start": 1,
+      "line_end": 21,
+      "relevance": "Primary owner for squad-sized mobile kin groups and the authored first-departure kin-by-care elaboration."
+    },
+    {
+      "source_id": "saueia-body",
+      "path": "Eusocial Interbeing/Species/Sa'ueia.md",
+      "title": "Sa'ueia",
+      "line_start": 1,
+      "line_end": 25,
+      "relevance": "Grounds the long-bodied hexapod anatomy, chest manipulators, facial chemical fans, low work surfaces, flank frames, and mobile family pattern."
+    },
+    {
+      "source_id": "breeding-grounds",
+      "path": "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+      "title": "Breeding Grounds",
+      "line_start": 1,
+      "line_end": 21,
+      "relevance": "Grounds communal infant care, rotating specialists, legal and reproductive continuity, arrival-terrace handovers, and living ecological witnesses."
+    },
+    {
+      "source_id": "burden-flowers",
+      "path": "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+      "title": "Burden Flowers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds flower attachment, mineral and light needs, host-state warning, fallible credibility, grooming contracts, and mobile-family cultivation."
+    },
+    {
+      "source_id": "candle-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds route access, amber fruiting candles, remembered honesty and concealment, and the road's independent logistics authority."
+    },
+    {
+      "source_id": "lantern-trees",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+      "title": "Umbros-Facing Lantern Trees",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds cold low-energy light, infant shelter, route signaling, neighborhood taxation, and child-care stakes."
+    },
+    {
+      "source_id": "mutable-memory",
+      "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+      "title": "Mutable Memory Endosymbiosis",
+      "line_start": 1,
+      "line_end": 123,
+      "relevance": "Grounds partial individual autonomy, memory exchange across bodies and scales, reproduction as negotiation, and nonhuman testimony without human-shaped omniscience."
+    },
+    {
+      "source_id": "reciprocal-ecologies",
+      "path": "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md",
+      "title": "Reciprocal Ecologies",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds future access and refusal as remembered consequences of family care and generosity."
+    },
+    {
+      "source_id": "mobile-technologies",
+      "path": "Eusocial Interbeing/Technologies/Sa'auei'a Mobile Technologies.md",
+      "title": "Sa'auei'a Mobile Technologies",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Grounds portable archives, medical continuity, repairable flank-borne equipment, and relationship-aware technology."
+    },
+    {
+      "source_id": "saueia-continent",
+      "path": "Eusocial Interbeing/World/Sa'ueia Continent.md",
+      "title": "Sa'ueia Continent",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds mobile ecological politics, remembered routes, and breeding grounds as the main permanent care concentrations."
+    },
+    {
+      "source_id": "nomadism-without-primitivism",
+      "path": "Eusocial Interbeing/Themes/Nomadism Without Primitivism.md",
+      "title": "Nomadism Without Primitivism",
+      "line_start": 1,
+      "line_end": 7,
+      "relevance": "Grounds sophisticated route law, medical continuity, distributed archives, and breeding-ground care without a sedentary default."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Unspecified Sa'ueia period before or apart from imperial contact",
+    "location": "A first-route packing hollow one shallow ramp below the arrival terrace of an Umbros-facing Sa'ueia breeding ground.",
+    "summary": "A mobile family prepares to receive a child and the trusted burden flower that has shared the child's nursery care. A visible alarm forces the adults to decide whether family membership is a spoken claim, a logistics plan, or a distributed obligation that can change the family's route.",
+    "public_facts": [
+      {
+        "text": "Sa'ueia mobile family units combine kinship, childcare, craft, defense, trade, memory, and ecological negotiation.",
+        "source_refs": ["saueia-family-units", "saueia-body"]
+      },
+      {
+        "text": "Breeding grounds hold communal infant care and legal continuity while most adults circulate with mobile family units.",
+        "source_refs": ["breeding-grounds", "saueia-continent"]
+      },
+      {
+        "text": "Burden flowers can warn of host sickness or hostile conditions, but hunger, neglect, and gossip pressure can distort their displays.",
+        "source_refs": ["burden-flowers", "mutable-memory"]
+      },
+      {
+        "text": "The authored elaboration makes first departure a transfer of named care obligations for the child and any allied organism whose established care contract would be harmed by casual separation.",
+        "source_refs": ["saueia-family-units"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A family that accepts a child and companion must spend pack space, route time, mineral access, light exposure, grooming labor, and privacy judgment; ecological reputation follows performance rather than declarations.",
+        "source_refs": ["saueia-family-units", "burden-flowers", "reciprocal-ecologies"]
+      },
+      {
+        "text": "The candle road can remember honest delay, public alarm, or concealment, but its routing response is partial ecological judgment rather than ownership of the family.",
+        "source_refs": ["candle-roads", "mutable-memory"]
+      },
+      {
+        "text": "Portable care archives must transmit useful thresholds while preserving the child's bounded private memory.",
+        "source_refs": ["saueia-family-units", "mobile-technologies", "mutable-memory"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "receiving-mobile-family",
+      "label": "Receiving Sa'ueia mobile family",
+      "group_type": "household_oath_group",
+      "institutional_logic": ["Carry kin, law, care, skill, memory, and ecological standing as one small mobile unit."],
+      "material_incentives": ["Leave within the useful candle wave", "Keep trade and repair obligations", "Build enough care capacity for child and companion", "Remain welcome on future routes"],
+      "internal_virtues": ["Distributed competence", "Return on promises", "Care made portable", "Privacy treated as a boundary rather than secrecy by default"],
+      "internal_shames": ["Naming kin without budgeting care", "Making one caretaker the only person who understands a dependent", "Suppressing alarms for convenience"],
+      "prestige_markers": ["Multiple adults able to perform the same care", "Useful archives with bounded private layers", "Route changes that preserve dependents without theatrical martyrdom"],
+      "taboo_triggers": ["Treating a child or allied organism as cargo", "Claiming an ecology or companion as household property", "Using an exposed host state as gossip"],
+      "emotional_display_norms": ["Practical teasing can carry affection; promises become legible through packing, watch assignments, route choice, and who gives up capacity."],
+      "trust_defaults": ["Trusts repeated care and route memory more than ancestry claims or confident interpretation."],
+      "speech_register_cues": ["Compressed task language", "Kin teasing", "Specific corrections", "Promises attached to watches, tools, and routes"],
+      "source_refs": ["saueia-family-units", "saueia-body", "mobile-technologies"]
+    },
+    {
+      "group_id": "breeding-ground-care",
+      "label": "Breeding-ground caretaker continuity",
+      "group_type": "reproductive_commons",
+      "institutional_logic": ["Entrust children and allied care relationships only when the receiving unit can preserve continuity without capturing the commons."],
+      "material_incentives": ["Avoid preventable return or injury", "Keep care archives usable", "Protect nursery capacity", "Maintain reciprocal route access"],
+      "internal_virtues": ["Exact handover", "Refusal without humiliation", "Separate testimony from verdict", "Remember failed care claims"],
+      "internal_shames": ["Letting urgency impersonate readiness", "Treating departure as proof of maturity", "Dumping unresolved care on the road"],
+      "prestige_markers": ["A handover that another caretaker can resume", "Children who can state care and privacy boundaries", "Dependents who return without hidden neglect"],
+      "taboo_triggers": ["Forced ecological passage", "Casual separation of bonded care partners", "Unbounded archive copying"],
+      "emotional_display_norms": ["Warmth is ordinary; assessment remains direct because politeness cannot carry a fever threshold."],
+      "trust_defaults": ["Trusts demonstrated shared care, ecological witnesses, and bounded archives."],
+      "speech_register_cues": ["Routine inventory", "Dry correction", "Care questions", "Concrete statements of unresolved obligation"],
+      "source_refs": ["breeding-grounds", "saueia-family-units"]
+    },
+    {
+      "group_id": "brood-companion-burden-flower",
+      "label": "Trusted burden-flower companion",
+      "group_type": "mobile_symbiont",
+      "institutional_logic": ["Secure a living host relationship, receive minerals, light, grooming, and travel, and remain credible enough that warnings change care."],
+      "material_incentives": ["Mineral washing", "Safe light", "Gentle release", "Continued travel", "Protection from neglect"],
+      "internal_virtues": ["Restrained accurate warning", "Host-preserving attachment", "Useful route testimony"],
+      "internal_shames": ["Not human-shaped; social judgment is expressed as lost credibility, removal pressure, or refusal rather than an assumed verbal moral code."],
+      "prestige_markers": ["Warnings corroborated by later care evidence", "Hosts who preserve a lineage over routes"],
+      "taboo_triggers": ["Rough removal", "Starvation", "Suppressed light", "Being treated as a decorative alarm"],
+      "emotional_display_norms": ["Grip, leaf angle, color, seed release, and filament posture carry state without providing a complete human-readable confession."],
+      "trust_defaults": ["Cooperates with regular care and honest sickness; may exaggerate under hunger or high gossip value."],
+      "speech_register_cues": ["No spoken dialogue", "Visible color bands", "Rootlet pressure", "Leaf orientation"],
+      "source_refs": ["burden-flowers", "mutable-memory"]
+    },
+    {
+      "group_id": "packing-hollow-route-ecology",
+      "label": "Lantern-and-candle route neighborhood",
+      "group_type": "ecological_infrastructure_parties",
+      "institutional_logic": ["Spend light and route capacity on travelers whose conduct preserves the local memory, root, and fungal network."],
+      "material_incentives": ["Honest disease signals", "Protected roots and fruiting bodies", "Clean offerings", "Reliable traffic", "Infant protection"],
+      "internal_virtues": ["Situated invitation", "Remembered reciprocity", "Specific refusal"],
+      "internal_shames": ["Not applicable as human affect; failures appear as closed lanes, dimmed light, or withdrawn future access."],
+      "prestige_markers": ["Trusted route continuity", "Useful warnings", "Care that keeps traffic safe"],
+      "taboo_triggers": ["Hidden sickness", "Forced passage", "Root damage", "Care claims used to excuse extraction"],
+      "emotional_display_norms": ["Amber fungal spacing and cold lantern pulses make acceptance, cost, warning, and closure spatially visible."],
+      "trust_defaults": ["Remembers family conduct at route scale and reprices access accordingly."],
+      "speech_register_cues": ["Nonverbal light, scent, pressure, brightness, and route width"],
+      "source_refs": ["candle-roads", "lantern-trees", "reciprocal-ecologies"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "saueia-family.kinship-requires-capacity",
+      "applies_to": ["receiving-mobile-family", "breeding-ground-care"],
+      "pressure_type": "care_obligation",
+      "summary": "Family membership follows demonstrated shared care as well as descent; a unit that cannot spread knowledge and material burden has not completed the handover.",
+      "projection_use": "Make family promises change pack contents, watch assignments, route timing, privacy rules, and outcomes.",
+      "source_refs": ["saueia-family-units"]
+    },
+    {
+      "field_id": "burden-flower.warning-is-partial",
+      "applies_to": ["brood-companion-burden-flower", "receiving-mobile-family"],
+      "pressure_type": "fallible_testimony",
+      "summary": "A flower alarm deserves response but does not own the meaning of a child's fear, illness, memory, or consent.",
+      "projection_use": "Treat visible color as a care prompt whose interpretation remains bounded and contestable.",
+      "source_refs": ["burden-flowers", "mutable-memory"]
+    },
+    {
+      "field_id": "route-neighborhood.private-care-has-public-cost",
+      "applies_to": ["packing-hollow-route-ecology", "receiving-mobile-family"],
+      "pressure_type": "reciprocal_access",
+      "summary": "Shielding a child's private signal may be right while still costing road credit; public disclosure may buy access while harming trust.",
+      "projection_use": "Do not flatten privacy and ecological honesty into one virtue meter. Make the tradeoff legible in route width and relationship state.",
+      "source_refs": ["candle-roads", "reciprocal-ecologies", "saueia-family-units"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "receiving-mobile-family",
+      "target_group_id": "brood-companion-burden-flower",
+      "observer_read": ["Medical alarm", "Care burden", "Route witness", "Possible exaggerator"],
+      "target_self_read": ["Unavailable in human categories; behavior tracks attachment, hunger, light, safety, credibility, and travel"],
+      "misread_patterns": ["Treating red as a diagnosis", "Treating release as consent to permanent separation", "Treating quiet color as absence of need"],
+      "likely_insults": ["ornament", "cargo alarm", "gossip flower"],
+      "projection_use": "Keep adult interpretation fallible and correctable through the child's knowledge, archives, and visible flower behavior.",
+      "source_refs": ["burden-flowers", "mutable-memory"]
+    },
+    {
+      "observer_group_id": "breeding-ground-care",
+      "target_group_id": "receiving-mobile-family",
+      "observer_read": ["Competent travelers", "Potentially underprepared carers", "A family claim under test"],
+      "target_self_read": ["Kin arriving to collect one of their own", "A small unit able to improvise"],
+      "misread_patterns": ["The nursery may mistake route confidence for care capacity", "The family may mistake affection for completed handover"],
+      "likely_insults": ["packers", "seasonal parents", "one-watch family"],
+      "projection_use": "Let dry domestic friction expose the difference between loving a child and budgeting the care that child brings.",
+      "source_refs": ["breeding-grounds", "saueia-family-units"]
+    },
+    {
+      "observer_group_id": "packing-hollow-route-ecology",
+      "target_group_id": "receiving-mobile-family",
+      "observer_read": ["Traffic with disclosed or concealed alarm", "Potential future nutrient and route partner", "Current capacity demand"],
+      "target_self_read": ["Family protecting a private child while trying to leave on time"],
+      "misread_patterns": ["The road can price concealment without understanding why privacy mattered", "The family can experience route narrowing as moral condemnation when it may be logistics and contamination caution"],
+      "likely_insults": ["No spoken insult; narrow lanes, dim candles, and withheld rest pockets carry the response"],
+      "projection_use": "Preserve ecology as an interested party without granting it full access to person-scale motives.",
+      "source_refs": ["candle-roads", "lantern-trees", "mutable-memory"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "receiving-route-caretaker",
+      "summary": "An adult taking responsibility for a child's first mobile circuit and for distributing the allied organism's care across the family.",
+      "obligations": ["Keep the child and flower distinct while honoring their bond", "Spread care knowledge beyond one adult", "Preserve bounded archive privacy", "Repair route costs created by care"],
+      "available_masks": ["Packing efficiency", "Dry humor", "Confident route competence", "Procedural handover calm"],
+      "failure_modes": ["Naming family without capacity", "Using public ecological witness to override the child", "Keeping all care knowledge personally", "Confusing delay with failure"],
+      "source_refs": ["saueia-family-units", "breeding-grounds", "mobile-technologies"]
+    },
+    {
+      "role_id": "first-route-child",
+      "summary": "A child leaving communal nursery care for a first circuit with a mobile family while retaining a private relationship with a burden flower.",
+      "obligations": ["Learn route care", "State limits where possible", "Carry no adult's need to make the handover look easy"],
+      "available_masks": ["Packing expertise", "Correction", "Silence", "Ceremonial disdain for adult equipment"],
+      "failure_modes": ["Hiding alarms to preserve belonging", "Letting adults translate every signal", "Treating assent under route pressure as free choice"],
+      "source_refs": ["saueia-family-units", "breeding-grounds", "burden-flowers"]
+    },
+    {
+      "role_id": "outgoing-nursery-caretaker",
+      "summary": "A communal caretaker who knows the child and flower's established care contract and must hand over usable knowledge without transferring ownership or raw private memory.",
+      "obligations": ["Demonstrate care sequences", "Name unresolved risk", "Protect privacy layers", "Refuse incomplete transfer when needed"],
+      "available_masks": ["Inventory language", "Senior correction", "Domestic teasing", "Exact silence"],
+      "failure_modes": ["Overprotective custody", "Unbounded archive transfer", "Mistaking familiarity for the child's current consent"],
+      "source_refs": ["breeding-grounds", "saueia-family-units"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "senn_receiving_caretaker",
+      "known_context": [
+        {"text": "Senn knows the family's pack capacity, route obligations, common burden-flower care, and the visible packing-hollow signals.", "source_refs": ["saueia-family-units", "burden-flowers", "candle-roads"]}
+      ],
+      "beliefs": [
+        {"text": "Senn believes a family can change route shape to carry care, but begins with too much confidence that affection and one archive are enough.", "source_refs": ["saueia-family-units"]}
+      ],
+      "misreads": [
+        {"text": "Senn may treat a visible alarm as more legible than the child's chosen explanation or mistake road response for moral judgment.", "source_refs": ["burden-flowers", "mutable-memory"]}
+      ],
+      "must_not_know": [
+        {"text": "Senn must not know with certainty whether the red display comes from active illness, old immune memory, separation stress, hunger, or mixed causes.", "source_refs": ["burden-flowers", "mutable-memory"]}
+      ]
+    },
+    {
+      "speaker_id": "oru_first_route_child",
+      "known_context": [
+        {"text": "Oru knows Pale Mica's nursery routines and some recurring signal contexts better than the incoming family does.", "source_refs": ["saueia-family-units", "burden-flowers"]}
+      ],
+      "beliefs": [
+        {"text": "Oru believes Pale Mica belongs inside the child's care relationship and fears being accepted only after that relationship is made convenient.", "source_refs": ["saueia-family-units"]}
+      ],
+      "misreads": [
+        {"text": "Oru may read practical packing uncertainty as rejection, especially once the flower makes private stress public.", "source_refs": ["saueia-family-units", "burden-flowers"]}
+      ],
+      "must_not_know": [
+        {"text": "Oru cannot know the candle road's complete interpretation or future route accounting from one brightness change.", "source_refs": ["candle-roads", "mutable-memory"]}
+      ]
+    },
+    {
+      "speaker_id": "talar_outgoing_caretaker",
+      "known_context": [
+        {"text": "Talar knows the nursery care record, prior fever alarms, flower grooming sequence, and the handover standard.", "source_refs": ["breeding-grounds", "saueia-family-units"]}
+      ],
+      "beliefs": [
+        {"text": "Talar believes care is transferred only when another person can resume it from the archive and material arrangement.", "source_refs": ["saueia-family-units", "mobile-technologies"]}
+      ],
+      "misreads": [
+        {"text": "Talar may underweight the receiving family's route obligations because nursery continuity is the local priority.", "source_refs": ["breeding-grounds", "saueia-continent"]}
+      ],
+      "must_not_know": [
+        {"text": "Talar must not treat long familiarity as ownership of Oru's current private fear or final route choice.", "source_refs": ["saueia-family-units", "mutable-memory"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Senn, Oru, Talar, Daro, Pale Mica, this packing hollow, and this exact first departure are story-local inventions, not named vault canon.",
+      "source_refs": ["saueia-family-units", "saueia-body"]
+    },
+    {
+      "text": "Pale Mica's red, yellow, violet, and copper pattern meanings are local scene handles, not a complete universal burden-flower language.",
+      "source_refs": ["burden-flowers"]
+    },
+    {
+      "text": "The structured packing-hollow camera map supports this fixture only; it does not define every breeding ground's architecture.",
+      "source_refs": ["breeding-grounds"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "How much choice does a child ordinarily exercise over first-route timing, receiving family, and bonded-organism separation across different Sa'ueia regions?",
+      "blocks_training": false,
+      "notes": "The fixture gives Oru meaningful local boundaries without canonizing a continent-wide age or consent code."
+    },
+    {
+      "question": "What durable physical formats do Sa'ueia care archives use, and how are private memory layers permissioned?",
+      "blocks_training": false,
+      "notes": "Flexible membranes and fold-closed layers remain bounded visual elaboration; recurrence should trigger a technology-owner pass."
+    },
+    {
+      "question": "Do burden flowers recognize household membership across host transfer, or only repeated embodied care from specific individuals?",
+      "blocks_training": false,
+      "notes": "The fixture shows learned care response but does not invent a universal flower kinship category."
+    }
+  ]
+}

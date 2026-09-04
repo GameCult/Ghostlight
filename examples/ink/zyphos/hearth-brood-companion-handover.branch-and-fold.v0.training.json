@@ -1,0 +1,393 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "hearth-brood-companion-handover-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/zyphos/hearth-brood-companion-handover.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/hearth-brood-companion-handover.v0.json",
+  "visual_plan_ref": "examples/visual/zyphos/hearth-brood-companion-handover.branch-and-fold.v0.visual.json",
+  "scene_id": "hearth-brood-companion-handover-v0.first-route-packing-hollow",
+  "protagonist_agent_id": "senn_receiving_caretaker",
+  "npc_agent_ids": [
+    "oru_first_route_child",
+    "talar_outgoing_caretaker",
+    "daro_repair_kin",
+    "pale_mica_burden_flower",
+    "packing_hollow_candle_road",
+    "packing_hollow_lantern_roots"
+  ],
+  "purpose": "Warm domestic branch-and-fold fixture testing whether Sa'ueia kin-by-care survives pack limits, privacy, route cost, and a fallible burden-flower alarm during a child's first departure from communal nursery care.",
+  "local_awareness_summary": [
+    {
+      "text": "Senn knows the receiving family's pack capacity, watch assignments, current route opening, common burden-flower care, and visible ecological signals in the packing hollow.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/hearth-brood-companion-handover.v0.json",
+        "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md"
+      ]
+    },
+    {
+      "text": "Senn can smell Oru's visible stress and see Pale Mica's display, but cannot know with certainty whether the alarm means active illness, old immune memory, separation fear, hunger, or mixed causes.",
+      "source_refs": [
+        "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+        "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+      ]
+    },
+    {
+      "text": "Senn understands that the candle road and lantern roots are interested care-and-route parties whose signals can price access without owning the child, flower, or family.",
+      "source_refs": [
+        "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+        "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective stays with Senn's Sa'ueia body: four running legs, two chest manipulators, chemical-sensing facial fans, bare signaling patches, low work surfaces, and balanced flank equipment.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Sa'ueia.md",
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      },
+      {
+        "text": "The scene establishes ordinary packing, jokes, care instruction, and route timing before Pale Mica's bloom creates pressure.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Senn may arrange care, route, equipment, archive custody, and family labor; Senn cannot author Oru's private meaning, Pale Mica's complete signal, or the road's judgment.",
+        "source_refs": [
+          "examples/lore-grounding/zyphos/hearth-brood-companion-handover.v0.json"
+        ]
+      },
+      {
+        "text": "Oru's assent under route pressure is not treated as proof of free consent, and a burden-flower display begins a care question rather than ending it.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The care archive, family flank frame, flower sling, repair roll, mineral basin, mineral brushes, route cords, and three mineral spoons retain explicit placement and costs across folds.",
+        "source_refs": [
+          "examples/ink/zyphos/hearth-brood-companion-handover.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Kinship must become distributed care capacity, privacy boundaries, changed pack contents, watch assignments, or route shape rather than remain a declaration.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md"
+        ]
+      },
+      {
+        "text": "Every ending must distinguish child safety, companion care, family cohesion, route obligation, and the right to leave some private meaning untranslated.",
+        "source_refs": [
+          "examples/lore-grounding/zyphos/hearth-brood-companion-handover.v0.json"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make the burden flower property, a perfect diagnostic instrument, or a speaking child surrogate.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+        ]
+      },
+      {
+        "text": "Do not make delay consequence-free or imply that route cost proves care was morally wrong.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md",
+          "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through ordinary care preparation and an exposed private alarm before selecting one of eight state-gated endings.",
+    "choice_layers": [
+      "ordinary_first_departure",
+      "exposed_private_alarm",
+      "route_kinship_commitment"
+    ],
+    "variables": [
+      "child_trust",
+      "flower_credibility",
+      "care_capacity",
+      "privacy_boundary",
+      "route_credit",
+      "departure_time",
+      "family_cohesion",
+      "flower_attached"
+    ],
+    "ending_gates": [
+      "ending_shared_care_success",
+      "ending_shared_care_cost",
+      "ending_divided_route_success",
+      "ending_divided_route_cost",
+      "ending_separation_success",
+      "ending_separation_cost",
+      "ending_defer_success",
+      "ending_defer_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "fit_flower_sling",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Buy concrete flower-care capacity by converting a repair roll into a lit mineral sling.",
+      "state_basis": [
+        "Sa'auei'a equipment is portable and repairable.",
+        "Burden flowers require mineral access, light, grooming, and travel."
+      ],
+      "reviewed_consequences": [
+        "Raises care_capacity and flower_credibility while spending departure_time; later pack prose, shared-care gating, and visual sling state read the change."
+      ],
+      "training_hooks": ["care_as_pack_cost", "portable_cross_species_support", "time_spent_on_care"]
+    },
+    {
+      "branch_id": "distribute_flower_care",
+      "ink_path": "routine_choice",
+      "action_type": "speak",
+      "actor_intent": "Move flower care out of one caretaker's head by assigning Daro the second watch.",
+      "state_basis": [
+        "First-departure handover requires named carers and shared competence."
+      ],
+      "reviewed_consequences": [
+        "Raises care_capacity, family_cohesion, and child_trust; later folded prose and the divided-route ending read distributed competence."
+      ],
+      "training_hooks": ["distributed_care", "kinship_as_redundancy", "ordinary_instruction"]
+    },
+    {
+      "branch_id": "child_demonstrates_signals",
+      "ink_path": "routine_choice",
+      "action_type": "gesture",
+      "actor_intent": "Let Oru teach the receiving family the flower's local signal boundaries.",
+      "state_basis": [
+        "Oru has situated knowledge of Pale Mica's nursery care and recurring displays."
+      ],
+      "reviewed_consequences": [
+        "Raises child_trust and privacy_boundary while spending departure_time; establishes the later rule that red means ask rather than announce."
+      ],
+      "training_hooks": ["child_as_knowledge_holder", "signal_not_verdict", "body_specific_gesture"]
+    },
+    {
+      "branch_id": "bound_care_archive",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Transfer useful care thresholds while allowing Oru to close private archive layers.",
+      "state_basis": [
+        "Sa'auei'a use portable archives and family membership does not erase individual boundary negotiation."
+      ],
+      "reviewed_consequences": [
+        "Raises care_capacity, privacy_boundary, and route_credit; later archive imagery, shared-care gate, road width, and separation gate read those variables."
+      ],
+      "training_hooks": ["bounded_memory_transfer", "privacy_as_care", "portable_archive_custody"]
+    },
+    {
+      "branch_id": "ask_child_first",
+      "ink_path": "bloom_choice",
+      "action_type": "speak",
+      "actor_intent": "Ask Oru to bound the care question before adults interpret the exposed alarm.",
+      "state_basis": [
+        "The flower's red display is fallible testimony and Oru retains person-scale meaning."
+      ],
+      "reviewed_consequences": [
+        "Raises child_trust, privacy_boundary, and flower_credibility while spending departure_time; later posture, archive closure, and shared-care or separation gates read the changes."
+      ],
+      "training_hooks": ["child_privacy_boundary", "listener_uncertainty", "care_before_explanation"]
+    },
+    {
+      "branch_id": "offer_supported_release",
+      "ink_path": "bloom_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Offer mineral, light, and time so Pale Mica can release Oru without being torn away.",
+      "state_basis": [
+        "Burden flowers can release and regrip slowly and cooperate with mineral washing, careful grooming, and safe light."
+      ],
+      "reviewed_consequences": [
+        "Raises care_capacity, flower_credibility, child_trust, and privacy_boundary; sets flower_attached to false; and spends departure_time. Placement persists through folds and enables consensual temporary separation."
+      ],
+      "training_hooks": ["cross_species_consent_proxy", "object_position_persistence", "supported_detachment"]
+    },
+    {
+      "branch_id": "shelter_private_signal",
+      "ink_path": "bloom_choice",
+      "action_type": "move",
+      "actor_intent": "Use Senn's body as a privacy screen while the archive is compared.",
+      "state_basis": [
+        "A long-bodied Sa'ueia adult can stand broadside between the central cradle and routeward ramp."
+      ],
+      "reviewed_consequences": [
+        "Raises privacy_boundary and child_trust while lowering route_credit; later road width and route-aware endings preserve the cost."
+      ],
+      "training_hooks": ["embodied_privacy", "care_route_tradeoff", "nonhuman_spatial_action"]
+    },
+    {
+      "branch_id": "disclose_to_road",
+      "ink_path": "bloom_choice",
+      "action_type": "show_object",
+      "actor_intent": "Let the candle road witness the alarm to preserve route trust and access.",
+      "state_basis": [
+        "Candle roads remember sickness disclosure, foot pressure, and family conduct."
+      ],
+      "reviewed_consequences": [
+        "Raises route_credit and flower_credibility while lowering privacy_boundary and child_trust; later road imagery and trust postures expose both benefits and harm."
+      ],
+      "training_hooks": ["public_health_private_cost", "ecological_witness", "assent_not_consent"]
+    },
+    {
+      "branch_id": "carry_child_and_companion",
+      "ink_path": "final_choice",
+      "action_type": "authorize",
+      "actor_intent": "Take Oru and Pale Mica together under distributed care rather than classify one as optional cargo.",
+      "state_basis": [
+        "Success requires care capacity, child trust, flower credibility, family cohesion, and usable route credit."
+      ],
+      "reviewed_consequences": [
+        "Routes to shared-care success or a capacity failure; the ending reads flower attachment and demonstrates or falsifies the kinship claim."
+      ],
+      "training_hooks": ["kinship_as_distributed_cross_body_obligation", "state_gated_ending"]
+    },
+    {
+      "branch_id": "divide_route_for_care",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Change the family's travel shape so the child and flower can move at nursery pace.",
+      "state_basis": [
+        "Success requires family cohesion, minimum care capacity, and remaining departure time."
+      ],
+      "reviewed_consequences": [
+        "Routes to a coherent temporary family split or a distributed-care failure with missing supplies."
+      ],
+      "training_hooks": ["family_shape_changes_for_care", "route_split_without_worldline_split"]
+    },
+    {
+      "branch_id": "support_temporary_separation",
+      "ink_path": "final_choice",
+      "action_type": "negotiate",
+      "actor_intent": "Let Pale Mica remain in nursery care while preserving the child's bond and return obligation.",
+      "state_basis": [
+        "Success requires supported release, a strong privacy boundary, and sufficient child trust."
+      ],
+      "reviewed_consequences": [
+        "Routes to negotiated separation with paired route cords or imposed logistics that damages child trust and warning access."
+      ],
+      "training_hooks": ["separation_without_disowned_kinship", "consent_state_gate"]
+    },
+    {
+      "branch_id": "defer_first_departure",
+      "ink_path": "final_choice",
+      "action_type": "refuse",
+      "actor_intent": "Protect care continuity by refusing the current departure window and accepting follow-on obligations.",
+      "state_basis": [
+        "Success depends on enough route credit and family cohesion to reorganize without abandoning downstream commitments."
+      ],
+      "reviewed_consequences": [
+        "Routes to useful delay or a safe but costly missed-route ending; neither path erases trade, nursery-capacity, or relationship consequences."
+      ],
+      "training_hooks": ["refusal_as_care", "safety_without_absolution", "route_obligation_cost"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable memory or relationship update for Senn, Oru, Talar, Daro, Pale Mica, the candle road, or lantern roots",
+      "Promotion of story-local names, color grammar, archive form, or packing-hollow geometry into Zyphos canon",
+      "Any claim that a burden-flower signal establishes a certain diagnosis or speaks for the child",
+      "Website rendering readiness if the structured camera map proves insufficient for image-to-image continuity"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex titled elaborator applying the four named Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "reviewer_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 5,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 4
+        },
+        "notes": [
+          "Warm domestic comedy establishes household, body plan, objects, and stakes before the alarm.",
+          "The shared-care gate was repaired so Daro's second-watch commitment requires prior family-cohesion work."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "notes": [
+          "The fixture remains inside the authored kin-by-care elaboration and existing burden-flower, breeding-ground, candle-road, lantern-tree, and Sa'ueia body constraints.",
+          "Story-local names, color grammar, archive form, and packing-hollow geometry remain noncanonical boundaries in the grounding digest."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "notes": [
+          "Eleven replay anchors separate locality, routine, alarm, response, threshold, and ending families.",
+          "Repaired success-only route cords and archive strips in ending bases, and moved flower placement into explicit state modifiers."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 5,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "notes": [
+          "The structured scene_set fixes cradle, nursery, basin, ramp, road lip, exterior lanes, occluder, staging, props, and nine camera slots.",
+          "Added explicit exterior main and grove lanes so the divided-route ending no longer depends on an unowned route fork."
+        ]
+      }
+    ],
+    "review_notes": [
+      "Mechanical review found all twelve material branches represented in the sidecar, all eight variables written and later read, and all eight endings reachable as success or cost families.",
+      "Supported separation was initially unreachable; the supported-release action now raises child trust and privacy boundary as well as care capacity and flower credibility.",
+      "No blocker or major finding remains after revision. The Ink source was not compiled because this pass forbids installing or running an Ink compiler."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true
+    }
+  }
+}
