@@ -429,7 +429,7 @@ fn check_preconditions(
                 let Some(audience) = bound_audience(via, bindings) else {
                     continue;
                 };
-                if !super::audience(state, actor, &audience).contains(&actor) {
+                if !super::can_broadcast(state, actor, &audience) {
                     rejections.push(ActionMismatch::NoAudience {
                         precondition: index,
                     });
@@ -868,9 +868,9 @@ mod tests {
         over_place, over_subject, player, reject_owner, submit_owner,
     };
     use crate::world::{
-        AffordanceKindName, AuthenticatedCaller, CallerId, CommandBody, Declaration, EntityKind,
-        ProposedEffect, RoleBinding, Statement, SubmitReceipt, WorldEffect, WorldKernel,
-        WorldPatch, WorldSnapshot, apply_effect,
+        AffordanceKindName, AuthenticatedCaller, AuthoredSource, CallerId, CommandBody, Confidence,
+        Declaration, EffectSlot, EntityKind, ProposedEffect, RoleBinding, Statement, SubmitReceipt,
+        WorldEffect, WorldKernel, WorldPatch, WorldSnapshot, apply_effect,
     };
     use std::collections::BTreeSet;
 
@@ -2530,5 +2530,62 @@ mod tests {
                 "the committed event is not what reduce produced"
             );
         }
+    }
+
+    /// `resolve_patch`'s candidate knowledge map never models `Communicate`'s
+    /// fan-out (see the comment beside its construction in `patch.rs`), and
+    /// that omission is safe only because no `ComponentOpKind` an affordance
+    /// may declare can lower to a knowledge write carrying
+    /// `KnowledgeSource::Told`. `AcquireKnowledge` is the only
+    /// `ComponentOpKind` that touches knowledge at all, and `lower` fixes its
+    /// source to `AuthoredSource::Witnessed` here, at the one call site that
+    /// turns a declared slot into a `ComponentOp` — a type that has no `Told`
+    /// variant to begin with. This test pins that lowering so a future author
+    /// cannot widen it without this assertion naming the change.
+    #[test]
+    fn no_component_op_kind_lowers_to_a_told_knowledge_write() {
+        let directory = tempfile::tempdir().unwrap();
+        let bench = bench(directory.path(), "AcquireKnowledgeLowering");
+        let entry = Affordance {
+            kind: AffordanceKindName("witness".into()),
+            roles: Vec::new(),
+            preconditions: Vec::new(),
+            effect_slots: vec![EffectSlot {
+                op_kind: ComponentOpKind::AcquireKnowledge {
+                    confidence: Confidence::Believed,
+                },
+                roles: vec![Role("subject".into()), Role("fact".into())],
+                bounds: Bounds::None,
+            }],
+            outcome_bands: vec![OutcomeBand {
+                weight: 1,
+                effects: vec![0],
+            }],
+            carries_speech: false,
+        };
+        let bindings = BTreeMap::from([
+            (Role("subject".into()), Target::Subject(bench.clerk)),
+            (Role("fact".into()), Target::Entity(bench.tithe)),
+        ]);
+        let invocation = DecisionInvocation {
+            affordance: bench.carry,
+            bindings: Vec::new(),
+            proposed: vec![ProposedEffect {
+                slot: 0,
+                magnitude: Magnitude::None,
+            }],
+            speech: None,
+        };
+        let lowered = lower(&entry, 0, &invocation, &bindings).expect("the acquire slot lowers");
+        assert_eq!(
+            lowered,
+            vec![ComponentOp::AcquireKnowledge {
+                subject: PatchRef::Existing(bench.clerk),
+                fact: PatchRef::Existing(bench.tithe),
+                source: AuthoredSource::Witnessed,
+                confidence: Confidence::Believed,
+            }],
+            "AcquireKnowledge must lower with a Witnessed source, never a forged teller"
+        );
     }
 }

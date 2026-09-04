@@ -1674,7 +1674,10 @@ struct RouteCandidate {
 /// [`resolve_patch`] and `action::exercise`. Deterministic on purpose: journal
 /// replay recomputes `reduce` and requires effect equality, so a reduce arm can
 /// never draw a `Uuid::new_v4`. Preimage fields are length-prefixed where they
-/// are variable-width, so the concatenation is unambiguous.
+/// are variable-width, so the concatenation is unambiguous — `discriminator`
+/// included: a bare presence byte followed by a length prefix means
+/// `Some("")` and `None` write different bytes, where an unprefixed
+/// `Some("")` would have written nothing, same as `None`.
 pub(super) fn derive_id(
     namespace: &str,
     world_id: WorldId,
@@ -1688,8 +1691,13 @@ pub(super) fn derive_id(
     hasher.update(command_id.0.as_bytes());
     hasher.update((handle.0.len() as u64).to_be_bytes());
     hasher.update(handle.0.as_bytes());
-    if let Some(discriminator) = discriminator {
-        hasher.update(discriminator.as_bytes());
+    match discriminator {
+        Some(discriminator) => {
+            hasher.update([1u8]);
+            hasher.update((discriminator.len() as u64).to_be_bytes());
+            hasher.update(discriminator.as_bytes());
+        }
+        None => hasher.update([0u8]),
     }
     let mut bytes = [0u8; 16];
     bytes.copy_from_slice(&hasher.finalize()[..16]);
@@ -2670,6 +2678,20 @@ pub(super) fn resolve_patch(
     // `NoOperationEffect` before any ID is minted. A `Communicate` never enters:
     // its fan-out is re-derived at apply, and a telling is a canonical change
     // whatever the room holds.
+    //
+    // This candidate map does not model `Communicate` at all — it has no case
+    // that inserts a `Told` entry into it, so it cannot answer "does this
+    // patch already know what a pending telling would land." That is safe
+    // today only because no `ComponentOp` can construct a `KnowledgeSource`
+    // carrying `Told`: `AcquireKnowledge` takes an `AuthoredSource`, and that
+    // type has exactly two variants, `Witnessed` and `Evidenced` — `Told` is
+    // unrepresentable there by construction (see `AuthoredSource`'s own doc
+    // comment), and `action::no_component_op_kind_lowers_to_a_told_knowledge_write`
+    // pins the one lowering site that could otherwise drift. If a future
+    // operation is ever given the power to write `Told` directly — bypassing
+    // `Communicate`'s own apply-time fan-out — it must model that fan-out into
+    // this candidate graph first, or `resolve_patch` will silently reason
+    // about a knowledge state the apply pass will not produce.
     let mut knowledge: BTreeMap<(Key<SubjectId>, Key<EntityId>), KnowledgeCandidate> = state
         .knowledge
         .iter()
@@ -5593,6 +5615,47 @@ mod tests {
                 .state
                 .subjects
                 .contains_key(&SubjectId(would_be[0]))
+        );
+    }
+
+    /// `discriminator` is length-prefixed like `handle`, so `Some("")` and
+    /// `None` write different bytes into the preimage and cannot collide —
+    /// and neither can any other pair of discriminators whose bytes would
+    /// otherwise concatenate to the same string.
+    #[test]
+    fn derive_id_does_not_collide_some_empty_discriminator_with_none() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, _) = WorldKernel::create(
+            &directory.path().join("world.cc"),
+            creation(CommandId::new(), "DeriveId"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let world_id = kernel.state.world_id;
+        let command_id = CommandId::new();
+        let handle = DraftHandle::new("a-handle");
+        assert_ne!(
+            derive_id(SUBJECT_NAMESPACE, world_id, command_id, &handle, None),
+            derive_id(SUBJECT_NAMESPACE, world_id, command_id, &handle, Some("")),
+        );
+        // A concatenation-style collision across the handle/discriminator
+        // boundary: without a length prefix on the discriminator, "ab" + ""
+        // and "a" + "b" would hash identically.
+        assert_ne!(
+            derive_id(
+                SUBJECT_NAMESPACE,
+                world_id,
+                command_id,
+                &DraftHandle::new("ab"),
+                Some(""),
+            ),
+            derive_id(
+                SUBJECT_NAMESPACE,
+                world_id,
+                command_id,
+                &DraftHandle::new("a"),
+                Some("b"),
+            ),
         );
     }
 

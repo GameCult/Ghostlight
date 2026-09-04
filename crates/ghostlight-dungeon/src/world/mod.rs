@@ -18,7 +18,7 @@ pub(crate) use controllers::{
     NarrativeRun, OperationalCapture, OperationalDecision, OperationalPending, OperationalRun,
     SourceRange, SubmissionDisposition, TranslationGapSummary,
 };
-pub(crate) use mailbox::{MailboxError, WorldMailbox};
+pub(crate) use mailbox::{ControllerPort, MailboxError, WorldMailbox};
 pub(crate) use patch::{
     AccessKind, Affordance, AffordanceKindName, Audience, AuthoredSource, AuthorityGrant,
     AuthorityKindName, AuthorityTarget, Bounds, ChannelRecord, ComponentOpKind, Confidence, Cost,
@@ -2090,7 +2090,7 @@ fn apply_operation(
                     "a telling names no live speaker or fact".into(),
                 ));
             }
-            if !audience(state, *speaker, to).contains(speaker) {
+            if !can_broadcast(state, *speaker, to) {
                 return Err(KernelError::Invariant(
                     "a speaker is outside its own audience".into(),
                 ));
@@ -2155,9 +2155,13 @@ fn apply_operation(
 }
 
 /// The label every minted claim carries. A label is a name, not a transcript:
-/// the statement is never copied into it and the label is never derived from it,
-/// so the utterance has one home in state. Labels resolve no references, so
-/// identical labels across every claim are unremarkable.
+/// the statement is never copied into it and the label is never derived from
+/// it. Labels resolve no references, so identical labels across every claim
+/// are unremarkable. The statement itself lives in `facts[fact].statement`
+/// and is also carried inside the committed `AssertClaim` effect on the
+/// event that minted it; `facts` is the one readable home a projection may
+/// consult, and the event copy is the replay witness, never a second read
+/// surface.
 const CLAIM_LABEL: &str = "claim";
 
 /// Whether a channel's reach and controller name live structure.
@@ -2201,7 +2205,7 @@ fn audience(state: &WorldState, actor: SubjectId, of: &Audience) -> BTreeSet<Sub
             let Some(record) = state.channels.get(channel) else {
                 return BTreeSet::new();
             };
-            let mut inside: BTreeSet<SubjectId> = match &record.reach {
+            match &record.reach {
                 Reach::Subjects(members) => members.clone(),
                 Reach::Place(root) => state
                     .positions
@@ -2211,14 +2215,29 @@ fn audience(state: &WorldState, actor: SubjectId, of: &Audience) -> BTreeSet<Sub
                     })
                     .map(|(subject_id, _)| *subject_id)
                     .collect(),
-            };
-            // The controller may speak on its own channel whether or not it
-            // stands inside its reach: the horn belongs to the temple.
-            if let Some(controller) = record.controller {
-                inside.insert(controller);
             }
-            inside
         }
+    }
+}
+
+/// Whether an actor may broadcast into an audience: either the actor stands
+/// inside the declared reach, or — for a channel — the actor is that
+/// channel's controller. The controller's privilege is narrow: it lets the
+/// horn sound from outside the room, but it does not admit the controller to
+/// the audience itself. A controller outside its channel's reach gains no
+/// knowledge from its own telling and is not a target another actor can
+/// reach through that channel; `audience()` stays the one statement of who is
+/// inside, and this is the one statement of who may speak.
+fn can_broadcast(state: &WorldState, actor: SubjectId, of: &Audience) -> bool {
+    if audience(state, actor, of).contains(&actor) {
+        return true;
+    }
+    match of {
+        Audience::Channel(channel) => state
+            .channels
+            .get(channel)
+            .is_some_and(|record| record.controller == Some(actor)),
+        Audience::Colocated => false,
     }
 }
 
@@ -2999,9 +3018,10 @@ mod tests {
     use super::patch::kernel_speak_grant;
     use super::*;
 
-    /// What a committed event actually asserted, read from the one home of an
-    /// utterance: the minted claim's statement. No other partition holds those
-    /// bytes.
+    /// What a committed event actually asserted, read from the one readable
+    /// home of an utterance: `facts[fact].statement`. The committed event's
+    /// own `AssertClaim` effect carries the same bytes as the replay witness,
+    /// but no projection reads that copy; `facts` is the surface.
     pub(super) fn spoken<'a>(state: &'a WorldState, event: &DecisionEvent) -> Option<&'a str> {
         event
             .speech
@@ -8212,13 +8232,11 @@ mod soul_knowledge_tests {
             .expect("a speech act names its claim")
     }
 
-    /// A channel's controller is folded into `audience` itself rather than only
-    /// into the `CanBroadcast` check, so it is a recipient of every telling on
-    /// its own channel and not merely a permitted speaker. A controller standing
-    /// outside its channel's reach therefore learns what is broadcast there.
-    ///
-    /// This test does not endorse that reach; it pins it, because the widening
-    /// is a knowledge path the declared reach does not describe.
+    /// A channel's controller carries exactly one privilege: `can_broadcast`
+    /// lets it sound the horn from outside the declared reach. `audience`
+    /// itself never folds the controller in, so the controller is not a
+    /// recipient of a telling it did not stand inside, whether the telling is
+    /// its own or another subject's.
     #[test]
     fn soul_a_channel_controller_hears_what_it_is_out_of_reach_of() {
         let directory = tempfile::tempdir().unwrap();
@@ -8239,6 +8257,37 @@ mod soul_knowledge_tests {
             Reach::Subjects(BTreeSet::from([speech.listener]))
         );
 
+        // The controller may still speak from outside its own reach — the horn
+        // belongs to the temple — and the listener, who stands inside the
+        // reach, hears it.
+        utter(
+            &mut kernel,
+            &active,
+            speech.speaker,
+            say(
+                speech.proclaim,
+                vec![binding("channel", Target::Entity(speech.horn))],
+                "The horn is mine to sound.",
+            ),
+        )
+        .expect("the controller may speak on its own channel");
+        let controllers_claim = minted_claim(&kernel);
+        assert_eq!(
+            knows(&kernel, speech.listener, controllers_claim),
+            Some(Knowledge {
+                confidence: Confidence::Believed,
+                source: KnowledgeSource::Told {
+                    by: speech.speaker,
+                    via: Some(speech.horn),
+                },
+            })
+        );
+        // The controller gains no knowledge of its own claim: it is outside
+        // the reach, and speaking privilege is not audience membership.
+        assert_eq!(knows(&kernel, speech.speaker, controllers_claim), None);
+
+        // Now the listener speaks on the same channel.
+        let active = kernel.snapshot().unwrap();
         utter(
             &mut kernel,
             &active,
@@ -8253,17 +8302,12 @@ mod soul_knowledge_tests {
         let claim = minted_claim(&kernel);
 
         // The declared reach names the listener alone, and the listener spoke,
-        // so the declared fan-out is empty. The controller learns it anyway.
+        // so the declared fan-out is empty. The controller — outside the
+        // reach, and not the speaker this time either — learns nothing.
         assert_eq!(
             knows(&kernel, speech.speaker, claim),
-            Some(Knowledge {
-                confidence: Confidence::Believed,
-                source: KnowledgeSource::Told {
-                    by: speech.listener,
-                    via: Some(speech.horn),
-                },
-            }),
-            "the controller is a recipient, not only a permitted speaker"
+            None,
+            "the controller does not gain knowledge through fan-out"
         );
         assert_eq!(knows(&kernel, speech.bystander, claim), None);
         assert_eq!(knows(&kernel, speech.stranger, claim), None);
@@ -8649,11 +8693,14 @@ mod soul_knowledge_tests {
         }
     }
 
-    /// The utterance does not have exactly one home in `WorldState`. It is the
-    /// minted claim's statement in `facts`, and it is also stored a second time
-    /// inside the committed event's own `AssertClaim` effect. Those two are the
-    /// whole of it, and neither reaches a subject-facing surface, but the
-    /// "one home" claim is false as written.
+    /// The statement's bytes are stored twice, and only one of the two copies
+    /// is a read surface. `facts[fact].statement` is the readable home:
+    /// `spoken()` and every projection consult it. The committed event's own
+    /// `AssertClaim` effect carries the same bytes as the replay witness —
+    /// required so `apply_effect` can re-derive the identical event on replay
+    /// without re-deriving the statement from elsewhere — but nothing reads
+    /// that copy back out. Those two are the whole of it, and neither reaches
+    /// a subject-facing surface.
     #[test]
     fn soul_the_utterance_is_stored_in_facts_and_in_the_committed_effect() {
         let directory = tempfile::tempdir().unwrap();
@@ -8686,7 +8733,7 @@ mod soul_knowledge_tests {
                 statement: Statement::new(text).unwrap(),
                 by: speech.speaker,
             },
-            "the committed event stores the statement a second time"
+            "the event carries the statement as a replay witness, not a second read surface"
         );
         // Those two are the whole of it: strip `facts` and `events` and the
         // rest of the state is silent.
@@ -8709,9 +8756,12 @@ mod soul_knowledge_tests {
     /// `operator_log` is unscoped by construction: it renders every committed
     /// act's utterance regardless of who holds knowledge of it. That is correct
     /// for the human operator's story feed and is exactly why it must never
-    /// become reachable from a controller lane. `ControllerRunner` owns a
-    /// `WorldMailbox`, and `WorldMailbox::operator_log` is `pub(crate)`, so the
-    /// separation is a convention about who calls it, not a type boundary.
+    /// become reachable from a controller lane. `ControllerRunner` no longer
+    /// owns a `WorldMailbox`; it owns a `ControllerPort`, which forwards
+    /// exactly the five requests a controller lane makes and has no
+    /// `operator_log` method at all. The separation is a type boundary now:
+    /// `WorldMailbox::operator_log` stays `pub(crate)` for the operator/story
+    /// feed owner, but nothing inside `controllers.rs` can name it.
     #[test]
     fn soul_the_operator_log_is_unscoped_and_must_stay_owner_only() {
         let directory = tempfile::tempdir().unwrap();

@@ -399,6 +399,73 @@ impl WorldMailbox {
     }
 }
 
+/// The narrow port `ControllerRunner` is built against, instead of the whole
+/// `WorldMailbox`. It forwards exactly the five requests a controller lane
+/// makes today — a snapshot to read from, and the four commit paths a
+/// controller may exercise or decline through — and names nothing else. In
+/// particular it has no `operator_log` method: "no controller lane calls the
+/// human operator's story feed" used to be a convention about who calls a
+/// `pub(crate)` method on `WorldMailbox`. Now it is a fact about which methods
+/// this type has. Adding `.operator_log()` to `controllers.rs` fails to
+/// compile, because `ControllerPort` never named it; that failure is the
+/// proof, not a test that runs and passes.
+#[derive(Clone)]
+pub(crate) struct ControllerPort {
+    mailbox: WorldMailbox,
+}
+
+impl ControllerPort {
+    pub(crate) fn new(mailbox: WorldMailbox) -> Self {
+        Self { mailbox }
+    }
+
+    pub(crate) async fn snapshot(&self) -> Result<WorldSnapshot, MailboxError> {
+        self.mailbox.snapshot().await
+    }
+
+    pub(crate) async fn controller_receipt(
+        &self,
+        command_id: CommandId,
+        opportunity: &super::DecisionOpportunity,
+        invocation: &super::DecisionInvocation,
+    ) -> Result<Option<super::CommitReceipt>, MailboxError> {
+        self.mailbox
+            .controller_receipt(command_id, opportunity, invocation)
+            .await
+    }
+
+    pub(crate) async fn controller_decline_receipt(
+        &self,
+        command_id: CommandId,
+        opportunity: &super::DecisionOpportunity,
+    ) -> Result<Option<super::CommitReceipt>, MailboxError> {
+        self.mailbox
+            .controller_decline_receipt(command_id, opportunity)
+            .await
+    }
+
+    pub(crate) async fn submit_controller(
+        &self,
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+        invocation: DecisionInvocation,
+    ) -> Result<SubmitReceipt, MailboxError> {
+        self.mailbox
+            .submit_controller(command_id, opportunity, invocation)
+            .await
+    }
+
+    pub(crate) async fn submit_controller_decline(
+        &self,
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+    ) -> Result<SubmitReceipt, MailboxError> {
+        self.mailbox
+            .submit_controller_decline(command_id, opportunity)
+            .await
+    }
+}
+
 fn mailbox_outcome(error: KernelError) -> MailboxError {
     match error {
         KernelError::RecoveryRequired { command_id } => MailboxError::OutcomeUnknown { command_id },

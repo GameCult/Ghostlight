@@ -8,10 +8,11 @@
 
 use crate::world::{
     AffordanceId, AffordanceSnapshot, AuthorityGrant, Bounds, CommandId, CommitReceipt, Confidence,
-    ControllerMode, Cost, DecisionInvocation, DecisionOpportunity, DependencyTarget, EdgeId,
-    EntityId, EntityKind, FactStandingView, KernelError, KnowledgeSnapshot, KnowledgeSource,
-    Magnitude, MailboxError, OfficeSnapshot, ProposedEffect, Quantity, RefKind, RoleBinding,
-    Statement, SubjectId, SubjectSnapshot, SubmitReceipt, Target, WorldMailbox, WorldSnapshot,
+    ControllerMode, ControllerPort, Cost, DecisionInvocation, DecisionOpportunity,
+    DependencyTarget, EdgeId, EntityId, EntityKind, FactStandingView, KernelError,
+    KnowledgeSnapshot, KnowledgeSource, Magnitude, MailboxError, OfficeSnapshot, ProposedEffect,
+    Quantity, RefKind, RoleBinding, Statement, SubjectId, SubjectSnapshot, SubmitReceipt, Target,
+    WorldMailbox, WorldSnapshot,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -1675,7 +1676,7 @@ enum ControllerWorldSubmission {
 }
 
 pub(crate) struct ControllerRunner {
-    mailbox: WorldMailbox,
+    mailbox: ControllerPort,
     inference: Arc<dyn InferencePort>,
     work: Arc<dyn ControllerWorkStore>,
     models: ControllerModels,
@@ -1684,7 +1685,11 @@ pub(crate) struct ControllerRunner {
 impl ControllerRunner {
     /// Opens the complete production controller organ. Runtime supplies
     /// deployment configuration, but cannot replace either the inference
-    /// transport or the durable controller-work owner.
+    /// transport or the durable controller-work owner. The caller still hands
+    /// over a whole `WorldMailbox` — that stays the one owner-facing type —
+    /// but this constructor is where it narrows to a `ControllerPort` before
+    /// the runner ever sees it, so nothing inside this module can reach past
+    /// the five requests a controller lane makes.
     pub(crate) fn open(
         mailbox: WorldMailbox,
         connector_endpoint: SocketAddr,
@@ -1703,7 +1708,7 @@ impl ControllerRunner {
         )?;
         let work = CultCacheControllerWorkStore::open(controller_work_path)?;
         Ok(Self {
-            mailbox,
+            mailbox: ControllerPort::new(mailbox),
             inference: Arc::new(inference),
             work: Arc::new(work),
             models,
@@ -1718,7 +1723,7 @@ impl ControllerRunner {
         models: ControllerModels,
     ) -> Self {
         Self {
-            mailbox,
+            mailbox: ControllerPort::new(mailbox),
             inference,
             work,
             models,
@@ -3802,6 +3807,41 @@ mod tests {
             schema_id: Some(CONTROLLER_WORK_SCHEMA.into()),
         };
         assert!(decode_controller_work(&row).is_err());
+    }
+
+    /// The schema bump to `v5` refuses a prior store rather than migrating it
+    /// silently: `open` walks every row and demands both the row type and the
+    /// schema id match the current constants, so a `controller_work.v4` row
+    /// left over from before the bump is an open-time error, not a quietly
+    /// dropped or reinterpreted checkpoint.
+    #[test]
+    fn a_controller_work_v4_row_is_refused_at_open() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("controller-work.cc");
+        let command_id = CommandId::new();
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let work = operational_in_flight(
+            command_id,
+            &opportunity,
+            "Hold the bridge.",
+            "operational-model",
+            vec![],
+        );
+        {
+            let mut store = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
+            let row = CultCacheEnvelope {
+                key: store_key(command_id).unwrap(),
+                r#type: "controller_work.v4".into(),
+                payload: rmp_serde::to_vec_named(&work).unwrap(),
+                stored_at: Utc::now().to_rfc3339(),
+                schema_id: Some("ghostlight.controller_work.v4".into()),
+            };
+            store.push(&row).unwrap();
+        }
+        let Err(error) = CultCacheControllerWorkStore::open(&path) else {
+            panic!("a v4 row was accepted by the v5 store");
+        };
+        assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
     }
 
     #[test]
