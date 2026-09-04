@@ -1,0 +1,831 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "veil-welfare-exception-chain-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/veil-welfare-exception-chain-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/veil-welfare-exception-chain-v0.branch-and-fold.v0.training.json",
+  "scene_id": "veil-welfare-exception-chain-v0.second-count-before-audit",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a NeuroSyn welfare-record disclosure fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for ordinary reconciliation, the second count, compartmented record custody, the rejected-event receipt, the early audit, four disclosure routes, and state-gated aftermaths.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the booth establishing frame, ordinary count, technical routine, routine decision, branch-aware routine fold, rejected receipt, evidence custody decision, auditor arrival, final disclosure threshold, and four ending families. The first appearance of the matching timecodes occupies its own object-closeup frame.",
+    "prompting_rule": "Each base image prompt supplies its complete visible room slice, lighting, materials, bodies, interfaces, and prop positions for a general image model. Prompt assembly adds the global style cue, refs only for visible characters, and triggered state or branch modifiers.",
+    "global_style_cue": "Style: bleak workplace-noir science-fiction illustration with dry humane observation, ink-wash shadows, restrained rust red and monitor amber against cold blue-gray metal, tactile paper receipts and worn industrial surfaces, readable silhouettes, cinematic framing designed for click-through interactive fiction.",
+    "prompt_assembly_rule": "Assemble each image prompt from global_style_cue, the scene base_image_prompt, visual refs for named characters and groups listed in visible_characters, and triggered state_image_modifiers or global_branch_image_modifiers. Continuity notes stay in tooling. Every render begins from the declared camera-specific scene-set input when that blockout exists.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture revisits one booth from several angles and makes sightlines, the sample drawer, paper custody, and the corridor entrance consequential. This plan defines stable zones, routes, cameras, occluders, staging slots, and receipt states for a future blockout.",
+      "future_scene_set_need": "Before high-consistency website rendering, construct a plan-view or 3D blockout from the embedded scene_set and provide camera-specific inputs for all repeated booth views."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "veil_booth_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view from the south corridor door into a compact rectangular corporate welfare reconciliation booth on Mars. The west wall holds a pale treatment console, a label printer, locked medication drawers, and stacked paper tickets. The east wall holds a dark interface calibration rack with cable loops, sensor bars, and a narrow thermal rejection printer. A waist-high steel counter runs across the middle toward a ribbed observation window on the north wall. A two-sided steel sample drawer sits beneath the window; uplifted black ravens perch in a dim aviary beyond the glass. A red shred slot stands beside the south door. Cold blue-gray panels, worn floor strips, amber monitor light, and one warm counter lamp make each record system visibly separate.",
+        "visible_characters": [
+          {
+            "agent_id": "aviary_ravens",
+            "default_stance": "several ravens on aluminum perches beyond the north observation window",
+            "visual_ref": "visual_character_refs.groups.aviary_ravens"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Use the south-door camera looking north. Treatment equipment stays west, calibration equipment east, counter and sample drawer center, observation window north, shred slot southwest.",
+          "The booth is a records workroom adjoining an aviary, not the whole containment annex."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_second_count",
+        "ink_anchor": "ordinary_count",
+        "base_image_prompt": "Medium view across the central steel counter toward the north observation window. Tava Mirren, a brown-skinned middle-aged woman with one shaved temple, a worn blue-gray contractor coat, knitted green collar, receipt cuff, and ink-stained fingers, sorts seven thumb-sized numbered medication seals beside six glowing treatment entries. Beyond ribbed glass, Latch, a compact glossy black raven with oil-blue feather sheen and a small silver interface band on the right leg, taps an aluminum perch above a bandaged juvenile raven. The west treatment console casts soft amber light over the paper count; dim aviary lamps hold the ravens in cooler shadow.",
+        "visible_characters": [
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "standing at the west side of the counter, counting seals under the lamp",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "on the lower aluminum perch beyond glass, head angled toward Tava and the juvenile",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          },
+          {
+            "agent_id": "aviary_ravens",
+            "default_stance": "one bandaged juvenile below Latch and several distant ravens",
+            "visual_ref": "visual_character_refs.groups.aviary_ravens"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The ribbed glass allows body posture and large objects to read while obscuring fine paper text on the far side.",
+          "Latch uses avian head angle, beak, claw, perch position, wing tension, and tap rhythm."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_printer_routine",
+        "ink_anchor": "printer_routine",
+        "base_image_prompt": "Medium-wide booth view from the north counter edge looking south. Tava Mirren stands left beside the pale treatment console and numbered seals. Oren Kade, a lean older man in dark maintenance coveralls with a burn-marked left glove and an orange diagnostic lens over his right eye, works at the east calibration rack and lifts the latch of a narrow thermal printer. Hara Venn, a tall containment lead with a blunt black bob, immaculate black uniform, black gloves, and a bright white triangular credential tab at the throat, occupies the south corridor doorway. Latch is visible through the north glass at the edge of frame on a lower perch. The steel counter physically separates the two record systems while Hara's doorway position commands both.",
+        "visible_characters": [
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "left of center beside the treatment console",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "oren_kade",
+            "default_stance": "right of center with one hand on the rejection printer latch",
+            "visual_ref": "visual_character_refs.characters.oren_kade"
+          },
+          {
+            "agent_id": "hara_venn",
+            "default_stance": "square in the south doorway, watching both workers",
+            "visual_ref": "visual_character_refs.characters.hara_venn"
+          },
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "partly visible on the lower perch beyond north glass",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Hara's doorway staging establishes her authority and her sightline to both consoles before any evidence moves."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_routine_choice",
+        "ink_anchor": "routine_choice",
+        "base_image_prompt": "High three-quarter decision frame over the central counter in a compact blue-gray records booth. Four reachable objects form a clear choice geometry around Tava Mirren: seven numbered medication seals under the west counter lamp, the north-wall sample drawer leading to Latch's raven perch, Oren Kade's jammed thermal rejection printer on the east rack, and the green confirmation field on the west treatment console. Hara Venn watches from the south doorway. The ribbed north window, red shred slot at southwest, cable loops, paper tickets, and worn floor lane make every route physical and bounded.",
+        "visible_characters": [
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "centered at the counter with hands between four reachable record actions",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "waiting at the lower north perch by the sample drawer",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          },
+          {
+            "agent_id": "oren_kade",
+            "default_stance": "at the east printer, lens angled toward Tava",
+            "visual_ref": "visual_character_refs.characters.oren_kade"
+          },
+          {
+            "agent_id": "hara_venn",
+            "default_stance": "watching from the south doorway",
+            "visual_ref": "visual_character_refs.characters.hara_venn"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide branch-aware routine frame from the south doorway looking north through the compact reconciliation booth. Tava Mirren stacks treatment tickets at the west console; Oren Kade clears thermal scraps at the east calibration rack; Hara Venn stands between them just inside the doorway; Latch waits beyond the ribbed north window near the two-sided sample drawer. The central steel counter holds a counter lamp, numbered medication seals, and empty space where a record join could occur. Blue-gray panels, amber displays, black cable loops, and the red southwest shred slot create an orderly room under quiet surveillance.",
+        "visible_characters": [
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "stacking tickets at the west console",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "oren_kade",
+            "default_stance": "clearing scraps at the east rack",
+            "visual_ref": "visual_character_refs.characters.oren_kade"
+          },
+          {
+            "agent_id": "hara_venn",
+            "default_stance": "inside the south doorway with a sightline to both consoles",
+            "visual_ref": "visual_character_refs.characters.hara_venn"
+          },
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "at the lower perch beyond the sample drawer",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "care_trace >= 3",
+            "modifier_prompt": "A numbered treatment ticket is tucked beneath Tava's receipt cuff, pressing a visible circle into the worn fabric."
+          },
+          {
+            "trigger": "raw_trace >= 2",
+            "modifier_prompt": "Oren holds the printer latch open while Tava angles her face toward one visible thermal timecode."
+          },
+          {
+            "trigger": "mutual_trust >= 3",
+            "modifier_prompt": "Latch keeps a folded blank thermal strip flat behind the lower aluminum perch bracket."
+          },
+          {
+            "trigger": "mutual_trust <= 0",
+            "modifier_prompt": "Latch occupies a high distant perch, leaving the sample drawer route visibly empty."
+          },
+          {
+            "trigger": "employment_cover >= 4",
+            "modifier_prompt": "Tava's treatment console displays a clean green six-dose count beside her green personnel indicator."
+          },
+          {
+            "trigger": "containment_heat >= 3",
+            "modifier_prompt": "Hara's body and eyes angle directly toward Tava and Oren instead of the completed welfare display."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "veil_rejected_receipt",
+        "ink_anchor": "rejected_event",
+        "base_image_prompt": "Object closeup under the warm counter lamp: Oren Kade's burn-marked glove holds a narrow thermal fault strip from the east calibration printer while Tava Mirren's ink-stained fingers hold a numbered drug-seal ticket from the west treatment console. The two strips lie parallel on the waist-high steel counter and show matching timestamp bars and matching station marks through simple geometric interface symbols. Hara Venn's black-gloved hand approaches from the south edge of frame. Beyond the ribbed north window, Latch's sharp black eye and silver right-leg interface band are visible above the steel sample drawer.",
+        "visible_characters": [
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "only ink-stained fingers and blue-gray sleeve visible at the west side of the closeup",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "oren_kade",
+            "default_stance": "only burn-marked glove and dark sleeve visible at the east side of the closeup",
+            "visual_ref": "visual_character_refs.characters.oren_kade"
+          },
+          {
+            "agent_id": "hara_venn",
+            "default_stance": "black-gloved hand entering from the south edge",
+            "visual_ref": "visual_character_refs.characters.hara_venn"
+          },
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "eye and right-leg band visible beyond glass above the drawer",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The matching time relation is visible through repeated bars and station marks rather than readable prose generated inside the image."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_evidence_choice",
+        "ink_anchor": "evidence_choice",
+        "base_image_prompt": "Medium overhead view of the central evidence routes in the compact booth. Tava Mirren stands at the steel counter between the west treatment ticket and east thermal fault strip. The north sample drawer opens toward Latch on the lower raven perch; the red shred slot waits beside the south door; a paper cleaning roster lies beneath Tava's pen; Oren Kade's orange diagnostic lens case rests at the east rack. Hara Venn approaches from the south lane while the corridor indicator above the door glows amber. Each destination is visible as a distinct physical custody choice.",
+        "visible_characters": [
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "centered between ticket, fault strip, roster, drawer, and shred slot",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "at the lower north perch within beak reach of the drawer",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          },
+          {
+            "agent_id": "oren_kade",
+            "default_stance": "at the east rack beside the open lens case",
+            "visual_ref": "visual_character_refs.characters.oren_kade"
+          },
+          {
+            "agent_id": "hara_venn",
+            "default_stance": "approaching along the south-center lane",
+            "visual_ref": "visual_character_refs.characters.hara_venn"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_auditor_arrival",
+        "ink_anchor": "lead_and_auditor",
+        "base_image_prompt": "Wide south-to-north view after the corridor door opens. Sen Aras, an androgynous adult with close-cropped silver hair, medium-brown skin, a plain charcoal-gray audit jacket, and a rectangular airgapped slate held at chest height, stands just inside the south doorway beside Hara Venn in an immaculate black containment uniform. Tava Mirren occupies the west treatment-console side; Oren Kade occupies the east calibration-rack side; Latch waits beyond the ribbed north window above the sample drawer. The central steel counter and warm lamp expose the empty joining surface while amber corridor light cuts across cold blue-gray floor strips.",
+        "visible_characters": [
+          {
+            "agent_id": "sen_aras",
+            "default_stance": "inside the south doorway with slate at chest height",
+            "visual_ref": "visual_character_refs.characters.sen_aras"
+          },
+          {
+            "agent_id": "hara_venn",
+            "default_stance": "beside Sen, controlling the center lane",
+            "visual_ref": "visual_character_refs.characters.hara_venn"
+          },
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "west of the counter near treatment tickets",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "oren_kade",
+            "default_stance": "east of the counter near the calibration printer",
+            "visual_ref": "visual_character_refs.characters.oren_kade"
+          },
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "beyond north glass at the lower perch",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "joined_exception >= 1",
+            "modifier_prompt": "Two matching timestamp marks are visible on separated paper surfaces near Tava's side of the counter."
+          },
+          {
+            "trigger": "receipt_cache >= 2",
+            "modifier_prompt": "Latch holds a folded thermal strip in the beak behind the lower perch bracket."
+          },
+          {
+            "trigger": "audit_window <= 0",
+            "modifier_prompt": "Sen's slate shows a closing amber sample-window bar near its edge."
+          },
+          {
+            "trigger": "audit_window >= 3",
+            "modifier_prompt": "Sen's slate shows a broad pale sample-window bar and Sen's stance is patient and square to both consoles."
+          },
+          {
+            "trigger": "containment_heat >= 4",
+            "modifier_prompt": "Hara stands close beside Tava, the white triangular credential tab occupying Tava's peripheral sightline."
+          },
+          {
+            "trigger": "raven_exposure >= 1",
+            "modifier_prompt": "Hara's wrist display marks the lower raven perch with a small amber locator box."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "veil_disclosure_threshold",
+        "ink_anchor": "disclosure_choice",
+        "base_image_prompt": "Tense medium-wide decision frame across the central counter. Sen Aras faces north from the south doorway with an airgapped slate ready. Hara Venn stands one step closer to the center lane. Tava Mirren faces four physical disclosure routes: matching receipts under the warm lamp, the north sample drawer leading to Latch, the slate microphone on Sen's device, and the green close-count field on the west console. Oren Kade waits at the east rack with his orange lens case near one hand. Cold blue-gray walls, amber corridor light, ribbed glass, red shred slot, and separated consoles keep every option materially bounded.",
+        "visible_characters": [
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "at the counter facing receipt, drawer, microphone, and console routes",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "sen_aras",
+            "default_stance": "south of the counter with slate ready",
+            "visual_ref": "visual_character_refs.characters.sen_aras"
+          },
+          {
+            "agent_id": "hara_venn",
+            "default_stance": "controlling the center lane beside Sen",
+            "visual_ref": "visual_character_refs.characters.hara_venn"
+          },
+          {
+            "agent_id": "oren_kade",
+            "default_stance": "at the east rack with a hand near the lens case",
+            "visual_ref": "visual_character_refs.characters.oren_kade"
+          },
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "near the north sample drawer, visible through ribbed glass",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_ending_formal",
+        "ink_anchor": "ending_formal_hold|ending_formal_rumor",
+        "base_image_prompt": "Formal-disclosure aftermath in the compact reconciliation booth. Sen Aras stands near the south doorway with a charcoal-gray jacket and a bright sealed slate; Tava Mirren stands at the central counter beside the west treatment console; Oren Kade waits at the east calibration rack; Hara Venn occupies the center lane in black uniform. The counter lamp illuminates the space where matching receipts may be joined. Latch and several uplifted ravens watch through the ribbed north window above the closed sample drawer. Amber and cold blue light divide the room into audit, care, calibration, containment, and captive witness zones.",
+        "visible_characters": [
+          {
+            "agent_id": "sen_aras",
+            "default_stance": "holding the sealed slate near the south doorway",
+            "visual_ref": "visual_character_refs.characters.sen_aras"
+          },
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "at the counter facing Sen",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "oren_kade",
+            "default_stance": "at the east rack under personnel-status light",
+            "visual_ref": "visual_character_refs.characters.oren_kade"
+          },
+          {
+            "agent_id": "hara_venn",
+            "default_stance": "in the center lane near Tava's badge",
+            "visual_ref": "visual_character_refs.characters.hara_venn"
+          },
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "watching through the north glass",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          },
+          {
+            "agent_id": "aviary_ravens",
+            "default_stance": "several ravens visible behind Latch on dim perches",
+            "visual_ref": "visual_character_refs.groups.aviary_ravens"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_ending_cache",
+        "ink_anchor": "ending_cache_hold|ending_cache_cost",
+        "base_image_prompt": "Raven-cache disclosure aftermath seen from a low west-counter camera. The two-sided steel sample drawer under the ribbed north observation window is the center of the frame. Latch, a compact glossy black raven with a silver right-leg interface band, occupies the lower aviary perch within beak reach of the drawer. A numbered treatment seal rests on the booth side under the warm lamp. Sen Aras aims an airgapped slate from the south lane; Hara Venn reaches toward the drawer in black gloves; Tava Mirren stands at the drawer handle; Oren Kade watches from the east calibration rack. The perch bracket, paper route, and distance from Hara's hand to the drawer are plainly visible.",
+        "visible_characters": [
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "at the lower perch beside the sample drawer",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          },
+          {
+            "agent_id": "sen_aras",
+            "default_stance": "aiming the slate from the south lane",
+            "visual_ref": "visual_character_refs.characters.sen_aras"
+          },
+          {
+            "agent_id": "hara_venn",
+            "default_stance": "reaching toward the drawer from the center lane",
+            "visual_ref": "visual_character_refs.characters.hara_venn"
+          },
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "at the booth-side drawer handle",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "oren_kade",
+            "default_stance": "watching from the east rack",
+            "visual_ref": "visual_character_refs.characters.oren_kade"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "raven_exposure >= 1",
+            "modifier_prompt": "Hara's wrist display projects an amber locator box around Latch's lower perch position."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "veil_ending_bounded",
+        "ink_anchor": "ending_bounded_notice|ending_bounded_fragment",
+        "base_image_prompt": "Bounded-notice aftermath in a compact corporate records booth. Tava Mirren speaks across the central steel counter toward the small microphone edge of Sen Aras's airgapped slate. Sen stands at the south doorway reading two geometric time bars on the slate. Oren Kade stays silent beside the east calibration rack with his orange diagnostic lens case closed. Hara Venn studies both workers from the center lane. Latch is visible through the ribbed north window near the sample drawer. The west treatment console and east printer stay darkly separate while the slate carries only paired time and configuration marks.",
+        "visible_characters": [
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "speaking toward the slate microphone from the counter",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "sen_aras",
+            "default_stance": "holding the slate at the south doorway",
+            "visual_ref": "visual_character_refs.characters.sen_aras"
+          },
+          {
+            "agent_id": "oren_kade",
+            "default_stance": "silent beside the east rack with lens case closed",
+            "visual_ref": "visual_character_refs.characters.oren_kade"
+          },
+          {
+            "agent_id": "hara_venn",
+            "default_stance": "studying the workers from the center lane",
+            "visual_ref": "visual_character_refs.characters.hara_venn"
+          },
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "visible beyond the north window near the drawer",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "containment_heat >= 3",
+            "modifier_prompt": "Hara's gaze forms a direct line between Tava and Oren, marking both as the likely source pair."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "veil_ending_second_count",
+        "ink_anchor": "ending_network_survives|ending_silence_consumes",
+        "base_image_prompt": "Late-shift aftermath in a compact reconciliation booth viewed from the south door. The west treatment console, east calibration rack, central steel counter, north ribbed observation window, two-sided sample drawer, southwest red shred slot, worn floor lanes, and cold blue-gray panels are all visible under reduced lighting. Tava Mirren stands near the sample drawer in a blue-gray contractor coat. Latch waits on the lower aviary perch beyond the glass. Oren Kade's east workstation and Hara Venn's south lane carry visible traces determined by branch modifiers. The small route between human hand, steel drawer, raven beak, and hidden perch bracket is the compositional center.",
+        "visible_characters": [
+          {
+            "agent_id": "tava_mirren",
+            "default_stance": "near the sample drawer after lights-down",
+            "visual_ref": "visual_character_refs.characters.tava_mirren"
+          },
+          {
+            "agent_id": "latch_role_name",
+            "default_stance": "on the lower perch beyond the drawer",
+            "visual_ref": "visual_character_refs.characters.latch_role_name"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "employment_cover >= 4",
+            "modifier_prompt": "Tava's personnel indicator glows clean green on the west console while her posture stays rigid beside it."
+          },
+          {
+            "trigger": "receipt_cache >= 1",
+            "modifier_prompt": "A folded thermal strip is visible in the shadow behind the lower aluminum perch bracket."
+          }
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_care_trace_visual",
+        "trigger": "branch_label == prime_care_trace",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_fold",
+          "veil_auditor_arrival",
+          "veil_disclosure_threshold"
+        ],
+        "modifier_prompt": "Tava's receipt cuff contains the seventh numbered treatment ticket, its circular seal shape visible beneath the worn fabric."
+      },
+      {
+        "modifier_id": "prime_second_count_visual",
+        "trigger": "branch_label == prime_second_count",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_fold",
+          "veil_auditor_arrival",
+          "veil_disclosure_threshold"
+        ],
+        "modifier_prompt": "Latch keeps a neatly folded blank thermal strip behind the lower perch bracket within beak reach of the sample drawer."
+      },
+      {
+        "modifier_id": "prime_raw_trace_visual",
+        "trigger": "branch_label == prime_raw_trace",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_fold",
+          "veil_auditor_arrival"
+        ],
+        "modifier_prompt": "Oren holds the rejection-printer latch open and Tava's attention is fixed on one exposed timestamp strip."
+      },
+      {
+        "modifier_id": "prime_job_cover_visual",
+        "trigger": "branch_label == prime_job_cover",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_fold",
+          "veil_auditor_arrival"
+        ],
+        "modifier_prompt": "The west treatment console displays a clean green six-dose count while Latch occupies a more distant high perch."
+      },
+      {
+        "modifier_id": "join_exception_openly_visual",
+        "trigger": "branch_label == join_exception_openly",
+        "apply_to_visual_scene_ids": [
+          "veil_auditor_arrival",
+          "veil_disclosure_threshold",
+          "veil_ending_formal"
+        ],
+        "modifier_prompt": "The fault strip and seventh treatment ticket lie side by side under the counter lamp with matching geometric time bars; Hara's black-gloved hand stops short of them."
+      },
+      {
+        "modifier_id": "preserve_weak_join_visual",
+        "trigger": "branch_label == preserve_weak_join",
+        "apply_to_visual_scene_ids": [
+          "veil_auditor_arrival",
+          "veil_disclosure_threshold",
+          "veil_ending_formal"
+        ],
+        "modifier_prompt": "A paper cleaning roster under Tava's pen carries two copied geometric time marks while the red shred slot shows fresh paper fibers."
+      },
+      {
+        "modifier_id": "cache_raw_receipt_visual",
+        "trigger": "branch_label == cache_raw_receipt",
+        "apply_to_visual_scene_ids": [
+          "veil_auditor_arrival",
+          "veil_disclosure_threshold",
+          "veil_ending_cache"
+        ],
+        "modifier_prompt": "Latch holds a folded thermal fault strip behind the lower perch bracket; Hara's wrist display marks that perch with an amber locator box."
+      },
+      {
+        "modifier_id": "protect_partial_witnesses_visual",
+        "trigger": "branch_label == protect_partial_witnesses",
+        "apply_to_visual_scene_ids": [
+          "veil_auditor_arrival",
+          "veil_disclosure_threshold",
+          "veil_ending_second_count"
+        ],
+        "modifier_prompt": "Oren's orange diagnostic lens case is closed with a thin thermal-paper corner tucked into its seam."
+      },
+      {
+        "modifier_id": "formal_exception_success_visual",
+        "trigger": "ending_label == formal_exception_success",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_formal"
+        ],
+        "modifier_prompt": "Sen's slate shows a sealed paired-time evidence symbol and an amber narrowed-finding bar; Hara holds Tava's badge while Oren's personnel light turns amber."
+      },
+      {
+        "modifier_id": "formal_exception_cost_visual",
+        "trigger": "ending_label == formal_exception_cost",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_formal"
+        ],
+        "modifier_prompt": "Sen's slate carries one small unsupported-note symbol while Hara's wrist display opens a staff conduct file and the printer's paper path sits empty."
+      },
+      {
+        "modifier_id": "raven_cache_success_visual",
+        "trigger": "ending_label == raven_cache_success",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_cache"
+        ],
+        "modifier_prompt": "Latch places a thermal fault strip beside the numbered treatment seal in the open sample drawer while Sen's slate seals the joined time marks."
+      },
+      {
+        "modifier_id": "raven_cache_cost_visual",
+        "trigger": "ending_label == raven_cache_cost",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_cache"
+        ],
+        "modifier_prompt": "Hara's black glove shuts the sample drawer; the lower perch bracket is lit by an amber search marker and the evidence surface is empty."
+      },
+      {
+        "modifier_id": "bounded_notice_success_visual",
+        "trigger": "ending_label == bounded_notice_success",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_bounded"
+        ],
+        "modifier_prompt": "Sen's slate displays two paired geometric time bars and one amber provisional-finding band while Tava and Oren's identity fields stay visually blank."
+      },
+      {
+        "modifier_id": "bounded_notice_cost_visual",
+        "trigger": "ending_label == bounded_notice_cost",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_bounded"
+        ],
+        "modifier_prompt": "Sen's slate displays one isolated time bar and a small gray informational marker; the east printer bay is visibly tagged for replacement."
+      },
+      {
+        "modifier_id": "second_count_survives_visual",
+        "trigger": "ending_label == second_count_survives",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_second_count"
+        ],
+        "modifier_prompt": "The sample drawer stands open a few centimeters; a folded paper edge survives behind Latch's lower perch bracket; Tava's badge and Oren's workstation indicators still glow."
+      },
+      {
+        "modifier_id": "silence_cost_visual",
+        "trigger": "ending_label == silence_cost",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_second_count"
+        ],
+        "modifier_prompt": "The lower perch bracket has been stripped to bare bolts, the sample drawer is locked red, Oren's east station is dark, and loose paper has vanished from the counter."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "neurosyn_welfare_reconciliation_booth.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Compact rectangular booth with a south corridor entrance, north ribbed observation window into Aviary C, west treatment system, east calibration system, central steel counter, and two-sided sample drawer centered beneath the window.",
+      "coordinate_frame": {
+        "north": "ribbed observation window and Aviary C",
+        "south": "corridor door and external audit approach",
+        "west": "treatment console, seal printer, medication drawers, and Tava work zone",
+        "east": "interface rack, rejection printer, cable loops, and Oren work zone"
+      },
+      "fixed_zones": [
+        {
+          "zone_id": "west_treatment_console",
+          "visible_form": "pale wall console, label printer, locked drawers, stacked treatment tickets, green personnel and count indicators",
+          "used_for": "Tava's care-side evidence and employment cover"
+        },
+        {
+          "zone_id": "east_calibration_rack",
+          "visible_form": "dark rack with cable loops, amber sensor bars, narrow thermal rejection printer, and small tool shelf",
+          "used_for": "Oren's raw-side evidence and buffer diagnostics"
+        },
+        {
+          "zone_id": "central_counter",
+          "visible_form": "waist-high brushed-steel work counter with warm task lamp and paper joining surface",
+          "used_for": "record comparison, evidence join, custody transfer, and final threshold"
+        },
+        {
+          "zone_id": "north_observation_window",
+          "visible_form": "ribbed safety glass showing raven silhouettes, lower aluminum perch, and dim aviary lamps",
+          "used_for": "body witness, tap communication, auditor sightline, and containment observation"
+        },
+        {
+          "zone_id": "north_sample_drawer",
+          "visible_form": "two-sided steel pass-through drawer beneath the observation window, reachable by a human at the counter and a raven from the lower perch",
+          "used_for": "paper transfer and distributed custody"
+        },
+        {
+          "zone_id": "south_corridor_door",
+          "visible_form": "single human-height security door with white-to-amber audit indicator above it",
+          "used_for": "Hara staging, Sen arrival, and audit time pressure"
+        },
+        {
+          "zone_id": "southwest_shred_slot",
+          "visible_form": "red wall slot beside the corridor door with a narrow paper mouth and fiber tray",
+          "used_for": "destruction of the fault receipt"
+        },
+        {
+          "zone_id": "lower_perch_bracket",
+          "visible_form": "aluminum raven perch and narrow shadowed mounting bracket on the aviary side of the sample drawer",
+          "used_for": "Latch staging and receipt cache"
+        }
+      ],
+      "routes": [
+        {
+          "route_id": "human_center_lane",
+          "path": "south_corridor_door -> gap between west and east work zones -> central_counter",
+          "users": [
+            "tava_mirren",
+            "oren_kade",
+            "hara_venn",
+            "sen_aras"
+          ]
+        },
+        {
+          "route_id": "care_paper_route",
+          "path": "west_treatment_console -> central_counter -> north_sample_drawer or sen_aras slate sightline",
+          "users": [
+            "tava_mirren"
+          ]
+        },
+        {
+          "route_id": "raw_paper_route",
+          "path": "east_calibration_rack -> central_counter -> southwest_shred_slot, oren lens case, north_sample_drawer, or sen_aras slate sightline",
+          "users": [
+            "oren_kade",
+            "tava_mirren"
+          ]
+        },
+        {
+          "route_id": "raven_paper_route",
+          "path": "north_sample_drawer aviary face -> lower_perch_bracket cache -> north_sample_drawer sightline",
+          "users": [
+            "latch_role_name"
+          ]
+        }
+      ],
+      "occluders": [
+        {
+          "occluder_id": "ribbed_observation_glass",
+          "effect": "Preserves body posture and large-object visibility while obscuring fine paper marks across the window."
+        },
+        {
+          "occluder_id": "central_counter_body",
+          "effect": "Blocks the south-door view of paper held below counter height but exposes paper laid under the lamp."
+        },
+        {
+          "occluder_id": "lower_perch_bracket_shadow",
+          "effect": "Conceals a folded strip from the south doorway until Latch brings it to the drawer sightline."
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "south_wide_north",
+          "supports_visual_scene_ids": [
+            "veil_booth_establishing",
+            "veil_routine_fold",
+            "veil_auditor_arrival",
+            "veil_ending_second_count"
+          ]
+        },
+        {
+          "camera_id": "counter_medium_north",
+          "supports_visual_scene_ids": [
+            "veil_second_count",
+            "veil_disclosure_threshold",
+            "veil_ending_bounded"
+          ]
+        },
+        {
+          "camera_id": "north_counter_south",
+          "supports_visual_scene_ids": [
+            "veil_printer_routine",
+            "veil_ending_formal"
+          ]
+        },
+        {
+          "camera_id": "high_counter_decision",
+          "supports_visual_scene_ids": [
+            "veil_routine_choice",
+            "veil_evidence_choice"
+          ]
+        },
+        {
+          "camera_id": "counter_object_close",
+          "supports_visual_scene_ids": [
+            "veil_rejected_receipt"
+          ]
+        },
+        {
+          "camera_id": "west_low_drawer",
+          "supports_visual_scene_ids": [
+            "veil_ending_cache"
+          ]
+        }
+      ],
+      "staging_slots": [
+        {
+          "slot_id": "tava_west_counter",
+          "position": "west half of central counter within reach of treatment console, receipt cuff, sample-drawer handle, and slate microphone sightline"
+        },
+        {
+          "slot_id": "oren_east_rack",
+          "position": "east calibration rack within reach of rejection printer and orange lens case"
+        },
+        {
+          "slot_id": "hara_center_lane",
+          "position": "south-center lane with direct sightline to both consoles and paper placed under the counter lamp"
+        },
+        {
+          "slot_id": "sen_south_threshold",
+          "position": "inside south door with slate sightline to central counter and north sample drawer"
+        },
+        {
+          "slot_id": "latch_lower_perch",
+          "position": "aviary side of north glass within beak reach of the sample drawer and bracket cache"
+        }
+      ],
+      "state_anchors": [
+        {
+          "anchor_id": "care_receipt_custody",
+          "states": [
+            "west treatment console stack",
+            "beneath Tava's receipt cuff",
+            "central counter join",
+            "north sample drawer"
+          ]
+        },
+        {
+          "anchor_id": "raw_receipt_custody",
+          "states": [
+            "east rejection printer",
+            "central counter join",
+            "southwest shred slot",
+            "Oren's lens case",
+            "north sample drawer",
+            "lower perch bracket cache"
+          ]
+        },
+        {
+          "anchor_id": "audit_status",
+          "states": [
+            "white corridor indicator",
+            "amber early-audit indicator",
+            "Sen slate sample window",
+            "sealed, provisional, informational, or clean finding symbol"
+          ]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for prompt assembly. Include refs only when the character or group is visible in the selected frame.",
+    "characters": {
+      "tava_mirren": "Tava Mirren: baseline human woman, middle-aged, brown skin, broad tired face, one temple shaved under short dark curls, worn blue-gray contractor coat with oversized faded service logo, knitted green collar, slim receipt cuff on left wrist, ink-stained fingertips, sturdy black work shoes, posture careful around paper and guarded around managers.",
+      "latch_role_name": "Latch: uplifted raven using a temporary human-facing role-name, compact glossy black body with subtle oil-blue feather sheen, sharp black eyes, strong black beak, clawed perching feet, small silver interface band on right leg, avian-only silhouette and body language through head angle, tap rhythm, beak placement, claw grip, wing tension, hopping, and short flight.",
+      "oren_kade": "Oren Kade: baseline human man, older adult, lean frame, pale freckled skin, close gray hair, orange diagnostic lens over right eye, dark maintenance coveralls with stitched tool loops, burn-marked left glove, small orange lens case, posture folded toward failing equipment and away from authority.",
+      "hara_venn": "Hara Venn: baseline human woman, tall, light-brown skin, blunt black bob, immaculate fitted black containment uniform, black gloves, bright white triangular credential tab at throat, narrow wrist display, upright posture that occupies doorways and controls lanes.",
+      "sen_aras": "Sen Aras: androgynous baseline human adult, medium-brown skin, close-cropped silver hair, plain charcoal-gray audit jacket with narrow pale piping, rectangular airgapped slate held at chest height, calm square stance, gaze moving between configuration, evidence custody, and source boundaries."
+    },
+    "groups": {
+      "aviary_ravens": "Aviary ravens: uplifted ravens of varied size on simple aluminum perches behind ribbed observation glass, glossy black feathers, alert black eyes, occasional small interface leg bands, one juvenile with a clean white bandage around the lower breast and side; avian-only bodies with beaks, wings, claws, tails, perching feet, head angles, wing tension, and coordinated or distant spacing."
+    }
+  },
+  "review_notes": [
+    "The visual plan supplies a complete textual scene-set map with one coordinate frame, fixed zones, paper routes, occluders, camera slots, staging slots, and receipt-state anchors.",
+    "The plan is concept-ready and stageable, but high-consistency generated replay remains blocked on a camera-specific plan-view or 3D blockout, which this pass is not permitted to add.",
+    "Base prompts use affirmative visible geometry and restate the relevant room slice for each frame.",
+    "Branch modifiers show custody, access, audit, employment, and cache consequences through objects, light, posture, and position."
+  ]
+}

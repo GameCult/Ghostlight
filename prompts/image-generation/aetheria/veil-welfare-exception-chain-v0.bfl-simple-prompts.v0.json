@@ -1,0 +1,64 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "veil-welfare-exception-chain-v0.bfl-simple-v0",
+  "fixture_id": "veil-welfare-exception-chain-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Bleak workplace-noir science-fiction illustration, ink-wash shadows, restrained rust red and monitor amber against cold blue-gray metal, tactile paper receipts, worn industrial surfaces, dry humane observation, readable silhouettes, abstract interface bars and symbols.",
+  "prompts": [
+    {
+      "id": "01_booth_establishing",
+      "prompt": "Wide view into a compact Mars corporate welfare records booth: pale treatment console on the west wall, dark calibration rack on the east wall, steel counter in the middle, ribbed observation window and raven aviary to the north, two-sided sample drawer beneath the glass, red shred slot beside the south door."
+    },
+    {
+      "id": "02_second_count",
+      "prompt": "Middle-aged brown-skinned woman in a worn blue-gray contractor coat counts seven numbered medication seals beside six amber console marks; a glossy black raven with a silver right-leg band taps a perch beyond ribbed glass above a bandaged juvenile."
+    },
+    {
+      "id": "03_printer_routine",
+      "prompt": "Records booth routine: animal-care clerk at the west treatment console, lean older technician with orange diagnostic lens opening a jammed east-side thermal printer, tall black-uniformed containment lead occupying the south doorway, raven watching through north glass."
+    },
+    {
+      "id": "04_routine_choice",
+      "prompt": "High three-quarter choice frame over a steel counter: seven medication seals, a north-wall sample drawer to a raven perch, a jammed east thermal printer, and a green west-console confirmation field form four reachable actions around one careful clerk."
+    },
+    {
+      "id": "05_routine_fold",
+      "prompt": "Wide branch-aware work frame in the rectangular booth: clerk stacking west-side tickets, technician clearing east-side scraps, containment lead watching from the south lane, raven waiting by the north sample drawer, warm lamp over an empty evidence-joining surface."
+    },
+    {
+      "id": "06_rejected_receipt",
+      "prompt": "Object closeup under a warm lamp: burn-marked maintenance glove holds a thin thermal fault strip; ink-stained fingers hold a numbered treatment seal; both show matching geometric time bars; black-gloved manager hand approaches; raven eye watches through ribbed glass."
+    },
+    {
+      "id": "07_evidence_choice",
+      "prompt": "Overhead custody puzzle in a compact records booth: treatment ticket and thermal fault strip on a steel counter, cleaning roster under a pen, red shred slot by the south door, orange lens case at the east rack, sample drawer to a raven at the north window, manager approaching."
+    },
+    {
+      "id": "08_auditor_arrival",
+      "prompt": "Gray-jacketed silver-haired auditor enters the south door with an airgapped slate beside the black-uniformed containment lead; care clerk stands west, calibrator east, black raven north beyond glass; the steel counter exposes the empty joining surface between them."
+    },
+    {
+      "id": "09_disclosure_threshold",
+      "prompt": "Tense records-booth decision: clerk faces matching paper receipts under a lamp, north sample drawer to a raven, microphone edge of an auditor slate, and green close-count field; manager controls center lane while calibrator waits beside east rack."
+    },
+    {
+      "id": "10_formal_ending",
+      "prompt": "Formal audit aftermath divided by amber and cold blue light: sealed slate near south door, care clerk at central counter, technician under personnel light at east rack, containment lead near the clerk's badge, ravens watching through the north ribbed window."
+    },
+    {
+      "id": "11_cache_ending",
+      "prompt": "Low view centered on the two-sided steel sample drawer: glossy black raven with silver leg band reaches from the north perch, numbered treatment seal waits under the lamp, auditor aims a slate, black-gloved containment lead reaches, care clerk holds drawer handle."
+    },
+    {
+      "id": "12_bounded_ending",
+      "prompt": "Care clerk speaks matching timecodes into a gray-jacketed auditor's slate; technician stays silent by the east calibration rack; containment lead studies both workers; raven waits through ribbed north glass; paired abstract time bars glow on the slate."
+    },
+    {
+      "id": "13_second_count_ending",
+      "prompt": "Late-shift booth under low blue-gray light: clerk and black raven face each other across ribbed glass and a partly open sample drawer; folded thermal receipt survives behind the lower perch bracket; west console, east rack, red shred slot, and empty steel counter surround the tiny route."
+    }
+  ]
+}

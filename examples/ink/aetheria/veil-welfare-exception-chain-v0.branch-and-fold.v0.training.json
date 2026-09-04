@@ -1,0 +1,586 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "veil-welfare-exception-chain-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/veil-welfare-exception-chain-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/veil-welfare-exception-chain-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/veil-welfare-exception-chain-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "veil-welfare-exception-chain-v0.second-count-before-audit",
+  "protagonist_agent_id": "tava_mirren",
+  "npc_agent_ids": [
+    "latch_role_name",
+    "oren_kade",
+    "hara_venn",
+    "sen_aras"
+  ],
+  "purpose": "A Veil-mandate branch-and-fold fixture about NeuroSyn welfare-log pruning, compartmented witnesses, and the cost of making a configuration mismatch admissible.",
+  "local_awareness_summary": [
+    {
+      "text": "Tava is a contracted animal-care clerk who can inspect treatment tickets and numbered drug seals but cannot inspect protected reconnaissance telemetry or the pruning configuration.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/veil-welfare-exception-chain-v0.v0.json",
+        "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/NeuroSyn.md"
+      ]
+    },
+    {
+      "text": "Oren can see rejected interface events; Latch knows the embodied event and can carry or cache paper; Hara sees the schedule, exception queue, and submitted bundle; Sen can act only on evidence admitted to the finding.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/veil-welfare-exception-chain-v0.v0.json"
+      ]
+    },
+    {
+      "text": "The ordinary second count is a quiet cross-check among workers and a raven, not a mature movement or a complete conspiracy.",
+      "source_refs": [
+        "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/NeuroSyn.md",
+        "Aetheria/Narrative Themes.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Tava's bounded clerk viewpoint inside one welfare reconciliation booth. She can count, compare, hide, transfer, speak, or withhold records; she cannot query the mission feed or command containment.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/aetheria/veil-welfare-exception-chain-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The tonal mode is workplace noir with dry procedural comedy and a quiet thread of mutual-aid warmth. Routine receives three visual beats before the early audit creates pressure.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Sen may narrow, withhold, or mark provisional a Rossum finding; Sen cannot open protected source systems, recognize Corvid personhood, or order a rescue.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Rossum & Douglas.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/NeuroSyn.md"
+        ]
+      },
+      {
+        "text": "Hara is the only local role that sees the schedule, exception queue, and audit packet together. Other participants may suspect or prove a mismatch only through their own fragment and a shared timecode.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/NeuroSyn.md"
+        ]
+      },
+      {
+        "text": "Latch is an uplifted raven using a temporary human-facing role-name. The fixture does not disclose a full autobiographical Corvid name or make human allies owners of the raven's testimony.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Corvid Collective.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The numbered treatment seal begins at Tava's console; the rejected-event strip begins in Oren's printer; the sample drawer can transfer paper to Latch; Sen's airgapped slate can seal only evidence placed in its sightline or spoken into its recorder.",
+        "source_refs": [
+          "examples/ink/aetheria/veil-welfare-exception-chain-v0.branch-and-fold.v0.ink",
+          "examples/visual/aetheria/veil-welfare-exception-chain-v0.branch-and-fold.v0.visual.json"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "A usable exception requires fragments from separate owners; no single brave disclosure produces omniscient truth.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/NeuroSyn.md"
+        ]
+      },
+      {
+        "text": "Every ending preserves a cost in employment, evidence custody, audit strength, raven safety, or future disclosure capacity.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let the Rossum auditor bypass source boundaries, enforce personhood, or become a rescuer; the finding is evidence consumed by other authorities.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Rossum & Douglas.md"
+        ]
+      },
+      {
+        "text": "Do not make Latch a pet witness, a human-proxy hacker, or an omniscient reader of institutional motives.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Corvid Collective.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three four-option choice layers fold through the rejected-event receipt and early audit, then route to eight state-gated endings.",
+    "choice_layers": [
+      "ordinary_reconciliation",
+      "exception_chain_custody",
+      "disclosure_path"
+    ],
+    "variables": [
+      "care_trace",
+      "raw_trace",
+      "joined_exception",
+      "mutual_trust",
+      "employment_cover",
+      "audit_window",
+      "containment_heat",
+      "raven_exposure",
+      "receipt_cache"
+    ],
+    "ending_gates": [
+      "ending_formal_hold",
+      "ending_formal_rumor",
+      "ending_cache_hold",
+      "ending_cache_cost",
+      "ending_bounded_notice",
+      "ending_bounded_fragment",
+      "ending_network_survives",
+      "ending_silence_consumes"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_care_trace",
+      "ink_path": "routine_choice",
+      "action_type": "inspect_object",
+      "actor_intent": "Turn Tava's ordinary inventory skill into a stronger care-side record before the audit.",
+      "state_basis": [
+        "Tava owns access to numbered drug seals and treatment tickets.",
+        "Latch's seven taps point to the missing dose but do not identify the telemetry event."
+      ],
+      "reviewed_consequences": [
+        "Raises care_trace and containment_heat while spending audit_window; later formal and bounded disclosure gates read care_trace."
+      ],
+      "training_hooks": [
+        "clerical_skill_as_evidence",
+        "care_record_fragment",
+        "time_cost"
+      ]
+    },
+    {
+      "branch_id": "prime_second_count",
+      "ink_path": "routine_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Give Latch a blank durable carrier for the quiet cross-check network.",
+      "state_basis": [
+        "Tava can operate the two-sided sample drawer.",
+        "Latch can carry and cache a paper strip with beak and claw."
+      ],
+      "reviewed_consequences": [
+        "Raises mutual_trust and receipt_cache while lowering employment_cover; later cache and survival endings read the change."
+      ],
+      "training_hooks": [
+        "nonhuman_object_custody",
+        "mutual_aid_routine",
+        "cover_tradeoff"
+      ]
+    },
+    {
+      "branch_id": "prime_raw_trace",
+      "ink_path": "routine_choice",
+      "action_type": "speak",
+      "actor_intent": "Ask Oren a narrow technical question that exposes the rejected timecode without granting Tava system access.",
+      "state_basis": [
+        "Oren can see the interface rejection printer; Tava cannot.",
+        "Hara can hear the conversation from the corridor doorway."
+      ],
+      "reviewed_consequences": [
+        "Raises raw_trace and containment_heat while lowering employment_cover."
+      ],
+      "training_hooks": [
+        "bounded_question",
+        "technical_witness_fragment",
+        "social_risk"
+      ]
+    },
+    {
+      "branch_id": "prime_job_cover",
+      "ink_path": "routine_choice",
+      "action_type": "withhold_action",
+      "actor_intent": "Preserve employment cover and time by accepting Hara's classification.",
+      "state_basis": [
+        "Tava may close the care count but does not own the combined welfare bundle."
+      ],
+      "reviewed_consequences": [
+        "Raises employment_cover and audit_window while lowering mutual_trust; later disclosure gates can benefit from cover but the raven-cache route may close."
+      ],
+      "training_hooks": [
+        "silence_as_action",
+        "survival_complicity",
+        "trust_cost"
+      ]
+    },
+    {
+      "branch_id": "join_exception_openly",
+      "ink_path": "evidence_choice",
+      "action_type": "join_evidence",
+      "actor_intent": "Create the strongest admissible exception chain while the two records occupy one room.",
+      "state_basis": [
+        "The rejected-event strip and treatment seal share a timecode.",
+        "The corridor camera can witness Hara reaching for joined evidence."
+      ],
+      "reviewed_consequences": [
+        "Sets joined_exception to the strong original-custody band, strengthens care_trace and raw_trace, spends audit_window and employment_cover, and sharply raises containment_heat."
+      ],
+      "training_hooks": [
+        "cross_owner_join",
+        "admissible_mismatch",
+        "open_defiance_cost"
+      ]
+    },
+    {
+      "branch_id": "preserve_weak_join",
+      "ink_path": "evidence_choice",
+      "action_type": "copy_and_destroy",
+      "actor_intent": "Preserve the time relation in a low-status record while destroying one original.",
+      "state_basis": [
+        "Tava controls the cleaning roster and the shred slot.",
+        "A copied timecode lacks the original fault slip's custody."
+      ],
+      "reviewed_consequences": [
+        "Sets joined_exception to the weak copied-custody band and modestly raises care_trace, raw_trace, employment_cover, and containment_heat; the formal route still fails without both originals."
+      ],
+      "training_hooks": [
+        "weak_evidence_survival",
+        "low_status_record",
+        "custody_loss"
+      ]
+    },
+    {
+      "branch_id": "cache_raw_receipt",
+      "ink_path": "evidence_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Move Oren's receipt into Latch's custody so no human holds the complete route.",
+      "state_basis": [
+        "The sample drawer reaches the lower perch bracket.",
+        "Latch may accept or refuse paper based on local trust."
+      ],
+      "reviewed_consequences": [
+        "Raises raw_trace, receipt_cache, mutual_trust, and raven_exposure while spending audit_window."
+      ],
+      "training_hooks": [
+        "distributed_custody",
+        "raven_agency",
+        "witness_exposure"
+      ]
+    },
+    {
+      "branch_id": "protect_partial_witnesses",
+      "ink_path": "evidence_choice",
+      "action_type": "warn",
+      "actor_intent": "Keep the fragments separate and preserve the workers' capacity to try again.",
+      "state_basis": [
+        "Oren can conceal his own strip; Tava can retain care-side knowledge.",
+        "Separate fragments do not yet create an admissible exception."
+      ],
+      "reviewed_consequences": [
+        "Raises raw_trace, mutual_trust, and employment_cover while lowering containment_heat."
+      ],
+      "training_hooks": [
+        "future_capacity_over_immediate_proof",
+        "bounded_mutual_aid",
+        "partial_knowledge"
+      ]
+    },
+    {
+      "branch_id": "disclose_formal_exception",
+      "ink_path": "disclosure_choice",
+      "action_type": "disclose",
+      "actor_intent": "Use joined source receipts to force the mismatch into the named finding.",
+      "state_basis": [
+        "Success requires joined_exception, sufficient care_trace and raw_trace, and a live audit window."
+      ],
+      "reviewed_consequences": [
+        "Routes to a narrowed finding or an unsupported-rumor ending based on actual evidence and time."
+      ],
+      "training_hooks": [
+        "state_gated_formal_disclosure",
+        "finding_not_rescue",
+        "employment_retaliation"
+      ]
+    },
+    {
+      "branch_id": "disclose_raven_cache",
+      "ink_path": "disclosure_choice",
+      "action_type": "open_route",
+      "actor_intent": "Let Latch decide whether to complete the exception chain in the auditor's sightline.",
+      "state_basis": [
+        "Success requires cached custody, mutual trust, and remaining audit time."
+      ],
+      "reviewed_consequences": [
+        "Routes to a withheld finding with raven exposure or a failed drawer reveal that exposes the cache route."
+      ],
+      "training_hooks": [
+        "nonhuman_witness_choice",
+        "distributed_evidence",
+        "route_exposure"
+      ]
+    },
+    {
+      "branch_id": "disclose_bounded_timecodes",
+      "ink_path": "disclosure_choice",
+      "action_type": "speak",
+      "actor_intent": "Disclose only the configuration identifiers and matching times so protected source content and worker names remain bounded.",
+      "state_basis": [
+        "Success requires both record traces, enough employment cover, and remaining audit time."
+      ],
+      "reviewed_consequences": [
+        "Routes to a provisional finding or an informational fragment depending on evidence coverage."
+      ],
+      "training_hooks": [
+        "minimal_necessary_disclosure",
+        "provisional_finding",
+        "source_boundary"
+      ]
+    },
+    {
+      "branch_id": "preserve_second_count",
+      "ink_path": "disclosure_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Let this audit pass to preserve the people, access, and custody route needed for a later attempt.",
+      "state_basis": [
+        "Success requires mutual trust, employment cover, and at least one preserved raw-record path."
+      ],
+      "reviewed_consequences": [
+        "Routes to survival of the second count or to silence consuming the remaining fragments."
+      ],
+      "training_hooks": [
+        "withholding_as_future_capacity",
+        "mutual_aid_not_movement",
+        "cover_can_become_complicity"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any promotion of fixture-local cast or events into Aetheria history",
+      "Durable character memories or relationships",
+      "Claims about the exact Mars annex beyond the marked NeuroSyn elaboration",
+      "Acceptance into a compiled Ink corpus"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Aetheria Veil elaborator using the four required Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted_with_visual_blockout_deferred",
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "artifact_ref": "examples/ink/aetheria/veil-welfare-exception-chain-v0.branch-and-fold.v0.ink",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 5,
+        "voice_score": 4,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Workplace noir with dry procedural comedy and a quiet thread of mutual-aid warmth.",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_branch_callback",
+          "strong_tonal_control",
+          "strong_wit_with_stakes",
+          "strong_quiet_scene",
+          "strong_material_lore"
+        ],
+        "acceptance_notes": [
+          "The opening establishes the booth, work hierarchy, record boundaries, raven body affordances, and ordinary second-count routine before the audit advances.",
+          "A first pass found that bounded-notice success was unreachable and that three disclosure labels could promise evidence the current path did not possess. The repair added the missing care-side trace, split strong original custody from weak copied custody, and state-gated the formal, cache, and bounded choices.",
+          "All four participants who can affect the final choice are introduced before it; folded scenes use conditional callbacks for evidence, trust, time, employment cover, containment attention, and raven exposure."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "artifact_ref": "examples/ink/aetheria/veil-welfare-exception-chain-v0.branch-and-fold.v0.ink",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 5,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": [
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/NeuroSyn.md",
+            "reason_checked": "Primary owner of managed telemetry, Corvid containment, welfare pruning, exception chains, and the second count.",
+            "used_for": "canon check and backfill target"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Rossum & Douglas.md",
+            "reason_checked": "Finding scope, configuration identity, evidence bodies, exceptions, and bounded audit authority.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Corvid Collective.md",
+            "reason_checked": "Raven origin, selective disclosure, distributed custody, body affordances, and human-facing role-names.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+            "reason_checked": "Corporate uplift labor, interface dependency, and disputed recognition.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Brain-Computer Interfaces.md",
+            "reason_checked": "Vendor-controlled telemetry, fatigue and affect measurement, records, and living-user interface boundary.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Narrative Themes.md",
+            "reason_checked": "Usable evidence, divided institutional authority, care, access, and mutual aid.",
+            "used_for": "context only"
+          },
+          {
+            "source_ref": "Aetheria/Stories/Corvid Collective First Exodus.md",
+            "reason_checked": "Existing story-local welfare-log, containment, audit, and pruned-telemetry scene pressure.",
+            "used_for": "duplication and continuity check"
+          }
+        ],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": [
+          {
+            "priority": "high",
+            "target_source": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/NeuroSyn.md",
+            "candidate_fact": "Corvid-program welfare bundles derive from separately owned raw interface, treatment, and containment records; a timecode-based exception chain can prove configuration discontinuity while the second count preserves fragments among mutually dependent low-authority witnesses.",
+            "artifact_origin": "Routine count, rejected-event receipt, audit threshold, and all eight endings.",
+            "why_it_belongs": "The mechanism makes NeuroSyn oversight, Rossum audit limits, worker risk, raven agency, disclosure failure, and the setting's small mutual-aid hope reusable in later scenes.",
+            "how_to_add_without_bloat": "Already added as one marked authored-elaboration section in the existing NeuroSyn note."
+          }
+        ],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_pressure",
+          "strong_body_affordance_grounding",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate"
+        ],
+        "acceptance_notes": [
+          "The general record mechanism is marked as Veil-authored elaboration in NeuroSyn.md; the cast, booth, and event remain fixture-local draft details in the grounding digest.",
+          "The fixture preserves Rossum's bounded authority: Sen changes only the finding, while receiving institutions retain enforcement and Corvid personhood remains unsettled.",
+          "Hara alone sees the schedule, exception queue, and audit packet together. Tava, Oren, Latch, and Sen each act from a smaller source-owned fragment."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "artifact_ref": "examples/visual/aetheria/veil-welfare-exception-chain-v0.branch-and-fold.v0.visual.json",
+        "overall_status": "needs_revision",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 3,
+        "major_findings": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The repeated multi-angle booth has a textual scene-set specification but no rendered plan-view or 3D blockout.",
+            "why_it_matters": "Generated art cannot reliably preserve the west and east record systems, sample-drawer sightline, corridor approach, perch occlusion, and receipt routes across thirteen frames from text alone.",
+            "evidence": "The fixture uses six camera slots and makes object custody, reach, and observation angle part of branch meaning.",
+            "fix_direction": "Before website rendering, build a camera-specific blockout from the embedded coordinate frame, fixed zones, routes, occluders, staging slots, and state anchors."
+          }
+        ],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The repeated multi-angle booth has a textual scene-set specification but no rendered plan-view or 3D blockout.",
+            "why_it_matters": "Generated art cannot reliably preserve the west and east record systems, sample-drawer sightline, corridor approach, perch occlusion, and receipt routes across thirteen frames from text alone.",
+            "evidence": "The fixture uses six camera slots and makes object custody, reach, and observation angle part of branch meaning.",
+            "fix_direction": "Before website rendering, build a camera-specific blockout from the embedded coordinate frame, fixed zones, routes, occluders, staging slots, and state anchors."
+          }
+        ],
+        "missing_branch_modifiers": [],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity",
+          "missing_scene_set"
+        ],
+        "acceptance_notes": [
+          "Thirteen Ink visual beats map to thirteen standalone visual-plan prompts and thirteen BFL concept prompts.",
+          "A first pass removed continuity-dependent wording from the late-shift base prompt and made the raven receipt handoff travel through the two-sided drawer instead of jumping across the glass.",
+          "All base prompts describe visible geometry, materials, lighting, bodies, interfaces, and props in affirmative terms; visible named characters have stable refs and off-frame refs are excluded.",
+          "The plan is accepted as concept-ready collateral only. High-consistency replay remains blocked by the missing camera-specific blockout, which the allowed output paths do not permit this pass to create."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "artifact_ref": "examples/ink/aetheria/veil-welfare-exception-chain-v0.branch-and-fold.v0.ink and examples/visual/aetheria/veil-welfare-exception-chain-v0.branch-and-fold.v0.visual.json",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "One compact rectangular booth has a south corridor door, west treatment console, east calibration rack, central waist-high counter, north ribbed observation window into Aviary C, and a two-sided sample drawer beneath the window. Tava works the west counter and can reach the drawer; Oren works the east rack; Hara controls the south-center lane; Sen audits from the south threshold; Latch reaches the drawer and shadowed cache from the lower north perch. The counter hides paper held low but exposes paper under its lamp.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [
+          {
+            "priority": "high",
+            "needed_artifact": "camera-specific plan-view or 3D blockout",
+            "reason": "Multi-angle generated replay needs geometry authority stronger than text for the drawer travel, console separation, corridor sightline, and raven perch occlusion.",
+            "minimum_required_detail": "Use the declared coordinate frame, eight fixed zones, four routes, three occluders, six camera slots, five staging slots, and three state anchors."
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state",
+          "diagram_needed"
+        ],
+        "acceptance_notes": [
+          "A first pass found the cache success text moving the receipt directly beside a booth-side seal from beyond the glass. The repair now pushes the drawer to Latch, receives the strip, and pulls it boothward under the lamp.",
+          "Every participant has one role-compatible route and bounded reach; the ribbed glass, counter body, and perch-bracket shadow explain what each observer can and cannot see.",
+          "Folded scenes retain record strength, join quality, cache custody, trust, audit time, employment cover, containment attention, and raven exposure through Ink conditions or visual modifiers."
+        ]
+      }
+    ],
+    "review_notes": [
+      "One-shot authoring is bounded fixture scaffolding and does not claim to be a runtime responder capture.",
+      "The four required reviewer prompts were applied as separate narrative, lore, visual, and spatial self-review passes after artifact drafting.",
+      "Ink compilation is prohibited for this pass. Static checks confirmed all four JSON schemas parse, twelve Ink branch labels match twelve sidecar branches, every declared Ink variable is read later, and thirteen visual scenes match thirteen BFL prompts."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
