@@ -1,0 +1,479 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "kalsa-hearth-forty-second-bowl-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/hearth-forty-second-bowl-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/hearth-forty-second-bowl-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/hearth-forty-second-bowl-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "hearth-forty-second-bowl-v0.evening-custodian-support",
+  "protagonist_agent_id": "bel_orra",
+  "npc_agent_ids": [
+    "sera_venn",
+    "maro_seln",
+    "nim_orra"
+  ],
+  "purpose": "Interactive Fiction Weaver compile of a Low Sere lower-step household's custodian-support turn, testing whether care for Sera Venn can remain real without hiding food, witness, and family costs.",
+  "tonal_mode": "Warm domestic wit under institutional fatigue, tightening into quiet material pressure.",
+  "artifact_role": "Playable illustrated-fiction website collateral and Kalsa lore stress test; not canonical simulation state and not core social-model training signal.",
+  "local_awareness_summary": [
+    {
+      "text": "Bel Orra is a lower-step water witness who knows her household's wet wall, missed labor, ration marks, safe public areas of the Cistern House, and the terms of the forty-second-bowl turn. She does not know the Ashen Intake's hidden configuration.",
+      "source_refs": [
+        "Kalsa/Public/Sources/At the Basin Table.md",
+        "Kalsa/Spoilers/Places/Low Sere.md"
+      ]
+    },
+    {
+      "text": "Sera Venn holds provisional authority for ordinary inspection, isolation, degraded service, and material refusal at the Cistern House boundary; a meal or household witness does not appoint her or enlarge that authority.",
+      "source_refs": [
+        "Kalsa/Spoilers/Places/Low Sere.md",
+        "Kalsa/Spoilers/Institutions/Relic Custody.md"
+      ]
+    },
+    {
+      "text": "Maro Seln controls the settlement drain wheel and records the basin table's water and work obligations. He does not control Sera's pressure spindle or technical stop.",
+      "source_refs": [
+        "Kalsa/Spoilers/Places/Low Sere.md",
+        "Kalsa/Public/Sources/At the Basin Table.md"
+      ]
+    },
+    {
+      "text": "Nim Orra is fixture-local elaboration of Bel's already-mentioned eldest: a young adult carrying household water and missing Grey Bed labor while the lower-step wall worsens.",
+      "source_refs": [
+        "Kalsa/Public/Sources/At the Basin Table.md",
+        "examples/ink/kalsa/hearth-forty-second-bowl-v0.branch-and-fold.v0.ink"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Bel's ordinary human viewpoint from her lower-step hearth to the public Cistern House threshold. Choices use food, household reports, safe cleaning work, witness presence, withdrawal, and neighborhood exchange rather than technical machine control.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Kalsa/Spoilers/Places/Low Sere.md"
+        ]
+      },
+      {
+        "text": "The opening establishes supper, damp bedding, carried water, missed bed work, and the household joke before the pressure seal interrupts routine.",
+        "source_refs": [
+          "AGENTS.md",
+          "Kalsa/Spoilers/Places/Low Sere.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Bel may report household conditions, perform instructed outer-screen cleaning, witness observable work, withhold her household's voluntary support, and organize exchanges. She may not operate the pressure seal, declare the intake safe, or appoint a custodian.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Institutions/Relic Custody.md"
+        ]
+      },
+      {
+        "text": "Sera alone among the scene participants owns the named technical isolation and degraded-service decisions; she must narrow service when safe support is absent rather than treat lonely work as success.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Institutions/Relic Custody.md"
+        ]
+      },
+      {
+        "text": "Maro may turn the drain wheel, call household replacements, and record obligations, but cannot convert a meal token or witness mark into technical competence.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Bel's hearth controls its food, dampness strip, work chit, and clay turn-token until delivery. The communal bowl carries support evidence but owns no authority. Sera controls the sampling vessel, isolation catch, and safe outer-screen work instruction. Maro controls the drain wheel and basin ledger.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "examples/ink/kalsa/hearth-forty-second-bowl-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Food delivered, custodian recovery, household observation, witness coverage, missed work, service scope, and private household safety remain separate state surfaces after branches fold.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Kalsa/Spoilers/Places/Low Sere.md"
+        ]
+      },
+      {
+        "text": "Every ending must make loyalty, accurate record, household boundary, or neighborhood reciprocity preserve something and cost something else; no value becomes the universal correct answer.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Kalsa/Spoilers/Places/Low Sere.md"
+        ]
+      },
+      {
+        "text": "The forty-second bowl may support a person and expose a site-support failure, but cannot certify Sera, settle Teren's appeal, or decide post-descent custody.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Events/The Grey Scald.md",
+          "Kalsa/Spoilers/Institutions/Relic Custody.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not advance the canonical three-shutter pressure clock, resolve the Ashen Intake descent, recover the Ashen Measure, or decide Sera's appointment.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+          "Kalsa/Spoilers/Places/Low Sere.md"
+        ]
+      },
+      {
+        "text": "Do not turn the Low Sere bowl into a Kalsa-wide kinship custom, universal currency, legal court, technical rite, or separate institution.",
+        "source_refs": [
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+          "Kalsa/Spoilers/Places/Low Sere.md"
+        ]
+      },
+      {
+        "text": "Do not make Bel know hidden dungeon evidence or machine causality; she can preserve observed knocks, marks, water, ash, and instructions without explaining their ultimate cause.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold household portion, custodian delivery, a bounded witness interval, and the final obligation record into eight state-gated endings.",
+    "choice_layers": [
+      "household_portion",
+      "custodian_delivery",
+      "short_witness_interval",
+      "obligation_record"
+    ],
+    "variables": [
+      "home_security",
+      "sera_recovery",
+      "record_honesty",
+      "watch_coverage",
+      "eldest_load",
+      "neighbor_credit",
+      "pressure_load",
+      "bowl_state",
+      "service_scope"
+    ],
+    "ending_gates": [
+      "ending_loyalty_held",
+      "ending_loyalty_hidden_cost",
+      "ending_honest_care_held",
+      "ending_honest_care_cost",
+      "ending_home_held",
+      "ending_home_cost",
+      "ending_neighbors_held",
+      "ending_neighbors_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "portion_full_first",
+      "ink_path": "portion_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Feed the provisional custodian fully before protecting the household's own meal.",
+      "state_basis": ["Bel's hearth holds tonight's bowl turn and knows Sera's support is necessary."],
+      "reviewed_consequences": ["Sets a full bowl and raises Sera's recovery basis while reducing home security and increasing Nim's hidden load."],
+      "training_hooks": ["personal_loyalty", "household_minimum_tradeoff", "care_as_material_input"]
+    },
+    {
+      "branch_id": "portion_marked_short",
+      "ink_path": "portion_choice",
+      "action_type": "record_and_transfer",
+      "actor_intent": "Preserve the hearth's meal and make the custodian portion shortage inspectable.",
+      "state_basis": ["The bowl rotation records full, short, exchanged, refused, or returned turns."],
+      "reviewed_consequences": ["Sets a short bowl, improves home security, and raises record honesty."],
+      "training_hooks": ["honest_shortfall", "household_boundary", "recorded_care"]
+    },
+    {
+      "branch_id": "portion_neighbor_exchange",
+      "ink_path": "portion_choice",
+      "action_type": "negotiate",
+      "actor_intent": "Use a witnessed neighbor exchange to fill the bowl without stripping one hearth.",
+      "state_basis": ["Low Sere hearths may exchange turns when the replacement and resulting debt are recorded."],
+      "reviewed_consequences": ["Fills the bowl, raises neighbor credit and record honesty, and reduces Nim's immediate load."],
+      "training_hooks": ["mutual_aid_debt", "recorded_exchange", "neighborhood_belonging"]
+    },
+    {
+      "branch_id": "portion_return_empty",
+      "ink_path": "portion_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Refuse food beyond the household minimum while carrying exact evidence of prior contributions.",
+      "state_basis": ["A returned bowl exposes a site-support failure without granting Bel technical authority."],
+      "reviewed_consequences": ["Returns an empty bowl, improves household security and record honesty, and raises social pressure at the site."],
+      "training_hooks": ["withheld_care", "evidence_instead_of_meal", "support_failure"]
+    },
+    {
+      "branch_id": "delivery_feed_first",
+      "ink_path": "delivery_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Put food into Sera's hands before the ledger can treat delivery as completed care.",
+      "state_basis": ["Sera is visibly working and has not yet eaten; Bel controls the covered bowl."],
+      "reviewed_consequences": ["Raises Sera's recovery and pressure load because the sample waits while she eats."],
+      "training_hooks": ["care_before_account", "recovery_time", "person_not_office"]
+    },
+    {
+      "branch_id": "delivery_household_report",
+      "ink_path": "delivery_choice",
+      "action_type": "speak",
+      "actor_intent": "Make lower-step damp and missed labor part of the operational record.",
+      "state_basis": ["Bel witnessed the wet line and Nim's displaced Grey Bed watch."],
+      "reviewed_consequences": ["Raises record honesty, home security awareness, and witness coverage through an actionable household report."],
+      "training_hooks": ["local_observation", "household_as_sensor", "missed_labor"]
+    },
+    {
+      "branch_id": "delivery_mark_first",
+      "ink_path": "delivery_choice",
+      "action_type": "show_object",
+      "actor_intent": "Force the ledger to name the bowl's actual state before anyone consumes or reinterprets it.",
+      "state_basis": ["Bel still holds the lidded bowl and the bowl-state marks are locally legible; food-first and work-for-rest choices remain gated to bowls that contain food."],
+      "reviewed_consequences": ["Raises record honesty and social pressure while preserving the actual full, short, or returned state."],
+      "training_hooks": ["custody_of_evidence", "record_before_consumption", "institutional_friction"]
+    },
+    {
+      "branch_id": "delivery_work_for_rest",
+      "ink_path": "delivery_choice",
+      "action_type": "use_object",
+      "actor_intent": "Perform safe instructed screen work so Sera can eat with both hands.",
+      "state_basis": ["Local workers may clean public outer screens; the pressure grate and technical seal remain closed."],
+      "reviewed_consequences": ["Raises Sera's recovery and witness coverage and lowers immediate pressure, while increasing Nim's unsupported household load."],
+      "training_hooks": ["labor_beneath_custody", "safe_affordance", "care_displaces_care"]
+    },
+    {
+      "branch_id": "witness_stay_send_eldest",
+      "ink_path": "witness_choice",
+      "action_type": "stay",
+      "actor_intent": "Complete the bounded hearth-witness interval while sending Nim to protect bedding and wait for enough hands to move the bed.",
+      "state_basis": ["Bel can witness from the chalk mark; Nim knows the hearth and can brace the bed."],
+      "reviewed_consequences": ["Raises watch coverage while reducing home security and sharply increasing Nim's hidden relief load."],
+      "training_hooks": ["kin_delegation", "witness_duty", "hidden_youth_load"]
+    },
+    {
+      "branch_id": "witness_call_neighbors",
+      "ink_path": "witness_choice",
+      "action_type": "delegate",
+      "actor_intent": "Call named lower-step neighbors into both the wall leak and the witness gap.",
+      "state_basis": ["Nim can carry an exact public call along the lower rail; prior exchanges can make response more credible."],
+      "reviewed_consequences": ["Raises neighbor credit, witness coverage, and home security while placing another carrying burden on Nim."],
+      "training_hooks": ["mutual_aid_signal", "named_debt", "child_as_messenger_cost"]
+    },
+    {
+      "branch_id": "witness_protect_home",
+      "ink_path": "witness_choice",
+      "action_type": "withdraw",
+      "actor_intent": "End the promised short interval, protect the household, and require narrower service until relief arrives.",
+      "state_basis": ["The bowl carrier owes only a bounded witness interval; Sera may narrow service when support fails."],
+      "reviewed_consequences": ["Raises home security and record honesty, lowers watch coverage, and narrows service to reduce machine risk at a material household cost."],
+      "training_hooks": ["bounded_refusal", "service_narrows", "home_before_office"]
+    },
+    {
+      "branch_id": "witness_call_dry_replacement",
+      "ink_path": "witness_choice",
+      "action_type": "compel_recorded_support",
+      "actor_intent": "Make the basin table call a better-resourced dry-step hearth before Bel leaves.",
+      "state_basis": ["Maro controls the household bell and basin-table work schedule; dry-step hearths share the output."],
+      "reviewed_consequences": ["Raises record honesty, witness coverage, home security, and delay pressure while redistributing the next interval."],
+      "training_hooks": ["class_redistribution", "replacement_before_departure", "delay_as_cost"]
+    },
+    {
+      "branch_id": "close_for_personal_loyalty",
+      "ink_path": "final_choice",
+      "action_type": "sign_record",
+      "actor_intent": "Protect Sera from another provisional-office failure by closing the turn as full.",
+      "state_basis": ["The ending succeeds only if food, recovery, and witness coverage make the full-turn claim true."],
+      "reviewed_consequences": ["Routes to supported loyalty or a hidden-cost ending based on bowl_state, sera_recovery, and watch_coverage."],
+      "training_hooks": ["loyalty_vs_accuracy", "state_gated_ending", "affection_can_launder_failure"]
+    },
+    {
+      "branch_id": "close_with_honest_care",
+      "ink_path": "final_choice",
+      "action_type": "correct_record",
+      "actor_intent": "Preserve food, witness, household, and labor costs as separate facts.",
+      "state_basis": ["The ending succeeds only if earlier choices produced enough record honesty and witness coverage."],
+      "reviewed_consequences": ["Routes to an inspectable-care or incomplete-memory ending."],
+      "training_hooks": ["separate_claims", "recorded_care", "state_gated_ending"]
+    },
+    {
+      "branch_id": "close_for_home",
+      "ink_path": "final_choice",
+      "action_type": "withdraw_authority",
+      "actor_intent": "Hold the household witness token until Bel's own room is safe.",
+      "state_basis": ["The ending succeeds only when home help arrived before pressure and delay outran the household."],
+      "reviewed_consequences": ["Routes to a defended household boundary or a too-late divided emergency based on home security and pressure load."],
+      "training_hooks": ["household_boundary", "service_scope_cost", "state_gated_ending"]
+    },
+    {
+      "branch_id": "close_with_neighbors",
+      "ink_path": "final_choice",
+      "action_type": "organize_mutual_aid",
+      "actor_intent": "Divide the remaining support turn into named reciprocal intervals.",
+      "state_basis": ["The ending succeeds only when neighbors were actually called and exchanges were kept legible."],
+      "reviewed_consequences": ["Routes to named reciprocal care or wishful solidarity based on neighbor credit and record honesty."],
+      "training_hooks": ["belonging_as_reciprocity", "mutual_aid_requires_signal", "state_gated_ending"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose and option gates",
+      "Ending selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable relationship or memory update for Bel, Nim, Sera, or Maro",
+      "Any promotion of this fixture's evening into Kalsa historical canon",
+      "Any universalization of the forty-second bowl beyond Low Sere",
+      "Any use of the fixture as core model-training signal rather than reviewed website collateral and lore stress-test material"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Kalsa Hearth elaborator applying four repository reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review gated food-dependent actions away from the returned-empty-bowl path, corrected the false home-security gain when Nim was sent back alone, and reconciled the named mutual-aid ending's participants.",
+      "Lore review promoted the load-bearing witness place and two distinct public signals into the Low Sere owner note, kept Nim and this evening fixture-local, and confirmed that the three-shutter dungeon clock does not advance.",
+      "Visual review added exact Ink anchors for the Warm Steps transition and Nim's arrival, added the missing witness-fold BFL prompt, and verified complete standalone character and environment descriptions.",
+      "Spatial review separated the broad bronze water-cut bell from the smaller fired-clay hearth-recall bell and aligned the scored witness place across lore, Ink, visual prompts, and the embedded two-set map.",
+      "Ink was intentionally not compiled because the pass contract forbids installing an Ink compiler; structural checks found sixteen branch labels mirrored by sixteen sidecar branches, reachable knot targets, and later reads for every declared variable."
+    ],
+    "review_passes": {
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 5,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 5
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "status": "fixed",
+            "problem": "The returned-empty-bowl path could select actions whose prose required Sera to eat.",
+            "fix": "Gated feed-first and work-for-rest choices to bowl_state >= 1."
+          },
+          {
+            "severity": "major",
+            "status": "fixed",
+            "problem": "Sending Nim home alone contradicted Nim's stated inability to move the bed and incorrectly increased household safety.",
+            "fix": "Changed the task to protecting bedding while waiting for help, reduced home_security, and preserved the increase to eldest_load."
+          },
+          {
+            "severity": "minor",
+            "status": "fixed",
+            "problem": "The successful mutual-aid ending named four neighbor tasks while its visual group and prior call established three neighbors plus Bel.",
+            "fix": "Assigned three named neighbor tasks and made Bel hold the fourth quarter-turn."
+          }
+        ]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "status": "fixed",
+            "problem": "The fixture depended on a bounded witness position and replacement signal that the authored owner-note elaboration had not yet named.",
+            "fix": "Added the scored witness place, broad bronze water-cut bell, and smaller fired-clay turn bell to Kalsa/Spoilers/Places/Low Sere.md."
+          },
+          {
+            "severity": "minor",
+            "status": "verified",
+            "problem": "A pressure knock could be mistaken for an advancement of the Ashen Intake's three-shutter clock.",
+            "fix": "Kept the black door closed, stated that no mark closes, preserved exactly three pale marks in every prompt, and treated the response as bounded surface isolation."
+          },
+          {
+            "severity": "minor",
+            "status": "verified",
+            "problem": "Nim Orra and this specific evening lack owner-note canon status.",
+            "fix": "Marked Nim and the evening as fixture-local in the grounding digest and mutation policy."
+          }
+        ]
+      },
+      "visual_continuity": {
+        "verdict": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "status": "fixed",
+            "problem": "The uphill transition and Nim's arrival initially used descriptive pseudo-anchors instead of exact Ink knots.",
+            "fix": "Added warm_steps_route and nim_arrival knots and bound their visual_scene_id entries directly."
+          },
+          {
+            "severity": "minor",
+            "status": "fixed",
+            "problem": "The BFL simple manifest lacked the witness-fold frame present in the visual plan.",
+            "fix": "Added 11_witness_fold and aligned the batch to all sixteen visual scenes."
+          },
+          {
+            "severity": "minor",
+            "status": "verified",
+            "problem": "Multi-angle replay requires geometry authority beyond image-model memory.",
+            "fix": "Embedded two fixed room models, explicit routes, ten camera slots, sightline lanes, staging slots, and branch-persistent object anchors in the visual plan."
+          }
+        ]
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 5,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "status": "fixed",
+            "problem": "One ambiguously named bell appeared to own both public water-cut warning and household replacement calls.",
+            "fix": "Separated a broad bronze water-cut bell at the drain station from a small fired-clay turn bell at the ration board in lore, Ink, prompts, and scene_set."
+          },
+          {
+            "severity": "minor",
+            "status": "fixed",
+            "problem": "The visual plan called the witness position chalk while the owner note established a durable scored place.",
+            "fix": "Aligned all visual prompts, modifiers, routes, and sightlines to the scored witness place outside the grate."
+          },
+          {
+            "severity": "minor",
+            "status": "verified",
+            "problem": "The story moves between home and Cistern House while Bel cannot observe both simultaneously.",
+            "fix": "The scene_set routes the uphill stair through the downslope doorway and explicitly occludes the household beyond the first Warm Steps turn."
+          }
+        ]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true,
+      "all_declared_variables_read": true,
+      "all_branch_labels_annotated": true,
+      "all_visual_scenes_manifested": true,
+      "public_and_spoiler_tiers_recorded": true
+    }
+  }
+}

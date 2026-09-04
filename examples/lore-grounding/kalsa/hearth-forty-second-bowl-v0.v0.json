@@ -1,0 +1,360 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.hearth-forty-second-bowl-v0",
+  "source_status": "mixed_public_and_spoiler_canon_with_authored_elaboration",
+  "fixture_status": "canon_adjacent_grounded",
+  "source_refs": [
+    {
+      "source_id": "spoiler-low-sere",
+      "path": "Kalsa/Spoilers/Places/Low Sere.md",
+      "title": "Low Sere",
+      "line_start": 17,
+      "line_end": 179,
+      "relevance": "Tier: Spoilers. Canonical place owner for forty-one hearths, Cistern House geometry, basin-table obligations, Sera and Maro's authority, ordinary dependence, class burden, and the authored forty-second-bowl elaboration."
+    },
+    {
+      "source_id": "public-low-sere",
+      "path": "Kalsa/Public/Places/Low Sere.md",
+      "title": "Low Sere",
+      "line_start": 11,
+      "line_end": 47,
+      "relevance": "Tier: Public. Reader-safe settlement presentation: Warm Steps, Grey Beds, basin table, provisional custody, and household exposure."
+    },
+    {
+      "source_id": "public-basin-table",
+      "path": "Kalsa/Public/Sources/At the Basin Table.md",
+      "title": "At the Basin Table",
+      "line_start": 12,
+      "line_end": 74,
+      "relevance": "Tier: Public. Situated source for Bel Orra, her eldest's displaced labor, lower-step damp, expedition food, Sera's refusal boundary, and Maro's threshold role."
+    },
+    {
+      "source_id": "spoiler-relic-custody",
+      "path": "Kalsa/Spoilers/Institutions/Relic Custody.md",
+      "title": "Relic Custody",
+      "line_start": 44,
+      "line_end": 145,
+      "relevance": "Tier: Spoilers. Canonical institution owner for bounded formation and appointment, material support, household dependence, safe work, provisional succession, and the separation of care from technical authority."
+    },
+    {
+      "source_id": "spoiler-grey-scald",
+      "path": "Kalsa/Spoilers/Events/The Grey Scald.md",
+      "title": "The Grey Scald",
+      "line_start": 14,
+      "line_end": 38,
+      "relevance": "Tier: Spoilers. Adopted history establishing the deaths, incomplete review, missing records, and Sera's inherited provisional burden; fixture may carry consequences but cannot resolve them."
+    },
+    {
+      "source_id": "spoiler-ashen-intake",
+      "path": "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+      "title": "The Ashen Intake",
+      "line_start": 18,
+      "line_end": 135,
+      "relevance": "Tier: Spoilers. Dungeon owner for the closed black pressure door, three-pale-shutter starting clock, Sera's degraded-service scope, and pressure-pulse rules. The fixture deliberately does not advance that clock."
+    },
+    {
+      "source_id": "spoiler-techpriesthoods",
+      "path": "Kalsa/Spoilers/Institutions/The Techpriesthoods.md",
+      "title": "The Techpriesthoods",
+      "line_start": 36,
+      "line_end": 102,
+      "relevance": "Tier: Spoilers. Institution context for apprenticeship under working conditions, labor beneath technical rites, support costs, and dangerous obligations inherited by apprentices."
+    },
+    {
+      "source_id": "spoiler-canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "line_start": 1,
+      "line_end": 90,
+      "relevance": "Tier: Spoilers. Governs owner-note authority, adopted elaboration, unresolved claims, and separation of situated Public presentation from author truth."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Present Low Sere before the commissioned Ashen Intake descent; absolute date and wider political era unresolved.",
+    "location": "A lower-step household on the Warm Steps and the public basin lip of Low Sere's Cistern House.",
+    "summary": "Bel Orra carries her hearth's custodian-support bowl uphill while her own wet room and eldest's displaced labor expose what loyalty to a dangerous public office costs at home.",
+    "public_facts": [
+      {
+        "text": "Public tier: Low Sere has forty-one occupied hearths dependent on warm grey water for household heat, cistern water, crops, and ash crafts.",
+        "source_refs": ["public-low-sere"]
+      },
+      {
+        "text": "Public tier: the basin table schedules water, stores, maintenance labor, admission, and emergency action, but large dry hearths and lower-step renters bear unequal leverage and risk.",
+        "source_refs": ["public-low-sere"]
+      },
+      {
+        "text": "Public tier: Bel Orra is a lower-step water witness whose rooms are wet, whose eldest carries drinking water instead of working the Grey Beds, and whose household already contributed food for the planned descent.",
+        "source_refs": ["public-basin-table"]
+      },
+      {
+        "text": "Public tier: Sera inherited a failing system and incomplete records under a provisional appointment after the Grey Scald dispute.",
+        "source_refs": ["public-low-sere", "public-basin-table"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Spoilers tier: Sera may inspect, isolate, stop, and maintain degraded service, while Maro controls the settlement drain wheel and public obligation record; neither authority consumes the other.",
+        "source_refs": ["spoiler-low-sere", "spoiler-relic-custody"]
+      },
+      {
+        "text": "Spoilers tier, authored elaboration: the forty-second bowl rotates food and household observations through all recognized hearths; its carrier owes delivery and at most one short witness interval, and shortages must remain visible as site-support failures.",
+        "source_refs": ["spoiler-low-sere"]
+      },
+      {
+        "text": "Spoilers tier: household support is operationally necessary but politically dangerous when care, food, assistants, records, and relief are treated as free evidence that an office is functioning.",
+        "source_refs": ["spoiler-relic-custody", "spoiler-techpriesthoods"]
+      },
+      {
+        "text": "Spoilers tier: exactly three pale shutters remain at the dungeon's starting state; this household-scale fixture uses a knock and temporary isolation while preserving all three marks.",
+        "source_refs": ["spoiler-ashen-intake"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "low-sere-lower-step-hearths",
+      "label": "Low Sere lower-step households",
+      "group_type": "settlement_household_network",
+      "institutional_logic": ["Keep rooms warm and dry enough to inhabit while preserving household standing at the basin table."],
+      "material_incentives": ["Protect household meals, bedding, labor time, water priority, and recognized witness status."],
+      "internal_virtues": ["Exact observation", "Named reciprocity", "Help that admits its cost", "Refusal before collapse"],
+      "internal_shames": ["Letting a neighbor's room fail unseen", "Pretending a debt vanished", "Buying respectability with a dependent's labor"],
+      "prestige_markers": ["A dry bed through a bad water interval", "A report that makes tomorrow's ration honest", "A debt repaid before it becomes lineage"],
+      "taboo_triggers": ["Calling lower-step work nonessential", "Treating a short bowl as moral failure", "Using belonging to erase subsistence"],
+      "emotional_display_norms": ["Concern travels through food, repairs, exact complaints, and dry jokes; public pleading risks being converted into weak standing."],
+      "trust_defaults": ["Trusts neighbors whose exchanges stay named and workers who preserve failures; distrusts clean summary marks issued from dry rooms."],
+      "speech_register_cues": ["Domestic arithmetic", "Object-first complaint", "Short work jokes", "Precise statements of what was carried or missed"],
+      "source_refs": ["spoiler-low-sere", "public-low-sere", "public-basin-table"]
+    },
+    {
+      "group_id": "low-sere-custodian-support",
+      "label": "The forty-second-bowl support rotation",
+      "group_type": "local_care_rotation",
+      "institutional_logic": ["Keep the acting custodian fed, informed by household observations, and briefly witnessed without granting the rotation technical or appointment authority."],
+      "material_incentives": ["Prevent solitary, hungry custody from becoming a hidden failure while spreading a necessary burden across recognized hearths."],
+      "internal_virtues": ["A hot portion", "A true short mark", "Bounded witness time", "Recorded exchange"],
+      "internal_shames": ["An empty person beneath a full-turn mark", "Unpriced assistant labor", "A neighbor debt left anonymous"],
+      "prestige_markers": ["A bowl returned clean because the custodian ate", "A witness strip another hearth can inspect", "A swap recorded before ration"],
+      "taboo_triggers": ["Treating food as certification", "Calling emergency extension voluntary after the bounded interval", "Using the custodian's need to consume household minimums"],
+      "emotional_display_norms": ["Care is allowed to be affectionate, resentful, or both; the public form is the condition of bowl, token, and record."],
+      "trust_defaults": ["Trusts visible delivery and named witness; distrusts broad completion marks that collapse food, work, and authority."],
+      "speech_register_cues": ["Full, short, exchanged, refused, returned", "Meal jokes", "Time-bounded promises", "Separate naming of household and site costs"],
+      "source_refs": ["spoiler-low-sere", "spoiler-relic-custody"]
+    },
+    {
+      "group_id": "low-sere-basin-table",
+      "label": "Low Sere basin table",
+      "group_type": "local_resource_compact",
+      "institutional_logic": ["Coordinate water, shared stores, work obligations, local threshold admission, and basin emergencies among unequal hearths and work groups."],
+      "material_incentives": ["Keep the intake serving, preserve inspectable ration and work claims, and avoid a panic that consumes winterless habitability."],
+      "internal_virtues": ["Recorded allocation", "Household witness", "Work matched to use and capacity", "Service continuity"],
+      "internal_shames": ["A household cut after years of unrecognized labor", "A support gap hidden as successful service", "A technical stop treated as disloyalty"],
+      "prestige_markers": ["A complete water board", "A replacement called before a watch breaks", "A surviving lower basin"],
+      "taboo_triggers": ["Publicly exposing that dry hearths escaped a shared cost", "A returned support token before crisis", "An appointment that remains provisional because it is convenient"],
+      "emotional_display_norms": ["Fear is translated into schedules and completion marks; guilt prefers one clean line over several expensive truths."],
+      "trust_defaults": ["Trusts repeated service and witnessed records while remaining vulnerable to the greater leverage of large hearths."],
+      "speech_register_cues": ["Work-watch compression", "Ration categories", "Practical urgency", "Institutional understatement"],
+      "source_refs": ["spoiler-low-sere", "public-low-sere"]
+    },
+    {
+      "group_id": "low-sere-provisional-custody",
+      "label": "Sera Venn's provisional intake custody",
+      "group_type": "bounded_technical_office",
+      "institutional_logic": ["Preserve safe ordinary inspection, isolation, degraded service, and refusal while missing tools and competent comparison keep full appointment unresolved."],
+      "material_incentives": ["Receive food, rest, assistants, observations, records, and comparison enough to avoid repeating the Grey Scald."],
+      "internal_virtues": ["A stop that stays stopped", "Limits spoken before work", "Failed support preserved", "No claim beyond formation"],
+      "internal_shames": ["Performing certainty for frightened dependants", "Letting exhaustion look like continuity", "Using affection as proof of competence"],
+      "prestige_markers": ["A stable degraded service", "A household warning taken seriously", "An honest request for replacement"],
+      "taboo_triggers": ["Pressure to open the inner Crown", "A meal described as consent", "A full-turn mark hiding solitary work"],
+      "emotional_display_norms": ["Fatigue appears through precision, refusal, and minimal humor; visible need can threaten a provisional custodian's standing."],
+      "trust_defaults": ["Trusts bounded observations and people who keep separate records; distrusts urgent summaries that enlarge authority."],
+      "speech_register_cues": ["Technical limits", "Short corrections", "Dry refusal", "Care acknowledged as input rather than favor"],
+      "source_refs": ["spoiler-low-sere", "spoiler-relic-custody", "spoiler-grey-scald"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "low-step-hearths.belonging-has-an-invoice",
+      "applies_to": ["low-sere-lower-step-hearths", "low-sere-custodian-support"],
+      "pressure_type": "belonging_and_subsistence",
+      "summary": "Membership is proven through shared food and work, but unequal hearths survive only when the invoice remains visible.",
+      "projection_use": "Prompt household actors to express loyalty through portions, tools, time, and named exchanges while resisting claims that affection cancels scarcity.",
+      "source_refs": ["spoiler-low-sere", "public-basin-table"]
+    },
+    {
+      "field_id": "provisional-custody.care-is-not-certification",
+      "applies_to": ["low-sere-provisional-custody", "low-sere-custodian-support"],
+      "pressure_type": "care_and_authority",
+      "summary": "Sera needs household care to work safely, yet that care cannot decide whether her provisional office is technically complete.",
+      "projection_use": "Keep personal tenderness and institutional judgment separate even when one meal affects the custodian's bodily capacity.",
+      "source_refs": ["spoiler-low-sere", "spoiler-relic-custody"]
+    },
+    {
+      "field_id": "basin-table.clean-completion-pressure",
+      "applies_to": ["low-sere-basin-table"],
+      "pressure_type": "administrative_convenience",
+      "summary": "One full-turn mark protects the appearance of continuity by collapsing several costly and potentially incomplete supports.",
+      "projection_use": "Let officials prefer compressed records for comprehensible reasons, then make hidden household and safety costs bite later.",
+      "source_refs": ["spoiler-low-sere", "spoiler-relic-custody"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "low-sere-basin-table",
+      "target_group_id": "low-sere-lower-step-hearths",
+      "observer_read": ["Recognized participants with ordinary rotation duties", "Households able to exchange turns when burdened"],
+      "target_self_read": ["Homes spending food, child labor, bed work, and dry space to keep a shared office alive"],
+      "misread_patterns": ["A meal delivered is read as a sustainable turn", "A child messenger is read as spare household capacity", "A short bowl is read as weak loyalty"],
+      "likely_insults": ["unreliable hearth", "always wet", "already represented"],
+      "projection_use": "Preserve the basin table's real coordination need while exposing how its clean categories hide unequal household capacity.",
+      "source_refs": ["spoiler-low-sere", "public-low-sere"]
+    },
+    {
+      "observer_group_id": "low-sere-lower-step-hearths",
+      "target_group_id": "low-sere-provisional-custody",
+      "observer_read": ["The person who still has guaranteed heat", "An apprentice whose office has consumed years of emergency"],
+      "target_self_read": ["A bounded operator carrying a public system beyond the support and review promised to her"],
+      "misread_patterns": ["Necessary custodian support can look like privilege", "Technical refusal can look like choosing records over wet rooms"],
+      "likely_insults": ["door-fed", "permanent provisional", "warmest poor person in the basin"],
+      "projection_use": "Allow affection and resentment to coexist; neither side gets the other's private account automatically.",
+      "source_refs": ["spoiler-low-sere", "spoiler-relic-custody"]
+    },
+    {
+      "observer_group_id": "low-sere-provisional-custody",
+      "target_group_id": "low-sere-basin-table",
+      "observer_read": ["Dependants under real pressure", "An appointing compact tempted to make survival evidence of competence"],
+      "target_self_read": ["The local body keeping all forty-one hearths habitable through an inherited failure"],
+      "misread_patterns": ["A request for continuity may be heard as a planned override", "A compressed mark may be routine rather than deliberate concealment"],
+      "likely_insults": ["frightened council", "ledger before witness", "wheel without spindle"],
+      "projection_use": "Keep Sera wary without granting her perfect motive reading of Maro or the household witnesses.",
+      "source_refs": ["spoiler-low-sere", "public-basin-table"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "lower-step-water-witness",
+      "summary": "A household representative who can report material conditions and witness public work while protecting one wet home's meal, labor, and standing.",
+      "obligations": ["Report water and wall changes", "Keep the household viable", "Name support actually given", "Preserve the bounded witness interval"],
+      "available_masks": ["Dry work humor", "Domestic arithmetic", "Patient witness", "Publicly light bowl"],
+      "failure_modes": ["Hiding a shortfall for someone loved", "Delegating adult relief to an eldest", "Refusing too late", "Naming neighbors who were never called"],
+      "source_refs": ["spoiler-low-sere", "public-basin-table"]
+    },
+    {
+      "role_id": "provisional-intake-custodian",
+      "summary": "An apprentice successor trusted with degraded service and isolation while missing records and comparison prevent full appointment.",
+      "obligations": ["Keep within formation", "Record abnormal behavior", "Narrow service when support fails", "Refuse an unsafe enlargement"],
+      "available_masks": ["Technical precision", "Dry jokes", "Visible economy of movement", "Refusal phrased as work"],
+      "failure_modes": ["Working hungry and alone", "Letting gratitude become appointment evidence", "Protecting households by hiding her own support failure"],
+      "source_refs": ["spoiler-low-sere", "spoiler-relic-custody", "spoiler-grey-scald"]
+    },
+    {
+      "role_id": "cistern-reeve",
+      "summary": "A basin-table officer controlling the drain wheel and obligation board while needing technical custody he cannot command.",
+      "obligations": ["Move water safely", "Call replacements", "Record use and labor", "Preserve settlement continuity"],
+      "available_masks": ["One clean completion mark", "Practical urgency", "Dry administrative certainty", "A joke treated as adjournment"],
+      "failure_modes": ["Collapsing separate costs", "Treating lower-step flexibility as infinite", "Letting a provisional office become permanent through habit"],
+      "source_refs": ["spoiler-low-sere", "public-basin-table"]
+    },
+    {
+      "role_id": "eldest-household-worker",
+      "summary": "A young adult whose water carrying, bed work, message running, and humor make the household appear to possess more capacity than it does.",
+      "obligations": ["Carry drinking water", "Protect bedding", "Relay exact instructions", "Help the hearth survive the adult's public duty"],
+      "available_masks": ["Competence", "One raised eyebrow", "Fast literal repetition", "Pretending the heaviest task is ordinary"],
+      "failure_modes": ["Becoming hidden relief labor", "Missing Grey Bed work", "Running messages while the room floods", "Carrying a debt nobody records"],
+      "source_refs": ["public-basin-table", "spoiler-low-sere"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "bel_orra",
+      "known_context": [
+        {"text": "Bel knows household wetness, ration and work marks, the public Cistern House layout, Sera's visible fatigue, and the promised limit of her own bowl turn.", "source_refs": ["public-basin-table", "spoiler-low-sere"]}
+      ],
+      "beliefs": [
+        {"text": "Bel believes Sera must be fed and witnessed, and that loyalty becomes extraction when lower-step food and labor disappear from the record.", "source_refs": ["spoiler-low-sere"]}
+      ],
+      "misreads": [
+        {"text": "Bel may read Maro's desire for a full-turn mark as contempt when it can also arise from real fear that the intake will fail before review.", "source_refs": ["spoiler-low-sere"]}
+      ],
+      "must_not_know": [
+        {"text": "Bel must not know hidden Ashen Intake zones, the missing objects' exact location, the final calibration sequence, or the cause of an unresolved knock.", "source_refs": ["spoiler-ashen-intake"]}
+      ]
+    },
+    {
+      "speaker_id": "sera_venn",
+      "known_context": [
+        {"text": "Sera knows her formation limits, the current sample, the pressure door's visible state, and which degraded service or isolation acts she may perform.", "source_refs": ["spoiler-low-sere", "spoiler-relic-custody"]}
+      ],
+      "beliefs": [
+        {"text": "Sera believes unsupported work is a site failure, and a full bowl or affectionate witness does not settle her appointment.", "source_refs": ["spoiler-low-sere", "spoiler-relic-custody"]}
+      ],
+      "misreads": [
+        {"text": "Sera may interpret compressed household support as basin-table pressure before seeing the private scarcity that produced it.", "source_refs": ["spoiler-low-sere"]}
+      ],
+      "must_not_know": [
+        {"text": "Sera must not know the missing folio's contents, final appointment outcome, or whether a pressure knock has a mechanical, dead, divine, or mixed cause beyond her evidence.", "source_refs": ["spoiler-low-sere", "spoiler-ashen-intake"]}
+      ]
+    },
+    {
+      "speaker_id": "maro_seln",
+      "known_context": [
+        {"text": "Maro knows the water schedule, work obligations, drain wheel, current public risks, and what Bel or Sera visibly reports.", "source_refs": ["spoiler-low-sere", "public-basin-table"]}
+      ],
+      "beliefs": [
+        {"text": "Maro believes settlement continuity needs usable records and fears review that can leave the threshold closed during argument.", "source_refs": ["spoiler-low-sere"]}
+      ],
+      "misreads": [
+        {"text": "Maro may treat a completed bowl delivery as completed support, or Bel's insistence on separate marks as delay rather than safety evidence.", "source_refs": ["spoiler-low-sere"]}
+      ],
+      "must_not_know": [
+        {"text": "Maro must not know Sera's unspoken bodily limit, Bel's private household decision, or technical safety beyond what the custodian reports.", "source_refs": ["spoiler-relic-custody"]}
+      ]
+    },
+    {
+      "speaker_id": "nim_orra",
+      "known_context": [
+        {"text": "Nim knows the household leak, bed, water vessels, Grey Bed work missed, neighbor doors, and instructions Bel gives in observable speech.", "source_refs": ["public-basin-table", "spoiler-low-sere"]}
+      ],
+      "beliefs": [
+        {"text": "Nim believes the household is always asked to prove belonging with the labor it needed for itself.", "source_refs": ["spoiler-low-sere"]}
+      ],
+      "misreads": [
+        {"text": "Nim may read Bel's witness duty as choosing Sera over home when Bel is also trying to preserve the water system that makes home possible.", "source_refs": ["spoiler-low-sere"]}
+      ],
+      "must_not_know": [
+        {"text": "Nim must not know off-frame Cistern House actions after running downhill or the technical meaning of the pressure knock.", "source_refs": ["spoiler-low-sere", "spoiler-ashen-intake"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Spoilers tier: the Grey Scald's exact institutional failure, hidden dungeon evidence, pressure-clock mechanics, and unresolved manifestation causes remain outside Bel's knowledge unless made observable in scene.",
+      "source_refs": ["spoiler-grey-scald", "spoiler-ashen-intake"]
+    },
+    {
+      "text": "Spoilers tier: the forty-second bowl is an authored Low Sere elaboration for this pass. It is local canon in the owner note, while this particular evening and Nim's name remain fixture-local and do not become adopted history.",
+      "source_refs": ["spoiler-low-sere"]
+    },
+    {
+      "text": "Public tier presentations establish Bel's visible burden and Sera's provisional office without publishing the dungeon's hidden configuration or adjudicating its causes.",
+      "source_refs": ["public-low-sere", "public-basin-table"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which recognized hearths commonly escape or trade the forty-second-bowl turn, and how long can those private exchange debts survive before basin review?",
+      "blocks_training": false,
+      "notes": "Left unresolved to avoid founding a full household law from one fixture. Future Hearth work could compare dry and lower-step participation if the owner note develops that pressure."
+    },
+    {
+      "question": "What other forms of food, rest, dependent support, and relief attach to Sera's custodial household beyond the evening bowl?",
+      "blocks_training": false,
+      "notes": "Current canon guarantees heat and now specifies one local meal-and-witness practice; compensation after dungeon outcomes remains explicitly unresolved."
+    },
+    {
+      "question": "Does Low Sere recognize young household workers such as Nim as independent water witnesses, dependants, or both?",
+      "blocks_training": false,
+      "notes": "The fixture keeps Nim as a household worker and messenger without deciding wider membership, age, or succession rules."
+    }
+  ]
+}

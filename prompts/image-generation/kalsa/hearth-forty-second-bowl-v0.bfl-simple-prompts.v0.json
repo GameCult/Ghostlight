@@ -1,0 +1,76 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-hearth-forty-second-bowl-v0.bfl-simple-v0",
+  "fixture_id": "hearth-forty-second-bowl-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, strong readable silhouettes, cold slate stone, warm mineral mist, amber oil-lamp light, clay-red utensils, tactile domestic wear, restrained magical ambiguity, humane faces, dry wit inside material stakes.",
+  "prompts": [
+    {
+      "id": "01_lower_step_home",
+      "prompt": "Small terraced stone dwelling in permanent twilight: warm grey-water channel under the uphill doorway, spreading damp on the inner wall, low bed, shared drying rail, scarred meal table, household cookpot, three eating bowls and one broad lidded communal bowl; sturdy grey-curled mother and slim young adult with water vessels divide supper under amber firelight."
+    },
+    {
+      "id": "02_household_portion",
+      "prompt": "Close supper arithmetic on a worn table: steaming greyroot pot, three household bowls, broad grey communal bowl with clay-red lid, dampness strip, missed-work chit and thumb-sized turn-token; cracked hand holds a ladle between family pot and public bowl while a tired young adult watches."
+    },
+    {
+      "id": "03_home_departure",
+      "prompt": "Middle-aged woman in patched slate-blue wrap carries a lidded grey bowl through a stone doorway; young adult remains beside thin supper, wet wall and low bed; warm threshold channel, rolled bedding and misty shared rail make the household cost visible."
+    },
+    {
+      "id": "04_warm_steps_route",
+      "prompt": "Tiered slate homes cling to a dry basin under unmoving twilight; steaming grey-water channels descend past damp lower walls, shared bedding rails and narrow stairs; a woman climbs toward a heavy-beamed cistern house carrying a covered bowl in both hands."
+    },
+    {
+      "id": "05_cistern_arrival",
+      "prompt": "Rectangular stone Cistern House: steaming east settling basin left, drained west basin right, broad dry lip between, iron grate and closed black pressure door with exactly three pale abstract marks, sampling shelf and chain drain wheel; bowl carrier enters toward tired braided custodian and broad reeve with ledger."
+    },
+    {
+      "id": "06_delivery_choice",
+      "prompt": "Three adults form a triangle on the dry lip between settling basins: bowl carrier with one hand on clay lid, lean braided custodian holding a grey-water sample, broad reeve at ledger and drain wheel; long scraper, catch tray, closed grate and three pale marks create readable food, record, work and authority choices."
+    },
+    {
+      "id": "07_sample_and_supper",
+      "prompt": "Close work scene under amber lamp: ash-stained braided custodian compares warm grey water at a low sampling shelf beside an open communal bowl; lower-step witness stands at a scored place; reeve records separate unlettered costs near a mineral catch tray and long-handled scraper."
+    },
+    {
+      "id": "08_double_knock",
+      "prompt": "Closed black pressure door behind a drained basin with exactly three pale marks glowing above; ceramic sample rings in its dish; custodian points to broad bronze water-cut bell, witness freezes at a scored place, reeve turns toward chain wheel; warm mist carries a physical double knock."
+    },
+    {
+      "id": "09_eldest_arrives",
+      "prompt": "Young adult with dark curls, reed-green tunic and soaked knees stands breathless in a wide cistern doorway; mother turns from a scored witness place; custodian stays at sampling shelf and reeve grips wheel chain; misty stone terraces descend behind the messenger toward an unseen wet home."
+    },
+    {
+      "id": "10_witness_choice",
+      "prompt": "Whole Cistern House decision geometry: wet basin left, drained basin right, central lip, scored witness place, closed black door, chain wheel, broad bronze water-cut bell, smaller fired-clay turn bell and downslope doorway; mother stands between her soaked eldest at the door and the custodian at the isolation catch while the reeve waits at the wheel."
+    },
+    {
+      "id": "11_witness_fold",
+      "prompt": "Cistern House after isolation: wheel chain still, closed catch, black door with three pale marks, communal bowl and household evidence beside ledger; lower-step witness faces broad reeve while braided custodian wipes ash from her hands; downslope doorway and empty scored witness place remain visible."
+    },
+    {
+      "id": "12_obligation_record",
+      "prompt": "Overhead evidence arrangement on a broad stone basin lip: communal bowl, clay turn-token, dampness strip, missed-work chit, witness marks and service-flow pieces surround three hands and a stylus; wet basin glows at left edge and drained basin with black door anchors right edge."
+    },
+    {
+      "id": "13_loyalty_end",
+      "prompt": "Intimate cistern aftermath: exhausted braided custodian sits with broad grey bowl in both hands while sturdy lower-step witness presses a clay full-turn mark; closed black door and three pale marks beyond the drained basin, cold downslope mist behind them."
+    },
+    {
+      "id": "14_honest_care_end",
+      "prompt": "Basin ledger aftermath: lower-step witness separates food, witness, wet-wall and missed-labor tokens into distinct rows; broad reeve writes unhappily; braided custodian watches from sampling shelf; two basins and closed pressure door fix the public work around the record."
+    },
+    {
+      "id": "15_household_end",
+      "prompt": "Return to wet lower-step home: mother and young adult lift a low bed onto fired clay blocks as warm grey water approaches; rolled bedding, catch vessels and cookpot crowd the small stone room; clay turn-token rests on the dry meal table under divided firelight and mineral mist."
+    },
+    {
+      "id": "16_neighbors_end",
+      "prompt": "Wide mutual-aid aftermath across the Cistern House: bowl and ledger on central lip, custodian at sample shelf, reeve writing, lower-step witness naming quarter-turns; young adult and three patched neighbors arrive through downslope doorway carrying bed brace, food vessel, water jar and rolled cloth as separate visible tasks."
+    }
+  ]
+}

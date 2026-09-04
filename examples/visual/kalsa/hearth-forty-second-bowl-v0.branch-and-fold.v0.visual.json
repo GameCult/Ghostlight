@@ -1,0 +1,355 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "kalsa-hearth-forty-second-bowl-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/hearth-forty-second-bowl-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/hearth-forty-second-bowl-v0.branch-and-fold.v0.training.json",
+  "scene_id": "hearth-forty-second-bowl-v0.evening-custodian-support",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for Bel Orra's household support turn between a lower-step hearth and Low Sere's Cistern House.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for household supper routine, the uphill delivery, bounded care at the Cistern House, a pressure knock, kin obligation, and four state-gated aftermath families.",
+    "segmentation_rule": "Separate the home establishing beat, portion choice, uphill transition, Cistern House arrival, delivery action, double knock, Nim's arrival, witness decision, obligation record, and each ending family. The two pressure knocks and Nim's wet-kneed arrival receive their own visual beat.",
+    "prompting_rule": "Every base prompt is a complete visible frame for a general image model: geometry, materials, lighting, bodies, tools, and staging are restated. Character refs are assembled only for named people actually visible. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, strong readable silhouettes, cold slate stone and warm mineral mist, muted grey-green crops and clay red utensils, amber oil-lamp light, tactile domestic wear, restrained magical ambiguity, humane faces, dry wit held inside material stakes.",
+    "prompt_assembly_rule": "Assemble global_style_cue plus the chosen scene base_image_prompt plus visual_character_refs only for the visible_characters listed in that scene plus triggered state_image_modifiers and global_branch_image_modifiers. Use the embedded scene_set camera and staging slots as geometry authority. Exclude continuity notes and off-frame character refs.",
+    "replay_readiness": "b_level_replay_ready_with_embedded_layout_map",
+    "scene_set_guidance": {
+      "current_mode": "embedded_two_set_layout_map",
+      "scope_reason": "The fixture revisits one lower-step hearth and one Cistern House room from several focuses. The embedded map fixes routes, basins, doors, props, camera slots, and staging so image generation paints known spaces.",
+      "required_scene_set": "Use the scene_set block in this artifact as the durable layout source for draft replay. A later 3D blockout may improve exact camera matching but does not own new geometry.",
+      "promotion_rule": "Generated art may interpret materials and mood while preserving the embedded zones, routes, sightlines, and branch-persistent anchors. Geometry changes require a reviewed scene_set revision."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "hearth_lower_step_establishing",
+        "ink_anchor": "start|lower_step_hearth",
+        "camera_slot": "home_wide_from_uphill_door",
+        "base_image_prompt": "Wide interior of a small lower-step stone dwelling in Low Sere, built into a terraced basin: a shallow open channel of warm grey water crosses beneath the uphill doorway; the adjacent wall is dark with spreading damp; a low bed stands against the inner wall; a clay cookpot hangs over a compact hearth; three ordinary eating bowls and one larger lidded communal bowl sit on a scarred table; through the doorway a shared wooden drying rail holds rolled bedding over mist. Bel Orra, a sturdy middle-aged human woman with deep brown skin, close-cropped dark curls touched with grey, patched slate-blue work wrap, clay-red sash, cracked hands, and practical forward-set posture, stands at the table. Nim Orra, an androgynous young adult with the same dark curls, long narrow face, reed-green tunic, rolled work trousers, damp knees, and two water vessels against one hip, has just entered. Amber hearth light meets cold grey mist.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "standing at the meal table between household pot and communal bowl", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "nim_orra", "default_stance": "inside the uphill doorway with two carried water vessels", "visual_ref": "visual_character_refs.characters.nim_orra"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The warm channel remains at the uphill threshold; bed and wet wall occupy the inner downhill side; meal table and hearth sit on the dry sidewall.",
+          "The communal bowl is broad grey ceramic with a fitted clay-red lid and one old dark repair seam."
+        ]
+      },
+      {
+        "visual_scene_id": "hearth_household_portion",
+        "ink_anchor": "portion_choice",
+        "camera_slot": "home_table_medium",
+        "base_image_prompt": "Medium view across the scarred meal table in a damp stone home: a steaming clay cookpot, three household bowls, the broad grey communal bowl with fitted clay-red lid, a narrow cloth strip marked at the height of the wet wall, a small work chit, and a thumb-sized clay turn-token form a clear set of choices. Bel Orra, sturdy middle-aged woman with deep brown skin, grey-touched close curls, patched slate-blue wrap, clay-red sash, and cracked hands, holds a ladle between the household pot and communal bowl. Nim Orra, slim androgynous young adult with dark curls, reed-green tunic, rolled trousers, and damp knees, watches from beside the threshold channel. Warm lamp and firelight catch mineral mist on the stone.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "ladle poised between household pot and communal bowl", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "nim_orra", "default_stance": "watching from the warm threshold channel", "visual_ref": "visual_character_refs.characters.nim_orra"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The portion choice changes bowl contents and evidence placement, not the room layout."]
+      },
+      {
+        "visual_scene_id": "hearth_home_fold",
+        "ink_anchor": "home_fold",
+        "camera_slot": "home_door_close",
+        "base_image_prompt": "Close-medium departure frame at a lower-step stone doorway: Bel Orra, sturdy middle-aged woman in a patched slate-blue wrap and clay-red sash, carries a broad lidded grey ceramic bowl in both cracked hands. Behind her, Nim Orra, slim young adult in reed-green work clothes with damp knees, tends the household cookpot beside a wet wall and a low bed. A warm grey-water channel crosses the threshold; rolled bedding hangs on a shared rail in mineral mist outside. The bowl, household supper, damp wall, and Nim's workload are all visible in one grounded domestic composition.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "turning uphill with the communal bowl", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "nim_orra", "default_stance": "remaining by the household pot and wet wall", "visual_ref": "visual_character_refs.characters.nim_orra"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "bowl_state >= 2", "modifier_prompt": "The lidded bowl is visibly full, with a thin line of broth at the lid and weight low in Bel's arms."},
+          {"trigger": "bowl_state == 1", "modifier_prompt": "The communal bowl is lightly filled; the dampness strip lies visibly beneath the lid edge with a clear short-portion notch."},
+          {"trigger": "bowl_state < 0", "modifier_prompt": "The communal bowl is empty of food and visibly holds a dampness strip, a small work chit, and a clay descent-food mark."},
+          {"trigger": "home_security <= 1", "modifier_prompt": "The household pot shows a thin portion, another catch vessel sits against the wet wall, and Nim's posture carries tired concentration."},
+          {"trigger": "neighbor_credit >= 3", "modifier_prompt": "A second small ladle and a differently glazed streak of moss broth show that a neighboring hearth contributed to the bowl."}
+        ],
+        "visual_continuity_notes": ["Nim remains in the home during Bel's uphill route until the later pressure beat."]
+      },
+      {
+        "visual_scene_id": "hearth_warm_steps_route",
+        "ink_anchor": "warm_steps_route",
+        "camera_slot": "steps_wide_uphill",
+        "base_image_prompt": "Wide exterior of Low Sere's Warm Steps under permanent twilight: tiered slate-stone dwellings cling to a dry basin slope; shallow channels carry steaming grey water downhill; upper terraces are drier while lower walls shine with damp; shared wooden rails hold bedding and work cloth; narrow stone stairs climb toward a broad Cistern House of heavy beams and two settling basins. Bel Orra, sturdy middle-aged woman with deep brown skin, grey-touched close curls, patched slate-blue work wrap, clay-red sash, and a lidded grey ceramic bowl in both hands, climbs alone through warm mist. Distant household figures carry vessels along the terraces as small readable silhouettes.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "climbing uphill with the covered bowl", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "lower_step_neighbors", "default_stance": "small figures carrying vessels and tending rails on lower terraces", "visual_ref": "visual_character_refs.groups.lower_step_neighbors"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The route ascends from lower-step homes to the Cistern House; Bel cannot see her room once inside the upper building."]
+      },
+      {
+        "visual_scene_id": "hearth_cistern_arrival",
+        "ink_anchor": "cistern_arrival",
+        "camera_slot": "cistern_wide_from_outer_door",
+        "base_image_prompt": "Wide interior of Low Sere's Cistern House viewed from the downslope outer doorway: a steaming east settling basin holds warm grey water on the left; a drained west stone basin lies on the right; the broad dry lip between them carries a ration board and low sampling shelf; behind the west basin an iron grate fronts a black pressure door with exactly three pale abstract shutter marks above it; a chain-driven drain wheel stands on the outer wall. Sera Venn, lean adult woman with umber skin, long black braid wrapped in grey cloth, ash-stained charcoal work robe, eight-tooth spindle at her belt, and tired precise posture, kneels at the sampling shelf holding a warm ceramic vessel. Maro Seln, broad older man with copper-brown skin, shaved head, rust-red reeve coat, heavy key ring, and ledger board, stands beside the drain wheel. Bel Orra enters with the lidded communal bowl. Amber lamps glow through mineral mist.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "entering from the downslope doorway with the bowl", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "kneeling at the sampling shelf outside the west-basin grate", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "maro_seln", "default_stance": "standing by drain wheel with ledger board", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "East basin is wet and left of the central lip; west basin is drained and right; grate and black pressure door sit behind the west basin; drain wheel is reachable from the outer dry wall.",
+          "The three pale shutter marks remain lit throughout this fixture."
+        ]
+      },
+      {
+        "visual_scene_id": "hearth_delivery_choice",
+        "ink_anchor": "delivery_choice",
+        "camera_slot": "cistern_lip_medium",
+        "base_image_prompt": "Medium triangular staging on the broad stone lip between two settling basins: Bel Orra, sturdy middle-aged woman in patched slate-blue wrap and clay-red sash, stands with the lidded grey communal bowl between Sera and Maro; Sera Venn, lean braided woman in an ash-stained charcoal work robe, kneels beside a low sampling shelf holding a warm ceramic sample; Maro Seln, broad shaved-headed older man in a rust-red reeve coat, braces a ledger board near the chain drain wheel. A long-handled scraper hangs on a wall peg beside the safe outer screen. The black pressure door and three pale marks are visible beyond the drained west basin. Bowl, ledger, sample, and scraper form four physical care-and-record levers.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "standing at center with one hand on bowl lid", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "kneeling at sampling shelf with ceramic vessel", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "maro_seln", "default_stance": "holding ledger beside drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "bowl_state >= 2", "modifier_prompt": "The bowl sits low and full in Bel's hands with steam escaping at the lid."},
+          {"trigger": "bowl_state == 1", "modifier_prompt": "The bowl is visibly light and accompanied by a strip with a short-portion notch."},
+          {"trigger": "bowl_state < 0", "modifier_prompt": "The open empty bowl visibly contains household evidence marks instead of food."}
+        ],
+        "visual_continuity_notes": ["All three adults remain outside the iron grate; safe outer-screen cleaning occurs from the dry basin lip."]
+      },
+      {
+        "visual_scene_id": "hearth_delivery_fold",
+        "ink_anchor": "delivery_fold",
+        "camera_slot": "cistern_sampling_close",
+        "base_image_prompt": "Close-medium work frame at the Cistern House sampling shelf: Sera Venn, lean adult woman with umber skin, cloth-wrapped black braid, ash-stained charcoal robe, and tired eyes, compares warm grey water in a ceramic vessel under an amber lamp; the broad communal bowl rests open on the low ledge; Bel Orra, sturdy middle-aged woman in slate-blue work wrap, watches from a chalk floor mark outside the grate; Maro Seln, broad older man in rust-red coat, writes on an abstract unlettered clay-and-wood ledger board near the drain wheel. A catch tray of mineral paste and the long-handled scraper occupy the safe outer screen. Three pale marks glow above the closed black door.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "at the scored witness place outside the grate", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "at sampling shelf with bowl and water sample", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "maro_seln", "default_stance": "writing by the drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "sera_recovery >= 3", "modifier_prompt": "Sera sits upright after eating, holding the sample steadily with relaxed shoulders and warmer color in her face."},
+          {"trigger": "sera_recovery <= 1", "modifier_prompt": "The communal bowl is closed or empty and Sera braces a visibly trembling hand against the shelf."},
+          {"trigger": "record_honesty >= 4", "modifier_prompt": "Separate unlettered marks for damp wall, missed work, witness time, and bowl state occupy distinct rows on Maro's board."},
+          {"trigger": "watch_coverage >= 3", "modifier_prompt": "Freshly scraped grey mineral paste fills the catch tray and Bel stands with the scraper returned to its peg."},
+          {"trigger": "pressure_load >= 3", "modifier_prompt": "Mist thickens around the black door and all three adults angle their attention toward the pressure seal."}
+        ],
+        "visual_continuity_notes": ["Meal and safe screen work can change, while the pressure door stays closed and the three marks stay lit."]
+      },
+      {
+        "visual_scene_id": "hearth_double_knock",
+        "ink_anchor": "pressure_knock",
+        "camera_slot": "cistern_black_door_centerline",
+        "base_image_prompt": "Pivotal still frame centered on the closed black pressure door behind the drained west basin: exactly three pale abstract shutter marks glow above the iron grate; a ceramic sample vessel rings visibly in its shallow dish on the low shelf; Sera Venn, lean braided woman in ash-stained charcoal robe, has one hand on the stone ledge and the other pointing toward a broad bronze water-cut bell; Bel Orra, sturdy woman in patched slate-blue wrap, freezes at the scored witness place; Maro Seln, broad older man in rust-red coat, turns toward the chain drain wheel. Warm mineral mist and amber lamps make the double knock feel physical while every visible mechanism remains closed.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "frozen at the witness mark, looking toward Sera", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "one hand on ledge, one pointing to water-cut bell", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "maro_seln", "default_stance": "turning toward drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The knock does not extinguish a shutter mark or open the pressure door."]
+      },
+      {
+        "visual_scene_id": "hearth_nim_arrival",
+        "ink_anchor": "nim_arrival",
+        "camera_slot": "cistern_outer_door_reverse",
+        "base_image_prompt": "Reverse medium-wide view from the basin lip toward the downslope outer doorway of the Cistern House: Nim Orra, slim androgynous young adult with dark curls, long narrow face, reed-green tunic, rolled trousers, empty hands, and soaked knees, stands in the doorway after running uphill. Bel Orra turns toward them from the scored witness place; Sera Venn remains beside the sampling shelf; Maro Seln holds the drain wheel chain. Behind Nim, misty Warm Steps descend toward damp homes and shared bedding rails. The empty doorway route makes the pull between household and intake visible.",
+        "visible_characters": [
+          {"agent_id": "nim_orra", "default_stance": "breathing hard in the downslope doorway with soaked knees", "visual_ref": "visual_character_refs.characters.nim_orra"},
+          {"agent_id": "bel_orra", "default_stance": "turned from the witness mark toward Nim", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "at sampling shelf inside the room", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "maro_seln", "default_stance": "at the drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Nim arrives only after the double knock; the home remains off-frame downhill."]
+      },
+      {
+        "visual_scene_id": "hearth_witness_choice",
+        "ink_anchor": "witness_choice",
+        "camera_slot": "cistern_wide_from_outer_door",
+        "base_image_prompt": "Wide decision frame showing the whole Cistern House working triangle: Nim Orra stands at the downslope doorway with soaked knees and the misty lower terraces behind; Bel Orra stands between doorway and a scored witness place at the drained west basin; Sera Venn holds the isolation catch outside the iron grate and closed black pressure door; Maro Seln grips the chain drain wheel beside a broad bronze water-cut bell, while a smaller fired-clay turn bell hangs at the ration board. The wet east basin steams on the left, the drained west basin lies on the right, and exactly three pale marks glow above the pressure door. The possible actions are physically readable: stay at the mark, send Nim downhill, leave together, or make Maro ring for a replacement.",
+        "visible_characters": [
+          {"agent_id": "nim_orra", "default_stance": "at the outer doorway angled toward home", "visual_ref": "visual_character_refs.characters.nim_orra"},
+          {"agent_id": "bel_orra", "default_stance": "between Nim and the scored witness place", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "at isolation catch outside closed grate", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "maro_seln", "default_stance": "between drain wheel and the small clay turn bell", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Bel can move between witness mark and doorway along the dry lip; Nim never crosses the grate."]
+      },
+      {
+        "visual_scene_id": "hearth_witness_fold",
+        "ink_anchor": "witness_fold",
+        "camera_slot": "cistern_lip_medium",
+        "base_image_prompt": "Medium aftermath at the broad dry lip of Low Sere's Cistern House: the chain drain wheel is still; the isolation catch is closed; the black pressure door remains shut with three pale marks; the communal bowl, dampness strip, work chit, and clay turn-token rest beside Maro's ledger board. Bel Orra, sturdy middle-aged woman in slate-blue wrap and clay-red sash, faces Maro Seln, broad older man in rust-red reeve coat; Sera Venn, lean braided woman in ash-stained charcoal robe, wipes mineral ash from her fingers at the sampling shelf. The downslope doorway and scored witness place both remain visible so absence or replacement can read clearly.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "between ledger board and downslope route", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "at sampling shelf beside the closed isolation catch", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "maro_seln", "default_stance": "at ledger board with clay turn-token", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "watch_coverage >= 3", "modifier_prompt": "A complete series of abstract witness marks shows two knocks, three pale shutters, one closed catch, and one wheel turn."},
+          {"trigger": "watch_coverage <= 1", "modifier_prompt": "The scored witness place is empty and Sera's narrower-service marker sits beside the closed isolation catch."},
+          {"trigger": "service_scope <= 1", "modifier_prompt": "Grey Bed and lower-step flow markers on the ration board are turned edgewise, and the east-basin outlet shows reduced flow."},
+          {"trigger": "neighbor_credit >= 3", "modifier_prompt": "Two lower-step neighbors in patched work wraps appear at the outer doorway with a bed brace and a second covered food vessel."},
+          {"trigger": "eldest_load >= 4", "modifier_prompt": "Nim is absent from the room; their empty wet footprints run from the doorway back downhill."},
+          {"trigger": "pressure_load >= 3", "modifier_prompt": "Maro's unfinished ledger spaces, the cooling bowl, and thick door mist show social delay collected around the stable mechanism."}
+        ],
+        "visual_continuity_notes": ["When neighbors appear through a modifier, use the lower_step_neighbors group ref only in assembled prompt data for that triggered frame."]
+      },
+      {
+        "visual_scene_id": "hearth_obligation_record",
+        "ink_anchor": "final_choice",
+        "camera_slot": "cistern_ledger_overhead",
+        "base_image_prompt": "Overhead close view of the final obligation record on the broad stone basin lip: a clay turn-token, a broad lidded grey bowl with old repair seam, separate dampness strip, missed-work chit, abstract witness marks, and edgewise service-flow pieces surround Maro's stylus. Bel Orra's cracked hand rests near the token; Sera Venn's ash-stained fingers rest near the witness strip; Maro Seln's broad hand holds the stylus above an empty completion space. The wet east basin glows along the left edge, the drained west basin and closed black door along the right edge. Amber lamplight makes each separate cost readable.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "only cracked hand and slate-blue sleeve visible near token", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "only ash-stained fingers and charcoal sleeve visible near witness strip", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "maro_seln", "default_stance": "only broad hand and rust-red sleeve visible with stylus", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "record_honesty >= 4", "modifier_prompt": "Food portion, witness interval, wet wall, missed labor, and service scope occupy five distinct unlettered mark clusters."},
+          {"trigger": "record_honesty <= 2", "modifier_prompt": "Several objects crowd one broad completion space, leaving their separate costs visually ambiguous."}
+        ],
+        "visual_continuity_notes": ["All marks are abstract and unlettered; the image communicates separation by object placement and repeated notch shapes."]
+      },
+      {
+        "visual_scene_id": "hearth_ending_loyalty",
+        "ink_anchor": "ending_loyalty_held|ending_loyalty_hidden_cost",
+        "camera_slot": "cistern_sampling_close",
+        "base_image_prompt": "Intimate Cistern House aftermath beside the low sampling shelf: Sera Venn, lean adult woman with umber skin, cloth-wrapped black braid, ash-stained charcoal robe, and exhausted precise face, sits with the broad grey communal bowl in both hands; Bel Orra, sturdy middle-aged woman with grey-touched curls, patched slate-blue wrap, clay-red sash, and cracked hands, presses the clay turn-token at the ledger edge. The closed black pressure door and three pale marks remain beyond the drained basin; the downslope doorway glows with colder mist. The frame centers personal loyalty as food, witness, and a consequential mark.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "pressing the turn-token into the record", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "seated with communal bowl in both hands", "visual_ref": "visual_character_refs.characters.sera_venn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hearth_ending_honest_care",
+        "ink_anchor": "ending_honest_care_held|ending_honest_care_cost",
+        "camera_slot": "cistern_ledger_overhead",
+        "base_image_prompt": "Medium overhead aftermath at the basin ledger: Bel Orra, sturdy woman in slate-blue work wrap, places separate food, witness, wet-wall, and missed-labor tokens into distinct rows; Maro Seln, broad older man in rust-red reeve coat, writes with a compressed unhappy posture; Sera Venn, lean braided woman in charcoal work robe, watches from the sampling shelf with the communal bowl nearby. Wet east basin, drained west basin, and closed black door anchor the room edges under amber lamps and warm mist.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "separating marks into distinct rows", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "watching from sampling shelf", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "maro_seln", "default_stance": "writing at ledger with stylus", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hearth_ending_home",
+        "ink_anchor": "ending_home_held|ending_home_cost",
+        "camera_slot": "home_wide_from_uphill_door",
+        "base_image_prompt": "Wide return to Bel Orra's lower-step stone home: warm grey water has spread from the threshold channel toward the low bed; fired clay blocks, rolled bedding, catch vessels, and the household cookpot define the rescue work. Bel Orra, sturdy middle-aged woman with deep brown skin, grey-touched curls, patched slate-blue wrap, and clay-red sash, braces the bed frame. Nim Orra, slim androgynous young adult in reed-green work clothes with soaked knees, lifts the opposite side. A clay turn-token sits prominently on the dry meal table beside the household bowls. Warm firelight and cold mineral damp divide the room.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "lifting one side of bed frame", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "nim_orra", "default_stance": "lifting opposite side beside fired clay blocks", "visual_ref": "visual_character_refs.characters.nim_orra"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hearth_ending_neighbors",
+        "ink_anchor": "ending_neighbors_held|ending_neighbors_cost",
+        "camera_slot": "cistern_wide_from_outer_door",
+        "base_image_prompt": "Wide mutual-aid aftermath across the Cistern House: wet east basin on the left, drained west basin and closed black pressure door on the right, broad central lip with bowl and ledger, downslope doorway at the near end. Bel Orra, sturdy woman in slate-blue wrap, names intervals over separated clay marks; Sera Venn, lean braided woman in charcoal robe, remains at the sampling shelf; Maro Seln, broad older man in rust-red coat, writes; Nim Orra, slim young adult in reed-green tunic, stands at the doorway beside three lower-step neighbors in patched work wraps carrying a bed brace, a second covered bowl, a water vessel, and rolled cloth. Each helper occupies a distinct task position under amber lamps and warm mist.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "at ledger naming intervals", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "at sampling shelf", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "maro_seln", "default_stance": "writing separated quarter-turn marks", "visual_ref": "visual_character_refs.characters.maro_seln"},
+          {"agent_id": "nim_orra", "default_stance": "at doorway beside arriving neighbors", "visual_ref": "visual_character_refs.characters.nim_orra"},
+          {"agent_id": "lower_step_neighbors", "default_stance": "three adults at doorway with distinct food, bed, water, and cloth tasks", "visual_ref": "visual_character_refs.groups.lower_step_neighbors"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {"modifier_id": "portion_full_first_visual", "trigger": "branch_label == portion_full_first", "apply_to_visual_scene_ids": ["hearth_household_portion", "hearth_home_fold"], "modifier_prompt": "Bel fills the communal bowl to the lid with greyroot, reed greens, and ash loaf while the household pot visibly thins."},
+      {"modifier_id": "portion_marked_short_visual", "trigger": "branch_label == portion_marked_short", "apply_to_visual_scene_ids": ["hearth_household_portion", "hearth_home_fold"], "modifier_prompt": "Bel serves the household bowls first and places a clearly short portion plus a notched dampness strip into the communal bowl."},
+      {"modifier_id": "portion_neighbor_exchange_visual", "trigger": "branch_label == portion_neighbor_exchange", "apply_to_visual_scene_ids": ["hearth_household_portion", "hearth_home_fold"], "modifier_prompt": "A neighboring hand passes a small ladle of differently glazed moss broth across the shared drying rail; paired clay tokens carry matching exchange notches."},
+      {"modifier_id": "portion_return_empty_visual", "trigger": "branch_label == portion_return_empty", "apply_to_visual_scene_ids": ["hearth_household_portion", "hearth_home_fold"], "modifier_prompt": "The communal bowl holds a dampness strip, missed-work chit, and food-contribution mark in a deliberate evidence arrangement; the household pot remains full enough for supper."},
+      {"modifier_id": "delivery_feed_first_visual", "trigger": "branch_label == delivery_feed_first", "apply_to_visual_scene_ids": ["hearth_delivery_choice", "hearth_delivery_fold"], "modifier_prompt": "The communal bowl rests directly in Sera's hands while the ceramic water sample cools unattended beside her."},
+      {"modifier_id": "delivery_household_report_visual", "trigger": "branch_label == delivery_household_report", "apply_to_visual_scene_ids": ["hearth_delivery_choice", "hearth_delivery_fold"], "modifier_prompt": "Bel holds the notched dampness strip beside the lamp while Sera compares it with the grey water sample and Maro records a separate household row."},
+      {"modifier_id": "delivery_mark_first_visual", "trigger": "branch_label == delivery_mark_first", "apply_to_visual_scene_ids": ["hearth_delivery_choice", "hearth_delivery_fold"], "modifier_prompt": "Bel's palm holds the bowl lid closed against the ledger board until Maro presses the accurate full, short, or returned mark."},
+      {"modifier_id": "delivery_work_for_rest_visual", "trigger": "branch_label == delivery_work_for_rest", "apply_to_visual_scene_ids": ["hearth_delivery_choice", "hearth_delivery_fold"], "modifier_prompt": "Bel uses the long-handled scraper on the safe outer screen and mineral paste falls into a catch tray while Sera sits eating with both hands."},
+      {"modifier_id": "witness_stay_send_eldest_visual", "trigger": "branch_label == witness_stay_send_eldest", "apply_to_visual_scene_ids": ["hearth_witness_choice", "hearth_witness_fold"], "modifier_prompt": "Bel plants both feet on the scored witness place while Nim turns downhill alone, wet footprints pointing toward the lower home."},
+      {"modifier_id": "witness_call_neighbors_visual", "trigger": "branch_label == witness_call_neighbors", "apply_to_visual_scene_ids": ["hearth_witness_choice", "hearth_witness_fold"], "modifier_prompt": "Nim runs downhill along the visible lower rail route while neighboring adults emerge at terrace doors with a bed brace and covered bowl."},
+      {"modifier_id": "witness_protect_home_visual", "trigger": "branch_label == witness_protect_home", "apply_to_visual_scene_ids": ["hearth_witness_choice", "hearth_witness_fold"], "modifier_prompt": "Bel and Nim leave together through the downslope doorway; the scored witness place is empty and Sera places a narrow-service piece beside the closed isolation catch."},
+      {"modifier_id": "witness_call_dry_replacement_visual", "trigger": "branch_label == witness_call_dry_replacement", "apply_to_visual_scene_ids": ["hearth_witness_choice", "hearth_witness_fold"], "modifier_prompt": "Maro strikes the small fired-clay turn bell beside the ration board while Bel blocks the doorway sightline with Nim's soaked knees clearly visible behind her."},
+      {"modifier_id": "ending_loyalty_supported_visual", "trigger": "ending_label == personal_loyalty_supported", "apply_to_visual_scene_ids": ["hearth_ending_loyalty"], "modifier_prompt": "The bowl is empty from eating, Sera's posture is steadier, and Bel's full-turn mark sits beside a complete witness strip."},
+      {"modifier_id": "ending_loyalty_hidden_cost_visual", "trigger": "ending_label == personal_loyalty_hidden_cost", "apply_to_visual_scene_ids": ["hearth_ending_loyalty"], "modifier_prompt": "The full-turn mark is broad and clean while the bowl remains short or closed and the witness strip ends in an unfinished edge."},
+      {"modifier_id": "ending_honest_care_supported_visual", "trigger": "ending_label == honest_care_supported", "apply_to_visual_scene_ids": ["hearth_ending_honest_care"], "modifier_prompt": "Five separate unlettered record clusters remain clearly divided; a dry-step replacement token is placed beside the next support interval."},
+      {"modifier_id": "ending_honest_care_incomplete_visual", "trigger": "ending_label == honest_care_incomplete", "apply_to_visual_scene_ids": ["hearth_ending_honest_care"], "modifier_prompt": "Several record rows stop at ragged unfinished marks; Sera adds a separate charcoal notation while the replacement space stays empty."},
+      {"modifier_id": "ending_household_boundary_supported_visual", "trigger": "ending_label == household_boundary_supported", "apply_to_visual_scene_ids": ["hearth_ending_home"], "modifier_prompt": "Bel and Nim raise the intact bed onto fired blocks before the water reaches its legs; rolled bedding stays dry on the high rail and the turn-token remains visible on the table."},
+      {"modifier_id": "ending_household_boundary_too_late_visual", "trigger": "ending_label == household_boundary_too_late", "apply_to_visual_scene_ids": ["hearth_ending_home"], "modifier_prompt": "One bed leg has slipped into shallow grey water, the lower blanket is visibly soaked, and Bel and Nim strain from poor angles around the frame."},
+      {"modifier_id": "ending_named_mutual_aid_supported_visual", "trigger": "ending_label == named_mutual_aid_supported", "apply_to_visual_scene_ids": ["hearth_ending_neighbors"], "modifier_prompt": "Four distinct quarter-turn pieces align with four named task objects; neighbors carry food, brace, water, and cloth along clearly separated routes."},
+      {"modifier_id": "ending_unnamed_mutual_aid_failure_visual", "trigger": "ending_label == unnamed_mutual_aid_failure", "apply_to_visual_scene_ids": ["hearth_ending_neighbors"], "modifier_prompt": "Only one neighbor has arrived, two quarter-turn spaces remain empty, Nim turns downhill alone, and the communal bowl cools beside an incomplete record."}
+    ],
+    "scene_set": {
+      "scene_set_id": "low_sere_forty_second_bowl.scene_set.v0",
+      "geometry_authority_level": "embedded_reviewed_layout_map",
+      "room_model": "Two fixed environments connected by an uphill exterior route: one compact lower-step household room and one rectangular Cistern House spanning two parallel settling basins.",
+      "fixed_zones": [
+        {"zone_id": "home_dry_side", "visible_form": "scarred meal table, compact cook hearth, shelves, household pot and bowls on the dry sidewall", "used_for": "portion choice and household supper"},
+        {"zone_id": "home_wet_side", "visible_form": "low bed against damp inner wall with catch vessels and fired clay lifting blocks", "used_for": "private leak stakes and home endings"},
+        {"zone_id": "home_threshold_channel", "visible_form": "shallow warm grey-water channel crossing beneath uphill doorway", "used_for": "heat source, leak approach, entry and exit"},
+        {"zone_id": "shared_drying_rail", "visible_form": "wooden rail outside the doorway above channel mist with bedding and work cloth", "used_for": "household care and neighbor exchange"},
+        {"zone_id": "warm_steps_route", "visible_form": "narrow stone stair and lower terrace rail ascending from household doors to Cistern House", "used_for": "Bel's delivery, Nim's message run, neighbor arrival"},
+        {"zone_id": "cistern_east_basin", "visible_form": "water-filled steaming stone settling basin on the left from the outer doorway", "used_for": "ordinary service and reduced-flow state"},
+        {"zone_id": "cistern_west_basin", "visible_form": "drained stone settling basin on the right from the outer doorway", "used_for": "safe view toward grate, pressure door and outer screen"},
+        {"zone_id": "cistern_central_lip", "visible_form": "broad dry stone strip between basins with ration board, ledger space, scored witness place and sampling shelf", "used_for": "delivery, witness, record and final choices"},
+        {"zone_id": "pressure_boundary", "visible_form": "iron grate and closed black pressure door beyond the west basin with exactly three pale marks above", "used_for": "technical boundary and double-knock pressure"},
+        {"zone_id": "drain_station", "visible_form": "chain-driven wheel and broad bronze water-cut bell on the dry outer wall", "used_for": "Maro's water control and public water-cut warning"},
+        {"zone_id": "turn_signal", "visible_form": "small fired-clay turn bell hanging beside the ration board", "used_for": "calling a replacement hearth from the higher or lower Steps"},
+        {"zone_id": "downslope_outer_door", "visible_form": "wide Cistern House doorway opening onto the Warm Steps route", "used_for": "Bel's arrival, Nim's arrival, withdrawal, neighbors and home sightline"}
+      ],
+      "routes": [
+        {"route_id": "home_to_cistern", "path": "home_threshold_channel -> shared_drying_rail -> warm_steps_route -> downslope_outer_door -> cistern_central_lip", "constraints": "Uphill stone stairs, human foot traffic, bowl carried in both hands."},
+        {"route_id": "central_lip_to_witness_mark", "path": "downslope_outer_door -> cistern_central_lip -> scored witness place outside west-basin grate", "constraints": "Dry public surface; no crossing of iron grate."},
+        {"route_id": "nim_neighbor_call", "path": "downslope_outer_door -> warm_steps_route -> lower terrace rail -> household doorways", "constraints": "Audible heel-strike route; lower home remains out of sight from basin lip."}
+      ],
+      "camera_slots": [
+        {"camera_id": "home_wide_from_uphill_door", "supports_visual_scene_ids": ["hearth_lower_step_establishing", "hearth_ending_home"]},
+        {"camera_id": "home_table_medium", "supports_visual_scene_ids": ["hearth_household_portion"]},
+        {"camera_id": "home_door_close", "supports_visual_scene_ids": ["hearth_home_fold"]},
+        {"camera_id": "steps_wide_uphill", "supports_visual_scene_ids": ["hearth_warm_steps_route"]},
+        {"camera_id": "cistern_wide_from_outer_door", "supports_visual_scene_ids": ["hearth_cistern_arrival", "hearth_witness_choice", "hearth_ending_neighbors"]},
+        {"camera_id": "cistern_outer_door_reverse", "supports_visual_scene_ids": ["hearth_nim_arrival"]},
+        {"camera_id": "cistern_lip_medium", "supports_visual_scene_ids": ["hearth_delivery_choice", "hearth_witness_fold"]},
+        {"camera_id": "cistern_sampling_close", "supports_visual_scene_ids": ["hearth_delivery_fold", "hearth_ending_loyalty"]},
+        {"camera_id": "cistern_black_door_centerline", "supports_visual_scene_ids": ["hearth_double_knock"]},
+        {"camera_id": "cistern_ledger_overhead", "supports_visual_scene_ids": ["hearth_obligation_record", "hearth_ending_honest_care"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "outer_door_to_pressure_marks", "path": "downslope_outer_door -> cistern_central_lip -> drained west basin -> pressure_boundary", "supports": ["Nim can see Bel, Sera, Maro, and the three marks from the doorway."]},
+        {"lane_id": "witness_to_work", "path": "scored witness place -> sampling shelf -> isolation catch -> drain station", "supports": ["Bel can observe the named isolation actions while remaining outside the grate."]},
+        {"lane_id": "cistern_to_home_limit", "path": "cistern_central_lip -> downslope_outer_door -> first Warm Steps turn", "supports": ["Bel can see the route but not her household room or wet wall from inside the Cistern House."]}
+      ],
+      "staging_slots": [
+        {"slot_id": "bel_home_table", "zone_id": "home_dry_side", "allowed_agents": ["bel_orra"]},
+        {"slot_id": "nim_home_threshold", "zone_id": "home_threshold_channel", "allowed_agents": ["nim_orra"]},
+        {"slot_id": "bel_cistern_center", "zone_id": "cistern_central_lip", "allowed_agents": ["bel_orra"]},
+        {"slot_id": "sera_sampling_shelf", "zone_id": "cistern_central_lip", "allowed_agents": ["sera_venn"]},
+        {"slot_id": "maro_drain_station", "zone_id": "drain_station", "allowed_agents": ["maro_seln"]},
+        {"slot_id": "nim_outer_door", "zone_id": "downslope_outer_door", "allowed_agents": ["nim_orra"]},
+        {"slot_id": "neighbors_outer_door", "zone_id": "downslope_outer_door", "allowed_agents": ["lower_step_neighbors"]}
+      ],
+      "branch_persistent_state_anchors": [
+        {"anchor_id": "communal_bowl", "states": ["full", "short", "empty_evidence", "eaten", "cooling"], "fixed_location_rule": "Moves home table -> Bel's hands -> Cistern House lip or Sera's hands."},
+        {"anchor_id": "clay_turn_token", "states": ["unclosed", "full_turn", "separated_costs", "withdrawn_home", "quarter_turns"], "fixed_location_rule": "Begins at home, reaches ledger with Bel, and moves only by final choice."},
+        {"anchor_id": "three_shutter_marks", "states": ["three_pale"], "fixed_location_rule": "Remain above the black pressure door for the entire fixture."},
+        {"anchor_id": "service_flow", "states": ["ordinary_minimum", "narrowed"], "fixed_location_rule": "Shown at east-basin outlet and ration-board flow pieces."},
+        {"anchor_id": "home_bed", "states": ["threatened", "braced", "slipped_and_soaked"], "fixed_location_rule": "Remains against inner wet wall in the lower-step home."}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable fixture-local visual identities for prompt assembly; include only refs for people or groups listed as visible in each frame.",
+    "characters": {
+      "bel_orra": "Bel Orra: baseline human woman in middle adulthood, sturdy build, deep brown skin, close-cropped dark curls touched with grey, broad observant face, patched slate-blue work wrap tied with clay-red sash, dark wool leggings, worn soft boots, cracked hands stained by greyroot and mineral ash; silhouette planted forward as if bracing against work; body language through squared feet, direct gaze, compressed mouth, and hands that keep hold of practical objects.",
+      "nim_orra": "Nim Orra: baseline human young adult, Bel's eldest, slim build, deep brown skin, dense dark curls, long narrow face, reed-green tunic, rolled charcoal work trousers, soft boots or bare wrapped feet near household water, often damp at knees; androgynous silhouette; body language quick, tired, competent, humor carried in one raised brow and careful object balance.",
+      "sera_venn": "Sera Venn: baseline human woman in early-to-middle adulthood, lean build, umber skin, long black braid wrapped in grey cloth, tired precise face with shadows beneath the eyes, ash-stained charcoal work robe over fitted practical layers, worn belt carrying an eight-tooth metal spindle and sample cloths, mineral-marked fingers; silhouette narrow and economical; body language controlled at technical boundaries, tremor visible only under fatigue.",
+      "maro_seln": "Maro Seln: baseline human older man, broad heavy build, copper-brown skin, shaved head, lined square face, rust-red reeve coat over dark work clothes, heavy iron key ring and wood-clay ledger board, thick boots suited to wet stone; silhouette anchored beside wheel or board; body language administrative certainty interrupted by reluctant attention to material evidence."
+    },
+    "groups": {
+      "lower_step_neighbors": "Lower-step neighbors: two to four baseline human adults of varied ages and builds in patched slate, reed-green, brown, and faded clay work wraps; worn soft boots, cracked hands, damp hems; each carries one concrete household tool such as a fired-clay bed brace, covered food vessel, water jar, rolled cloth, or catch basin; distinct task-oriented postures, clustered at terrace doors or the Cistern House outer doorway."
+    }
+  },
+  "review_notes": [
+    "The embedded two-set map owns draft replay geometry for the lower-step hearth, Warm Steps route, and Cistern House; generated images are painterly projections of that map.",
+    "All base prompts restate visible geometry, lighting, material objects, and character appearance; assembly still uses stable refs for continuity and excludes off-frame people.",
+    "The canonical pressure clock remains at three pale shutter marks in every scene and modifier.",
+    "Review verdicts and any applied repairs are recorded in the training sidecar audit."
+  ]
+}
