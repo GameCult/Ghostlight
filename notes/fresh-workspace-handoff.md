@@ -40,8 +40,12 @@ The replacement owner is sealed. Its runtime boundary remains create/open,
 immutable snapshot, submit, and typed receipts. Mutable aggregate state,
 canonical ID issuance, the reducer, and the CultCache journal writer stay
 private to the kernel. Controller assignment and affordance grants are
-canonical; current executability and exact revision-bound decision
-opportunities are derived and revalidated by the kernel.
+canonical; current executability and decision opportunities are derived and
+revalidated by the kernel. The landed `foundation.v0` loop binds opportunities
+to a revision; ontology v2 replaces that with scope-digest binding, so a
+proposal whose scope digest is unchanged commits at a later revision and one
+whose digest changed is rejected. Revision binding is current source, not the
+adopted rule.
 
 Autonomous cognition has two explicit modes under disjoint controller scopes:
 
@@ -196,32 +200,33 @@ and proposals but cannot commit on their behalf.
 
 ## Next gate
 
-Two live operator orders, both ahead of the deployment gate. Commit `9c662bd`
-landed the closed vocabulary at `docs/architecture/ghostlight-world-ontology.md`
-and implementation-plan step 6 (ontology widening, seven passes); the kernel
-source is still Speak-only (`SubjectKind` Person/Institution/Population,
-`AffordanceKind::Speak`, `DecisionAction::Speak` in
-`crates/ghostlight-dungeon/src/world/mod.rs`). Run 115's root cause is recorded
-as vocabulary-shaped in `state/evidence.jsonl`; `12ee9f4` removed the legacy
-elaboration ingresses with no compatibility path and they are not a design input.
+Ontology v2 is the adopted vocabulary: `34ce8c8` rewrote
+`docs/architecture/ghostlight-world-ontology.md` (twelve components, twenty-nine
+operations under one `WorldPatch`, world-authored affordances with
+preconditions, effect slots, and kernel-entropy outcome bands, four derived
+`CausalBoundary` kinds, scope-digest binding, one `AdmitPatch` for seed and
+elaboration, eighteen proofs). `ghostlight-transition-algebra.md` and
+`ghostlight-multiresolution-agency.md` are teardown evidence. Plan step 6 is
+eight implementation passes, none landed; kernel source is still Speak-only
+(`crates/ghostlight-dungeon/src/world/mod.rs`) with revision-bound
+opportunities. Run 115's vocabulary-shaped root cause and the v2 decisions are
+the last two records in `state/evidence.jsonl`.
 
-1. Revise the ontology so deterministic correctness verification covers both
-   world elaboration and character action, general enough for sprawling worlds
-   with layered institutional agency. Eight elaborators are looping agents whose
-   tools are exactly the ontology's permitted mutations; no elaborator gets a
-   tool the reducer cannot validate. Sparse causal sufficiency still governs:
-   counts, cover ratios, and qualitative review are evaluation evidence only.
-2. Fan out four detached Codex CLI workers on the prose plus illustration Ink
-   fixture path, one each against AetheriaLore, Delvehold lore, Kalsa, and
-   Zyphos. Planned layout, not yet present on disk at the time of writing:
-   launcher under `C:\Users\Meta\.claude\worlds\`; Ghostlight worktrees at
-   `F:\Projects\Ghostlight-worlds\<world>` on branches `codex/world-<world>`;
-   lore worktrees at `F:\Projects\<Lore>-worktrees\ghostlight-worlds`. On
-   re-entry, `git worktree list` and `git branch --list 'codex/world-*'` are
-   the witnesses; if they are empty, the fan-out has not launched. Image
-   rendering is deferred: the BFL key at `E:\Projects\gamecult-ops\bfl-api.txt`
-   is gone with drive E:, so workers emit imagegen-ready prompts only and
-   `scripts/generate_bfl_images.py` must not be run against its default key path.
+1. Land plan step 6 pass 1: typed ID namespaces, `Ref<Id>` draft handles,
+   closed-patch resolution, and the complete mismatch set against an otherwise
+   empty ontology, with tests, before pass 2. Eight elaborators are one
+   `OperationalAgent` loop whose tool catalog is a projection of the operation
+   set; no elaborator gets a tool the reducer cannot validate.
+2. Four detached Codex CLI world workers are live on the prose plus
+   illustration Ink fixture path (started 2026-09-04T15:56). PIDs:
+   `C:\Users\Meta\.claude\worlds\logs\pids-worlds.csv`. Poll from
+   `C:\Users\Meta\.claude\worlds\` with `.\Invoke-Worlds.ps1 -Phase Status`.
+   Ledgers: `F:\Projects\Ghostlight-worlds\<world>\examples\ink\<world>\RUN.md`
+   for aetheria, delvehold, kalsa, zyphos. Worktrees branch from `9c662bd` on
+   `codex/world-<world>`; `git worktree list` lists them. Lore worktrees at
+   `F:\Projects\<Lore>-worktrees\ghostlight-worlds`. Image rendering is
+   deferred: the BFL key drive E: is gone, workers emit imagegen-ready prompts
+   only, and `scripts/generate_bfl_images.py` has no working default key path.
 
 The deployment gate below is deferred behind both orders, not cancelled:
 

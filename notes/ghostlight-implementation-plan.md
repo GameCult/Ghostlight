@@ -112,8 +112,10 @@ projection of committed history.
     them.
 11. Controller assignment and affordance grants are canonical aggregate state.
     Current executability and decision opportunities are deterministic
-    revision-bound derivations. A scheduler can order those opportunities but
-    cannot mint their authority.
+    derivations bound to a scope digest over the components they read; a
+    proposal whose scope digest is unchanged commits at a later revision, and
+    one whose scope changed is rejected. A scheduler can order those
+    opportunities but cannot mint their authority.
 
 ## Implementation sequence
 
