@@ -1,0 +1,763 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "tangle-continuity-ward-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.training.json",
+  "scene_id": "tangle-continuity-ward-v0.annex-eight-reciprocity-alert",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Annex Eight continuity-ward fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary ward care, the split patient index, the breach alert, competing custody claims, corridor choices, and four ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the corridor establishing frame, patient-registrar routine, folded morning state, the one-sentence amber alert, Sato's entrance and divided-authority demand, the custody decision, corridor pressure, the final threshold, and each ending family. The alert and Sato's entrance remain separate so the pre-arrival room is established first.",
+    "prompting_rule": "Each base image prompt stands alone for a general image model, names visible geometry and body features directly, and includes only visible characters or drawable groups. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: bleak institutional science-fiction noir illustrated as a tactile storybook frame, restrained ink-wash shadows, cold blue clinic light, bruised amber alert light, precise industrial materials, expressive but unsentimental faces, legible silhouettes, humane small details, cinematic composition suitable for interactive fiction.",
+    "prompt_assembly_rule": "Assemble every image prompt from the global_style_cue, the scene base_image_prompt, visual refs only for named characters or groups visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Keep continuity notes outside prompt text and use the embedded scene_set camera map as geometry authority.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture reuses one corridor from several angles and moves a capsule, cradle, rail, and bodies through branch-dependent positions. The embedded draft map fixes zones, routes, cameras, sightlines, and object states for B-level replay planning.",
+      "future_scene_set_need": "Before high-consistency website rendering, lower this map into a hand-built plan view or simple 3D blockout with the west public lift, east vault door, south thermal-service door, six alcoves, benches, registrar island, center rail, wall panes, floor guide, and cooling trunk."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "tangle_annex_eight_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of Tycho Continuity Annex Eight on Luna, a long rectangular pressurized clinic corridor about eighteen meters from west to east. A recessed public lift with brushed metal doors occupies the west end; an armored blue-lit embodiment-vault pressure door fills the east end. Six shallow calibration alcoves with articulated diagnostic arches line the south wall. Padded patient benches and mobility supports line the north wall. A waist-high registrar island and removable center rail divide the waiting area from a clear service lane. A sealed south thermal-service door opens toward adjacent cooling works. Pale ceramic panels, brushed steel, exposed coolant pipes, floor guide tracks, cold blue task lights, and small warm soup flasks make the place clinically expensive and humanly inhabited. Augmented patients and caregivers wait on the benches in layered work clothes, visible prostheses, implant access patches, canes, and compact tool pouches.",
+        "visible_characters": [
+          {
+            "agent_id": "continuity_ward_queue",
+            "default_stance": "patients and caregivers seated along the north benches or waiting beside mobility supports",
+            "visual_ref": "visual_character_refs.groups.continuity_ward_queue"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The local coordinate frame is west public lift, east vault, north benches, south calibration alcoves and thermal-service door, with the registrar island near the center-west and one straight service lane between island and vault.",
+          "The annex is one clinic corridor adjoining Cryonix service infrastructure, not a habitat-scale complex."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_morning_ward_routine",
+        "ink_anchor": "morning_ward",
+        "base_image_prompt": "Medium view at the Annex Eight registrar island under cold blue clinic lights. Nera Seln, a compact middle-aged human woman with warm brown skin, close-cropped black hair, tired dark eyes, and a left forearm made of ivory ceramic shells over brushed metal joints, sits behind the desk in a charcoal registrar vest; her prosthetic index fingertip has a small recessed blue contact. Dr. Ilya Marr, a tall older human man with olive skin, silver hair at the temples, small paired silver implants above both ears, a long gray Finch clinic coat, and careful narrow hands, calibrates an older patient's mechanical jaw at the rail. A clear palm-sized capsule with a blue consent light rests on the desk beside paper repair slips, a padded ward pouch, a clipped soup flask, and a wall pane showing an ordinary queue. Patients pass cups and a borrowed wrist bearing along the north benches; six diagnostic alcoves remain visible across the service lane.",
+        "visible_characters": [
+          {
+            "agent_id": "nera_seln",
+            "default_stance": "seated at registrar island, prosthetic fingertip near the desk contact",
+            "visual_ref": "visual_character_refs.characters.nera_seln"
+          },
+          {
+            "agent_id": "ilya_marr",
+            "default_stance": "standing at the center rail while calibrating a seated patient's jaw actuator",
+            "visual_ref": "visual_character_refs.characters.ilya_marr"
+          },
+          {
+            "agent_id": "continuity_ward_queue",
+            "default_stance": "sharing cups and a compatible spare along the north benches",
+            "visual_ref": "visual_character_refs.groups.continuity_ward_queue"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Nera's left forearm and delayed index contact remain the same prosthesis in every frame.",
+          "The clear index capsule begins on the registrar desk with a blue patient-consent light."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_morning_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide-medium view down Tycho Continuity Annex Eight from the west side: the north patient benches, south calibration alcoves, center registrar island, removable rail, south service door, and blue east vault door all remain visible. Nera Seln sits at the registrar desk with ivory ceramic left forearm near repair slips; Dr. Ilya Marr stands beside the rail in a long gray clinic coat; augmented patients and caregivers pass broth, a padded pouch, and small compatible parts along the benches. A wall pane above the desk shows queue rows and coverage markers. The corridor feels quiet, practiced, and held together by work performed between official appointments.",
+        "visible_characters": [
+          {
+            "agent_id": "nera_seln",
+            "default_stance": "at registrar desk watching the pouch route",
+            "visual_ref": "visual_character_refs.characters.nera_seln"
+          },
+          {
+            "agent_id": "ilya_marr",
+            "default_stance": "beside center rail near the nearest diagnostic alcove",
+            "visual_ref": "visual_character_refs.characters.ilya_marr"
+          },
+          {
+            "agent_id": "continuity_ward_queue",
+            "default_stance": "seated or standing in a practiced relay along the north benches",
+            "visual_ref": "visual_character_refs.groups.continuity_ward_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ward_trust >= 4",
+            "modifier_prompt": "The padded ward pouch moves hand to hand in an unbroken relay; patients make room for one another and steady mobility supports with practiced ease."
+          },
+          {
+            "trigger": "ward_trust <= 1",
+            "modifier_prompt": "The padded ward pouch has stopped between two benches; several patients hold their hands close and watch the repair slips with guarded posture."
+          },
+          {
+            "trigger": "finch_access >= 3",
+            "modifier_prompt": "The wall pane shows a clean named service map linked by blue lines to Ilya's clinic console."
+          },
+          {
+            "trigger": "finch_access <= 0",
+            "modifier_prompt": "Three repair rows on the wall pane are gray anonymous blocks separated from the urgent-care list."
+          },
+          {
+            "trigger": "grace_exposure >= 2",
+            "modifier_prompt": "Several queue rows carry amber coverage triangles beside patient-authorized names."
+          },
+          {
+            "trigger": "ilya_implicated >= 2",
+            "modifier_prompt": "Ilya's silver clinical signature glows beside three repair rows on the wall pane."
+          },
+          {
+            "trigger": "index_custody >= 3",
+            "modifier_prompt": "The clear blue-lit capsule is visible inside the padded pouch moving along the north benches."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Opening choices alter the capsule, pouch, wall pane, and group spacing while preserving the corridor geometry."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_amber_alert",
+        "ink_anchor": "continuity_alert",
+        "base_image_prompt": "Pivotal wide frame inside Tycho Continuity Annex Eight at the instant every diagnostic arch changes from cold blue to bruised amber. Six articulated arches along the south wall glow together; amber bands reflect across pale ceramic panels, brushed metal floor guide tracks, the north patient benches, the center registrar island, and the armored east vault door. Augmented patients look up from cups and spare parts; Nera Seln rises behind the desk, her ivory ceramic left forearm catching the alert light; Dr. Ilya Marr turns from a calibration alcove. The alert is visual and sudden, with the ordinary clinic objects still exactly where the routine left them.",
+        "visible_characters": [
+          {
+            "agent_id": "nera_seln",
+            "default_stance": "rising behind registrar desk toward the amber arches",
+            "visual_ref": "visual_character_refs.characters.nera_seln"
+          },
+          {
+            "agent_id": "ilya_marr",
+            "default_stance": "turning from the nearest alcove",
+            "visual_ref": "visual_character_refs.characters.ilya_marr"
+          },
+          {
+            "agent_id": "continuity_ward_queue",
+            "default_stance": "patients looking up, cups and small parts still in hand",
+            "visual_ref": "visual_character_refs.groups.continuity_ward_queue"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This is the pre-arrival alert frame; Sato, Finch security bodies, and recovery-unit bodies are outside the visible corridor."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_divided_authority_arrives",
+        "ink_anchor": "arrivals",
+        "base_image_prompt": "Medium-wide view toward the south thermal-service door of Tycho Continuity Annex Eight under amber alert light. The door stands partly open onto exposed coolant pipes and a colder industrial passage. Sato Veen, a lean human courier with freckled pale skin, shaved copper hair, a stained slate-blue pressure jacket, orange seal tape, heavy boots, and black work gloves, pushes a low rugged service cradle through the doorway. The cradle has four thick wheels in the floor guide, folding padded body supports, a battery-coolant block, bundled cables, and an orange record-carrier slot. Nera Seln stands at the center registrar island with ivory ceramic left forearm near the clear capsule; Dr. Ilya Marr reads a white Finch emergency addendum on the wall pane; patients and caregivers wait along the north benches. The blue east vault door is visible at the far end, establishing three separate claims on one service lane.",
+        "visible_characters": [
+          {
+            "agent_id": "nera_seln",
+            "default_stance": "standing behind registrar island between queue and service lane",
+            "visual_ref": "visual_character_refs.characters.nera_seln"
+          },
+          {
+            "agent_id": "ilya_marr",
+            "default_stance": "reading the emergency pane near the east side of the island",
+            "visual_ref": "visual_character_refs.characters.ilya_marr"
+          },
+          {
+            "agent_id": "sato_veen",
+            "default_stance": "pushing the low service cradle through the south thermal-service door",
+            "visual_ref": "visual_character_refs.characters.sato_veen"
+          },
+          {
+            "agent_id": "continuity_ward_queue",
+            "default_stance": "watching from the north benches with mobility supports and small tool pouches",
+            "visual_ref": "visual_character_refs.groups.continuity_ward_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "index_custody >= 3",
+            "modifier_prompt": "The clear blue-lit capsule sits inside the padded ward pouch held by a patient on the north bench instead of on the desk."
+          },
+          {
+            "trigger": "grace_exposure >= 2",
+            "modifier_prompt": "Amber coverage triangles glow beside several patient rows on the wall pane."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Sato arrives only through the south thermal-service door; the recovery unit remains two pressure sections beyond that route at this beat."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_emergency_custody_choice",
+        "ink_anchor": "annex_choice",
+        "base_image_prompt": "Object-centered decision frame at the Annex Eight registrar island. Nera Seln's ivory ceramic prosthetic hand hovers above a clear palm-sized patient-index capsule with a blue consent light. Four concrete destinations surround it: a white Finch transfer field on the wall pane, the padded ward pouch on the desk, an orange carrier slot on Sato's low rugged service cradle, and a transmitter panel showing sealed receipt icons. Dr. Ilya Marr stands beside the wall pane with his silver clinical seal ready; Sato Veen braces the cradle in the service-lane floor guide. Amber diagnostic arches, north benches, the south service door, and the blue east vault remain legible in the background.",
+        "visible_characters": [
+          {
+            "agent_id": "nera_seln",
+            "default_stance": "prosthetic fingertip above capsule at registrar island",
+            "visual_ref": "visual_character_refs.characters.nera_seln"
+          },
+          {
+            "agent_id": "ilya_marr",
+            "default_stance": "beside wall pane with clinical seal ready",
+            "visual_ref": "visual_character_refs.characters.ilya_marr"
+          },
+          {
+            "agent_id": "sato_veen",
+            "default_stance": "one boot bracing the cradle's wheel against the floor guide",
+            "visual_ref": "visual_character_refs.characters.sato_veen"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The four decision affordances are spatially reachable from the registrar island; the cradle is aligned in the adjacent service lane."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_corridor_pressure",
+        "ink_anchor": "corridor_pressure",
+        "base_image_prompt": "Long-lens view eastward through Tycho Continuity Annex Eight under amber and red alert light. The west public lift is locked behind the camera; north benches and south calibration alcoves narrow toward the blue armored vault door. Nera Seln stands at the central registrar island; Dr. Ilya Marr is positioned between the island and the vault; Sato Veen holds the rugged wheeled cradle near the south thermal-service door. A wall pane shows a grainy camera view of four continuity recovery contractors in hard gray pressure suits at the next coolant-pipe junction, with red command chevrons, sealed helmets, compact breaching tools, and restraint webbing. The center rail, capsule location, orange carrier slot, coverage rows, and outside acknowledgements remain readable as branch-state anchors.",
+        "visible_characters": [
+          {
+            "agent_id": "nera_seln",
+            "default_stance": "at registrar island facing wall pane and queue",
+            "visual_ref": "visual_character_refs.characters.nera_seln"
+          },
+          {
+            "agent_id": "ilya_marr",
+            "default_stance": "between registrar island and east vault door",
+            "visual_ref": "visual_character_refs.characters.ilya_marr"
+          },
+          {
+            "agent_id": "sato_veen",
+            "default_stance": "holding cradle near south service door",
+            "visual_ref": "visual_character_refs.characters.sato_veen"
+          },
+          {
+            "agent_id": "continuity_ward_queue",
+            "default_stance": "clustered along north benches around urgent patients",
+            "visual_ref": "visual_character_refs.groups.continuity_ward_queue"
+          },
+          {
+            "agent_id": "zhestokost_aligned_recovery_unit",
+            "default_stance": "visible only inside the south-junction camera pane as four suited contractors",
+            "visual_ref": "visual_character_refs.groups.zhestokost_aligned_recovery_unit"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "index_custody == 1",
+            "modifier_prompt": "The clear capsule appears as a small white-lit custody icon on Ilya's Finch console; the physical desk and ward pouch are empty."
+          },
+          {
+            "trigger": "index_custody == 2",
+            "modifier_prompt": "The clear capsule with blue patient-consent light rests at the center of the registrar island between queue and vault."
+          },
+          {
+            "trigger": "index_custody >= 3 && astrodyne_route < 2",
+            "modifier_prompt": "The padded ward pouch containing the blue-lit capsule is held midway along the north benches."
+          },
+          {
+            "trigger": "astrodyne_route >= 2",
+            "modifier_prompt": "The clear capsule is locked inside the cradle's orange carrier slot; Sato angles the cradle toward the south door."
+          },
+          {
+            "trigger": "public_receipts >= 3",
+            "modifier_prompt": "Small white acknowledgement timestamps accumulate along the edge of the wall pane beside the contractor camera view."
+          },
+          {
+            "trigger": "grace_exposure >= 2",
+            "modifier_prompt": "Amber coverage triangles visibly mark several patients seated nearest the registrar island."
+          },
+          {
+            "trigger": "finch_access >= 3",
+            "modifier_prompt": "Blue identity lines connect named queue rows to the east vault and a bright hard-seal command on Ilya's console."
+          },
+          {
+            "trigger": "ilya_implicated >= 2",
+            "modifier_prompt": "Ilya stands beside Nera at the registrar island with his glowing clinical seal visible on the public pane."
+          },
+          {
+            "trigger": "security_pressure >= 4",
+            "modifier_prompt": "Red trace brackets converge on the capsule or carrier position, and the four contractors advance through the coolant-pipe junction."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The recovery unit is seen through a south-junction camera feed, preserving the two-section distance and blocked sightline.",
+          "Every capsule modifier is mutually exclusive by index_custody and astrodyne_route."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_annex_eight_threshold",
+        "ink_anchor": "final_choice",
+        "base_image_prompt": "Wide threshold frame centered on the removable rail at Tycho Continuity Annex Eight. The registrar island stands just west of the rail; the north benches hold augmented patients and caregivers; the south service door is open to cold coolant pipes; the east vault door glows blue. Nera Seln stands at the rail in charcoal registrar vest, ivory ceramic left forearm extended toward the capsule custody point. Dr. Ilya Marr in a long gray clinic coat stands between her and the vault. Sato Veen braces the low rugged cradle in the floor guide near the south door. Amber diagnostic arches and the red wall-pane image of suited recovery contractors place the whole corridor under visible pressure. The rail latch, capsule or carrier, hard-seal control, and receipt transmitter are all readable physical affordances.",
+        "visible_characters": [
+          {
+            "agent_id": "nera_seln",
+            "default_stance": "at removable rail with prosthetic hand near the latch and custody point",
+            "visual_ref": "visual_character_refs.characters.nera_seln"
+          },
+          {
+            "agent_id": "ilya_marr",
+            "default_stance": "between Nera and east vault console",
+            "visual_ref": "visual_character_refs.characters.ilya_marr"
+          },
+          {
+            "agent_id": "sato_veen",
+            "default_stance": "bracing service cradle near south door",
+            "visual_ref": "visual_character_refs.characters.sato_veen"
+          },
+          {
+            "agent_id": "continuity_ward_queue",
+            "default_stance": "patients and caregivers poised along north benches and rail",
+            "visual_ref": "visual_character_refs.groups.continuity_ward_queue"
+          },
+          {
+            "agent_id": "zhestokost_aligned_recovery_unit",
+            "default_stance": "visible only on the wall-pane camera feed",
+            "visual_ref": "visual_character_refs.groups.zhestokost_aligned_recovery_unit"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ward_trust >= 4",
+            "modifier_prompt": "Patients, caregivers, and technicians form a practiced relay along the rail, leaving a cradle-width lane while closing the gaps around the custody point."
+          },
+          {
+            "trigger": "ward_trust <= 1",
+            "modifier_prompt": "Visible gaps open along the rail; several patients remain seated with guarded posture and uncertain hands."
+          },
+          {
+            "trigger": "emergency_window <= 1",
+            "modifier_prompt": "The south door warning band is nearly full red and the floor guide flashes at its failing junction."
+          },
+          {
+            "trigger": "public_receipts >= 3",
+            "modifier_prompt": "The receipt transmitter glows with a vertical row of outside acknowledgement timestamps."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The final choices use affordances within Nera's reach or authority: rail latch, capsule, wall transmitter, and clinician dialogue; Finch hard seal requires sufficient access state."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_finch",
+        "ink_anchor": "ending_finch_protection|ending_finch_cost",
+        "base_image_prompt": "Finch-lockdown aftermath in Tycho Continuity Annex Eight. Thick white locking bars engage across the south thermal-service door; the east embodiment-vault door remains cold blue; diagnostic arches continue urgent calibration along the south wall. Nera Seln stands behind the registrar island with her ivory ceramic left hand lowered. Dr. Ilya Marr works at a bright named clinical console. The north benches hold patients under steady clinic light. The center wall pane, clear capsule custody lock, padded ward pouch, and cold soup flask are all visible so the current record custody and hard-seal result can appear through modifiers.",
+        "visible_characters": [
+          {
+            "agent_id": "nera_seln",
+            "default_stance": "behind registrar island watching the hard-seal and custody surfaces",
+            "visual_ref": "visual_character_refs.characters.nera_seln"
+          },
+          {
+            "agent_id": "ilya_marr",
+            "default_stance": "working the named urgent-care console",
+            "visual_ref": "visual_character_refs.characters.ilya_marr"
+          },
+          {
+            "agent_id": "continuity_ward_queue",
+            "default_stance": "patients receiving urgent calibration or waiting under the sealed corridor",
+            "visual_ref": "visual_character_refs.groups.continuity_ward_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "grace_exposure >= 2",
+            "modifier_prompt": "Amber low-Grace triangles remain beside named patients even while blue urgent-care lines reach them."
+          },
+          {
+            "trigger": "index_custody == 1",
+            "modifier_prompt": "The physical ward pouch is empty and the wall pane shows a white Finch custody icon for the capsule."
+          },
+          {
+            "trigger": "index_custody >= 2",
+            "modifier_prompt": "The clear blue-lit capsule remains physically present at the registrar custody lock while the hard seal engages."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Ending modifiers distinguish a clean hard seal from a door closed on the cradle floor guide."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_distributed",
+        "ink_anchor": "ending_distributed_custody|ending_distributed_cost",
+        "base_image_prompt": "Distributed-custody aftermath at the south thermal-service door of Tycho Continuity Annex Eight. Cold exposed coolant pipes and grated maintenance flooring fill the industrial passage beyond the door. Sato Veen aligns a low rugged cradle in the threshold; the clear patient-index capsule glows blue inside its orange carrier slot, and one urgent patient's padded transfer board rests beside the cradle. Nera Seln walks beside it with ivory ceramic left hand on the custody latch. Patients and caregivers form a hand-to-hand relay from the north benches through the open center rail, steadying cables and mobility supports. Dr. Ilya Marr calls calibration data from the clinic side. Amber door bands and red carrier-trace glyphs make time and surveillance visible while ending modifiers decide what crosses.",
+        "visible_characters": [
+          {
+            "agent_id": "nera_seln",
+            "default_stance": "walking beside cradle with prosthetic hand on custody latch",
+            "visual_ref": "visual_character_refs.characters.nera_seln"
+          },
+          {
+            "agent_id": "ilya_marr",
+            "default_stance": "clinic side of threshold calling calibration order",
+            "visual_ref": "visual_character_refs.characters.ilya_marr"
+          },
+          {
+            "agent_id": "sato_veen",
+            "default_stance": "aligning the cradle in the south-door threshold",
+            "visual_ref": "visual_character_refs.characters.sato_veen"
+          },
+          {
+            "agent_id": "continuity_ward_queue",
+            "default_stance": "forming a cable and body relay through the opened center rail",
+            "visual_ref": "visual_character_refs.groups.continuity_ward_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "security_pressure >= 4",
+            "modifier_prompt": "Red trace brackets lock onto the orange carrier slot and continue down the coolant-pipe passage."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The south service route is cradle-width only after the center rail is unhooked; the success and cost modifiers preserve patient position relative to the closing door."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_public",
+        "ink_anchor": "ending_public_receipt|ending_public_cost",
+        "base_image_prompt": "Evidence-pressure aftermath at the Annex Eight registrar island. Nera Seln stands squarely at the wall transmitter, ivory ceramic index contact pressed to a bright receipt seal. The wall pane places two evidence blocks side by side: amber patient-authorized service-gap rows and a red audio waveform from the continuity recovery demand. Small white acknowledgement timestamps from ports, insurers, and patient advocates accumulate around them as abstract institutional icons. Dr. Ilya Marr pauses near the hard-seal control; Sato Veen waits beside the rugged cradle at the south door; augmented patients watch from north benches. Amber clinic arches and the blue east vault remain visible behind the evidence plane.",
+        "visible_characters": [
+          {
+            "agent_id": "nera_seln",
+            "default_stance": "prosthetic fingertip pressed to receipt transmitter",
+            "visual_ref": "visual_character_refs.characters.nera_seln"
+          },
+          {
+            "agent_id": "ilya_marr",
+            "default_stance": "paused beside hard-seal control",
+            "visual_ref": "visual_character_refs.characters.ilya_marr"
+          },
+          {
+            "agent_id": "sato_veen",
+            "default_stance": "waiting with cradle near south door",
+            "visual_ref": "visual_character_refs.characters.sato_veen"
+          },
+          {
+            "agent_id": "continuity_ward_queue",
+            "default_stance": "watching the receipt pane from north benches",
+            "visual_ref": "visual_character_refs.groups.continuity_ward_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "grace_exposure >= 2",
+            "modifier_prompt": "Amber coverage markers connect publicly authorized names to delayed calibration rows, making the personal price of evidence visible."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Outside counterparties appear as timestamps and abstract seal icons on the pane, not as people physically present in Annex Eight."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_ward_line",
+        "ink_anchor": "ending_ward_line|ending_ward_cost",
+        "base_image_prompt": "Ward-line aftermath centered on the removable rail inside Tycho Continuity Annex Eight. The clear index capsule is physically locked to the rail with its blue patient-consent light visible. Nera Seln stands on the registrar side with ivory ceramic left hand on the latch. Dr. Ilya Marr stands between the rail and the blue east vault door in a gray Finch coat, silver clinical seal tool visible at his wrist. Augmented patients, caregivers, and technicians occupy the north side of the rail in varied positions: one steadies a cane user, one holds the padded pouch, one checks a cable, and one carries a cold soup cup. Amber diagnostic alcoves, the south service door, and the red contractor camera pane remain visible along the corridor's fixed geometry; ending modifiers decide whether the people and seals close the line.",
+        "visible_characters": [
+          {
+            "agent_id": "nera_seln",
+            "default_stance": "at locked capsule and rail latch",
+            "visual_ref": "visual_character_refs.characters.nera_seln"
+          },
+          {
+            "agent_id": "ilya_marr",
+            "default_stance": "between Nera and the east vault with clinical seal tool visible",
+            "visual_ref": "visual_character_refs.characters.ilya_marr"
+          },
+          {
+            "agent_id": "continuity_ward_queue",
+            "default_stance": "gathered in varied positions along the north side of the rail",
+            "visual_ref": "visual_character_refs.groups.continuity_ward_queue"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Ending modifiers distinguish a continuous functional line with adjacent seals from a sparse line where Ilya remains near the vault."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "record_named_swaps_visual",
+        "trigger": "branch_label == record_named_swaps",
+        "apply_to_visual_scene_ids": [
+          "tangle_morning_routine_fold",
+          "tangle_divided_authority_arrives"
+        ],
+        "modifier_prompt": "Three patient-authorized names appear beside amber unpaid-repair rows on the wall pane; several patients watch those rows with guarded posture."
+      },
+      {
+        "modifier_id": "aggregate_swaps_visual",
+        "trigger": "branch_label == aggregate_the_swaps",
+        "apply_to_visual_scene_ids": [
+          "tangle_morning_routine_fold"
+        ],
+        "modifier_prompt": "The wall pane shows one gray aggregate repair block, while three folded paper slips sit inside the padded ward pouch."
+      },
+      {
+        "modifier_id": "implicate_ilya_visual",
+        "trigger": "branch_label == implicate_ilya",
+        "apply_to_visual_scene_ids": [
+          "tangle_morning_routine_fold",
+          "tangle_corridor_pressure",
+          "tangle_annex_eight_threshold"
+        ],
+        "modifier_prompt": "Ilya's silver clinical seal is visibly paired with the repair rows, and his body remains beside Nera instead of near the vault."
+      },
+      {
+        "modifier_id": "mobilize_index_visual",
+        "trigger": "branch_label == mobilize_the_index",
+        "apply_to_visual_scene_ids": [
+          "tangle_morning_routine_fold",
+          "tangle_divided_authority_arrives"
+        ],
+        "modifier_prompt": "The clear blue-lit capsule travels inside the padded ward pouch held in a hand-to-hand relay along the benches."
+      },
+      {
+        "modifier_id": "unified_custody_visual",
+        "trigger": "branch_label == accept_unified_custody",
+        "apply_to_visual_scene_ids": [
+          "tangle_corridor_pressure",
+          "tangle_annex_eight_threshold",
+          "tangle_ending_finch"
+        ],
+        "modifier_prompt": "The capsule's patient-blue light is replaced by a white Finch custody icon on Ilya's console; the ward pouch lies visibly empty."
+      },
+      {
+        "modifier_id": "astrodyne_carrier_visual",
+        "trigger": "branch_label == prime_astrodyne_route",
+        "apply_to_visual_scene_ids": [
+          "tangle_corridor_pressure",
+          "tangle_annex_eight_threshold",
+          "tangle_ending_distributed"
+        ],
+        "modifier_prompt": "The clear blue-lit capsule is locked behind the cradle's orange carrier cover; Sato braces the cart toward the south door as red trace brackets begin to find it."
+      },
+      {
+        "modifier_id": "reciprocity_counter_visual",
+        "trigger": "branch_label == counter_with_reciprocity",
+        "apply_to_visual_scene_ids": [
+          "tangle_corridor_pressure",
+          "tangle_annex_eight_threshold",
+          "tangle_ending_ward_line"
+        ],
+        "modifier_prompt": "A blue ward seal and silver Finch clinical seal appear side by side on the wall pane and at the capsule custody point."
+      },
+      {
+        "modifier_id": "published_gaps_visual",
+        "trigger": "branch_label == publish_service_gaps",
+        "apply_to_visual_scene_ids": [
+          "tangle_corridor_pressure",
+          "tangle_annex_eight_threshold",
+          "tangle_ending_public"
+        ],
+        "modifier_prompt": "Patient-authorized service-gap rows leave the transmitter as white timestamped receipt packets while amber coverage markers remain visible beside the consenting names."
+      },
+      {
+        "modifier_id": "ending_finch_success_visual",
+        "trigger": "ending_label == finch_protection_success",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_finch"
+        ],
+        "modifier_prompt": "The south door is fully closed with clean white bars; blue urgent-care lines reach occupied diagnostic alcoves; the returned ward capsule bears a new white tamper seal."
+      },
+      {
+        "modifier_id": "ending_finch_cost_visual",
+        "trigger": "ending_label == finch_protection_cost",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_finch"
+        ],
+        "modifier_prompt": "The south door has sealed against the cradle's floor guide; one detached cable and wheel remain on the clinic side while an urgent patient's lit wrist monitor is visible through the small pressure window beyond."
+      },
+      {
+        "modifier_id": "ending_distributed_success_visual",
+        "trigger": "ending_label == distributed_custody_success",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_distributed"
+        ],
+        "modifier_prompt": "One urgent patient lies supported on the moving cradle; the ward relay preserves a cradle-width lane; Nera's hand remains on the custody latch while Ilya calls calibration order."
+      },
+      {
+        "modifier_id": "ending_distributed_cost_visual",
+        "trigger": "ending_label == distributed_custody_cost",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_distributed"
+        ],
+        "modifier_prompt": "The blue-lit record carrier has crossed the service threshold while an urgent patient and a jammed borrowed wheel remain on the clinic side of the closing door."
+      },
+      {
+        "modifier_id": "ending_public_success_visual",
+        "trigger": "ending_label == public_receipt_success",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_public"
+        ],
+        "modifier_prompt": "White acknowledgement clocks multiply around the evidence pane; the red contractor camera feed pauses at the coolant junction and Finch's hard-seal control remains untouched."
+      },
+      {
+        "modifier_id": "ending_public_cost_visual",
+        "trigger": "ending_label == public_receipt_cost",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_public"
+        ],
+        "modifier_prompt": "Red trace brackets converge from the contractor camera pane onto Nera's registrar island, illuminating the desk, clear capsule, and clipped soup flask as one targeted cluster."
+      },
+      {
+        "modifier_id": "ending_ward_success_visual",
+        "trigger": "ending_label == ward_line_success",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_ward_line"
+        ],
+        "modifier_prompt": "A continuous functional line fills the north side of the rail; blue ward and silver clinical seals touch at the capsule; a cold soup cup passes behind the people holding position."
+      },
+      {
+        "modifier_id": "ending_ward_cost_visual",
+        "trigger": "ending_label == ward_line_cost",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_ward_line"
+        ],
+        "modifier_prompt": "Visible gaps break the line at the rail; Ilya stands back near the blue vault door; the isolated custody lock hangs open and the capsule's patient-blue light changes to a white Finch custody icon on the wall pane."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "tycho_continuity_annex_eight.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Eighteen-meter rectangular clinic corridor running west to east, with west public lift, east embodiment-vault pressure door, north patient benches, south calibration alcoves and thermal-service door, and a central registrar island beside a removable queue rail.",
+      "fixed_zones": [
+        {
+          "zone_id": "west_public_lift",
+          "visible_form": "recessed brushed-metal public lift doors with a small pressure vestibule",
+          "used_for": "ordinary patient arrival and alert lockout"
+        },
+        {
+          "zone_id": "north_patient_benches",
+          "visible_form": "padded benches, cane clips, mobility-support parking points, cup shelf, and a hand-to-hand pouch route",
+          "used_for": "queue routine, ward trust staging, and body relay"
+        },
+        {
+          "zone_id": "south_calibration_alcoves",
+          "visible_form": "six shallow service bays with articulated diagnostic arches, cable reels, padded stools, and blue or amber status light",
+          "used_for": "ordinary calibration and urgent care"
+        },
+        {
+          "zone_id": "registrar_island",
+          "visible_form": "waist-high ceramic and steel desk with contact reader, wall pane, paper slips, padded ward pouch, soup flask, and receipt transmitter",
+          "used_for": "Nera's choices, fixed index custody, evidence release, and trace target"
+        },
+        {
+          "zone_id": "removable_center_rail",
+          "visible_form": "waist-high brushed-steel queue rail with a blue custody lock and a floor latch that can open a cradle-width lane",
+          "used_for": "queue order, ward line, and distributed-custody route"
+        },
+        {
+          "zone_id": "south_thermal_service_door",
+          "visible_form": "pressure door opening onto exposed coolant pipes, grated flooring, and a guide track toward Cryonix thermal works",
+          "used_for": "Sato arrival, recovery-unit approach, hard seal, and cradle exit"
+        },
+        {
+          "zone_id": "east_embodiment_vault",
+          "visible_form": "armored blue-lit pressure door with cold vapor at seals and a nearby named clinical console",
+          "used_for": "Finch records, cooling dependency, and hard-seal authority"
+        },
+        {
+          "zone_id": "service_lane_floor_guide",
+          "visible_form": "straight metal guide track from registrar island past the center rail to the south door, with one worn junction that can bind a wheel",
+          "used_for": "cradle staging and branch-dependent evacuation failure"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_west_to_east",
+          "supports_visual_scene_ids": [
+            "tangle_annex_eight_establishing",
+            "tangle_morning_routine_fold",
+            "tangle_amber_alert",
+            "tangle_annex_eight_threshold"
+          ]
+        },
+        {
+          "camera_id": "registrar_medium",
+          "supports_visual_scene_ids": [
+            "tangle_morning_ward_routine",
+            "tangle_emergency_custody_choice",
+            "tangle_ending_public",
+            "tangle_ending_ward_line"
+          ]
+        },
+        {
+          "camera_id": "south_door_arrival",
+          "supports_visual_scene_ids": [
+            "tangle_divided_authority_arrives",
+            "tangle_ending_distributed"
+          ]
+        },
+        {
+          "camera_id": "eastward_pressure_long",
+          "supports_visual_scene_ids": [
+            "tangle_corridor_pressure",
+            "tangle_ending_finch"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "registrar_to_queue_and_vault",
+          "path": "registrar_island -> removable_center_rail -> north_patient_benches and east_embodiment_vault",
+          "supports": [
+            "record_named_swaps",
+            "counter_with_reciprocity",
+            "prioritize_ward_line"
+          ]
+        },
+        {
+          "lane_id": "south_camera_to_wall_pane",
+          "path": "coolant junction camera -> south thermal-service door network -> registrar wall pane",
+          "supports": [
+            "publish_service_gaps",
+            "prioritize_public_receipt"
+          ]
+        },
+        {
+          "lane_id": "cradle_exit_lane",
+          "path": "north patient benches -> opened center rail -> service lane floor guide -> south thermal-service door",
+          "supports": [
+            "prime_astrodyne_route",
+            "prioritize_distributed_custody"
+          ]
+        }
+      ],
+      "index_capsule_states": [
+        {
+          "value": 1,
+          "label": "finch_unified_custody",
+          "visible_form": "white Finch custody icon on Ilya's console and an empty physical ward pouch"
+        },
+        {
+          "value": 2,
+          "label": "fixed_split_custody",
+          "visible_form": "clear blue-lit capsule on registrar island or locked to center rail"
+        },
+        {
+          "value": 3,
+          "label": "mobile_ward_custody",
+          "visible_form": "clear blue-lit capsule inside padded ward pouch or orange AstroDyne carrier slot"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "nera_seln": "Nera Seln: compact middle-aged baseline human woman with warm brown skin, close-cropped black hair, tired dark eyes, charcoal registrar vest over a soft gray shirt, practical dark trousers, and a left forearm prosthesis made of ivory ceramic shells over brushed metal joints. Her prosthetic index fingertip has a recessed blue clinical contact. Her posture is economical; stress appears as checking the delayed finger against edges and keeping her body between the desk and queue.",
+      "ilya_marr": "Dr. Ilya Marr: tall older baseline human man with olive skin, narrow careful hands, silver hair at the temples, paired small silver implants above both ears, long gray Finch clinic coat over dark scrubs, flat clinic shoes, and a thin silver seal tool at the wrist. Professional posture softens when he calibrates a patient and straightens when company authority speaks.",
+      "sato_veen": "Sato Veen: lean adult baseline human courier with freckled pale skin, shaved copper hair, stained slate-blue pressure jacket with orange seal tape, heavy black work gloves, magnetic-soled boots, and a compact tool roll. Sato moves behind a low rugged four-wheeled service cradle with folding padded supports, battery-coolant block, bundled cross-vendor cables, and an orange record-carrier slot."
+    },
+    "groups": {
+      "continuity_ward_queue": "Annex Eight continuity ward queue: eight to twelve adult and older patients, caregivers, and off-shift technicians with varied skin tones and visibly varied augmentation: ceramic limb shells, exposed brushed-metal joints, implant access patches, one mechanical jaw, one cane user, compact mobility supports, layered gray work clothes, soft clinic wraps, tool pouches, soup cups, and a padded custody pouch. Body language changes from practiced hand-to-hand coordination to guarded gaps according to ward_trust.",
+      "zhestokost_aligned_recovery_unit": "Zhestokost-aligned continuity recovery unit: four baseline humans in hard gray pressure suits with red command chevrons, sealed helmets, compact breaching tools, restraint webbing, and heavy magnetic boots; visible as a disciplined unit through a grainy junction camera feed, advancing among exposed coolant pipes."
+    }
+  },
+  "review_notes": [
+    "Narrative, lore, visual-continuity, and spatial-cohesion self-review verdicts are recorded in the training sidecar; all four accepted after revisions.",
+    "The embedded scene_set map is the draft geometry authority for this multi-angle corridor fixture.",
+    "All base prompts use affirmative visible descriptions and repeat enough room, body, material, light, interface, and object detail to stand alone.",
+    "Character refs are attached only to scenes where the named character or group is visible; the recovery unit appears only through the south-junction camera feed.",
+    "Ending-family base frames remain neutral where success and cost states disagree; branch and ending modifiers own the changed body, object, seal, trace, and door positions."
+  ]
+}

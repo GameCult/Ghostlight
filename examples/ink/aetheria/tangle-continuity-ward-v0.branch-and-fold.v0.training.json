@@ -1,0 +1,547 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "tangle-continuity-ward-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/tangle-continuity-ward-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "tangle-continuity-ward-v0.annex-eight-reciprocity-alert",
+  "protagonist_agent_id": "nera_seln",
+  "npc_agent_ids": [
+    "ilya_marr",
+    "sato_veen",
+    "continuity_ward_queue",
+    "finch_security",
+    "zhestokost_aligned_recovery_unit"
+  ],
+  "purpose": "A branch-and-fold fixture dramatizing how one Tycho patient-defense continuity ward uses split custody, receipts, and embodied mutual aid during the Neural Network Defense Campaign.",
+  "tonal_mode": "Workplace noir with dry institutional comedy and quiet mutual-aid warmth; routine precedes one bounded escalation.",
+  "local_awareness_summary": [
+    {
+      "text": "Nera is both a lower-Grace Finch patient and the morning registrar for Annex Eight's continuity ward. She knows the people in the queue, the ward's rotating index procedure, her own tactile delay, and the local clinic layout.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/tangle-continuity-ward-v0.v0.json",
+        "examples/ink/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.ink"
+      ]
+    },
+    {
+      "text": "Nera can authorize or withhold the ward half of the patient index, publish patient-authorized service receipts, move the capsule, unhook the queue rail, and ask Ilya to bind Finch clinically. She cannot open the embodiment vault, command Finch security, or know the raiders' private plan.",
+      "source_refs": [
+        "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Neural Network Defense Campaign.md"
+      ]
+    },
+    {
+      "text": "Annex Eight has two opposing access routes: the west public lift and the south thermal-service door. The Finch vault is east of the registrar island; the patient benches and calibration alcoves flank the central service lane.",
+      "source_refs": [
+        "examples/visual/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.visual.json"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective stays with Nera's patient-registrar awareness. Institutional strategy is legible through panes, clauses, routes, objects, coverage warnings, and observable conduct.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/aetheria/tangle-continuity-ward-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The morning repair ledger establishes routine, relationships, class pressure, and the ward's small mutual-aid practice before the breach alert.",
+        "source_refs": [
+          "AGENTS.md Aetheria Grounding Doctrine",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Finch owns encrypted diagnostics, clinical channels, and the vault. The ward owns a patient-authorized index and release key. Cryonix owns neither, but its cooling service can change the duration of a standoff.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Neural Network Defense Campaign.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Finch Cybernetics.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cryonix.md"
+        ]
+      },
+      {
+        "text": "Evidence changes price, recognition, and delay; it does not command ports, insurers, security, or raiders to rescue anyone.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Politics/Restrictions on Warfare.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The clear index capsule can be in Finch custody, split ward custody, the rotating ward pouch, or Sato's orange record carrier. Its position and consent-light color must remain conditional after branches fold.",
+        "source_refs": [
+          "examples/ink/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.ink",
+          "examples/visual/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.visual.json"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Protection and enclosure must remain materially entangled: Finch can honestly save lives while consolidating the records that make patients dependent.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Neural Network Defense Campaign.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Finch Cybernetics.md"
+        ]
+      },
+      {
+        "text": "The hopeful outcome stays local and procedural: a shared route, a divided key, a clinician's co-signature, and urgent care lasting through one shift.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Neural Network Defense Campaign.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not turn the continuity ward into a system-wide revolutionary movement, a full clinic, or a power able to defeat corporate security outright.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Neural Network Defense Campaign.md"
+        ]
+      },
+      {
+        "text": "Do not treat a mobile record as bodily rescue, Finch protection as simple villainy, AstroDyne equipment as complete compatibility, or PSC-facing evidence as an automatic moral verdict.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/AstroDyne.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Brain-Computer Interfaces.md",
+          "Aetheria/Worldbuilding/Politics/Restrictions on Warfare.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through the morning queue, the emergency custody demand, and a final corridor defense priority into eight state-gated endings.",
+    "choice_layers": [
+      "routine_record",
+      "emergency_custody",
+      "defense_priority"
+    ],
+    "variables": [
+      "ward_trust",
+      "finch_access",
+      "public_receipts",
+      "index_custody",
+      "grace_exposure",
+      "emergency_window",
+      "ilya_implicated",
+      "astrodyne_route",
+      "security_pressure"
+    ],
+    "ending_gates": [
+      "ending_finch_protection",
+      "ending_finch_cost",
+      "ending_distributed_custody",
+      "ending_distributed_cost",
+      "ending_public_receipt",
+      "ending_public_cost",
+      "ending_ward_line",
+      "ending_ward_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "record_named_swaps",
+      "ink_path": "opening_record_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Make the ward's unpaid care undeniable even though named proof exposes lower-Grace patients.",
+      "state_basis": [
+        "Nera has a clinical contact in her prosthetic finger and registrar authority over the morning repair sheet."
+      ],
+      "reviewed_consequences": [
+        "Raises finch_access, public_receipts, and grace_exposure while lowering ward_trust; later prose exposes the named service map and the ending cost of legibility."
+      ],
+      "training_hooks": [
+        "documentation_as_double_edged_leverage",
+        "coverage_exposure",
+        "embodied_signature"
+      ]
+    },
+    {
+      "branch_id": "aggregate_the_swaps",
+      "ink_path": "opening_record_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Protect patient identities while preserving a count of mutual repair work.",
+      "state_basis": [
+        "The ward maintains a rotating pouch for patient-authorized names."
+      ],
+      "reviewed_consequences": [
+        "Raises ward_trust and security_pressure while lowering finch_access; improves collective refusal but weakens named emergency binding."
+      ],
+      "training_hooks": [
+        "aggregate_evidence",
+        "privacy_coordination_tradeoff"
+      ]
+    },
+    {
+      "branch_id": "implicate_ilya",
+      "ink_path": "opening_record_choice",
+      "action_type": "speak",
+      "actor_intent": "Bind a Finch clinician to the unauthorized repairs so punishment and emergency authority become less tidy.",
+      "state_basis": [
+        "Ilya performed or enabled the calibrations and can apply a clinical seal."
+      ],
+      "reviewed_consequences": [
+        "Raises ilya_implicated, finch_access, and ward_trust; enables the strongest reciprocity-line ending when combined with collective trust."
+      ],
+      "training_hooks": [
+        "clinician_as_fallible_bridge",
+        "shared_liability_as_leverage"
+      ]
+    },
+    {
+      "branch_id": "mobilize_the_index",
+      "ink_path": "opening_record_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Remove the ward key from one fixed desk safe before an alert makes fixed custody easy to seize.",
+      "state_basis": [
+        "The clear capsule is small enough to move in the rotating ward pouch."
+      ],
+      "reviewed_consequences": [
+        "Sets index_custody to mobile and raises ward_trust and security_pressure; later choices can route the mobile key without paying a pre-alert emergency-time cost."
+      ],
+      "training_hooks": [
+        "physical_key_mobility",
+        "distributed_custody"
+      ]
+    },
+    {
+      "branch_id": "accept_unified_custody",
+      "ink_path": "annex_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Buy faster protected clinical access by surrendering the ward half of the record to Finch.",
+      "state_basis": [
+        "Finch security offers a hard seal and named urgent channel in return for the ward key."
+      ],
+      "reviewed_consequences": [
+        "Raises finch_access and emergency_window, puts the index in Finch custody, and lowers ward_trust; enables the Finch protection route and changes ending imagery."
+      ],
+      "training_hooks": [
+        "protection_enclosure_identity",
+        "emergency_authority_transfer"
+      ]
+    },
+    {
+      "branch_id": "prime_astrodyne_route",
+      "ink_path": "annex_choice",
+      "action_type": "use_object",
+      "actor_intent": "Make the ward key physically portable through a rugged third-party service carrier.",
+      "state_basis": [
+        "Sato has one AstroDyne cradle and carrier with limited cross-vendor adapters."
+      ],
+      "reviewed_consequences": [
+        "Raises astrodyne_route and security_pressure, makes index custody mobile, and spends emergency_window; enables a bodily evacuation attempt with trace risk."
+      ],
+      "training_hooks": [
+        "gray_market_interoperability",
+        "portable_record_not_portable_person"
+      ]
+    },
+    {
+      "branch_id": "counter_with_reciprocity",
+      "ink_path": "annex_choice",
+      "action_type": "mixed",
+      "actor_intent": "Preserve split custody while granting urgent named access and forcing every coercive state change to leave a receipt.",
+      "state_basis": [
+        "The ward's authored reciprocity clause allows time-limited urgent access under co-signature."
+      ],
+      "reviewed_consequences": [
+        "Raises public_receipts and ilya_implicated while spending emergency_window; strengthens the public-evidence and ward-line routes."
+      ],
+      "training_hooks": [
+        "contract_clause_as_counterpower",
+        "split_authority"
+      ]
+    },
+    {
+      "branch_id": "publish_service_gaps",
+      "ink_path": "annex_choice",
+      "action_type": "show_object",
+      "actor_intent": "Create outside witnesses and price pressure before either armed claimant controls the story.",
+      "state_basis": [
+        "Nera can publish patient-authorized receipts but cannot force outside institutions to act."
+      ],
+      "reviewed_consequences": [
+        "Raises public_receipts, grace_exposure, and security_pressure while spending emergency_window; enables the public receipt route and exposes the registrar island to trace."
+      ],
+      "training_hooks": [
+        "evidence_changes_price",
+        "publicity_exposes_constituency"
+      ]
+    },
+    {
+      "branch_id": "prioritize_finch_protection",
+      "ink_path": "final_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Use Finch's named clinical channel and hard seal to protect the annex even if company custody consolidates.",
+      "state_basis": [
+        "Available only with sufficient finch_access; outcome depends on emergency_window."
+      ],
+      "reviewed_consequences": [
+        "Routes to Finch protection success or cost; the endings read grace_exposure, index_custody, and public_receipts."
+      ],
+      "training_hooks": [
+        "state_gated_lockdown",
+        "honest_protection_with_lock_in"
+      ]
+    },
+    {
+      "branch_id": "prioritize_distributed_custody",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Move one urgent patient and the mobile index through the thermal-service route.",
+      "state_basis": [
+        "Available with an AstroDyne route or already mobile index; outcome depends on ward_trust and emergency_window."
+      ],
+      "reviewed_consequences": [
+        "Routes to distributed custody success or cost; security_pressure changes whether the route preserves secrecy."
+      ],
+      "training_hooks": [
+        "mutual_aid_as_logistics",
+        "body_record_mobility_gap"
+      ]
+    },
+    {
+      "branch_id": "prioritize_public_receipt",
+      "ink_path": "final_choice",
+      "action_type": "show_object",
+      "actor_intent": "Bind the contractor demand to patient-authorized evidence while the seizure is still priceable.",
+      "state_basis": [
+        "Available with enough public_receipts; outcome depends on receipt strength and security_pressure."
+      ],
+      "reviewed_consequences": [
+        "Routes to public receipt success or cost; grace_exposure records the delayed contractual cost of public evidence."
+      ],
+      "training_hooks": [
+        "witness_not_rescue",
+        "evidentiary_market_pressure"
+      ]
+    },
+    {
+      "branch_id": "prioritize_ward_line",
+      "ink_path": "final_choice",
+      "action_type": "block_object",
+      "actor_intent": "Use the center rail, split key, collective trust, and a clinician's seal to make unilateral custody visibly costly.",
+      "state_basis": [
+        "Availability requires non-Finch index custody; success requires ward_trust and ilya_implicated."
+      ],
+      "reviewed_consequences": [
+        "Routes to the local reciprocity-clause success or exposes the rail as mere furniture when shared procedure is absent."
+      ],
+      "training_hooks": [
+        "divided_authority_preserves_refusal",
+        "solidarity_requires_procedure"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Choice availability and ending gate selection",
+      "Triggered visual modifiers"
+    ],
+    "manual_review_required": [
+      "Durable character memory or relationship updates",
+      "Promotion of branch-specific events beyond the authored Annex Eight elaboration",
+      "Accepted training-corpus status",
+      "Any claim that the reciprocity clause became system-wide law"
+    ]
+  },
+  "audit": {
+    "reviewer": "Tangle elaborator self-review using the four required Ghostlight reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Ink was authored from the campaign-note elaboration and exact linked lore sources.",
+      "Narrative and branch review found and fixed an unreachable ward success, a dead final-choice combination, an incorrectly spent pre-alert time unit, and two object-position ambiguities.",
+      "Visual and spatial review made the three shared ending frames state-neutral before applying success or cost modifiers, removed an unused character ref, and clarified the south-door crossing.",
+      "Compilation was intentionally deferred by pass instructions. JSON artifacts parse, all twelve Ink branches have sidecar records, all nine variables are read after mutation, every opening/emergency combination exposes a final route, and all eight endings are reachable by static state enumeration."
+    ],
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "artifact_ref": "examples/ink/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.ink",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 5,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Workplace noir with dry institutional comedy and quiet mutual-aid warmth, escalating once from clinic routine into bounded corridor pressure.",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_wit_with_stakes",
+          "strong_quiet_scene",
+          "strong_material_lore",
+          "strong_branch_callback",
+          "strong_character_voice"
+        ],
+        "acceptance_notes": [
+          "Routine establishes food, calibration, coverage, work hierarchy, and the capsule before the alert.",
+          "The first pass exposed an unreachable ward success and one dead choice combination; revised gates make all eight endings reachable and every two-layer history playable.",
+          "Grace is introduced as maintenance coverage before it becomes a branch cost, and all named characters are introduced before folded payoff."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "artifact_ref": "examples/ink/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.ink plus linked sidecars",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 5,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": [
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Neural Network Defense Campaign.md",
+            "reason_checked": "Owning event, actors, dates, locations, and authored continuity-ward mechanism.",
+            "used_for": "canon check and backfill target"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Finch Cybernetics.md",
+            "reason_checked": "Finch clinical authority, Grace coverage, proprietary maintenance, and lunar service geography.",
+            "used_for": "canon and faction-pressure check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/AstroDyne.md",
+            "reason_checked": "Gray-market repairability and rough frontier service limits.",
+            "used_for": "canon and material-capability check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Zhestokost.md",
+            "reason_checked": "Security-house lineage, provision, assignment, and intact seizure logic.",
+            "used_for": "canon and faction-pressure check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cryonix.md",
+            "reason_checked": "Tycho thermal works and certified operating margins independent of Finch.",
+            "used_for": "territorial and infrastructure check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Brain-Computer Interfaces.md",
+            "reason_checked": "Maintenance dependence, provider switching, and Finch-AstroDyne boundary.",
+            "used_for": "technology and body-affordance check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Politics/Restrictions on Warfare.md",
+            "reason_checked": "Evidence, insurers, hired coercive specialists, recognition, and price effects.",
+            "used_for": "institutional-consequence check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+            "reason_checked": "Layered Finch-Cryonix authority at Tycho and records as territorial claims.",
+            "used_for": "location and sovereignty check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Tycho Exclusion Riots.md",
+            "reason_checked": "Earlier lower-tier exclusion, technician evidence, and patient distrust in Tycho clinics.",
+            "used_for": "historical-pressure check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Existential Collapse.md",
+            "reason_checked": "3003 scarcity, maintenance debt, mutual aid, and late PSC pressure.",
+            "used_for": "era check"
+          }
+        ],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": [],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_pressure",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate"
+        ],
+        "acceptance_notes": [
+          "The durable backfill was placed in the owning campaign note before fixture drafting and is explicitly marked authored elaboration.",
+          "Branch-only acts remain exploratory; the digest states that Annex Eight is one local case and does not promote the reciprocity clause into universal law.",
+          "Finch, Cryonix, AstroDyne, the ward, and the recovery unit retain distinct authority and reciprocal dependencies."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "artifact_ref": "examples/visual/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.visual.json",
+        "overall_status": "accepted",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 4,
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [],
+        "missing_branch_modifiers": [],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity"
+        ],
+        "acceptance_notes": [
+          "Twelve visual scenes separate establishment, routine, the single-sentence alert, Sato's arrival, custody choice, corridor pressure, threshold, and four outcome families.",
+          "The first pass found three ending-family base prompts that prematurely chose a success state and two modifiers that introduced off-frame named or grouped bodies; the prompts now establish neutral thresholds and let modifiers own the delta.",
+          "The embedded scene_set fixes zones, camera slots, routes, sightlines, and capsule states. A physical blockout remains advisable for high-consistency final website art, but the map is sufficient for B-level draft replay.",
+          "All base prompts are standalone, affirmative, and free of unexplained Aetheria environment or equipment passwords."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "artifact_ref": "examples/ink/aetheria/tangle-continuity-ward-v0.branch-and-fold.v0.ink plus visual plan",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "One eighteen-meter west-east corridor: public lift west, embodiment vault east, patient benches north, six calibration alcoves and a thermal-service door south, registrar island center-west, removable rail and straight floor guide connecting the benches to the south door. Raiders remain two pressure sections away and appear only through the south-junction camera pane.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state"
+        ],
+        "acceptance_notes": [
+          "The first pass corrected an impossible capsule assumption in the ward-line route and made pouch-to-carrier movement explicit in the distributed route.",
+          "The hard-seal cost path now stages Sato and one urgent patient through the south doorway before the floor guide binds and the door closes.",
+          "Nera's prosthetic contact, delayed tactile return, rail latch, capsule, cradle, floor guide, doors, and wall-pane sightline stay physically bounded and branch-persistent."
+        ]
+      }
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true,
+      "every_declared_variable_read_later": true
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "tangle-continuity-ward-v0.bfl-simple-v0",
+  "fixture_id": "tangle-continuity-ward-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Bleak institutional science-fiction noir storybook painting, restrained ink-wash shadows, cold blue clinic light, bruised amber alerts, tactile ceramic and steel, expressive unsentimental faces, precise readable silhouettes, unlabeled interface graphics.",
+  "prompts": [
+    {
+      "id": "01_annex_establishing",
+      "prompt": "Long lunar clinic corridor: public lift at west, armored blue vault at east, patient benches north, six diagnostic alcoves south, registrar island and removable rail in the center, augmented patients sharing cups and small parts."
+    },
+    {
+      "id": "02_morning_ward",
+      "prompt": "Middle-aged brown-skinned registrar with ivory ceramic left forearm beside clear blue-lit patient-index capsule; older silver-templed clinician calibrates a mechanical jaw; broth, repair slips, padded pouch, and borrowed wrist bearing cross the queue."
+    },
+    {
+      "id": "03_routine_fold",
+      "prompt": "Quiet clinic mutual aid: patients relay a padded custody pouch along benches, clinician stands at center rail, registrar watches wall pane where blue service lines and amber coverage markers turn care into account entries."
+    },
+    {
+      "id": "04_amber_alert",
+      "prompt": "Every articulated diagnostic arch in a pale ceramic clinic corridor turns amber at once; augmented patients look up holding soup cups and spare parts; registrar rises and clinician turns toward the sealed doors."
+    },
+    {
+      "id": "05_divided_authority",
+      "prompt": "Gray-market courier in stained pressure jacket pushes rugged four-wheeled medical service cradle through south coolant door; registrar guards index capsule, clinician reads white emergency addendum, cold blue corporate vault waits at far end."
+    },
+    {
+      "id": "06_custody_choice",
+      "prompt": "Clear patient-index capsule under ivory ceramic prosthetic hand, surrounded by four concrete choices: corporate transfer field, padded ward pouch, orange cart carrier, and sealed receipt transmitter; clinician and courier wait under amber light."
+    },
+    {
+      "id": "07_corridor_pressure",
+      "prompt": "Long clinic corridor squeezed between patient queue, blue vault, and south service door; wall camera shows four gray-suited recovery contractors among coolant pipes; capsule, orange carrier, red trace brackets, and coverage rows show competing claims."
+    },
+    {
+      "id": "08_threshold",
+      "prompt": "Registrar with ivory ceramic arm stands at removable center rail; clinician between her and blue vault, courier bracing wheeled cradle near south door, patients ready along benches, red contractor camera and amber arches frame the decision."
+    },
+    {
+      "id": "09_finch_ending",
+      "prompt": "Corporate lockdown aftermath: white bars engage across south door, blue urgent-care lines reach diagnostic bays, clinician works named console, registrar watches wall pane, capsule lock, padded ward pouch, and cold soup flask."
+    },
+    {
+      "id": "10_distributed_ending",
+      "prompt": "Rugged medical cradle aligns in a cold coolant-pipe threshold beside an urgent patient's padded transfer board; blue-lit index capsule fills its orange carrier while registrar, courier, clinician, and caregivers prepare the crossing."
+    },
+    {
+      "id": "11_public_ending",
+      "prompt": "Registrar presses ceramic fingertip to bright evidence transmitter; wall pane pairs amber service-gap receipts with red contractor waveform while white acknowledgement clocks gather; clinician pauses at hard-seal control."
+    },
+    {
+      "id": "12_ward_line_ending",
+      "prompt": "Clear blue-lit index capsule locked to center rail between registrar and augmented patient queue; clinician stands between rail and vault with silver seal tool ready; hands hover near bodies, cables, pouch, and cold soup cup."
+    }
+  ]
+}

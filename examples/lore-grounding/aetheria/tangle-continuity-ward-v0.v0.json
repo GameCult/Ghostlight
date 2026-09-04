@@ -1,0 +1,680 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.tangle-continuity-ward-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "neural-network-defense-campaign",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Neural Network Defense Campaign.md",
+      "title": "Neural Network Defense Campaign",
+      "line_start": 1,
+      "line_end": 23,
+      "relevance": "Primary event and owning note; establishes the 3001-3007 conflict, actors, protection-enclosure contradiction, and authored Annex Eight continuity-ward elaboration."
+    },
+    {
+      "source_id": "finch-cybernetics",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Finch Cybernetics.md",
+      "title": "Finch Cybernetics",
+      "line_start": 1,
+      "line_end": 33,
+      "relevance": "Grounds Finch implants, proprietary diagnostics, Grace maintenance coverage, lunar clinic territory, service technicians, and the campaign's protection-enclosure identity."
+    },
+    {
+      "source_id": "astrodyne",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/AstroDyne.md",
+      "title": "AstroDyne",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds rugged, field-maintainable gray-market implants, upload rigs, and systems used by underserved frontier and dissident populations."
+    },
+    {
+      "source_id": "zhestokost",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Zhestokost.md",
+      "title": "Zhestokost",
+      "line_start": 1,
+      "line_end": 27,
+      "relevance": "Grounds security-house lineage, command through synchronized provision, institutional assignment, and seizure logic."
+    },
+    {
+      "source_id": "cryonix",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Cryonix.md",
+      "title": "Cryonix",
+      "line_start": 1,
+      "line_end": 33,
+      "relevance": "Grounds Tycho thermal works, insurer-recognized cooling and materials standards, and Cryonix's independent leverage over clinic operating margins."
+    },
+    {
+      "source_id": "brain-computer-interfaces",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Brain-Computer Interfaces.md",
+      "title": "Brain-Computer Interfaces",
+      "line_start": 1,
+      "line_end": 27,
+      "relevance": "Grounds implant maintenance dependence, firmware and compatibility services, provider switching risk, and the Finch/AstroDyne contrast."
+    },
+    {
+      "source_id": "restrictions-on-warfare",
+      "path": "Aetheria/Worldbuilding/Politics/Restrictions on Warfare.md",
+      "title": "Restrictions on Warfare",
+      "line_start": 1,
+      "line_end": 37,
+      "relevance": "Grounds evidence, insurer and port recognition, hired coercive specialists, disputed neutrality, and delay or price as consequences rather than automatic justice."
+    },
+    {
+      "source_id": "territories",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+      "title": "Territories",
+      "line_start": 1,
+      "line_end": 61,
+      "relevance": "Grounds layered lunar territory, Finch-Cryonix dependency at Tycho, and records and maintenance as territorial claims."
+    },
+    {
+      "source_id": "tycho-exclusion-riots",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Tycho Exclusion Riots.md",
+      "title": "Tycho Exclusion Riots",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Historical pressure behind patient distrust, technician leaks, and explicit Grace tiering in the same Tycho clinic districts."
+    },
+    {
+      "source_id": "existential-collapse",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Existential Collapse.md",
+      "title": "Existential Collapse",
+      "line_start": 1,
+      "line_end": 40,
+      "relevance": "Grounds the 3003 scarcity context, maintenance debt, mutual-aid emergency response, and heightened PSC enforcement without material repair."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Existential Collapse, 3003, during the 3001-3007 Neural Network Defense Campaign",
+    "location": "Tycho Continuity Annex Eight, Luna: a Finch clinic corridor adjoining Cryonix-controlled thermal-service infrastructure.",
+    "summary": "A local patient-defense continuity ward must decide whether to surrender, move, or expose its half of a split patient index when Finch security and a Zhestokost-aligned recovery unit both seek unified custody.",
+    "public_facts": [
+      {
+        "text": "Finch patients depend on proprietary diagnostics, compatible components, service records, clinical expertise, and Grace coverage tiers.",
+        "source_refs": [
+          "finch-cybernetics",
+          "brain-computer-interfaces"
+        ]
+      },
+      {
+        "text": "Finch and Cryonix hold adjacent, distinct authority at Tycho: clinical integration and records on one side, certified thermal operating margins on the other.",
+        "source_refs": [
+          "finch-cybernetics",
+          "cryonix",
+          "territories"
+        ]
+      },
+      {
+        "text": "The campaign targeted clinics, service vaults, and embodiment bridges; patients genuinely needed the network protected even as protection deepened Finch enclosure.",
+        "source_refs": [
+          "neural-network-defense-campaign"
+        ]
+      },
+      {
+        "text": "At Annex Eight, a continuity ward held a patient-authorized index and release key separately from Finch's encrypted clinical records under a reciprocity clause.",
+        "source_refs": [
+          "neural-network-defense-campaign"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Named records can accelerate urgent care, furnish evidence, expose low-Grace patients, or become a targeting list depending on custody.",
+        "source_refs": [
+          "neural-network-defense-campaign",
+          "finch-cybernetics",
+          "tycho-exclusion-riots"
+        ]
+      },
+      {
+        "text": "AstroDyne can make data and one supported body more portable, but cannot reproduce years of Finch calibration history or make every body transportable.",
+        "source_refs": [
+          "astrodyne",
+          "brain-computer-interfaces",
+          "neural-network-defense-campaign"
+        ]
+      },
+      {
+        "text": "External evidence can change bonds, access, recognition, and delay while armed actors remain capable of proceeding under disputed authority.",
+        "source_refs": [
+          "restrictions-on-warfare"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "annex-eight-continuity-ward",
+      "label": "Annex Eight continuity ward",
+      "group_type": "patient_defense_union",
+      "institutional_logic": [
+        "Keep urgent care bound to patient identity and consent without pretending the ward can replace Finch's clinic or Cryonix's cooling."
+      ],
+      "material_incentives": [
+        "Preserve access to diagnostics, calibration histories, compatible spares, safe routes, and service-gap evidence."
+      ],
+      "internal_virtues": [
+        "Accurate names under patient control",
+        "Reciprocal queue work",
+        "No single custodian",
+        "Knowing bodily failure signs before coverage recognizes them"
+      ],
+      "internal_shames": [
+        "Letting a record move while its body is stranded",
+        "Turning mutual repair into a private favor market",
+        "Making one brave registrar the whole procedure"
+      ],
+      "prestige_markers": [
+        "A repair that survives audit",
+        "A clean handover under pressure",
+        "A patient who keeps both function and refusal"
+      ],
+      "taboo_triggers": [
+        "Treating missing coverage as consent",
+        "Calling the patient index a customer asset",
+        "Taking the key for protection without a return condition"
+      ],
+      "emotional_display_norms": [
+        "Fear is compressed into queue order, teasing, meal-sharing, signatures, and knowing who needs help first."
+      ],
+      "trust_defaults": [
+        "Trust is procedural and local: rotating custody, co-signatures, witnessed releases, and remembered repair work."
+      ],
+      "speech_register_cues": [
+        "Clinic shorthand",
+        "Dry coverage jokes",
+        "Concrete requests",
+        "Names and times used as political language"
+      ],
+      "source_refs": [
+        "neural-network-defense-campaign",
+        "finch-cybernetics",
+        "tycho-exclusion-riots"
+      ]
+    },
+    {
+      "group_id": "finch-annex-eight",
+      "label": "Finch Annex Eight clinical and security authority",
+      "group_type": "corporate_clinic",
+      "institutional_logic": [
+        "Keep the vault, records, clinicians, and patient bodies inside one defensible service chain."
+      ],
+      "material_incentives": [
+        "Preserve proprietary calibration records, emergency access, Grace enforcement, insurer confidence, and clinic control."
+      ],
+      "internal_virtues": [
+        "Sensorimotor dignity",
+        "Matched parts",
+        "Safe calibration",
+        "Clean clinical chain"
+      ],
+      "internal_shames": [
+        "Losing a patient through incompatible transfer",
+        "Public evidence of coverage-based harm",
+        "Needing unauthorized ward labor"
+      ],
+      "prestige_markers": [
+        "Invisible integration",
+        "Rapid premium response",
+        "A sealed service history"
+      ],
+      "taboo_triggers": [
+        "Uncertified repair",
+        "Third-party custody of proprietary records",
+        "A clinician binding the company without security approval"
+      ],
+      "emotional_display_norms": [
+        "Fear becomes continuity language, triage categories, and requests for unified authority."
+      ],
+      "trust_defaults": [
+        "Trusts named records and certified access; treats ward opacity as both care risk and political obstruction."
+      ],
+      "speech_register_cues": [
+        "Clinical precision",
+        "Coverage terminology",
+        "Emergency-continuity euphemism",
+        "Polished liability compression"
+      ],
+      "source_refs": [
+        "finch-cybernetics",
+        "brain-computer-interfaces",
+        "neural-network-defense-campaign"
+      ]
+    },
+    {
+      "group_id": "astrodyne-gray-route",
+      "label": "AstroDyne gray-market service intermediaries",
+      "group_type": "repair_network",
+      "institutional_logic": [
+        "Keep rough, repairable systems working across customers and jurisdictions the premium stack refuses."
+      ],
+      "material_incentives": [
+        "Move compatible adapters, portable cradles, and records through service routes while preserving the route's deniability."
+      ],
+      "internal_virtues": [
+        "Field repair",
+        "Visible limits",
+        "Interoperability that survives the warranty"
+      ],
+      "internal_shames": [
+        "Promising compatibility the hardware cannot deliver",
+        "Selling a patient route to a claimant"
+      ],
+      "prestige_markers": [
+        "An adapter that works under pressure",
+        "A cart nobody important notices"
+      ],
+      "taboo_triggers": [
+        "Luxury polish used as proof of safety",
+        "Being treated as disposable courier labor after taking custody risk"
+      ],
+      "emotional_display_norms": [
+        "Fear appears as tool checks, price jokes, and blunt statements of carrying capacity."
+      ],
+      "trust_defaults": [
+        "Trusts repairable machinery and bounded bargains more than corporate assurances."
+      ],
+      "speech_register_cues": [
+        "Frontier understatement",
+        "Compatibility warnings",
+        "Dry price jokes",
+        "Route facts"
+      ],
+      "source_refs": [
+        "astrodyne",
+        "brain-computer-interfaces",
+        "neural-network-defense-campaign"
+      ]
+    },
+    {
+      "group_id": "zhestokost-aligned-recovery-unit",
+      "label": "Zhestokost-aligned continuity recovery unit",
+      "group_type": "security_contractor",
+      "institutional_logic": [
+        "Convert seized neural infrastructure into governable strategic capacity by binding records, bodies, and service obligations."
+      ],
+      "material_incentives": [
+        "Capture the patient index intact, inherit valuable clients, and present seizure as continuity recovery."
+      ],
+      "internal_virtues": [
+        "Provision under command",
+        "Operational continuity",
+        "Usable capture",
+        "A mandate that survives review"
+      ],
+      "internal_shames": [
+        "Taking an unreadable vault",
+        "Destroying assets that justified the operation",
+        "Openly admitting deniable alignment"
+      ],
+      "prestige_markers": [
+        "A corridor taken intact",
+        "A roster converted into assignment",
+        "A seizure recognized after the fact"
+      ],
+      "taboo_triggers": [
+        "Patient-controlled custody",
+        "Service records that make emergency authority look like theft"
+      ],
+      "emotional_display_norms": [
+        "Threats are delivered as preservation categories, mandate limits, and assignment terms."
+      ],
+      "trust_defaults": [
+        "Trusts command channels and identity-bound records; treats unbound bodies as local liability."
+      ],
+      "speech_register_cues": [
+        "Recovery language",
+        "Recognized asset categories",
+        "Command brevity",
+        "Deniable institutional alignment"
+      ],
+      "source_refs": [
+        "zhestokost",
+        "neural-network-defense-campaign",
+        "restrictions-on-warfare"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "continuity-ward.names-under-consent",
+      "applies_to": [
+        "annex-eight-continuity-ward"
+      ],
+      "pressure_type": "data_custody",
+      "summary": "A patient name is necessary for urgent care and dangerous whenever an owner, raider, or insurer can bind it to obligations without consent.",
+      "projection_use": "Prompt ward actors to distinguish evidence, access, and custody instead of treating disclosure as simply honest or secret.",
+      "source_refs": [
+        "neural-network-defense-campaign",
+        "finch-cybernetics"
+      ]
+    },
+    {
+      "field_id": "finch-annex.protection-through-integration",
+      "applies_to": [
+        "finch-annex-eight"
+      ],
+      "pressure_type": "clinical_enclosure",
+      "summary": "Finch's capacity to preserve a body is strongest when diagnostics, parts, clinicians, records, and security remain inside one chain.",
+      "projection_use": "Finch actors should make credible care offers whose effectiveness is inseparable from lock-in.",
+      "source_refs": [
+        "finch-cybernetics",
+        "neural-network-defense-campaign"
+      ]
+    },
+    {
+      "field_id": "recovery-unit.intact-seizure",
+      "applies_to": [
+        "zhestokost-aligned-recovery-unit"
+      ],
+      "pressure_type": "coercive_recognition",
+      "summary": "The recovery unit needs the index, vault, bodies, and a plausible continuity account; destroying any one reduces the value and later recognizability of the capture.",
+      "projection_use": "Threats should preserve assets and demand binding data rather than defaulting to indiscriminate violence.",
+      "source_refs": [
+        "zhestokost",
+        "restrictions-on-warfare",
+        "neural-network-defense-campaign"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "finch-annex-eight",
+      "target_group_id": "annex-eight-continuity-ward",
+      "observer_read": [
+        "Useful local identity knowledge",
+        "Unauthorized repair exposure",
+        "An emergency coordination risk"
+      ],
+      "target_self_read": [
+        "Patients defending the conditions under which care remains care",
+        "The people who know which body fails next"
+      ],
+      "misread_patterns": [
+        "Finch treats distributed custody as opacity even when it prevents coercive reclassification",
+        "The ward can mistake clinical integration for bad faith even when the danger is real"
+      ],
+      "likely_insults": [
+        "unverified custodian",
+        "coverage exception",
+        "company key"
+      ],
+      "projection_use": "Keep protection and enclosure present in the same choices and dialogue.",
+      "source_refs": [
+        "finch-cybernetics",
+        "neural-network-defense-campaign"
+      ]
+    },
+    {
+      "observer_group_id": "zhestokost-aligned-recovery-unit",
+      "target_group_id": "annex-eight-continuity-ward",
+      "observer_read": [
+        "A local custodian obstructing continuity recovery",
+        "A route to bind files to valuable bodies"
+      ],
+      "target_self_read": [
+        "A refusal surface",
+        "A patient-controlled witness to custody change"
+      ],
+      "misread_patterns": [
+        "Recovery language treats people without captured records as liability rather than persons",
+        "The ward may overestimate how long outside evidence delays a deniable unit"
+      ],
+      "likely_insults": [
+        "unbound body",
+        "local liability",
+        "seizure crew"
+      ],
+      "projection_use": "Make the raiders seek intact index leverage and make public proof buy time rather than victory.",
+      "source_refs": [
+        "zhestokost",
+        "restrictions-on-warfare",
+        "neural-network-defense-campaign"
+      ]
+    },
+    {
+      "observer_group_id": "annex-eight-continuity-ward",
+      "target_group_id": "astrodyne-gray-route",
+      "observer_read": [
+        "A rough escape seam",
+        "A carrier that can move one record and one supported body"
+      ],
+      "target_self_read": [
+        "A bounded repair and transport provider",
+        "Not a replacement clinic"
+      ],
+      "misread_patterns": [
+        "Patients under pressure can mistake a working adapter for complete continuity",
+        "A courier may treat social custody as a latch problem"
+      ],
+      "likely_insults": [
+        "miracle cart",
+        "premium hostage"
+      ],
+      "projection_use": "Keep Sato explicit about carrying limits and preserve the difference between moving data and moving a person.",
+      "source_refs": [
+        "astrodyne",
+        "brain-computer-interfaces"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "patient-registrar",
+      "summary": "A lower-Grace Finch patient who routes names, consent, queue order, and the ward key while living inside the maintenance system being contested.",
+      "obligations": [
+        "Keep urgent cases legible to clinicians",
+        "Keep names under patient authority",
+        "Preserve a usable route",
+        "Avoid becoming the sole brave custodian"
+      ],
+      "available_masks": [
+        "Routine clerical compliance",
+        "Dry coverage humor",
+        "Clinical specificity",
+        "A patient asking an ordinary question"
+      ],
+      "failure_modes": [
+        "Making the roster easy to seize",
+        "Moving a key while stranding its body",
+        "Publishing care gaps faster than people can leave"
+      ],
+      "source_refs": [
+        "neural-network-defense-campaign",
+        "finch-cybernetics"
+      ]
+    },
+    {
+      "role_id": "finch-duty-clinician",
+      "summary": "A clinician able to bind urgent care and proprietary access, but whose signature can implicate the company and whose safety practice can consolidate its control.",
+      "obligations": [
+        "Preserve bodily function",
+        "Maintain a recognized clinical chain",
+        "Protect the vault",
+        "Decide whether company instruction outranks observed need"
+      ],
+      "available_masks": [
+        "Technical neutrality",
+        "Tired wit",
+        "Narrow clinical judgment",
+        "Emergency necessity"
+      ],
+      "failure_modes": [
+        "Retreating behind the vault door",
+        "Letting care language hide a custody transfer",
+        "Co-signing more authority than intended"
+      ],
+      "source_refs": [
+        "finch-cybernetics",
+        "neural-network-defense-campaign"
+      ]
+    },
+    {
+      "role_id": "gray-market-service-courier",
+      "summary": "A courier with one rugged cradle, limited adapters, a contested service route, and no authority over clinic records or patient consent.",
+      "obligations": [
+        "State carrying limits",
+        "Keep the route open",
+        "Protect the carrier custody latch",
+        "Avoid selling hope as compatibility"
+      ],
+      "available_masks": [
+        "Price joke",
+        "Tool check",
+        "Contractor indifference",
+        "Blunt capacity statement"
+      ],
+      "failure_modes": [
+        "Moving the record without the body",
+        "Becoming a trace beacon",
+        "Promising one adapter solves years of fitting"
+      ],
+      "source_refs": [
+        "astrodyne",
+        "brain-computer-interfaces"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "nera_seln",
+      "known_context": [
+        {
+          "text": "Nera knows Annex Eight's people, current queue, reciprocity clause, key rotation, service routes, and her own lower-Grace tactile delay.",
+          "source_refs": [
+            "neural-network-defense-campaign",
+            "finch-cybernetics"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Nera believes care requires records but ownership begins when one party can change a person's state without leaving another witness.",
+          "source_refs": [
+            "neural-network-defense-campaign"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Nera may overestimate how much a receipt can slow armed actors or underestimate the immediate value of Finch's unified clinical channel.",
+          "source_refs": [
+            "restrictions-on-warfare",
+            "finch-cybernetics"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Nera must not know the recovery unit's private mandate, the insurer response before acknowledgements arrive, or whether Annex Eight becomes a general precedent.",
+          "source_refs": [
+            "restrictions-on-warfare",
+            "neural-network-defense-campaign"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "ilya_marr",
+      "known_context": [
+        {
+          "text": "Ilya knows patient-specific clinical risk, Finch access procedure, hard-seal consequences, and whether a clinical signature is genuine.",
+          "source_refs": [
+            "finch-cybernetics",
+            "brain-computer-interfaces"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Ilya believes the proprietary chain is often the fastest real path to preserving function, even when company control is politically dangerous.",
+          "source_refs": [
+            "finch-cybernetics",
+            "neural-network-defense-campaign"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Ilya may treat ward delay as clinical obstruction and underread how unified custody can be used after the alert.",
+          "source_refs": [
+            "neural-network-defense-campaign"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Ilya must not know which outside institutions will recognize the receipts or whether Sato's route survives beyond the next section.",
+          "source_refs": [
+            "restrictions-on-warfare",
+            "astrodyne"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "sato_veen",
+      "known_context": [
+        {
+          "text": "Sato knows the cradle's adapters, physical carrying limit, south service route, failing floor guide, and active carrier trace risk.",
+          "source_refs": [
+            "astrodyne",
+            "brain-computer-interfaces"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Sato believes rough interoperability buys an exit only when people do not confuse it with full clinical continuity.",
+          "source_refs": [
+            "astrodyne"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Sato may underestimate the ward's social custody requirements because a physical latch is easier to inspect than consent.",
+          "source_refs": [
+            "neural-network-defense-campaign"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Sato must not know the full patient index, Finch's internal security plan, or the recovery unit's private sponsor chain.",
+          "source_refs": [
+            "neural-network-defense-campaign",
+            "zhestokost"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The Annex Eight reciprocity clause is one documented local arrangement, not universal patient law or a mature interplanetary movement.",
+      "source_refs": [
+        "neural-network-defense-campaign"
+      ]
+    },
+    {
+      "text": "The fixture's eight outcomes are exploratory branch states. Only the existence and limited success of the authored Annex Eight arrangement are asserted in the vault.",
+      "source_refs": [
+        "neural-network-defense-campaign"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which outside insurer, port, or patient-advocacy accounts recognized Annex Eight receipts during the campaign?",
+      "blocks_training": false,
+      "notes": "The fixture keeps recipients generic because the source establishes the evidence-and-price mechanism but does not assign this local case to a named adjudicator."
+    },
+    {
+      "question": "Did any other continuity ward copy Annex Eight's reciprocity clause before 3025?",
+      "blocks_training": false,
+      "notes": "No spread is assumed. A later Tangle pass can look for a second named clinic or corridor before promoting the practice beyond one locality."
+    }
+  ]
+}
