@@ -1,0 +1,408 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "tangle-five-hand-refuge-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/tangle-five-hand-refuge-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/tangle-five-hand-refuge-v0.branch-and-fold.v0.training.json",
+  "scene_id": "tangle-five-hand-refuge-v0.ninth-furnace-hostel-before-first-horn",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a five-hand Soiru'i refuge ring facing Ninth Furnace registry pressure.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for the warm copy-room routine, five office stations, one preparation, Nema's threshold arrival, exposure pressure, the first horn, final strategy, and four aftermath families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for room establishment, member and object introduction, routine preparation choices, stateful preparation fold, registrar arrival, registrar response choices, the first-horn threshold, final strategy, and each ending family. Nema's entrance and the first horn each receive a separate click-through beat because they change the room's power geometry.",
+    "prompting_rule": "Each base image prompt describes a complete drawable frame with room geometry, visible bodies, materials, light, and important objects. Character refs are assembled only for named people visible in that frame. Continuity notes remain tooling constraints and never enter the generated prompt.",
+    "global_style_cue": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, strong readable silhouettes, cold charcoal stone and iron against warm furnace-amber light, restrained supernatural ambiguity, practical worn materials, abstract unlettered record marks, dry human intimacy under institutional pressure.",
+    "prompt_assembly_rule": "Assemble every generated prompt from the global_style_cue, the visual scene's base_image_prompt, visual refs only for visible named characters or groups, and triggered state_image_modifiers or global_branch_image_modifiers. A camera-specific render of the declared scene_set should accompany any multi-angle generation; generated images are painterly outputs, not geometry authority.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture reuses one compact copy room from several focal lengths and moves characters through two doors and one stair. The declared fixed zones, camera slots, sightlines, and branch-state anchors are sufficient for draft replay planning.",
+      "future_scene_set_need": "Before high-consistency website rendering, make a plan-view or simple 3D blockout of the Ninth Furnace hostel copy room using the declared courtward door, west hostel corridor, north ash-service stair, south heat bench and aid cupboard, central copy table, and threshold clerk positions."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "tangle_copy_room_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of a compact rectangular stone copy room inside a geothermal high-fantasy fortress hostel. A heavy iron-strapped door in the east wall opens toward an orange furnace court; a plain west doorway leads to a dim hostel corridor and steaming communal pots; a felt curtain in the north wall hides a narrow descending ash-service stair beside a caged vertical ash chute; a low bronze heat pipe warms a stone bench along the south wall beneath an open aid cupboard. A scarred wooden copy table stands in the center under two oil lamps with rolled parchment, ink, a closed iron-bound branch list, an opened grain jar, a folded wool wrap, and a sealed mortuary answer roll. Five adult human workers occupy separate stations: lean brown-skinned Veka with shaved temples, one black braid and rust-red scribe layers; tall older Melka with deep-brown skin, white head wrap and ash-gray robes; broad older Taru with brown skin, left-cheek scar and dark work wrap; stocky copper-brown Leth with silver-streaked curls, quilted coat and key loops; wiry dark-umber Kera with soot-gray headcloth, cracked-leather apron and corded packet.",
+        "visible_characters": [
+          {"agent_id": "veka_orr", "default_stance": "seated at the center table with pen and closed membership list", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "melka", "default_stance": "standing at the table with both hands on the sealed answer roll", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "taru", "default_stance": "seated on the heated south bench with a household copy inside his wrap", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "leth_aru", "default_stance": "at the south aid cupboard counting food and a wool wrap", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "kera_oss", "default_stance": "beside the north felt curtain with an empty corded packet", "visual_ref": "visual_character_refs.characters.kera_oss"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The room is a compact rectangle. East is courtward, west is the hostel corridor, north is the ash-service stair, south is the heat bench and aid cupboard, and the copy table remains central.",
+          "The sealed answer roll stays with Melka in every frame unless an ending explicitly shows her carrying it courtward. Taru's household copy is a smaller folded packet inside his wrap."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_five_hands_routine",
+        "ink_anchor": "introduce_ring|ordinary_copy_work",
+        "base_image_prompt": "Medium-wide view across the central copy table in a warm stone hostel room: Veka Orr, a lean middle-aged memory keeper with brown skin, shaved temples, a black braid, rust-red layered robe and ink-stained fingers reads from a parchment page; Melka, a tall older mortuary witness in ash-gray robes with a white head wrap corrects the record while guarding a sealed dark roll; Taru, a broad older laborer with a scarred face and dark wool work wrap listens from the low heat-pipe bench; Leth Aru, a stocky store steward in ochred quilted brown wool counts a grain jar, folded wrap, and witness tokens at the open cupboard; Kera Oss, a wiry ash porter in a leather apron and soot-gray headcloth knots a plain packet by the felt stair curtain. Two oil lamps make small islands of amber against charcoal masonry.",
+        "visible_characters": [
+          {"agent_id": "veka_orr", "default_stance": "reading and copying at the table", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "melka", "default_stance": "correcting one line with hands near the sealed roll", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "taru", "default_stance": "listening from the heated bench", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "leth_aru", "default_stance": "counting material refuge at the aid cupboard", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "kera_oss", "default_stance": "knotting a custody cord beside the stair curtain", "visual_ref": "visual_character_refs.characters.kera_oss"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This frame introduces all five members, their stations, and custody objects before any optional branch makes them important.",
+          "The horn is heard through stone and remains off-frame; visible magic is absent in the copy room."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_preparation_choice",
+        "ink_anchor": "preparation_choice",
+        "base_image_prompt": "High three-quarter view of the compact furnace-hostel copy room presenting four physical work choices around one central table: lean braided Veka in rust-red scribe layers sits beside an adverse-margin page and ink pot; stocky silver-curled Leth in a key-looped quilted coat stands at an open south-wall cupboard with a sealed grain jar, wool wrap, and hostel account; wiry soot-head-clothed Kera in a cracked-leather apron waits by the north felt curtain and descending ash stair with a corded packet; broad scar-faced Taru in a dark work wrap sits on the heated bench rehearsing from a household copy while tall white-head-wrapped Melka in ash-gray robes guards the sealed answer roll. The east court door, west hostel corridor, north stair curtain, south bench, and central table are all readable in one frame under warm oil lamps and furnace glow.",
+        "visible_characters": [
+          {"agent_id": "veka_orr", "default_stance": "poised between writing, speaking, moving, and directing aid", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "melka", "default_stance": "watching the work beside the sealed roll", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "taru", "default_stance": "on the heat bench with household copy", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "leth_aru", "default_stance": "at open aid cupboard", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "kera_oss", "default_stance": "at stair curtain with packet", "visual_ref": "visual_character_refs.characters.kera_oss"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "All four choices are reachable from Veka's current table position or by the stated move to the north stair."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_preparation_fold",
+        "ink_anchor": "preparation_fold",
+        "base_image_prompt": "Medium-wide routine fold inside a compact rectangular stone copy room: lean braided Veka in rust-red scribe layers sits at the central scarred table; tall white-head-wrapped Melka in ash-gray robes guards the sealed mortuary roll; broad scar-faced Taru in a dark work wrap sits at the south heat bench; stocky silver-curled Leth in a key-looped coat stands at the aid cupboard; wiry soot-head-clothed Kera in a leather apron waits at the north stair curtain. The parchment working page, closed membership list, grain jar, wool wrap, and corded outside packet are each visible in their baseline locations. The closed east court door, open west hostel corridor, warm amber lamplight, and furnace spill complete the frame.",
+        "visible_characters": [
+          {"agent_id": "veka_orr", "default_stance": "at the table reviewing the prepared state", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "melka", "default_stance": "guarding the sealed answer roll", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "taru", "default_stance": "on the heated bench", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "leth_aru", "default_stance": "beside the aid cupboard", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "kera_oss", "default_stance": "by the stair curtain", "visual_ref": "visual_character_refs.characters.kera_oss"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "record_integrity >= 3", "modifier_prompt": "The working page is densely filled with four separate uninterrupted abstract margin lines in black and ochre ink."},
+          {"trigger": "aid_released >= 2", "modifier_prompt": "The grain jar seal lies broken on the shelf, the jar stands open beside a clearly entered hostel account and folded wool wrap."},
+          {"trigger": "route_ready >= 3", "modifier_prompt": "A corded packet sits in a soot-black wall niche just beyond the north curtain, and damp boot grit marks both turns of the visible stair."},
+          {"trigger": "cutout_integrity >= 3", "modifier_prompt": "Taru holds one small household page openly while the membership list remains closed on Veka's side of the table."}
+        ],
+        "visual_continuity_notes": [
+          "Branch preparation changes only the named page, store seal, packet position, or Taru's public-copy posture."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_registrar_arrival",
+        "ink_anchor": "registrar_arrival",
+        "base_image_prompt": "Power-changing entrance at the east courtward door of a compact stone hostel copy room: Nema, a compact middle-aged registrar with umber skin, cropped iron-gray hair, charcoal wool layers, and a bright copper seal chain steps inside carrying an iron-bound branch case at her hip. Two plainly dressed furnace clerks wait in orange court light beyond the doorway with wax tablets and empty hands. Lean braided Veka in rust-red scribe layers sits at the central table facing the door; tall white-head-wrapped Melka in ash-gray robes stands beside the sealed roll; broad scar-faced Taru in a dark work wrap sits on the south heat bench; stocky silver-curled Leth in a key-looped coat remains at the aid cupboard; wiry soot-head-clothed Kera in a leather apron watches from the north stair curtain. Nema's case and seal chain create a hard line across the warm workroom routine.",
+        "visible_characters": [
+          {"agent_id": "nema", "default_stance": "entering through the east door with branch case", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "veka_orr", "default_stance": "seated at table facing Nema", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "melka", "default_stance": "standing beside sealed roll", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "taru", "default_stance": "watching from heat bench", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "leth_aru", "default_stance": "one hand near aid cupboard", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "kera_oss", "default_stance": "still beside stair curtain", "visual_ref": "visual_character_refs.characters.kera_oss"},
+          {"agent_id": "furnace_clerks", "default_stance": "two clerks outside the east threshold with tablets", "visual_ref": "visual_character_refs.groups.furnace_clerks"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Nema enters from the east courtward door. She does not appear in earlier room-establishing frames.",
+          "The clerks stay outside the threshold during arrival."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_registrar_choice",
+        "ink_anchor": "registrar_choice",
+        "base_image_prompt": "Medium confrontation across a central copy table in a rectangular stone hostel room: compact gray-haired Nema in charcoal wool and a copper seal chain stands at the east edge beside an open iron-bound branch case and certified parchment extract; lean braided Veka in rust-red scribe layers sits opposite with one hand near a closed membership list and working page; broad scar-faced Taru in a dark work wrap stands between the south heated bench and table with his folded household copy; wiry soot-head-clothed Kera in a cracked-leather apron waits beside the north felt stair curtain holding a corded packet. Tall white-head-wrapped Melka guards the sealed roll and stocky silver-curled Leth stands at the aid cupboard in the background. Two charcoal-robed threshold clerks with wax tablets are visible beyond Nema in furnace-orange light. The composition makes four available acts legible: open the list, receipt one page into the case, let Taru speak, or signal Kera toward the stair.",
+        "visible_characters": [
+          {"agent_id": "nema", "default_stance": "standing beside open branch case", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "veka_orr", "default_stance": "seated opposite Nema with hands near list and page", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "taru", "default_stance": "standing with household copy", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "kera_oss", "default_stance": "waiting by north curtain with packet", "visual_ref": "visual_character_refs.characters.kera_oss"},
+          {"agent_id": "melka", "default_stance": "background beside sealed roll", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "leth_aru", "default_stance": "background at aid cupboard", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "furnace_clerks", "default_stance": "outside threshold with tablets ready", "visual_ref": "visual_character_refs.groups.furnace_clerks"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The branch case is open on the east edge of the table but does not physically control the north stair or west hostel corridor."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_registrar_fold",
+        "ink_anchor": "registrar_fold",
+        "base_image_prompt": "Wide stateful confrontation in the compact furnace-hostel copy room: compact gray-haired Nema in charcoal wool and copper seal chain stands in the narrow walking gap between the east door and the central table, with her open iron-bound branch case on the table's east edge; lean braided Veka in rust-red scribe layers faces her from the west side; tall white-head-wrapped Melka guards the sealed roll; broad scar-faced Taru holds his household copy; stocky silver-curled Leth in a key-looped coat stands at the south aid cupboard; wiry soot-head-clothed Kera in a leather apron occupies the north felt stair station. Two charcoal-robed furnace clerks with wax tablets remain at the east threshold. The west hostel door and north stair are visibly distinct routes under amber lamp and furnace light.",
+        "visible_characters": [
+          {"agent_id": "nema", "default_stance": "beside open case, watching each office", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "veka_orr", "default_stance": "west side of table facing Nema", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "melka", "default_stance": "beside sealed roll", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "taru", "default_stance": "holding household copy near heated bench", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "leth_aru", "default_stance": "at aid cupboard", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "kera_oss", "default_stance": "at or beyond north curtain according to route state", "visual_ref": "visual_character_refs.characters.kera_oss"},
+          {"agent_id": "furnace_clerks", "default_stance": "at east threshold with tablets", "visual_ref": "visual_character_refs.groups.furnace_clerks"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "ring_exposure >= 3", "modifier_prompt": "The five-name membership list lies open under both lamps while one threshold clerk copies its abstract marks onto a wax tablet."},
+          {"trigger": "office_separation >= 4", "modifier_prompt": "Five custody anchors remain visibly separate: working page at Veka, roll at Melka, household copy at Taru, open aid account at Leth, and corded route packet at Kera's station."},
+          {"trigger": "registrar_record >= 2", "modifier_prompt": "A signed receipt or a second copied membership list is visibly attached inside Nema's open branch case."},
+          {"trigger": "route_ready >= 3", "modifier_prompt": "The north felt curtain stands slightly open with soot-marked stair treads and the packet positioned beyond the hostel threshold."},
+          {"trigger": "nema_pressure >= 3", "modifier_prompt": "The two furnace clerks step shoulder to shoulder across part of the east doorway while keeping tablets and styluses visible instead of weapons."}
+        ],
+        "visual_continuity_notes": [
+          "The clerks may narrow only the east courtward door. The west hostel corridor and north stair remain separately visible and physically possible routes.",
+          "Nema's authority is shown through case, seal, receipt, clerks, and threshold position rather than supernatural effects."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_first_horn_threshold",
+        "ink_anchor": "first_horn|final_choice",
+        "base_image_prompt": "Whole-room threshold at the first furnace horn: the compact charcoal-stone copy room trembles in orange light rising from the caged ash chute and east court doorway; oil-lamp flames lean; fine soot lifts from the north stair. Lean braided Veka in rust-red scribe layers stands at the central table with membership list; compact gray-haired Nema in charcoal wool and copper chain waits beside her open branch case at the east edge; tall white-head-wrapped Melka grips the sealed answer roll; broad scar-faced Taru in a dark work wrap holds the smaller household copy; stocky silver-curled Leth braces one hand on the aid cupboard; wiry soot-head-clothed Kera in a leather apron stands at the north stair route. The south heat bench, west hostel corridor, three exits, five office objects, and two tablet-carrying threshold clerks are all readable before the final choice.",
+        "visible_characters": [
+          {"agent_id": "veka_orr", "default_stance": "standing at table with list", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "nema", "default_stance": "beside open case at east edge", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "melka", "default_stance": "gripping sealed answer roll", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "taru", "default_stance": "holding household copy between bench and threshold", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "leth_aru", "default_stance": "at opened aid cupboard", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "kera_oss", "default_stance": "at the north stair or beyond its first turn", "visual_ref": "visual_character_refs.characters.kera_oss"},
+          {"agent_id": "furnace_clerks", "default_stance": "at east threshold", "visual_ref": "visual_character_refs.groups.furnace_clerks"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "aid_released >= 2", "modifier_prompt": "The broken grain-jar seal, open account, folded wool wrap, and food allotment are grouped at Leth's station as refuge already in effect."},
+          {"trigger": "route_ready >= 4", "modifier_prompt": "Kera and the corded packet are visible one turn down the north stair through the open felt curtain."},
+          {"trigger": "ring_exposure >= 4", "modifier_prompt": "The open membership list and copied threshold tablet make every member publicly legible."},
+          {"trigger": "nema_pressure >= 4", "modifier_prompt": "Nema's clerks hold the east threshold in a tight administrative line while the orange court light silhouettes them."}
+        ],
+        "visual_continuity_notes": [
+          "The first horn changes light, soot, flame posture, and body attention; it does not create visible divine armor inside this room.",
+          "All final choices originate from the central table and use existing east, north, or custody routes."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_exposure",
+        "ink_anchor": "ending_exposure_success|ending_exposure_cost",
+        "base_image_prompt": "Exposure aftermath in the compact stone copy room: lean braided Veka in rust-red scribe layers stands at the central table reading from an open five-name membership list; compact gray-haired Nema in charcoal wool and copper seal chain writes at her iron-bound branch case on the east side; two charcoal-robed threshold clerks copy the record in furnace-orange light. Tall white-head-wrapped Melka guards the sealed roll, broad scar-faced Taru holds the household copy, stocky silver-curled Leth stands at the aid cupboard, and wiry soot-head-clothed Kera waits at the north stair. The composition centers named vulnerability, five separate material offices, and a tense administrative reckoning.",
+        "visible_characters": [
+          {"agent_id": "veka_orr", "default_stance": "standing and reading the five names", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "nema", "default_stance": "recording the disclosure at branch case", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "melka", "default_stance": "holding sealed roll", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "taru", "default_stance": "holding household copy", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "leth_aru", "default_stance": "at aid cupboard", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "kera_oss", "default_stance": "at north route", "visual_ref": "visual_character_refs.characters.kera_oss"},
+          {"agent_id": "furnace_clerks", "default_stance": "copying at threshold", "visual_ref": "visual_character_refs.groups.furnace_clerks"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Success and cost share the public list; modifiers distinguish whether the five offices have durable objects and routes behind their names."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_distribution",
+        "ink_anchor": "ending_distribution_success|ending_distribution_cost",
+        "base_image_prompt": "Distributed fallback aftermath shown across the compact copy room's three routes: tall older Melka in a white head wrap and ash-gray robes carries a sealed dark answer roll toward the east furnace-court door; broad older scar-faced Taru in a dark work wrap stands separately with a smaller folded household copy; stocky silver-curled Leth in a key-looped coat remains at the south cupboard with grain, wool wrap, and hostel account; wiry soot-head-clothed Kera in a cracked-leather apron descends the north stair carrying a corded packet; lean braided Veka in rust-red scribe layers stays at the central table with membership list; compact gray-haired Nema in charcoal wool and copper seal chain occupies the east edge beside her branch case. Warm lamp light links a clear arrangement of separate holdings.",
+        "visible_characters": [
+          {"agent_id": "melka", "default_stance": "moving east with sealed roll", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "taru", "default_stance": "standing with household copy", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "leth_aru", "default_stance": "at open aid station", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "kera_oss", "default_stance": "descending north stair with corded packet", "visual_ref": "visual_character_refs.characters.kera_oss"},
+          {"agent_id": "veka_orr", "default_stance": "remaining at table with list", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "nema", "default_stance": "at east edge with branch case", "visual_ref": "visual_character_refs.characters.nema"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "record_integrity < 3", "modifier_prompt": "Veka's working page shows one short sparse margin beside a much larger branch extract."},
+          {"trigger": "record_integrity >= 3", "modifier_prompt": "Veka's working page shows four distinct uninterrupted abstract margin lines in black and ochre ink."},
+          {"trigger": "aid_released < 2", "modifier_prompt": "Leth's grain jar retains an intact seal beside a blank hostel support line."},
+          {"trigger": "aid_released >= 2", "modifier_prompt": "Leth's grain jar is open beside a completed hostel support entry and folded wool wrap."},
+          {"trigger": "route_ready < 3", "modifier_prompt": "Kera and the corded packet remain above the first stair turn inside the hostel room."},
+          {"trigger": "route_ready >= 3", "modifier_prompt": "Kera and the corded packet have passed the first soot-marked stair turn toward the outer route."}
+        ],
+        "visual_continuity_notes": [
+          "Each object remains with its declared owner and route. The image must preserve east courtward motion, north external packet motion, and the stationary south aid store."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_cutout",
+        "ink_anchor": "ending_cutout_success|ending_cutout_cost",
+        "base_image_prompt": "Public-cutout aftermath at the east threshold: broad older Taru with brown skin, left-cheek scar, short gray hair and dark wool work wrap stands in clear furnace-orange light holding only his folded household witness copy while addressing compact gray-haired Nema in charcoal wool and copper seal chain beside her open branch case. Several paces behind him inside the amber copy room, lean braided Veka in rust-red scribe layers remains at the table, tall white-head-wrapped Melka in ash-gray robes guards the sealed roll, stocky silver-curled Leth in a key-looped coat stands by the aid cupboard, and wiry soot-head-clothed Kera in a leather apron waits near the north curtain. The spatial gap makes Taru's public claim visible while keeping support offices physically separate.",
+        "visible_characters": [
+          {"agent_id": "taru", "default_stance": "alone in the east threshold light with household copy", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "nema", "default_stance": "recording Taru at the branch case", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "veka_orr", "default_stance": "behind Taru at central table", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "melka", "default_stance": "behind Taru beside sealed roll", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "leth_aru", "default_stance": "behind Taru at aid cupboard", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "kera_oss", "default_stance": "behind Taru at north curtain", "visual_ref": "visual_character_refs.characters.kera_oss"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Taru carries only the household copy. The sealed answer roll, ring list, aid store, and external packet remain visibly behind him with their owners."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_sanctuary",
+        "ink_anchor": "ending_sanctuary_success|ending_sanctuary_cost",
+        "base_image_prompt": "Sanctuary-exit aftermath at the north ash-service stair of a geothermal stone hostel: wiry dark-umber Kera in a cracked-leather apron and soot-gray headcloth leads broad older scar-faced Taru in a dark wool work wrap down narrow iron-edged steps beside a caged ash chute. Taru carries a folded household copy and an empty porter sling ready for declared aid. Above them through the felt curtain, lean braided Veka in rust-red scribe layers stands at the central copy table, stocky silver-curled Leth in a key-looped coat watches from the aid cupboard, and compact gray-haired Nema in charcoal wool and copper seal chain remains near the orange-lit east court door with her iron-bound case. The stair landing clearly offers a level turn toward an outer road and a lower turn toward the furnace court.",
+        "visible_characters": [
+          {"agent_id": "kera_oss", "default_stance": "leading down the north stair", "visual_ref": "visual_character_refs.characters.kera_oss"},
+          {"agent_id": "taru", "default_stance": "following with household copy, grain jar, and wool wrap", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "veka_orr", "default_stance": "visible above at central table", "visual_ref": "visual_character_refs.characters.veka_orr"},
+          {"agent_id": "leth_aru", "default_stance": "visible above by aid cupboard", "visual_ref": "visual_character_refs.characters.leth_aru"},
+          {"agent_id": "nema", "default_stance": "distant at east door beside branch case", "visual_ref": "visual_character_refs.characters.nema"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "aid_released < 2", "modifier_prompt": "Taru carries only the folded household copy while a sealed grain jar and wool wrap remain above at Leth's cupboard."},
+          {"trigger": "aid_released >= 2", "modifier_prompt": "Taru carries the household copy, an opened grain allotment, and a thick wool sleeping wrap."},
+          {"trigger": "route_ready < 3", "modifier_prompt": "Kera pauses at the landing with one hand on a closed level porter door and soot-dark uncertainty on the untested threshold."},
+          {"trigger": "route_ready >= 3", "modifier_prompt": "The level porter door stands open onto a checked soot-marked passage toward the outer shrine road."}
+        ],
+        "visual_continuity_notes": [
+          "The north stair landing has two onward paths: lower to the furnace court and level through a porter door toward the outer shrine road.",
+          "Success shows Taru with material aid and a clear level turn; cost modifiers show missing support or a blocked porter door."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prepare_record_integrity_visual",
+        "trigger": "branch_label == prepare_record_integrity",
+        "apply_to_visual_scene_ids": ["tangle_preparation_fold", "tangle_first_horn_threshold"],
+        "modifier_prompt": "Show Veka's working page with four distinct abstract margin marks preserved in separate lines and a fresh trail of ink to the membership table."
+      },
+      {
+        "modifier_id": "prepare_released_aid_visual",
+        "trigger": "branch_label == prepare_released_aid",
+        "apply_to_visual_scene_ids": ["tangle_preparation_fold", "tangle_first_horn_threshold", "tangle_ending_distribution"],
+        "modifier_prompt": "Show the grain jar open with its broken seal beside a written hostel account, wool wrap, and small witness-support allotment at Leth's station."
+      },
+      {
+        "modifier_id": "prepare_route_fallback_visual",
+        "trigger": "branch_label == prepare_route_fallback",
+        "apply_to_visual_scene_ids": ["tangle_preparation_fold", "tangle_first_horn_threshold", "tangle_ending_sanctuary"],
+        "modifier_prompt": "Show checked soot footprints on both stair turns and the corded packet placed in a black wall niche beyond the north hostel threshold."
+      },
+      {
+        "modifier_id": "prepare_public_cutout_visual",
+        "trigger": "branch_label == prepare_public_cutout",
+        "apply_to_visual_scene_ids": ["tangle_preparation_fold", "tangle_ending_cutout"],
+        "modifier_prompt": "Show Taru holding one concise household page in front of his chest while the closed ring list remains several paces behind on Veka's table."
+      },
+      {
+        "modifier_id": "expose_membership_list_visual",
+        "trigger": "branch_label == expose_membership_list",
+        "apply_to_visual_scene_ids": ["tangle_registrar_fold", "tangle_first_horn_threshold", "tangle_ending_exposure"],
+        "modifier_prompt": "Show the five-name membership list open beneath both lamps and a threshold clerk making a second copy on a wax tablet."
+      },
+      {
+        "modifier_id": "receipt_working_copy_visual",
+        "trigger": "branch_label == receipt_the_working_copy",
+        "apply_to_visual_scene_ids": ["tangle_registrar_fold", "tangle_first_horn_threshold"],
+        "modifier_prompt": "Show one parchment page inside Nema's branch case with a copper-sealed receipt naming its boundary, while Melka and Taru visibly retain different documents."
+      },
+      {
+        "modifier_id": "present_claimant_visual",
+        "trigger": "branch_label == present_claimant_cutout",
+        "apply_to_visual_scene_ids": ["tangle_registrar_fold", "tangle_ending_cutout"],
+        "modifier_prompt": "Show Taru one pace forward with household copy raised, Nema writing his statement, and the four supporting office holders remaining behind their own objects."
+      },
+      {
+        "modifier_id": "move_external_fallback_visual",
+        "trigger": "branch_label == move_external_fallback",
+        "apply_to_visual_scene_ids": ["tangle_registrar_fold", "tangle_first_horn_threshold", "tangle_ending_distribution"],
+        "modifier_prompt": "Show Kera and the corded packet beyond the first stair turn, with the north curtain swinging and Nema's attention fixed on the audible route."
+      },
+      {
+        "modifier_id": "ending_exposure_success_visual",
+        "trigger": "ending_label == exposed_offices_success",
+        "apply_to_visual_scene_ids": ["tangle_ending_exposure"],
+        "modifier_prompt": "Each named member remains visibly anchored to a distinct object and route while Nema records them: list, sealed roll, household copy, opened aid account, and porter stair packet."
+      },
+      {
+        "modifier_id": "ending_exposure_cost_visual",
+        "trigger": "ending_label == exposed_offices_cost",
+        "apply_to_visual_scene_ids": ["tangle_ending_exposure"],
+        "modifier_prompt": "Nema's sealing cord circles the central table and whatever working papers remain co-located; the five named bodies lose the clean spacing of independent office stations."
+      },
+      {
+        "modifier_id": "ending_distribution_success_visual",
+        "trigger": "ending_label == distributed_fallback_success",
+        "apply_to_visual_scene_ids": ["tangle_ending_distribution"],
+        "modifier_prompt": "Show four holdings moving or standing independently: Melka east with sealed roll, Taru separate with household copy, Leth south with opened aid, and Kera north with outside packet."
+      },
+      {
+        "modifier_id": "ending_distribution_cost_visual",
+        "trigger": "ending_label == distributed_fallback_cost",
+        "apply_to_visual_scene_ids": ["tangle_ending_distribution"],
+        "modifier_prompt": "Show at least one visibly weak anchor among the sparse working page, aid shelf, or upper stair packet while Nema's east-threshold position can stop isolated holders in sequence."
+      },
+      {
+        "modifier_id": "ending_cutout_success_visual",
+        "trigger": "ending_label == public_cutout_success",
+        "apply_to_visual_scene_ids": ["tangle_ending_cutout"],
+        "modifier_prompt": "Taru stands firmly in threshold light with one household copy; the ring list is closed behind him and each supporting worker remains at a separate station."
+      },
+      {
+        "modifier_id": "ending_cutout_cost_visual",
+        "trigger": "ending_label == public_cutout_cost",
+        "apply_to_visual_scene_ids": ["tangle_ending_cutout"],
+        "modifier_prompt": "Taru stands isolated in the threshold while Nema's clerks write around him; the four supporters blur together behind the table like one undisclosed patron."
+      },
+      {
+        "modifier_id": "ending_sanctuary_success_visual",
+        "trigger": "ending_label == sanctuary_exit_success",
+        "apply_to_visual_scene_ids": ["tangle_ending_sanctuary"],
+        "modifier_prompt": "Taru carries household copy, opened grain allotment, and thick wool wrap while Kera points toward the clear level porter door leading to the outer shrine road."
+      },
+      {
+        "modifier_id": "ending_sanctuary_cost_visual",
+        "trigger": "ending_label == sanctuary_exit_cost",
+        "apply_to_visual_scene_ids": ["tangle_ending_sanctuary"],
+        "modifier_prompt": "Taru and Kera pause at the landing while one required support anchor remains visibly incomplete in the aid cupboard, packet route, or porter doorway."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "ninth_furnace_hostel_copy_room.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Compact rectangular stone room with a central table, east furnace-court threshold, west hostel corridor, north ash-service stair behind felt, and south heat bench with aid cupboard.",
+      "fixed_zones": [
+        {"zone_id": "central_copy_table", "visible_form": "scarred rectangular wooden table under two oil lamps with ink, pages, membership list, answer roll, and branch case positions", "used_for": "memory work, disclosure, receipt, and final strategy"},
+        {"zone_id": "east_courtward_door", "visible_form": "iron-strapped stone doorway opening into orange furnace-court light", "used_for": "Nema's entrance, threshold clerks, Melka and Taru's courtward path"},
+        {"zone_id": "west_hostel_corridor", "visible_form": "plain dim passage toward sleeping rooms and steaming communal pots", "used_for": "ordinary hostel access and proof that the court door is not the room's only exit"},
+        {"zone_id": "north_ash_service_stair", "visible_form": "felt curtain, narrow iron-edged steps, caged vertical ash chute, first turn, and landing with lower and level onward routes", "used_for": "Kera's porter route, outside copy, and sanctuary exit"},
+        {"zone_id": "south_heat_bench", "visible_form": "low bronze geothermal pipe warming a stone bench", "used_for": "Taru's waiting place and visible hostel warmth"},
+        {"zone_id": "south_aid_cupboard", "visible_form": "open wooden cupboard holding grain jars, wool wraps, simple medicine packets, and a bound hostel account", "used_for": "Leth's store release and material refuge state"}
+      ],
+      "camera_slots": [
+        {"camera_id": "wide_from_west_hostel", "supports_visual_scene_ids": ["tangle_copy_room_establishing", "tangle_preparation_choice", "tangle_registrar_fold", "tangle_first_horn_threshold"]},
+        {"camera_id": "table_medium_from_south", "supports_visual_scene_ids": ["tangle_five_hands_routine", "tangle_preparation_fold", "tangle_registrar_choice", "tangle_ending_exposure"]},
+        {"camera_id": "east_threshold_medium", "supports_visual_scene_ids": ["tangle_registrar_arrival", "tangle_ending_cutout"]},
+        {"camera_id": "north_stair_three_quarter", "supports_visual_scene_ids": ["tangle_ending_distribution", "tangle_ending_sanctuary"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "nema_to_five_offices", "path": "east_courtward_door -> central_copy_table -> south_bench_and_cupboard plus north_stair_curtain", "supports": ["registrar_arrival", "registrar_choice", "expose_membership_list"]},
+        {"lane_id": "veka_to_route_signal", "path": "central_copy_table -> north felt curtain -> Kera porter station", "supports": ["move_external_fallback"]},
+        {"lane_id": "taru_public_gap", "path": "east threshold -> Taru speaking position -> several-pace gap -> four support stations", "supports": ["present_claimant_cutout", "prioritize_public_cutout"]}
+      ],
+      "branch_state_anchors": [
+        {"state": "record_integrity", "anchor": "working page at central_copy_table", "visible_values": "thin household index or four separately preserved adverse-margin marks"},
+        {"state": "aid_released", "anchor": "south_aid_cupboard", "visible_values": "sealed grain jar and unwritten support or broken seal with open aid account and wool wrap"},
+        {"state": "route_ready", "anchor": "north_ash_service_stair", "visible_values": "packet on central table or soot-marked checked route with packet beyond threshold"},
+        {"state": "ring_exposure", "anchor": "membership list and threshold clerk tablet", "visible_values": "closed list or open five-name list under duplicate copying"},
+        {"state": "registrar_record", "anchor": "Nema's branch case", "visible_values": "empty case, signed receipt, or copied membership list"}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for people visible in the current scene.",
+    "characters": {
+      "veka_orr": "Veka Orr: adult human Hearth-sect memory keeper, middle-aged, lean build, medium-brown skin, narrow thoughtful face, shaved temples with one long black braid, rust-red layered wool robe under a dark sleeveless scribe vest, ink-stained fingers, reed pen and small seal cord, posture precise until humor loosens the mouth. Stable silhouette: seated or standing close to records, long braid down the back, narrow vest and pen hand.",
+      "melka": "Melka: adult human mortuary witness, older and tall, deep-brown skin, fine lined face, white cloth wrapped close over silver hair, ash-gray layered robe with a dark red witness sash, both hands habitually guarding a sealed dark parchment roll, steady upright posture. Stable details: white head wrap, red sash, sealed roll in her custody.",
+      "taru": "Taru: adult human household recognizer, older, broad work-built body, warm brown skin, scar crossing the left cheek, short graying hair, heavy dark wool work wrap over patched furnace clothes, smaller folded household record kept inside the wrap, posture stubborn and tired. Stable details: left-cheek scar, broad silhouette, dark wrap, household copy.",
+      "leth_aru": "Leth Aru: adult human Soiru'i store steward, middle-aged, stocky build, copper-brown skin, thick silver-streaked curls tied in a low knot, quilted brown wool coat with many key loops, plain apron, practical square stance beside food and bedding stores. Stable details: key loops, quilted coat, store ledger and broken or intact grain seal.",
+      "kera_oss": "Kera Oss: adult human ash porter and route holder, lean wiry build, dark umber skin, long nose, alert black eyes, soot-gray headcloth, sleeveless cracked-leather apron over charcoal work layers, heavy gloves tucked at belt, corded packet carried close to the ribs, forward-balanced stair posture. Stable details: soot headcloth, leather apron, corded packet, ash-marked boots.",
+      "nema": "Nema: adult human Ninth Furnace branch registrar, middle-aged and compact, umber skin, cropped iron-gray hair, composed round face, charcoal wool layers cut close for work, bright copper seal chain across the chest, iron-bound branch case at the hip, posture economical and difficult to move. Stable details: copper chain, iron-bound case, cropped gray hair, charcoal silhouette."
+    },
+    "groups": {
+      "furnace_clerks": "Two adult human furnace clerks in plain charcoal work robes, leather tablet sleeves, wax tablets and styluses held visibly at chest height, soot-dark hems, attentive administrative posture at the east threshold; unarmed record workers whose aligned bodies can still narrow a doorway."
+    }
+  },
+  "review_notes": [
+    "Visual-continuity review accepted: twelve segmented anchors, standalone affirmative prompts, visible-character-only refs, explicit branch deltas, and a draft scene-set map support B-level illustrated replay.",
+    "Spatial-cohesion review accepted: the east court threshold, west hostel corridor, north ash stair, south heat bench and cupboard, and central table remain stable across every branch.",
+    "The copy room is fixture-bounded geometry and is not promoted as a universal Jamnai hostel plan; a plan-view or 3D blockout remains a future requirement for high-consistency rendered art."
+  ]
+}

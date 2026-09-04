@@ -1,0 +1,373 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.tangle-five-hand-refuge-v0",
+  "source_status": "reviewed",
+  "fixture_status": "procedural_branch",
+  "source_refs": [
+    {
+      "source_id": "kalsa-index",
+      "path": "Kalsa/index.md",
+      "title": "Kalsa",
+      "canon_tier": "Public/navigation",
+      "line_start": 1,
+      "line_end": 24,
+      "relevance": "Establishes the Public and Spoilers knowledge-tier boundary followed by this digest."
+    },
+    {
+      "source_id": "canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "canon_tier": "Spoilers/policy",
+      "line_start": 1,
+      "line_end": 129,
+      "relevance": "Defines canonical, adopted, unresolved, and knowledge-layer handling; prevents the fixture from converting manifestation interpretations or live outcomes into author fact."
+    },
+    {
+      "source_id": "soirui-sects",
+      "path": "Kalsa/Spoilers/Institutions/Soiru'i Sects.md",
+      "title": "Soiru'i Sects",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 317,
+      "relevance": "Primary owner for sect offices, mutual aid, duplicate records, sanctuary, living champions, institutional limits, and the authored five-hand refuge-ring elaboration."
+    },
+    {
+      "source_id": "death-binding-law",
+      "path": "Kalsa/Spoilers/Institutions/Death and Binding Law.md",
+      "title": "Death and Binding Law",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 287,
+      "relevance": "Owns death witnesses, answer rolls, overlapping custody, duplicate evidence, material support during appeal, and the limit against identifying a manifestation from a familiar sign."
+    },
+    {
+      "source_id": "ash-halo-court",
+      "path": "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md",
+      "title": "The Ash-Halo Court",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 246,
+      "relevance": "Owns the present Ninth Furnace armament pressure, Melka, Taru, Nema, the answer roll, withdrawn shrine support, registrar boundary, under-gallery route, and three-horn clock."
+    },
+    {
+      "source_id": "ash-halo-armament",
+      "path": "Kalsa/Spoilers/Events/The Ash-Halo Armament.md",
+      "title": "The Ash-Halo Armament",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 119,
+      "relevance": "Owns the earlier armament, divergent high-branch, forge, and mortuary records, and the practice of sects carrying independent copies after a registrar kept the first roll sealed."
+    },
+    {
+      "source_id": "jamnai-hierarchy",
+      "path": "Kalsa/Spoilers/Institutions/Jamnai Submission Hierarchy.md",
+      "title": "Jamnai Submission Hierarchy",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 190,
+      "relevance": "Owns branch registrars, office boundaries, appeal through the hierarchy, material protection duties, and the danger of collapsing victory into custody of records, people, and competence."
+    },
+    {
+      "source_id": "public-gods-dead",
+      "path": "Kalsa/Public/World/Gods and the Dead.md",
+      "title": "Gods and the Dead",
+      "canon_tier": "Public/reader",
+      "line_start": 1,
+      "line_end": 90,
+      "relevance": "Reader-facing grounding for real but non-omniscient gods, separated covenant, store, and mortuary records, and familiar signs that remain evidentiary rather than conclusive."
+    },
+    {
+      "source_id": "public-faces-halo",
+      "path": "Kalsa/Public/Sources/The Faces in the Ash Halo.md",
+      "title": "The Faces in the Ash Halo",
+      "canon_tier": "Public/reader",
+      "line_start": 1,
+      "line_end": 72,
+      "relevance": "Reader-facing account of the sealed answer roll, furnace-court material preparation, withdrawn shrines, familiar signs, later silences, and divergent returns."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Kalsa's standing present, immediately before the first horn in the live Ash-Halo Court situation; the absolute date and calendar remain unresolved.",
+    "location": "A fixture-bounded copy room in the Ninth Furnace hostel, with a courtward door, a hostel corridor, and an ash-service stair linking the furnace-court level to an outer shrine road.",
+    "summary": "Five sect workers prepare a household claim, material refuge, and outside copy before Ninth Furnace's registrar asserts branch custody over court-related records. The scene tests whether a conspiracy can survive exposure because its members control separate, reviewable acts rather than one secret command.",
+    "public_facts": [
+      {
+        "text": "Kalsan gods act, bargain, protect, and sometimes fail without being established as all-knowing.",
+        "source_refs": ["public-gods-dead"]
+      },
+      {
+        "text": "Familiar gestures and voices near concentrated miracles may support claims and investigation without proving the identity or intention of the dead presence.",
+        "source_refs": ["public-gods-dead", "public-faces-halo"]
+      },
+      {
+        "text": "At the earlier Ash-Halo armament, an answer roll remained sealed during preparation while divine iron closed around a champion and familiar shrine presences later fell silent.",
+        "source_refs": ["public-faces-halo"]
+      },
+      {
+        "text": "High-branch, forge, household, and mortuary records preserve different consequences of the same divine working.",
+        "source_refs": ["public-faces-halo"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Soiru'i sect power rests in living institutions: memory, shrines, champions, stores, mortuary witnesses, sanctuary, and routes that keep dead claims from belonging only to the current branch holder.",
+        "source_refs": ["soirui-sects"]
+      },
+      {
+        "text": "A refuge ring survives disclosure only when copies, released aid, witness standing, sanctuary, and route capacity remain under separate owners with their own review paths.",
+        "source_refs": ["soirui-sects"]
+      },
+      {
+        "text": "The Ninth Furnace registrar may preserve and interpret branch records, challenge a copy at the court threshold, and record refusals, but cannot erase Taru's household witness or identify what appears below.",
+        "source_refs": ["ash-halo-court", "jamnai-hierarchy"]
+      },
+      {
+        "text": "Taru needs warning or withdrawal if the defeated champion's sign returns, while Melka's answer roll can establish recorded signs and later appearances but not metaphysical identity.",
+        "source_refs": ["ash-halo-court", "death-binding-law"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "five-hand-refuge-ring",
+      "label": "Five-hand Soiru'i refuge ring",
+      "group_type": "cross_office_conspiracy",
+      "institutional_logic": ["Keep one branch seizure from acquiring record, survival support, witness, sanctuary, and route authority at once."],
+      "material_incentives": ["Preserve adverse testimony", "Release food and lodging before retaliation", "Maintain an outside copy", "Keep a claimant alive long enough to reach another forum"],
+      "internal_virtues": ["Declared conflicts", "Adverse evidence retained", "Acts carried by their actual owner", "Fallbacks already funded and routed"],
+      "internal_shames": ["Using a claimant as an ignorant shield", "Calling promised aid refuge", "Letting a public champion acquire archive and store authority"],
+      "prestige_markers": ["A seized copy reconstructed from independent witnesses", "An exposed member whose office still functions", "A claimant fed through a lost hearing"],
+      "taboo_triggers": ["One holder demanding every copy", "A store gift rewritten as submission", "A sanctuary inside the same holder's effective custody"],
+      "emotional_display_norms": ["Fear appears as checked routes, opened grain jars, precise custody language, and dry jokes about the paperwork likely to survive them."],
+      "trust_defaults": ["Trust is role-specific and audited against custody; personal loyalty does not excuse merging offices."],
+      "speech_register_cues": ["Named office boundaries", "Short custody statements", "Adverse interpretations stated plainly", "Hearth humor tied to food, warmth, and work"],
+      "source_refs": ["soirui-sects", "death-binding-law"]
+    },
+    {
+      "group_id": "ninth-furnace-branch-office",
+      "label": "Ninth Furnace branch and registry",
+      "group_type": "jamnai_branch_government",
+      "institutional_logic": ["Keep the armament, records, stores, and branch obligations coherent enough to retake the East Collar heat gate."],
+      "material_incentives": ["Restore hostel heat", "Keep the champion armed", "Prevent Ash Hook from using delay", "Return withdrawn grants after victory"],
+      "internal_virtues": ["Exact refusals", "Certified extracts", "Protection delivered through rank", "Records that outlast the holder"],
+      "internal_shames": ["An uncountersigned copy defeating the branch account", "A public office acting as concealed rebellion", "Delay that helps Ash Hook retain the gate"],
+      "prestige_markers": ["A complete branch return", "A champion who marches on the horn", "A registry able to show what Ninth Furnace promised"],
+      "taboo_triggers": ["Copies leaving branch custody", "A defeated champion's claim interrupting the living hierarchy", "Sanctuary used to block a recognized order"],
+      "emotional_display_norms": ["Urgency is translated into seals, receipts, horns, rank, and the claim that every delay benefits an enemy."],
+      "trust_defaults": ["Trusts recognized branch copies and bounded office records; suspects independent networks of using uncertainty to seize political time."],
+      "speech_register_cues": ["Branch custody", "Certified extract", "Named refusal", "Protection and victory as linked obligations"],
+      "source_refs": ["ash-halo-court", "jamnai-hierarchy"]
+    },
+    {
+      "group_id": "withdrawn-shrine-households",
+      "label": "Households and shrines exposed by the armament",
+      "group_type": "distributed_claimants",
+      "institutional_logic": ["Preserve recognition, ordinary protection, and a route to remedy when the branch concentrates divine capacity elsewhere."],
+      "material_incentives": ["Warning before another shrine falls silent", "Restored protection", "Food and lodging during appeal", "A witness copy outside the branch case"],
+      "internal_virtues": ["Recognizable signs", "Household copies", "Refusal to turn silence into consent"],
+      "internal_shames": ["Invented ancestors added for a ritual share", "Letting one prestigious dead claimant consume other households' losses"],
+      "prestige_markers": ["A claim heard without surrendering its copy", "A familiar sign recorded with uncertainty intact"],
+      "taboo_triggers": ["Silence declared release", "A branch victory copy ending before household loss", "Aid conditioned on inherited binding"],
+      "emotional_display_norms": ["Grief and suspicion are compressed into remembered gestures, copied margins, requests for warning, and refusal of bindings offered in another name."],
+      "trust_defaults": ["Trusts household recognizers and independent witnesses while remaining vulnerable to claimants who manufacture signs."],
+      "speech_register_cues": ["What appeared", "Who recognized it", "What stopped answering", "Which remedy is requested without claiming identity"],
+      "source_refs": ["death-binding-law", "ash-halo-court", "public-faces-halo"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "five-hand-refuge-ring.disclosure-resilience",
+      "applies_to": ["five-hand-refuge-ring"],
+      "pressure_type": "distributed_leverage",
+      "summary": "Secrecy protects timing, but the ring's durable power comes from separately valid offices and material acts that remain live after the membership list is exposed.",
+      "projection_use": "Give Veka choices that trade concealment for stronger office records; exposure must raise retaliation risk while preserving only the leverage actually funded, witnessed, or routed.",
+      "source_refs": ["soirui-sects"]
+    },
+    {
+      "field_id": "ninth-furnace-branch-office.armament-clock",
+      "applies_to": ["ninth-furnace-branch-office", "withdrawn-shrine-households"],
+      "pressure_type": "divine_campaign_priority",
+      "summary": "The branch's attempt to restore a heat gate gives every record challenge a real cost in time while making delay useful to the rival branch.",
+      "projection_use": "Let Nema's pressure remain institutionally credible rather than treating registry custody as mere villainy; the first horn should force a loss among hearing, secrecy, route, and support.",
+      "source_refs": ["ash-halo-court"]
+    },
+    {
+      "field_id": "withdrawn-shrine-households.survival-before-verdict",
+      "applies_to": ["withdrawn-shrine-households"],
+      "pressure_type": "appeal_survival",
+      "summary": "A household claim cannot survive long enough for review if food, lodging, witness pay, and a safe route remain future promises.",
+      "projection_use": "Make opened stores, a checked route, and a place to sleep alter endings instead of serving as decorative kindness.",
+      "source_refs": ["soirui-sects", "death-binding-law"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "ninth-furnace-branch-office",
+      "target_group_id": "five-hand-refuge-ring",
+      "observer_read": ["Concealed succession machinery", "An uncountersigned archive", "Delay serving Ash Hook", "Sedition sheltered by divided office"],
+      "target_self_read": ["A way to keep one branch case from becoming witness, store, sanctuary, road, and verdict"],
+      "misread_patterns": ["Treats coordinated protection as proof that every act has one hidden owner", "Treats any external copy as hostility rather than a check on retrospective rewriting"],
+      "likely_insults": ["five-handed refusal", "hostel court", "ash-stair government"],
+      "projection_use": "Nema should infer coordination from visible offices but must not know the membership list or external destination until an action reveals it.",
+      "source_refs": ["soirui-sects", "jamnai-hierarchy"]
+    },
+    {
+      "observer_group_id": "five-hand-refuge-ring",
+      "target_group_id": "ninth-furnace-branch-office",
+      "observer_read": ["One case trying to eat five authorities", "Victory copy prepared before the household cost", "Protection becoming custody"],
+      "target_self_read": ["A branch preserving enough coherence to restore heat and prevent a rival conquest"],
+      "misread_patterns": ["Can treat any registry demand as seizure even when a bounded receipt would preserve the adverse claim", "Can underweight the cost of delaying the armament"],
+      "likely_insults": ["case-fed memory", "horn law", "warm-seal courage"],
+      "projection_use": "Keep Veka capable of using a hostile branch record when its limits are explicit; resistance should not require pretending the branch has no constituency.",
+      "source_refs": ["ash-halo-court", "jamnai-hierarchy"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "hearth-memory-keeper",
+      "summary": "The protagonist preserves claims, adverse testimony, and the ring's membership record without acquiring the witness, store, route, sanctuary, or divine working.",
+      "obligations": ["Keep interpretations distinct from observations", "Name conflicts", "Preserve a reconstructable record", "Avoid making the claimant carry every secret"],
+      "available_masks": ["Routine copying", "Pedantic correction", "Dry institutional humor", "Open disclosure of a narrower act"],
+      "failure_modes": ["Treating the ring as personal authorship", "Protecting secrecy by loading risk onto Taru", "Confusing duplicate pages with funded refuge"],
+      "source_refs": ["soirui-sects", "death-binding-law"]
+    },
+    {
+      "role_id": "branch-registrar",
+      "summary": "A Ninth Furnace official who preserves orders and refusals in the branch's favor while remaining unable to erase independent household witness or decide metaphysical identity.",
+      "obligations": ["Keep certified extracts", "Record refusals exactly", "Preserve branch commitments", "Challenge unauthorized copies at the threshold"],
+      "available_masks": ["Custody precision", "Administrative patience", "Victory urgency", "A receipt narrower than the demand"],
+      "failure_modes": ["Turning the branch case into total jurisdiction", "Calling every delay enemy aid", "Using clerks at a doorway as undeclared force"],
+      "source_refs": ["ash-halo-court", "jamnai-hierarchy"]
+    },
+    {
+      "role_id": "household-claimant-cutout",
+      "summary": "A claimant who owns the remembered sign and requested remedy but should not be made custodian of the hidden network supporting the petition.",
+      "obligations": ["State only the sign previously recognized", "Name warning or withdrawal as the request", "Refuse a binding offered in another name", "Preserve the household copy"],
+      "available_masks": ["Plain household testimony", "Public refusal", "Deliberate ignorance of the support route"],
+      "failure_modes": ["Being turned into the conspiracy's sole visible body", "Accepting aid as a new submission", "Claiming identity from recognition alone"],
+      "source_refs": ["ash-halo-court", "death-binding-law"]
+    },
+    {
+      "role_id": "sect-store-steward",
+      "summary": "A worker who turns refuge from a future promise into a declared interval of food, heat, lodging, and witness support.",
+      "obligations": ["Apply the beneficiary rule", "Separate aid from submission", "Record opened stores", "Accept later review without reversing consumed support by fiction"],
+      "available_masks": ["Hostel routine", "Inventory literalism", "Domestic authority", "An opened seal"],
+      "failure_modes": ["Leaving aid unissued until the verdict", "Favoring only registered families", "Letting the champion hold store keys"],
+      "source_refs": ["soirui-sects"]
+    },
+    {
+      "role_id": "ash-route-holder",
+      "summary": "A porter who controls an ordinary work route and receives only the next destination and custody mark.",
+      "obligations": ["Carry one admitted packet or person", "Keep route conditions visible", "Refuse to claim knowledge of the whole plot", "Preserve the next handoff"],
+      "available_masks": ["Ash-cart routine", "Soot marks", "Work-route impatience", "One-destination custody"],
+      "failure_modes": ["Becoming the only route", "Learning enough to become an archive", "Stranding the ring when the porter door closes"],
+      "source_refs": ["soirui-sects"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "veka_orr",
+      "known_context": [
+        {"text": "Veka knows the ring membership, declared conflicts, current records, room routes, visible branch demand, and acts disclosed in scene.", "source_refs": ["soirui-sects", "ash-halo-court"]}
+      ],
+      "beliefs": [
+        {"text": "Veka believes a conspiracy should survive truth because its offices and support are real, not because nobody can name it.", "source_refs": ["soirui-sects"]}
+      ],
+      "misreads": [
+        {"text": "Veka may read every registry request as an attempted total seizure and underuse a bounded receipt that could preserve the claim inside branch custody.", "source_refs": ["jamnai-hierarchy", "ash-halo-court"]}
+      ],
+      "must_not_know": [
+        {"text": "Veka must not know which manifestation will appear, the Iron Shelter's private intention, Nema's undisclosed loyalties, or the result of the armament below.", "source_refs": ["ash-halo-court", "canon-policy"]}
+      ]
+    },
+    {
+      "speaker_id": "nema",
+      "known_context": [
+        {"text": "Nema knows Iresa's order, the branch extract, registry rules, visible people and objects, and any refusal or transfer made before her.", "source_refs": ["ash-halo-court"]}
+      ],
+      "beliefs": [
+        {"text": "Nema believes complete branch custody protects Ninth Furnace from delay, hostile quotation, and Ash Hook leverage.", "source_refs": ["ash-halo-court", "jamnai-hierarchy"]}
+      ],
+      "misreads": [
+        {"text": "Nema may treat coordinated offices as one hidden command even when each act has an independent owner and constituency.", "source_refs": ["soirui-sects"]}
+      ],
+      "must_not_know": [
+        {"text": "Nema must not know the full membership, outside copy position, or Taru's rehearsed boundary before visible action reveals it.", "source_refs": ["canon-policy"]}
+      ]
+    },
+    {
+      "speaker_id": "taru",
+      "known_context": [
+        {"text": "Taru knows his household's prior sign, the shrine's silence, his requested warning or withdrawal, his refusal of binding, and support explicitly disclosed to him.", "source_refs": ["ash-halo-court"]}
+      ],
+      "beliefs": [
+        {"text": "Taru believes the household record gives him standing to ask that the defeated champion's sign not be consumed or bound without answer.", "source_refs": ["ash-halo-court", "death-binding-law"]}
+      ],
+      "misreads": [
+        {"text": "Taru may experience bounded ignorance as condescension when the ring intends to keep him from carrying its hidden custody map.", "source_refs": ["soirui-sects"]}
+      ],
+      "must_not_know": [
+        {"text": "Taru must not identify a returned sign as the defeated champion merely because it resembles the household record.", "source_refs": ["death-binding-law", "ash-halo-court"]}
+      ]
+    },
+    {
+      "speaker_id": "melka",
+      "known_context": [
+        {"text": "Melka knows the answer roll's custody, recorded signs, recognized households, and the evidence boundary of later appearances and silences.", "source_refs": ["ash-halo-court", "death-binding-law"]}
+      ],
+      "beliefs": [
+        {"text": "Melka believes interpretations must remain unselected until observation and household recognition support a narrower claim.", "source_refs": ["death-binding-law"]}
+      ],
+      "misreads": [
+        {"text": "Melka may underweight how quickly the first-horn clock turns careful custody into a missed intervention.", "source_refs": ["ash-halo-court"]}
+      ],
+      "must_not_know": [
+        {"text": "Melka must not know the identity, memory, or intention of the slag-cistern feeder from the answer roll alone.", "source_refs": ["ash-halo-court", "death-binding-law"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The five-hand refuge-ring section is explicit authored elaboration. It is a recurring translated pattern, not a universal native institution, fixed denomination, or proof that every five-role coordination is legitimate.",
+      "source_refs": ["soirui-sects", "canon-policy"]
+    },
+    {
+      "text": "The fixture stages one possible ring around the current Ash-Halo pressure. It does not establish that this conspiracy canonically exists, choose an Ash-Halo outcome, or alter the current dungeon owner.",
+      "source_refs": ["ash-halo-court", "canon-policy"]
+    },
+    {
+      "text": "The copy-room floor plan, Veka, Leth, and Kera are fixture-bounded elaborations. Melka, Taru, Nema, Ninth Furnace, the Iron Shelter, and the current armament pressure come from the canonical dungeon note.",
+      "source_refs": ["ash-halo-court", "canon-policy"]
+    },
+    {
+      "text": "Nema's arrival before the horn, her two threshold clerks, her demand for court-related copies, and Taru's limited sanctuary-hand role are fixture-bounded possibilities. They do not amend the current site dossier or establish completed history.",
+      "source_refs": ["ash-halo-court", "canon-policy"]
+    },
+    {
+      "text": "No familiar sign or divine response can settle personal identity, survival, release, or the moral truth of the branch claim.",
+      "source_refs": ["death-binding-law", "ash-halo-armament"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Does a five-hand refuge ring actually form around the present Ash-Halo Court, and which five people would accept the exposure?",
+      "blocks_training": false,
+      "notes": "The fixture explores one possible arrangement without canonizing it or selecting the live dungeon outcome."
+    },
+    {
+      "question": "What is the canonical room-scale geometry of Ninth Furnace's hostel, court access, ash routes, and outer shrine road?",
+      "blocks_training": false,
+      "notes": "The fixture supplies a bounded scene_set for illustrated replay. Future recurrence should promote only durable geometry that the place owner adopts."
+    },
+    {
+      "question": "Which sanctuary beyond Ninth Furnace can hear a household claim without falling under Iresa's effective branch authority?",
+      "blocks_training": false,
+      "notes": "The scene calls it an outer Hearth shrine and does not name, locate, or canonize that institution."
+    },
+    {
+      "question": "Which god, dead claimant, or divine faction benefits from the refuge ring's intervention?",
+      "blocks_training": false,
+      "notes": "Numen lead only: Tangle leaves divine identity and intent unresolved while furnishing the mortal political machinery."
+    }
+  ]
+}

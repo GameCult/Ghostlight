@@ -1,0 +1,449 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "tangle-five-hand-refuge-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/tangle-five-hand-refuge-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/tangle-five-hand-refuge-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/tangle-five-hand-refuge-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "tangle-five-hand-refuge-v0.ninth-furnace-hostel-before-first-horn",
+  "protagonist_agent_id": "veka_orr",
+  "npc_agent_ids": [
+    "melka",
+    "taru",
+    "leth_aru",
+    "kera_oss",
+    "nema"
+  ],
+  "purpose": "Interactive Fiction Weaver-format branch-and-fold fixture dramatizing how a five-hand Soiru'i refuge ring distributes evidence, aid, sanctuary standing, and routes before the first horn at the reopened Ash-Halo Court.",
+  "tonal_mode": "Hearth-noir workplace comedy with mortuary stakes: warm routine, dry institutional wit, and a tightening conspiracy whose costs remain bodily and political.",
+  "artifact_role": "Illustrated current-situation scaffold. Its branches explore possible actions around the Ash-Halo Court and do not select a canonical outcome for that live site.",
+  "local_awareness_summary": [
+    {
+      "text": "Veka is a Hearth-sect memory keeper in a Ninth Furnace hostel copy room. Veka knows the five members, their declared offices, the room's three routes, Taru's household claim, Melka's custody, Leth's aid rule, Kera's porter route, and Nema's public registrar authority.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/tangle-five-hand-refuge-v0.v0.json",
+        "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+      ]
+    },
+    {
+      "text": "Veka does not know what will answer in the furnace court, what the Iron Shelter intends beyond its offered terms, whether Nema privately favors seizure or procedure, or whether any manifestation is the defeated champion.",
+      "source_refs": [
+        "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md",
+        "Kalsa/Spoilers/Institutions/Death and Binding Law.md"
+      ]
+    },
+    {
+      "text": "The scene begins during ordinary copying, hostel support, and porter-route preparation before the first horn opens the Ash-Halo armament stores.",
+      "source_refs": [
+        "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md",
+        "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Veka's: literate, politically experienced, materially ordinary, and limited to what can be seen, heard, recorded, inferred, or disclosed in the copy room.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/kalsa/tangle-five-hand-refuge-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The ordinary opening must establish the five offices, hostel aid, copy work, route geometry, and dry workroom humor before registrar pressure arrives.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Veka owns copied memory and the membership list, not Melka's answer roll, Leth's store release, Taru's claim, Kera's porter route, Nema's branch case, or the divine working below.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md",
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+        ]
+      },
+      {
+        "text": "Nema may challenge a copy at the court threshold and preserve refusals in the branch record. She cannot erase a household witness, identify a manifestation, operate the forge, or convert registry custody into ownership of every office in the room.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md",
+          "Kalsa/Spoilers/Institutions/Jamnai Submission Hierarchy.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Melka keeps the sealed answer roll; Taru keeps a household witness copy; Veka keeps the ring list and working page; Leth keeps the aid account and store seal; Kera keeps only the packet currently admitted to her route; Nema keeps the branch case and any receipted transfer.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md",
+          "Kalsa/Spoilers/Institutions/Death and Binding Law.md",
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Exposure must change risk without automatically dissolving leverage: independently valid witness, aid, sanctuary, and route acts remain separately contestable.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+        ]
+      },
+      {
+        "text": "A cutout carries one public act or bounded packet and never becomes secret owner of the ring, its archive, or its store.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+        ]
+      },
+      {
+        "text": "Every fallback must already possess material support, evidence, or route capacity; a promised future refuge cannot count as a working fallback.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md",
+          "Kalsa/Spoilers/Institutions/Death and Binding Law.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not identify the slag-cistern feeder, defeated champion, or any manifestation, and do not establish divine approval of the ring.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md",
+          "Kalsa/Spoilers/Events/The Ash-Halo Armament.md"
+        ]
+      },
+      {
+        "text": "Do not select an outcome for the Ash-Halo armament, decide whether the answer-roll claim is admitted, or grant Veka authority over the court's forge, grant, champion, branch, or dead.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through the registrar's arrival and first horn, then choose among exposed-office, distributed-fallback, public-cutout, and sanctuary-exit strategies with state-gated success or cost endings.",
+    "choice_layers": [
+      "five_hand_preparation",
+      "registrar_pressure",
+      "refuge_ring_commitment"
+    ],
+    "variables": [
+      "record_integrity",
+      "aid_released",
+      "route_ready",
+      "office_separation",
+      "ring_exposure",
+      "cutout_integrity",
+      "registrar_record",
+      "nema_pressure"
+    ],
+    "ending_gates": [
+      "ending_exposure_success",
+      "ending_exposure_cost",
+      "ending_distribution_success",
+      "ending_distribution_cost",
+      "ending_cutout_success",
+      "ending_cutout_cost",
+      "ending_sanctuary_success",
+      "ending_sanctuary_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_record_integrity",
+      "ink_path": "preparation_choice",
+      "action_type": "write_record",
+      "actor_intent": "Preserve adverse interpretations so Taru's claim cannot be detached from its uncertainty.",
+      "state_basis": [
+        "Veka owns the working copy and knows the ring is obliged to retain adverse testimony.",
+        "Taru's household record preserves several possible readings without selecting one."
+      ],
+      "reviewed_consequences": [
+        "Raises record_integrity and ring_exposure; later folds show a stronger claim and a clearer trail back to the copy room."
+      ],
+      "training_hooks": [
+        "adverse_testimony_as_resilience",
+        "record_strength_exposure_tradeoff"
+      ]
+    },
+    {
+      "branch_id": "prepare_released_aid",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Turn promised refuge into food, lodging, and witness support before retaliation begins.",
+      "state_basis": [
+        "Leth owns the declared sect-store beneficiary rule and open cupboard.",
+        "Released material support gives an appeal time to survive."
+      ],
+      "reviewed_consequences": [
+        "Raises aid_released and office_separation; later endings distinguish an opened aid interval from decorative support."
+      ],
+      "training_hooks": [
+        "material_refuge_before_hearing",
+        "store_office_independence"
+      ]
+    },
+    {
+      "branch_id": "prepare_route_fallback",
+      "ink_path": "preparation_choice",
+      "action_type": "move",
+      "actor_intent": "Check the ordinary porter route and place an outside copy beyond the threatened branch threshold.",
+      "state_basis": [
+        "Kera controls ordinary ash-cart passage one handoff at a time.",
+        "The fixture-bounded ash stair joins the court, hostel, and outer road through distinct doors."
+      ],
+      "reviewed_consequences": [
+        "Raises route_ready and ring_exposure; later prose carries the packet's external position and visible stair use."
+      ],
+      "training_hooks": [
+        "route_as_political_leverage",
+        "fallback_requires_checked_geometry"
+      ]
+    },
+    {
+      "branch_id": "prepare_public_cutout",
+      "ink_path": "preparation_choice",
+      "action_type": "speak",
+      "actor_intent": "Give Taru a complete public claim without giving him hidden archive, store, or route custody.",
+      "state_basis": [
+        "Taru owns his household recognition and requested remedy.",
+        "A cutout should carry one act rather than hidden authority."
+      ],
+      "reviewed_consequences": [
+        "Raises cutout_integrity and office_separation; later Taru can speak without exposing or owning the ring."
+      ],
+      "training_hooks": [
+        "bounded_cutout",
+        "claimant_not_puppet"
+      ]
+    },
+    {
+      "branch_id": "expose_membership_list",
+      "ink_path": "registrar_choice",
+      "action_type": "show_object",
+      "actor_intent": "Make the ring's five roles undeniable and force any response onto separate office records.",
+      "state_basis": [
+        "Veka controls the closed list and can disclose it.",
+        "The ring is designed to survive exposure through separated authority, not deniability."
+      ],
+      "reviewed_consequences": [
+        "Strongly raises ring_exposure, office_separation, registrar_record, and Nema's pressure; unlocks the strongest exposed-office ending when prior support is adequate."
+      ],
+      "training_hooks": [
+        "membership_list_as_weapon_and_target",
+        "leverage_survives_disclosure"
+      ]
+    },
+    {
+      "branch_id": "receipt_the_working_copy",
+      "ink_path": "registrar_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Transfer one bounded page into branch custody while preserving the separate evidence and limits on the receipt.",
+      "state_basis": [
+        "Nema controls the branch case and can sign a custody receipt.",
+        "Taru's household copy and Melka's roll remain under their own custody."
+      ],
+      "reviewed_consequences": [
+        "Raises record_integrity, office_separation, registrar_record, and ring_exposure; later the branch copy preserves the transfer's limits."
+      ],
+      "training_hooks": [
+        "bounded_custody_transfer",
+        "hostile_archive_preserves_limits"
+      ]
+    },
+    {
+      "branch_id": "present_claimant_cutout",
+      "ink_path": "registrar_choice",
+      "action_type": "speak",
+      "actor_intent": "Let Taru present his own household claim while the supporting offices remain distinct.",
+      "state_basis": [
+        "Taru can recognize his household sign and request warning or withdrawal.",
+        "Nema records refusals and petitions in Ninth Furnace's favor without owning the underlying witness."
+      ],
+      "reviewed_consequences": [
+        "Raises cutout_integrity, registrar_record, and Nema's pressure; later endings test whether Taru is protected from becoming the whole conspiracy."
+      ],
+      "training_hooks": [
+        "public_claimant_with_private_support",
+        "cutout_resists_ownership"
+      ]
+    },
+    {
+      "branch_id": "move_external_fallback",
+      "ink_path": "registrar_choice",
+      "action_type": "gesture",
+      "actor_intent": "Move the external packet through the porter route before the registrar can place it in the branch case.",
+      "state_basis": [
+        "Kera understands Veka's bounded soot signal and the next route handoff.",
+        "The stair remains physically available until a named authority closes it."
+      ],
+      "reviewed_consequences": [
+        "Raises route_ready, record_integrity, ring_exposure, and Nema's pressure; later visuals and prose place Kera beyond the first stair turn."
+      ],
+      "training_hooks": [
+        "gesture_as_conspiracy_action",
+        "ordinary_work_route_as_fallback"
+      ]
+    },
+    {
+      "branch_id": "prioritize_exposed_offices",
+      "ink_path": "final_choice",
+      "action_type": "speak",
+      "actor_intent": "Accept named exposure and require separate review of copying, witness, aid, sanctuary, and route acts.",
+      "state_basis": [
+        "Success depends on office_separation and a registrar_record already strong enough to preserve the distinctions."
+      ],
+      "reviewed_consequences": [
+        "Routes to exposed-office success or cost; exposure becomes a durable risk while leverage persists only when the offices are materially real."
+      ],
+      "training_hooks": [
+        "exposure_not_defeat",
+        "separate_hearings_as_leverage"
+      ]
+    },
+    {
+      "branch_id": "prioritize_distributed_fallback",
+      "ink_path": "final_choice",
+      "action_type": "mixed",
+      "actor_intent": "Keep roll, household copy, aid, and outside record in different hands.",
+      "state_basis": [
+        "Success depends on strong record integrity, released aid, and a checked route."
+      ],
+      "reviewed_consequences": [
+        "Routes to distributed-fallback success or cost; the ending tests whether each separated holding can stand rather than merely being distant."
+      ],
+      "training_hooks": [
+        "distributed_authority",
+        "fallback_capacity_audit"
+      ]
+    },
+    {
+      "branch_id": "prioritize_public_cutout",
+      "ink_path": "final_choice",
+      "action_type": "speak",
+      "actor_intent": "Place Taru's own grievance in public while keeping support offices from owning his words or loading him with their secrets.",
+      "state_basis": [
+        "Success depends on cutout integrity and a sufficiently complete household record."
+      ],
+      "reviewed_consequences": [
+        "Routes to public-cutout success or cost; the cost ending exposes how a network can preserve itself by making one claimant absorb its hidden shape."
+      ],
+      "training_hooks": [
+        "cutout_carries_act_not_authority",
+        "claimant_risk"
+      ]
+    },
+    {
+      "branch_id": "prioritize_sanctuary_exit",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Lose the immediate hearing while preserving claimant, household copy, and material survival beyond Ninth Furnace.",
+      "state_basis": [
+        "Success depends on aid already released and a checked outside route."
+      ],
+      "reviewed_consequences": [
+        "Routes to sanctuary-exit success or cost; the ending preserves the claim at the price of losing the first court petition."
+      ],
+      "training_hooks": [
+        "lost_hearing_preserved_claim",
+        "sanctuary_requires_food_and_road"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier selection"
+    ],
+    "manual_review_required": [
+      "Promotion of any branch as the canonical prelude to the Ash-Halo Court",
+      "Durable memory or relationship updates for Veka, Nema, Melka, Taru, Leth, or Kera",
+      "Any claim that a manifestation is the defeated champion or that the Iron Shelter approved the ring",
+      "Backfill of fixture-bounded hostel copy-room geometry as a standard Jamnai layout"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Tangle elaborator applying four repository reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review accepted the fixture after confirming that all six named participants are introduced before shared payoff, the routine precedes pressure, choices mix speech and material action, and the hearth-noir workplace humor leaves the mortuary and political costs intact.",
+      "Branch review found the distributed-fallback success gate unreachable from the original initial state. record_integrity now begins at 2, making the aid-preparation plus external-route response a valid success path while preserving all cost paths.",
+      "Lore review accepted after the digest marked Nema's arrival timing, threshold clerks, custody demand, Taru's sanctuary-hand role, and copy-room geometry as fixture-bounded possibilities rather than additions to the Ash-Halo site dossier.",
+      "Visual review corrected malformed keys, removed memory-dependent and negative prompt phrasing, expanded every base prompt into a standalone drawable frame, and separated success/cost modifiers for record, aid, and route state.",
+      "Spatial review replaced an implausibly blocking table case with Nema's body-and-case threshold geometry and made distributed and sanctuary cost endings read the actual weak state instead of assuming a specific missing object.",
+      "No Ink compiler was installed or invoked; syntax review remained manual and structural as required by the swarm pass."
+    ],
+    "review_passes": {
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 4,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 5
+        },
+        "findings": [
+          "The opening is dense but functional: room, five offices, custody objects, three routes, ordinary work, and stakes are established before the first choice.",
+          "Veka, Melka, Taru, Leth, and Nema carry distinct registers; Kera remains legible through route work and gesture rather than forced dialogue.",
+          "Every final strategy changes hearing access, exposure, material refuge, evidence custody, or route survival."
+        ]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings": [
+          "Soiru'i Sects owns the five-hand political mechanism; Death and Binding Law owns evidentiary limits; the Ash-Halo Court owns the live people, clock, answer roll, and unresolved outcome.",
+          "The fixture never opens the sealed roll, identifies a presence, establishes divine approval, or selects an Ash-Halo result.",
+          "The durable political mechanism was backfilled once in the owning institution note; scene geometry and one-off roles remain in the fixture digest."
+        ]
+      },
+      "visual_continuity": {
+        "verdict": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings": [
+          "Twelve visual anchors cover establishment, role introduction, choices, power-changing entrance, horn threshold, and four ending families.",
+          "Every named recurring character and the clerk group has a stable visual reference; each scene includes only visible refs and a complete standalone base prompt.",
+          "A draft scene-set map is sufficient for B-level replay planning; high-consistency generated art still needs a plan-view or 3D blockout."
+        ]
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 5,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "findings": [
+          "The room maintains one coordinate frame: east court door, west hostel corridor, north ash stair and chute, south heat bench and cupboard, central table.",
+          "Nema and her case narrow only the east walking lane; the north and west routes remain physically independent.",
+          "Record, aid, exposure, and route deltas persist through folds and ending-specific visual modifiers."
+        ]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

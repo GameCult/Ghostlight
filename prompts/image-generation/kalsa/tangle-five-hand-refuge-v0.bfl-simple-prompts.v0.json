@@ -1,0 +1,60 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-tangle-five-hand-refuge-v0.bfl-simple-v0",
+  "fixture_id": "tangle-five-hand-refuge-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, strong readable silhouettes, cold charcoal stone and iron against warm furnace-amber light, restrained supernatural ambiguity, practical worn materials, abstract unlettered record marks, dry human intimacy under institutional pressure.",
+  "prompts": [
+    {
+      "id": "01_copy_room_establishing",
+      "prompt": "Wide compact rectangular fortress-hostel copy room: east iron-strapped door glowing orange from a furnace court, west corridor toward sleeping rooms and steam pots, north felt curtain over an ash-service stair and caged chute, south heat-pipe bench and aid cupboard, central scarred table under two oil lamps with parchment, grain jar, wool wrap, sealed roll, and five adult workers at separate stations."
+    },
+    {
+      "id": "02_five_hands_routine",
+      "prompt": "Medium view across a warm stone copy table: lean braided memory keeper writes; tall older white-head-wrapped mortuary witness guards a sealed dark roll; broad scar-faced claimant listens from a heated bench; stocky key-looped store steward counts grain and bedding; wiry soot-head-clothed ash porter knots a corded packet by the stair curtain."
+    },
+    {
+      "id": "03_preparation_choice",
+      "prompt": "High three-quarter view of four conspiracy preparations in one compact copy room: adverse-margin parchment and ink at central table, opened aid cupboard with grain and wool on south wall, corded packet by north ash stair, household witness copy held at heated bench; east court door and west hostel corridor clearly visible."
+    },
+    {
+      "id": "04_preparation_fold",
+      "prompt": "Stateful workroom after preparation: five workers returned to fixed stations around central table, sealed answer roll, household copy, aid shelf, and porter packet; one branch result visibly changed as dense four-part margin, broken grain seal and entered support, soot-marked checked stair, or public copy held apart from closed membership list."
+    },
+    {
+      "id": "05_registrar_arrival",
+      "prompt": "Power-changing entrance through east furnace door: compact middle-aged registrar with cropped gray hair, charcoal wool, copper seal chain, and iron-bound case steps into warm stone copy room; two tablet-carrying clerks wait in orange threshold light while five hostel workers turn from table, roll, bench, cupboard, and stair."
+    },
+    {
+      "id": "06_registrar_choice",
+      "prompt": "Medium confrontation across central table: registrar beside open iron-bound branch case and certified extract; braided memory keeper opposite with closed five-name list; scar-faced claimant holding household copy; soot-marked porter beside north curtain with corded packet; mortuary roll and aid cupboard remain in separate background custody."
+    },
+    {
+      "id": "07_registrar_fold",
+      "prompt": "Wide copy room under registry pressure: open iron case narrows east courtward path, two clerks align at doorway, west hostel corridor and north ash stair remain visible; five separate custody anchors surround the table—membership page, sealed roll, household copy, opened aid account, route packet."
+    },
+    {
+      "id": "08_first_horn_threshold",
+      "prompt": "Whole compact room at first furnace horn: orange light rises through caged ash chute, oil flames lean, soot lifts from north stair; memory keeper and registrar face each other across table while mortuary witness grips sealed roll, claimant holds household copy, store steward guards aid, porter stands on outside route."
+    },
+    {
+      "id": "09_exposure_end",
+      "prompt": "Public disclosure aftermath: braided memory keeper reads five names from open list under two lamps; copper-chained registrar and threshold clerks copy them; five members remain visibly anchored to separate roll, household page, aid account, and stair packet, exposure creating named danger while material leverage persists."
+    },
+    {
+      "id": "10_distribution_end",
+      "prompt": "Distributed fallback across three room routes: tall mortuary witness carries sealed roll east toward furnace court; broad claimant holds household copy separately; stocky store steward keeps opened food and wool at south cupboard; wiry porter descends north stair with packet; memory keeper stays at table and registrar occupies only east edge."
+    },
+    {
+      "id": "11_cutout_end",
+      "prompt": "Public claimant at east threshold: broad older scar-faced laborer stands alone in orange furnace light with one folded household copy before registrar's open case; several paces behind in amber workroom, memory keeper, mortuary witness, store steward, and ash porter remain beside their separate records, food, and road."
+    },
+    {
+      "id": "12_sanctuary_end",
+      "prompt": "North ash-service stair refuge: wiry porter in soot-gray headcloth leads broad older claimant down iron-edged steps beside caged ash chute; claimant carries folded household record, grain jar, and thick wool wrap; landing visibly divides lower toward furnace court and level toward an outer shrine road while registrar remains distant above by east door."
+    }
+  ]
+}
