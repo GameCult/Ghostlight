@@ -7,6 +7,8 @@
     "dungeon:build": "cargo build --workspace && npm --prefix web run build",
     "dungeon:test": "cargo test --workspace && npm --prefix web run build",
     "dungeon:run": "cargo run -p ghostlight-dungeon",
+    "sdk:build": "npm --prefix sidecar/claude-sdk run build",
+    "sdk:test": "npm --prefix sidecar/claude-sdk test",
     "state:status": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\ghostlight_state.py status",
     "state:prepare-compaction": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\ghostlight_prepare_compaction.py",
     "agent-state:validate": "\"C:\\Users\\Meta\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe\" .\\tools\\validate_agent_state.py",

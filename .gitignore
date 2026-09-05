@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 node_modules/
 web/dist/
+sidecar/claude-sdk/dist/
 state/scratch-compaction-*.md
 experiments/images/
 target/

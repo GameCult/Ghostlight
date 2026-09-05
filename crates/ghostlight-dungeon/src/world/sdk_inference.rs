@@ -1377,6 +1377,52 @@ mod tests {
         );
     }
 
+    /// The Rust half of the sidecar's schema-grammar pair (spec test 17):
+    /// publishes every `parameters_json` the two catalogs actually emit, so the
+    /// sidecar's closed converter is tested against real strings rather than
+    /// hand-written ones.
+    #[test]
+    fn schema_fixtures_match_the_checked_in_sidecar_grammar() {
+        let granted = vec![AffordanceSnapshot {
+            id: AffordanceId::issue(),
+            entry: kernel_speak_entry(),
+        }];
+        let mut emitted: Vec<(String, String)> = patch_tools()
+            .into_iter()
+            .chain(catalog_tools("", &granted))
+            .chain(catalog_tools("c3__", &granted))
+            .map(|tool| (tool.name, tool.parameters_json))
+            .collect();
+        emitted.sort();
+        emitted.dedup();
+        let rendered = serde_json::to_string_pretty(
+            &emitted
+                .into_iter()
+                .map(
+                    |(name, schema)| serde_json::json!({ "name": name, "parameters_json": schema }),
+                )
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../sidecar/claude-sdk/test/schemas.json");
+        if std::env::var_os("GHOSTLIGHT_WRITE_SIDECAR_FIXTURES").is_some() {
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(&path, format!("{rendered}\n")).unwrap();
+        }
+        let on_disk = std::fs::read_to_string(&path).unwrap_or_else(|error| {
+            panic!(
+                "the sidecar schema fixture {} is missing ({error}); regenerate with GHOSTLIGHT_WRITE_SIDECAR_FIXTURES=1",
+                path.display()
+            )
+        });
+        assert_eq!(
+            on_disk.replace("\r\n", "\n"),
+            format!("{rendered}\n"),
+            "the emitted tool schemas drifted from the sidecar's converter fixture"
+        );
+    }
+
     /// The Rust half of the sidecar's frame round-trip pair (spec test 18):
     /// pins the exact `rmp_serde::to_vec_named` bytes the TypeScript decoder is
     /// tested against, so the two halves cannot drift apart silently.
