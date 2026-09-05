@@ -9383,4 +9383,544 @@ mod tests {
         drop(fixture.mailbox);
         fixture.task.await.unwrap();
     }
+
+    // ---- Soul: the seed lane under falsification ------------------------
+
+    /// Soul. The lane's claim is that Active is refused twice: once by the
+    /// runner's phase gate and once by the kernel, "if that check is ever
+    /// removed". The second refusal is `require_answer`'s
+    /// `(Active, None) if declares` arm, and `declares` is
+    /// `!(declarations.is_empty() && evidence.is_empty())` — operations are not
+    /// in it. So a patch made only of operations passes the kernel's Active
+    /// gate through `submit_seed`, and it is a patch that moves world state and
+    /// the scale deficit.
+    ///
+    /// This is not an authority escalation: the owner may write in Active. It
+    /// falsifies the defence-in-depth claim, not the ownership one.
+    #[tokio::test]
+    #[ignore = "FALSIFIED: require_answer ignores operations, so the Active second gate does not fire"]
+    async fn soul_the_seed_lane_admits_an_operations_only_patch_in_active() {
+        let fixture = seed_mailbox(6).await;
+        let authenticated =
+            AuthenticatedCaller::fixture(CallerId::Principal(fixture.owner.clone()));
+        let mut snapshot = fixture.mailbox.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            fixture
+                .mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: snapshot.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(fixture.owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = fixture.mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        let owner_subject = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.label == "The Owner")
+            .expect("the first person")
+            .id;
+
+        let admitted = seed_port(&fixture)
+            .submit_seed(
+                CommandId::new(),
+                snapshot.world_id,
+                snapshot.revision,
+                WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![crate::world::patch::ComponentOp::CreateCommitment {
+                        subject: Ref::Existing(owner_subject),
+                        counterparty: None,
+                        kind: CommitmentKind::Goal,
+                        due: crate::world::FictionalMinutes(600),
+                        period: None,
+                        checks: Vec::new(),
+                    }],
+                    evidence: Vec::new(),
+                },
+            )
+            .await;
+        let after = fixture.mailbox.snapshot().await.unwrap();
+        assert!(
+            admitted.is_err(),
+            "an Active seed submission committed: revision {} -> {}, owner qualified {}",
+            snapshot.revision,
+            after.revision,
+            after
+                .subjects
+                .iter()
+                .any(|subject| subject.id == owner_subject && subject.qualified)
+        );
+
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Soul. What the deleted phase clause used to be blamed for, checked
+    /// directly: `require_answer` still refuses every Draft answer, and still
+    /// demands one from every Active patch that declares. The seed lane meets
+    /// only the first, because `submit_seed` hardcodes `answers: None`.
+    #[tokio::test]
+    async fn soul_require_answer_still_owns_the_phase_rule_the_clause_did_not() {
+        let fixture = seed_mailbox(6).await;
+        let authenticated =
+            AuthenticatedCaller::fixture(CallerId::Principal(fixture.owner.clone()));
+        let mut snapshot = fixture.mailbox.snapshot().await.unwrap();
+        let shed = || WorldPatch {
+            declarations: vec![Declaration::Entity(EntityDeclaration {
+                handle: DraftHandle::new("shed"),
+                label: "A Shed".into(),
+                kind: EntityKind::Place,
+                container: None,
+            })],
+            operations: Vec::new(),
+            evidence: Vec::new(),
+        };
+
+        // Draft refuses an answer outright, whatever the answer names.
+        let refused = fixture
+            .mailbox
+            .submit_fixture(
+                CommandEnvelope {
+                    id: CommandId::new(),
+                    world_id: snapshot.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(fixture.owner.clone()),
+                    body: CommandBody::AdmitPatch {
+                        answers: Some(crate::world::PatchAnswer::Deficit(
+                            JurisdictionKey::PlaceSubtree(fixture.sere),
+                        )),
+                        patch: shed(),
+                    },
+                },
+                &authenticated,
+            )
+            .await;
+        assert!(
+            matches!(
+                refused,
+                Err(MailboxError::Kernel(KernelError::AnswerNotDerived))
+            ),
+            "{refused:?}"
+        );
+        assert_eq!(
+            fixture.mailbox.snapshot().await.unwrap().revision,
+            snapshot.revision
+        );
+
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            fixture
+                .mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: snapshot.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(fixture.owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = fixture.mailbox.snapshot().await.unwrap();
+        }
+
+        // Active refuses a declaring patch that carries none.
+        let refused = seed_port(&fixture)
+            .submit_seed(
+                CommandId::new(),
+                snapshot.world_id,
+                snapshot.revision,
+                shed(),
+            )
+            .await;
+        assert!(
+            matches!(
+                refused,
+                Err(MailboxError::Kernel(KernelError::AnswerRequired))
+            ),
+            "{refused:?}"
+        );
+
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Soul. One session's round loop is bounded by the elaboration budget it
+    /// shares, not by anything the seed lane holds: a model that keeps calling
+    /// tools and never submits stops at `ELABORATION_ROUND_BUDGET` rounds and
+    /// leaves a `NoPatch` row, and a second sweep over the same store spends
+    /// nothing, because that row is the row's fixed point.
+    #[tokio::test]
+    async fn soul_a_session_that_never_submits_is_bounded_by_the_round_budget() {
+        // `elaboration::ELABORATION_ROUND_BUDGET`, which is file-private to the
+        // lane that owns it. Restated here so that raising the budget fails
+        // this bound loudly rather than silently widening it.
+        const SHARED_ROUND_BUDGET: usize = 6;
+
+        let fixture = seed_mailbox(6).await;
+        let genesis = fixture.mailbox.snapshot().await.unwrap().revision;
+        let store = fresh_store();
+        let scripted = seed_script(
+            (0..SHARED_ROUND_BUDGET + 4)
+                .map(|round| {
+                    tool_round(
+                        vec![(
+                            "declare_place",
+                            json!({
+                                "handle": format!("shed{round}"),
+                                "label": "A Shed",
+                                "container": null
+                            }),
+                        )],
+                        &format!("r{round}"),
+                    )
+                })
+                .collect(),
+        );
+        let runner = seed_runner(
+            &fixture,
+            scripted.clone(),
+            store.clone(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.step().await.unwrap(), SeedOutcome::NoPatch);
+        assert_eq!(
+            scripted.seen.lock().unwrap().len(),
+            SHARED_ROUND_BUDGET,
+            "the round loop is not bounded by the shared budget"
+        );
+        assert_eq!(
+            fixture.mailbox.snapshot().await.unwrap().revision,
+            genesis,
+            "a session that never submitted moved the world"
+        );
+
+        // The row is now a fixed point: a fresh sweep re-derives the same id,
+        // finds `NoPatch`, and does not spend a round.
+        let resumed = seed_runner(
+            &fixture,
+            scripted.clone(),
+            store.clone(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(resumed.sweep(4).await.unwrap(), SeedOutcome::NoPatch);
+        assert_eq!(
+            scripted.seen.lock().unwrap().len(),
+            SHARED_ROUND_BUDGET,
+            "a NoPatch row was reopened against the endpoint"
+        );
+        assert_eq!(store.work.lock().unwrap().len(), 1, "one row per session");
+
+        drop(runner);
+        drop(resumed);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Soul. The derived id is the whole idempotency story, so it has to hold
+    /// at the ledger and not only at the store: the same id submitted twice
+    /// commits once.
+    #[tokio::test]
+    async fn soul_one_derived_seed_id_commits_once() {
+        let fixture = seed_mailbox(6).await;
+        let port = seed_port(&fixture);
+        let snapshot = port.snapshot().await.unwrap();
+        let command_id = CommandId::new();
+        let shed = || WorldPatch {
+            declarations: vec![Declaration::Entity(EntityDeclaration {
+                handle: DraftHandle::new("shed"),
+                label: "A Shed".into(),
+                kind: EntityKind::Place,
+                container: None,
+            })],
+            operations: Vec::new(),
+            evidence: Vec::new(),
+        };
+        let first = port
+            .submit_seed(command_id, snapshot.world_id, snapshot.revision, shed())
+            .await
+            .unwrap();
+        let after = port.snapshot().await.unwrap();
+        assert_eq!(after.revision, snapshot.revision + 1);
+        let again = port
+            .submit_seed(command_id, snapshot.world_id, snapshot.revision, shed())
+            .await
+            .unwrap();
+        let (SubmitReceipt::Applied(landed), SubmitReceipt::AlreadyApplied(replayed)) =
+            (&first, &again)
+        else {
+            panic!("a replayed seed id was not recognised: {first:?} then {again:?}");
+        };
+        assert_eq!(
+            landed, replayed,
+            "a replayed seed id returned a different commit"
+        );
+        assert_eq!(
+            port.snapshot().await.unwrap().revision,
+            after.revision,
+            "one derived id committed twice"
+        );
+
+        drop(port);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Soul. Two rows in one Draft world, answered in sequence, leave two store
+    /// rows under two ids. The ancestry in the key is what makes each landed
+    /// patch open a fresh session rather than resubmitting one id.
+    #[tokio::test]
+    async fn soul_two_seed_sessions_in_one_world_hold_two_ids() {
+        let fixture = seed_mailbox(2).await;
+        let store = fresh_store();
+        let scripted = seed_script(vec![
+            author_persons("r0", fixture.sere, fixture.speak, &["a1"]),
+            author_persons("r1", fixture.sere, fixture.speak, &["a2"]),
+        ]);
+        let runner = seed_runner(
+            &fixture,
+            scripted,
+            store.clone(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.sweep(4).await.unwrap(), SeedOutcome::Clean);
+        let ids: BTreeSet<CommandId> = store.work.lock().unwrap().keys().copied().collect();
+        assert_eq!(ids.len(), 2, "two landed sessions shared one derived id");
+
+        drop(runner);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Soul. `valid_seed_progression` is what stops a resumed session from
+    /// rewriting its own history. The forward extension is allowed; a repair
+    /// with an empty mismatch set, a rewritten row, and every transition out of
+    /// the terminal stage are not.
+    #[tokio::test]
+    async fn soul_valid_seed_progression_refuses_every_backward_transition() {
+        let fixture = seed_mailbox(6).await;
+        let store = fresh_store();
+        let runner = seed_runner(
+            &fixture,
+            seed_script(vec![tool_round(
+                vec![
+                    (
+                        "declare_subject",
+                        json!({
+                            "handle": "digger",
+                            "label": "Sere digger",
+                            "kind": "person",
+                            "controller": {"type": "narrative_persona"},
+                            "affordances": [{
+                                "ref": "existing",
+                                "value": serde_json::to_value(fixture.speak).unwrap()
+                            }],
+                            "position": {"ref": "draft", "value": "nowhere"},
+                        }),
+                    ),
+                    ("submit", json!({})),
+                ],
+                "r0",
+            )]),
+            store.clone(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.step().await.unwrap(), SeedOutcome::Rejected);
+        drop(runner);
+
+        let stored = store.work.lock().unwrap().values().next().unwrap().clone();
+        let ControllerWork::Seed(repair) = stored else {
+            panic!("the rejection left no seed row");
+        };
+        let SeedCheckpoint::SeedInFlight {
+            command_id,
+            session,
+            agent_prompt,
+            last_mismatches,
+            completed,
+            invocation,
+        } = repair.clone()
+        else {
+            panic!("a rejection must reopen the session in flight");
+        };
+        assert!(!last_mismatches.is_empty());
+        assert!(completed.is_empty());
+
+        let ready = SeedCheckpoint::ReadyToSubmit {
+            command_id,
+            session: session.clone(),
+            agent_prompt: agent_prompt.clone(),
+            last_mismatches: last_mismatches.clone(),
+            completed: completed.clone(),
+        };
+        let unrepaired = SeedCheckpoint::SeedInFlight {
+            command_id,
+            session: session.clone(),
+            agent_prompt: agent_prompt.clone(),
+            last_mismatches: Vec::new(),
+            completed: completed.clone(),
+            invocation: invocation.clone(),
+        };
+        let no_patch = SeedCheckpoint::NoPatch {
+            command_id,
+            session: session.clone(),
+            agent_prompt: agent_prompt.clone(),
+            completed: completed.clone(),
+            gaps: Vec::new(),
+        };
+        let other_row = SeedCheckpoint::SeedInFlight {
+            command_id,
+            session: {
+                let mut moved = session.clone();
+                moved.target += 1;
+                moved
+            },
+            agent_prompt,
+            last_mismatches,
+            completed,
+            invocation,
+        };
+
+        // A submitted session reopens only with a repair set.
+        assert!(!valid_seed_progression(&ready, &unrepaired));
+        // Nothing follows the terminal stage.
+        assert!(!valid_seed_progression(&no_patch, &repair));
+        assert!(!valid_seed_progression(&no_patch, &ready));
+        // The row a session bound to is not rewritable.
+        assert!(!valid_seed_progression(&repair, &other_row));
+        // And the forward move the lane actually needs is still allowed.
+        assert!(valid_seed_progression(&repair, &ready));
+
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Soul. The pass claims a seeded world hands the Active elaborator at
+    /// least one boundary. It is the obligations that do that, never the goals:
+    /// `derive_boundaries` skips a commitment with no counterparty, and a goal
+    /// cannot carry one. A world seeded to full strength out of goals alone
+    /// activates with nothing for the elaborator to answer.
+    #[tokio::test]
+    #[ignore = "FALSIFIED: a Goal derives no boundary, so a goals-only seed leaves the elaborator nothing"]
+    async fn soul_a_world_seeded_out_of_goals_alone_hands_the_elaborator_nothing() {
+        let fixture = seed_mailbox(2).await;
+        let entry = serde_json::to_value(fixture.speak).unwrap();
+        let place = serde_json::to_value(fixture.sere).unwrap();
+        let mut calls: Vec<(&str, Value)> = Vec::new();
+        for handle in ["a1", "a2"] {
+            calls.push((
+                "declare_subject",
+                json!({
+                    "handle": handle,
+                    "label": format!("Sere {handle}"),
+                    "kind": "person",
+                    "controller": {"type": "narrative_persona"},
+                    "affordances": [{"ref": "existing", "value": entry}],
+                    "position": {"ref": "existing", "value": place},
+                }),
+            ));
+            calls.push((
+                "create_commitment",
+                json!({
+                    "subject": {"ref": "draft", "value": handle},
+                    "counterparty": null,
+                    "kind": "goal",
+                    "due": 600,
+                    "period": null,
+                    "checks": [],
+                }),
+            ));
+        }
+        calls.push(("submit", json!({})));
+        let runner = seed_runner(
+            &fixture,
+            seed_script(vec![tool_round(calls, "r0")]),
+            fresh_store(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.sweep(4).await.unwrap(), SeedOutcome::Clean);
+        drop(runner);
+
+        let authenticated =
+            AuthenticatedCaller::fixture(CallerId::Principal(fixture.owner.clone()));
+        let mut snapshot = fixture.mailbox.snapshot().await.unwrap();
+        assert!(snapshot.scale_deficit.iter().all(|row| row.deficit == 0));
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            fixture
+                .mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: snapshot.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(fixture.owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = fixture.mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        assert!(
+            !snapshot.boundaries.is_empty(),
+            "a fully seeded world activated with nothing for the elaborator to answer"
+        );
+
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Soul. The custody discriminator has to see the new lane, or a seed row
+    /// is a row nobody counts.
+    #[tokio::test]
+    async fn soul_the_custody_probe_counts_a_seed_row() {
+        let fixture = seed_mailbox(6).await;
+        let store = fresh_store();
+        assert_eq!(
+            store.custody_probe().await.unwrap(),
+            ControllerWorkCustody::Owned {
+                narrative_commands: 0,
+                operational_commands: 0,
+                elaboration_commands: 0,
+                seed_commands: 0,
+            }
+        );
+        let runner = seed_runner(
+            &fixture,
+            seed_script(vec![author_persons(
+                "r0",
+                fixture.sere,
+                fixture.speak,
+                &["digger"],
+            )]),
+            store.clone(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.step().await.unwrap(), SeedOutcome::Committed);
+        assert_eq!(
+            store.custody_probe().await.unwrap(),
+            ControllerWorkCustody::Owned {
+                narrative_commands: 0,
+                operational_commands: 0,
+                elaboration_commands: 0,
+                seed_commands: 1,
+            }
+        );
+
+        drop(runner);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
 }

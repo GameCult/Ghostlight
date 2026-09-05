@@ -537,6 +537,180 @@ mod tests {
         );
     }
 
+    /// Soul. The scope check runs once, at `open`, against the scope string.
+    /// The walk that follows does not: `collect_notes` recurses through
+    /// anything `is_dir()` answers for, which follows a directory junction, and
+    /// `strip_prefix(&root)` then runs against the uncanonicalized path, so a
+    /// note outside the root comes back wearing a vault-relative reference.
+    ///
+    /// A junction needs no privilege on Windows, so this is reachable by
+    /// anyone who can write inside the configured vault.
+    #[cfg(windows)]
+    #[tokio::test]
+    #[ignore = "FALSIFIED: collect_notes follows a directory junction out of the vault root"]
+    async fn soul_a_junction_inside_the_root_reads_a_note_outside_it() {
+        let directory = fixture();
+        let outside = tempfile::tempdir().unwrap();
+        write(
+            outside.path(),
+            "Secret.md",
+            "The vault root does not cover me.\n",
+        );
+        let link = directory.path().join("Public").join("Escape");
+        let made = std::process::Command::new("cmd")
+            .args([
+                "/C",
+                "mklink",
+                "/J",
+                &link.display().to_string(),
+                &outside.path().display().to_string(),
+            ])
+            .output();
+        if made.is_err() || !link.exists() {
+            eprintln!("skipped: this environment cannot create a directory junction");
+            return;
+        }
+
+        let source = VaultEvidenceSource::open(directory.path(), "Public").unwrap();
+        let receipts = source.retrieve(&query(&["Secret"])).await.unwrap();
+        assert!(
+            receipts.is_empty(),
+            "a note outside the configured root was read and handed back as {:?}",
+            receipts
+                .iter()
+                .map(|receipt| receipt.reference.text().to_owned())
+                .collect::<Vec<_>>()
+        );
+    }
+
+    /// Soul. Two bounds and one promise. A note over `MAX_NOTE_BYTES` is
+    /// skipped on its metadata, so it is never read into memory and never
+    /// reaches a receipt; and neither `open` nor `retrieve` writes anything,
+    /// asserted against the tree's own bytes and modification times rather than
+    /// against the doc comment.
+    #[tokio::test]
+    async fn soul_an_oversized_note_is_never_read_and_the_reader_never_writes() {
+        let directory = fixture();
+        let root = directory.path();
+        let huge = format!(
+            "---\ntitle: The Long Note\n---\n{}\n",
+            "obese ".repeat(usize::try_from(MAX_NOTE_BYTES).unwrap() / 4)
+        );
+        assert!(u64::try_from(huge.len()).unwrap() > MAX_NOTE_BYTES);
+        write(root, "Public/Places/Long Note.md", &huge);
+
+        let before = tree(root);
+        let source = VaultEvidenceSource::open(root, "").unwrap();
+        for name in ["Long Note", "The Long Note", "obese"] {
+            let receipts = source.retrieve(&query(&[name])).await.unwrap();
+            assert!(
+                receipts
+                    .iter()
+                    .all(|receipt| receipt.reference
+                        != EvidenceRef::new("Public/Places/Long Note.md")),
+                "{name} returned a note over the byte cap"
+            );
+        }
+        assert_eq!(before, tree(root), "the reader changed the vault");
+    }
+
+    /// Every file under `root`, by relative path, length, and modification
+    /// time: what a read-only reader must leave exactly as it found it.
+    fn tree(root: &Path) -> BTreeMap<String, (u64, std::time::SystemTime)> {
+        let mut found = BTreeMap::new();
+        let mut paths = Vec::new();
+        collect_all(root, &mut paths);
+        for path in paths {
+            let metadata = std::fs::metadata(&path).unwrap();
+            found.insert(
+                path.strip_prefix(root).unwrap().display().to_string(),
+                (metadata.len(), metadata.modified().unwrap()),
+            );
+        }
+        found
+    }
+
+    fn collect_all(directory: &Path, into: &mut Vec<PathBuf>) {
+        for entry in std::fs::read_dir(directory).unwrap().flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                collect_all(&path, into);
+            } else {
+                into.push(path);
+            }
+        }
+    }
+
+    /// Soul. `MAX_VAULT_RECEIPTS` is the cap the module names, and the reason
+    /// it gives is that a session citing everything still fits in one patch.
+    /// The link fanout overshoots it: the guard is checked before a link is
+    /// resolved and not before each receipt that link produces, so one
+    /// keyword-resolving link adds up to `MAX_HITS_PER_REFERENT` past the cap.
+    #[tokio::test]
+    async fn soul_the_link_fanout_overshoots_the_receipt_cap() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path();
+        // Enough plain notes to walk the receipt count up to the cap, each one
+        // resolving by its own stem and linking nowhere.
+        for index in 0..MAX_VAULT_RECEIPTS {
+            write(root, &format!("plain{index}.md"), "A plain note.\n");
+        }
+        // One note whose single wikilink resolves by keyword, not by key, to
+        // three notes at once.
+        write(root, "hub.md", "See [[quarry stone]].\n");
+        for index in 0..MAX_HITS_PER_REFERENT {
+            write(
+                root,
+                &format!("quarry{index}.md"),
+                "quarry stone quarry stone\n",
+            );
+        }
+        let source = VaultEvidenceSource::open(root, "").unwrap();
+
+        let mut referents: Vec<String> = (0..MAX_VAULT_RECEIPTS - 1)
+            .map(|index| format!("plain{index}"))
+            .collect();
+        referents.push("hub".to_owned());
+        let receipts = source.retrieve(&EvidenceQuery { referents }).await.unwrap();
+        assert!(
+            receipts.len() <= MAX_VAULT_RECEIPTS,
+            "one call returned {} receipts against a cap of {MAX_VAULT_RECEIPTS}",
+            receipts.len()
+        );
+    }
+
+    /// Soul. A vault error carries the server's absolute filesystem paths, and
+    /// `seed_once` maps `VaultError` straight into `RuntimeCommandError::Payload`,
+    /// so the string reaches the owner's command receipt. The reference format
+    /// is deliberately vault-relative; these strings are not.
+    #[test]
+    #[ignore = "FALSIFIED: VaultError::Root carries the server absolute path into the owner receipt"]
+    fn soul_a_vault_error_carries_an_absolute_path() {
+        let directory = fixture();
+        let root = directory.path();
+        for (case, opened) in [
+            (
+                "an escaping scope",
+                VaultEvidenceSource::open(root, "Public/../.."),
+            ),
+            // The reachable misconfiguration: `GHOSTLIGHT_SEED_VAULT_ROOT`
+            // naming something that is not a directory.
+            (
+                "a root that is a file",
+                VaultEvidenceSource::open(&root.join("Public/index.md"), ""),
+            ),
+        ] {
+            let Err(error) = opened else {
+                panic!("{case} was admitted");
+            };
+            let message = error.to_string();
+            assert!(
+                !message.contains(&root.display().to_string()) && !message.contains(":\\"),
+                "{case} handed back an absolute path: {message}"
+            );
+        }
+    }
+
     /// Spec test 15. The scope is a corner of a configured vault, never a read
     /// primitive over the filesystem.
     #[test]

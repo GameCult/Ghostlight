@@ -3875,4 +3875,89 @@ mod tests {
         );
         assert!(encoded.contains("world.seed"), "the button is missing");
     }
+
+    /// Soul. `SeedPort` holds one `VerifiedPrincipalEvidence` for the whole
+    /// session, and the question is what happens when the session behind it
+    /// dies mid-run. The answer is nothing: the evidence is an account hash
+    /// with no expiry, no session id, and no revision, and `submit_principal`
+    /// mints `CallerId::Principal` straight from it without consulting the
+    /// session store. So the gate is the evidence value's own lifetime in
+    /// memory, and nothing else.
+    ///
+    /// Today that lifetime is one request, because `seed_once` builds the port
+    /// from the request that carried the cookie and drops it at the end. The
+    /// bound is the construction site, not a check.
+    #[tokio::test]
+    #[ignore = "FALSIFIED: the mailbox never re-verifies principal evidence; a revoked session still commits"]
+    async fn soul_verified_evidence_outlives_the_session_that_minted_it() {
+        let fixture = fixture().await;
+        two_cell_world(
+            &fixture.state,
+            &fixture.cookie,
+            BTreeMap::new(),
+            Vec::new(),
+            false,
+        )
+        .await;
+        let principal = fixture
+            .state
+            .sessions
+            .lock()
+            .await
+            .account_for_cookie(&fixture.cookie, Utc::now())
+            .unwrap()
+            .expect("the fixture cookie names a live session");
+
+        // The session the evidence came from is destroyed.
+        assert!(
+            fixture
+                .state
+                .sessions
+                .lock()
+                .await
+                .revoke_cookie(&fixture.cookie)
+                .unwrap()
+        );
+        assert!(
+            fixture
+                .state
+                .sessions
+                .lock()
+                .await
+                .account_for_cookie(&fixture.cookie, Utc::now())
+                .unwrap()
+                .is_none(),
+            "the cookie survived revocation"
+        );
+
+        let before = fixture.state.world.snapshot().await.unwrap();
+        let committed = fixture
+            .state
+            .world
+            .submit_principal(
+                PrincipalCommandIntent {
+                    id: CommandId::new(),
+                    world_id: before.world_id,
+                    expected_revision: before.revision,
+                    // `ApproveDraft`, because it is refused for anyone but a
+                    // required approver and its effect is visible in the
+                    // snapshot. What is under test is who the kernel believes
+                    // the caller is.
+                    body: CommandBody::ApproveDraft,
+                },
+                &principal,
+            )
+            .await;
+        assert!(
+            committed.is_err(),
+            "a revoked session's evidence still committed as the owner: {committed:?}, approvals {:?}",
+            fixture
+                .state
+                .world
+                .snapshot()
+                .await
+                .unwrap()
+                .draft_approvals
+        );
+    }
 }
