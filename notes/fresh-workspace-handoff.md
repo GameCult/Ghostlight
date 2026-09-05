@@ -32,9 +32,10 @@ The adopted target is `docs/architecture/ghostlight-dungeon-mvp.md`.
 
 One per-world `WorldKernel` owns one revisioned `WorldState` across Draft and
 Active phases. It alone derives authority, applies the typed
-ontology reducer, and commits an atomic CultCache revision. Session Zero,
-autonomous turns, player commands, imports, and administrative changes must
-enter through the same `CommandEnvelope` path.
+ontology reducer, and commits an atomic CultCache revision. World creation,
+autonomous turns, player commands, elaboration, consumer patches, time
+advance, and administrative changes all enter through the same
+`CommandEnvelope` path; there is no Session Zero.
 
 The replacement owner is sealed. Its runtime boundary remains create/open,
 immutable snapshot, submit, and typed receipts. Mutable aggregate state,
@@ -306,17 +307,42 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    Still deferred by design: `PolityInCausalRange`, `IndividuationRequired`,
    and Verification 13 wait for relations and population slices.
 
-   Decisions the operator owns, unchanged by the smoke, recorded nowhere
-   else durable than here and the series evidence record: (a) whether a refused coupled constituent may
-   re-submit once inside the same tick, to be taken with the
+   In flight: the operator ordered "Build the seed producer" on 2026-09-05.
+   Nothing is edited yet; Modeling is mapping the source into the session
+   scratchpad `modeling-seed.md`, then Imagination, Hands in an isolation
+   worktree, Soul in that tree, coordinator integrates. Operating assumption
+   recorded from the coordinator: a Draft-phase authoring session on the
+   existing elaboration repair loop, a local markdown Vault as
+   `EvidenceSource`, seed patches admitted in Draft for owner approval,
+   driven by the scale deficit from `WorldScaleIntent` at world creation,
+   triggered by an owner-only Eve command; no new reducer, ID allocator, or
+   `SystemCapability`. Two source facts the steward checked that the
+   assumption must absorb before Hands cuts: (1) `CreateWorldIntent`
+   (`world/mod.rs:311`) carries no scale intent and `WorldMailbox::create`
+   seeds genesis with `WorldScaleIntentRef::default()` (`mailbox.rs:169`),
+   so at creation the intent is empty and the deficit is zero; the genesis
+   patch lane already carries `Option<WorldScaleIntentRef>`
+   (`patch.rs:1805`), so the intent must arrive there or `CreateWorldIntent`
+   must grow it; (2) `SeedRequest` is not inhabited and Draft answers
+   nothing (`mod.rs:1563`, `require_answer`), so the ontology doc's
+   draft-phase `SeedRequest` answer (ontology lines 516 to 533, plan step 6
+   pass 8) is a promise, not a live mechanism, and the elaboration loop's
+   answer binding is Active-only today. What is live: `EvidenceSource`
+   (`elaboration.rs:229`, production supplies `NullEvidenceSource`);
+   `AdmitPatch` against a draft world under draft authority as the one seed
+   admission path (ontology 539 to 541, consumer-api 11 to 12);
+   `WorldScaleIntent` and `derive_scale_deficit` (ontology 138, 562). No
+   plan step names this organ; it is new scope after step 6.
+
+   Decisions the operator owns: (a) whether a refused coupled constituent
+   may re-submit once inside the same tick, to be taken with the
    submitted-versus-committed number in hand; (b) the authority for an
-   owner-only Eve `world.run_tick` command, which is not built; (c) which of the
-   seed producer (now evidenced by the smoke), the outbound consumer
-   response batch with the non-loopback CultMesh lease, or the deployment
-   gate below is cut next. The ten specs
-   and maps (`imagination-pass1..10.md`, `modeling-pass1..10.md`) remain in
-   the session scratchpad only and are now history, not steering; the docs
-   own the design.
+   owner-only Eve `world.run_tick` command, which is not built; (c) is taken:
+   the seed producer is cut next, ahead of the outbound consumer response
+   batch with the non-loopback CultMesh lease and the deployment gate below.
+   The ten specs and maps (`imagination-pass1..10.md`,
+   `modeling-pass1..10.md`) remain in the session scratchpad only and are
+   history, not steering; the docs own the design.
 
 2. First-generation world fixtures are banked and pushed, one per world, each
    with Ink, training sidecar, visual plan, lore grounding, and BFL manifest,

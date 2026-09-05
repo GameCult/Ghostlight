@@ -83,7 +83,8 @@ Major committed events cross promptly. Ordinary material flow closes hourly. Rec
 
 Ghostlight needs:
 
-1. one seed admission primitive shared by compiler and consumer seed producers;
+1. one seed admission primitive (`AdmitPatch` in Draft) shared by the seed
+   producer and consumer seed authors;
 2. generic external-subject ownership metadata enforced by selection and
    mutation gates;
 3. generic consumer effect-schema registration or supply;

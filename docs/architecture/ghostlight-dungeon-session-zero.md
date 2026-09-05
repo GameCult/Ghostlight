@@ -2,10 +2,13 @@
 
 ## Status
 
-This document is the authority map for campaign creation and the first bounded
-co-op runtime. Direct browser-owned compilation is not a production authority.
-Generated openings and roles are DM suggestions inside Session Zero; the typed
-draft is the only compiler input.
+Teardown evidence, not a live authority map. The `SessionZeroKernel`, the
+compiler, the preview and contract-review organs described below exist in no
+committed source. World creation is `world.create` on the sealed kernel; seed
+authoring is plan step 8, the seed producer: a Draft-phase authoring session
+that admits `AdmitPatch` seeds as the owner for approval before activation
+(`notes/ghostlight-implementation-plan.md`). Read this document only for the
+co-op intent and the rejected compiler shape.
 
 ## Owners
 

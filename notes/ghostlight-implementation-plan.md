@@ -239,7 +239,7 @@ negative legacy checks agree, delete the old units, releases, state roots,
 acceptance debris, gamecult-ops target deploy programs, and local run
 scaffolding.
 
-### 6. Widen the ontology to the causal boundary — designed, not implemented
+### 6. Widen the ontology to the causal boundary — landed
 
 The operator ordered this stage ahead of the deployment cutover. Step 2 deferred
 places, relations, resources, and external ownership until "a live typed causal
@@ -247,10 +247,11 @@ boundary" existed; this stage builds that boundary.
 
 The closed vocabulary is `docs/architecture/ghostlight-world-ontology.md`: typed
 ID namespaces, draft-handle references resolved inside one closed `WorldPatch`,
-twelve decision-constraining components over twenty-nine named operations,
+twelve decision-constraining components over twenty-seven named operations,
 world-authored affordances (preconditions, effect slots, outcome bands) that
 make character action a deterministic precondition-effect transition, four
-derived `CausalBoundary` kinds plus draft `SeedRequest`, scope-digest binding
+derived `CausalBoundary` kinds (a draft `SeedRequest` is representable, not
+inhabited: Draft answers nothing), scope-digest binding
 for proposals, and one `AdmitPatch` command shared by seed admission and
 boundary elaboration. Eight elaborators are one `OperationalAgent` loop whose
 tool catalog is a projection of the operation set. The document carries its own
@@ -271,9 +272,10 @@ Implementation order, each pass landing tests before the next begins:
 6. `Knowledge`, `Channel`, `Fact` standing, and scoped-projection non-leakage.
 7. `Commitment`, `Pressure`, obligation → pressure → opportunity flow, and
    boundary derivation.
-8. `AdmitPatch` with boundary, seed-request, and scale-deficit binding;
-   `WorldScaleIntent` with structural qualification and per-jurisdiction
-   deficit derivation; and the derived elaborator tool catalog.
+8. `AdmitPatch` with boundary and scale-deficit binding (Draft answers
+   nothing; `SeedRequest` stays uninhabited); `WorldScaleIntent` with
+   structural qualification and per-jurisdiction deficit derivation; and the
+   derived elaborator tool catalog.
 9. Budgeted connected cover: agency-graph partition under the cell budget,
    singleton detail focus, grouped coarse cells with partitioned views and
    per-constituent attribution, debt rotation. Scheduler-owned; the kernel
@@ -300,6 +302,32 @@ The deployment cutover (step 5) is deferred behind this stage, not cancelled. No
 world acceptance run may start while Yggdrasil serves the legacy body.
 
 ### 7. Contract verification
+
+### 8. Seed producer — in design
+
+Objective: a world that is alive at genesis rather than three subjects in one
+room. The first live smoke (`notes/local-live-smoke.md`) proved the road and
+showed that genesis yields thin prose because nothing authored exists to want
+or be wanted.
+
+Current mechanism: `WorldMailbox::create` builds a fixed genesis of three
+subjects in `commons` and writes an empty `WorldScaleIntentRef`, so a fresh
+world has zero deficit; the only Draft-phase author is the owner through the
+same command, and no production path admits a second Draft patch. The
+elaboration lane is Active-only by its answer selection; `EvidenceSource` is
+a live trait whose production impl is null.
+
+Intended change: a Draft-phase authoring session on the existing elaboration
+repair loop, reading a local markdown Vault through an `EvidenceSource`,
+producing seed patches admitted in Draft for the owner to approve before
+activation, planned against the scale deficit of a `WorldScaleIntent` that
+must now arrive at creation. Triggered by an owner-only Eve command.
+
+Cut line: no new reducer, ID allocator, conservation check, or
+`SystemCapability`; no second tool surface; no compatibility path for the
+three-subject genesis. `SeedRequest` is inhabited only if the spec shows Draft
+needs an answer to bind, which today it does not.
+
 
 Required black-box proofs:
 

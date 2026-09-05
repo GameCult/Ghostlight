@@ -523,7 +523,8 @@ CausalBoundary
   MissingStructure        { scope }     // a commitment or pressure has no authority,
                                         //   channel, or redress path that could resolve it
 
-SeedRequest { jurisdiction: DraftHandle, brief: EvidenceRef }   // draft phase only
+SeedRequest { jurisdiction: DraftHandle, brief: EvidenceRef }   // draft phase only;
+                                        //   representable, not inhabited: Draft answers nothing
 ```
 
 Boundaries are derived from a revision exactly as opportunities are, and each
