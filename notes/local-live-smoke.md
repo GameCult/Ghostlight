@@ -49,7 +49,7 @@ export GHOSTLIGHT_CONTROLLER_CONNECTOR=127.0.0.1:4103 \
   GHOSTLIGHT_CONTROLLER_CREDENTIAL='F:\Projects\Ghostlight-smoke\connector\ghostlight.key' \
   GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID=ghostlight-smoke \
   GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL=gpt-5.6-luna \
-  GHOSTLIGHT_CONTROLLER_PERSONA_MODEL=gpt-5.6-sol \
+  GHOSTLIGHT_CONTROLLER_PERSONA_MODEL=gpt-5.6-terra \
   GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL=gpt-5.6-terra \
   GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL=gpt-5.6-terra \
   GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL=gpt-5.6-terra \
@@ -98,7 +98,44 @@ The older ignored test `real_codex_connector_cognition_modes_commit_speech`
 in `world/controllers.rs` predates pass 6 and declares its subjects unplaced,
 so it fails at `NoAudience` before reaching the provider; retire or place it.
 
-## Seeded run
+## Seeded run, 2026-09-05
 
-Not yet run. The harness now seeds a created world from a real Vault before
-ticking it; the numbers land here once that road run happens.
+Kalsa `Public` scope, root Low Sere, target six persons, brief "A dry basin
+town that owes its water to the gate above it."
+
+| Stage | Wall time | Result |
+|---|---|---|
+| Seed session 1 | 39 s | one round, committed: six persons in Low Sere, all qualified, deficit 6 → 0; session 2 skipped, no shortfall left |
+| Activate | | nine subjects, nine opportunities, six boundaries for the elaborator |
+| Tick 1 | 95 s | 8 singleton cells, revision 3 → 7, Bren Ash: "I'm here." |
+| Tick 2 | 95 s | 8 singleton cells, revision 7 → 11, Mara Dene: "Bren?" |
+| Tick 3 | 123 s | 8 singleton cells, revision 11 → 15, Tovin Rusk: "Bren?", the Persona asking for a beginning |
+
+Twelve runs were needed to get here. Every failure was on the road, not in
+the kernel, and each became a rule the tree now carries:
+
+- The copied Codex credential diverged from the live session and its refresh
+  token was invalidated; the connector's Codex home is now the operator's
+  real `~/.codex`, one credential family.
+- Strict function schemas refuse `oneOf` and a `const` without a `type`; the
+  emitter uses `anyOf` and types every tag, and a test walks every tool of
+  both authoring lanes against the strict rules offline.
+- `gpt-5.6-sol` is not available to a ChatGPT account; the Persona runs on
+  `gpt-5.6-terra` here.
+- A seed generation exceeded the five-minute socket read; the connector's
+  expiry skew stays at five minutes while the response read timeout is
+  fifteen.
+- The model referenced existing things by label; the brief prints every
+  canonical id beside its label.
+- One tool call per response spent the six-round budget; the seed lane has
+  its own budget of 24, requests parallel tool calls, and submits the draft
+  as authored when the budget ends instead of discarding it.
+- A repair round re-used the first attempt's provider request id and the
+  connector refused it as a replay conflict; request ids are content-addressed.
+- Obligations carried a period; the tool description states the commitment
+  shape rule the resolver enforces.
+- The first landed seed put all six people in the commons; the brief states
+  that a subject must stand at the row's root or inside it to count.
+
+The harness fails when no seed patch lands or nobody speaks, so a run that
+reaches the provider and gets nothing back is a failed run.

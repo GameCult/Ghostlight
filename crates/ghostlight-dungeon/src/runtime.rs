@@ -1935,18 +1935,27 @@ async fn run_cover_tick(state: &AppState) {
                     );
                 }
                 Ok(CellRun::Narrative(NarrativeRun::Pending(pending))) => {
-                    tracing::debug!(
+                    tracing::info!(
                         reason = ?pending.reason(),
                         "a detail narrative cell is pending"
                     );
                 }
                 Ok(CellRun::Operational(OperationalRun::Pending(pending))) => {
-                    tracing::debug!(
+                    tracing::info!(
                         reason = ?pending.reason(),
                         "a detail operational cell is pending"
                     );
                 }
-                Ok(CellRun::Narrative(_) | CellRun::Operational(_)) => {}
+                // The operator's only window onto what a cell decided is this
+                // line; the world journal keeps effects, not the run.
+                Ok(CellRun::Narrative(run)) => {
+                    let summary = format!("{run:?}");
+                    tracing::info!(run = %summary.chars().take(600).collect::<String>(), "narrative cell completed");
+                }
+                Ok(CellRun::Operational(run)) => {
+                    let summary = format!("{run:?}");
+                    tracing::info!(run = %summary.chars().take(600).collect::<String>(), "operational cell completed");
+                }
                 Err(error) => {
                     // A cell that faults does not abort the tick. Custody loss
                     // does: the work journal is one lock and one custody claim,
@@ -1955,7 +1964,7 @@ async fn run_cover_tick(state: &AppState) {
                         tracing::error!(%error, "controller cognition quarantined mid-tick");
                         quarantined.store(true, Ordering::SeqCst);
                     } else {
-                        tracing::debug!(%error, "a cell did not complete this tick");
+                        tracing::info!(%error, "a cell did not complete this tick");
                     }
                 }
             }
@@ -3350,6 +3359,9 @@ mod tests {
     #[tokio::test]
     #[ignore = "requires a running CodexConnector and a vault; see GHOSTLIGHT_SMOKE_* environment"]
     async fn live_smoke_seeds_then_ticks_a_world_against_the_connector() {
+        let _ = tracing_subscriber::fmt()
+            .with_env_filter(EnvFilter::from_default_env())
+            .try_init();
         let env = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("{name} is required"));
         let live = LiveController {
             endpoint: env("GHOSTLIGHT_CONTROLLER_CONNECTOR").parse().unwrap(),
@@ -3410,6 +3422,7 @@ mod tests {
             draft.scale_deficit.len(),
             crate::world::select_row(&draft)
         ));
+        let mut seed_patches = 0usize;
         for round in 1..=seed_sessions {
             let before = state.world.snapshot().await.unwrap();
             if crate::world::select_row(&before).is_none() {
@@ -3446,7 +3459,16 @@ mod tests {
                     .map(|row| (row.kind, row.target, row.qualified, row.deficit))
                     .collect::<Vec<_>>()
             ));
-            if !matches!(outcome, Ok(SeedOutcome::Committed)) {
+            // A rejection persists a repair prompt that the next step
+            // consumes, so it is a session in progress, not an end.
+            // `NoProgress` is a committed patch that moved no row; it still
+            // proves the lane authored and landed something.
+            if matches!(
+                outcome,
+                Ok(SeedOutcome::Committed | SeedOutcome::NoProgress)
+            ) {
+                seed_patches += 1;
+            } else if !matches!(outcome, Ok(SeedOutcome::Rejected)) {
                 break;
             }
         }
@@ -3549,6 +3571,17 @@ mod tests {
         assert!(
             final_snapshot.revision > snapshot.revision,
             "the clock alone must move the revision"
+        );
+        // A road run that reached the provider and got nothing back is a
+        // failed run, not a quiet one: the smoke exists to prove inference
+        // happened, so an empty seed or a silent Persona fails it.
+        assert!(
+            seed_sessions == 0 || seed_patches >= 1,
+            "no seed session committed a patch; read the seed round outcomes in the log"
+        );
+        assert!(
+            ticks == 0 || logged_events >= 1,
+            "no subject spoke in {ticks} ticks; inference did not reach the world"
         );
     }
 

@@ -5718,7 +5718,7 @@ pub(crate) const PATCH_TOOLS: &[PatchTool] = &[
     },
     PatchTool {
         name: "create_commitment",
-        description: "Author a promise: a routine with a period, an obligation to another, or a personal goal.",
+        description: "Author a promise. Exactly one of the three shapes: kind routine carries a period and no counterparty; kind obligation names a counterparty and carries no period; kind goal names no counterparty and carries no period. A period on an obligation or goal, or a routine without one, is refused.",
         fields: &[
             field("subject", PatchFieldKind::Reference("subject")),
             field("counterparty", PatchFieldKind::OptionalReference("subject")),
@@ -6330,7 +6330,7 @@ fn composite_example(shape: CompositeShape) -> Value {
 /// rather than a hand-written third spelling of the same vocabulary.
 #[cfg(test)]
 fn schema_derived_example(schema: &Value) -> Value {
-    if let Some(alternatives) = schema.get("oneOf").and_then(Value::as_array) {
+    if let Some(alternatives) = schema.get("anyOf").and_then(Value::as_array) {
         return schema_derived_example(alternatives.first().unwrap_or(&Value::Null));
     }
     if let Some(constant) = schema.get("const") {
@@ -6366,6 +6366,14 @@ fn schema_derived_example(schema: &Value) -> Value {
 #[cfg(test)]
 mod catalog_tests {
     use super::*;
+
+    #[test]
+    fn every_patch_tool_schema_is_strict() {
+        for tool in patch_tools() {
+            let schema: Value = serde_json::from_str(&tool.parameters_json).unwrap();
+            super::super::tool_schema::assert_strict(&schema, &tool.name);
+        }
+    }
 
     /// One arguments object per entry, one example value per field, with the
     /// entry's serde tag and its fixed pairs injected exactly as the evaluator
@@ -6724,12 +6732,12 @@ mod catalog_tests {
     // instance built from the emitted schema must decode, for every branch of
     // every sum the schema offers, not only the one branch the example picks.
 
-    /// One instance of `schema`, taking `branch` at the top-level `oneOf` and
+    /// One instance of `schema`, taking `branch` at the top-level `anyOf` and
     /// the first alternative everywhere below it. Nothing here reads the const
     /// list: the schema is the only input, which is what makes the decode a
     /// statement about the schema.
     fn instance_of(schema: &Value, branch: usize) -> Value {
-        if let Some(alternatives) = schema.get("oneOf").and_then(Value::as_array) {
+        if let Some(alternatives) = schema.get("anyOf").and_then(Value::as_array) {
             let index = branch.min(alternatives.len().saturating_sub(1));
             return instance_of(&alternatives[index], 0);
         }
@@ -6765,16 +6773,16 @@ mod catalog_tests {
 
     fn branch_count(schema: &Value) -> usize {
         schema
-            .get("oneOf")
+            .get("anyOf")
             .and_then(Value::as_array)
             .map_or(1, Vec::len)
     }
 
-    /// A structural reader of exactly the shapes `tool_schema` emits: `oneOf`,
+    /// A structural reader of exactly the shapes `tool_schema` emits: `anyOf`,
     /// `const`, `enum`, closed objects with every property required, arrays,
     /// bounded integers, strings, booleans, null.
     fn admits(schema: &Value, value: &Value) -> bool {
-        if let Some(alternatives) = schema.get("oneOf").and_then(Value::as_array) {
+        if let Some(alternatives) = schema.get("anyOf").and_then(Value::as_array) {
             return alternatives
                 .iter()
                 .any(|alternative| admits(alternative, value));

@@ -57,16 +57,16 @@ pub(super) fn variant(tag: &str, variants: Vec<(&str, Vec<(String, Value)>)>) ->
     let branches: Vec<Value> = variants
         .into_iter()
         .map(|(name, content)| {
-            let mut properties = vec![(tag.to_owned(), json!({"const": name}))];
+            let mut properties = vec![(tag.to_owned(), json!({"type": "string", "const": name}))];
             properties.extend(content);
             object(properties)
         })
         .collect();
-    json!({ "oneOf": branches })
+    json!({ "anyOf": branches })
 }
 
 pub(super) fn nullable(inner: Value) -> Value {
-    json!({ "oneOf": [inner, {"type": "null"}] })
+    json!({ "anyOf": [inner, {"type": "null"}] })
 }
 
 pub(super) fn list(inner: Value) -> Value {
@@ -104,14 +104,14 @@ pub(super) fn variant_content(
     let branches: Vec<Value> = variants
         .into_iter()
         .map(|(name, payload)| {
-            let mut properties = vec![(tag.to_owned(), json!({"const": name}))];
+            let mut properties = vec![(tag.to_owned(), json!({"type": "string", "const": name}))];
             if let Some(inner) = payload {
                 properties.push((content.to_owned(), inner));
             }
             object(properties)
         })
         .collect();
-    json!({ "oneOf": branches })
+    json!({ "anyOf": branches })
 }
 
 /// An externally tagged sum: a bare string for a unit variant, or a
@@ -120,9 +120,68 @@ pub(super) fn external_variant(variants: Vec<(&str, Option<Value>)>) -> Value {
     let branches: Vec<Value> = variants
         .into_iter()
         .map(|(name, payload)| match payload {
-            None => json!({"const": name}),
+            None => json!({"type": "string", "const": name}),
             Some(inner) => object(vec![(name.to_owned(), inner)]),
         })
         .collect();
-    json!({ "oneOf": branches })
+    json!({ "anyOf": branches })
+}
+
+/// The provider's strict function-schema rules, enforced offline so the
+/// catalog cannot be refused on the road one keyword at a time: every
+/// node names a `type` or is an `anyOf` of nodes that do; every object is
+/// closed and lists every property as required; `oneOf`, `allOf`, and
+/// `not` never appear. The first live seeded run failed on exactly these.
+#[cfg(test)]
+pub(super) fn assert_strict(schema: &Value, at: &str) {
+    for forbidden in ["oneOf", "allOf", "not"] {
+        assert!(
+            schema.get(forbidden).is_none(),
+            "{at}: `{forbidden}` is not permitted in a strict schema"
+        );
+    }
+    if let Some(branches) = schema.get("anyOf").and_then(Value::as_array) {
+        assert!(!branches.is_empty(), "{at}: empty anyOf");
+        for (index, branch) in branches.iter().enumerate() {
+            assert_strict(branch, &format!("{at}/anyOf/{index}"));
+        }
+        return;
+    }
+    let kind = schema
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_else(|| panic!("{at}: schema must have a `type` key: {schema}"));
+    match kind {
+        "object" => {
+            assert_eq!(
+                schema.get("additionalProperties"),
+                Some(&Value::Bool(false)),
+                "{at}: object must be closed"
+            );
+            let properties = schema
+                .get("properties")
+                .and_then(Value::as_object)
+                .unwrap_or_else(|| panic!("{at}: object without properties"));
+            let mut names: Vec<&str> = properties.keys().map(String::as_str).collect();
+            names.sort_unstable();
+            let mut required: Vec<&str> = schema
+                .get("required")
+                .and_then(Value::as_array)
+                .map(|list| list.iter().filter_map(Value::as_str).collect())
+                .unwrap_or_default();
+            required.sort_unstable();
+            assert_eq!(names, required, "{at}: every property must be required");
+            for (name, property) in properties {
+                assert_strict(property, &format!("{at}/{name}"));
+            }
+        }
+        "array" => {
+            let items = schema
+                .get("items")
+                .unwrap_or_else(|| panic!("{at}: array without items"));
+            assert_strict(items, &format!("{at}/items"));
+        }
+        "string" | "integer" | "number" | "boolean" | "null" => {}
+        other => panic!("{at}: unexpected type {other}"),
+    }
 }

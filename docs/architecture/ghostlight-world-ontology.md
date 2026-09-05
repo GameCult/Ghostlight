@@ -253,6 +253,18 @@ Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
 Step 6 of the plan is complete. The next seam is the seeded live run against a
 real Vault and a real connector, then the outbound consumer response.
 
+Rules the road imposed, carried in the tree: the provider request identity is
+content-addressed over command, purpose, round, instructions, and input, so a
+resumed round replays and a repair round under the same command names a new
+request; every tool schema of both authoring lanes satisfies the provider's
+strict function-schema rules (`anyOf`, typed tags, closed objects with every
+property required) and a test walks them offline; the seed lane has its own
+round budget, asks for several tool calls per response, and submits the draft
+as authored when its budget ends; the seed brief prints every canonical id
+beside its label and states that a subject counts only if it stands at the
+row's root or inside it; the connector's expiry skew bounds an invocation's
+validity and a separate response timeout bounds a generation.
+
 ## The failure this vocabulary is designed against
 
 Run 115 terminated because `inst:kharad-road-keepers` referenced

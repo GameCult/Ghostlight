@@ -42,6 +42,10 @@ use uuid::Uuid;
 /// repair, where the operational agent wants one terminal choice.
 /// `TOOL_STEP_BUDGET` is left alone for the lane it belongs to.
 const ELABORATION_ROUND_BUDGET: usize = 6;
+/// A seed session authors a whole shortfall, not one answer: several subjects,
+/// each with a grant, a goal, and an obligation, then a submit. Measured on
+/// the road at one declaration per response, six rounds discarded everything.
+const SEED_ROUND_BUDGET: usize = 24;
 
 const ELABORATION_NAMESPACE: &str = "ghostlight.command.elaboration.v1";
 
@@ -125,7 +129,12 @@ impl ElaborationCheckpoint {
             } => {
                 !agent_prompt.is_empty()
                     && canonical_model(&invocation.invocation.request.model)
-                    && match evaluate_elaboration_loop(agent_prompt, last_mismatches, completed) {
+                    && match evaluate_elaboration_loop(
+                        agent_prompt,
+                        last_mismatches,
+                        completed,
+                        ELABORATION_ROUND_BUDGET,
+                    ) {
                         Ok(ElaborationLoopEvaluation::Continue { conversation }) => {
                             elaboration_request(
                                 *command_id,
@@ -150,13 +159,18 @@ impl ElaborationCheckpoint {
                 last_mismatches,
                 completed,
                 ..
-            } => derive_elaboration_capture(agent_prompt, last_mismatches, completed)
-                .is_ok_and(|capture| capture.submitted),
+            } => derive_elaboration_capture(
+                agent_prompt,
+                last_mismatches,
+                completed,
+                ELABORATION_ROUND_BUDGET,
+            )
+            .is_ok_and(|capture| capture.submitted),
             Self::NoPatch {
                 agent_prompt,
                 completed,
                 ..
-            } => derive_elaboration_capture(agent_prompt, &[], completed)
+            } => derive_elaboration_capture(agent_prompt, &[], completed, ELABORATION_ROUND_BUDGET)
                 .is_ok_and(|capture| !capture.submitted),
         }
     }
@@ -372,7 +386,12 @@ impl ElaborationRunner {
         };
 
         loop {
-            match evaluate_elaboration_loop(&agent_prompt, &last_mismatches, &completed)? {
+            match evaluate_elaboration_loop(
+                &agent_prompt,
+                &last_mismatches,
+                &completed,
+                ELABORATION_ROUND_BUDGET,
+            )? {
                 ElaborationLoopEvaluation::Continue { conversation } => {
                     let request = elaboration_request(
                         command_id,
@@ -492,7 +511,12 @@ impl ElaborationRunner {
         agent_prompt: &str,
         last_mismatches: &[Mismatch],
     ) -> Result<(), ControllerError> {
-        let conversation = match evaluate_elaboration_loop(agent_prompt, last_mismatches, &[])? {
+        let conversation = match evaluate_elaboration_loop(
+            agent_prompt,
+            last_mismatches,
+            &[],
+            ELABORATION_ROUND_BUDGET,
+        )? {
             ElaborationLoopEvaluation::Continue { conversation } => conversation,
             ElaborationLoopEvaluation::Complete { .. } => {
                 return Err(ControllerError::Serialization(
@@ -804,6 +828,7 @@ pub(super) fn evaluate_elaboration_loop(
     prompt: &str,
     last_mismatches: &[Mismatch],
     completed: &[InferenceOutput],
+    budget: usize,
 ) -> Result<ElaborationLoopEvaluation, ControllerError> {
     // The repair set is prompt material, folded in by `build_prompt`; it is
     // named here so a checkpoint that carries one cannot be re-derived without
@@ -859,17 +884,26 @@ pub(super) fn evaluate_elaboration_loop(
             }
         }
 
-        let is_complete = submitted || !called_tool || round + 1 == ELABORATION_ROUND_BUDGET;
+        let is_complete = submitted || !called_tool || round + 1 == budget;
         if is_complete {
             if round + 1 != completed.len() {
                 return Err(ControllerError::Serialization(
                     "elaboration evidence continued after total finalization".into(),
                 ));
             }
-            if !submitted && called_tool && round + 1 == ELABORATION_ROUND_BUDGET {
-                gaps.push(ControllerNeed {
-                    detail: "The elaboration round budget ended before a submit.".into(),
-                });
+            if !submitted && called_tool && round + 1 == budget {
+                // What was authored is still a patch; the resolver decides it,
+                // not the round counter. An empty draft has nothing to submit.
+                if draft.declarations.is_empty() && draft.operations.is_empty() {
+                    gaps.push(ControllerNeed {
+                        detail: "The elaboration round budget ended before a submit.".into(),
+                    });
+                } else {
+                    submitted = true;
+                    gaps.push(ControllerNeed {
+                        detail: "The round budget ended before a submit; the draft as authored was submitted.".into(),
+                    });
+                }
             }
             draft.evidence.sort();
             draft.evidence.dedup();
@@ -884,7 +918,7 @@ pub(super) fn evaluate_elaboration_loop(
         }
     }
 
-    if completed.len() >= ELABORATION_ROUND_BUDGET {
+    if completed.len() >= budget {
         return Err(ControllerError::Serialization(
             "elaboration evidence exceeded its round budget".into(),
         ));
@@ -994,8 +1028,9 @@ pub(super) fn derive_elaboration_capture(
     prompt: &str,
     last_mismatches: &[Mismatch],
     completed: &[InferenceOutput],
+    budget: usize,
 ) -> Result<ElaborationCapture, ControllerError> {
-    match evaluate_elaboration_loop(prompt, last_mismatches, completed)? {
+    match evaluate_elaboration_loop(prompt, last_mismatches, completed, budget)? {
         ElaborationLoopEvaluation::Complete { capture } => Ok(capture),
         ElaborationLoopEvaluation::Continue { .. } => Err(ControllerError::Serialization(
             "elaboration evidence did not finalize".into(),
@@ -1069,7 +1104,7 @@ const SEED_NAMESPACE: &str = "ghostlight.command.seed.v1";
 /// seeded out of goals alone therefore activates with nothing for the Active
 /// elaborator to answer, so this instruction requires an obligation, not a
 /// goal alone, from every subject it authors.
-const SEED_INSTRUCTIONS: &str = "Use only the supplied tools to author living structure inside your jurisdiction. A subject counts only when it has a controller, at least one affordance grant, and holds a goal commitment. A goal alone is not enough structure: every person and institution you author must also hold at least one obligation commitment with a counterparty, because a goal carries no counterparty and derives no boundary for the world's Active elaborator to answer. Author the shortfall you were given, then submit. Recording a gap changes nothing.";
+const SEED_INSTRUCTIONS: &str = "Use only the supplied tools to author living structure inside your jurisdiction. A subject counts only when it has a controller, at least one affordance grant, and holds a goal commitment. A goal alone is not enough structure: every person and institution you author must also hold at least one obligation commitment with a counterparty, because a goal carries no counterparty and derives no boundary for the world's Active elaborator to answer. Author the shortfall you were given in as few responses as you can, making several tool calls per response, and finish with submit_patch as your last call; a session that ends without it keeps only what was authored. Recording a gap changes nothing.";
 
 /// The row a session answers, plus the ancestry it was built against. There is
 /// no `PatchAnswer` here: a seed answers nothing, and giving this session an
@@ -1171,7 +1206,12 @@ impl SeedCheckpoint {
             } => {
                 !agent_prompt.is_empty()
                     && canonical_model(&invocation.invocation.request.model)
-                    && match evaluate_elaboration_loop(agent_prompt, last_mismatches, completed) {
+                    && match evaluate_elaboration_loop(
+                        agent_prompt,
+                        last_mismatches,
+                        completed,
+                        SEED_ROUND_BUDGET,
+                    ) {
                         Ok(ElaborationLoopEvaluation::Continue { conversation }) => seed_request(
                             *command_id,
                             completed.len(),
@@ -1194,13 +1234,18 @@ impl SeedCheckpoint {
                 last_mismatches,
                 completed,
                 ..
-            } => derive_elaboration_capture(agent_prompt, last_mismatches, completed)
-                .is_ok_and(|capture| capture.submitted),
+            } => derive_elaboration_capture(
+                agent_prompt,
+                last_mismatches,
+                completed,
+                SEED_ROUND_BUDGET,
+            )
+            .is_ok_and(|capture| capture.submitted),
             Self::NoPatch {
                 agent_prompt,
                 completed,
                 ..
-            } => derive_elaboration_capture(agent_prompt, &[], completed)
+            } => derive_elaboration_capture(agent_prompt, &[], completed, SEED_ROUND_BUDGET)
                 .is_ok_and(|capture| !capture.submitted),
         }
     }
@@ -1373,7 +1418,12 @@ impl SeedRunner {
         };
 
         loop {
-            match evaluate_elaboration_loop(&agent_prompt, &last_mismatches, &completed)? {
+            match evaluate_elaboration_loop(
+                &agent_prompt,
+                &last_mismatches,
+                &completed,
+                SEED_ROUND_BUDGET,
+            )? {
                 ElaborationLoopEvaluation::Continue { conversation } => {
                     let request =
                         seed_request(command_id, completed.len(), &self.model, conversation)?;
@@ -1402,6 +1452,16 @@ impl SeedRunner {
                 }
                 ElaborationLoopEvaluation::Complete { capture } => {
                     if !capture.submitted {
+                        let last = completed
+                            .last()
+                            .map(|output| format!("{output:?}"))
+                            .unwrap_or_default();
+                        tracing::info!(
+                            rounds = completed.len(),
+                            gaps = ?capture.gaps,
+                            last_output = %last.chars().take(2000).collect::<String>(),
+                            "seed session ended without a patch"
+                        );
                         self.persist(SeedCheckpoint::NoPatch {
                             command_id,
                             session,
@@ -1444,6 +1504,10 @@ impl SeedRunner {
                             })
                         }
                         Err(MailboxError::Kernel(KernelError::PatchRejected(mismatches))) => {
+                            tracing::info!(
+                                mismatches = ?mismatches,
+                                "seed patch rejected; a repair prompt is persisted for the next step"
+                            );
                             last_mismatches = mismatches;
                             let repaired = build_seed_prompt(
                                 &snapshot,
@@ -1503,14 +1567,16 @@ impl SeedRunner {
         agent_prompt: &str,
         last_mismatches: &[Mismatch],
     ) -> Result<(), ControllerError> {
-        let conversation = match evaluate_elaboration_loop(agent_prompt, last_mismatches, &[])? {
-            ElaborationLoopEvaluation::Continue { conversation } => conversation,
-            ElaborationLoopEvaluation::Complete { .. } => {
-                return Err(ControllerError::Serialization(
-                    "a repair round completed before any evidence".into(),
-                ));
-            }
-        };
+        let conversation =
+            match evaluate_elaboration_loop(agent_prompt, last_mismatches, &[], SEED_ROUND_BUDGET)?
+            {
+                ElaborationLoopEvaluation::Continue { conversation } => conversation,
+                ElaborationLoopEvaluation::Complete { .. } => {
+                    return Err(ControllerError::Serialization(
+                        "a repair round completed before any evidence".into(),
+                    ));
+                }
+            };
         let request = seed_request(command_id, 0, &self.model, conversation)?;
         let invocation =
             self.inference
@@ -1565,8 +1631,10 @@ fn seed_request(
         input,
         patch_tools(),
         RequestShape {
-            max_output_tokens: 4_000,
-            parallel_tool_calls: false,
+            // A seed response carries many declarations and operations at
+            // once; one call per response spent the whole budget on the road.
+            max_output_tokens: 8_000,
+            parallel_tool_calls: true,
         },
     )
 }
@@ -1625,6 +1693,19 @@ fn build_seed_prompt(
         render_kind(session.kind),
         session.qualified
     ));
+    // The row is a place subtree; a subject standing anywhere else fills a
+    // row with no target and leaves this shortfall untouched. On the road the
+    // first landed seed put all six people in the commons for want of this.
+    prompt.push_str(&match session.jurisdiction {
+        JurisdictionKey::PlaceSubtree(root) => format!(
+            "Placement: every subject you author must stand at {} [{}] or at a place you declare inside it; a subject standing anywhere else does not count toward this shortfall.\n",
+            render_jurisdiction(snapshot, session.jurisdiction),
+            id_text(root)
+        ),
+        JurisdictionKey::Uncovered => {
+            "Placement: every subject you author must stand at a place no declared root covers.\n".to_owned()
+        }
+    });
     if let Some(brief) = brief.map(str::trim).filter(|value| !value.is_empty()) {
         prompt.push_str(&format!("{brief}\n"));
     }
@@ -1649,6 +1730,16 @@ fn render_kind(kind: SubjectKind) -> &'static str {
 /// already exist. A renderer beside `render_jurisdiction` and `render_answer`,
 /// and seed-only: widening the Active elaborator's prompt is a behaviour change
 /// to a working lane and belongs to whoever measures it.
+/// The canonical id as the patch vocabulary spells it: the bare UUID text,
+/// without the typed wrapper's name.
+fn id_text(id: impl std::fmt::Debug) -> String {
+    let text = format!("{id:?}");
+    match (text.find('('), text.rfind(')')) {
+        (Some(open), Some(close)) if open < close => text[open + 1..close].to_owned(),
+        _ => text,
+    }
+}
+
 fn render_world_structure(snapshot: &WorldSnapshot) -> String {
     let place_label = |id: EntityId| {
         snapshot
@@ -1660,7 +1751,13 @@ fn render_world_structure(snapshot: &WorldSnapshot) -> String {
                 |entry| entry.label.clone(),
             )
     };
-    let mut out = String::from("Standing structure:\n");
+    // Ids are printed beside labels because a patch names an existing thing
+    // by its canonical id and nothing else; a model that sees only labels
+    // can only guess, and the first live seed session guessed six times.
+    let mut out = String::from(
+        "Standing structure (reference an existing thing by the id in brackets, \
+         exactly as printed; reference a thing declared in this patch by its handle):\n",
+    );
     out.push_str("  Places:");
     if snapshot.places.is_empty() {
         out.push_str(" none");
@@ -1669,12 +1766,13 @@ fn render_world_structure(snapshot: &WorldSnapshot) -> String {
         match place.container {
             Some(container) => {
                 out.push_str(&format!(
-                    " {} (in {});",
+                    " {} [{}] (in {});",
                     place.label,
+                    id_text(place.id),
                     place_label(container)
                 ));
             }
-            None => out.push_str(&format!(" {};", place.label)),
+            None => out.push_str(&format!(" {} [{}];", place.label, id_text(place.id))),
         }
     }
     out.push_str("\n  Routes:");
@@ -1683,8 +1781,9 @@ fn render_world_structure(snapshot: &WorldSnapshot) -> String {
     }
     for route in &snapshot.routes {
         out.push_str(&format!(
-            " {}: {} -> {}, {:?}, {};",
+            " {} [{}]: {} -> {}, {:?}, {};",
             route.label,
+            id_text(route.id),
             place_label(route.from),
             place_label(route.to),
             route.access,
@@ -1697,8 +1796,9 @@ fn render_world_structure(snapshot: &WorldSnapshot) -> String {
     }
     for subject in &snapshot.subjects {
         out.push_str(&format!(
-            " {} ({:?}, {}, in {}, grants: {}, {});",
+            " {} [{}] ({:?}, {}, in {}, grants: {}, {});",
             subject.label,
+            id_text(subject.id),
             subject.kind,
             subject
                 .controller_mode
@@ -1720,8 +1820,9 @@ fn render_world_structure(snapshot: &WorldSnapshot) -> String {
     }
     for affordance in &snapshot.affordances {
         out.push_str(&format!(
-            " {}, roles: {}, {};",
+            " {} [{}], roles: {}, {};",
             affordance.entry.kind.0,
+            id_text(affordance.id),
             if affordance.entry.roles.is_empty() {
                 "none".to_owned()
             } else {
@@ -1789,7 +1890,8 @@ mod tests {
     }
 
     fn capture(completed: &[InferenceOutput]) -> ElaborationCapture {
-        derive_elaboration_capture("prompt", &[], completed).expect("the loop finalizes")
+        derive_elaboration_capture("prompt", &[], completed, ELABORATION_ROUND_BUDGET)
+            .expect("the loop finalizes")
     }
 
     /// Each declaration tool call appends a `Declaration`; each operation call

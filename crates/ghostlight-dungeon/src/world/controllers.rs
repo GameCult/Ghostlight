@@ -50,7 +50,15 @@ use thiserror::Error;
 use zeroize::Zeroizing;
 
 const MAX_CONNECTOR_FRAME_BYTES: usize = 1_052_672;
+/// How far ahead an invocation may claim to be valid. The connector refuses
+/// an expiry beyond its own skew bound as `Expired`, so this is the daemon's
+/// number, not ours; it is admission validity, not generation time.
 const REQUEST_EXPIRY: Duration = Duration::from_secs(300);
+/// One provider round's whole lifetime as seen from this side of the socket:
+/// the connector replies once at the end, so the read timeout bounds an
+/// entire generation, and a seed patch at medium effort was measured past
+/// five minutes.
+const RESPONSE_TIMEOUT: Duration = Duration::from_secs(900);
 const TOOL_STEP_BUDGET: usize = 4;
 /// The grouped protocol asks for every call in one round, so this budget buys
 /// exactly one repair round after decode gaps are reported back. It deliberately
@@ -275,7 +283,7 @@ impl CodexConnectorInferencePort {
             endpoint,
             connection_key,
             MAX_CONNECTOR_FRAME_BYTES,
-            Some(REQUEST_EXPIRY),
+            Some(RESPONSE_TIMEOUT),
         )
         .map_err(|error| InferenceFault::new(error.to_string()))?;
         Ok(Self {
@@ -1160,8 +1168,14 @@ fn exact_request_identity(
             .is_some_and(|digest| digest == request.invocation.native_request_sha256)
         && provider_request_sha256(provider)
             .is_ok_and(|digest| digest == request.invocation.provider_request_sha256)
-        && provider_request_id(command_id, purpose, round)
-            .is_ok_and(|expected| provider.request_id == expected)
+        && provider_request_id(
+            command_id,
+            purpose,
+            round,
+            &provider.instructions,
+            &provider.input,
+        )
+        .is_ok_and(|expected| provider.request_id == expected)
         && conversation_id(command_id, purpose, round)
             .is_ok_and(|expected| provider.conversation_id == expected)
 }
@@ -1934,6 +1948,10 @@ pub(crate) enum ControllerPendingReason {
 }
 
 fn inference_pending_reason(error: &ControllerError) -> Option<ControllerPendingReason> {
+    // The pending reason is a classification; the fault text is the only
+    // record of what the provider or connector actually said, so it is logged
+    // here where every lane's fault passes.
+    tracing::info!(%error, "inference fault classified for pending");
     match error {
         ControllerError::Inference { source, .. } if source.integrity_was_violated() => None,
         ControllerError::Inference { source, .. } if source.recovery_required() => {
@@ -4516,13 +4534,20 @@ fn persona_request(
     // constructor. Its only model-visible input is the dedicated natural-prose
     // prompt plus the smallest nonempty instruction required by the provider
     // transport contract.
+    let input = vec![CodexInputItem::UserText { text: prompt }];
     let mut provider = CodexProviderRequest::new(
-        provider_request_id(command_id, InferencePurpose::Persona, 0)?,
+        provider_request_id(
+            command_id,
+            InferencePurpose::Persona,
+            0,
+            PERSONA_PROVIDER_INSTRUCTIONS,
+            &input,
+        )?,
         conversation_id(command_id, InferencePurpose::Persona, 0)?,
         model,
         PERSONA_PROVIDER_INSTRUCTIONS,
     );
-    provider.input = vec![CodexInputItem::UserText { text: prompt }];
+    provider.input = input;
     provider.reasoning_effort = Some("low".into());
     provider.tools = Vec::new();
     provider.tool_choice = CodexToolChoice::Auto;
@@ -4544,10 +4569,11 @@ fn text_request(
     prompt: String,
     max_output_tokens: u32,
 ) -> Result<InferenceRequest, ControllerError> {
-    let request = provider_request_id(command_id, purpose, 0)?;
+    let input = vec![CodexInputItem::UserText { text: prompt }];
+    let request = provider_request_id(command_id, purpose, 0, instructions, &input)?;
     let conversation = conversation_id(command_id, purpose, 0)?;
     let mut provider = CodexProviderRequest::new(request, conversation, model, instructions);
-    provider.input = vec![CodexInputItem::UserText { text: prompt }];
+    provider.input = input;
     provider.reasoning_effort = Some("low".into());
     provider.tools = Vec::new();
     provider.tool_choice = CodexToolChoice::Auto;
@@ -4622,7 +4648,7 @@ pub(super) fn tool_request(
     shape: RequestShape,
 ) -> Result<InferenceRequest, ControllerError> {
     let mut provider = CodexProviderRequest::new(
-        provider_request_id(command_id, purpose, round)?,
+        provider_request_id(command_id, purpose, round, instructions, &input)?,
         conversation_id(command_id, purpose, round)?,
         model,
         instructions,
@@ -4905,16 +4931,37 @@ fn decode_catalog_call(
     })
 }
 
+/// The provider request identity is content-addressed: the same command,
+/// purpose, round, and bytes name the same request, so a resumed round replays
+/// its completed response, while a repair round that re-prompts under the
+/// same command and round names a different request instead of colliding
+/// with the connector's replay record for the first attempt.
 pub(super) fn provider_request_id(
     command_id: CommandId,
     purpose: InferencePurpose,
     round: usize,
+    instructions: &str,
+    input: &[CodexInputItem],
 ) -> Result<String, ControllerError> {
+    let content = request_content_digest(instructions, input)?;
     Ok(format!(
-        "ghostlight-request-{}-{}-{round}",
+        "ghostlight-request-{}-{}-{round}-{content}",
         encoded_id(&command_id)?,
         purpose_name(purpose)
     ))
+}
+
+fn request_content_digest(
+    instructions: &str,
+    input: &[CodexInputItem],
+) -> Result<String, ControllerError> {
+    let bytes = serde_json::to_vec(&(instructions, input))
+        .map_err(|error| ControllerError::Serialization(error.to_string()))?;
+    let digest = Sha256::digest(bytes);
+    Ok(digest[..12]
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect())
 }
 
 fn conversation_id(
@@ -4942,6 +4989,17 @@ fn purpose_name(purpose: InferencePurpose) -> &'static str {
 
 #[cfg(test)]
 mod tests {
+
+    /// The decision lanes' tools go to the same provider under the same
+    /// strict rules as the patch catalog; the interpreter's fixed tools and a
+    /// granted catalog entry are checked offline here for the same reason.
+    #[test]
+    fn every_decision_lane_tool_schema_is_strict() {
+        for tool in interpreter_tools() {
+            let schema: serde_json::Value = serde_json::from_str(&tool.parameters_json).unwrap();
+            super::super::tool_schema::assert_strict(&schema, &tool.name);
+        }
+    }
     use super::*;
     use crate::world::elaboration::{EvidenceError, EvidenceQuery, EvidenceReceipt};
     use crate::world::patch::{RECORD_GAP_PATCH_TOOL, kernel_speak_entry, kernel_speak_grant};
@@ -9600,23 +9658,21 @@ mod tests {
         fixture.task.await.unwrap();
     }
 
-    /// Soul. One session's round loop is bounded by the elaboration budget it
-    /// shares, not by anything the seed lane holds: a model that keeps calling
-    /// tools and never submits stops at `ELABORATION_ROUND_BUDGET` rounds and
-    /// leaves a `NoPatch` row, and a second sweep over the same store spends
-    /// nothing, because that row is the row's fixed point.
+    /// Soul, revised on the road. The seed lane's round loop is bounded by
+    /// `SEED_ROUND_BUDGET`; a model that keeps declaring and never submits
+    /// stops there and the draft as authored is submitted rather than
+    /// discarded, because what it authored is a patch the resolver decides.
     #[tokio::test]
-    async fn soul_a_session_that_never_submits_is_bounded_by_the_round_budget() {
-        // `elaboration::ELABORATION_ROUND_BUDGET`, which is file-private to the
-        // lane that owns it. Restated here so that raising the budget fails
-        // this bound loudly rather than silently widening it.
-        const SHARED_ROUND_BUDGET: usize = 6;
+    async fn soul_a_session_that_never_submits_is_bounded_and_its_draft_is_submitted() {
+        // `elaboration::SEED_ROUND_BUDGET`, file-private to the lane that owns
+        // it, restated so raising it fails this bound loudly.
+        const SEED_ROUND_BUDGET: usize = 24;
 
         let fixture = seed_mailbox(6).await;
         let genesis = fixture.mailbox.snapshot().await.unwrap().revision;
         let store = fresh_store();
         let scripted = seed_script(
-            (0..SHARED_ROUND_BUDGET + 4)
+            (0..SEED_ROUND_BUDGET + 4)
                 .map(|round| {
                     tool_round(
                         vec![(
@@ -9638,20 +9694,71 @@ mod tests {
             store.clone(),
             Arc::new(NullEvidenceSource),
         );
-        assert_eq!(runner.step().await.unwrap(), SeedOutcome::NoPatch);
+        // Sheds qualify nobody, so the outcome may report no progress on the
+        // row; the revision and the places prove the draft was submitted.
+        let outcome = runner.step().await.unwrap();
+        assert!(
+            matches!(outcome, SeedOutcome::Committed | SeedOutcome::NoProgress),
+            "the draft as authored was not submitted: {outcome:?}"
+        );
         assert_eq!(
             scripted.seen.lock().unwrap().len(),
-            SHARED_ROUND_BUDGET,
-            "the round loop is not bounded by the shared budget"
+            SEED_ROUND_BUDGET,
+            "the round loop is not bounded by the seed budget"
+        );
+        let after = fixture.mailbox.snapshot().await.unwrap();
+        assert_eq!(
+            after.revision,
+            genesis + 1,
+            "the authored draft was not submitted once"
         );
         assert_eq!(
-            fixture.mailbox.snapshot().await.unwrap().revision,
-            genesis,
-            "a session that never submitted moved the world"
+            after
+                .places
+                .iter()
+                .filter(|place| place.label == "A Shed")
+                .count(),
+            SEED_ROUND_BUDGET,
+            "every declaration authored before the budget ended must land"
         );
 
-        // The row is now a fixed point: a fresh sweep re-derives the same id,
-        // finds `NoPatch`, and does not spend a round.
+        drop(runner);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Soul. A session that only records gaps has authored nothing; the budget
+    /// ends it as `NoPatch`, the world does not move, and a second sweep over
+    /// the same store finds that row and spends no round.
+    #[tokio::test]
+    async fn soul_a_session_that_authors_nothing_is_a_fixed_point() {
+        const SEED_ROUND_BUDGET: usize = 24;
+
+        let fixture = seed_mailbox(6).await;
+        let genesis = fixture.mailbox.snapshot().await.unwrap().revision;
+        let store = fresh_store();
+        let scripted = seed_script(
+            (0..SEED_ROUND_BUDGET + 4)
+                .map(|round| {
+                    tool_round(
+                        vec![(
+                            "record_gap",
+                            json!({"detail": format!("nothing yet {round}")}),
+                        )],
+                        &format!("r{round}"),
+                    )
+                })
+                .collect(),
+        );
+        let runner = seed_runner(
+            &fixture,
+            scripted.clone(),
+            store.clone(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.step().await.unwrap(), SeedOutcome::NoPatch);
+        assert_eq!(scripted.seen.lock().unwrap().len(), SEED_ROUND_BUDGET);
+        assert_eq!(fixture.mailbox.snapshot().await.unwrap().revision, genesis);
         let resumed = seed_runner(
             &fixture,
             scripted.clone(),
@@ -9661,7 +9768,7 @@ mod tests {
         assert_eq!(resumed.sweep(4).await.unwrap(), SeedOutcome::NoPatch);
         assert_eq!(
             scripted.seen.lock().unwrap().len(),
-            SHARED_ROUND_BUDGET,
+            SEED_ROUND_BUDGET,
             "a NoPatch row was reopened against the endpoint"
         );
         assert_eq!(store.work.lock().unwrap().len(), 1, "one row per session");
