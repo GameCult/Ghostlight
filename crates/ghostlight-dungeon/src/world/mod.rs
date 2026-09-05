@@ -24,8 +24,7 @@ pub(crate) use controllers::{
     SourceRange, SubmissionDisposition, TranslationGapSummary,
 };
 pub(crate) use cover::{
-    AgencyGraph, Cell, CellId, Constituent, Cover, CoverBudget, CoverBudgetError, Resolution,
-    TickIndex, derive_cover,
+    AgencyGraph, Cell, CellId, Constituent, Cover, CoverBudget, Resolution, TickIndex, derive_cover,
 };
 pub(crate) use mailbox::{ControllerPort, ElaborationPort, MailboxError, WorldMailbox};
 pub(crate) use patch::{

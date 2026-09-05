@@ -1680,13 +1680,46 @@ async fn run_cover_tick(state: &AppState) {
                 return;
             };
             match runner.run_cell(&cell).await {
-                Ok(run) => {
-                    if let CellRun::Grouped(grouped) = &run
-                        && let Some(reason) = grouped.pending
-                    {
-                        tracing::debug!(?reason, "a coarse cell did not finish its submissions");
-                    }
+                // A tick that reports nothing is a tick nobody can debug. One
+                // line per coarse cell, naming what it consumed and what it
+                // could not: a batch buys one inference, never one admission
+                // rule, and the gap between turns offered and turns committed
+                // is the number that says so.
+                Ok(CellRun::Grouped(grouped)) => {
+                    let committed = grouped
+                        .submissions
+                        .iter()
+                        .filter(|entry| {
+                            matches!(
+                                entry.submission,
+                                SubmissionDisposition::Completed(_)
+                                    | SubmissionDisposition::PreviouslyConfirmed(_)
+                            )
+                        })
+                        .count();
+                    tracing::debug!(
+                        cell = %grouped.cell,
+                        resolution = ?grouped.resolution,
+                        submitted = grouped.submissions.len(),
+                        committed,
+                        needs = grouped.needs.len(),
+                        pending = ?grouped.pending,
+                        "a coarse cell finished"
+                    );
                 }
+                Ok(CellRun::Narrative(NarrativeRun::Pending(pending))) => {
+                    tracing::debug!(
+                        reason = ?pending.reason(),
+                        "a detail narrative cell is pending"
+                    );
+                }
+                Ok(CellRun::Operational(OperationalRun::Pending(pending))) => {
+                    tracing::debug!(
+                        reason = ?pending.reason(),
+                        "a detail operational cell is pending"
+                    );
+                }
+                Ok(CellRun::Narrative(_) | CellRun::Operational(_)) => {}
                 Err(error) => {
                     // A cell that faults does not abort the tick. Custody loss
                     // does: the work journal is one lock and one custody claim,
@@ -2596,10 +2629,10 @@ mod tests {
     /// captured argument is the `TickMinutes` `submit_clock_tick` was given,
     /// with no measured elapsed duration — no `Duration`, no `Instant` — ever
     /// constructed along the way. Driven through the narrow port rather than
-    /// `advance_world_clock` itself, so the assertion holds without waiting on
-    /// tokio's timer.
+    /// `drive_cover_tick` itself, so the assertion holds without waiting on
+    /// tokio's timer or on a cognition organ.
     #[tokio::test]
-    async fn advance_world_clock_tick_submits_the_configured_span_and_nothing_measured() {
+    async fn a_clock_tick_submits_the_configured_span_and_nothing_measured() {
         let minutes = TickMinutes::new(CLOCK_TICK_MINUTES).expect("a valid configured tick");
         let captured: std::sync::Arc<std::sync::Mutex<Option<TickMinutes>>> =
             std::sync::Arc::new(std::sync::Mutex::new(None));

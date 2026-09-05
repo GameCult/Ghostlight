@@ -3988,7 +3988,6 @@ struct GroupedCapture {
     /// Handle to proposal. A handle absent here proposed nothing and declines.
     proposals: BTreeMap<usize, DecisionInvocation>,
     needs: Vec<ControllerNeed>,
-    inference_receipts: Vec<String>,
 }
 
 enum GroupedLoopEvaluation {
@@ -4007,7 +4006,6 @@ fn evaluate_grouped_loop(
     let mut proposals: BTreeMap<usize, DecisionInvocation> = BTreeMap::new();
     let mut terminal: BTreeSet<usize> = BTreeSet::new();
     let mut needs = Vec::new();
-    let mut receipts = Vec::new();
 
     for (round, output) in completed.iter().enumerate() {
         if output.receipt_digest.is_empty() || output.receipt_digest.trim() != output.receipt_digest
@@ -4017,7 +4015,6 @@ fn evaluate_grouped_loop(
                 detail: "provider output has no canonical receipt digest".into(),
             });
         }
-        receipts.push(output.receipt_digest.clone());
         let mut called_tool = false;
         for event in &output.events {
             match event {
@@ -4157,11 +4154,7 @@ fn evaluate_grouped_loop(
                 });
             }
             return Ok(GroupedLoopEvaluation::Complete {
-                capture: GroupedCapture {
-                    proposals,
-                    needs,
-                    inference_receipts: receipts,
-                },
+                capture: GroupedCapture { proposals, needs },
             });
         }
     }
@@ -7322,7 +7315,6 @@ mod tests {
         .await;
         let cell = one_group(&mailbox).await;
         assert_eq!(cell.members().len(), 3);
-        assert_eq!(cell.resolution(), Resolution::Coarse { constituents: 3 });
 
         let (runner, _store) = grouped_runner(
             &mailbox,
@@ -7344,6 +7336,7 @@ mod tests {
             panic!("a coarse cell did not run the grouped lane")
         };
         assert!(run.pending.is_none());
+        assert_eq!(run.resolution, Resolution::Coarse { constituents: 3 });
         assert_eq!(run.submissions.len(), 3, "every constituent finished");
         let first = cell.members()[0].subject;
         assert!(matches!(
@@ -7636,6 +7629,50 @@ mod tests {
         assert_eq!(mailbox.operator_log().await.unwrap().len(), committed);
 
         drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Adjacency is a scheduler projection, not a subject view. Two subjects in
+    /// one room are related through the kernel's own containment closure, which
+    /// no union of `SubjectSnapshot`s could produce for a channel, and the
+    /// result reaches `derive_cover` and nothing else: `run_cell` takes a
+    /// `&Cell`, which holds no graph, so a controller organ that read adjacency
+    /// would fail to compile.
+    #[tokio::test]
+    async fn soul_the_agency_graph_relates_co_located_subjects_and_reaches_no_prompt() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+            NewController::NarrativePersona,
+        ])
+        .await;
+        let graph = mailbox.agency_graph().await.unwrap();
+        assert_eq!(graph.subjects.len(), 3);
+        assert_eq!(
+            graph.edges.len(),
+            3,
+            "three subjects in one room are a clique"
+        );
+        for (one, other) in &graph.edges {
+            assert!(one < other, "an edge is not canonicalised");
+        }
+        // Nothing about adjacency reaches a subject-facing surface: the typed
+        // view a constituent is shown carries its own state and no neighbour's.
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let selected = select_one(&snapshot, &snapshot.opportunities[0]).unwrap();
+        let view = selected.typed_view().unwrap();
+        for other in snapshot
+            .subjects
+            .iter()
+            .filter(|subject| subject.id != selected.subject.id)
+        {
+            assert!(
+                !view.contains(&other.label),
+                "a typed view named a neighbour"
+            );
+        }
+
         drop(mailbox);
         task.await.unwrap();
     }

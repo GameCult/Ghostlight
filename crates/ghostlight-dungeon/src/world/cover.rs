@@ -137,31 +137,10 @@ pub(crate) enum Cell {
 }
 
 impl Cell {
-    pub(crate) fn id(&self) -> CellId {
-        match self {
-            Self::Singleton { id, .. } | Self::Group { id, .. } => *id,
-        }
-    }
-
-    pub(crate) fn tick(&self) -> TickIndex {
-        match self {
-            Self::Singleton { tick, .. } | Self::Group { tick, .. } => *tick,
-        }
-    }
-
     pub(crate) fn members(&self) -> &[Constituent] {
         match self {
             Self::Singleton { member, .. } => std::slice::from_ref(member),
             Self::Group { members, .. } => members,
-        }
-    }
-
-    pub(crate) fn resolution(&self) -> Resolution {
-        match self {
-            Self::Singleton { .. } => Resolution::Detail,
-            Self::Group { members, .. } => Resolution::Coarse {
-                constituents: members.len(),
-            },
         }
     }
 }
