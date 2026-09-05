@@ -421,41 +421,29 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    interruption as `denied`.
 
    In flight: the operator ordered "Build the Claude connector" on
-   2026-09-06. Nothing is edited; Modeling is mapping read-only into the
-   session scratchpad `modeling-claude-connector.md`, then Imagination,
-   Hands, Soul, integrate. Cross-repo: CodexConnector and Ghostlight.
-   Operating assumptions recorded from the coordinator, any of which the
-   operator may overrule before Hands starts: (1) the credential is an
-   Anthropic API key against the Messages API, because the connector
-   contract (consumer-derived exact request bytes, no prompt policy in the
-   daemon) cannot be kept through a subscription path that runs the Claude
-   Code harness; (2) it lives in the CodexConnector repo as a second
-   provider backend and second typed request shape behind one daemon and
-   one wire law, not a sibling repo, because a sibling would fork wire law
-   the doctrine says consumers consume; (3) the Ghostlight inference port
-   learns to lower to the new shape and the Cargo pin moves to the new
-   head. Steward findings before the cut: the pin is `68fe94b` in
-   `Cargo.toml:21`, an ancestor of the CodexConnector checkout `6519289`
-   on branch `codex/ghostlight-release-binding`, five commits behind it;
-   CodexConnector `origin/main` is at `b2e7684` "Admit multiple models per
-   connector caller" and is an ancestor of that checkout: the release-binding
-   branch is ahead of main and main has not been fast-forwarded, so "the
-   new head" must name the branch, or main must be fast-forwarded first. Ghostlight
-   binds Codex-named types in four files (`controllers.rs:25`,
-   `elaboration.rs:31`, `patch.rs:20`, `tool_schema.rs:9`:
-   `CodexProviderRequest`, `CodexInputItem`, `CodexToolDefinition`,
-   `CodexToolChoice`, the client and transport types) behind one
-   `InferencePort::prepare` (`controllers.rs:226`); the default model names
-   in `runtime.rs:427-434` are `gpt-5.6-luna/sol/terra`, so backend
-   selection by model name or by a new setting is a spec question. No
-   Ghostlight steering surface says the connector is Codex-only; the
-   CodexConnector doctrine does (`AGENTS.md` lines 3-4, 12, 19; `README.md`
-   lines 4, 10, 25, 107) and the operator owns that amendment. CodexConnector
-   has no `state/`, `notes/`, handoff, or evidence surface: its Mind is
-   `AGENTS.md` (31 lines, shared with `CLAUDE.md`), `README.md`, and
-   `deployment/idunn`; this task stewards those by proposal only. The
-   smoke runbook describes only the Codex credential path (`codex-home`,
-   `codex app-server` child) and will need a second path.
+   2026-09-06, then overturned both opening assumptions before anything
+   landed. Void: (1) an Anthropic API key against the Messages API, because
+   no API spend is possible now; (2) a second backend inside the
+   CodexConnector repo, because CodexConnector is a deliberate fork of
+   Codex cut so that Epiphany stops compiling Codex, and nothing goes into
+   it. The Modeling map `modeling-claude-connector.md` was stopped mid-map
+   and is void even if partial text is on disk. Standing premise, not yet
+   a design: the credential is the Claude subscription through the Agent
+   SDK or the Claude Code CLI, as a stopgap; the connector is a separate
+   small organ; its shape waits on a read-only research pass
+   (`research-agent-sdk.md` in the session scratchpad) establishing whether
+   the SDK can act as a transport that returns tool calls unexecuted, and
+   on the operator saying go. Nothing is edited in either repo. Facts that
+   survive the overturn: Ghostlight binds Codex-named types in four files
+   (`controllers.rs:25`, `elaboration.rs:31`, `patch.rs:20`,
+   `tool_schema.rs:9`) behind one `InferencePort::prepare`
+   (`controllers.rs:226`); the default model names in `runtime.rs:427-434`
+   are `gpt-5.6-luna/sol/terra`; the Cargo pin is `68fe94b`
+   (`Cargo.toml:21`); CodexConnector `main` was fast-forwarded to `6519289`
+   before the correction, which is the line Ghostlight runs, is harmless,
+   and stays; CodexConnector has no state, notes, handoff, or evidence
+   surface and its doctrine (`AGENTS.md`) is untouched. The smoke runbook
+   describes only the Codex credential path.
 
    Constraint, which this pass may lift: no road run is possible until a
    provider is available. The Codex subscription lapsed mid-build and the
