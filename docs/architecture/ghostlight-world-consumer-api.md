@@ -8,8 +8,11 @@ settle before a consumer patch can reach `AdmitPatch`: caller authority (which
 `CallerId` a consumer lowers to), decode-time size bounds on the patch,
 phase (Draft seed versus Active elaboration), and boundary answering (an
 Active consumer patch that declares must answer a derived boundary like any
-other author). The transport is an inbound `mesh.rs` path, not a fifth
-`execute_world` operation literal.
+other author). The transport is one typed inbound document over a second loopback route
+beside `POST /cultnet/snapshot`, carrying the patch as a nested
+canonical-msgpack byte frame bounded before any item deserializes; it is
+not a fifth `execute_world` operation literal and not an organ of the
+outbound mesh publisher.
 
 ## Objective
 

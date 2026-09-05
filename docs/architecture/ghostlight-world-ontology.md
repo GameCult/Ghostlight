@@ -35,8 +35,9 @@ not from a model agreeing that the world is deep.
 
 ## Current mechanism
 
-Passes 1 through 8 of the widening are landed (`5e53beb`, `e99af63`,
-`d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`, `1852ddd`, `3ed3868`). The sealed kernel holds subjects with a label and a
+Passes 1 through 9 of the widening are landed (`5e53beb`, `e99af63`,
+`d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`, `1852ddd`, `3ed3868`,
+`8aebfb6`). The sealed kernel holds subjects with a label and a
 kind (`Person | Institution | Population`); a `positions` partition with
 `Position`; entities with `container` under containment acyclicity; `Route`
 as an `EdgeRecord` variant carrying `AccessKind { Public, Restricted }`, a
@@ -61,10 +62,13 @@ outcome bands. The ten inhabited operations are `Relocate`, `OpenRoute`,
 `Admit` (same-patch evidence), `Bind`, and `Release`; `apply_operations` is
 the one owner of operation application and conservation, and
 `patch::check_ledger` is the single named conservation check.
-`CommandBody::AdmitPatch` is Draft-only and emits `WorldEffect::PatchAdmitted`
-through the one `admit_resolved` insertion owner shared with genesis. No
-production ingress authors a `WorldPatch` before pass 10; `EvidenceRef::new`
-is `#[cfg(test)]`.
+`CommandBody::AdmitPatch` emits `WorldEffect::PatchAdmitted` through the one
+`admit_resolved` insertion owner shared with genesis; it has no phase gate of
+its own, because in Active the answer rule below bounds what a patch may
+declare. Before pass 10 the only production author of a `WorldPatch` is the
+elaborator lane, which decodes items one at a time under its draft caps; the
+kernel itself bounds a patch nowhere yet. `EvidenceRef::new` is `pub(super)`
+and its production use is bounded by `filter_evidence`.
 
 Character action is a precondition-effect transition. Grants are
 `BTreeMap<DecisionScope, BTreeSet<AffordanceId>>`. `world/action.rs` owns
@@ -161,6 +165,24 @@ and re-prompts with it, bounded by `ELABORATION_ROUND_BUDGET` and the
 `EvidenceSource` receipts (`filter_evidence`); with `NullEvidenceSource` no
 canonical fact and no `Admit` can land from the elaborator lane.
 
+`world/cover.rs` owns the budgeted connected cover. `derive_cover(world, now,
+tick, opportunities, agency_graph, budget)` is pure: it reads the attention
+order that `order_opportunities` owns, reserves the urgency slots for its
+head, rotates the remaining subjects through singleton cells by debt, and
+packs the rest into grouped cells by connected component of the agency graph
+(scheduler-only; reachable from no prompt builder). `Cell`, `Cover`,
+`CellId`, `Resolution`, `TickIndex`, and `AgencyGraph` are derived and
+disposable; the only durable trace of a tick is the `controller_work.v8` row
+(`ControllerWork::Grouped`), custody-separate from world custody. A grouped
+cell is one inference over partitioned per-constituent views returning zero
+or one attributed proposal per constituent; declines are submitted first and
+each proposal commits or is refused on its own scope digest; a coarse
+`NarrativePersona` receives its typed view and does not enter the membrane.
+Cell and constituent command ids are sha256-derived. The runtime's
+`drive_cover_tick` is the single owner of tick cadence, cover derivation,
+the bounded concurrency permit pool, the quarantine flag, and the clock,
+which advances after the cells so every cell in a tick shares one `now`.
+
 Opportunities bind to a `ScopeDigest` over one `scope_components` owner
 (controller assignment, grants, delegated grants, own authority, position,
 incident routes, own holdings, own dependencies, known fact ids, controlled
@@ -168,9 +190,9 @@ channels, own commitments; never `now`, occupancy, forum state, or another
 subject's knowledge); a proposal commits at any later revision with unchanged scope and is
 rejected with `KernelError::ScopeChanged` otherwise. State schema is
 `world_state.elaboration.v1`, commit schema `world_commit.elaboration.v1`,
-controller work `controller_work.v7`; earlier stores are refused. Ghostlight owns a conserved narrative ledger;
+controller work `controller_work.v8`; earlier stores are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
-Pass 9 adds the budgeted cover; pass 10 adds the consumer ingress.
+Pass 10 adds the consumer ingress.
 
 ## The failure this vocabulary is designed against
 
@@ -559,10 +581,9 @@ none of which is a second identity layer:
    quiet world moves without being looked at and without inventing spurious
    crisis.
 3. **Ordered attention.** The scheduler is a pure planner over one revision.
-   It orders opportunities by unresolved pressure, causal exposure,
-   readiness, and time since last opportunity, so every subject receives
-   direct attention within bounded ticks absent a mandatory foreground
-   override.
+   It orders opportunities by unresolved pressure, then time since last
+   opportunity, then subject id, so every subject receives direct attention
+   within bounded ticks absent a mandatory foreground override.
 4. **Cell resolution.** A singleton cell is detail focus: a `NarrativePersona`
    controller receives its prose membrane, an `OperationalAgent` its full
    permissioned view. A grouped cell is one inference over its constituents'
@@ -574,10 +595,34 @@ none of which is a second identity layer:
    change. The cell can emit no cell-owned mutation, and no subject is ever
    spoken for by an arena.
 
-Debt rotation makes the choke fair: with N subjects and budget B, every
-subject reaches a singleton cell within about N/B ticks absent a mandatory
-foreground override, and the deterministic clocks keep its commitments moving
-in between.
+Debt rotation makes the choke fair. With N active subjects, a cell budget B,
+and U urgency slots reserved for the head of the attention order, the
+rotation reserve is R = B − U, and a subject continuously active for
+ceil(N/R) ticks with stable membership is a singleton at least once. ceil(N/B)
+is unreachable whenever N > B, because it would leave subjects uncovered. The
+constituent cap yields for two reasons, when the budget's token capacity is
+short of the active count and when connected components cannot pack inside
+the cell budget even with capacity to spare; the cell budget never yields;
+`oversubscribed` is the operator-visible signal that the cap gave way. The
+cover is pure over its inputs and the attention order is a real input: the
+same subjects in a different order give the same coverage and a different
+singleton set, because urgency and backfill read that order. The deterministic clocks keep commitments moving in
+between.
+
+A grouped cell buys one inference, never one admission rule. Its constituents
+are grouped because they are connected, so they are the subjects most likely
+to contend: each attributed proposal binds to its own scope digest, and when
+the first act lands (a telling changes a co-located listener's knowledge),
+the second is refused `ScopeChanged` rather than committed on a stale scope.
+Declines are submitted first so silent constituents consume their turn
+without contention, and the driver reports submitted against committed per
+cell so the gap is visible. The cover did not create the contention; two
+singleton cells for the same pair would contend identically, and a refused
+constituent costs one admission check rather than one inference. The grouping
+heuristic stays. The open decision for the operator, to be taken with the
+submitted-versus-committed number in hand, is whether a refused constituent
+gets one bounded re-submission against its re-derived opportunity inside the
+same tick, which costs no inference.
 
 ## What stays open
 

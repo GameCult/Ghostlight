@@ -2,11 +2,12 @@
 
 ## Current Subgoal
 
-Plan step 6 pass 9 (budgeted connected cover, scheduler-owned, kernel never
-sees a cell) with Hands in `F:\Projects\Ghostlight-pass9` on `hands/pass9`,
-alongside the pass-8 follow-ups in `F:\Projects\Ghostlight-pass8fu` on
-`hands/pass8-followups`; both from `3ed3868`. Main tip `3ed3868`, passes 1-8
-integrated. Pass 9 must not enable `uuid/v5`.
+Pass-9 follow-ups with Hands in `F:\Projects\Ghostlight-pass9fu` on
+`hands/pass9-followups` from `8aebfb6`, and pass 10 (consumer ingress) design:
+`modeling-pass10.md` on disk, `imagination-pass10.md` in progress under the
+ten rulings. Main tip `8aebfb6`, passes 1-9 integrated. Open operator
+decisions: bounded in-tick re-submission for a refused constituent; Eve
+`world.run_tick` authority.
 
 ## Working Notes
 

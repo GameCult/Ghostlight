@@ -108,7 +108,9 @@ The following are recalculated from committed state and may be discarded:
 
 - subject-local projections;
 - due-owner queues and attention plans;
-- population covers and grouping choices;
+- population covers, cells, cell ids, resolution, tick index, the agency
+  graph, and the cover budget (the only durable trace of a tick is the
+  controller-work row, custody-separate from world custody);
 - action-owner counts and causal-capacity summaries;
 - transcript, news, narration, and operator summaries;
 - Eve/CultUI and CultMesh documents;
@@ -287,7 +289,13 @@ choose a mode opportunistically. The scheduler does choose resolution: a
 and is represented operationally, at coarse resolution, when grouped. That is
 a budget decision, not a mode change; the controller, its scope, and its
 authority are unchanged. A controller changes representation and model
-ergonomics, never permission or commit authority.
+ergonomics, never permission or commit authority. A `NarrativePersona` in a
+grouped cell receives its typed view and nothing from the membrane; it mints
+no `PersonaTurn`, so the immutable-turn-receipt rule does not apply to it.
+The membrane is not weakened; it is not entered. The agency graph is
+scheduler-only and is reachable from no prompt builder; its mailbox request
+is port-narrowed (absent from the controller and elaboration ports), not
+principal-authenticated.
 
 An opportunity is issued to exactly one controller. An untranslated intent or
 infrastructure fault cannot fall through to the other mode, and the same
@@ -433,6 +441,17 @@ The scheduler is a pure planner over one revision. It orders eligible subjects
 using unresolved pressure and time since the last opportunity, with subject id
 as the final tiebreak. Causal exposure is derivable from `dependencies` and is
 not an ordering input. It emits `DecisionOpportunity` values and cannot commit.
+
+`drive_cover_tick` is the single owner of tick cadence, cover derivation, and
+the clock: it derives the cover, runs the cells under a bounded concurrency
+permit pool with a quarantine flag, and advances the clock after the cells so
+every cell in a tick shares one `now` and one tick index. Its budget is
+configuration (`GHOSTLIGHT_COVER_CELL_BUDGET`, `GHOSTLIGHT_COVER_CONSTITUENT_CAP`,
+`GHOSTLIGHT_COVER_URGENCY_SLOTS`, `GHOSTLIGHT_CONTROLLER_MAX_CONCURRENT`,
+`GHOSTLIGHT_TICK_INTERVAL_SECONDS`); changing any is a restart. The five
+controller models are configuration too (`GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL`,
+`_PERSONA_MODEL`, `_INTERPRETER_MODEL`, `_OPERATIONAL_MODEL`,
+`_ELABORATOR_MODEL`), each with a default when absent.
 
 The kernel commits one decision at a time through the mailbox. After each
 commit the planner derives a fresh queue. Parallel inference may speculate on
