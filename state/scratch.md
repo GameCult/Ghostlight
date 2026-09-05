@@ -2,13 +2,11 @@
 
 ## Current Subgoal
 
-Step-9 follow-ups, the only open branch: Hands in
-`F:\Projects\Ghostlight-interruptfu` on `hands/interruption-followups` at
-`d20dc51` (delete the dead fork-D branch; `InferencePurpose`,
-`PreparedInference::purpose`, `InferenceEvent` to `pub(crate)`; driver test end
-to end; interruption section against a witness), then Soul, then gated
-integration (rebase, merge, confirm tip, remove). Main tip `1244595`; steps 9
-and 10 landed. No road run until a provider is available.
+None. Steps 9 and 10 are landed with their follow-ups at `651bfb2`; no
+worktree exists. The next slice opens on the outbound consumer response batch
+with a non-loopback CultMesh lease, the deployment gate, the Eve "overtaken"
+result-state question, or operator decision (b) `world.run_tick` (see
+`notes/fresh-workspace-handoff.md`). No road run until a provider is available.
 
 ## Working Notes
 

@@ -394,15 +394,31 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    `ghostlight-persona-projection`, plus one integration test (Soul ran
    371 / 418).
 
-   In flight, not landed, the only open branch: `hands/interruption-followups`
-   in the worktree `F:\Projects\Ghostlight-interruptfu` at `d20dc51`, no
-   commits yet: delete the dead fork-D branch; widen `InferencePurpose`,
-   `PreparedInference::purpose`, and `InferenceEvent` to `pub(crate)` and
-   write the driver test end to end; and, routed here because this worker
-   owns `controllers.rs`, test the interruption section against a witness,
-   which is untested. New Eve question from Soul, owned by the Eve owner:
-   whether the command-result vocabulary needs a fourth state for
-   "overtaken" instead of rendering an interruption as `denied`.
+   The step-9 follow-ups are integrated at `651bfb2` over `5cd8853`,
+   gated (rebase, merge, confirm the tip, remove the worktree). The push
+   follows a background crate test and the branch read `ahead 1` at the
+   time of writing; `git status -sb` is the witness. Landed: the
+   unreachable `SPEAK_KIND` guard and its branch deleted from
+   `interrupted`, with a comment on why a fresh opportunity always carries
+   speech (the constant itself remains in use elsewhere in
+   `controllers.rs`); `InferencePurpose` (`controllers.rs:92`),
+   `PreparedInference::purpose` (:118), and `InferenceEvent` (:123)
+   widened to `pub(crate)`, with two test seams `fixture_inference_events`
+   (:274) and `fixture_recovery_required` (:220) re-exported from
+   `world/mod.rs`; the driver end-to-end test
+   `a_second_mid_turn_change_reaches_the_drivers_interrupted_arm`
+   (`runtime.rs:3397`) through `run_cover_tick`, with two Interpreter calls
+   and the overtaken turn committing nothing; and
+   `a_witness_between_the_turn_and_submit_carries_no_overheard_row`
+   (`controllers.rs:11377`), closing the step-10 seam Soul left. Baseline
+   at `651bfb2`: 373 test functions in `world/*.rs`, 426 crate source, 13
+   in `ghostlight-persona-projection`, plus one integration test (Hands ran
+   372 / 420 / 13). Steps 9 and 10 are therefore complete with their
+   follow-ups. Nothing is in flight and no worktree exists.
+
+   Open question routed to the Eve owner: whether the command-result
+   vocabulary needs a fourth state for "overtaken" instead of rendering an
+   interruption as `denied`.
 
    Constraint: no road run is possible until a provider is available again.
    The Codex subscription lapsed mid-build and the twelve seeded runs
@@ -411,7 +427,7 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    ports until then; the connector is stopped and the smoke substrate at
    `F:\Projects\Ghostlight-smoke` stays.
 
-   Next seams after the interruption follow-ups: the outbound consumer response
+   Next seams: the outbound consumer response
    batch with the non-loopback CultMesh lease; then the deployment gate
    below. The elaborator swarm's ideas still sit on
    `slot/<world>/<title>/<stamp>` branches and the four ledger directories;

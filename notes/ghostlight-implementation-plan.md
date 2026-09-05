@@ -418,16 +418,17 @@ is exactly what the membrane already lets the subject perceive
 never a raw knowledge row). The joint-per-room Interpreter was considered and
 rejected: the room is not the unit of interruption, the digest is.
 
-What is undone: Fork D (a fresh opportunity with no `Speak` ends the turn
-without spending inference) has no test exercising it — the eight landed
-tests cover a co-located neighbour's speech and an anonymous owner-patch
-move, not that branch. Transfer, route-closing, and elaborator-patch causes
-are not separately tested; only the generic "a change with no author" case
-stands in for them. There is no end-to-end `drive_cover_tick` test carrying
-an interruption through a real tick. No road run has exercised this against
-a live provider — none exists yet for the narrative lane's re-lowering
-round, so the next road run is the first evidence of `interpreter_round`
-producing a real second request.
+What is undone: no road run has exercised the re-lowering against a live
+provider; none exists yet. Closed since landing: fork D's branch was dead by
+construction (grants are insert-only, so a fresh opportunity always carries
+speech) and is deleted; transfer, route-closing, and grant-revocation causes
+are proven anonymous by Soul; a `run_cover_tick` end-to-end carries an
+interruption through a real tick and shows the overtaken turn committing
+nothing; a witness landing mid-turn yields the anonymous knowledge line and
+no overheard row. Still open: the elaborator-patch cause is proven only by
+the shared code path, not by a fixture that drives the elaborator past its
+answer gate; and whether Eve's command-result vocabulary needs a fourth
+state for an overtaken turn is the Eve owner's question.
 
 ### 10. Witnessed events over a place subtree — landed
 
