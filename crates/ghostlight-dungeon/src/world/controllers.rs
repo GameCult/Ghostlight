@@ -4943,8 +4943,13 @@ fn purpose_name(purpose: InferencePurpose) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::patch::{kernel_speak_entry, kernel_speak_grant};
-    use crate::world::{CoverBudget, WorldScaleIntentRef, derive_cover};
+    use crate::world::elaboration::{EvidenceError, EvidenceQuery, EvidenceReceipt};
+    use crate::world::patch::{RECORD_GAP_PATCH_TOOL, kernel_speak_entry, kernel_speak_grant};
+    use crate::world::{
+        CommitmentKind, CoverBudget, CreateJurisdictionIntent, CreateWorldIntent,
+        EntityDeclaration, EntityId, EvidenceRef, JurisdictionKey, Ref, SeedOutcome, SeedPort,
+        TickMinutes, WorldScaleIntentRef, derive_cover,
+    };
 
     /// The granted catalog every controller fixture works against: the
     /// kernel-built Speak entry under a fixture id.
@@ -6034,7 +6039,7 @@ mod tests {
                     title: "Controller Fixture".into(),
                     patch: WorldPatch {
                         declarations: vec![
-                            Declaration::Entity(crate::world::EntityDeclaration {
+                            Declaration::Entity(EntityDeclaration {
                                 handle: DraftHandle::new("commons"),
                                 label: "The Commons".into(),
                                 kind: EntityKind::Place,
@@ -6047,9 +6052,7 @@ mod tests {
                                 controller,
                                 affordances: kernel_speak_grant(),
                                 // Speech needs a room to fill.
-                                position: Some(crate::world::Ref::Draft(DraftHandle::new(
-                                    "commons",
-                                ))),
+                                position: Some(Ref::Draft(DraftHandle::new("commons"))),
                             }),
                         ],
                         operations: Vec::new(),
@@ -7026,8 +7029,8 @@ mod tests {
         tempfile::TempDir,
         WorldMailbox,
         tokio::task::JoinHandle<()>,
-        crate::world::EntityId,
-        crate::world::EntityId,
+        EntityId,
+        EntityId,
     ) {
         let directory = tempfile::tempdir().unwrap();
         let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
@@ -7041,25 +7044,23 @@ mod tests {
                     title: "Elaboration Fixture".into(),
                     patch: WorldPatch {
                         declarations: vec![
-                            Declaration::Entity(crate::world::EntityDeclaration {
+                            Declaration::Entity(EntityDeclaration {
                                 handle: DraftHandle::new("commons"),
                                 label: "The Commons".into(),
                                 kind: EntityKind::Place,
                                 container: None,
                             }),
-                            Declaration::Entity(crate::world::EntityDeclaration {
+                            Declaration::Entity(EntityDeclaration {
                                 handle: DraftHandle::new("road"),
                                 label: "The Unwalked Road".into(),
                                 kind: EntityKind::Place,
-                                container: Some(crate::world::Ref::Draft(DraftHandle::new(
-                                    "commons",
-                                ))),
+                                container: Some(Ref::Draft(DraftHandle::new("commons"))),
                             }),
                             Declaration::Route(crate::world::RouteDeclaration {
                                 handle: DraftHandle::new("lane"),
                                 label: "The Long Lane".into(),
-                                from: crate::world::Ref::Draft(DraftHandle::new("commons")),
-                                to: crate::world::Ref::Draft(DraftHandle::new("road")),
+                                from: Ref::Draft(DraftHandle::new("commons")),
+                                to: Ref::Draft(DraftHandle::new("road")),
                                 access: crate::world::AccessKind::Public,
                                 cost: Cost(1),
                             }),
@@ -7069,9 +7070,7 @@ mod tests {
                                 kind: SubjectKind::Person,
                                 controller: NewController::NarrativePersona,
                                 affordances: kernel_speak_grant(),
-                                position: Some(crate::world::Ref::Draft(DraftHandle::new(
-                                    "commons",
-                                ))),
+                                position: Some(Ref::Draft(DraftHandle::new("commons"))),
                             }),
                         ],
                         operations: Vec::new(),
@@ -7122,7 +7121,7 @@ mod tests {
     #[tokio::test]
     async fn soul_an_elaboration_session_resumes_and_repairs_from_its_mismatch_set() {
         let (_directory, mailbox, task, commons, road) = elaboration_mailbox().await;
-        let jurisdiction = crate::world::JurisdictionKey::PlaceSubtree(commons);
+        let jurisdiction = JurisdictionKey::PlaceSubtree(commons);
         let road_id = serde_json::to_value(road).unwrap();
         let store = Arc::new(RecordingWorkStore {
             persisted: Arc::new(AtomicBool::new(false)),
@@ -7274,10 +7273,7 @@ mod tests {
         );
         // The road's own subtree holds the road's boundary; a leaf with nothing
         // under it and no deficit row is clean.
-        let outcome = runner
-            .step(crate::world::JurisdictionKey::Uncovered)
-            .await
-            .unwrap();
+        let outcome = runner.step(JurisdictionKey::Uncovered).await.unwrap();
         assert_eq!(
             outcome,
             crate::world::elaboration::ElaborationOutcome::Clean
@@ -7303,7 +7299,7 @@ mod tests {
         let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
         let owner = PrincipalId::new("owner");
         let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
-        let mut declarations = vec![Declaration::Entity(crate::world::EntityDeclaration {
+        let mut declarations = vec![Declaration::Entity(EntityDeclaration {
             handle: DraftHandle::new("commons"),
             label: "The Commons".into(),
             kind: EntityKind::Place,
@@ -7316,7 +7312,7 @@ mod tests {
                 kind: SubjectKind::Person,
                 controller,
                 affordances: kernel_speak_grant(),
-                position: Some(crate::world::Ref::Draft(DraftHandle::new("commons"))),
+                position: Some(Ref::Draft(DraftHandle::new("commons"))),
             }));
         }
         let creation = mailbox
@@ -7849,7 +7845,7 @@ mod tests {
         let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
         let mut declarations = Vec::new();
         for (index, controller) in controllers.into_iter().enumerate() {
-            declarations.push(Declaration::Entity(crate::world::EntityDeclaration {
+            declarations.push(Declaration::Entity(EntityDeclaration {
                 handle: DraftHandle::new(&format!("room{index}")),
                 label: format!("Room {index}"),
                 kind: EntityKind::Place,
@@ -7861,9 +7857,7 @@ mod tests {
                 kind: SubjectKind::Person,
                 controller,
                 affordances: kernel_speak_grant(),
-                position: Some(crate::world::Ref::Draft(DraftHandle::new(&format!(
-                    "room{index}"
-                )))),
+                position: Some(Ref::Draft(DraftHandle::new(&format!("room{index}")))),
             }));
         }
         let creation = mailbox
@@ -8288,5 +8282,1105 @@ mod tests {
                 seed_commands: 0,
             }
         );
+    }
+
+    // ---- The seed lane ---------------------------------------------------
+
+    struct SeedFixture {
+        _directory: tempfile::TempDir,
+        mailbox: WorldMailbox,
+        task: tokio::task::JoinHandle<()>,
+        owner: PrincipalId,
+        principal: crate::app_session::VerifiedPrincipalEvidence,
+        sere: EntityId,
+        speak: AffordanceId,
+    }
+
+    /// A Draft world with an authored scale intent: persons wanted in the Low
+    /// Sere, none alive yet, plus the owner's own subject standing in the
+    /// commons, which no declared root covers.
+    async fn seed_mailbox(target: u32) -> SeedFixture {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("seed-owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        mailbox
+            .create_fixture(
+                CreateWorld {
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Seed Fixture".into(),
+                    patch: WorldPatch {
+                        declarations: vec![
+                            Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("commons"),
+                                label: "The Commons".into(),
+                                kind: EntityKind::Place,
+                                container: None,
+                            }),
+                            Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("sere"),
+                                label: "The Low Sere".into(),
+                                kind: EntityKind::Place,
+                                container: None,
+                            }),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("first-person"),
+                                label: "The Owner".into(),
+                                kind: SubjectKind::Person,
+                                controller: NewController::Human {
+                                    principal: owner.clone(),
+                                },
+                                affordances: kernel_speak_grant(),
+                                position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                            }),
+                        ],
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
+                    scale_intent: WorldScaleIntentRef {
+                        targets: BTreeMap::from([(SubjectKind::Person, target)]),
+                        jurisdictions: BTreeMap::from([(DraftHandle::new("sere"), 1000)]),
+                    },
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert_eq!(snapshot.phase, WorldPhase::Draft);
+        let sere = snapshot
+            .places
+            .iter()
+            .find(|place| place.label == "The Low Sere")
+            .expect("the declared root")
+            .id;
+        let speak = snapshot
+            .affordances
+            .iter()
+            .find(|entry| entry.entry.kind.0 == "speak")
+            .expect("the kernel Speak entry")
+            .id;
+        SeedFixture {
+            _directory: directory,
+            mailbox,
+            task,
+            owner,
+            principal: crate::app_session::VerifiedPrincipalEvidence::fixture("seed-owner"),
+            sere,
+            speak,
+        }
+    }
+
+    fn seed_port(fixture: &SeedFixture) -> SeedPort {
+        SeedPort::new(fixture.mailbox.clone(), fixture.principal.clone())
+    }
+
+    /// One session that declares `handles.len()` persons who qualify: a
+    /// controller, the granted Speak entry, a position inside the root, and a
+    /// personal goal each.
+    fn author_persons(
+        receipt: &str,
+        root: EntityId,
+        speak: AffordanceId,
+        handles: &[&str],
+    ) -> Result<InferenceOutput, InferenceFault> {
+        author_across(receipt, speak, &[(root, handles)])
+    }
+
+    /// The same, over more than one jurisdiction root in one patch.
+    fn author_across(
+        receipt: &str,
+        speak: AffordanceId,
+        groups: &[(EntityId, &[&str])],
+    ) -> Result<InferenceOutput, InferenceFault> {
+        let entry = serde_json::to_value(speak).unwrap();
+        let mut calls: Vec<(&str, Value)> = Vec::new();
+        let first = groups
+            .first()
+            .and_then(|(_, handles)| handles.first().copied());
+        for (root, handles) in groups {
+            author_group(&mut calls, *root, &entry, handles, first);
+        }
+        calls.push(("submit", json!({})));
+        tool_round(calls, receipt)
+    }
+
+    fn author_group(
+        calls: &mut Vec<(&'static str, Value)>,
+        root: EntityId,
+        entry: &Value,
+        handles: &[&str],
+        owed: Option<&str>,
+    ) {
+        let place = serde_json::to_value(root).unwrap();
+        for (index, handle) in handles.iter().enumerate() {
+            calls.push((
+                "declare_subject",
+                json!({
+                    "handle": handle,
+                    "label": format!("Sere {handle}"),
+                    "kind": "person",
+                    "controller": {"type": "narrative_persona"},
+                    "affordances": [{"ref": "existing", "value": entry}],
+                    "position": {"ref": "existing", "value": place},
+                }),
+            ));
+            calls.push((
+                "create_commitment",
+                json!({
+                    "subject": {"ref": "draft", "value": handle},
+                    "counterparty": null,
+                    "kind": "goal",
+                    "due": 600,
+                    "period": null,
+                    "checks": [],
+                }),
+            ));
+            // Everyone after the first owes the first something. That is what
+            // leaves the Active elaborator a `MissingStructure` boundary to
+            // answer; a goal cannot, because a goal carrying a counterparty is
+            // refused with `GoalWithCounterparty`.
+            if let Some(owed) = owed.filter(|owed| owed != handle) {
+                let _ = index;
+                calls.push((
+                    "create_commitment",
+                    json!({
+                        "subject": {"ref": "draft", "value": handle},
+                        "counterparty": {"ref": "draft", "value": owed},
+                        "kind": "obligation",
+                        "due": 900,
+                        "period": null,
+                        "checks": [],
+                    }),
+                ));
+            }
+        }
+    }
+
+    fn fresh_store() -> Arc<RecordingWorkStore> {
+        Arc::new(RecordingWorkStore {
+            persisted: Arc::new(AtomicBool::new(false)),
+            work: Mutex::new(BTreeMap::new()),
+        })
+    }
+
+    fn seed_script(rounds: Vec<Result<InferenceOutput, InferenceFault>>) -> Arc<ElaborationScript> {
+        Arc::new(ElaborationScript {
+            outputs: Mutex::new(rounds),
+            seen: Mutex::new(Vec::new()),
+        })
+    }
+
+    /// A fixture Vault that hands back exactly what it was built with, so a
+    /// citation test can name a reference inside and outside the retrieved set
+    /// without a filesystem.
+    struct FixtureVault {
+        receipts: Vec<EvidenceReceipt>,
+    }
+
+    #[async_trait]
+    impl EvidenceSource for FixtureVault {
+        async fn retrieve(
+            &self,
+            _query: &EvidenceQuery,
+        ) -> Result<Vec<EvidenceReceipt>, EvidenceError> {
+            Ok(self.receipts.clone())
+        }
+    }
+
+    fn seed_runner(
+        fixture: &SeedFixture,
+        script: Arc<ElaborationScript>,
+        store: Arc<RecordingWorkStore>,
+        evidence: Arc<dyn EvidenceSource>,
+    ) -> SeedRunner {
+        SeedRunner::new(
+            seed_port(fixture),
+            script,
+            evidence,
+            store,
+            models().elaborator,
+            None,
+        )
+    }
+
+    fn root_deficit(snapshot: &WorldSnapshot, root: EntityId) -> u32 {
+        snapshot
+            .scale_deficit
+            .iter()
+            .find(|row| row.jurisdiction == JurisdictionKey::PlaceSubtree(root))
+            .map_or(0, |row| row.deficit)
+    }
+
+    /// Spec test 4. One session commits one Draft patch as the owner's own act,
+    /// and every subject it declared qualifies.
+    #[tokio::test]
+    async fn a_seed_session_commits_a_draft_patch_as_the_owner() {
+        let fixture = seed_mailbox(6).await;
+        let before = fixture.mailbox.snapshot().await.unwrap();
+        let runner = seed_runner(
+            &fixture,
+            seed_script(vec![author_persons(
+                "seed-round-zero",
+                fixture.sere,
+                fixture.speak,
+                &["digger", "warden"],
+            )]),
+            fresh_store(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.step().await.unwrap(), SeedOutcome::Committed);
+
+        let after = fixture.mailbox.snapshot().await.unwrap();
+        assert_eq!(after.revision, before.revision + 1);
+        assert_eq!(after.phase, WorldPhase::Draft, "a seed never activates");
+        for label in ["Sere digger", "Sere warden"] {
+            let subject = after
+                .subjects
+                .iter()
+                .find(|subject| subject.label == label)
+                .expect("the declared subject");
+            assert!(subject.controller_id.is_some());
+            assert!(!subject.affordances.is_empty());
+            assert_eq!(subject.position, Some(fixture.sere));
+            assert!(
+                subject
+                    .commitments
+                    .iter()
+                    .any(|held| held.kind == CommitmentKind::Goal)
+            );
+            assert!(subject.qualified, "{label} does not reduce the deficit");
+        }
+        assert_eq!(root_deficit(&after, fixture.sere), 4);
+
+        // The commit is the owner's own act, and that is not a convention: the
+        // only unconfined Draft author is `Principal(owner)`, so a port built
+        // on anyone else's evidence is refused by the reducer.
+        let stranger = SeedPort::new(
+            fixture.mailbox.clone(),
+            crate::app_session::VerifiedPrincipalEvidence::fixture("not-the-owner"),
+        );
+        let refused = stranger
+            .submit_seed(
+                CommandId::new(),
+                after.world_id,
+                after.revision,
+                WorldPatch {
+                    declarations: vec![Declaration::Entity(EntityDeclaration {
+                        handle: DraftHandle::new("shed"),
+                        label: "A Shed".into(),
+                        kind: EntityKind::Place,
+                        container: None,
+                    })],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            )
+            .await;
+        assert!(
+            matches!(
+                refused,
+                Err(MailboxError::Kernel(KernelError::Unauthorized))
+            ),
+            "{refused:?}"
+        );
+        drop(stranger);
+
+        drop(runner);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Spec test 5. Termination is derived: the deficit falls as patches land
+    /// and the sweep stops at zero without spending a further inference call.
+    #[tokio::test]
+    async fn the_deficit_falls_as_patches_land_and_the_sweep_stops_at_zero() {
+        let fixture = seed_mailbox(6).await;
+        assert_eq!(
+            root_deficit(&fixture.mailbox.snapshot().await.unwrap(), fixture.sere),
+            6
+        );
+        let scripted = seed_script(vec![
+            author_persons("r0", fixture.sere, fixture.speak, &["a1", "a2"]),
+            author_persons("r1", fixture.sere, fixture.speak, &["b1", "b2"]),
+            author_persons("r2", fixture.sere, fixture.speak, &["c1", "c2"]),
+        ]);
+        let runner = seed_runner(
+            &fixture,
+            scripted.clone(),
+            fresh_store(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.sweep(8).await.unwrap(), SeedOutcome::Clean);
+        assert_eq!(
+            root_deficit(&fixture.mailbox.snapshot().await.unwrap(), fixture.sere),
+            0
+        );
+        assert_eq!(
+            scripted.seen.lock().unwrap().len(),
+            3,
+            "the fourth step is clean and must spend nothing"
+        );
+
+        drop(runner);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Spec test 6. A commit that does not strictly lower its row is a fixed
+    /// point, not a retry.
+    #[tokio::test]
+    async fn a_committed_patch_that_does_not_move_the_deficit_stops_the_row() {
+        let fixture = seed_mailbox(6).await;
+        let scripted = seed_script(vec![tool_round(
+            vec![
+                (
+                    "declare_place",
+                    json!({"handle": "shed", "label": "A Shed", "container": null}),
+                ),
+                ("submit", json!({})),
+            ],
+            "r0",
+        )]);
+        let runner = seed_runner(
+            &fixture,
+            scripted.clone(),
+            fresh_store(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.sweep(4).await.unwrap(), SeedOutcome::NoProgress);
+        assert_eq!(
+            scripted.seen.lock().unwrap().len(),
+            1,
+            "a fixed point spun against the endpoint"
+        );
+
+        drop(runner);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Spec test 7. Seeding is Draft's lane, refused twice: the runner's own
+    /// phase gate spends nothing, and the kernel refuses the port directly
+    /// because an Active patch that declares must answer and this lane cannot
+    /// express an answer.
+    #[tokio::test]
+    async fn a_seed_patch_cannot_be_admitted_in_active_by_the_seed_lane() {
+        let fixture = seed_mailbox(6).await;
+        let mut snapshot = fixture.mailbox.snapshot().await.unwrap();
+        let authenticated =
+            AuthenticatedCaller::fixture(CallerId::Principal(fixture.owner.clone()));
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            fixture
+                .mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: snapshot.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(fixture.owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = fixture.mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+
+        let store = fresh_store();
+        let scripted = seed_script(vec![author_persons(
+            "r0",
+            fixture.sere,
+            fixture.speak,
+            &["late"],
+        )]);
+        let runner = seed_runner(
+            &fixture,
+            scripted.clone(),
+            store.clone(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.step().await.unwrap(), SeedOutcome::NotDraft);
+        assert!(scripted.seen.lock().unwrap().is_empty());
+        assert!(store.work.lock().unwrap().is_empty());
+
+        let refused = seed_port(&fixture)
+            .submit_seed(
+                CommandId::new(),
+                snapshot.world_id,
+                snapshot.revision,
+                WorldPatch {
+                    declarations: vec![Declaration::Entity(EntityDeclaration {
+                        handle: DraftHandle::new("shed"),
+                        label: "A Shed".into(),
+                        kind: EntityKind::Place,
+                        container: None,
+                    })],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            )
+            .await;
+        assert!(
+            matches!(
+                refused,
+                Err(MailboxError::Kernel(KernelError::AnswerRequired))
+            ),
+            "{refused:?}"
+        );
+
+        drop(runner);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Spec test 8. `SeedPort` has two methods. Approve, activate, the clock,
+    /// the operator log, and the agency graph are not among them, so reaching
+    /// for one fails to compile rather than failing a test; what runs here is
+    /// the other half — the body is hardcoded, so the lane cannot express any
+    /// command but an unanswered `AdmitPatch`, and a commit through it moves
+    /// neither the phase, nor the approvals, nor the clock.
+    #[tokio::test]
+    async fn the_seed_lane_cannot_approve_or_activate() {
+        let fixture = seed_mailbox(6).await;
+        let port = seed_port(&fixture);
+        let snapshot = port.snapshot().await.unwrap();
+        assert_eq!(snapshot.phase, WorldPhase::Draft);
+        assert!(snapshot.draft_approvals.is_empty());
+
+        port.submit_seed(
+            CommandId::new(),
+            snapshot.world_id,
+            snapshot.revision,
+            WorldPatch {
+                declarations: vec![Declaration::Entity(EntityDeclaration {
+                    handle: DraftHandle::new("shed"),
+                    label: "A Shed".into(),
+                    kind: EntityKind::Place,
+                    container: None,
+                })],
+                operations: Vec::new(),
+                evidence: Vec::new(),
+            },
+        )
+        .await
+        .unwrap();
+        let after = port.snapshot().await.unwrap();
+        assert_eq!(after.revision, snapshot.revision + 1);
+        assert_eq!(after.phase, WorldPhase::Draft);
+        assert!(after.draft_approvals.is_empty());
+        assert_eq!(after.now, snapshot.now, "the lane moved the clock");
+
+        drop(port);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Spec test 9. Provenance's owner is the runner. A citation outside the
+    /// round's retrieved set is dropped before the kernel sees it, so the
+    /// canonical fact that named it is refused; the same fact citing a
+    /// reference the Vault did return commits.
+    #[tokio::test]
+    async fn a_citation_outside_the_retrieved_set_is_dropped_and_an_uncited_fact_is_refused() {
+        let retrieved = EvidenceReceipt {
+            reference: EvidenceRef::new("Public/Places/Low Sere.md"),
+            excerpt: "The sere runs dry nine months a year.".into(),
+            source: "Low Sere".into(),
+        };
+        let fact = |reference: &str| {
+            tool_round(
+                vec![
+                    (
+                        "declare_fact",
+                        json!({
+                            "handle": "dry",
+                            "label": "The Dry Season",
+                            "statement": "The sere runs dry nine months a year.",
+                            "standing": {"standing": "canonical", "evidence": reference},
+                        }),
+                    ),
+                    ("submit", json!({})),
+                ],
+                "r0",
+            )
+        };
+
+        let forged = seed_mailbox(6).await;
+        let before = forged.mailbox.snapshot().await.unwrap().revision;
+        let refused = seed_runner(
+            &forged,
+            seed_script(vec![fact("Public/Places/Nowhere.md")]),
+            fresh_store(),
+            Arc::new(FixtureVault {
+                receipts: vec![retrieved.clone()],
+            }),
+        );
+        assert_eq!(refused.step().await.unwrap(), SeedOutcome::Rejected);
+        assert_eq!(
+            forged.mailbox.snapshot().await.unwrap().revision,
+            before,
+            "a forged citation minted canon"
+        );
+        drop(refused);
+        drop(forged.mailbox);
+        forged.task.await.unwrap();
+
+        let cited = seed_mailbox(6).await;
+        let before = cited.mailbox.snapshot().await.unwrap().revision;
+        let admitted = seed_runner(
+            &cited,
+            seed_script(vec![fact("Public/Places/Low Sere.md")]),
+            fresh_store(),
+            Arc::new(FixtureVault {
+                receipts: vec![retrieved],
+            }),
+        );
+        // It commits; it declares nobody alive, so the row does not move and
+        // the outcome is the honest fixed point rather than a rejection.
+        assert_eq!(admitted.step().await.unwrap(), SeedOutcome::NoProgress);
+        assert_eq!(
+            cited.mailbox.snapshot().await.unwrap().revision,
+            before + 1,
+            "the cited fact was refused"
+        );
+        drop(admitted);
+        drop(cited.mailbox);
+        cited.task.await.unwrap();
+    }
+
+    /// Spec test 10. A rejection reopens the same derived id with the kernel's
+    /// complete mismatch set, and a fresh runner over the same store resumes it
+    /// rather than opening a second session.
+    #[tokio::test]
+    async fn a_seed_session_resumes_its_checkpoint_under_the_same_derived_id() {
+        let fixture = seed_mailbox(6).await;
+        let store = fresh_store();
+        let entry = serde_json::to_value(fixture.speak).unwrap();
+        let scripted = seed_script(vec![
+            // A subject standing in a handle nothing declares.
+            tool_round(
+                vec![
+                    (
+                        "declare_subject",
+                        json!({
+                            "handle": "digger",
+                            "label": "Sere digger",
+                            "kind": "person",
+                            "controller": {"type": "narrative_persona"},
+                            "affordances": [{"ref": "existing", "value": entry}],
+                            "position": {"ref": "draft", "value": "nowhere"},
+                        }),
+                    ),
+                    ("submit", json!({})),
+                ],
+                "r0",
+            ),
+            author_persons("r1", fixture.sere, fixture.speak, &["digger"]),
+        ]);
+        let first = seed_runner(
+            &fixture,
+            scripted.clone(),
+            store.clone(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(first.step().await.unwrap(), SeedOutcome::Rejected);
+        drop(first);
+
+        let (command_id, prompt) = {
+            let stored = store.work.lock().unwrap();
+            assert_eq!(stored.len(), 1, "one session, one row");
+            let ControllerWork::Seed(SeedCheckpoint::SeedInFlight {
+                command_id,
+                last_mismatches,
+                agent_prompt,
+                completed,
+                ..
+            }) = stored.values().next().unwrap().clone()
+            else {
+                panic!("the rejection did not reopen the session for repair");
+            };
+            assert!(!last_mismatches.is_empty(), "the repair set is empty");
+            assert!(completed.is_empty(), "a rejected round kept its evidence");
+            (command_id, agent_prompt)
+        };
+        assert!(
+            prompt.contains("Your previous patch was refused"),
+            "{prompt}"
+        );
+        assert!(prompt.contains("You are seeding a world before it opens"));
+        assert!(prompt.contains("holds a goal commitment"));
+
+        let second = seed_runner(
+            &fixture,
+            scripted,
+            store.clone(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(second.step().await.unwrap(), SeedOutcome::Committed);
+        {
+            let stored = store.work.lock().unwrap();
+            assert_eq!(stored.len(), 1, "the resume opened a second row");
+            assert_eq!(stored.values().next().unwrap().command_id(), command_id);
+        }
+
+        drop(second);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Spec test 16. A v9 row is refused at open beside the pinned v8 and v7
+    /// refusals; a seed checkpoint written over another lane's row under one
+    /// command id is a mode conflict; cross-lane progression is false; and a
+    /// first write that is not the lane's initial stage is refused.
+    #[tokio::test]
+    async fn a_controller_work_row_written_before_this_pass_is_refused() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("controller-work.cc");
+        let command_id = CommandId::new();
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let work = operational_in_flight(
+            command_id,
+            &opportunity,
+            "Hold the bridge.",
+            "operational-model",
+            vec![],
+        );
+        {
+            let mut store = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
+            store
+                .push(&CultCacheEnvelope {
+                    key: store_key(command_id).unwrap(),
+                    r#type: "controller_work.v9".into(),
+                    payload: rmp_serde::to_vec_named(&work).unwrap(),
+                    stored_at: Utc::now().to_rfc3339(),
+                    schema_id: Some("ghostlight.controller_work.v9".into()),
+                })
+                .unwrap();
+        }
+        let Err(error) = CultCacheControllerWorkStore::open(&path) else {
+            panic!("a v9 row was accepted by the v10 store");
+        };
+        assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
+
+        // A real seed row, taken from a session that committed.
+        let fixture = seed_mailbox(6).await;
+        let store = fresh_store();
+        let runner = seed_runner(
+            &fixture,
+            seed_script(vec![author_persons(
+                "r0",
+                fixture.sere,
+                fixture.speak,
+                &["digger"],
+            )]),
+            store.clone(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.step().await.unwrap(), SeedOutcome::Committed);
+        drop(runner);
+        let seed_row = store.work.lock().unwrap().values().next().unwrap().clone();
+        let seed_command = seed_row.command_id();
+
+        // Another lane's row under the same command id. The store is seeded
+        // directly, because what is under test is the conflict on write and not
+        // the other lane's own entry path.
+        let other = operational_in_flight(
+            seed_command,
+            &opportunity,
+            "Hold the bridge.",
+            "operational-model",
+            vec![],
+        );
+        let conflicted = fresh_store();
+        conflicted
+            .work
+            .lock()
+            .unwrap()
+            .insert(seed_command, other.clone());
+        assert!(matches!(
+            conflicted.persist(&seed_row).await,
+            Err(ControllerWorkStoreError::CommandModeConflict)
+        ));
+        assert!(!valid_controller_work_progression(&other, &seed_row));
+        assert!(!valid_controller_work_progression(&seed_row, &other));
+
+        // The row the committing session left is `ReadyToSubmit`, which is not
+        // the lane's initial stage, so a store that has never seen the session
+        // refuses it.
+        assert!(matches!(
+            seed_row,
+            ControllerWork::Seed(SeedCheckpoint::ReadyToSubmit { .. })
+        ));
+        assert!(fresh_store().persist(&seed_row).await.is_err());
+
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
+    }
+
+    /// Spec test 17. The whole road: a world is created with a two-root scale
+    /// intent, seeded to zero deficit, approved, activated, elaborated, ticked,
+    /// and then replayed from its own journal to the same state digest.
+    #[tokio::test]
+    async fn a_world_is_created_seeded_approved_activated_and_replays() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let owner = PrincipalId::new("seed-owner");
+        let principal = crate::app_session::VerifiedPrincipalEvidence::fixture("seed-owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let (mailbox, task) = WorldMailbox::open(&path).unwrap();
+        mailbox
+            .create(
+                CreateWorldIntent {
+                    id: CommandId::new(),
+                    title: "The Whole Road".into(),
+                    human_subject_label: "The Owner".into(),
+                    narrative_persona_label: None,
+                    operational_agent_label: None,
+                    targets: BTreeMap::from([(SubjectKind::Person, 4)]),
+                    jurisdictions: vec![
+                        CreateJurisdictionIntent {
+                            handle: "sere".into(),
+                            label: "The Low Sere".into(),
+                            permille: 500,
+                        },
+                        CreateJurisdictionIntent {
+                            handle: "gate".into(),
+                            label: "The Rain Gate".into(),
+                            permille: 500,
+                        },
+                    ],
+                },
+                &principal,
+            )
+            .await
+            .unwrap();
+        let genesis = mailbox.snapshot().await.unwrap();
+        assert_eq!(genesis.scale_deficit.len(), 2, "one row per declared root");
+        assert!(
+            genesis
+                .scale_deficit
+                .iter()
+                .all(|row| row.target == 2 && row.deficit == 2)
+        );
+        let root = |label: &str| {
+            genesis
+                .places
+                .iter()
+                .find(|place| place.label == label)
+                .expect("the declared root")
+                .id
+        };
+        let (sere, gate) = (root("The Low Sere"), root("The Rain Gate"));
+        let speak = genesis
+            .affordances
+            .iter()
+            .find(|entry| entry.entry.kind.0 == "speak")
+            .unwrap()
+            .id;
+
+        let runner = SeedRunner::new(
+            SeedPort::new(mailbox.clone(), principal.clone()),
+            // One patch fills both roots. Which row the runner selects first is
+            // the snapshot's order and not this test's business; a session that
+            // answers both cannot pick wrong.
+            seed_script(vec![author_across(
+                "r0",
+                speak,
+                &[(sere, &["s1", "s2"]), (gate, &["g1", "g2"])],
+            )]),
+            Arc::new(NullEvidenceSource),
+            fresh_store(),
+            models().elaborator,
+            None,
+        );
+        assert_eq!(runner.sweep(3).await.unwrap(), SeedOutcome::Clean);
+        let seeded = mailbox.snapshot().await.unwrap();
+        assert!(
+            seeded.scale_deficit.iter().all(|row| row.deficit == 0),
+            "{:?}",
+            seeded.scale_deficit
+        );
+        for label in ["Sere s1", "Sere s2", "Sere g1", "Sere g2"] {
+            assert!(
+                seeded
+                    .subjects
+                    .iter()
+                    .any(|subject| subject.label == label && subject.qualified)
+            );
+        }
+        drop(runner);
+
+        let mut snapshot = seeded;
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: snapshot.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        // The seeded goals have no counterparty who can command or litigate
+        // them, which is exactly the boundary the elaborator exists to answer.
+        assert!(
+            !snapshot.boundaries.is_empty(),
+            "the seed manufactured nothing for the elaborator"
+        );
+
+        let elaborator = ElaborationRunner::new(
+            ElaborationPort::new(mailbox.clone()),
+            // One text-only round per jurisdiction: the sweep reaches every
+            // root the intent named plus the uncovered residual, and each ends
+            // in `NoPatch` without a tool call. What is under test here is that
+            // the elaborator has something to be given, not what it does with
+            // it.
+            seed_script(
+                (0..4)
+                    .map(|round| {
+                        output(
+                            vec![InferenceEvent::Text("nothing to add".into())],
+                            &format!("e{round}"),
+                        )
+                    })
+                    .collect(),
+            ),
+            Arc::new(NullEvidenceSource),
+            fresh_store(),
+            models().elaborator,
+        );
+        elaborator.sweep().await.unwrap();
+        drop(elaborator);
+
+        mailbox
+            .submit_clock(CommandId::new(), TickMinutes::new(60).unwrap())
+            .await
+            .unwrap();
+        let final_snapshot = mailbox.snapshot().await.unwrap();
+        assert!(final_snapshot.now.0 >= 60);
+        drop(mailbox);
+        task.await.unwrap();
+
+        // Replay: the journal alone reproduces the state, digest for digest.
+        let (reopened, replay_task) = WorldMailbox::open(&path).unwrap();
+        let replayed = reopened.snapshot().await.unwrap();
+        assert_eq!(replayed.state_digest, final_snapshot.state_digest);
+        assert_eq!(replayed.revision, final_snapshot.revision);
+        assert_eq!(replayed.subjects.len(), final_snapshot.subjects.len());
+        assert_eq!(replayed.scale_deficit, final_snapshot.scale_deficit);
+        drop(reopened);
+        replay_task.await.unwrap();
+    }
+
+    /// Spec test 2. A create naming two roots yields a world whose places
+    /// include both, whose deficit carries one row per `(kind, root)`, and
+    /// whose weights divide the target. The two ways to author a bad intent are
+    /// refused by the resolver, in its complete mismatch set, rather than
+    /// pre-checked at ingress.
+    #[tokio::test]
+    async fn the_intents_roots_are_declared_and_covered() {
+        let directory = tempfile::tempdir().unwrap();
+        let owner = PrincipalId::new("seed-owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let genesis = |intent: WorldScaleIntentRef, roots: &[&str]| CreateWorld {
+            id: CommandId::new(),
+            owner: owner.clone(),
+            title: "Two Roots".into(),
+            patch: WorldPatch {
+                declarations: std::iter::once(Declaration::Entity(EntityDeclaration {
+                    handle: DraftHandle::new("commons"),
+                    label: "The Commons".into(),
+                    kind: EntityKind::Place,
+                    container: None,
+                }))
+                .chain(roots.iter().map(|handle| {
+                    Declaration::Entity(EntityDeclaration {
+                        handle: DraftHandle::new(*handle),
+                        label: format!("The {handle}"),
+                        kind: EntityKind::Place,
+                        container: None,
+                    })
+                }))
+                .chain(std::iter::once(Declaration::Subject(SubjectDeclaration {
+                    handle: DraftHandle::new("first-person"),
+                    label: "The Owner".into(),
+                    kind: SubjectKind::Person,
+                    controller: NewController::Human {
+                        principal: owner.clone(),
+                    },
+                    affordances: kernel_speak_grant(),
+                    position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                })))
+                .collect(),
+                operations: Vec::new(),
+                evidence: Vec::new(),
+            },
+            scale_intent: intent,
+        };
+
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("two-roots.cc")).unwrap();
+        mailbox
+            .create_fixture(
+                genesis(
+                    WorldScaleIntentRef {
+                        targets: BTreeMap::from([(SubjectKind::Person, 10)]),
+                        jurisdictions: BTreeMap::from([
+                            (DraftHandle::new("sere"), 700),
+                            (DraftHandle::new("gate"), 300),
+                        ]),
+                    },
+                    &["sere", "gate"],
+                ),
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let snapshot = mailbox.snapshot().await.unwrap();
+        for label in ["The sere", "The gate"] {
+            assert!(snapshot.places.iter().any(|place| place.label == label));
+        }
+        assert_eq!(snapshot.scale_deficit.len(), 2);
+        let mut targets: Vec<u32> = snapshot
+            .scale_deficit
+            .iter()
+            .map(|row| {
+                assert_eq!(row.kind, SubjectKind::Person);
+                assert_eq!(row.deficit, row.target, "nothing is alive at genesis");
+                row.target
+            })
+            .collect();
+        targets.sort_unstable();
+        assert_eq!(targets, vec![3, 7], "the weights did not divide the target");
+        drop(mailbox);
+        task.await.unwrap();
+
+        // A root the genesis patch does not declare.
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("unknown.cc")).unwrap();
+        let refused = mailbox
+            .create_fixture(
+                genesis(
+                    WorldScaleIntentRef {
+                        targets: BTreeMap::from([(SubjectKind::Person, 10)]),
+                        jurisdictions: BTreeMap::from([(DraftHandle::new("nowhere"), 1000)]),
+                    },
+                    &["sere"],
+                ),
+                &authenticated,
+            )
+            .await;
+        let Err(MailboxError::Kernel(KernelError::PatchRejected(mismatches))) = refused else {
+            panic!("an undeclared jurisdiction root was admitted");
+        };
+        assert!(
+            mismatches.iter().any(|mismatch| matches!(
+                mismatch,
+                crate::world::Mismatch::UnknownJurisdictionRoot { .. }
+            )),
+            "{mismatches:?}"
+        );
+        drop(mailbox);
+        task.await.unwrap();
+
+        // Weights distribute the target and never raise it.
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("heavy.cc")).unwrap();
+        let refused = mailbox
+            .create_fixture(
+                genesis(
+                    WorldScaleIntentRef {
+                        targets: BTreeMap::from([(SubjectKind::Person, 10)]),
+                        jurisdictions: BTreeMap::from([
+                            (DraftHandle::new("sere"), 700),
+                            (DraftHandle::new("gate"), 700),
+                        ]),
+                    },
+                    &["sere", "gate"],
+                ),
+                &authenticated,
+            )
+            .await;
+        let Err(MailboxError::Kernel(KernelError::PatchRejected(mismatches))) = refused else {
+            panic!("permille weights over the whole were admitted");
+        };
+        assert!(
+            mismatches.iter().any(|mismatch| matches!(
+                mismatch,
+                crate::world::Mismatch::ScaleWeightsExceedWhole
+            )),
+            "{mismatches:?}"
+        );
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Spec test 3. The world's first person belongs to no jurisdiction's
+    /// population target: it stands in the commons, which no declared root
+    /// covers, so it counts in `Uncovered` and reduces nothing.
+    #[tokio::test]
+    async fn the_owner_subject_lands_uncovered() {
+        let fixture = seed_mailbox(6).await;
+        let before = fixture.mailbox.snapshot().await.unwrap();
+        let owner_subject = before
+            .subjects
+            .iter()
+            .find(|subject| subject.label == "The Owner")
+            .expect("the first person");
+        assert!(
+            !owner_subject.qualified,
+            "the first person holds no goal and cannot count yet"
+        );
+        assert_eq!(before.scale_deficit.len(), 1, "one root, one row");
+
+        // Give it a goal through the same lane a seed uses, and it appears in
+        // the residual rather than in the root's row.
+        let runner = seed_runner(
+            &fixture,
+            seed_script(vec![tool_round(
+                vec![
+                    (
+                        "create_commitment",
+                        json!({
+                            "subject": {"ref": "existing", "value": serde_json::to_value(owner_subject.id).unwrap()},
+                            "counterparty": null,
+                            "kind": "goal",
+                            "due": 600,
+                            "period": null,
+                            "checks": [],
+                        }),
+                    ),
+                    ("submit", json!({})),
+                ],
+                "r0",
+            )]),
+            fresh_store(),
+            Arc::new(NullEvidenceSource),
+        );
+        assert_eq!(runner.step().await.unwrap(), SeedOutcome::NoProgress);
+        let after = fixture.mailbox.snapshot().await.unwrap();
+        let residual = after
+            .scale_deficit
+            .iter()
+            .find(|row| row.jurisdiction == JurisdictionKey::Uncovered)
+            .expect("the uncovered residual");
+        assert_eq!(residual.qualified, 1);
+        assert_eq!(residual.target, 0, "the first person raised a target");
+        assert_eq!(
+            root_deficit(&after, fixture.sere),
+            6,
+            "the first person reduced a root's shortfall"
+        );
+
+        drop(runner);
+        drop(fixture.mailbox);
+        fixture.task.await.unwrap();
     }
 }

@@ -64,6 +64,15 @@ impl VerifiedPrincipalEvidence {
     pub(crate) fn account_subject_hash(&self) -> &str {
         &self.account_subject_hash
     }
+
+    /// Test-only. Production keeps exactly one minter — a live cookie resolved
+    /// by `account_for_cookie` — and this constructor is compiled out of it.
+    #[cfg(test)]
+    pub(crate) fn fixture(account_subject_hash: impl Into<String>) -> Self {
+        Self {
+            account_subject_hash: account_subject_hash.into(),
+        }
+    }
 }
 
 pub(crate) struct AppSessionOwner {

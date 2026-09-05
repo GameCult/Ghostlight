@@ -3338,15 +3338,18 @@ mod tests {
         );
     }
 
-    /// The local live smoke: the production tick driver, elaboration sweep,
-    /// and clock against a real CodexConnector, on a genesis world, for a
-    /// configured number of ticks, writing what the operator would see to a
-    /// log. Everything else in this module proves the machine under fixture
-    /// ports; this is the one place the road is tested. It asserts only that
-    /// the loop ran; the log is the deliverable.
+    /// Spec test 18. The local live smoke: a world created with a real scale
+    /// intent, seeded from a real Vault until its deficit is zero or the
+    /// session budget is spent, then approved, activated, and ticked by the
+    /// production tick driver, elaboration sweep, and clock against a real
+    /// CodexConnector. Everything else in this module proves the machine under
+    /// fixture ports; this is the one place the road is tested. It asserts only
+    /// that the loop ran; the log is the deliverable — patches committed,
+    /// deficit per round, subjects qualified, and the prose a tick produces
+    /// from a world that now has people in it.
     #[tokio::test]
-    #[ignore = "requires a running CodexConnector; see GHOSTLIGHT_SMOKE_* environment"]
-    async fn live_smoke_ticks_a_genesis_world_against_the_connector() {
+    #[ignore = "requires a running CodexConnector and a vault; see GHOSTLIGHT_SMOKE_* environment"]
+    async fn live_smoke_seeds_then_ticks_a_world_against_the_connector() {
         let env = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("{name} is required"));
         let live = LiveController {
             endpoint: env("GHOSTLIGHT_CONTROLLER_CONNECTOR").parse().unwrap(),
@@ -3369,12 +3372,115 @@ mod tests {
             log.flush().unwrap();
         };
 
+        let seed_sessions: usize = env("GHOSTLIGHT_SMOKE_SEED_SESSIONS").parse().unwrap();
+        let seed_target: u32 = env("GHOSTLIGHT_SMOKE_SEED_TARGET").parse().unwrap();
+        let vault_scope = std::env::var("GHOSTLIGHT_SMOKE_VAULT_SCOPE").unwrap_or_default();
+        let brief = std::env::var("GHOSTLIGHT_SMOKE_SEED_BRIEF").ok();
+        // Read here rather than only inside `seed_once`, so a misconfigured run
+        // fails at the top instead of after the first paid session.
+        let _ = env(SEED_VAULT_ROOT_ENVIRONMENT);
+
         let fixture = fixture_with(Some(live)).await;
         let state = &fixture.state;
-        active_two_cell_world(state, &fixture.cookie).await;
-        let snapshot = state.world.snapshot().await.unwrap();
+        two_cell_world(
+            state,
+            &fixture.cookie,
+            BTreeMap::from([(SubjectKind::Person, seed_target)]),
+            vec![CreateJurisdictionIntent {
+                handle: "seed_root".into(),
+                label: env("GHOSTLIGHT_SMOKE_SEED_ROOT_LABEL"),
+                permille: 1000,
+            }],
+            false,
+        )
+        .await;
+
+        let principal = state
+            .sessions
+            .lock()
+            .await
+            .account_for_cookie(&fixture.cookie, Utc::now())
+            .unwrap()
+            .expect("the fixture cookie names a live session");
+        let draft = state.world.snapshot().await.unwrap();
         line(format!(
-            "genesis world={:?} revision={} phase={:?} subjects={} opportunities={} now={:?} boundaries={} deficit_rows={}",
+            "draft world={:?} revision={} deficit_rows={} shortfall={:?}",
+            draft.world_id,
+            draft.revision,
+            draft.scale_deficit.len(),
+            crate::world::select_row(&draft)
+        ));
+        for round in 1..=seed_sessions {
+            let before = state.world.snapshot().await.unwrap();
+            if crate::world::select_row(&before).is_none() {
+                line(format!("seed round {round} skipped: no shortfall left"));
+                break;
+            }
+            let started = std::time::Instant::now();
+            let outcome = seed_once(
+                state,
+                &principal,
+                &before,
+                SeedPayload {
+                    vault_scope: vault_scope.clone(),
+                    brief: brief.clone(),
+                },
+            )
+            .await;
+            let after = state.world.snapshot().await.unwrap();
+            line(format!(
+                "seed round {round} took={:?} outcome={:?} revision {}->{} patches={} qualified={} rows={:?}",
+                started.elapsed(),
+                outcome.as_ref().map(|value| value.name()),
+                before.revision,
+                after.revision,
+                after.revision.saturating_sub(1),
+                after
+                    .subjects
+                    .iter()
+                    .filter(|subject| subject.qualified)
+                    .count(),
+                after
+                    .scale_deficit
+                    .iter()
+                    .map(|row| (row.kind, row.target, row.qualified, row.deficit))
+                    .collect::<Vec<_>>()
+            ));
+            if !matches!(outcome, Ok(SeedOutcome::Committed)) {
+                break;
+            }
+        }
+        for subject in &state.world.snapshot().await.unwrap().subjects {
+            line(format!(
+                "  seeded {} kind={:?} mode={:?} grants={} qualified={}",
+                subject.label,
+                subject.kind,
+                subject.controller_mode,
+                subject.affordances.len(),
+                subject.qualified
+            ));
+        }
+
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            let snapshot = state.world.snapshot().await.unwrap();
+            state
+                .world
+                .submit_principal(
+                    PrincipalCommandIntent {
+                        id: CommandId::new(),
+                        world_id: snapshot.world_id,
+                        expected_revision: snapshot.revision,
+                        body,
+                    },
+                    &principal,
+                )
+                .await
+                .unwrap();
+        }
+        let snapshot = state.world.snapshot().await.unwrap();
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        line(format!(
+            "activated world={:?} revision={} phase={:?} subjects={} opportunities={} now={:?} boundaries={} deficit_rows={}",
             snapshot.world_id,
             snapshot.revision,
             snapshot.phase,
@@ -3444,5 +3550,329 @@ mod tests {
             final_snapshot.revision > snapshot.revision,
             "the clock alone must move the revision"
         );
+    }
+
+    // ---- The seed command ------------------------------------------------
+
+    /// Spec test 1. `world_create.v1` is not kept alive beside v2: an
+    /// invocation announcing it dies at validation before any handler runs, and
+    /// a payload that announces v2 but omits the scale target is a payload
+    /// error rather than a defaulted empty intent. Neither creates a world.
+    #[tokio::test]
+    async fn a_v1_create_payload_is_refused() {
+        let fixture = fixture().await;
+        let stale = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v1",
+                0,
+                json!({"title":"Stale World","subject_label":"Operator"}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(stale["state"], "denied");
+        assert!(current_world(&fixture.state).await.unwrap().is_none());
+
+        let partial = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v2",
+                0,
+                json!({"title":"Half World","subject_label":"Operator"}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(partial["state"], "denied");
+        assert!(
+            current_world(&fixture.state).await.unwrap().is_none(),
+            "a v2 payload with no scale target created a world anyway"
+        );
+    }
+
+    /// Every `control.button` in a surface, at whatever depth.
+    fn surface_buttons(node: &Value, into: &mut Vec<String>) {
+        if node["kind"] == "control.button"
+            && let Some(command) = node["props"]["command"].as_str()
+        {
+            into.push(command.to_owned());
+        }
+        for child in node["children"].as_array().into_iter().flatten() {
+            surface_buttons(child, into);
+        }
+    }
+
+    /// Spec test 11. An operation can be emitted by the panel, handled by
+    /// `execute_world`, and still be dead because `operation_schema` does not
+    /// name it — which is exactly what `world.advance_time` was. Every button
+    /// the panel emits and every descriptor it advertises must resolve, and the
+    /// descriptor's schema must be the one validation will demand.
+    #[tokio::test]
+    async fn every_operation_the_panel_emits_has_a_schema() {
+        let fixture = fixture().await;
+        let owner = fixture
+            .state
+            .sessions
+            .lock()
+            .await
+            .account_for_cookie(&fixture.cookie, Utc::now())
+            .unwrap()
+            .unwrap()
+            .account_subject_hash()
+            .to_owned();
+        let stranger = "someone-else";
+        let cover = eve::CoverPanel {
+            cells: 240,
+            constituent_cap: 24,
+            urgency_slots: 36,
+            last: None,
+        };
+
+        let mut surfaces = vec![eve::authenticated_surface(&owner, None, &[], &cover).unwrap()];
+        two_cell_world(
+            &fixture.state,
+            &fixture.cookie,
+            BTreeMap::from([(SubjectKind::Person, 4)]),
+            vec![CreateJurisdictionIntent {
+                handle: "sere".into(),
+                label: "The Low Sere".into(),
+                permille: 1000,
+            }],
+            false,
+        )
+        .await;
+        let draft = fixture.state.world.snapshot().await.unwrap();
+        assert_eq!(draft.phase, WorldPhase::Draft);
+        for account in [owner.as_str(), stranger] {
+            surfaces.push(eve::authenticated_surface(account, Some(&draft), &[], &cover).unwrap());
+        }
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            let snapshot = fixture.state.world.snapshot().await.unwrap();
+            let principal = fixture
+                .state
+                .sessions
+                .lock()
+                .await
+                .account_for_cookie(&fixture.cookie, Utc::now())
+                .unwrap()
+                .unwrap();
+            fixture
+                .state
+                .world
+                .submit_principal(
+                    PrincipalCommandIntent {
+                        id: CommandId::new(),
+                        world_id: snapshot.world_id,
+                        expected_revision: snapshot.revision,
+                        body,
+                    },
+                    &principal,
+                )
+                .await
+                .unwrap();
+        }
+        let active = fixture.state.world.snapshot().await.unwrap();
+        assert_eq!(active.phase, WorldPhase::Active);
+        for account in [owner.as_str(), stranger] {
+            surfaces.push(eve::authenticated_surface(account, Some(&active), &[], &cover).unwrap());
+        }
+        surfaces.push(eve::anonymous_surface());
+
+        let mut seen = 0usize;
+        for surface in &surfaces {
+            let mut buttons = Vec::new();
+            surface_buttons(&surface["surface"]["root"], &mut buttons);
+            assert!(!buttons.is_empty());
+            for command in &buttons {
+                assert!(
+                    eve::operation_schema(command).is_some(),
+                    "the panel emits {command}, which Ghostlight does not advertise"
+                );
+                seen += 1;
+            }
+            for descriptor in surface["commands"].as_array().unwrap() {
+                let command = descriptor["command"].as_str().unwrap();
+                assert_eq!(
+                    eve::operation_schema(command),
+                    descriptor["payloadSchema"].as_str(),
+                    "the descriptor for {command} names a schema validation will refuse"
+                );
+            }
+        }
+        assert!(seen > 5, "the walk found almost nothing to check");
+    }
+
+    /// Spec test 12. Seeding is the owner's lane and Draft's lane, and both
+    /// refusals land before the request reaches a paid endpoint or a vault.
+    #[tokio::test]
+    async fn world_seed_is_owner_only_and_draft_only_before_it_spends_anything() {
+        let fixture = fixture().await;
+        let stranger = fixture
+            .state
+            .sessions
+            .lock()
+            .await
+            .create_session(heimdall::VerifiedSessionAdmission::fixture(
+                "stranger-account",
+                "heimdall-stranger",
+                1,
+                Utc::now() + chrono::Duration::hours(1),
+                Utc::now() + chrono::Duration::days(1),
+                "stranger-refresh",
+            ))
+            .unwrap();
+        two_cell_world(
+            &fixture.state,
+            &fixture.cookie,
+            BTreeMap::from([(SubjectKind::Person, 4)]),
+            vec![CreateJurisdictionIntent {
+                handle: "sere".into(),
+                label: "The Low Sere".into(),
+                permille: 1000,
+            }],
+            false,
+        )
+        .await;
+        let draft = fixture.state.world.snapshot().await.unwrap();
+
+        // The vault root is deliberately unset: neither refusal may reach it.
+        unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
+        let denied = post(
+            &fixture.state,
+            &stranger,
+            invocation(
+                "world.seed",
+                "ghostlight.world_seed.v1",
+                draft.revision + 1,
+                json!({}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(denied["state"], "denied");
+        assert!(
+            denied["message"].as_str().unwrap().contains("owner"),
+            "{denied}"
+        );
+
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            let snapshot = fixture.state.world.snapshot().await.unwrap();
+            let principal = fixture
+                .state
+                .sessions
+                .lock()
+                .await
+                .account_for_cookie(&fixture.cookie, Utc::now())
+                .unwrap()
+                .unwrap();
+            fixture
+                .state
+                .world
+                .submit_principal(
+                    PrincipalCommandIntent {
+                        id: CommandId::new(),
+                        world_id: snapshot.world_id,
+                        expected_revision: snapshot.revision,
+                        body,
+                    },
+                    &principal,
+                )
+                .await
+                .unwrap();
+        }
+        let active = fixture.state.world.snapshot().await.unwrap();
+        let refused = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.seed",
+                "ghostlight.world_seed.v1",
+                active.revision + 1,
+                json!({}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(refused["state"], "accepted");
+        assert_eq!(refused["receipt"]["outcome"], "not_draft");
+        assert_eq!(
+            fixture.state.world.snapshot().await.unwrap().revision,
+            active.revision,
+            "a refused seed still moved the world"
+        );
+    }
+
+    /// Spec test 13. The card's rows are the deficit rows, and the shortfall it
+    /// names is the row the runner will actually select.
+    #[tokio::test]
+    async fn the_seed_card_projects_the_deficit_it_will_answer() {
+        let fixture = fixture().await;
+        let owner = fixture
+            .state
+            .sessions
+            .lock()
+            .await
+            .account_for_cookie(&fixture.cookie, Utc::now())
+            .unwrap()
+            .unwrap()
+            .account_subject_hash()
+            .to_owned();
+        two_cell_world(
+            &fixture.state,
+            &fixture.cookie,
+            BTreeMap::from([(SubjectKind::Person, 9)]),
+            vec![CreateJurisdictionIntent {
+                handle: "sere".into(),
+                label: "The Low Sere".into(),
+                permille: 1000,
+            }],
+            false,
+        )
+        .await;
+        let draft = fixture.state.world.snapshot().await.unwrap();
+        let surface = eve::authenticated_surface(
+            &owner,
+            Some(&draft),
+            &[],
+            &eve::CoverPanel {
+                cells: 240,
+                constituent_cap: 24,
+                urgency_slots: 36,
+                last: None,
+            },
+        )
+        .unwrap();
+        let encoded = serde_json::to_string(&surface).unwrap();
+        let card = surface["surface"]["root"]["children"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|child| child["id"] == "world.seed.card")
+            .expect("the seed card");
+        assert_eq!(
+            card["children"].as_array().unwrap().len(),
+            draft.scale_deficit.len()
+        );
+        let selected = crate::world::select_row(&draft).expect("a shortfall to answer");
+        assert_eq!(selected.target, 9);
+        assert!(
+            card["props"]["nextShortfall"]
+                .as_str()
+                .unwrap()
+                .contains(&format!("short {}", selected.deficit)),
+            "{card}"
+        );
+        assert!(
+            card["props"]["detail"]
+                .as_str()
+                .unwrap()
+                .contains(&format!("{}", draft.revision.saturating_sub(1))),
+        );
+        assert!(encoded.contains("world.seed"), "the button is missing");
     }
 }
