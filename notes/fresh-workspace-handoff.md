@@ -336,24 +336,60 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    source, plus one integration test. The connector is stopped after the
    run; the smoke substrate at `F:\Projects\Ghostlight-smoke` stays.
 
-   In flight: the operator approved the interruption pass on 2026-09-05,
-   plan step 9. Nothing is edited yet except the plan line; Modeling is
-   mapping the source into the session scratchpad `modeling-interruption.md`,
-   then Imagination, Hands in an isolation worktree, Soul in that tree,
-   coordinator integrates. Operating assumption recorded from the
-   coordinator: an interruption is a scope change between forming an intent
-   and committing it, from any cause (a neighbour, the clock, an
-   elaborator, a consumer, "the moon"). The Persona is never re-run. On
-   `ScopeChanged` the runner re-lowers once through the Interpreter with a
-   second input, the delta the subject perceived since its turn, rendered
-   from the scope components and the fan-out; the re-lowered proposal is an
-   ordinary `ExerciseDecision` bound to the fresh digest; one re-lowering
-   per subject per tick; no kernel arm changes. First invariant: the delta
-   shown to the Interpreter is exactly what the membrane already lets the
-   subject perceive, proven by a leakage test. Rejected on the way: a
-   joint-per-room Interpreter; the room is not the unit of interruption,
-   the digest is. This resolves former operator decision (a): a "bounded
-   in-tick re-submission" now has this shape and is no longer open.
+   In flight, plan step 9, the interruption pass (operator-approved
+   2026-09-05): Hands is cutting in the worktree
+   `F:\Projects\Ghostlight-interrupt` on `hands/interruption`, branched from
+   `a7c9b8e`, first commit `79f5a64` "Interrupt the narrative turn instead
+   of losing it" with further uncommitted edits in `world/controllers.rs`.
+   The spec is the session-scratchpad `imagination-interruption.md` (with
+   `modeling-interruption.md` and `interruption_tests.rs` beside it). Its
+   six forks, all taken: A delete the narrative lane's three scope checks
+   so the kernel is the sole `ScopeChanged` detector; B `SubjectSnapshot`
+   carries `components: ScopeComponents` and loses five duplicate fields;
+   C persist `Overheard { speaker, statement, confidence }`; D a fresh
+   opportunity without `speak` ends the turn `Interrupted`; E `NoProposal`
+   is re-lowered too; F the re-lowering uses the configured interpreter
+   model. Schema bumps: `controller_work.v11`, `persona_turn_receipt.v3`.
+   Shape, unchanged: the Persona is never re-run; on `ScopeChanged` the
+   runner re-lowers once through the Interpreter with the delta the subject
+   perceived since its turn, rendered from the scope components and the
+   fan-out; the result is an ordinary `ExerciseDecision` on the fresh
+   digest; one re-lowering per subject per tick; no kernel arm changes.
+   First invariant: the delta equals exactly what the membrane already lets
+   the subject perceive, proven by a leakage test. The ontology paragraph
+   (lines 695 to 704, `a7c9b8e`) scopes the promise to narrative subjects
+   in singleton cells; a grouped constituent has no Persona turn and no
+   Interpreter, so its refused proposal stays refused. Rejected on the way:
+   a joint-per-room Interpreter; the digest, not the room, is the unit.
+   This resolved former operator decision (a). Integration follows the
+   usual recipe: Soul in the worktree, fast-forward, focused test, push.
+
+   In design, plan step 10, witnessed events over a place subtree
+   (`e2392de`): the operator ruled that regional and global effects matter
+   (an asteroid over a region, the moon over a hemisphere) and that places
+   nest for exactly this. The answer is one operation, `Witness { fact,
+   place }`, landing `Witnessed` knowledge on every subject positioned
+   under the place subtree, recipients derived at apply time from live
+   positions exactly as speech `fan_out` derives its audience, never
+   stored, naming no speaker. Cut line from the plan: no second fan-out
+   owner, no stored recipient list, the subtree walk reuses the one
+   covering predicate, the tool surface and exemplar lists grow by exactly
+   one, confinement treats the place like any other ground. It lands as its
+   own small pass behind the interruption cut, because every witness's
+   scope digest moves and that is what makes a global event interrupt
+   whoever was mid-thought. Modeling is mapping into the session-scratchpad
+   `modeling-witness.md` (not on disk yet at the time of writing). Two
+   source facts the steward checked that the design can lean on:
+   `KnowledgeSource` (`patch.rs:371`) already has `Witnessed` beside
+   `Told { by, via }` and `Evidenced`, and `AuthoredSource::Witnessed`
+   (`patch.rs:393`) already lowers to it (`mod.rs:2494`), so `Witness` adds
+   no source variant; `ScopeComponents` (`mod.rs:2958`) carries position,
+   routes, holdings, dependencies, authority, delegated grants, and
+   knowledge keys, and no actor field, so a digest change is always noticed
+   and its cause is perceivable only when a `Told { by }` landed. That is
+   the ruling the coordinator gave the operator, "anonymous means the cause
+   is not perceivable, not that the change is not noticed", and it holds
+   against the map.
 
    Constraint: no road run is possible until a provider is available again.
    The Codex subscription lapsed mid-build and the twelve seeded runs
@@ -362,7 +398,7 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    ports until then; the connector is stopped and the smoke substrate at
    `F:\Projects\Ghostlight-smoke` stays.
 
-   Next seams after the interruption pass: the outbound consumer response
+   Next seams after steps 9 and 10: the outbound consumer response
    batch with the non-loopback CultMesh lease; then the deployment gate
    below. The elaborator swarm's ideas still sit on
    `slot/<world>/<title>/<stamp>` branches and the four ledger directories;

@@ -2,14 +2,13 @@
 
 ## Current Subgoal
 
-Interruption pass (plan step 9, operator-approved 2026-09-05). Pipeline:
-Modeling (`modeling-interruption.md` in the session scratchpad) -> Imagination
--> Hands in an isolation worktree -> Soul in that tree -> integrate onto
-`codex/ghostlight-dungeon-mvp`. Nothing edited yet at `bcfd024` beyond the
-plan line. Shape: no Persona re-run; one Interpreter re-lowering per subject
-per tick on `ScopeChanged`, fed the perceived delta; ordinary
-`ExerciseDecision` on the fresh digest; no kernel arm changes. No road run
-until a provider is available again.
+Two slices. (1) Plan step 9, interruption: Hands in
+`F:\Projects\Ghostlight-interrupt` on `hands/interruption` from `a7c9b8e`
+(`79f5a64` plus uncommitted `controllers.rs`), spec
+`imagination-interruption.md`; then Soul in that tree, integrate. (2) Plan
+step 10, `Witness { fact, place }` over a place subtree: in design, Modeling
+into `modeling-witness.md`, then Imagination, Hands, Soul, integrate, behind
+step 9. Main tip `e2392de`. No road run until a provider is available.
 
 ## Working Notes
 

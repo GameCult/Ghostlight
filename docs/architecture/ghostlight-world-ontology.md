@@ -106,8 +106,8 @@ a `Confidence` and a `KnowledgeSource { Witnessed, Told { by, via }, Evidenced }
 a telling never overwrites a holder. A `Channel` is an entity with a
 `Reach { Subjects, Place }` and a controller. Speech is an affordance whose
 entry declares exactly one `Audience { Colocated, Channel }`: `exercise`
-mints the `Claimed` fact through `derive_id` (the second of its two call
-sites, the first being `resolve_patch`) and lowers a `Communicate` whose
+mints the `Claimed` fact through `derive_id` (one of the fixed set of `derive_id`
+call sites; no pass adds one) and lowers a `Communicate` whose
 recipients are re-derived by one pure `fan_out` over `audience` at apply
 time. Audience means the declared reach; a channel's controller may broadcast
 from outside it (`can_broadcast`) but receives nothing unless inside it.
