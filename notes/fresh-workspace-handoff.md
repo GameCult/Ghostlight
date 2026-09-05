@@ -427,19 +427,37 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    CodexConnector repo, because CodexConnector is a deliberate fork of
    Codex cut so that Epiphany stops compiling Codex, and nothing goes into
    it. The Modeling map `modeling-claude-connector.md` was stopped mid-map
-   and is void even if partial text is on disk. The operator then gave the go: "Wait for the research, then build the
-   SDK port." Adopted shape: a Ghostlight `InferencePort` implementation
-   over the Claude Agent SDK, with the subscription credential held by
-   Claude Code and never by Ghostlight, as a stopgap transport and not a
-   harness inversion; a separate small organ, not a CodexConnector
-   backend. Persona and Projector are single plain completions and need
-   nothing special. The tool lanes (Interpreter, operational, elaborator,
-   seed, grouped) need the SDK to return tool calls unexecuted; the
-   read-only research pass `research-agent-sdk.md` is establishing whether
-   it can. If capture fails, those lanes stay on Codex and the split costs
-   no code, because models are already configured per lane. The
-   "harnessed Persona" idea is withdrawn: the Persona turn is non-agentic.
-   Nothing is cut yet; Hands waits on the research result. Nothing is edited in either repo. Facts that
+   and is void even if partial text is on disk. The operator gave the go ("Wait for the research, then build the SDK
+   port"), the research landed as an evidence record (2026-09-05T22:25Z,
+   `research-agent-sdk.md`: system prompt replaceable, built-ins
+   strippable, `CLAUDE.md` loading stoppable, tool calls returnable
+   unexecuted), and the design is decided: plan step 11 opened at
+   `634e81f`, map `modeling-sdk-port.md`, spec `imagination-sdk-port.md`
+   with eleven forks, all in the session scratchpad. Hands is cutting in
+   the worktree `F:\Projects\Ghostlight-sdkport` on `hands/sdk-port` from
+   `634e81f`, no commits yet at the time of writing. Load-bearing facts of
+   the design: the organ is a Ghostlight `InferencePort` implementation
+   over the Claude Agent SDK, a stopgap transport and not a harness
+   inversion, with the subscription credential held by Claude Code and
+   never read, copied, or logged by Ghostlight. Checkpoint integrity is
+   transport-agnostic, so the port prepares the same `PreparedInference`
+   and no second identity scheme exists. The sidecar (`sidecar/claude-sdk`,
+   TypeScript, Node 24 pinned, msgpack frames over stdio, one persistent
+   child per runner) never computes a tool result: Rust answers every call
+   through a per-lane `ToolResultOracle` that is the evaluator's own fold,
+   so divergence is impossible by construction, and the oracle carries the
+   lane's remaining round budget (seed and elaboration share a purpose).
+   Rust owns transcript lowering and fault disposition. Routing is per lane
+   by `GHOSTLIGHT_SDK_MODEL_PREFIX` (default `claude`) in `open_inference`;
+   `ControllerRunner::open` becomes injection-only and `with_test_ports`
+   collapses into it. The receipt is the SDK's message, a named liability.
+   Persona and Projector are plain completions; the tool lanes
+   (Interpreter, operational, elaborator, seed, grouped) ride the oracle;
+   if a lane cannot, it stays on Codex at no code cost because models are
+   per lane. The harnessed-Persona idea is withdrawn (the Persona turn is
+   non-agentic). Credential steps for the operator (install the Claude Code
+   CLI, log in or `setup-token`) belong in the smoke runbook; nothing is
+   installed locally yet. Main is untouched; the cut lives in the worktree. Facts that
    survive the overturn: Ghostlight binds Codex-named types in four files
    (`controllers.rs:25`, `elaboration.rs:31`, `patch.rs:20`,
    `tool_schema.rs:9`) behind one `InferencePort::prepare`

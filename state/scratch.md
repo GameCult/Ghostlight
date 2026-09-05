@@ -2,14 +2,14 @@
 
 ## Current Subgoal
 
-Claude SDK port (operator go, 2026-09-06: wait for the research, then build).
-Shape: a Ghostlight `InferencePort` implementation over the Claude Agent SDK,
-credential held by Claude Code, stopgap transport, separate small organ, not a
-CodexConnector backend. Persona and Projector are plain completions; the tool
-lanes need unexecuted tool-call return, which `research-agent-sdk.md` is
-establishing; on failure those lanes stay on Codex (models are per lane).
-Harnessed Persona withdrawn. Nothing cut at `06236a4`; Hands waits on the
-research result.
+Plan step 11, the Claude SDK inference port: Hands in
+`F:\Projects\Ghostlight-sdkport` on `hands/sdk-port` from `634e81f`, spec
+`imagination-sdk-port.md` (eleven forks), map `modeling-sdk-port.md`; then Soul
+in that tree, then gated integration (rebase, merge, confirm tip, remove).
+Shape: `InferencePort` over the Agent SDK; sidecar `sidecar/claude-sdk` never
+computes a tool result, Rust answers via per-lane `ToolResultOracle`; same
+`PreparedInference`; routing by `GHOSTLIGHT_SDK_MODEL_PREFIX`. Operator
+credential steps go in the smoke runbook; nothing installed locally yet.
 
 ## Working Notes
 
