@@ -3,7 +3,7 @@ use sha2::{Digest, Sha256};
 
 pub const MEMBRANE_SCHEMA: &str = "ghostlight.persona_projection_membrane.v1";
 pub const COGNITION_CONTROLLER_SCHEMA: &str = "ghostlight.decision_controller.v1";
-pub const PERSONA_TURN_RECEIPT_SCHEMA: &str = "ghostlight.persona_turn_receipt.v2";
+pub const PERSONA_TURN_RECEIPT_SCHEMA: &str = "ghostlight.persona_turn_receipt.v3";
 pub const RECORD_GAP_TOOL_NAME: &str = "record_gap";
 pub const RECORD_GAP_TOOL_CONTRACT: &str = "record_gap(kind: ambiguity | missing_reference | missing_affordance | missing_primitive | unresolved, source_start_byte: integer, source_end_byte: integer, detail: string)";
 
@@ -110,7 +110,7 @@ pub fn build_interpreter_prompt(input: &InterpreterPrompt<'_>) -> String {
         None => "The harness supplies the current legal typed proposal tools immediately before each step. Use only those current contracts; never reuse a contract remembered from an earlier step.".into(),
     };
     format!(
-        "<!-- membrane:{MEMBRANE_SCHEMA}:interpreter -->\nYou are a private Interpreter. Translate a natural Persona turn into zero or more typed candidate proposals supported by the prose and permissioned context. The owning runtime validates and commits proposals; you never claim that a proposed consequence already happened. Do not invent knowledge, capability, custody, perception, identifiers, or state references.\n\nInterpretation is total: this turn cannot fail because some prose has no available translation. The harness has already preserved the Persona turn verbatim as noncanonical source prose. Capture every translation you can justify, citing its exact UTF-8 byte span in that source. Spoken words become a typed speech proposal; wondering, deciding, attempting, and narration are not automatically speech. If a meaningful passage cannot be represented safely, call `{gap_tool}` instead of guessing. A report containing only source prose, or source prose plus gaps, is valid. If the step budget ends, the harness completes the report and records the unresolved source instead of failing.\n\nThe always-available gap tool is:\n{gap_contract}\nUse `ambiguity` when several translations remain live, `missing_reference` when the prose lacks an exact world reference, `missing_affordance` when the subject lacks a permitted way to attempt it, `missing_primitive` when the ontology has no suitable proposal vocabulary, and `unresolved` only when no narrower account fits.\n\n{proposal_contract}\n\nDomain guidance and exact permissions:\n{guidance}\n\nIdentity:\n{identity}\n\nPermissioned typed context:\n{context}\n\nLived stream:\n{stream}\n\nPersona turn (already preserved verbatim as source evidence):\n{output}",
+        "<!-- membrane:{MEMBRANE_SCHEMA}:interpreter -->\nYou are a private Interpreter. Translate a natural Persona turn into zero or more typed candidate proposals supported by the prose and permissioned context. The owning runtime validates and commits proposals; you never claim that a proposed consequence already happened. Do not invent knowledge, capability, custody, perception, identifiers, or state references.\n\nInterpretation is total: this turn cannot fail because some prose has no available translation. The harness has already preserved the Persona turn verbatim as noncanonical source prose. Capture every translation you can justify, citing its exact UTF-8 byte span in that source. Spoken words become a typed speech proposal; wondering, deciding, attempting, and narration are not automatically speech. If a meaningful passage cannot be represented safely, call `{gap_tool}` instead of guessing. A report containing only source prose, or source prose plus gaps, is valid. If the step budget ends, the harness completes the report and records the unresolved source instead of failing.\n\nThe always-available gap tool is:\n{gap_contract}\nUse `ambiguity` when several translations remain live, `missing_reference` when the prose lacks an exact world reference, `missing_affordance` when the subject lacks a permitted way to attempt it, `missing_primitive` when the ontology has no suitable proposal vocabulary, and `unresolved` only when no narrower account fits.\n\nIf a section headed `Interrupted:` follows the Persona turn, the world moved after that prose was written and before it could take effect. The prose is not re-written and not re-authored; translate it again against what that section reports. You may capture a shorter or different span of the same prose, a different permitted action the prose supports, or call `{gap_tool}` with `unresolved` when the intent the prose carried has been overtaken. The reported change is not something this person said, did, or caused.\n\n{proposal_contract}\n\nDomain guidance and exact permissions:\n{guidance}\n\nIdentity:\n{identity}\n\nPermissioned typed context:\n{context}\n\nLived stream:\n{stream}\n\nPersona turn (already preserved verbatim as source evidence):\n{output}",
         identity = input.identity,
         guidance = input.domain_guidance,
         context = input.typed_context,
@@ -205,6 +205,13 @@ pub struct PersonaTurnBinding {
     pub scope_digest: String,
     pub projector_receipt_digest: String,
     pub persona_inference_receipt_digest: String,
+    /// The binding this same prose was first receipted under. Present exactly
+    /// on a re-lowered turn: the world moved between the prose and its commit,
+    /// so the turn's binding was renewed against the fresh opportunity while the
+    /// prose and both inference receipts were carried across unchanged. Its own
+    /// `interrupted_from` is always `None` — prose is lowered at most twice, so
+    /// a chain is not a shape this type admits.
+    pub interrupted_from: Option<Box<PersonaTurnBinding>>,
 }
 
 /// Immutable source evidence persisted by the NarrativePersona runner before
@@ -223,6 +230,9 @@ pub struct PersonaTurn {
 pub enum PersonaTurnIntegrityError {
     SourceDigestMismatch,
     ReceiptDigestMismatch,
+    /// A re-lowered turn whose predecessor was itself re-lowered. One
+    /// re-lowering per turn is a property of the type, not a counter.
+    InterruptionChained,
 }
 
 impl std::fmt::Display for PersonaTurnIntegrityError {
@@ -233,6 +243,8 @@ impl std::fmt::Display for PersonaTurnIntegrityError {
             }
             Self::ReceiptDigestMismatch => formatter
                 .write_str("Persona turn binding or source does not match its persisted receipt"),
+            Self::InterruptionChained => formatter
+                .write_str("Persona prose was already re-lowered once and admits no second"),
         }
     }
 }
@@ -287,6 +299,9 @@ impl PersonaTurn {
         let source_prose = source_prose.into();
         let source_digest = source_digest.into();
         let receipt_digest = receipt_digest.into();
+        if !interruption_is_unchained(&binding) {
+            return Err(PersonaTurnIntegrityError::InterruptionChained);
+        }
         if sha256(&source_prose) != source_digest {
             return Err(PersonaTurnIntegrityError::SourceDigestMismatch);
         }
@@ -302,7 +317,8 @@ impl PersonaTurn {
     }
 
     pub fn receipt_is_valid(&self) -> bool {
-        sha256(&self.source_prose) == self.source_digest
+        interruption_is_unchained(&self.binding)
+            && sha256(&self.source_prose) == self.source_digest
             && persona_turn_receipt_digest(&self.binding, &self.source_digest)
                 == self.receipt_digest
     }
@@ -595,7 +611,24 @@ pub fn sha256(value: &str) -> String {
     format!("sha256:{:x}", Sha256::digest(value.as_bytes()))
 }
 
+/// One re-lowering, expressed as a shape rather than a count: the binding a
+/// re-lowered turn replaced must itself be an original.
+fn interruption_is_unchained(binding: &PersonaTurnBinding) -> bool {
+    binding
+        .interrupted_from
+        .as_ref()
+        .is_none_or(|prior| prior.interrupted_from.is_none())
+}
+
 fn persona_turn_receipt_digest(binding: &PersonaTurnBinding, source_digest: &str) -> String {
+    // The prior binding's receipt over the *same* source digest is exactly the
+    // receipt the first turn published, so a re-lowered turn's receipt commits
+    // to the turn it replaced by value.
+    let interrupted_from = binding
+        .interrupted_from
+        .as_ref()
+        .map(|prior| persona_turn_receipt_digest(prior, source_digest))
+        .unwrap_or_default();
     let mut digest = Sha256::new();
     for value in [
         PERSONA_TURN_RECEIPT_SCHEMA.as_bytes(),
@@ -605,6 +638,7 @@ fn persona_turn_receipt_digest(binding: &PersonaTurnBinding, source_digest: &str
         binding.scope_digest.as_bytes(),
         binding.projector_receipt_digest.as_bytes(),
         binding.persona_inference_receipt_digest.as_bytes(),
+        interrupted_from.as_bytes(),
         source_digest.as_bytes(),
     ] {
         digest.update((value.len() as u64).to_le_bytes());
@@ -635,6 +669,7 @@ mod tests {
             scope_digest: "sha256:world-state".into(),
             projector_receipt_digest: "sha256:projector-receipt".into(),
             persona_inference_receipt_digest: "sha256:persona-inference-receipt".into(),
+            interrupted_from: None,
         };
         PersonaTurn::record(binding, source_prose)
     }
@@ -717,6 +752,49 @@ mod tests {
                 recorded.receipt_digest(),
             ),
             Err(PersonaTurnIntegrityError::ReceiptDigestMismatch)
+        );
+    }
+
+    #[test]
+    fn a_re_lowered_turn_commits_to_the_receipt_it_replaced_and_admits_no_chain() {
+        let source = "I say, \"The western brace is giving way.\"";
+        let first = turn(source);
+        let mut renewed = first.binding().clone();
+        renewed.scope_digest = "sha256:world-state-moved".into();
+        renewed.interrupted_from = Some(Box::new(first.binding().clone()));
+        let second = PersonaTurn::record(renewed.clone(), source);
+
+        // The prose and both inference receipts are carried, never recomputed.
+        assert_eq!(second.source_prose(), first.source_prose());
+        assert_eq!(second.source_digest(), first.source_digest());
+        assert_eq!(
+            second.binding().projector_receipt_digest,
+            first.binding().projector_receipt_digest
+        );
+        assert_eq!(
+            second.binding().persona_inference_receipt_digest,
+            first.binding().persona_inference_receipt_digest
+        );
+        // The second receipt commits to the first by value.
+        assert_ne!(second.receipt_digest(), first.receipt_digest());
+        assert_eq!(
+            second.binding().interrupted_from.as_deref(),
+            Some(first.binding())
+        );
+        assert!(second.receipt_is_valid());
+
+        let mut chained = renewed.clone();
+        chained.interrupted_from = Some(Box::new(renewed));
+        let third = PersonaTurn::record(chained.clone(), source);
+        assert!(!third.receipt_is_valid());
+        assert_eq!(
+            PersonaTurn::rehydrate(
+                chained,
+                third.source_prose(),
+                third.source_digest(),
+                third.receipt_digest(),
+            ),
+            Err(PersonaTurnIntegrityError::InterruptionChained)
         );
     }
 

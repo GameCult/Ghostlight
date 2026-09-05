@@ -1065,7 +1065,9 @@ async fn dispatch_controller(
     drop(permit);
     let quarantine = match &result {
         Ok(ControllerHttpResult::Pending { quarantine, .. }) => *quarantine,
-        Ok(ControllerHttpResult::Completed { .. }) => false,
+        Ok(ControllerHttpResult::Completed { .. } | ControllerHttpResult::Interrupted { .. }) => {
+            false
+        }
         Err(error) => error.requires_quarantine(),
     };
     if quarantine {
@@ -1106,6 +1108,18 @@ async fn dispatch_controller(
             ))
             .into_response()
         }
+        Ok(ControllerHttpResult::Interrupted { message, receipt }) => Json(eve::command_result(
+            &invocation,
+            "denied",
+            message,
+            current_world(state)
+                .await
+                .ok()
+                .map(|snapshot| eve::surface_version(snapshot.as_ref())),
+            None,
+            Some(receipt),
+        ))
+        .into_response(),
         Ok(ControllerHttpResult::Pending {
             state_name,
             message,
@@ -1189,6 +1203,12 @@ enum ControllerHttpResult {
         receipt: Value,
         quarantine: bool,
     },
+    /// The turn ended without reaching the world: its one re-lowering was spent
+    /// or refused. Not a commit, and not a retryable state.
+    Interrupted {
+        message: &'static str,
+        receipt: Value,
+    },
 }
 
 fn controller_narrative_result(run: NarrativeRun) -> ControllerHttpResult {
@@ -1225,6 +1245,23 @@ fn controller_narrative_result(run: NarrativeRun) -> ControllerHttpResult {
         NarrativeRun::Pending(pending) => {
             controller_pending_result(pending.mode(), pending.reason(), pending.persona_prose())
         }
+        NarrativeRun::Interrupted(interruption) => ControllerHttpResult::Interrupted {
+            message: "The world moved under this turn and it could not be lowered again.",
+            receipt: json!({
+                "kind":"narrative_interrupted",
+                "subject":interruption.subject(),
+                "boundScopeDigest":interruption.bound_scope_digest(),
+                "freshScopeDigest":interruption.fresh_scope_digest(),
+                "personaProse":interruption.persona_turn().source_prose(),
+                "personaReceiptDigest":interruption.persona_turn().receipt_digest(),
+                "gap":{
+                    "kind":interruption.gap().kind,
+                    "startByte":interruption.gap().source.start_byte,
+                    "endByte":interruption.gap().source.end_byte,
+                    "detail":interruption.gap().detail,
+                },
+            }),
+        },
     }
 }
 
@@ -1938,6 +1975,19 @@ async fn run_cover_tick(state: &AppState) {
                     tracing::info!(
                         reason = ?pending.reason(),
                         "a detail narrative cell is pending"
+                    );
+                }
+                // The operator's record of a turn the world overtook. It is
+                // reached only after the one re-lowering was spent or refused:
+                // a turn that re-lowers and commits reports as completed like
+                // any other.
+                Ok(CellRun::Narrative(NarrativeRun::Interrupted(interruption))) => {
+                    tracing::info!(
+                        subject = ?interruption.subject(),
+                        bound_scope_digest = interruption.bound_scope_digest(),
+                        fresh_scope_digest = interruption.fresh_scope_digest().unwrap_or("none"),
+                        detail = interruption.gap().detail.as_str(),
+                        "a detail narrative cell was interrupted"
                     );
                 }
                 Ok(CellRun::Operational(OperationalRun::Pending(pending))) => {

@@ -859,14 +859,13 @@ pub(crate) struct SubjectSnapshot {
     pub(crate) human_controller: Option<PrincipalId>,
     pub(crate) affordances: BTreeSet<AffordanceId>,
     pub(crate) position: Option<EntityId>,
-    /// Lowered from the one `scope_components` owner, so these are exactly what
-    /// the scope digest binds: this subject's own holdings, dependencies, and
-    /// grants, the routes incident to its place, and the offices it occupies
-    /// with what each lends. A counterparty's components never enter.
-    pub(crate) holdings: BTreeMap<EntityId, Quantity>,
-    pub(crate) dependencies: BTreeSet<DependencyTarget>,
-    pub(crate) incident_routes: Vec<EdgeId>,
-    pub(crate) authority: BTreeSet<AuthorityGrant>,
+    /// Exactly what the scope digest binds for this subject, carried whole
+    /// rather than lowered into projections that then have to be diffed back
+    /// together: its own position, incident routes, holdings, dependencies,
+    /// grants, delegated offices, known fact keys, controlled channels, and
+    /// commitments. A counterparty's components never enter. The narrative lane
+    /// persists this as the "before" an interruption is measured against.
+    pub(crate) components: ScopeComponents,
     pub(crate) offices_held: Vec<OfficeSnapshot>,
     /// View-only, and covered by no digest: an institution's own offices, so
     /// its controller can see what it lends and to whom. No precondition reads
@@ -880,11 +879,9 @@ pub(crate) struct SubjectSnapshot {
     /// perception surface: a subject perceives a speech act if and only if it
     /// holds `Knowledge` of that act's fact. Ordered by `spoken_at` then `fact`.
     pub(crate) knowledge: Vec<KnowledgeSnapshot>,
-    /// The channels this subject controls, by id. Not their reach: who else is
-    /// in earshot is a question about other subjects.
-    pub(crate) controls: BTreeSet<EntityId>,
     /// Digest-bound, lowered from the one `scope_components` call `snapshot`
-    /// already makes, so view and digest cannot drift.
+    /// already makes, so view and digest cannot drift. Carries `past_due`,
+    /// which the components do not.
     pub(crate) commitments: Vec<CommitmentSnapshot>,
     /// Pressure on self. View-only: read by no precondition, so covered by no
     /// digest. Pressure this subject *sources* is excluded — it is another
@@ -2954,7 +2951,13 @@ fn overlapping_holder(state: &WorldState) -> Option<SubjectId> {
 /// restored by the front door. A target that walks out of a jurisdiction
 /// mid-flight therefore fails at `Authorized` rather than rebinding, while a
 /// revoked grant is a `ScopeChanged`.
-#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+///
+/// `Deserialize` is here so the narrative lane can persist a subject's own
+/// components as the "before" an interruption is measured against. No field
+/// changes with it, so `ScopePreimage`'s serialization — and therefore every
+/// scope digest — is byte-identical.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub(super) struct ScopeComponents {
     position: Option<Position>,
     routes: BTreeMap<EdgeId, EdgeRecord>,
@@ -3405,20 +3408,15 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 human_controller: controller.human_principal().cloned(),
                 affordances,
                 position: components.position.map(|position| position.place),
-                holdings: components.holdings,
-                dependencies: components.dependencies,
-                incident_routes: components.routes.into_keys().collect(),
-                authority: components.authority,
                 offices_held,
                 offices_granted,
                 redress,
                 knowledge,
-                controls: components.controls.into_keys().collect(),
                 commitments: components
                     .commitments
-                    .into_iter()
+                    .iter()
                     .map(|(key, commitment)| CommitmentSnapshot {
-                        key,
+                        key: *key,
                         kind: commitment.kind,
                         counterparty: commitment.counterparty,
                         due: commitment.due,
@@ -3426,6 +3424,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                         past_due: commitment.due <= state.now,
                     })
                     .collect(),
+                components,
                 pressures: state
                     .pressures
                     .get(subject_id)
@@ -7873,14 +7872,14 @@ mod tests {
 
         // Grants are the subject's own; offices held and offices granted are
         // the two ends of one link and never merge.
-        assert!(of(civic.reeve).authority.is_empty());
+        assert!(of(civic.reeve).components.authority.is_empty());
         assert_eq!(of(civic.reeve).offices_held.len(), 1);
         assert!(of(civic.reeve).offices_granted.is_empty());
         assert_eq!(of(civic.treasury).offices_granted.len(), 2);
         assert!(of(civic.treasury).offices_held.is_empty());
-        assert!(of(civic.farmer).authority.is_empty());
+        assert!(of(civic.farmer).components.authority.is_empty());
         assert_eq!(
-            of(civic.treasury).authority,
+            of(civic.treasury).components.authority,
             BTreeSet::from([
                 AuthorityGrant {
                     kind: authority_kind(LEVY_KIND),
@@ -8168,7 +8167,7 @@ mod custody_tests {
             .into_iter()
             .find(|subject| subject.id == custody.holder)
             .expect("the holder is in the snapshot");
-        assert!(subject.holdings.is_empty());
+        assert!(subject.components.holdings.is_empty());
     }
 
     #[test]
@@ -8261,7 +8260,7 @@ mod custody_tests {
             .into_iter()
             .find(|subject| subject.id == custody.counterparty)
             .expect("the counterparty is in the snapshot");
-        assert!(counterparty.holdings.is_empty());
+        assert!(counterparty.components.holdings.is_empty());
     }
 
     #[test]
@@ -8417,7 +8416,7 @@ mod custody_tests {
             .find(|subject| subject.id == custody.holder)
             .expect("the holder is in the snapshot");
         assert_eq!(
-            subject.dependencies,
+            subject.components.dependencies,
             BTreeSet::from([DependencyTarget::Route(topology.shutter)])
         );
     }

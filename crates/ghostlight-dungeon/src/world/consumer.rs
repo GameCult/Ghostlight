@@ -1040,7 +1040,7 @@ mod tests {
                 .subjects
                 .iter()
                 .find(|subject| subject.id == mirror.first)
-                .and_then(|subject| subject.holdings.get(&mirror.grain).copied()),
+                .and_then(|subject| subject.components.holdings.get(&mirror.grain).copied()),
             Some(Quantity(6))
         );
     }

@@ -17,8 +17,8 @@ use crate::world::{
     DecisionInvocation, DecisionOpportunity, DependencyTarget, EdgeId, ElaborationPort, EntityId,
     EntityKind, FactStandingView, KernelError, KnowledgeSnapshot, KnowledgeSource, Magnitude,
     MailboxError, OfficeSnapshot, ProposedEffect, Quantity, RefKind, Resolution, RoleBinding,
-    SeedPort, Statement, SubjectId, SubjectSnapshot, SubmitReceipt, Target, TickIndex,
-    WorldMailbox, WorldSnapshot,
+    ScopeComponents, ScopeDigest, SeedPort, Statement, SubjectId, SubjectSnapshot, SubmitReceipt,
+    Target, TickIndex, WorldMailbox, WorldSnapshot,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -69,8 +69,8 @@ const CELL_TOOL_STEP_BUDGET: usize = 2;
 /// carried by tool identity, never by a model-written argument.
 const HANDLE_SEPARATOR: &str = "__";
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v10";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v10";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v11";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v11";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -516,6 +516,14 @@ enum NarrativeCheckpoint {
         command_id: CommandId,
         identity: String,
         typed_view: String,
+        /// The acting subject's own components at turn time, frozen for the
+        /// life of the row exactly as `opportunity` is. Not a cache of the
+        /// digest: it is the only copy of a value the digest hashes and
+        /// discards, and it is the "before" an interruption is measured
+        /// against. Pre-turn variants carry it because progression demands
+        /// equality and the value must reach `ReadyToSubmit`; nothing reads it
+        /// before submit.
+        components: ScopeComponents,
         persona_model: String,
         interpreter_model: String,
         opportunity: DecisionOpportunity,
@@ -526,6 +534,7 @@ enum NarrativeCheckpoint {
         command_id: CommandId,
         identity: String,
         typed_view: String,
+        components: ScopeComponents,
         interpreter_model: String,
         opportunity: DecisionOpportunity,
         granted: Vec<AffordanceSnapshot>,
@@ -536,6 +545,11 @@ enum NarrativeCheckpoint {
         command_id: CommandId,
         turn: PersonaTurn,
         interpreter_prompt: String,
+        components: ScopeComponents,
+        /// `Some` exactly when this row's turn was re-lowered, and then equal to
+        /// the turn's `interrupted_from`: the two records of the same fact may
+        /// not disagree.
+        interruption: Option<Interruption>,
         opportunity: DecisionOpportunity,
         granted: Vec<AffordanceSnapshot>,
         completed: Vec<InferenceOutput>,
@@ -545,6 +559,8 @@ enum NarrativeCheckpoint {
         command_id: CommandId,
         turn: PersonaTurn,
         interpreter_prompt: String,
+        components: ScopeComponents,
+        interruption: Option<Interruption>,
         opportunity: DecisionOpportunity,
         granted: Vec<AffordanceSnapshot>,
         completed: Vec<InferenceOutput>,
@@ -553,6 +569,8 @@ enum NarrativeCheckpoint {
         command_id: CommandId,
         turn: PersonaTurn,
         interpreter_prompt: String,
+        components: ScopeComponents,
+        interruption: Option<Interruption>,
         opportunity: DecisionOpportunity,
         completed: Vec<InferenceOutput>,
     },
@@ -684,6 +702,7 @@ impl NarrativeCheckpoint {
                 command_id,
                 identity,
                 typed_view,
+                components: _,
                 persona_model,
                 interpreter_model,
                 opportunity,
@@ -710,6 +729,7 @@ impl NarrativeCheckpoint {
                 command_id,
                 identity,
                 typed_view,
+                components: _,
                 interpreter_model,
                 opportunity,
                 granted,
@@ -746,12 +766,16 @@ impl NarrativeCheckpoint {
                 command_id,
                 turn,
                 interpreter_prompt,
+                interruption,
                 opportunity,
                 granted,
                 completed,
                 invocation,
+                ..
             } => {
+                let round = interpreter_round(interruption, completed);
                 turn_matches_opportunity(turn, opportunity)
+                    && interruption_matches_turn(interruption, turn)
                     && opportunity.controller_mode == ControllerMode::NarrativePersona
                     && granted_matches_opportunity(granted, opportunity)
                     && !interpreter_prompt.is_empty()
@@ -760,17 +784,12 @@ impl NarrativeCheckpoint {
                         Ok(InterpreterLoopEvaluation::Continue { conversation }) => {
                             interpreter_request(
                                 *command_id,
-                                completed.len(),
+                                round,
                                 &invocation.invocation.request.model,
                                 conversation,
                             )
                             .is_ok_and(|expected| {
-                                prepared_matches_request(
-                                    invocation,
-                                    &expected,
-                                    *command_id,
-                                    completed.len(),
-                                )
+                                prepared_matches_request(invocation, &expected, *command_id, round)
                             })
                         }
                         Ok(InterpreterLoopEvaluation::Complete { .. }) | Err(_) => false,
@@ -779,12 +798,14 @@ impl NarrativeCheckpoint {
             Self::ReadyToSubmit {
                 turn,
                 interpreter_prompt,
+                interruption,
                 opportunity,
                 granted,
                 completed,
                 ..
             } => {
                 turn_matches_opportunity(turn, opportunity)
+                    && interruption_matches_turn(interruption, turn)
                     && opportunity.controller_mode == ControllerMode::NarrativePersona
                     && granted_matches_opportunity(granted, opportunity)
                     && derive_narrative_capture(turn, interpreter_prompt, completed)
@@ -793,11 +814,13 @@ impl NarrativeCheckpoint {
             Self::NoProposal {
                 turn,
                 interpreter_prompt,
+                interruption,
                 opportunity,
                 completed,
                 ..
             } => {
                 turn_matches_opportunity(turn, opportunity)
+                    && interruption_matches_turn(interruption, turn)
                     && opportunity.controller_mode == ControllerMode::NarrativePersona
                     && derive_narrative_capture(turn, interpreter_prompt, completed)
                         .is_ok_and(|capture| capture.proposal.is_none())
@@ -981,6 +1004,49 @@ pub(crate) struct NarrativeCapture {
     pub(crate) inference_receipts: Vec<String>,
 }
 
+/// One thing said to this subject after its turn was formed. Speech is the only
+/// interruption a subject may perceive as having an author, and only through a
+/// `Told { by }` row for a fact `fan_out` actually gave it. The label is
+/// resolved here because the snapshot that resolves it is gone by the time the
+/// row is re-read, and it is resolved by `speaker_label` and nothing else.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Overheard {
+    /// `None` for a fact this subject holds without having been told it. It
+    /// knows the thing, not the telling.
+    pub(crate) speaker: Option<String>,
+    pub(crate) statement: Statement,
+    pub(crate) confidence: Confidence,
+}
+
+/// What the runner showed the Interpreter when it re-lowered, and the
+/// conversation it replaced. Persisted so a resumed row rebuilds the same
+/// request byte for byte without a snapshot.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Interruption {
+    /// The subject's own components at re-lowering. The "after"; the
+    /// checkpoint's `components` is the "before".
+    pub(crate) components: ScopeComponents,
+    /// Rows whose `spoken_at` is later than the turn's bound revision, in the
+    /// snapshot's order.
+    pub(crate) overheard: Vec<Overheard>,
+    /// The first lowering's evidence. Nothing is discarded merely because the
+    /// world moved elsewhere; it also fixes the round index so the second
+    /// conversation cannot collide with the first on `conversation_id`.
+    pub(crate) discarded: Vec<InferenceOutput>,
+}
+
+/// The one owner of the interpreter round index. A re-lowering continues the
+/// row's numbering rather than restarting it, so two conversations under one
+/// command id can never share a `conversation_id`.
+fn interpreter_round(interruption: &Option<Interruption>, completed: &[InferenceOutput]) -> usize {
+    interruption
+        .as_ref()
+        .map_or(0, |interruption| interruption.discarded.len())
+        + completed.len()
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct SourceRange {
     pub(crate) start_byte: usize,
@@ -1013,6 +1079,33 @@ fn select_one(
     snapshot: &WorldSnapshot,
     exact_opportunity: &DecisionOpportunity,
 ) -> Result<SelectedDecision, ControllerError> {
+    let selected = select_scope(snapshot, exact_opportunity, true)?;
+    Ok(SelectedDecision {
+        // The run's own bound value, not the fresh snapshot's: one run binds
+        // one opportunity, persists it, and submits it unchanged.
+        opportunity: exact_opportunity.clone(),
+        ..selected
+    })
+}
+
+/// What replaced the scope this run bound. Same subject, same controller, same
+/// single-match requirement, same grant intersection — only the digest clause
+/// differs, so an interruption can never be selected under looser rules than a
+/// turn. The returned opportunity and granted set are the *fresh* ones.
+fn select_fresh(
+    snapshot: &WorldSnapshot,
+    exact_opportunity: &DecisionOpportunity,
+) -> Result<SelectedDecision, ControllerError> {
+    select_scope(snapshot, exact_opportunity, false)
+}
+
+/// The shared matcher. `require_digest` is the only difference between binding a
+/// run and finding what replaced it.
+fn select_scope(
+    snapshot: &WorldSnapshot,
+    exact_opportunity: &DecisionOpportunity,
+    require_digest: bool,
+) -> Result<SelectedDecision, ControllerError> {
     let expected = exact_opportunity.controller_mode;
     let subject_id = exact_opportunity.scope.subject_id;
     let Some(subject) = snapshot
@@ -1036,7 +1129,7 @@ fn select_one(
         .iter()
         .filter(|opportunity| {
             opportunity.scope == exact_opportunity.scope
-                && opportunity.scope_digest == exact_opportunity.scope_digest
+                && (!require_digest || opportunity.scope_digest == exact_opportunity.scope_digest)
         })
         .cloned()
         .collect::<Vec<_>>();
@@ -1062,9 +1155,7 @@ fn select_one(
     Ok(SelectedDecision {
         snapshot: snapshot.clone(),
         subject,
-        // The run's own bound value, not the fresh snapshot's: one run binds
-        // one opportunity, persists it, and submits it unchanged.
-        opportunity: exact_opportunity.clone(),
+        opportunity: opportunity.clone(),
         granted,
     })
 }
@@ -1093,6 +1184,12 @@ fn granted_matches_opportunity(
         && granted
             .iter()
             .all(|entry| opportunity.affordance_ids.contains(&entry.id))
+}
+
+/// The row and the turn are two records of one fact — that this prose was
+/// lowered a second time — and they may not disagree.
+fn interruption_matches_turn(interruption: &Option<Interruption>, turn: &PersonaTurn) -> bool {
+    interruption.is_some() == turn.binding().interrupted_from.is_some()
 }
 
 fn turn_matches_opportunity(turn: &PersonaTurn, opportunity: &DecisionOpportunity) -> bool {
@@ -1585,6 +1682,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id,
                 identity,
                 typed_view,
+                components,
                 persona_model,
                 interpreter_model,
                 opportunity,
@@ -1595,6 +1693,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id: next_command_id,
                 identity: next_identity,
                 typed_view: next_typed_view,
+                components: next_components,
                 interpreter_model: next_interpreter_model,
                 opportunity: next_opportunity,
                 granted: next_granted,
@@ -1605,6 +1704,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
             command_id == next_command_id
                 && identity == next_identity
                 && typed_view == next_typed_view
+                && components == next_components
                 && interpreter_model == next_interpreter_model
                 && opportunity == next_opportunity
                 && granted == next_granted
@@ -1617,6 +1717,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id,
                 identity,
                 typed_view,
+                components,
                 interpreter_model,
                 opportunity,
                 granted,
@@ -1627,6 +1728,8 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id: next_command_id,
                 turn,
                 interpreter_prompt,
+                components: next_components,
+                interruption: next_interruption,
                 opportunity: next_opportunity,
                 granted: next_granted,
                 completed,
@@ -1648,9 +1751,13 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 domain_guidance: "",
             });
             command_id == next_command_id
+                && components == next_components
                 && opportunity == next_opportunity
                 && granted == next_granted
                 && completed.is_empty()
+                // A first lowering can never be born interrupted.
+                && next_interruption.is_none()
+                && turn.binding().interrupted_from.is_none()
                 && interpreter_prompt == &expected_prompt
                 && turn.binding().projector_receipt_digest == projector_receipt
                 && &invocation.invocation.request.model == interpreter_model
@@ -1662,6 +1769,8 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id,
                 turn,
                 interpreter_prompt,
+                components,
+                interruption,
                 opportunity,
                 granted,
                 completed,
@@ -1671,6 +1780,8 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id: next_command_id,
                 turn: next_turn,
                 interpreter_prompt: next_interpreter_prompt,
+                components: next_components,
+                interruption: next_interruption,
                 opportunity: next_opportunity,
                 granted: next_granted,
                 completed: next_completed,
@@ -1680,6 +1791,8 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
             command_id == next_command_id
                 && turn == next_turn
                 && interpreter_prompt == next_interpreter_prompt
+                && components == next_components
+                && interruption == next_interruption
                 && opportunity == next_opportunity
                 && granted == next_granted
                 && completed_advances(completed, next_completed)
@@ -1693,6 +1806,8 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id,
                 turn,
                 interpreter_prompt,
+                components,
+                interruption,
                 opportunity,
                 granted,
                 completed,
@@ -1702,6 +1817,8 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id: next_command_id,
                 turn: next_turn,
                 interpreter_prompt: next_interpreter_prompt,
+                components: next_components,
+                interruption: next_interruption,
                 opportunity: next_opportunity,
                 granted: next_granted,
                 completed: next_completed,
@@ -1710,6 +1827,8 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
             command_id == next_command_id
                 && turn == next_turn
                 && interpreter_prompt == next_interpreter_prompt
+                && components == next_components
+                && interruption == next_interruption
                 && opportunity == next_opportunity
                 && granted == next_granted
                 && completed_advances(completed, next_completed)
@@ -1719,6 +1838,8 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id,
                 turn,
                 interpreter_prompt,
+                components,
+                interruption,
                 opportunity,
                 completed,
                 ..
@@ -1727,6 +1848,8 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id: next_command_id,
                 turn: next_turn,
                 interpreter_prompt: next_interpreter_prompt,
+                components: next_components,
+                interruption: next_interruption,
                 opportunity: next_opportunity,
                 completed: next_completed,
             },
@@ -1734,8 +1857,79 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
             command_id == next_command_id
                 && turn == next_turn
                 && interpreter_prompt == next_interpreter_prompt
+                && components == next_components
+                && interruption == next_interruption
                 && opportunity == next_opportunity
                 && completed_advances(completed, next_completed)
+        }
+        // The one re-lowering. This arm is the entire bound: a checkpoint whose
+        // turn already carries `interrupted_from` fails the clause below and has
+        // no other successor, so a second re-lowering cannot be persisted even
+        // if the runner were changed to attempt one. There is no counter and no
+        // tick. It is also what refuses a forged ancestry — `is_initial` admits
+        // only `Projector` for this lane, so an `InterpreterInFlight` row can
+        // only arrive through a progression, and this arm requires the claimed
+        // prior binding to equal the existing row's own turn binding.
+        (
+            NarrativeCheckpoint::ReadyToSubmit {
+                command_id,
+                turn,
+                interpreter_prompt,
+                components,
+                opportunity,
+                completed,
+                ..
+            }
+            | NarrativeCheckpoint::NoProposal {
+                command_id,
+                turn,
+                interpreter_prompt,
+                components,
+                opportunity,
+                completed,
+                ..
+            },
+            NarrativeCheckpoint::InterpreterInFlight {
+                command_id: next_command_id,
+                turn: next_turn,
+                interpreter_prompt: next_interpreter_prompt,
+                components: next_components,
+                interruption: next_interruption,
+                opportunity: next_opportunity,
+                granted: next_granted,
+                completed: next_completed,
+                invocation: next_invocation,
+            },
+        ) => {
+            command_id == next_command_id
+                // The before must survive the rebinding unchanged.
+                && components == next_components
+                && turn.binding().interrupted_from.is_none()
+                && next_turn.binding().interrupted_from.as_deref() == Some(turn.binding())
+                && next_turn.source_prose() == turn.source_prose()
+                && next_turn.binding().projector_receipt_digest
+                    == turn.binding().projector_receipt_digest
+                && next_turn.binding().persona_inference_receipt_digest
+                    == turn.binding().persona_inference_receipt_digest
+                && opportunity.world_id == next_opportunity.world_id
+                && opportunity.scope == next_opportunity.scope
+                && opportunity.scope_digest != next_opportunity.scope_digest
+                && granted_matches_opportunity(next_granted, next_opportunity)
+                && next_completed.is_empty()
+                && next_interruption.as_ref().is_some_and(|interruption| {
+                    interruption.discarded == *completed
+                        && next_interpreter_prompt
+                            == &format!(
+                                "{interpreter_prompt}{}",
+                                interruption_section(
+                                    components,
+                                    opportunity,
+                                    interruption,
+                                    next_opportunity,
+                                )
+                            )
+                })
+                && canonical_model(&next_invocation.invocation.request.model)
         }
         _ => false,
     }
@@ -1929,6 +2123,53 @@ impl NarrativeDecision {
 pub(crate) enum NarrativeRun {
     Completed(NarrativeDecision),
     Pending(NarrativePending),
+    /// The turn was interrupted and could not be lowered again: its one
+    /// re-lowering was already spent, or the fresh opportunity no longer grants
+    /// speech. Nothing was submitted to the world, and this is not a pending
+    /// state — there is nothing to retry.
+    Interrupted(NarrativeInterruption),
+}
+
+#[derive(Debug)]
+pub(crate) struct NarrativeInterruption {
+    turn: PersonaTurn,
+    capture: NarrativeCapture,
+    subject: SubjectId,
+    bound_scope_digest: String,
+    /// Absent when the bound re-lowering was already spent, because the runner
+    /// refuses that before it looks for what replaced the scope.
+    fresh_scope_digest: Option<ScopeDigest>,
+    /// The runner's own statement, in the existing vocabulary, that the world
+    /// refused the act. A report field: never persisted into a checkpoint and
+    /// never entered into a `NarrativeCapture`, so `evaluate_interpreter_loop`
+    /// remains the only producer of capture gaps.
+    gap: TranslationGapSummary,
+}
+
+impl NarrativeInterruption {
+    pub(crate) fn persona_turn(&self) -> &PersonaTurn {
+        &self.turn
+    }
+
+    pub(crate) fn capture(&self) -> &NarrativeCapture {
+        &self.capture
+    }
+
+    pub(crate) fn subject(&self) -> SubjectId {
+        self.subject
+    }
+
+    pub(crate) fn bound_scope_digest(&self) -> &str {
+        &self.bound_scope_digest
+    }
+
+    pub(crate) fn fresh_scope_digest(&self) -> Option<&str> {
+        self.fresh_scope_digest.as_ref().map(ScopeDigest::as_str)
+    }
+
+    pub(crate) fn gap(&self) -> &TranslationGapSummary {
+        &self.gap
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -2291,6 +2532,7 @@ impl ControllerRunner {
             command_id,
             identity,
             typed_view,
+            components: selected.subject.components.clone(),
             persona_model: self.models.persona.clone(),
             interpreter_model: self.models.interpreter.clone(),
             opportunity: selected.opportunity,
@@ -2939,8 +3181,10 @@ impl ControllerRunner {
         select_one(&snapshot, exact_opportunity)
     }
 
-    /// The scope this run bound still derives the same digest. A commit
-    /// elsewhere in the world no longer kills an in-flight turn.
+    /// The scope this run bound still derives the same digest. The operational
+    /// lane's early abort, and only its: a lane holding nothing to preserve
+    /// stops as soon as the scope moves, while the narrative lane runs to the
+    /// kernel's refusal so its prose and receipts survive to be lowered again.
     async fn ensure_scope_unchanged(
         &self,
         opportunity: &DecisionOpportunity,
@@ -2981,6 +3225,7 @@ impl ControllerRunner {
             command_id,
             identity,
             typed_view,
+            components,
             persona_model,
             interpreter_model,
             opportunity,
@@ -2992,7 +3237,6 @@ impl ControllerRunner {
                 "Projector runner received another checkpoint".into(),
             ));
         };
-        self.ensure_scope_unchanged(&opportunity).await?;
         let projector_output = match self.infer(invocation).await {
             Ok(output) => output,
             Err(error) => match inference_pending_reason(&error) {
@@ -3020,6 +3264,7 @@ impl ControllerRunner {
             command_id,
             identity,
             typed_view,
+            components,
             interpreter_model,
             opportunity,
             granted,
@@ -3052,6 +3297,7 @@ impl ControllerRunner {
             command_id,
             identity,
             typed_view,
+            components,
             interpreter_model,
             opportunity,
             granted,
@@ -3066,7 +3312,6 @@ impl ControllerRunner {
         let (lived_stream, projector_receipt) = projector_output
             .clone()
             .prose_only(InferencePurpose::Projector)?;
-        self.ensure_scope_unchanged(&opportunity).await?;
         let persona = match self
             .infer(invocation)
             .await
@@ -3087,6 +3332,7 @@ impl ControllerRunner {
                 scope_digest: opportunity.scope_digest.as_str().to_owned(),
                 projector_receipt_digest: projector_receipt,
                 persona_inference_receipt_digest: persona.1,
+                interrupted_from: None,
             },
             persona.0,
         );
@@ -3111,6 +3357,8 @@ impl ControllerRunner {
             command_id,
             turn,
             interpreter_prompt,
+            components,
+            interruption: None,
             opportunity,
             granted,
             completed: Vec::new(),
@@ -3144,6 +3392,8 @@ impl ControllerRunner {
                 command_id,
                 turn,
                 interpreter_prompt,
+                components,
+                interruption,
                 opportunity,
                 granted,
                 mut completed,
@@ -3154,7 +3404,6 @@ impl ControllerRunner {
                     "Interpreter runner received a terminal checkpoint".into(),
                 ));
             };
-            self.ensure_scope_unchanged(&opportunity).await?;
             let model = invocation.invocation.request.model.clone();
             let output = match self.infer(invocation).await {
                 Ok(output) => output,
@@ -3171,6 +3420,8 @@ impl ControllerRunner {
                             command_id,
                             turn,
                             interpreter_prompt,
+                            components,
+                            interruption,
                             opportunity,
                             granted,
                             completed,
@@ -3180,6 +3431,8 @@ impl ControllerRunner {
                             command_id,
                             turn,
                             interpreter_prompt,
+                            components,
+                            interruption,
                             opportunity,
                             completed,
                         }
@@ -3197,11 +3450,13 @@ impl ControllerRunner {
                     return self.submit_narrative(next).await;
                 }
                 Ok(InterpreterLoopEvaluation::Continue { conversation }) => {
-                    let round = completed.len();
+                    let round = interpreter_round(&interruption, &completed);
                     let next = NarrativeCheckpoint::InterpreterInFlight {
                         command_id,
                         turn,
                         interpreter_prompt,
+                        components,
+                        interruption,
                         opportunity,
                         granted,
                         completed,
@@ -3274,13 +3529,159 @@ impl ControllerRunner {
         };
         match self
             .submit_controller_world(command_id, &opportunity, command)
-            .await?
+            .await
         {
-            ControllerWorldSubmission::Completed(submission) => {
+            Ok(ControllerWorldSubmission::Completed(submission)) => {
                 completed_narrative(&checkpoint, submission)
             }
-            ControllerWorldSubmission::Pending(reason) => Ok(narrative_pending(checkpoint, reason)),
+            Ok(ControllerWorldSubmission::Pending(reason)) => {
+                Ok(narrative_pending(checkpoint, reason))
+            }
+            // Both of `submit_controller_world`'s kernel-error mappings funnel
+            // here; they are the same fact and are not distinguished.
+            Err(ControllerError::World(KernelError::ScopeChanged { .. })) => {
+                self.interrupted(checkpoint).await
+            }
+            Err(error) => Err(error),
         }
+    }
+
+    /// One place, one event. A scope digest that moved between the turn and the
+    /// commit is an interruption whatever moved it: a neighbour's speech, a
+    /// transfer, a route closing, a revocation, a vacated office, a routine
+    /// rolling on a tick, an elaborator patch, a consumer document. The Persona
+    /// is never re-run; only the binding is renewed, and the same prose is
+    /// lowered a second time against an anonymous account of what moved.
+    async fn interrupted(
+        &self,
+        checkpoint: NarrativeCheckpoint,
+    ) -> Result<NarrativeRun, ControllerError> {
+        let (command_id, turn, interpreter_prompt, opportunity, completed, components) =
+            match checkpoint.clone() {
+                NarrativeCheckpoint::ReadyToSubmit {
+                    command_id,
+                    turn,
+                    interpreter_prompt,
+                    components,
+                    opportunity,
+                    completed,
+                    ..
+                }
+                | NarrativeCheckpoint::NoProposal {
+                    command_id,
+                    turn,
+                    interpreter_prompt,
+                    components,
+                    opportunity,
+                    completed,
+                    ..
+                } => (
+                    command_id,
+                    turn,
+                    interpreter_prompt,
+                    opportunity,
+                    completed,
+                    components,
+                ),
+                _ => {
+                    return Err(ControllerError::Serialization(
+                        "an interruption requires terminal controller work".into(),
+                    ));
+                }
+            };
+        // The bound of one re-lowering, read before any inference or selection
+        // is spent on it.
+        if turn.binding().interrupted_from.is_some() {
+            return overtaken(&checkpoint, None);
+        }
+        let snapshot = self
+            .mailbox
+            .snapshot()
+            .await
+            .map_err(ControllerError::Snapshot)?;
+        let fresh = select_fresh(&snapshot, &opportunity)?;
+        if fresh.opportunity.scope_digest == opportunity.scope_digest {
+            // The refusal was not this scope's move, and the runner does not
+            // invent a second explanation for it.
+            return Err(ControllerError::World(KernelError::ScopeChanged {
+                scope: opportunity.scope,
+                expected: opportunity.scope_digest.clone(),
+                actual: fresh.opportunity.scope_digest,
+            }));
+        }
+        if !fresh
+            .granted
+            .iter()
+            .any(|entry| entry.entry.kind.0 == SPEAK_KIND)
+        {
+            // Lowering prose into an invocation the fresh grant set cannot
+            // express is a round bought to produce `SpeakUnavailable`.
+            return overtaken(&checkpoint, Some(fresh.opportunity.scope_digest.clone()));
+        }
+        let interruption = Interruption {
+            components: fresh.subject.components.clone(),
+            overheard: fresh.overheard_since(turn.binding().world_revision),
+            discarded: completed,
+        };
+        let next_turn = PersonaTurn::record(
+            PersonaTurnBinding {
+                world_id: encoded_id(&fresh.opportunity.world_id)?,
+                controller_id: encoded_id(&fresh.opportunity.controller_id)?,
+                opportunity_digest: fresh.opportunity.digest()?,
+                world_revision: fresh.opportunity.revision,
+                scope_digest: fresh.opportunity.scope_digest.as_str().to_owned(),
+                projector_receipt_digest: turn.binding().projector_receipt_digest.clone(),
+                persona_inference_receipt_digest: turn
+                    .binding()
+                    .persona_inference_receipt_digest
+                    .clone(),
+                interrupted_from: Some(Box::new(turn.binding().clone())),
+            },
+            turn.source_prose(),
+        );
+        let next_prompt = format!(
+            "{interpreter_prompt}{}",
+            interruption_section(&components, &opportunity, &interruption, &fresh.opportunity,)
+        );
+        let conversation = match evaluate_interpreter_loop(&next_turn, &next_prompt, &[])? {
+            InterpreterLoopEvaluation::Continue { conversation } => conversation,
+            InterpreterLoopEvaluation::Complete { .. } => {
+                return Err(ControllerError::Serialization(
+                    "empty Interpreter evidence unexpectedly finalized".into(),
+                ));
+            }
+        };
+        let round = interpreter_round(&Some(interruption.clone()), &[]);
+        let next = NarrativeCheckpoint::InterpreterInFlight {
+            command_id,
+            turn: next_turn,
+            interpreter_prompt: next_prompt,
+            components,
+            interruption: Some(interruption),
+            granted: fresh.granted,
+            opportunity: fresh.opportunity,
+            completed: Vec::new(),
+            invocation: self.prepare(interpreter_request(
+                command_id,
+                round,
+                &self.models.interpreter,
+                conversation,
+            )?)?,
+        };
+        if self
+            .persist(ControllerWork::Narrative(next.clone()))
+            .await?
+            == ControllerWorkWrite::CustodyUncertain
+        {
+            return Ok(narrative_pending(
+                next,
+                ControllerPendingReason::StoreReopenRequired,
+            ));
+        }
+        // The re-lowering rejoins the ordinary loop, which is what closes the
+        // cycle `interpret_pending -> submit_narrative -> interrupted`. One
+        // boxed edge is all the compiler needs to size it.
+        Box::pin(self.interpret_pending(next)).await
     }
 
     async fn persist(&self, work: ControllerWork) -> Result<ControllerWorkWrite, ControllerError> {
@@ -3500,6 +3901,7 @@ impl SelectedDecision {
     /// question. Nothing here marks whether a jurisdiction is occupied.
     fn typed_authority(&self) -> Vec<Value> {
         self.subject
+            .components
             .authority
             .iter()
             .map(Self::typed_grant)
@@ -3560,8 +3962,9 @@ impl SelectedDecision {
     /// from the one `scope_components` derivation.
     fn typed_routes(&self) -> Vec<Value> {
         self.subject
-            .incident_routes
-            .iter()
+            .components
+            .routes
+            .keys()
             .filter_map(|edge_id| {
                 self.snapshot
                     .routes
@@ -3587,6 +3990,7 @@ impl SelectedDecision {
     /// for nothing else.
     fn typed_holdings(&self) -> Vec<Value> {
         self.subject
+            .components
             .holdings
             .iter()
             .map(|(resource, quantity)| {
@@ -3607,6 +4011,7 @@ impl SelectedDecision {
     /// crisis is the world's to derive, not this view's to editorialize.
     fn typed_dependencies(&self) -> Vec<Value> {
         self.subject
+            .components
             .dependencies
             .iter()
             .map(|target| match target {
@@ -3638,7 +4043,7 @@ impl SelectedDecision {
             .iter()
             .map(|entry| {
                 json!({
-                    "speaker": self.speaker_label(entry),
+                    "speaker": self.speaker_label(entry).map_or(Value::Null, Value::String),
                     "certainty": entry.confidence,
                     "text": entry.statement.as_str(),
                 })
@@ -3650,16 +4055,33 @@ impl SelectedDecision {
     /// scope: a subject that holds a fact it was never told sees the statement
     /// with no speaker, because it knows the thing and not the telling. A label
     /// is resolved only for a subject that spoke to this one.
-    fn speaker_label(&self, entry: &KnowledgeSnapshot) -> Value {
+    fn speaker_label(&self, entry: &KnowledgeSnapshot) -> Option<String> {
         match entry.source {
             KnowledgeSource::Told { by, .. } => self
                 .snapshot
                 .subjects
                 .iter()
                 .find(|subject| subject.id == by)
-                .map_or(Value::Null, |subject| Value::String(subject.label.clone())),
-            KnowledgeSource::Witnessed | KnowledgeSource::Evidenced => Value::Null,
+                .map(|subject| subject.label.clone()),
+            KnowledgeSource::Witnessed | KnowledgeSource::Evidenced => None,
         }
+    }
+
+    /// Everything said to *this* subject since the turn's bound revision. Read
+    /// from `self.subject` and never from `self.snapshot.subjects`: a delta
+    /// rendered from the snapshot's subject list would leak a neighbour's state
+    /// and no type would stop it.
+    fn overheard_since(&self, revision: u64) -> Vec<Overheard> {
+        self.subject
+            .knowledge
+            .iter()
+            .filter(|row| row.spoken_at.is_some_and(|at| at > revision))
+            .map(|row| Overheard {
+                speaker: self.speaker_label(row),
+                statement: row.statement.clone(),
+                confidence: row.confidence,
+            })
+            .collect()
     }
 
     fn typed_knowledge(&self) -> Vec<Value> {
@@ -3688,11 +4110,116 @@ impl SelectedDecision {
     /// question about other subjects, so no reach set is carried.
     fn typed_channels(&self) -> Vec<Value> {
         self.subject
+            .components
             .controls
-            .iter()
+            .keys()
             .map(|channel| json!({"id": channel}))
             .collect()
     }
+}
+
+const OVERTAKEN_DETAIL: &str =
+    "the intent this prose carried was overtaken before it could take effect";
+
+/// The interruption section, appended verbatim to the interpreter prompt the
+/// first lowering used.
+///
+/// It takes values, not a snapshot, so a neighbour's state is not reachable from
+/// here: the whole-snapshot leak is a compile error rather than a review note.
+/// What a subject may be shown is exactly (1) that one of its *own* scope
+/// components differs, by the name of the field's meaning and with no value, id,
+/// count, or actor; (2) that the set of affordances its opportunity grants
+/// differs, in the same terms; and (3) every statement told to it since its
+/// turn's bound revision, with a speaker only where the row's source is a
+/// telling. (1) and (2) are anonymous by construction — no component of a scope
+/// names an actor — and (3) is attributable because `fan_out` already decided
+/// the subject may hold that row.
+fn interruption_section(
+    before: &ScopeComponents,
+    bound: &DecisionOpportunity,
+    interruption: &Interruption,
+    fresh: &DecisionOpportunity,
+) -> String {
+    let after = &interruption.components;
+    let mut section = String::from(
+        "\n\nInterrupted: the world moved after this turn's prose was written. The prose stands; what it can still mean may not.\n\nWhat changed in this person's own reach, with no author it could perceive:\n",
+    );
+    let moved = [
+        (
+            before.position != after.position,
+            "- where this person stands changed\n",
+        ),
+        (
+            before.routes != after.routes,
+            "- a way out of here changed\n",
+        ),
+        (
+            before.holdings != after.holdings,
+            "- what this person holds changed\n",
+        ),
+        (
+            before.dependencies != after.dependencies,
+            "- what this person depends on changed\n",
+        ),
+        (
+            before.authority != after.authority,
+            "- what this person is authorized over changed\n",
+        ),
+        (
+            before.delegated != after.delegated,
+            "- an office this person holds changed\n",
+        ),
+        (
+            before.knows != after.knows,
+            "- what this person knows changed\n",
+        ),
+        (
+            before.controls != after.controls,
+            "- a channel this person controls changed\n",
+        ),
+        (
+            before.commitments != after.commitments,
+            "- what this person owes changed\n",
+        ),
+        (
+            bound.affordance_ids != fresh.affordance_ids,
+            "- what this person may attempt changed\n",
+        ),
+    ];
+    // The block is never empty: the digest also binds each granted entry's
+    // definition, so every named field can compare equal while the scope has
+    // still moved.
+    if moved.iter().any(|(differs, _)| *differs) {
+        for (_, line) in moved.iter().filter(|(differs, _)| *differs) {
+            section.push_str(line);
+        }
+    } else {
+        section.push_str("- something in this person's reach changed that it cannot name\n");
+    }
+    if !interruption.overheard.is_empty() {
+        section.push_str("\nWhat was said to this person since:\n");
+        for row in &interruption.overheard {
+            let confidence = confidence_name(row.confidence);
+            let statement = row.statement.as_str();
+            match &row.speaker {
+                Some(speaker) => section
+                    .push_str(&format!("- {speaker} said: \"{statement}\" ({confidence})\n")),
+                None => section.push_str(&format!(
+                    "- this person came to know, without being told: \"{statement}\" ({confidence})\n"
+                )),
+            }
+        }
+    }
+    section
+}
+
+/// Confidence through its own serde name, so the prompt and the typed surface
+/// spell it the same way.
+fn confidence_name(confidence: Confidence) -> String {
+    serde_json::to_value(confidence)
+        .ok()
+        .and_then(|value| value.as_str().map(str::to_owned))
+        .unwrap_or_default()
 }
 
 /// The narrative lane speaks and does nothing else, so it finds its entry by
@@ -3823,6 +4350,53 @@ fn completed_narrative(
 
 fn narrative_pending(work: NarrativeCheckpoint, reason: ControllerPendingReason) -> NarrativeRun {
     NarrativeRun::Pending(NarrativePending { work, reason })
+}
+
+/// The terminal interruption. One rule for every un-re-lowerable interruption:
+/// it ends the turn, it never becomes a world submission, and it is reported in
+/// the gap vocabulary the model already owns rather than a new word.
+fn overtaken(
+    checkpoint: &NarrativeCheckpoint,
+    fresh_scope_digest: Option<ScopeDigest>,
+) -> Result<NarrativeRun, ControllerError> {
+    let (turn, interpreter_prompt, completed, opportunity) = match checkpoint {
+        NarrativeCheckpoint::ReadyToSubmit {
+            turn,
+            interpreter_prompt,
+            completed,
+            opportunity,
+            ..
+        }
+        | NarrativeCheckpoint::NoProposal {
+            turn,
+            interpreter_prompt,
+            completed,
+            opportunity,
+            ..
+        } => (turn, interpreter_prompt, completed, opportunity),
+        _ => {
+            return Err(ControllerError::Serialization(
+                "interrupted Persona work is not terminal".into(),
+            ));
+        }
+    };
+    let capture = derive_narrative_capture(turn, interpreter_prompt, completed)?;
+    let source = capture.proposal.unwrap_or(SourceRange {
+        start_byte: 0,
+        end_byte: turn.source_prose().len(),
+    });
+    Ok(NarrativeRun::Interrupted(NarrativeInterruption {
+        subject: opportunity.scope.subject_id,
+        bound_scope_digest: opportunity.scope_digest.as_str().to_owned(),
+        fresh_scope_digest,
+        gap: TranslationGapSummary {
+            kind: TranslationGapKind::Unresolved,
+            source,
+            detail: OVERTAKEN_DETAIL.into(),
+        },
+        turn: turn.clone(),
+        capture,
+    }))
 }
 
 fn completed_operational(
@@ -5234,10 +5808,7 @@ mod tests {
             human_controller: None,
             affordances: BTreeSet::from([speak_affordance]),
             position: None,
-            holdings: BTreeMap::new(),
-            dependencies: BTreeSet::new(),
-            incident_routes: Vec::new(),
-            authority: BTreeSet::new(),
+            components: fixture_components(),
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
             redress: Vec::new(),
@@ -5252,7 +5823,6 @@ mod tests {
                 },
                 spoken_at: Some(40),
             }],
-            controls: BTreeSet::new(),
             commitments: Vec::new(),
             pressures: Vec::new(),
             qualified: false,
@@ -5266,10 +5836,7 @@ mod tests {
             human_controller: None,
             affordances: BTreeSet::new(),
             position: None,
-            holdings: BTreeMap::new(),
-            dependencies: BTreeSet::new(),
-            incident_routes: Vec::new(),
-            authority: BTreeSet::new(),
+            components: fixture_components(),
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
             redress: Vec::new(),
@@ -5281,7 +5848,6 @@ mod tests {
                 source: KnowledgeSource::Witnessed,
                 spoken_at: None,
             }],
-            controls: BTreeSet::new(),
             commitments: Vec::new(),
             pressures: Vec::new(),
             qualified: false,
@@ -5486,15 +6052,14 @@ mod tests {
             human_controller: None,
             affordances: BTreeSet::from([speak_affordance]),
             position: Some(yard),
-            holdings: BTreeMap::new(),
-            dependencies: BTreeSet::new(),
-            incident_routes: vec![first_edge],
-            authority: BTreeSet::new(),
+            components: ScopeComponents {
+                routes: BTreeMap::from([(first_edge, fixture_route(yard, road))]),
+                ..fixture_components()
+            },
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
             redress: Vec::new(),
             knowledge: Vec::new(),
-            controls: BTreeSet::new(),
             commitments: Vec::new(),
             pressures: Vec::new(),
             qualified: false,
@@ -5508,15 +6073,14 @@ mod tests {
             human_controller: None,
             affordances: BTreeSet::new(),
             position: Some(vault),
-            holdings: BTreeMap::new(),
-            dependencies: BTreeSet::new(),
-            incident_routes: vec![second_edge],
-            authority: BTreeSet::new(),
+            components: ScopeComponents {
+                routes: BTreeMap::from([(second_edge, fixture_route(road, vault))]),
+                ..fixture_components()
+            },
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
             redress: Vec::new(),
             knowledge: Vec::new(),
-            controls: BTreeSet::new(),
             commitments: Vec::new(),
             pressures: Vec::new(),
             qualified: false,
@@ -5585,7 +6149,7 @@ mod tests {
         // `scope_components` derives both together, so the fixture clears both.
         let mut unplaced = selected;
         unplaced.subject.position = None;
-        unplaced.subject.incident_routes.clear();
+        unplaced.subject.components.routes.clear();
         let view = unplaced.typed_view().unwrap();
         assert!(!view.contains("The Cavity Yard"));
         assert!(!view.contains("The Yard Ramp"));
@@ -5607,8 +6171,9 @@ mod tests {
                 label: "The Vault Hoard".into(),
             },
         ];
-        custodial.subject.holdings = BTreeMap::from([(tithe, Quantity(7))]);
-        custodial.subject.dependencies = BTreeSet::from([DependencyTarget::Route(second_edge)]);
+        custodial.subject.components.holdings = BTreeMap::from([(tithe, Quantity(7))]);
+        custodial.subject.components.dependencies =
+            BTreeSet::from([DependencyTarget::Route(second_edge)]);
         let view = custodial.typed_view().unwrap();
         assert!(view.contains("The Rhythm Tithe"));
         assert!(view.contains(r#""quantity": 7"#));
@@ -5624,7 +6189,7 @@ mod tests {
         // target, and no other subject's jurisdiction.
         let mut civic = custodial;
         let hall = EntityId::issue();
-        civic.subject.authority = BTreeSet::from([crate::world::AuthorityGrant {
+        civic.subject.components.authority = BTreeSet::from([crate::world::AuthorityGrant {
             kind: crate::world::AuthorityKindName("levy".into()),
             over: crate::world::AuthorityTarget::PlaceSubtree(hall),
         }]);
@@ -5632,7 +6197,7 @@ mod tests {
             institution: other_id,
             office: crate::world::OfficeName("warden".into()),
             incumbent: Some(actor_id),
-            authority: civic.subject.authority.clone(),
+            authority: civic.subject.components.authority.clone(),
         }];
         civic.subject.redress = vec![crate::world::ForumSnapshot {
             grievance: crate::world::GrievanceKindName("seizure".into()),
@@ -5932,6 +6497,34 @@ mod tests {
         })
     }
 
+    /// The digest-bound components a fixture subject carries. A literal rather
+    /// than a constructor on `ScopeComponents`: the kernel derives these from
+    /// state and owes no test builder.
+    fn fixture_components() -> ScopeComponents {
+        ScopeComponents {
+            position: None,
+            routes: BTreeMap::new(),
+            holdings: BTreeMap::new(),
+            dependencies: BTreeSet::new(),
+            authority: BTreeSet::new(),
+            delegated: BTreeMap::new(),
+            knows: BTreeSet::new(),
+            controls: BTreeMap::new(),
+            commitments: BTreeMap::new(),
+        }
+    }
+
+    fn fixture_route(from: EntityId, to: EntityId) -> crate::world::patch::EdgeRecord {
+        crate::world::patch::EdgeRecord::Route {
+            label: "a fixture route".into(),
+            from,
+            to,
+            access: crate::world::AccessKind::Public,
+            cost: crate::world::Cost(6),
+            open: true,
+        }
+    }
+
     fn fixture_opportunity(mode: ControllerMode) -> DecisionOpportunity {
         DecisionOpportunity {
             world_id: WorldId::issue(),
@@ -5982,6 +6575,7 @@ mod tests {
                 scope_digest: opportunity.scope_digest.as_str().to_owned(),
                 projector_receipt_digest: "sha256:projector".into(),
                 persona_inference_receipt_digest: "sha256:persona".into(),
+                interrupted_from: None,
             },
             source_prose,
         )
@@ -6006,6 +6600,8 @@ mod tests {
             command_id,
             turn: turn.clone(),
             interpreter_prompt: interpreter_prompt.into(),
+            components: fixture_components(),
+            interruption: None,
             opportunity: opportunity.clone(),
             granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
             completed,
