@@ -2255,7 +2255,20 @@ mod tests {
         cookie: String,
     }
 
+    /// A real CodexConnector behind the fixture, read from the environment
+    /// the production runtime reads. Only the ignored live smoke uses it.
+    struct LiveController {
+        endpoint: SocketAddr,
+        credential: PathBuf,
+        runtime_id: String,
+        models: ControllerModels,
+    }
+
     async fn fixture() -> Fixture {
+        fixture_with(None).await
+    }
+
+    async fn fixture_with(live: Option<LiveController>) -> Fixture {
         let directory = tempfile::tempdir().unwrap();
         let key = directory.path().join("session.key");
         std::fs::write(&key, [17_u8; 32]).unwrap();
@@ -2274,19 +2287,25 @@ mod tests {
         let (world, _owner) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
         let controller_key = directory.path().join("controller.key");
         std::fs::write(&controller_key, "runtime-test-controller-key").unwrap();
-        let controllers = ControllerRunner::open(
-            world.clone(),
-            "127.0.0.1:9".parse().unwrap(),
-            &controller_key,
-            "ghostlight-runtime-test",
-            directory.path().join("controller-work.cc"),
-            ControllerModels {
+        let live = live.unwrap_or_else(|| LiveController {
+            endpoint: "127.0.0.1:9".parse().unwrap(),
+            credential: controller_key.clone(),
+            runtime_id: "ghostlight-runtime-test".into(),
+            models: ControllerModels {
                 projector: "gpt-5.6-luna".into(),
                 persona: "gpt-5.6-sol".into(),
                 interpreter: "gpt-5.6-terra".into(),
                 operational_agent: "gpt-5.6-terra".into(),
                 elaborator: "gpt-5.6-terra".into(),
             },
+        });
+        let controllers = ControllerRunner::open(
+            world.clone(),
+            live.endpoint,
+            &live.credential,
+            live.runtime_id,
+            directory.path().join("controller-work.cc"),
+            live.models,
         )
         .unwrap();
         let mesh = MeshPublisher::open(
@@ -3145,6 +3164,114 @@ mod tests {
         assert!(
             result.is_err(),
             "a malformed credentials file must refuse the registry, not start empty"
+        );
+    }
+
+    /// The local live smoke: the production tick driver, elaboration sweep,
+    /// and clock against a real CodexConnector, on a genesis world, for a
+    /// configured number of ticks, writing what the operator would see to a
+    /// log. Everything else in this module proves the machine under fixture
+    /// ports; this is the one place the road is tested. It asserts only that
+    /// the loop ran; the log is the deliverable.
+    #[tokio::test]
+    #[ignore = "requires a running CodexConnector; see GHOSTLIGHT_SMOKE_* environment"]
+    async fn live_smoke_ticks_a_genesis_world_against_the_connector() {
+        let env = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("{name} is required"));
+        let live = LiveController {
+            endpoint: env("GHOSTLIGHT_CONTROLLER_CONNECTOR").parse().unwrap(),
+            credential: PathBuf::from(env("GHOSTLIGHT_CONTROLLER_CREDENTIAL")),
+            runtime_id: env("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID"),
+            models: ControllerModels {
+                projector: env("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL"),
+                persona: env("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL"),
+                interpreter: env("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL"),
+                operational_agent: env("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL"),
+                elaborator: env("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL"),
+            },
+        };
+        let ticks: u32 = env("GHOSTLIGHT_SMOKE_TICKS").parse().unwrap();
+        let log_path = PathBuf::from(env("GHOSTLIGHT_SMOKE_LOG"));
+        let mut log = std::fs::File::create(&log_path).unwrap();
+        use std::io::Write as _;
+        let mut line = |text: String| {
+            writeln!(log, "{} {text}", Utc::now().to_rfc3339()).unwrap();
+            log.flush().unwrap();
+        };
+
+        let fixture = fixture_with(Some(live)).await;
+        let state = &fixture.state;
+        active_two_cell_world(state, &fixture.cookie).await;
+        let snapshot = state.world.snapshot().await.unwrap();
+        line(format!(
+            "genesis world={:?} revision={} phase={:?} subjects={} opportunities={} now={:?} boundaries={} deficit_rows={}",
+            snapshot.world_id,
+            snapshot.revision,
+            snapshot.phase,
+            snapshot.subjects.len(),
+            snapshot.opportunities.len(),
+            snapshot.now,
+            snapshot.boundaries.len(),
+            snapshot.scale_deficit.len()
+        ));
+        for subject in &snapshot.subjects {
+            line(format!(
+                "  subject {} kind={:?} mode={:?} affordances={}",
+                subject.label,
+                subject.kind,
+                subject.controller_mode,
+                subject.affordances.len()
+            ));
+        }
+        let runner = state.controllers.clone().expect("a live controller runner");
+        let mut logged_events = 0usize;
+        for tick in 1..=ticks {
+            let started = std::time::Instant::now();
+            let before = state.world.snapshot().await.unwrap().revision;
+            drive_one_tick(
+                TickMinutes::new(CLOCK_TICK_MINUTES).unwrap(),
+                || run_cover_tick(state),
+                |id, minutes| state.world.submit_clock(id, minutes),
+            )
+            .await;
+            let cover = *state.cover.lock().await;
+            let elaboration = runner.elaborator().sweep().await;
+            let after = state.world.snapshot().await.unwrap();
+            line(format!(
+                "tick {tick} took={:?} revision {before}->{} now={:?} cover={cover:?} quarantined={} elaboration={elaboration:?} boundaries={} deficit_rows={} subjects={}",
+                started.elapsed(),
+                after.revision,
+                after.now,
+                state.controller_quarantined.load(Ordering::SeqCst),
+                after.boundaries.len(),
+                after.scale_deficit.len(),
+                after.subjects.len()
+            ));
+            let events = state.world.operator_log().await.unwrap();
+            for event in events.iter().skip(logged_events) {
+                line(format!(
+                    "  r{} {}: {}",
+                    event.revision,
+                    event.speaker_label,
+                    event
+                        .speech
+                        .as_ref()
+                        .map(Statement::as_str)
+                        .unwrap_or("<no speech>")
+                ));
+            }
+            logged_events = events.len();
+            if let Ok(custody) = runner.custody_probe().await {
+                line(format!("  custody {custody:?}"));
+            }
+        }
+        let final_snapshot = state.world.snapshot().await.unwrap();
+        line(format!(
+            "done revision={} state_digest={} events={}",
+            final_snapshot.revision, final_snapshot.state_digest, logged_events
+        ));
+        assert!(
+            final_snapshot.revision > snapshot.revision,
+            "the clock alone must move the revision"
         );
     }
 }
