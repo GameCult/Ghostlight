@@ -10702,6 +10702,11 @@ mod tests {
         /// An owner patch creates a commitment on the actor. Its `commitments`
         /// move and nothing names a mover anywhere in the components.
         Commitment { subject: SubjectId },
+        /// An owner patch carrying arbitrary component operations. One arm for
+        /// every remaining un-authored cause: a transfer out of a neighbour's
+        /// custody, a route closing under the actor's feet, a grant revoked out
+        /// from under it, a commitment that names a counterparty.
+        Ops(Vec<crate::world::patch::ComponentOp>),
     }
 
     async fn apply_mid_turn(mailbox: &WorldMailbox, commit: &MidTurnCommit) {
@@ -10769,6 +10774,31 @@ mod tests {
                     )
                     .await
                     .expect("the mid-turn patch committed");
+            }
+            MidTurnCommit::Ops(operations) => {
+                let owner = PrincipalId::new("owner");
+                let authenticated =
+                    AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+                mailbox
+                    .submit_fixture(
+                        CommandEnvelope {
+                            id: CommandId::new(),
+                            world_id: snapshot.world_id,
+                            expected_revision: snapshot.revision,
+                            caller: CallerId::Principal(owner),
+                            body: CommandBody::AdmitPatch {
+                                answers: None,
+                                patch: WorldPatch {
+                                    declarations: Vec::new(),
+                                    operations: operations.clone(),
+                                    evidence: Vec::new(),
+                                },
+                            },
+                        },
+                        &authenticated,
+                    )
+                    .await
+                    .expect("the mid-turn operations committed");
             }
         }
     }
@@ -11489,4 +11519,579 @@ mod tests {
     /// The value `the_scope_digest_is_unchanged_by_this_pass` guards.
     const PINNED_SCOPE_DIGEST: &str =
         "sha256:39c881f8052be4e1fb278e78d20dcf9e081750affebafa33bd244de11ae18c9e";
+
+    // ------------------------------------------- Soul falsification, step 9
+    //
+    // The pass proves the leak invariant over two causes: a speech the subject
+    // was told, and an owner patch moving its commitments. These carry it over
+    // the rest of the causes the handler claims to serve, over the values the
+    // persisted row actually holds, and over the asymmetry the deleted stage
+    // detectors left between the two detail lanes.
+
+    use crate::world::patch::{AuthorityGrantRef, AuthorityTargetRef, RouteDeclaration};
+    use crate::world::{AccessKind, AuthorityKindName, AuthorityTarget};
+
+    /// An Active world carrying the furniture every un-authored cause needs: a
+    /// route the actor stands on, a resource its neighbour holds, and a
+    /// jurisdiction the actor is granted. `active_cell_mailbox` has none of
+    /// these, so its subjects can only ever be interrupted through `knows` and
+    /// `commitments`.
+    struct InterruptionWorld {
+        actor: SubjectId,
+        neighbour: SubjectId,
+        ramp: EdgeId,
+        tithe: EntityId,
+        hall: EntityId,
+    }
+
+    async fn interruption_world() -> (
+        tempfile::TempDir,
+        WorldMailbox,
+        tokio::task::JoinHandle<()>,
+        InterruptionWorld,
+    ) {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let place = |handle: &str, label: &str, container: Option<&str>| {
+            Declaration::Entity(EntityDeclaration {
+                handle: DraftHandle::new(handle),
+                label: label.into(),
+                kind: EntityKind::Place,
+                container: container.map(|inside| Ref::Draft(DraftHandle::new(inside))),
+            })
+        };
+        let inhabitant = |handle: &str, label: &str, controller: NewController| {
+            Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new(handle),
+                label: label.into(),
+                kind: SubjectKind::Person,
+                controller,
+                affordances: kernel_speak_grant(),
+                position: Some(Ref::Draft(DraftHandle::new("commons"))),
+            })
+        };
+        let ledger = EvidenceRef::new("the fixture ledger");
+        let creation = mailbox
+            .create_fixture(
+                CreateWorld {
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Interruption Fixture".into(),
+                    patch: WorldPatch {
+                        declarations: vec![
+                            place("commons", "The Commons", None),
+                            // Inside the commons, and empty: the deficit that
+                            // gives an elaborator session something to author
+                            // under `PlaceSubtree(commons)`.
+                            place("road", "The Road", Some("commons")),
+                            place("hall", "The Hall", None),
+                            Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("tithe"),
+                                label: "The Rhythm Tithe".into(),
+                                kind: EntityKind::Resource,
+                                container: None,
+                            }),
+                            Declaration::Route(RouteDeclaration {
+                                handle: DraftHandle::new("ramp"),
+                                label: "The Yard Ramp".into(),
+                                from: Ref::Draft(DraftHandle::new("commons")),
+                                to: Ref::Draft(DraftHandle::new("road")),
+                                access: AccessKind::Public,
+                                cost: Cost(4),
+                            }),
+                            inhabitant("actor", "Subject 0", NewController::NarrativePersona),
+                            inhabitant("neighbour", "Subject 1", NewController::OperationalAgent),
+                        ],
+                        operations: vec![
+                            crate::world::patch::ComponentOp::Admit {
+                                holder: Ref::Draft(DraftHandle::new("neighbour")),
+                                resource: Ref::Draft(DraftHandle::new("tithe")),
+                                qty: Quantity(5),
+                                evidence: ledger.clone(),
+                            },
+                            crate::world::patch::ComponentOp::GrantAuthority {
+                                holder: Ref::Draft(DraftHandle::new("actor")),
+                                grant: AuthorityGrantRef {
+                                    kind: AuthorityKindName("levy".into()),
+                                    over: AuthorityTargetRef::PlaceSubtree(Ref::Draft(
+                                        DraftHandle::new("hall"),
+                                    )),
+                                },
+                            },
+                        ],
+                        evidence: vec![ledger],
+                    },
+                    scale_intent: WorldScaleIntentRef::default(),
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: creation.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        let of = |label: &str| {
+            snapshot
+                .subjects
+                .iter()
+                .find(|subject| subject.label == label)
+                .unwrap_or_else(|| panic!("the fixture declares {label}"))
+        };
+        let actor = of("Subject 0");
+        let neighbour = of("Subject 1");
+        let furniture = InterruptionWorld {
+            actor: actor.id,
+            neighbour: neighbour.id,
+            ramp: *actor
+                .components
+                .routes
+                .keys()
+                .next()
+                .expect("the actor stands on a route"),
+            tithe: *neighbour
+                .components
+                .holdings
+                .keys()
+                .next()
+                .expect("the neighbour holds the tithe"),
+            hall: match actor
+                .components
+                .authority
+                .iter()
+                .next()
+                .expect("the actor is granted a jurisdiction")
+                .over
+            {
+                AuthorityTarget::PlaceSubtree(place) => place,
+                AuthorityTarget::Subject(_) => panic!("the fixture grants over a place"),
+            },
+        };
+        (directory, mailbox, task, furniture)
+    }
+
+    /// One interrupted narrative turn over `interruption_world`, driven to the
+    /// re-lowering and stopped there with its row persisted: `rounds` of 1 means
+    /// the re-lowered Interpreter call finds no script and leaves the row for
+    /// the test to read. Returns the turn and the prompt bytes the port saw.
+    async fn interrupted_by(
+        mailbox: &WorldMailbox,
+        source: &str,
+        speech: &str,
+        rounds: usize,
+        commit: MidTurnCommit,
+    ) -> (
+        InterruptedTurn,
+        Vec<String>,
+        Result<NarrativeRun, ControllerError>,
+    ) {
+        let (_, opportunity) = narrative_opportunity(mailbox).await;
+        let turn = interrupted_turn(mailbox, source, speech, rounds, vec![(2, commit)]);
+        let run = turn
+            .runner
+            .run_narrative(CommandId::new(), &opportunity)
+            .await;
+        let seen = turn.seen.lock().unwrap().clone();
+        (turn, seen, run)
+    }
+
+    /// Priority one, the leak invariant, over the causes the pass leaves
+    /// untested: a transfer out of a neighbour's custody, a route closed under
+    /// the actor's feet, the actor's own grant revoked, and an elaborator patch
+    /// admitted under its root. Each moves a different component; each is
+    /// something no subject may perceive as having an author. The section must
+    /// carry the anonymous line for the field that moved, no `What was said`
+    /// block at all, and no label, id, or value belonging to anyone.
+    #[tokio::test]
+    async fn every_un_authored_cause_is_re_lowered_with_no_actor_and_no_value() {
+        type Cause = fn(&InterruptionWorld) -> MidTurnCommit;
+        let causes: [(&str, &str, Cause); 3] = [
+            (
+                "a transfer",
+                "- what this person holds changed",
+                (|world| {
+                    MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::Transfer {
+                        from: Ref::Existing(world.neighbour),
+                        to: Ref::Existing(world.actor),
+                        resource: Ref::Existing(world.tithe),
+                        qty: Quantity(2),
+                    }])
+                }) as Cause,
+            ),
+            ("a closed route", "- a way out of here changed", |world| {
+                MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::CloseRoute {
+                    route: Ref::Existing(world.ramp),
+                }])
+            }),
+            (
+                "a revoked grant",
+                "- what this person is authorized over changed",
+                |world| {
+                    MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::RevokeAuthority {
+                        holder: Ref::Existing(world.actor),
+                        grant: AuthorityGrantRef {
+                            kind: AuthorityKindName("levy".into()),
+                            over: AuthorityTargetRef::PlaceSubtree(Ref::Existing(world.hall)),
+                        },
+                    }])
+                },
+            ),
+        ];
+
+        for (name, expected_line, cause) in causes {
+            let (_directory, mailbox, task, world) = interruption_world().await;
+            let source = "I say, \"The western brace is giving way.\"";
+            let (turn, seen, run) = interrupted_by(
+                &mailbox,
+                source,
+                "The western brace is giving way.",
+                2,
+                cause(&world),
+            )
+            .await;
+            assert!(
+                matches!(run, Ok(NarrativeRun::Completed(_))),
+                "{name} did not re-lower to a commit: {run:?}"
+            );
+            assert_eq!(
+                turn.calls.load(Ordering::SeqCst),
+                4,
+                "{name} spent something other than one re-lowering"
+            );
+            let section = interruption_section_of(&seen[3])
+                .unwrap_or_else(|| panic!("{name} produced no interruption section"));
+            assert!(
+                section.contains(expected_line),
+                "{name} did not report `{expected_line}`: {section}"
+            );
+            assert!(
+                !section.contains("What was said to this person since:"),
+                "{name} produced an overheard block: {section}"
+            );
+            // Nothing that could name a mover, a value, or a thing: the section
+            // renders fixed English per changed field and nothing else.
+            for leaked in [
+                "Subject 0",
+                "Subject 1",
+                "The Rhythm Tithe",
+                "The Yard Ramp",
+                "The Roadside Shed",
+                "The Hall",
+                "levy",
+                encoded_id(&world.neighbour).unwrap().as_str(),
+                encoded_id(&world.actor).unwrap().as_str(),
+                encoded_id(&world.tithe).unwrap().as_str(),
+                encoded_id(&world.ramp).unwrap().as_str(),
+                encoded_id(&world.hall).unwrap().as_str(),
+            ] {
+                assert!(
+                    !section.contains(leaked),
+                    "{name} leaked `{leaked}` into the interruption section: {section}"
+                );
+            }
+            drop(turn.runner);
+            drop(mailbox);
+            task.await.unwrap();
+        }
+    }
+
+    /// The membrane's exact boundary, and the sharpest thing to falsify here:
+    /// the persisted `Interruption` carries a whole `ScopeComponents`, and a
+    /// commitment inside it names its counterparty by id. That value is the
+    /// subject's own digest-bound state and belongs in the row. It must reach
+    /// no prompt byte, because the renderer takes values and emits only the
+    /// name of the field that moved.
+    #[tokio::test]
+    async fn the_row_carries_a_counterparty_the_prompt_never_names() {
+        let (_directory, mailbox, task, world) = interruption_world().await;
+        let source = "I say, \"Then it is agreed.\"";
+        // One scripted round only, so the re-lowered row is left persisted.
+        let (turn, seen, run) = interrupted_by(
+            &mailbox,
+            source,
+            "Then it is agreed.",
+            1,
+            MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::CreateCommitment {
+                subject: Ref::Existing(world.actor),
+                counterparty: Some(Ref::Existing(world.neighbour)),
+                kind: CommitmentKind::Obligation,
+                due: crate::world::FictionalMinutes(900),
+                period: None,
+                checks: Vec::new(),
+            }]),
+        )
+        .await;
+        assert!(
+            matches!(run, Ok(NarrativeRun::Pending(_))),
+            "the re-lowered round did not leave its row pending: {run:?}"
+        );
+
+        let NarrativeCheckpoint::InterpreterInFlight { interruption, .. } =
+            narrative_row(&turn.store)
+        else {
+            panic!("the re-lowering did not persist an in-flight row")
+        };
+        let interruption = interruption.expect("the re-lowered row records no interruption");
+        assert!(
+            interruption
+                .components
+                .commitments
+                .values()
+                .any(|commitment| commitment.counterparty == Some(world.neighbour)),
+            "the row does not carry the counterparty this test is about"
+        );
+
+        let section =
+            interruption_section_of(&seen[3]).expect("the re-lowered prompt has no section");
+        assert!(section.contains("- what this person owes changed"));
+        for leaked in [
+            "Subject 1",
+            encoded_id(&world.neighbour).unwrap().as_str(),
+            "obligation",
+            "900",
+        ] {
+            assert!(
+                !section.contains(leaked),
+                "the section rendered `{leaked}` out of the components it diffs: {section}"
+            );
+        }
+
+        drop(turn.runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Fork B's claim, checked against the digest rather than against itself.
+    /// `the_scope_digest_is_unchanged_by_this_pass` pins the serialization over
+    /// a hand-built preimage; this asserts the other half — that the value the
+    /// snapshot now hands the lane *is* what the kernel hashed for that subject
+    /// at that revision. Rebuilding the preimage from the view alone and
+    /// reproducing the live opportunity's digest is what "view and digest cannot
+    /// drift" has to mean, and it is the property the five deleted projections
+    /// used to spread across five fields.
+    #[tokio::test]
+    async fn the_snapshot_component_field_reproduces_every_live_scope_digest() {
+        let (_directory, mailbox, task, world) = interruption_world().await;
+        // Checked once on the fixture as declared, then again after a transfer
+        // and a route closure have moved two more component kinds.
+        for cause in [
+            MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::Transfer {
+                from: Ref::Existing(world.neighbour),
+                to: Ref::Existing(world.actor),
+                resource: Ref::Existing(world.tithe),
+                qty: Quantity(1),
+            }]),
+            MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::CloseRoute {
+                route: Ref::Existing(world.ramp),
+            }]),
+        ] {
+            let snapshot = mailbox.snapshot().await.unwrap();
+            assert_eq!(snapshot.opportunities.len(), 2, "two subjects hold a turn");
+            for opportunity in &snapshot.opportunities {
+                let subject = snapshot
+                    .subjects
+                    .iter()
+                    .find(|subject| subject.id == opportunity.scope.subject_id)
+                    .expect("every opportunity names a subject in the view");
+                let controller_id = opportunity.controller_id;
+                let assignment = match opportunity.controller_mode {
+                    ControllerMode::NarrativePersona => {
+                        ControllerAssignment::NarrativePersona { controller_id }
+                    }
+                    ControllerMode::OperationalAgent => {
+                        ControllerAssignment::OperationalAgent { controller_id }
+                    }
+                    ControllerMode::Human => continue,
+                };
+                let entries = snapshot
+                    .affordances
+                    .iter()
+                    .filter(|entry| opportunity.affordance_ids.contains(&entry.id))
+                    .map(|entry| (entry.id, &entry.entry))
+                    .collect::<BTreeMap<_, _>>();
+                assert_eq!(
+                    world_digest(&ScopePreimage {
+                        world_id: snapshot.world_id,
+                        subject_id: subject.id,
+                        controller: &assignment,
+                        affordances: entries,
+                        components: &subject.components,
+                    })
+                    .unwrap(),
+                    opportunity.scope_digest.as_str(),
+                    "the view's components do not hash to the digest the kernel published"
+                );
+            }
+            apply_mid_turn(&mailbox, &cause).await;
+        }
+
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Fork A's cut, taken at the exact call sites it deleted, and the
+    /// asymmetry it leaves behind. Both halves resume a persisted in-flight row
+    /// after the world moved under it, which is where `ensure_scope_unchanged`
+    /// used to stand in each lane. The operational lane still aborts there and
+    /// spends nothing. The narrative lane no longer does: it spends its
+    /// Interpreter round on a binding already known to be stale, is refused at
+    /// submit, re-lowers, and commits. That extra round is the price the fork
+    /// accepts, and it is bounded at one.
+    #[tokio::test]
+    async fn a_resumed_row_aborts_in_one_lane_and_is_lowered_in_the_other() {
+        let (_directory, mailbox, task, world) = interruption_world().await;
+        let (_, narrative) = narrative_opportunity(&mailbox).await;
+        let operational = mailbox
+            .snapshot()
+            .await
+            .unwrap()
+            .opportunities
+            .iter()
+            .find(|entry| entry.scope.subject_id == world.neighbour)
+            .expect("the neighbour has a live opportunity")
+            .clone();
+        let source = "I say, \"We leave by the upper stair.\"";
+        let speech = "We leave by the upper stair.";
+
+        // Each lane is driven to a persisted in-flight row and left there by a
+        // script that runs out.
+        let narrative_command = CommandId::new();
+        let first = interrupted_turn(&mailbox, source, speech, 0, Vec::new());
+        assert!(matches!(
+            first
+                .runner
+                .run_narrative(narrative_command, &narrative)
+                .await,
+            Ok(NarrativeRun::Pending(_))
+        ));
+        assert!(matches!(
+            narrative_row(&first.store),
+            NarrativeCheckpoint::InterpreterInFlight { .. }
+        ));
+        let operational_command = CommandId::new();
+        let opening_store = Arc::new(RecordingWorkStore {
+            persisted: Arc::new(AtomicBool::new(true)),
+            work: Mutex::new(BTreeMap::new()),
+        });
+        let opening_calls = Arc::new(AtomicUsize::new(0));
+        let opening = ControllerRunner::with_test_ports(
+            mailbox.clone(),
+            // No scripted round at all: the opening call faults retryably, so
+            // the lane leaves its `AgentInFlight` row persisted and unanswered.
+            Arc::new(InterruptingPort {
+                mailbox: mailbox.clone(),
+                outputs: Mutex::new(Vec::new()),
+                calls: opening_calls.clone(),
+                commits: Vec::new(),
+                seen: Arc::new(Mutex::new(Vec::new())),
+            }),
+            opening_store.clone(),
+            models(),
+        );
+        let opened = opening
+            .run_operational(operational_command, &operational)
+            .await;
+        assert!(
+            matches!(opened, Ok(OperationalRun::Pending(_))),
+            "the operational opening round did not leave a row pending: {opened:?}"
+        );
+        assert_eq!(
+            opening_calls.load(Ordering::SeqCst),
+            1,
+            "the operational opening round never reached the port"
+        );
+        drop(first.runner);
+        drop(opening);
+
+        // Then the world moves under both rows.
+        apply_mid_turn(
+            &mailbox,
+            &MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::CloseRoute {
+                route: Ref::Existing(world.ramp),
+            }]),
+        )
+        .await;
+
+        // The operational lane checks the digest at the top of its loop and
+        // stops without asking the provider anything.
+        let operational_calls = Arc::new(AtomicUsize::new(0));
+        let refused = ControllerRunner::with_test_ports(
+            mailbox.clone(),
+            Arc::new(InterruptingPort {
+                mailbox: mailbox.clone(),
+                outputs: Mutex::new(vec![output(
+                    vec![InferenceEvent::Text("Nothing further.".into())],
+                    "operational-resume",
+                )]),
+                calls: operational_calls.clone(),
+                commits: Vec::new(),
+                seen: Arc::new(Mutex::new(Vec::new())),
+            }),
+            opening_store.clone(),
+            models(),
+        )
+        .run_operational(operational_command, &operational)
+        .await;
+        assert!(
+            matches!(refused, Err(ControllerError::NoOpportunity { .. })),
+            "the operational lane stopped holding its early abort: {refused:?}"
+        );
+        assert_eq!(
+            operational_calls.load(Ordering::SeqCst),
+            0,
+            "a lane with nothing to preserve spent an inference on a doomed turn"
+        );
+
+        // The narrative lane has prose to preserve, so it runs on.
+        let narrative_calls = Arc::new(AtomicUsize::new(0));
+        let run = ControllerRunner::with_test_ports(
+            mailbox.clone(),
+            Arc::new(InterruptingPort {
+                mailbox: mailbox.clone(),
+                outputs: Mutex::new(vec![
+                    speak_span(source, speech, "resume-zero"),
+                    speak_span(source, speech, "resume-one"),
+                ]),
+                calls: narrative_calls.clone(),
+                commits: Vec::new(),
+                seen: Arc::new(Mutex::new(Vec::new())),
+            }),
+            first.store.clone(),
+            models(),
+        )
+        .run_narrative(narrative_command, &narrative)
+        .await
+        .expect("a resumed narrative row on a moved scope is no longer an error");
+        let NarrativeRun::Completed(decision) = run else {
+            panic!("the resumed narrative row did not re-lower to a commit")
+        };
+        assert!(
+            decision.persona_turn().binding().interrupted_from.is_some(),
+            "the turn committed without recording the interruption"
+        );
+        assert_eq!(
+            narrative_calls.load(Ordering::SeqCst),
+            2,
+            "fork A's accepted cost is one extra Interpreter round, no more"
+        );
+
+        drop(mailbox);
+        task.await.unwrap();
+    }
 }

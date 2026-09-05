@@ -798,6 +798,49 @@ mod tests {
         );
     }
 
+    /// The receipt schema bumped because the binding's fields changed, and the
+    /// pass keeps no compatibility path. A v2 receipt is rebuilt here exactly as
+    /// the previous version computed it — the old schema string, and no
+    /// `interrupted_from` value in the preimage — and it must not rehydrate.
+    /// Written out rather than derived from the live function, so a future edit
+    /// to the digest cannot quietly move both sides of the comparison together.
+    #[test]
+    fn a_receipt_written_before_this_pass_does_not_rehydrate() {
+        let source = "I say, \"The western brace is giving way.\"";
+        let live = turn(source);
+        let binding = live.binding();
+        let mut digest = Sha256::new();
+        for value in [
+            "ghostlight.persona_turn_receipt.v2".as_bytes(),
+            binding.world_id.as_bytes(),
+            binding.controller_id.as_bytes(),
+            binding.opportunity_digest.as_bytes(),
+            binding.scope_digest.as_bytes(),
+            binding.projector_receipt_digest.as_bytes(),
+            binding.persona_inference_receipt_digest.as_bytes(),
+            live.source_digest().as_bytes(),
+        ] {
+            digest.update((value.len() as u64).to_le_bytes());
+            digest.update(value);
+        }
+        let v2 = format!("sha256:{:x}", digest.finalize());
+
+        assert_eq!(
+            PERSONA_TURN_RECEIPT_SCHEMA,
+            "ghostlight.persona_turn_receipt.v3"
+        );
+        assert_ne!(v2, live.receipt_digest(), "the bump moved no bytes");
+        assert_eq!(
+            PersonaTurn::rehydrate(
+                binding.clone(),
+                live.source_prose(),
+                live.source_digest(),
+                &v2,
+            ),
+            Err(PersonaTurnIntegrityError::ReceiptDigestMismatch)
+        );
+    }
+
     #[test]
     fn interpretation_is_total_at_step_exhaustion() {
         let source = "I say, \"Mara, the bridge is unsafe.\" Then I try the rusted western gate.";
