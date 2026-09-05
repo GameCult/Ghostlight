@@ -378,6 +378,35 @@ serve as an ontology or completeness gate. No live Delvehold acceptance run is
 admitted before the focused suite passes and the old writers are structurally
 unable to override the aggregate.
 
+### 9. Interruption — in design
+
+Objective: a subject whose world moved between forming an intent and
+committing it is interrupted, not silently refused, and the interruption is
+narrated from what it could perceive.
+
+Current mechanism: a proposal binds to the scope digest of the components its
+verification reads; when another commit moves that digest before the proposal
+lands, the kernel refuses it with `ScopeChanged`. The narrative lane spent
+three inferences (projector, persona, interpreter) on that proposal and
+records nothing of what overtook it. Coupled subjects in one tick therefore
+pay for acts the kernel will refuse, and nothing in the vocabulary lets an
+act be cut short by an event.
+
+Intended change: the Persona is never re-run. On `ScopeChanged` the runner
+re-lowers once through the Interpreter with a second input, the delta the
+subject perceived since its turn, rendered from the same components the
+digest reads and the same fan-out that bounds knowledge; the re-lowered
+proposal is an ordinary `ExerciseDecision` bound to the fresh digest. One
+re-lowering per subject per tick. Interruption is defined by the digest, so
+a neighbour's act, a clock tick, an elaborator patch, a consumer document,
+and a world-scale event are one case.
+
+Cut line: no new kernel arm, bundle, or joint command; no second Persona
+turn; no event log reaches a controller; the delta shown to the Interpreter
+is exactly what the membrane already lets the subject perceive, proven by a
+leakage test. The joint-per-room Interpreter was considered and rejected:
+the room is not the unit of interruption, the digest is.
+
 ## Subtraction budget
 
 Prefer deletion, collapse, or reuse before adding surfaces. The replacement

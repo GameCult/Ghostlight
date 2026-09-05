@@ -2,11 +2,14 @@
 
 ## Current Subgoal
 
-None. The seed producer is landed (`b7042f1`) and proven by the seeded live
-smoke (2026-09-05, Kalsa Public, Low Sere); road fixes are uncommitted on main
-pending a green unit suite. The next slice opens on the outbound consumer
-response batch, the deployment gate, or one of the two open operator
-decisions (see `notes/fresh-workspace-handoff.md`).
+Interruption pass (plan step 9, operator-approved 2026-09-05). Pipeline:
+Modeling (`modeling-interruption.md` in the session scratchpad) -> Imagination
+-> Hands in an isolation worktree -> Soul in that tree -> integrate onto
+`codex/ghostlight-dungeon-mvp`. Nothing edited yet at `bcfd024` beyond the
+plan line. Shape: no Persona re-run; one Interpreter re-lowering per subject
+per tick on `ScopeChanged`, fed the perceived delta; ordinary
+`ExerciseDecision` on the fresh digest; no kernel arm changes. No road run
+until a provider is available again.
 
 ## Working Notes
 

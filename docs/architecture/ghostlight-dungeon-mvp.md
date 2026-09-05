@@ -45,7 +45,7 @@ mutation.
    checkpoints, and model receipts do not own world truth.
 6. Qualitative interest, political diversity, prose quality, name repetition,
    and actor counts are evaluation evidence. They are never mutation gates.
-7. A failed or interrupted inference leaves no half-owned world state. Recovery
+7. A failed or interrupted inference leaves no half-owned world state. Recovery (infrastructure interruption of an inference; a world-scope interruption between intent and commit is plan step 9 and is narrated, not discarded).
    starts from the last committed revision and derives pending work again.
 
 ## Canonical owner

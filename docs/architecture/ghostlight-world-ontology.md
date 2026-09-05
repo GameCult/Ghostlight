@@ -695,10 +695,10 @@ without contention, and the driver reports submitted against committed per
 cell so the gap is visible. The cover did not create the contention; two
 singleton cells for the same pair would contend identically, and a refused
 constituent costs one admission check rather than one inference. The grouping
-heuristic stays. The open decision for the operator, to be taken with the
-submitted-versus-committed number in hand, is whether a refused constituent
-gets one bounded re-submission against its re-derived opportunity inside the
-same tick, which costs no inference.
+heuristic stays. A refused constituent is interrupted, not silently refused:
+the runner re-lowers once through the Interpreter with the delta the subject
+could perceive since its turn, bound to the fresh digest, at the cost of one
+Interpreter inference and no Persona re-run (plan step 9).
 
 ## What stays open
 

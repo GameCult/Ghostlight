@@ -336,16 +336,40 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    source, plus one integration test. The connector is stopped after the
    run; the smoke substrate at `F:\Projects\Ghostlight-smoke` stays.
 
-   Next seams, in the order the operator has so far implied: the outbound
-   consumer response batch with the non-loopback CultMesh lease; then the
-   deployment gate below. The elaborator swarm's ideas still sit on
+   In flight: the operator approved the interruption pass on 2026-09-05,
+   plan step 9. Nothing is edited yet except the plan line; Modeling is
+   mapping the source into the session scratchpad `modeling-interruption.md`,
+   then Imagination, Hands in an isolation worktree, Soul in that tree,
+   coordinator integrates. Operating assumption recorded from the
+   coordinator: an interruption is a scope change between forming an intent
+   and committing it, from any cause (a neighbour, the clock, an
+   elaborator, a consumer, "the moon"). The Persona is never re-run. On
+   `ScopeChanged` the runner re-lowers once through the Interpreter with a
+   second input, the delta the subject perceived since its turn, rendered
+   from the scope components and the fan-out; the re-lowered proposal is an
+   ordinary `ExerciseDecision` bound to the fresh digest; one re-lowering
+   per subject per tick; no kernel arm changes. First invariant: the delta
+   shown to the Interpreter is exactly what the membrane already lets the
+   subject perceive, proven by a leakage test. Rejected on the way: a
+   joint-per-room Interpreter; the room is not the unit of interruption,
+   the digest is. This resolves former operator decision (a): a "bounded
+   in-tick re-submission" now has this shape and is no longer open.
+
+   Constraint: no road run is possible until a provider is available again.
+   The Codex subscription lapsed mid-build and the twelve seeded runs
+   consumed half the operator's monthly free quota; a Claude connector is a
+   candidate. The interruption pass proves itself under fixture inference
+   ports until then; the connector is stopped and the smoke substrate at
+   `F:\Projects\Ghostlight-smoke` stays.
+
+   Next seams after the interruption pass: the outbound consumer response
+   batch with the non-loopback CultMesh lease; then the deployment gate
+   below. The elaborator swarm's ideas still sit on
    `slot/<world>/<title>/<stamp>` branches and the four ledger directories;
    their integration remains owed and deferred (item 2).
 
-   Decisions the operator owns: (a) whether a refused coupled constituent
-   may re-submit once inside the same tick, to be taken with the
-   submitted-versus-committed number in hand; (b) the authority for an
-   owner-only Eve `world.run_tick` command, which is not built.
+   Decision the operator owns: the authority for an owner-only Eve
+   `world.run_tick` command, which is not built.
    The ten specs and maps (`imagination-pass1..10.md`,
    `modeling-pass1..10.md`) remain in the session scratchpad only and are
    history, not steering; the docs own the design.
