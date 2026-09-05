@@ -426,6 +426,18 @@ impl ElaborationRunner {
                     })
                     .await?;
                     let draft = filter_evidence(capture.draft, &allowed);
+                    // `check_patch_caps` is the one enforcement site for the
+                    // three item caps on a `WorldPatch` value; the consumer
+                    // ingress reaches it through `decode_patch`, and this is
+                    // the elaboration lane's own call into the same function,
+                    // so `MAX_PATCH_EVIDENCE` (never checked per-tool-call
+                    // above, unlike declarations and operations before this
+                    // pass) is bound here too.
+                    if let Err(error) = patch::check_patch_caps(&draft) {
+                        return Err(ControllerError::Serialization(format!(
+                            "elaboration draft exceeded a patch item cap: {error:?}"
+                        )));
+                    }
                     let submitted = self
                         .mailbox
                         .submit_elaboration(
@@ -919,14 +931,6 @@ fn apply_tool_call(
             }
         },
         PatchToolShape::Declare { variant, fixed } => {
-            if draft.declarations.len() >= patch::MAX_PATCH_DECLARATIONS {
-                gaps.push(tool_decode_need(
-                    name,
-                    arguments,
-                    "the draft is at its declaration cap",
-                ));
-                return "the draft is full".into();
-            }
             let mut value = fields;
             value.insert("type".into(), Value::String(variant.into()));
             for (key, fixed_value) in fixed {
@@ -949,14 +953,6 @@ fn apply_tool_call(
             }
         }
         PatchToolShape::Operate { variant } => {
-            if draft.operations.len() >= patch::MAX_PATCH_OPERATIONS {
-                gaps.push(tool_decode_need(
-                    name,
-                    arguments,
-                    "the draft is at its operation cap",
-                ));
-                return "the draft is full".into();
-            }
             let mut value = fields;
             value.insert("op".into(), Value::String(variant.into()));
             match serde_json::from_value::<ComponentOp>(Value::Object(value)) {
@@ -1027,6 +1023,16 @@ pub(super) fn elaboration_request(
 /// mailbox's idempotency probe sees the same command. The derivation itself is
 /// `CommandId::derived`, which is the one recipe every derived command key
 /// uses.
+///
+/// Pass 10 moved this derivation onto `CommandId::derived`, which hashes a
+/// different byte stream than the pass-9 spelling did (see
+/// `soul_the_session_command_id_derivation_moved_under_the_refactor`). There is
+/// no migration for command ids computed under the old spelling: a session
+/// checkpointed before this pass would resume under an id the mailbox has
+/// never seen, which is exactly the silent-resume failure a bumped schema is
+/// for. The `controller_work` row and schema constants carry v9 for the same
+/// reason the `consumer.v1` bump exists — a pre-refactor checkpoint refuses to
+/// open rather than resuming under a mismatched id.
 fn session_command_id(session: &ElaboratorSession) -> Result<CommandId, ControllerError> {
     let scope = digest_of(&(session.world_id, session.jurisdiction))?;
     Ok(CommandId::derived(
@@ -1160,7 +1166,11 @@ mod tests {
 
     /// The author owns the size of what it authors. The kernel gets no cap.
     #[test]
-    fn a_draft_past_the_size_cap_becomes_a_gap() {
+    fn a_draft_past_the_declaration_cap_is_refused_by_the_shared_cap_check() {
+        // The elaboration lane no longer caps a declaration mid-round: one
+        // enforcement site, `check_patch_caps`, catches an over-cap draft
+        // before it reaches submission (see `step`), so at this layer the
+        // draft grows past the cap uncapped.
         let mut calls: Vec<(&str, Value)> = (0..=patch::MAX_PATCH_DECLARATIONS)
             .map(|index| {
                 (
@@ -1177,11 +1187,44 @@ mod tests {
         let capture = capture(&vec![output(calls)]);
         assert_eq!(
             capture.draft.declarations.len(),
-            patch::MAX_PATCH_DECLARATIONS
+            patch::MAX_PATCH_DECLARATIONS + 1
         );
-        assert!(
-            capture.gaps.iter().any(|gap| gap.detail.contains("cap")),
-            "the call past the cap was not recorded as a gap"
+        assert_eq!(
+            patch::check_patch_caps(&capture.draft),
+            Err(patch::PatchDecodeError::TooManyDeclarations {
+                count: patch::MAX_PATCH_DECLARATIONS + 1
+            })
+        );
+    }
+
+    /// `MAX_PATCH_EVIDENCE` has no pre-append check at all: every admitted
+    /// citation is pushed to the draft unconditionally as it is captured.
+    /// `check_patch_caps` is the one place that bites, and it bites at the same
+    /// function every other cap goes through -- there is no separate,
+    /// unenforced evidence path on the elaboration lane.
+    #[test]
+    fn an_over_evidence_draft_is_refused_by_the_shared_cap_check() {
+        let mut calls: Vec<(&str, Value)> = (0..=patch::MAX_PATCH_EVIDENCE)
+            .map(|index| {
+                (
+                    "admit",
+                    serde_json::json!({
+                        "holder": {"ref": "existing", "value": "00000000-0000-0000-0000-000000000001"},
+                        "resource": {"ref": "existing", "value": "00000000-0000-0000-0000-000000000002"},
+                        "qty": 1,
+                        "evidence": format!("vault:harvest-{index}"),
+                    }),
+                )
+            })
+            .collect();
+        calls.push((SUBMIT_PATCH_TOOL, serde_json::json!({})));
+        let capture = capture(&vec![output(calls)]);
+        assert_eq!(capture.draft.evidence.len(), patch::MAX_PATCH_EVIDENCE + 1);
+        assert_eq!(
+            patch::check_patch_caps(&capture.draft),
+            Err(patch::PatchDecodeError::TooManyEvidence {
+                count: patch::MAX_PATCH_EVIDENCE + 1
+            })
         );
     }
 

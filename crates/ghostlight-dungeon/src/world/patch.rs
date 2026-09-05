@@ -1144,8 +1144,10 @@ pub(crate) struct WorldPatch {
 
 /// The one byte bound on a `WorldPatch` frame from any external source, and
 /// the three item bounds on a `WorldPatch` as a value. One owner, two
-/// consumers: the consumer ingress decodes against them, and the elaboration
-/// lane checks its own draft against the same two item caps.
+/// consumers: the consumer ingress decodes against them through
+/// `decode_patch`, and the elaboration lane checks its own assembled draft
+/// against the same three item caps through `check_patch_caps`, before
+/// submission.
 pub(crate) const MAX_PATCH_BYTES: usize = 256 * 1024;
 pub(crate) const MAX_PATCH_DECLARATIONS: usize = 64;
 pub(crate) const MAX_PATCH_OPERATIONS: usize = 128;

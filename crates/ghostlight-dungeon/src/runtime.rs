@@ -280,7 +280,7 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
     require_no_runtime_custody_failure(&mut fatal_events)?;
     let (revisions, _) = broadcast::channel(32);
     let cover_budget = configured_cover_budget()?;
-    let consumers = Arc::new(open_consumer_registry());
+    let consumers = Arc::new(open_consumer_registry()?);
     let mut state = AppState {
         consumer: ConsumerPort::new(world.clone()),
         consumers,
@@ -452,20 +452,15 @@ async fn cultnet_world_patch(
 }
 
 /// Read once at startup. A missing or unset path means no configured
-/// consumers, which is the fail-closed default; a malformed file is fatal to
-/// the registry rather than silently empty, so a mistyped credential cannot
-/// read as "no consumers configured".
-fn open_consumer_registry() -> ConsumerRegistry {
+/// consumers, which is the fail-closed default; a malformed file fails
+/// startup outright, so a mistyped credential cannot silently read as "no
+/// consumers configured".
+fn open_consumer_registry() -> anyhow::Result<ConsumerRegistry> {
     let Ok(path) = std::env::var(crate::world::CONSUMER_CREDENTIALS_ENVIRONMENT) else {
-        return ConsumerRegistry::empty();
+        return Ok(ConsumerRegistry::empty());
     };
-    match ConsumerRegistry::from_secret_file(&path) {
-        Ok(registry) => registry,
-        Err(error) => {
-            tracing::warn!(%error, "consumer credentials are unreadable; no consumer is configured");
-            ConsumerRegistry::empty()
-        }
-    }
+    ConsumerRegistry::from_secret_file(&path)
+        .map_err(|error| anyhow::anyhow!("consumer credentials at {path} are unreadable: {error}"))
 }
 
 async fn cultnet_snapshot(
@@ -3110,6 +3105,46 @@ mod tests {
                 .iter()
                 .all(|event| matches!(event, Event::Cell(tick) if *tick == cover.tick)),
             "every cell in the tick must carry the same tick index"
+        );
+    }
+
+    /// A missing credentials path is the fail-closed default: no consumer is
+    /// configured, and startup proceeds. A path that names a file that exists
+    /// but does not decode is a different situation entirely -- a mistyped or
+    /// corrupted credential -- and must not be swallowed into the same empty
+    /// registry. It fails startup instead.
+    #[test]
+    fn a_malformed_consumer_credentials_file_refuses_the_registry_rather_than_starting_empty() {
+        // Serialize against any other test in this binary that touches the
+        // same process-wide environment variable.
+        static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|poison| poison.into_inner());
+
+        let previous = std::env::var(crate::world::CONSUMER_CREDENTIALS_ENVIRONMENT).ok();
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("consumers.cc");
+        std::fs::write(&path, b"not a consumer credentials file").unwrap();
+        // SAFETY: serialized by ENV_LOCK above; no other thread in this test
+        // binary reads or writes this variable concurrently.
+        unsafe {
+            std::env::set_var(
+                crate::world::CONSUMER_CREDENTIALS_ENVIRONMENT,
+                path.as_os_str(),
+            );
+        }
+        let result = open_consumer_registry();
+        // SAFETY: same lock, restoring (or clearing) the prior value.
+        unsafe {
+            match &previous {
+                Some(value) => {
+                    std::env::set_var(crate::world::CONSUMER_CREDENTIALS_ENVIRONMENT, value)
+                }
+                None => std::env::remove_var(crate::world::CONSUMER_CREDENTIALS_ENVIRONMENT),
+            }
+        }
+        assert!(
+            result.is_err(),
+            "a malformed credentials file must refuse the registry, not start empty"
         );
     }
 }

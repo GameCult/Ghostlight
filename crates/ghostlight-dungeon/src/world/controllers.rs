@@ -60,8 +60,8 @@ const CELL_TOOL_STEP_BUDGET: usize = 2;
 /// carried by tool identity, never by a model-written argument.
 const HANDLE_SEPARATOR: &str = "__";
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v8";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v8";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v9";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v9";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -4944,8 +4944,11 @@ mod tests {
     /// `open` walks every row and demands both the row type and the schema id
     /// match the current constants, so a row left over from before the bump is
     /// an open-time error, not a quietly dropped or reinterpreted checkpoint.
+    /// v8 is the version that predates the pass-10 `session_command_id`
+    /// derivation change, so a v8 row is exactly the checkpoint this bump
+    /// exists to refuse.
     #[test]
-    fn a_controller_work_row_from_a_prior_schema_is_refused_at_open() {
+    fn a_controller_work_row_from_schema_v8_is_refused_at_open() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("controller-work.cc");
         let command_id = CommandId::new();
@@ -4961,15 +4964,15 @@ mod tests {
             let mut store = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
             let row = CultCacheEnvelope {
                 key: store_key(command_id).unwrap(),
-                r#type: "controller_work.v5".into(),
+                r#type: "controller_work.v8".into(),
                 payload: rmp_serde::to_vec_named(&work).unwrap(),
                 stored_at: Utc::now().to_rfc3339(),
-                schema_id: Some("ghostlight.controller_work.v5".into()),
+                schema_id: Some("ghostlight.controller_work.v8".into()),
             };
             store.push(&row).unwrap();
         }
         let Err(error) = CultCacheControllerWorkStore::open(&path) else {
-            panic!("a v5 row was accepted by the v6 store");
+            panic!("a v8 row was accepted by the v9 store");
         };
         assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
     }
@@ -8187,7 +8190,7 @@ mod tests {
                 .unwrap();
         }
         let Err(error) = CultCacheControllerWorkStore::open(&path) else {
-            panic!("a v7 row was accepted by the v8 store");
+            panic!("a v7 row was accepted by the v9 store");
         };
         assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
     }

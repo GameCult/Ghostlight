@@ -35,7 +35,7 @@ pub(crate) const CONSUMER_BODY_LIMIT: usize = patch::MAX_PATCH_BYTES + CONSUMER_
 /// The environment variable naming the credentials file.
 pub(crate) const CONSUMER_CREDENTIALS_ENVIRONMENT: &str = "GHOSTLIGHT_CONSUMER_CREDENTIALS";
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct ConsumerPatchDocument {
     /// Pinned to `CONSUMER_PATCH_SCHEMA`; any other value is refused before the
@@ -61,6 +61,26 @@ pub(crate) struct ConsumerPatchDocument {
     /// checked against the patch itself before any of its items deserializes.
     #[serde(with = "serde_bytes")]
     pub(crate) patch: Vec<u8>,
+}
+
+/// `derive(Debug)` would print `secret` in plaintext into any log, panic
+/// message, or test failure that formats this document. `Debug` is for
+/// diagnostics, not custody, so the field is redacted here rather than left to
+/// callers to remember not to print it.
+impl std::fmt::Debug for ConsumerPatchDocument {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ConsumerPatchDocument")
+            .field("schema", &self.schema)
+            .field("world_id", &self.world_id)
+            .field("consumer", &self.consumer)
+            .field("secret", &"<redacted>")
+            .field("idempotency_key", &self.idempotency_key)
+            .field("expected_revision", &self.expected_revision)
+            .field("answers", &self.answers)
+            .field("patch", &self.patch)
+            .finish()
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -110,6 +130,15 @@ pub(crate) enum ConsumerOutcome {
 pub(crate) enum ConsumerRefusal {
     Schema,
     TooLarge,
+    /// The byte-decoded patch held more declarations than
+    /// `patch::MAX_PATCH_DECLARATIONS`.
+    TooManyDeclarations,
+    /// The byte-decoded patch held more operations than
+    /// `patch::MAX_PATCH_OPERATIONS`.
+    TooManyOperations,
+    /// The byte-decoded patch cited more evidence than
+    /// `patch::MAX_PATCH_EVIDENCE`.
+    TooManyEvidence,
     NotCanonical,
     Malformed,
     Unauthenticated,
@@ -277,10 +306,10 @@ fn decode_document(bytes: &[u8]) -> Result<ConsumerPatchDocument, ConsumerRefusa
 
 fn decode_refusal(error: PatchDecodeError) -> ConsumerRefusal {
     match error {
-        PatchDecodeError::TooLarge { .. }
-        | PatchDecodeError::TooManyDeclarations { .. }
-        | PatchDecodeError::TooManyOperations { .. }
-        | PatchDecodeError::TooManyEvidence { .. } => ConsumerRefusal::TooLarge,
+        PatchDecodeError::TooLarge { .. } => ConsumerRefusal::TooLarge,
+        PatchDecodeError::TooManyDeclarations { .. } => ConsumerRefusal::TooManyDeclarations,
+        PatchDecodeError::TooManyOperations { .. } => ConsumerRefusal::TooManyOperations,
+        PatchDecodeError::TooManyEvidence { .. } => ConsumerRefusal::TooManyEvidence,
         PatchDecodeError::NotCanonical => ConsumerRefusal::NotCanonical,
         PatchDecodeError::Malformed => ConsumerRefusal::Malformed,
     }
@@ -1204,36 +1233,6 @@ mod tests {
         assert_eq!(candidate, kernel.state);
     }
 
-    #[test]
-    fn journal_replay_refuses_a_forged_consumer_row() {
-        let directory = tempfile::tempdir().unwrap();
-        let (kernel, mirror) = mirror_kernel(directory.path(), "Forged");
-        // A state whose event claims the mirror acted: the mirror's assignment
-        // has no controller id, so the shape check cannot match one.
-        let mut forged = kernel.state.clone();
-        let event = forged.events.first().cloned();
-        if let Some(mut event) = event {
-            event.scope = DecisionScope {
-                subject_id: mirror.first,
-            };
-            forged.events = vec![event];
-            assert!(
-                super::super::journal::verify_state_shape(&forged).is_err(),
-                "a forged consumer row replayed"
-            );
-        }
-        // And a mirror carrying an affordance grant is refused by the same
-        // shape check, both ways.
-        let mut granted = kernel.state.clone();
-        let scope = DecisionScope {
-            subject_id: mirror.first,
-        };
-        granted
-            .affordance_grants
-            .insert(scope, BTreeSet::from([AffordanceId::issue()]));
-        assert!(super::super::journal::verify_state_shape(&granted).is_err());
-    }
-
     // ---- confinement, per row --------------------------------------------
 
     #[test]
@@ -1781,11 +1780,9 @@ mod tests {
 
     // ---- Soul: falsification of the pass's own claims ----------------------
 
-    /// A committed decision under the forgery. `journal_replay_refuses_a_forged_consumer_row`
-    /// guards its first half behind `if let Some(event) = state.events.first()`
-    /// and the mirror fixture commits no decision, so that half never runs.
-    /// This is the same claim with a real event beneath it, and it also proves
-    /// the honest state — a mirror with no controller and no grant — passes.
+    /// A committed decision under the forgery, with a real event beneath it,
+    /// and proof that the honest state — a mirror with no controller and no
+    /// grant — passes the same shape check.
     #[test]
     fn soul_a_forged_decision_event_on_a_mirror_is_refused_at_replay() {
         let directory = tempfile::tempdir().unwrap();
@@ -1997,7 +1994,7 @@ mod tests {
                 ConsumerRefusal::Unauthenticated,
             ),
             (
-                "a patch frame over the item cap",
+                "a patch frame over the declaration cap",
                 encode_document(
                     &build_document(
                         world_id,
@@ -2011,7 +2008,7 @@ mod tests {
                     .unwrap(),
                 )
                 .unwrap(),
-                ConsumerRefusal::TooLarge,
+                ConsumerRefusal::TooManyDeclarations,
             ),
             (
                 "a stale expected revision",
@@ -2265,5 +2262,31 @@ mod tests {
         assert!(registry.authenticate(CONSUMER, "not-the-secret").is_none());
         assert!(registry.authenticate(OTHER, SECRET).is_none());
         assert!(!format!("{registry:?}").contains(SECRET));
+    }
+
+    /// The registry's own `Debug` carries only digests to begin with, but the
+    /// document that arrives off the wire carries the secret in plaintext, and
+    /// its `derive(Debug)` would have printed it. This is the document-side
+    /// sibling of `soul_no_secret_reaches_a_registry_error_or_a_registry_debug`.
+    #[test]
+    fn soul_no_secret_reaches_a_consumer_patch_document_debug() {
+        let empty = WorldPatch {
+            declarations: Vec::new(),
+            operations: Vec::new(),
+            evidence: Vec::new(),
+        };
+        let document = build_document(
+            WorldId::nil_for_test(),
+            CONSUMER,
+            SECRET,
+            "idempotency-key",
+            1,
+            None,
+            &empty,
+        )
+        .unwrap();
+        let rendered = format!("{document:?}");
+        assert!(!rendered.contains(SECRET), "{rendered}");
+        assert!(rendered.contains("<redacted>"), "{rendered}");
     }
 }
