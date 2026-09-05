@@ -695,10 +695,12 @@ without contention, and the driver reports submitted against committed per
 cell so the gap is visible. The cover did not create the contention; two
 singleton cells for the same pair would contend identically, and a refused
 constituent costs one admission check rather than one inference. The grouping
-heuristic stays. A refused constituent is interrupted, not silently refused:
-the runner re-lowers once through the Interpreter with the delta the subject
-could perceive since its turn, bound to the fresh digest, at the cost of one
-Interpreter inference and no Persona re-run (plan step 9).
+heuristic stays. A grouped constituent has no Persona turn and no
+Interpreter, so its refused proposal stays refused. A narrative subject in a
+singleton cell is interrupted rather than silently refused: the lane
+re-lowers once through the Interpreter with the delta the subject could
+perceive since its turn, bound to the fresh digest, at the cost of one
+Interpreter inference and no Persona re-run (plan step 9, in design).
 
 ## What stays open
 
