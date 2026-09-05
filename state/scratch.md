@@ -2,10 +2,11 @@
 
 ## Current Subgoal
 
-None. Step 6 of the plan is complete at `842b5af`; no worktree exists. The
-next slice opens when the operator decides between in-tick re-submission,
-Eve `world.run_tick` authority, the outbound consumer response, and resuming
-the deployment gate (see `notes/fresh-workspace-handoff.md`).
+None. Step 6 closed at `842b5af`; the first local live smoke landed at
+`5e52943` (runbook `notes/local-live-smoke.md`). The seed producer is the
+evidenced next cut, but it opens only when the operator chooses it over the
+outbound consumer response or the deployment gate (see
+`notes/fresh-workspace-handoff.md`).
 
 ## Working Notes
 

@@ -216,14 +216,12 @@ and proposals but cannot commit on their behalf.
 
 ## Next gate
 
-Ontology v2 is the adopted vocabulary at `docs/architecture/ghostlight-world-ontology.md`
-(twelve components, twenty-nine operations under one `WorldPatch`,
-world-authored affordances with preconditions, effect slots, and kernel-entropy
-outcome bands, four derived `CausalBoundary` kinds, scope-digest binding, one
-`AdmitPatch` for seed and elaboration, eighteen proofs).
+The adopted vocabulary is `docs/architecture/ghostlight-world-ontology.md`
+(twelve components, twenty-seven operations under one `WorldPatch`,
+world-authored affordances, derived `CausalBoundary` kinds, scope-digest
+binding, one `AdmitPatch` for seed, elaboration, and consumer ingress).
 `ghostlight-transition-algebra.md` and `ghostlight-multiresolution-agency.md`
-are teardown evidence. Plan step 6 is nine implementation passes; pass 1 is
-landed, passes 2 through 9 are not.
+are teardown evidence. Plan step 6 is ten implementation passes, all landed.
 
 1. Plan step 6, the ontology widening, is complete: all ten passes are
    integrated on `codex/ghostlight-dungeon-mvp`. Tip is `a1fd645` (Soul)
@@ -284,16 +282,38 @@ landed, passes 2 through 9 are not.
    corrected; the plan's step-6 pass-10 line in past tense. Queued doc
    edits: none.
 
+   First local live smoke, 2026-09-05, committed as `5e52943` and pushed:
+   `notes/local-live-smoke.md` is the runbook. The production tick driver,
+   cover, Persona membrane, operational lane, clock, and elaboration sweep
+   ran three ticks against a real CodexConnector (head daemon with the
+   `daemon` feature, ChatGPT auth) on a genesis world: revision 2 to 11, two
+   singleton cells per tick, the Persona spoke each tick, the operational
+   lane committed each tick, the elaboration sweep was clean, 40 to 70
+   seconds per tick. The harness is the ignored test
+   `live_smoke_ticks_a_genesis_world_against_the_connector` in `runtime.rs`
+   (line 3177) with `fixture_with(Option<LiveController>)`; the evidence
+   record is dated 2026-09-05T13:42Z. Two findings: the road works end to
+   end; the prose is thin because genesis is three subjects in one room.
+   That makes the seed producer the evidenced gap, not an argued one: no
+   doc or steering surface named a "seed producer" before this smoke (the
+   Delvehold boundary doc names only a seed admission primitive), so it is
+   now the obvious next cut once the operator decisions below are taken.
+   Stale: the pre-pass-6 ignored acceptance test
+   `real_codex_connector_cognition_modes_commit_speech` in
+   `world/controllers.rs` (line 6549) fails at `NoAudience` because its
+   subjects are unplaced; retire it or place its subjects.
+
    Still deferred by design: `PolityInCausalRange`, `IndividuationRequired`,
    and Verification 13 wait for relations and population slices.
 
-   Decisions the operator owns, recorded nowhere else durable than here and
-   the series evidence record: (a) whether a refused coupled constituent may
+   Decisions the operator owns, unchanged by the smoke, recorded nowhere
+   else durable than here and the series evidence record: (a) whether a refused coupled constituent may
    re-submit once inside the same tick, to be taken with the
    submitted-versus-committed number in hand; (b) the authority for an
-   owner-only Eve `world.run_tick` command, which is not built; (c) whether
-   the outbound consumer response batch and the non-loopback CultMesh lease
-   are cut next or the deployment gate below resumes first. The ten specs
+   owner-only Eve `world.run_tick` command, which is not built; (c) which of the
+   seed producer (now evidenced by the smoke), the outbound consumer
+   response batch with the non-loopback CultMesh lease, or the deployment
+   gate below is cut next. The ten specs
    and maps (`imagination-pass1..10.md`, `modeling-pass1..10.md`) remain in
    the session scratchpad only and are now history, not steering; the docs
    own the design.
@@ -371,6 +391,9 @@ acceptance roots, and local run scaffolding.
 - Gestalt authority: `docs/architecture/ghostlight-multiresolution-agency.md`
 - Operations: `F:\Projects\gamecult-ops`
 - Faculty-workflow lessons (Epiphany): `F:\Projects\Epiphany
+- Local live smoke runbook: `notes/local-live-smoke.md` (substrate at
+  `F:\Projects\Ghostlight-smoke`, connector from the CodexConnector repo head
+  with the `daemon` feature, environment, first-run table)
 otesaculty-workflow-lessons-2026-09-04.md`
 
 ## Re-entry warnings

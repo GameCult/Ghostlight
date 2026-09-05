@@ -558,6 +558,14 @@ boundaries.
 
 ## Verification contract
 
+Focused tests prove the machine under fixture inference ports. The one place
+the road is exercised against a real controller is the local live smoke
+(`notes/local-live-smoke.md`): the production tick driver, cover, Persona
+membrane, operational lane, clock, and elaboration sweep against a
+CodexConnector on a genesis world. Its first run (2026-09-05) proved the path
+end to end and showed that a three-subject, one-room genesis yields thin
+prose; a seed producer is the gap that finding names.
+
 Focused tests must prove:
 
 1. Draft and active commands mutate the same aggregate through the same commit
