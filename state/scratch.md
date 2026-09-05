@@ -2,13 +2,10 @@
 
 ## Current Subgoal
 
-Pass-10 follow-ups with Hands in `F:\Projects\Ghostlight-pass10fu` on
-`hands/pass10-followups` from `a1fd645` (`controller_work.v9`, fatal malformed
-credentials, redacting `Debug`, `check_patch_caps` in the elaboration lane),
-then series close-out: commit the docs-worker edits, integrate, remove the
-worktree. Main tip `a1fd645`; step 6 complete. Then the operator decides:
-in-tick re-submission, Eve `world.run_tick` authority, outbound consumer
-response versus the deployment gate.
+None. Step 6 of the plan is complete at `842b5af`; no worktree exists. The
+next slice opens when the operator decides between in-tick re-submission,
+Eve `world.run_tick` authority, the outbound consumer response, and resuming
+the deployment gate (see `notes/fresh-workspace-handoff.md`).
 
 ## Working Notes
 
