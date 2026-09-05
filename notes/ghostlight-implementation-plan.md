@@ -407,6 +407,30 @@ is exactly what the membrane already lets the subject perceive, proven by a
 leakage test. The joint-per-room Interpreter was considered and rejected:
 the room is not the unit of interruption, the digest is.
 
+### 10. Witnessed events over a place subtree — in design
+
+Objective: stories that carry regional and global effects. An asteroid is
+witnessed by everyone under a region's root; the moon going dark by everyone
+under a hemisphere's; a subject standing in a village under both sees both.
+
+Current mechanism: knowledge enters a subject through `AcquireKnowledge`
+(one operation per subject), through speech fan-out (`Communicate`, which
+names a speaker and follows a channel's `Reach`), or through evidence. An
+event with no speaker that a thousand people saw costs a thousand operations
+and hits the patch caps.
+
+Intended change: one operation, `Witness { fact, place }`, that lands
+`Witnessed` knowledge of the fact on every subject positioned anywhere under
+the place, recipients derived at apply time from live positions exactly as
+speech fan-out derives its audience, never stored. Every witness's scope
+digest moves, which is what makes a global event interrupt whoever was
+mid-thought (step 9).
+
+Cut line: no second fan-out owner; no stored recipient list; a witness names
+no speaker; the subtree walk reuses the one covering predicate; the tool
+surface and exemplar lists grow by exactly one; confinement treats the place
+like any other operation ground.
+
 ## Subtraction budget
 
 Prefer deletion, collapse, or reuse before adding surfaces. The replacement
