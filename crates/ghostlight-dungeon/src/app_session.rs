@@ -55,9 +55,16 @@ pub(crate) struct RefreshCandidate {
 ///
 /// The account hash is intentionally readable by world ingress, but this type
 /// can only be constructed while `AppSessionOwner` holds valid custody.
+///
+/// `valid_until` is minted from the session's own `access_expires_at`, not a
+/// fresh clock read at construction: the evidence's authority cannot outlive
+/// the session that vouched for it, and a `SeedPort` that holds this value for
+/// a whole multi-round session is bounded by this expiry, not only by the
+/// request's own lifetime.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct VerifiedPrincipalEvidence {
     account_subject_hash: String,
+    valid_until: DateTime<Utc>,
 }
 
 impl VerifiedPrincipalEvidence {
@@ -65,12 +72,20 @@ impl VerifiedPrincipalEvidence {
         &self.account_subject_hash
     }
 
+    pub(crate) fn valid_until(&self) -> DateTime<Utc> {
+        self.valid_until
+    }
+
     /// Test-only. Production keeps exactly one minter — a live cookie resolved
     /// by `account_for_cookie` — and this constructor is compiled out of it.
     #[cfg(test)]
-    pub(crate) fn fixture(account_subject_hash: impl Into<String>) -> Self {
+    pub(crate) fn fixture(
+        account_subject_hash: impl Into<String>,
+        valid_until: DateTime<Utc>,
+    ) -> Self {
         Self {
             account_subject_hash: account_subject_hash.into(),
+            valid_until,
         }
     }
 }
@@ -216,6 +231,7 @@ impl AppSessionOwner {
                 .any(|value| value == "app_access"))
         .then(|| VerifiedPrincipalEvidence {
             account_subject_hash: session.account_subject_hash.clone(),
+            valid_until: session.access_expires_at,
         }))
     }
 

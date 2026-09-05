@@ -4,10 +4,11 @@ use super::{
     DecisionOpportunity, Declaration, DraftHandle, EntityDeclaration, EntityKind, JurisdictionKey,
     KernelError, NewController, OperatorEvent, PatchAnswer, PrincipalCommandIntent, PrincipalId,
     Ref, SubjectDeclaration, SubjectKind, SubmitReceipt, SystemCapability, TickMinutes, WorldId,
-    WorldKernel, WorldPatch, WorldScaleIntentRef, WorldSnapshot, journal,
+    WorldKernel, WorldPatch, WorldPhase, WorldScaleIntentRef, WorldSnapshot, journal,
     patch::kernel_speak_grant, prepare_creation,
 };
 use crate::app_session::VerifiedPrincipalEvidence;
+use chrono::Utc;
 use std::path::Path;
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot};
@@ -214,11 +215,21 @@ impl WorldMailbox {
             .map_err(mailbox_outcome)
     }
 
+    /// A wall-clock read at the boundary a request crosses into the mailbox is
+    /// ingress, not reduce: the reducer stays deterministic over its journal,
+    /// and this is the one place a caller's own claim of continued authority
+    /// is checked against the moment it is spent, not the moment it was
+    /// minted. `VerifiedPrincipalEvidence` can outlive one request inside a
+    /// long-running port such as `SeedPort`, so this is the gate that keeps
+    /// holding it bounded by the session's own expiry.
     pub(crate) async fn submit_principal(
         &self,
         intent: PrincipalCommandIntent,
         principal: &VerifiedPrincipalEvidence,
     ) -> Result<SubmitReceipt, MailboxError> {
+        if principal.valid_until() <= Utc::now() {
+            return Err(MailboxError::Kernel(KernelError::Unauthorized));
+        }
         let principal_id = PrincipalId::new(principal.account_subject_hash());
         let caller = CallerId::Principal(principal_id.clone());
         let authenticated = AuthenticatedCaller::verified_principal(principal_id);
@@ -568,7 +579,10 @@ impl ElaborationPort {
 /// is `AppSessionOwner` holding a live cookie, and a checkpoint that stored an
 /// account hash so the runner could re-mint one would be a second minter and an
 /// offline forge path. The evidence is captured from the request that asked for
-/// the work and dies with the port.
+/// the work and dies with the port — but holding it is also bounded by the
+/// evidence's own `valid_until`, not only by the port's own lifetime: every
+/// submission through `submit_principal` is refused once that expiry has
+/// passed, whatever the port itself still thinks the session's shape is.
 #[derive(Clone)]
 pub(crate) struct SeedPort {
     mailbox: WorldMailbox,
@@ -585,26 +599,42 @@ impl SeedPort {
     }
 
     /// One body, hardcoded. The seed lane cannot express an answered patch, so
-    /// it meets exactly one answer gate — `require_answer`'s Draft branch — and
-    /// the owner arm of `require_patch_author`, which is unconfined.
+    /// a submission meets two independent Draft-only gates in sequence: this
+    /// method's own phase check, taken against a snapshot read at the moment
+    /// of submission and bound to that snapshot's revision, refuses every
+    /// non-Draft submission before the mailbox ever sees it; and, for a patch
+    /// that declares or admits evidence, `require_answer`'s Active branch
+    /// refuses it again if the first gate were ever removed. An operations-only
+    /// patch needs no answer in Active because the owner's hand is legitimate
+    /// there — `require_answer` does not, and must not, treat every Active
+    /// patch as unanswerable — so this method's own phase check is what keeps
+    /// the seed lane itself confined to Draft.
     ///
-    /// It takes `expected_revision` rather than stamping one: a world that
-    /// moved under a long session fails `StaleRevision` and the runner reports
-    /// `Superseded`, where a stamped submission would silently commit against a
-    /// world the model never saw.
+    /// The snapshot is taken here rather than trusted from the caller: a
+    /// multi-round session reads its own snapshot long before it has a patch
+    /// to submit, and binding to that stale revision would only catch a world
+    /// that moved, not a world that moved to Active without moving its
+    /// revision incompatibly. Reading fresh at submission time means the
+    /// phase this method checks is the phase the mailbox will actually see.
     pub(super) async fn submit_seed(
         &self,
         command_id: CommandId,
         world_id: WorldId,
-        expected_revision: u64,
         patch: WorldPatch,
     ) -> Result<SubmitReceipt, MailboxError> {
+        let snapshot = self.mailbox.snapshot().await?;
+        if snapshot.phase != WorldPhase::Draft {
+            return Err(MailboxError::Kernel(KernelError::WrongPhase {
+                expected: WorldPhase::Draft,
+                actual: snapshot.phase,
+            }));
+        }
         self.mailbox
             .submit_principal(
                 PrincipalCommandIntent {
                     id: command_id,
                     world_id,
-                    expected_revision,
+                    expected_revision: snapshot.revision,
                     body: CommandBody::AdmitPatch {
                         answers: None,
                         patch,

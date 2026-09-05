@@ -1064,7 +1064,12 @@ fn digest_of<T: Serialize>(value: &T) -> Result<String, ControllerError> {
 
 const SEED_NAMESPACE: &str = "ghostlight.command.seed.v1";
 
-const SEED_INSTRUCTIONS: &str = "Use only the supplied tools to author living structure inside your jurisdiction. A subject counts only when it has a controller, at least one affordance grant, and holds a goal commitment. Author the shortfall you were given, then submit. Recording a gap changes nothing.";
+/// A goal commitment carries no counterparty and can never derive a
+/// `MissingStructure` boundary — a promise to oneself needs no forum. A world
+/// seeded out of goals alone therefore activates with nothing for the Active
+/// elaborator to answer, so this instruction requires an obligation, not a
+/// goal alone, from every subject it authors.
+const SEED_INSTRUCTIONS: &str = "Use only the supplied tools to author living structure inside your jurisdiction. A subject counts only when it has a controller, at least one affordance grant, and holds a goal commitment. A goal alone is not enough structure: every person and institution you author must also hold at least one obligation commitment with a counterparty, because a goal carries no counterparty and derives no boundary for the world's Active elaborator to answer. Author the shortfall you were given, then submit. Recording a gap changes nothing.";
 
 /// The row a session answers, plus the ancestry it was built against. There is
 /// no `PatchAnswer` here: a seed answers nothing, and giving this session an
@@ -1423,7 +1428,7 @@ impl SeedRunner {
                     }
                     let submitted = self
                         .mailbox
-                        .submit_seed(command_id, snapshot.world_id, snapshot.revision, draft)
+                        .submit_seed(command_id, snapshot.world_id, draft)
                         .await;
                     return match submitted {
                         // Termination is the deficit, not a counter the runner
@@ -1453,6 +1458,13 @@ impl SeedRunner {
                         }
                         Err(MailboxError::Kernel(KernelError::RevisionMismatch { .. })) => {
                             Ok(SeedOutcome::Superseded)
+                        }
+                        // The world left Draft while this round's inference was
+                        // in flight; `submit_seed` caught it against its own
+                        // fresh snapshot rather than the one this step began
+                        // with.
+                        Err(MailboxError::Kernel(KernelError::WrongPhase { .. })) => {
+                            Ok(SeedOutcome::NotDraft)
                         }
                         Err(error) => Err(snapshot_error(error)),
                     };

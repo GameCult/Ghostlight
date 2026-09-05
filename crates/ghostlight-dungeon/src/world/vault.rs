@@ -27,10 +27,15 @@ const MAX_EXCERPT_CHARS: usize = 800;
 const MAX_VAULT_NOTES: usize = 4_096;
 const MAX_NOTE_BYTES: u64 = 512 * 1024;
 
+/// Neither variant carries an absolute filesystem path: `seed_once` maps this
+/// error straight into the owner's command receipt, and the reference format
+/// this module hands back is deliberately vault-relative, so the error text
+/// must be too. `Root` names no path at all; `Scope` carries only the
+/// vault-relative scope string the caller supplied.
 #[derive(Debug, Error)]
 pub(crate) enum VaultError {
-    #[error("vault root is not a readable directory: {0}")]
-    Root(String),
+    #[error("vault root is not a readable directory")]
+    Root,
     #[error("vault scope escapes its root: {0}")]
     Scope(String),
     #[error("vault holds more than {MAX_VAULT_NOTES} notes")]
@@ -70,11 +75,9 @@ impl VaultEvidenceSource {
     /// spoiler tier is a directory in every vault that has one, so it is
     /// expressed as a scope and there is no tier field anywhere in this file.
     pub(crate) fn open(root: &Path, scope: &str) -> Result<Self, VaultError> {
-        let root = root
-            .canonicalize()
-            .map_err(|error| VaultError::Root(error.to_string()))?;
+        let root = root.canonicalize().map_err(|_| VaultError::Root)?;
         if !root.is_dir() {
-            return Err(VaultError::Root(root.display().to_string()));
+            return Err(VaultError::Root);
         }
         let scope_path = if scope.trim().is_empty() {
             root.clone()
@@ -90,15 +93,15 @@ impl VaultEvidenceSource {
             let joined = root.join(relative);
             let canonical = joined
                 .canonicalize()
-                .map_err(|error| VaultError::Scope(error.to_string()))?;
+                .map_err(|_| VaultError::Scope(scope.to_owned()))?;
             if !canonical.starts_with(&root) {
-                return Err(VaultError::Scope(canonical.display().to_string()));
+                return Err(VaultError::Scope(scope.to_owned()));
             }
             canonical
         };
 
         let mut paths: Vec<PathBuf> = Vec::new();
-        collect_notes(&scope_path, &mut paths)?;
+        collect_notes(&root, &scope_path, &mut paths)?;
         paths.sort();
 
         let mut notes = Vec::new();
@@ -262,6 +265,9 @@ impl EvidenceSource for VaultEvidenceSource {
                         None => (link.as_str(), None),
                     };
                     for linked in self.resolve(link_target) {
+                        if receipts.len() >= MAX_VAULT_RECEIPTS {
+                            return Ok(receipts);
+                        }
                         if seen.insert(self.notes[linked].reference.clone()) {
                             receipts.push(self.receipt(linked, link_heading));
                         }
@@ -273,14 +279,38 @@ impl EvidenceSource for VaultEvidenceSource {
     }
 }
 
-fn collect_notes(directory: &Path, into: &mut Vec<PathBuf>) -> Result<(), VaultError> {
-    let entries =
-        std::fs::read_dir(directory).map_err(|error| VaultError::Root(error.to_string()))?;
+/// `root` is the vault's canonical root, fixed for the whole walk. Every
+/// directory and note is canonicalized and admitted only when its canonical
+/// form still starts with `root`, so a junction or symlink planted inside the
+/// scope cannot walk the reader out to wherever it points. A directory entry
+/// whose own metadata is a reparse point is refused outright rather than
+/// descended into: canonicalizing its *contents* would still resolve through
+/// the reparse point before the containment check ever runs.
+fn collect_notes(root: &Path, directory: &Path, into: &mut Vec<PathBuf>) -> Result<(), VaultError> {
+    let entries = std::fs::read_dir(directory).map_err(|_| VaultError::Root)?;
     for entry in entries.flatten() {
         let path = entry.path();
-        if path.is_dir() {
-            collect_notes(&path, into)?;
+        let Ok(metadata) = std::fs::symlink_metadata(&path) else {
+            continue;
+        };
+        if is_reparse_point(&metadata) {
+            continue;
+        }
+        if metadata.is_dir() {
+            let Ok(canonical) = path.canonicalize() else {
+                continue;
+            };
+            if !canonical.starts_with(root) {
+                continue;
+            }
+            collect_notes(root, &path, into)?;
         } else if path.extension().is_some_and(|value| value == "md") {
+            let Ok(canonical) = path.canonicalize() else {
+                continue;
+            };
+            if !canonical.starts_with(root) {
+                continue;
+            }
             if into.len() >= MAX_VAULT_NOTES {
                 return Err(VaultError::TooManyNotes);
             }
@@ -288,6 +318,22 @@ fn collect_notes(directory: &Path, into: &mut Vec<PathBuf>) -> Result<(), VaultE
         }
     }
     Ok(())
+}
+
+/// A directory junction on Windows carries the reparse-point attribute
+/// alongside the directory attribute, so `file_attributes` is the only signal
+/// that distinguishes it from a real directory; elsewhere a symlink is enough
+/// of a proxy for the same hazard.
+#[cfg(windows)]
+fn is_reparse_point(metadata: &std::fs::Metadata) -> bool {
+    use std::os::windows::fs::MetadataExt;
+    const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
+    metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0
+}
+
+#[cfg(not(windows))]
+fn is_reparse_point(metadata: &std::fs::Metadata) -> bool {
+    metadata.file_type().is_symlink()
 }
 
 /// A leading `---` line opens a frontmatter block that runs to the next `---`.
@@ -537,17 +583,18 @@ mod tests {
         );
     }
 
-    /// Soul. The scope check runs once, at `open`, against the scope string.
-    /// The walk that follows does not: `collect_notes` recurses through
-    /// anything `is_dir()` answers for, which follows a directory junction, and
-    /// `strip_prefix(&root)` then runs against the uncanonicalized path, so a
-    /// note outside the root comes back wearing a vault-relative reference.
+    /// The scope check at `open` only bounds the scope string; the walk itself
+    /// must bound every step, because a junction planted after `open` (or
+    /// simply present in the tree) is a directory as far as `read_dir` is
+    /// concerned. `collect_notes` now canonicalizes every directory and note it
+    /// visits and admits it only when the canonical form still starts with the
+    /// vault's canonical root, and it refuses to descend into a directory
+    /// entry that is itself a reparse point.
     ///
     /// A junction needs no privilege on Windows, so this is reachable by
     /// anyone who can write inside the configured vault.
     #[cfg(windows)]
     #[tokio::test]
-    #[ignore = "FALSIFIED: collect_notes follows a directory junction out of the vault root"]
     async fn soul_a_junction_inside_the_root_reads_a_note_outside_it() {
         let directory = fixture();
         let outside = tempfile::tempdir().unwrap();
@@ -641,11 +688,12 @@ mod tests {
         }
     }
 
-    /// Soul. `MAX_VAULT_RECEIPTS` is the cap the module names, and the reason
-    /// it gives is that a session citing everything still fits in one patch.
-    /// The link fanout overshoots it: the guard is checked before a link is
-    /// resolved and not before each receipt that link produces, so one
-    /// keyword-resolving link adds up to `MAX_HITS_PER_REFERENT` past the cap.
+    /// `MAX_VAULT_RECEIPTS` is the cap the module names, and the reason it
+    /// gives is that a session citing everything still fits in one patch. The
+    /// guard is checked once per top-level referent and again per receipt a
+    /// link's own fanout would add, so a keyword-resolving link that hands
+    /// back up to `MAX_HITS_PER_REFERENT` notes can never push the total past
+    /// the cap.
     #[tokio::test]
     async fn soul_the_link_fanout_overshoots_the_receipt_cap() {
         let directory = tempfile::tempdir().unwrap();
@@ -679,12 +727,12 @@ mod tests {
         );
     }
 
-    /// Soul. A vault error carries the server's absolute filesystem paths, and
     /// `seed_once` maps `VaultError` straight into `RuntimeCommandError::Payload`,
     /// so the string reaches the owner's command receipt. The reference format
-    /// is deliberately vault-relative; these strings are not.
+    /// this module hands back is deliberately vault-relative, and `VaultError`
+    /// now carries no absolute filesystem path either: `Root` names no path,
+    /// and `Scope` carries only the caller-supplied scope string.
     #[test]
-    #[ignore = "FALSIFIED: VaultError::Root carries the server absolute path into the owner receipt"]
     fn soul_a_vault_error_carries_an_absolute_path() {
         let directory = fixture();
         let root = directory.path();

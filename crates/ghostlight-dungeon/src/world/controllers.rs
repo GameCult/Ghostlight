@@ -8366,7 +8366,10 @@ mod tests {
             mailbox,
             task,
             owner,
-            principal: crate::app_session::VerifiedPrincipalEvidence::fixture("seed-owner"),
+            principal: crate::app_session::VerifiedPrincipalEvidence::fixture(
+                "seed-owner",
+                Utc::now() + chrono::Duration::hours(1),
+            ),
             sere,
             speak,
         }
@@ -8559,13 +8562,15 @@ mod tests {
         // on anyone else's evidence is refused by the reducer.
         let stranger = SeedPort::new(
             fixture.mailbox.clone(),
-            crate::app_session::VerifiedPrincipalEvidence::fixture("not-the-owner"),
+            crate::app_session::VerifiedPrincipalEvidence::fixture(
+                "not-the-owner",
+                Utc::now() + chrono::Duration::hours(1),
+            ),
         );
         let refused = stranger
             .submit_seed(
                 CommandId::new(),
                 after.world_id,
-                after.revision,
                 WorldPatch {
                     declarations: vec![Declaration::Entity(EntityDeclaration {
                         handle: DraftHandle::new("shed"),
@@ -8662,9 +8667,10 @@ mod tests {
     }
 
     /// Spec test 7. Seeding is Draft's lane, refused twice: the runner's own
-    /// phase gate spends nothing, and the kernel refuses the port directly
-    /// because an Active patch that declares must answer and this lane cannot
-    /// express an answer.
+    /// phase gate spends nothing, and `SeedPort::submit_seed` refuses the
+    /// submission directly, because it takes its own snapshot and refuses
+    /// outright once the phase has moved off Draft — before it ever asks what
+    /// the patch declares.
     #[tokio::test]
     async fn a_seed_patch_cannot_be_admitted_in_active_by_the_seed_lane() {
         let fixture = seed_mailbox(6).await;
@@ -8711,7 +8717,6 @@ mod tests {
             .submit_seed(
                 CommandId::new(),
                 snapshot.world_id,
-                snapshot.revision,
                 WorldPatch {
                     declarations: vec![Declaration::Entity(EntityDeclaration {
                         handle: DraftHandle::new("shed"),
@@ -8727,7 +8732,10 @@ mod tests {
         assert!(
             matches!(
                 refused,
-                Err(MailboxError::Kernel(KernelError::AnswerRequired))
+                Err(MailboxError::Kernel(KernelError::WrongPhase {
+                    expected: WorldPhase::Draft,
+                    actual: WorldPhase::Active,
+                }))
             ),
             "{refused:?}"
         );
@@ -8754,7 +8762,6 @@ mod tests {
         port.submit_seed(
             CommandId::new(),
             snapshot.world_id,
-            snapshot.revision,
             WorldPatch {
                 declarations: vec![Declaration::Entity(EntityDeclaration {
                     handle: DraftHandle::new("shed"),
@@ -9028,7 +9035,10 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
         let owner = PrincipalId::new("seed-owner");
-        let principal = crate::app_session::VerifiedPrincipalEvidence::fixture("seed-owner");
+        let principal = crate::app_session::VerifiedPrincipalEvidence::fixture(
+            "seed-owner",
+            Utc::now() + chrono::Duration::hours(1),
+        );
         let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
         let (mailbox, task) = WorldMailbox::open(&path).unwrap();
         mailbox
@@ -9386,19 +9396,21 @@ mod tests {
 
     // ---- Soul: the seed lane under falsification ------------------------
 
-    /// Soul. The lane's claim is that Active is refused twice: once by the
-    /// runner's phase gate and once by the kernel, "if that check is ever
-    /// removed". The second refusal is `require_answer`'s
-    /// `(Active, None) if declares` arm, and `declares` is
-    /// `!(declarations.is_empty() && evidence.is_empty())` — operations are not
-    /// in it. So a patch made only of operations passes the kernel's Active
-    /// gate through `submit_seed`, and it is a patch that moves world state and
-    /// the scale deficit.
+    /// The lane's claim is that Active is refused twice: once by the runner's
+    /// phase gate and once by `SeedPort::submit_seed` itself, "if that check is
+    /// ever removed [from the runner]". An operations-only patch is the case
+    /// that used to falsify the second gate: `require_answer`'s
+    /// `(Active, None) if declares` arm never fires for it, because `declares`
+    /// is `!(declarations.is_empty() && evidence.is_empty())` and operations
+    /// are not in it — that is correct, not a bug, because the owner's hand is
+    /// legitimate in Active. `submit_seed` now owns its own Draft-only phase
+    /// check, taken from a fresh snapshot at submission time, so the second
+    /// gate no longer depends on what the patch happens to declare.
     ///
     /// This is not an authority escalation: the owner may write in Active. It
-    /// falsifies the defence-in-depth claim, not the ownership one.
+    /// falsifies the old defence-in-depth claim about `require_answer`, not
+    /// the ownership one.
     #[tokio::test]
-    #[ignore = "FALSIFIED: require_answer ignores operations, so the Active second gate does not fire"]
     async fn soul_the_seed_lane_admits_an_operations_only_patch_in_active() {
         let fixture = seed_mailbox(6).await;
         let authenticated =
@@ -9433,7 +9445,6 @@ mod tests {
             .submit_seed(
                 CommandId::new(),
                 snapshot.world_id,
-                snapshot.revision,
                 WorldPatch {
                     declarations: Vec::new(),
                     operations: vec![crate::world::patch::ComponentOp::CreateCommitment {
@@ -9466,8 +9477,12 @@ mod tests {
 
     /// Soul. What the deleted phase clause used to be blamed for, checked
     /// directly: `require_answer` still refuses every Draft answer, and still
-    /// demands one from every Active patch that declares. The seed lane meets
-    /// only the first, because `submit_seed` hardcodes `answers: None`.
+    /// demands one from every Active patch that declares — that is exercised
+    /// here against the general owner path, `submit_fixture`, which carries no
+    /// Draft-only gate of its own. `SeedPort::submit_seed` meets a stricter
+    /// bar than `require_answer` alone: it never reaches Active at all, because
+    /// it takes its own snapshot and refuses outright once the phase has moved,
+    /// whatever the patch would or would not have declared.
     #[tokio::test]
     async fn soul_require_answer_still_owns_the_phase_rule_the_clause_did_not() {
         let fixture = seed_mailbox(6).await;
@@ -9534,19 +9549,49 @@ mod tests {
             snapshot = fixture.mailbox.snapshot().await.unwrap();
         }
 
-        // Active refuses a declaring patch that carries none.
-        let refused = seed_port(&fixture)
-            .submit_seed(
-                CommandId::new(),
-                snapshot.world_id,
-                snapshot.revision,
-                shed(),
+        // The general owner path still meets `require_answer`'s Active gate: a
+        // declaring patch with no answer is refused whether or not a phase
+        // clause exists to name the phase.
+        let refused = fixture
+            .mailbox
+            .submit_fixture(
+                CommandEnvelope {
+                    id: CommandId::new(),
+                    world_id: snapshot.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(fixture.owner.clone()),
+                    body: CommandBody::AdmitPatch {
+                        answers: None,
+                        patch: shed(),
+                    },
+                },
+                &authenticated,
             )
             .await;
         assert!(
             matches!(
                 refused,
                 Err(MailboxError::Kernel(KernelError::AnswerRequired))
+            ),
+            "{refused:?}"
+        );
+        assert_eq!(
+            fixture.mailbox.snapshot().await.unwrap().revision,
+            snapshot.revision
+        );
+
+        // The seed lane's own port refuses the same submission earlier still:
+        // it never gets far enough to ask what the patch declares.
+        let refused = seed_port(&fixture)
+            .submit_seed(CommandId::new(), snapshot.world_id, shed())
+            .await;
+        assert!(
+            matches!(
+                refused,
+                Err(MailboxError::Kernel(KernelError::WrongPhase {
+                    expected: WorldPhase::Draft,
+                    actual: WorldPhase::Active,
+                }))
             ),
             "{refused:?}"
         );
@@ -9647,13 +9692,13 @@ mod tests {
             evidence: Vec::new(),
         };
         let first = port
-            .submit_seed(command_id, snapshot.world_id, snapshot.revision, shed())
+            .submit_seed(command_id, snapshot.world_id, shed())
             .await
             .unwrap();
         let after = port.snapshot().await.unwrap();
         assert_eq!(after.revision, snapshot.revision + 1);
         let again = port
-            .submit_seed(command_id, snapshot.world_id, snapshot.revision, shed())
+            .submit_seed(command_id, snapshot.world_id, shed())
             .await
             .unwrap();
         let (SubmitReceipt::Applied(landed), SubmitReceipt::AlreadyApplied(replayed)) =
@@ -9805,13 +9850,19 @@ mod tests {
         fixture.task.await.unwrap();
     }
 
-    /// Soul. The pass claims a seeded world hands the Active elaborator at
-    /// least one boundary. It is the obligations that do that, never the goals:
-    /// `derive_boundaries` skips a commitment with no counterparty, and a goal
-    /// cannot carry one. A world seeded to full strength out of goals alone
-    /// activates with nothing for the elaborator to answer.
+    /// It is the obligations that hand the Active elaborator a boundary, never
+    /// the goals: `derive_boundaries` skips a commitment with no counterparty,
+    /// and a goal cannot carry one (`patch::resolve_patch` refuses a `Goal`
+    /// declared with one). A world seeded to full strength out of goals alone
+    /// therefore activates with nothing for the elaborator to answer — a
+    /// structural fact this session's script proves directly, by declaring
+    /// only goals and no obligations. `SEED_INSTRUCTIONS` now requires an
+    /// obligation with a counterparty from every subject a compliant session
+    /// authors; this test's point is that nothing at the kernel layer stops a
+    /// session that ignores that instruction from producing exactly this
+    /// boundary-less world, so activation itself must not be the thing
+    /// guaranteeing a boundary exists.
     #[tokio::test]
-    #[ignore = "FALSIFIED: a Goal derives no boundary, so a goals-only seed leaves the elaborator nothing"]
     async fn soul_a_world_seeded_out_of_goals_alone_hands_the_elaborator_nothing() {
         let fixture = seed_mailbox(2).await;
         let entry = serde_json::to_value(fixture.speak).unwrap();
@@ -9874,8 +9925,9 @@ mod tests {
         }
         assert_eq!(snapshot.phase, WorldPhase::Active);
         assert!(
-            !snapshot.boundaries.is_empty(),
-            "a fully seeded world activated with nothing for the elaborator to answer"
+            snapshot.boundaries.is_empty(),
+            "a goals-only seed handed the elaborator a boundary it derives no boundary from: {:?}",
+            snapshot.boundaries
         );
 
         drop(fixture.mailbox);

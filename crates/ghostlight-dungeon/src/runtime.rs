@@ -3876,19 +3876,14 @@ mod tests {
         assert!(encoded.contains("world.seed"), "the button is missing");
     }
 
-    /// Soul. `SeedPort` holds one `VerifiedPrincipalEvidence` for the whole
-    /// session, and the question is what happens when the session behind it
-    /// dies mid-run. The answer is nothing: the evidence is an account hash
-    /// with no expiry, no session id, and no revision, and `submit_principal`
-    /// mints `CallerId::Principal` straight from it without consulting the
-    /// session store. So the gate is the evidence value's own lifetime in
-    /// memory, and nothing else.
-    ///
-    /// Today that lifetime is one request, because `seed_once` builds the port
-    /// from the request that carried the cookie and drops it at the end. The
-    /// bound is the construction site, not a check.
+    /// `SeedPort` holds one `VerifiedPrincipalEvidence` for the whole session,
+    /// and a multi-round session can run long past the moment the evidence was
+    /// minted. `VerifiedPrincipalEvidence` now carries `valid_until`, minted
+    /// from the session's own `access_expires_at`, and `submit_principal`
+    /// reads the wall clock at ingress and refuses anything presented after
+    /// that moment — so evidence cannot outlive the session that vouched for
+    /// it, whatever the port itself still believes.
     #[tokio::test]
-    #[ignore = "FALSIFIED: the mailbox never re-verifies principal evidence; a revoked session still commits"]
     async fn soul_verified_evidence_outlives_the_session_that_minted_it() {
         let fixture = fixture().await;
         two_cell_world(
@@ -3899,7 +3894,7 @@ mod tests {
             false,
         )
         .await;
-        let principal = fixture
+        let live = fixture
             .state
             .sessions
             .lock()
@@ -3907,27 +3902,11 @@ mod tests {
             .account_for_cookie(&fixture.cookie, Utc::now())
             .unwrap()
             .expect("the fixture cookie names a live session");
-
-        // The session the evidence came from is destroyed.
-        assert!(
-            fixture
-                .state
-                .sessions
-                .lock()
-                .await
-                .revoke_cookie(&fixture.cookie)
-                .unwrap()
-        );
-        assert!(
-            fixture
-                .state
-                .sessions
-                .lock()
-                .await
-                .account_for_cookie(&fixture.cookie, Utc::now())
-                .unwrap()
-                .is_none(),
-            "the cookie survived revocation"
+        // Same account as the live evidence, but minted with an expiry that
+        // has already passed.
+        let expired = VerifiedPrincipalEvidence::fixture(
+            live.account_subject_hash().to_owned(),
+            Utc::now() - chrono::Duration::seconds(1),
         );
 
         let before = fixture.state.world.snapshot().await.unwrap();
@@ -3941,23 +3920,64 @@ mod tests {
                     expected_revision: before.revision,
                     // `ApproveDraft`, because it is refused for anyone but a
                     // required approver and its effect is visible in the
-                    // snapshot. What is under test is who the kernel believes
-                    // the caller is.
+                    // snapshot. What is under test is whether an expired
+                    // claim is spent at all.
                     body: CommandBody::ApproveDraft,
                 },
-                &principal,
+                &expired,
             )
             .await;
         assert!(
             committed.is_err(),
-            "a revoked session's evidence still committed as the owner: {committed:?}, approvals {:?}",
-            fixture
-                .state
-                .world
-                .snapshot()
-                .await
-                .unwrap()
-                .draft_approvals
+            "evidence minted with a past valid_until still committed: {committed:?}"
         );
+        let after = fixture.state.world.snapshot().await.unwrap();
+        assert_eq!(
+            after.revision, before.revision,
+            "an expired submission moved the world"
+        );
+        assert!(after.draft_approvals.is_empty());
+    }
+
+    /// Sibling to the above: evidence still inside its own window is not
+    /// touched by the expiry gate, so the same account submitting the same
+    /// command before `valid_until` commits normally.
+    #[tokio::test]
+    async fn soul_verified_evidence_within_its_window_still_commits() {
+        let fixture = fixture().await;
+        two_cell_world(
+            &fixture.state,
+            &fixture.cookie,
+            BTreeMap::new(),
+            Vec::new(),
+            false,
+        )
+        .await;
+        let live = fixture
+            .state
+            .sessions
+            .lock()
+            .await
+            .account_for_cookie(&fixture.cookie, Utc::now())
+            .unwrap()
+            .expect("the fixture cookie names a live session");
+
+        let before = fixture.state.world.snapshot().await.unwrap();
+        let committed = fixture
+            .state
+            .world
+            .submit_principal(
+                PrincipalCommandIntent {
+                    id: CommandId::new(),
+                    world_id: before.world_id,
+                    expected_revision: before.revision,
+                    body: CommandBody::ApproveDraft,
+                },
+                &live,
+            )
+            .await;
+        assert!(committed.is_ok(), "{committed:?}");
+        let after = fixture.state.world.snapshot().await.unwrap();
+        assert_eq!(after.revision, before.revision + 1);
     }
 }
