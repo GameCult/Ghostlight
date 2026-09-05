@@ -1111,6 +1111,53 @@ mod tests {
         assert!(capture.gaps[2].detail.contains("submitted twice"));
     }
 
+    /// Soul, pass 10. `session_command_id` was rewritten onto
+    /// `CommandId::derived`, and the two spellings hash different byte streams:
+    /// the old one hashed one msgpack tuple of `(world, jurisdiction, digest)`,
+    /// the new one hashes a length-prefixed pair of `(digest_of(world,
+    /// jurisdiction), digest text)`. The derivation is still deterministic and
+    /// still keyed on the same three inputs, but a session checkpointed before
+    /// this pass resumes under a different command id. That is a silent id
+    /// migration for in-flight elaboration rows, and this test pins the fact so
+    /// it cannot move again unnoticed.
+    #[test]
+    fn soul_the_session_command_id_derivation_moved_under_the_refactor() {
+        let session = ElaboratorSession {
+            world_id: WorldId::nil_for_test(),
+            jurisdiction: JurisdictionKey::Uncovered,
+            answer: PatchAnswer::Deficit(JurisdictionKey::Uncovered),
+            answer_digest: BoundaryDigest::from_digest("sha256:deadbeef".into()),
+            ancestry: "sha256:ancestry".into(),
+        };
+        let live = session_command_id(&session).unwrap();
+        assert_eq!(live, session_command_id(&session).unwrap());
+
+        // The pass-9 spelling, reproduced exactly.
+        let mut hasher = Sha256::new();
+        hasher.update(ELABORATION_NAMESPACE.as_bytes());
+        hasher.update(
+            rmp_serde::to_vec_named(&(
+                session.world_id,
+                session.jurisdiction,
+                &session.answer_digest,
+            ))
+            .unwrap(),
+        );
+        let bytes: [u8; 16] = hasher.finalize()[..16].try_into().unwrap();
+        let previous = CommandId::parse_uuid(&Uuid::from_bytes(bytes).to_string()).unwrap();
+        assert_ne!(
+            live, previous,
+            "the derivation is unchanged; delete this test and the migration note"
+        );
+
+        // And the new recipe still separates the inputs it is keyed on.
+        let moved = ElaboratorSession {
+            answer_digest: BoundaryDigest::from_digest("sha256:cafe".into()),
+            ..session.clone()
+        };
+        assert_ne!(live, session_command_id(&moved).unwrap());
+    }
+
     /// The author owns the size of what it authors. The kernel gets no cap.
     #[test]
     fn a_draft_past_the_size_cap_becomes_a_gap() {

@@ -428,6 +428,8 @@ pub(crate) fn build_document(
 
 #[cfg(test)]
 mod tests {
+    use super::super::DecisionInvocation;
+    use super::super::tests::opportunity_for;
     use super::super::tests::{
         activate, auth_principal, command, creation, operations, owner, speak_entry, submit_owner,
     };
@@ -438,8 +440,8 @@ mod tests {
         EntityDeclaration, EntityId, EntityKind, EvidenceRef, FactDeclaration, FactStandingRef,
         FictionalMinutes, JurisdictionKey, NewController, PatchGround, Quantity, Ref,
         RouteDeclaration, Statement, SubjectDeclaration, SubjectId, SubjectKind, SystemCapability,
-        WorldId, WorldKernel, WorldMailbox, agency_graph, derive_boundaries, derive_cover,
-        derive_opportunities, ground_covers,
+        WorldId, WorldKernel, WorldMailbox, WorldScaleIntentRef, agency_graph, derive_boundaries,
+        derive_cover, derive_opportunities, derive_scale_deficit, ground_covers,
     };
     use super::*;
     use std::collections::BTreeSet;
@@ -1775,5 +1777,493 @@ mod tests {
         assert!(rewritten > 0, "the store names no state schema");
         std::fs::write(&path, bytes).unwrap();
         assert!(WorldKernel::open(&path, world_id).is_err());
+    }
+
+    // ---- Soul: falsification of the pass's own claims ----------------------
+
+    /// A committed decision under the forgery. `journal_replay_refuses_a_forged_consumer_row`
+    /// guards its first half behind `if let Some(event) = state.events.first()`
+    /// and the mirror fixture commits no decision, so that half never runs.
+    /// This is the same claim with a real event beneath it, and it also proves
+    /// the honest state — a mirror with no controller and no grant — passes.
+    #[test]
+    fn soul_a_forged_decision_event_on_a_mirror_is_refused_at_replay() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Acted");
+        let snapshot = kernel.snapshot().unwrap();
+        let opportunity = opportunity_for(&snapshot, mirror.local);
+        let affordance = opportunity.affordance_ids[0];
+        let controller = opportunity.controller_id;
+        submit_as(
+            &mut kernel,
+            CallerId::Controller(controller),
+            CommandBody::ExerciseDecision {
+                opportunity,
+                invocation: DecisionInvocation {
+                    affordance,
+                    bindings: Vec::new(),
+                    proposed: Vec::new(),
+                    speech: Some(Statement::new("The hold is counted.").unwrap()),
+                },
+            },
+        )
+        .expect("an ordinary subject acts");
+        assert!(
+            !kernel.state.events.is_empty(),
+            "the fixture must commit a real event for this forgery to mean anything"
+        );
+
+        // The honest state passes: an externally controlled subject with no
+        // controller id and no affordance grant is legal.
+        super::super::journal::verify_state_shape(&kernel.state)
+            .expect("a world holding a mirror is a well-shaped world");
+
+        // Re-scoping the committed event onto the mirror is refused: the
+        // mirror's assignment has no controller id to match.
+        let mut forged = kernel.state.clone();
+        let mut event = forged.events.first().cloned().expect("a committed event");
+        event.scope = DecisionScope {
+            subject_id: mirror.first,
+        };
+        forged.events = vec![event];
+        assert!(
+            super::super::journal::verify_state_shape(&forged).is_err(),
+            "a forged history in which the mirror acted replayed"
+        );
+    }
+
+    /// The pass-10 deficit assertion lands on `AnswerNotDerived` because its
+    /// fixture names no scale intent, so the answer rule refuses before the
+    /// ground rule is consulted. With an intent the deficit is real, the answer
+    /// rule passes, and `ground_covers` is what refuses.
+    #[test]
+    fn soul_a_consumer_cannot_answer_a_derived_deficit() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut creation = creation(CommandId::new(), "Deficit");
+        creation.scale_intent = WorldScaleIntentRef {
+            targets: BTreeMap::from([(SubjectKind::Person, 9)]),
+            jurisdictions: BTreeMap::from([(DraftHandle::new(super::super::tests::COMMONS), 1000)]),
+        };
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation,
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let commons = entity_named(&kernel, "The Commons");
+        let speak = speak_entry(&kernel);
+        let before = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: mirror_patch(commons, speak),
+            },
+        );
+        let mirror = Mirror {
+            commons,
+            grain: entity_named(&kernel, "Winter Grain"),
+            first: subject_named(&kernel, "The Sunk Hold"),
+            second: subject_named(&kernel, "The Deeper Hold"),
+            local: subject_named(&kernel, "The Rhythm Hall"),
+        };
+        activate(&mut kernel);
+
+        let jurisdiction = JurisdictionKey::PlaceSubtree(commons);
+        assert!(
+            derive_scale_deficit(&kernel.state)
+                .unwrap()
+                .iter()
+                .any(|row| row.jurisdiction == jurisdiction && row.deficit > 0),
+            "the fixture must derive a real deficit for this refusal to mean anything"
+        );
+        // The elaborator holding that jurisdiction is covered by the same row.
+        assert!(ground_covers(
+            &kernel.state,
+            PatchGround::Jurisdiction(jurisdiction),
+            &PatchAnswer::Deficit(jurisdiction)
+        ));
+        assert!(!ground_covers(
+            &kernel.state,
+            PatchGround::Consumer(consumer()),
+            &PatchAnswer::Deficit(jurisdiction)
+        ));
+
+        let error = as_consumer(
+            &mut kernel,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Deficit(jurisdiction)),
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: clearing_grant(&mirror),
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+    }
+
+    /// The byte cap is ahead of serde, not beside it. Bytes msgpack cannot
+    /// decode at all come back `TooLarge` over the cap and `Malformed` under
+    /// it, which is only possible if the length gate runs first.
+    #[test]
+    fn soul_the_patch_byte_cap_bites_before_any_item_deserializes() {
+        // 0xc1 is msgpack's never-used byte: nothing can deserialize from it.
+        let over = vec![0xc1u8; patch::MAX_PATCH_BYTES + 1];
+        assert_eq!(
+            patch::decode_patch(&over),
+            Err(PatchDecodeError::TooLarge {
+                bytes: patch::MAX_PATCH_BYTES + 1
+            })
+        );
+        let under = vec![0xc1u8; patch::MAX_PATCH_BYTES];
+        assert_eq!(
+            patch::decode_patch(&under),
+            Err(PatchDecodeError::Malformed)
+        );
+    }
+
+    /// Every refusal shape the ingress owns, each against the store's bytes.
+    /// A refused document must move neither the revision nor one byte of the
+    /// journal, and its receipt must name the gate that refused it.
+    #[tokio::test]
+    async fn soul_every_refused_document_leaves_the_store_byte_identical() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task, port, mirror, world_id) = mirror_mailbox(directory.path()).await;
+        let path = directory.path().join("world.cc");
+        let before = mailbox.snapshot().await.unwrap();
+        assert!(before.revision > 0);
+        // The store is open and locked by the owner task and its file is
+        // preallocated, so neither its bytes nor its length reports growth while
+        // it is live. Equality of state is read as the whole snapshot here, and
+        // the committed rows are counted once the lock is gone.
+        let good = consumer_ops(&mirror, 1);
+        let document = |consumer: &str, secret: &str, key: &str, revision: u64| {
+            build_document(world_id, consumer, secret, key, revision, None, &good).unwrap()
+        };
+        let over_cap = WorldPatch {
+            declarations: (0..=patch::MAX_PATCH_DECLARATIONS)
+                .map(|index| {
+                    Declaration::Entity(EntityDeclaration {
+                        handle: DraftHandle::new(&format!("shed-{index}")),
+                        label: format!("Shed {index}"),
+                        kind: EntityKind::Place,
+                        container: None,
+                    })
+                })
+                .collect(),
+            operations: Vec::new(),
+            evidence: Vec::new(),
+        };
+        let wrong_schema = {
+            let mut wrong = document(CONSUMER, SECRET, "schema", before.revision);
+            wrong.schema = "ghostlight.consumer_patch.v9".into();
+            wrong
+        };
+
+        let cases: Vec<(&str, Vec<u8>, ConsumerRefusal)> = vec![
+            (
+                "a frame that is not msgpack at all",
+                vec![0xc1u8; 32],
+                ConsumerRefusal::Malformed,
+            ),
+            (
+                "a non-canonical outer frame",
+                rmp_serde::to_vec(&document(CONSUMER, SECRET, "compact", before.revision)).unwrap(),
+                ConsumerRefusal::NotCanonical,
+            ),
+            (
+                "an unknown schema string",
+                encode_document(&wrong_schema).unwrap(),
+                ConsumerRefusal::Schema,
+            ),
+            (
+                "an unregistered consumer",
+                encode_document(&document(OTHER, SECRET, "stranger", before.revision)).unwrap(),
+                ConsumerRefusal::Unauthenticated,
+            ),
+            (
+                "a wrong secret",
+                encode_document(&document(
+                    CONSUMER,
+                    "not-the-secret",
+                    "wrong",
+                    before.revision,
+                ))
+                .unwrap(),
+                ConsumerRefusal::Unauthenticated,
+            ),
+            (
+                "a patch frame over the item cap",
+                encode_document(
+                    &build_document(
+                        world_id,
+                        CONSUMER,
+                        SECRET,
+                        "over-cap",
+                        before.revision,
+                        None,
+                        &over_cap,
+                    )
+                    .unwrap(),
+                )
+                .unwrap(),
+                ConsumerRefusal::TooLarge,
+            ),
+            (
+                "a stale expected revision",
+                encode_document(&document(CONSUMER, SECRET, "stale", before.revision - 1)).unwrap(),
+                ConsumerRefusal::StaleRevision,
+            ),
+        ];
+
+        for (name, bytes, expected) in cases {
+            let receipt = admit_document(&port, &registry(), &bytes).await;
+            let ConsumerOutcome::Refused { gate, .. } = &receipt.outcome else {
+                panic!("{name} was not refused: {receipt:?}");
+            };
+            assert_eq!(*gate, expected, "{name}");
+            if expected == ConsumerRefusal::StaleRevision {
+                // The refusal carries the live revision, so the consumer knows
+                // what to build against next.
+                assert_eq!(receipt.revision, Some(before.revision), "{name}");
+            }
+            assert_eq!(
+                mailbox.snapshot().await.unwrap(),
+                before,
+                "{name} moved the world"
+            );
+        }
+
+        // And the same fixture still admits an honest document, so the loop
+        // above proves refusal rather than a dead ingress.
+        let honest =
+            encode_document(&document(CONSUMER, SECRET, "honest", before.revision)).unwrap();
+        let receipt = admit_document(&port, &registry(), &honest).await;
+        assert!(
+            matches!(receipt.outcome, ConsumerOutcome::Applied { .. }),
+            "{receipt:?}"
+        );
+        assert_eq!(receipt.world_id, Some(world_id));
+        assert!(receipt.command_id.is_some());
+        assert_eq!(receipt.schema, CONSUMER_RECEIPT_SCHEMA);
+        // The receipt decodes by its schema constant.
+        let decoded: ConsumerReceiptDocument =
+            rmp_serde::from_slice(&encode_receipt(&receipt).unwrap()).unwrap();
+        assert_eq!(decoded, receipt);
+        let applied = mailbox.snapshot().await.unwrap();
+        assert_eq!(applied.revision, before.revision + 1);
+
+        drop(port);
+        drop(mailbox);
+        task.await.unwrap();
+
+        // Replay is what proves the store grew by exactly one row: a refusal
+        // that had appended a commit would replay to a different revision and a
+        // different world.
+        let replayed = WorldKernel::open(&path, world_id).unwrap();
+        assert_eq!(replayed.snapshot().unwrap(), applied);
+        assert_eq!(replayed.snapshot().unwrap().revision, before.revision + 1);
+    }
+
+    /// The one derived-key recipe: deterministic, namespaced, and unambiguous
+    /// across the three parts a consumer key is built from.
+    #[test]
+    fn soul_a_derived_command_key_is_deterministic_and_unambiguous() {
+        let key = |namespace: &str, parts: &[&str]| CommandId::derived(namespace, parts);
+        assert_eq!(key("ns", &["a", "b"]), key("ns", &["a", "b"]));
+        // Length-prefixed parts: a split cannot be moved without changing the key.
+        assert_ne!(key("ns", &["a", "b"]), key("ns", &["ab", ""]));
+        assert_ne!(key("ns", &["a", "b"]), key("other", &["a", "b"]));
+
+        let derived: Vec<CommandId> = [
+            ("world-one", "consumer-one", "key-one"),
+            ("world-one", "consumer-one", "key-two"),
+            ("world-one", "consumer-two", "key-one"),
+            ("world-two", "consumer-one", "key-one"),
+        ]
+        .iter()
+        .map(|(world, consumer, idempotency)| {
+            key(CONSUMER_COMMAND_NAMESPACE, &[world, consumer, idempotency])
+        })
+        .collect();
+        for (index, one) in derived.iter().enumerate() {
+            for other in &derived[index + 1..] {
+                assert_ne!(one, other, "two derived command keys collided");
+            }
+        }
+        assert_ne!(ConsumerId::of_name(CONSUMER), ConsumerId::of_name(OTHER));
+        assert_eq!(ConsumerId::of_name(CONSUMER), ConsumerId::of_name(CONSUMER));
+    }
+
+    /// The mirror is not an actor at the second gate either: a real committed
+    /// decision, re-scoped onto the mirror and pushed straight through
+    /// `apply_effect`, is refused and leaves the candidate state untouched.
+    #[test]
+    fn soul_a_forged_exercise_naming_a_mirror_is_refused_at_apply_effect() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, mirror) = mirror_kernel(directory.path(), "Forged Act");
+        let snapshot = kernel.snapshot().unwrap();
+        let opportunity = opportunity_for(&snapshot, mirror.local);
+        let affordance = opportunity.affordance_ids[0];
+        let controller = opportunity.controller_id;
+        let command_id = CommandId::new();
+        let effect = super::super::reduce(
+            &kernel.state,
+            &command(
+                &snapshot,
+                command_id,
+                CallerId::Controller(controller),
+                CommandBody::ExerciseDecision {
+                    opportunity: opportunity.clone(),
+                    invocation: DecisionInvocation {
+                        affordance,
+                        bindings: Vec::new(),
+                        proposed: Vec::new(),
+                        speech: Some(Statement::new("The hold is counted.").unwrap()),
+                    },
+                },
+            ),
+        )
+        .expect("the ordinary decision reduces");
+        let super::super::WorldEffect::DecisionExercised {
+            opportunity,
+            invocation,
+            mut event,
+        } = effect
+        else {
+            panic!("an exercised decision produces one effect shape");
+        };
+        let scope = DecisionScope {
+            subject_id: mirror.first,
+        };
+        event.scope = scope;
+        let forged = super::super::WorldEffect::DecisionExercised {
+            opportunity: DecisionOpportunity {
+                scope,
+                ..opportunity
+            },
+            invocation,
+            event,
+        };
+        let mut candidate = kernel.state.clone();
+        let error = super::super::apply_effect(
+            &mut candidate,
+            command_id,
+            &CallerId::Controller(controller),
+            &forged,
+        )
+        .unwrap_err();
+        assert!(
+            matches!(
+                error,
+                KernelError::Invariant(_)
+                    | KernelError::OpportunityMismatch
+                    | KernelError::ScopeChanged { .. }
+            ),
+            "{error:?}"
+        );
+        assert_eq!(candidate, kernel.state);
+    }
+
+    /// A mixed history — owner genesis, owner admission, an elaborator patch, a
+    /// clock tick, and two consumer documents — replays from the store to the
+    /// same snapshot, and the previous pass's state schema is refused rather
+    /// than migrated.
+    #[test]
+    fn soul_a_mixed_history_replays_and_the_elaboration_schema_is_refused() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Mixed");
+        let world_id = kernel.snapshot().unwrap().world_id;
+
+        as_consumer(&mut kernel, operations(consumer_ops(&mirror, 1).operations)).unwrap();
+
+        // An elaborator writing inside the commons subtree, so all three
+        // authors appear in one store.
+        let boundary = missing_structure(&kernel, mirror.local);
+        let elaborator = CallerId::System(SystemCapability::Elaborator {
+            jurisdiction: JurisdictionKey::PlaceSubtree(mirror.commons),
+        });
+        submit_as(
+            &mut kernel,
+            elaborator,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(boundary)),
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::GrantAuthority {
+                        holder: Ref::Existing(mirror.second),
+                        grant: AuthorityGrantRef {
+                            kind: AuthorityKindName(HOLD_KIND.into()),
+                            over: AuthorityTargetRef::Subject(Ref::Existing(mirror.local)),
+                        },
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .expect("the elaborator answers a boundary inside its jurisdiction");
+
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            CommandBody::AdvanceTime {
+                minutes: super::super::TickMinutes::new(30).unwrap(),
+            },
+        );
+        as_consumer(&mut kernel, operations(consumer_ops(&mirror, 2).operations)).unwrap();
+
+        let accepted = kernel.snapshot().unwrap();
+        let digest = kernel.state.clone();
+        drop(kernel);
+        let replayed = WorldKernel::open(directory.path().join("world.cc"), world_id).unwrap();
+        assert_eq!(replayed.snapshot().unwrap(), accepted);
+        assert_eq!(replayed.state, digest);
+
+        // The pass-9 schema string, named exactly, is refused by the same shape
+        // check every replayed store passes.
+        let mut previous = replayed.state.clone();
+        previous.schema = "ghostlight.world_state.elaboration.v1".into();
+        assert!(super::super::journal::verify_state_shape(&previous).is_err());
+        assert_eq!(
+            super::super::STATE_SCHEMA,
+            "ghostlight.world_state.consumer.v1"
+        );
+    }
+
+    /// The registry holds digests, and nothing it can say about a bad
+    /// credentials file can carry one.
+    #[test]
+    fn soul_no_secret_reaches_a_registry_error_or_a_registry_debug() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("consumers.cfg");
+
+        // A missing file is no consumers, not an open door and not a panic.
+        let missing = ConsumerRegistry::from_secret_file(&path).expect("a missing file is empty");
+        assert!(missing.authenticate(CONSUMER, SECRET).is_none());
+
+        // A file holding a plaintext secret where a digest belongs is an error
+        // that does not echo the secret.
+        std::fs::write(&path, format!("{CONSUMER} = {SECRET}\n")).unwrap();
+        let error = ConsumerRegistry::from_secret_file(&path).unwrap_err();
+        assert!(!error.contains(SECRET), "{error}");
+
+        // The honest file authenticates, and the registry's own rendering
+        // carries only the digest.
+        let digest = Sha256::digest(SECRET.as_bytes());
+        let hex: String = digest.iter().map(|byte| format!("{byte:02x}")).collect();
+        std::fs::write(&path, format!("# consumers\n\n{CONSUMER} = {hex}\n")).unwrap();
+        let registry = ConsumerRegistry::from_secret_file(&path).expect("a well-formed file");
+        assert_eq!(
+            registry.authenticate(CONSUMER, SECRET),
+            Some(ConsumerId::of_name(CONSUMER))
+        );
+        assert!(registry.authenticate(CONSUMER, "not-the-secret").is_none());
+        assert!(registry.authenticate(OTHER, SECRET).is_none());
+        assert!(!format!("{registry:?}").contains(SECRET));
     }
 }
