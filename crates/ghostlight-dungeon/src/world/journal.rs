@@ -1218,6 +1218,34 @@ mod tests {
         );
     }
 
+    /// A `Witness` reaches the store through two rows — a commit carries the
+    /// admitted operations and the state row carries the event's effects — so
+    /// both schemas bumped and both prior versions are refused at open. There
+    /// is no migration adapter and no dual read.
+    #[test]
+    fn a_store_written_before_the_witness_schema_is_refused() {
+        for (row_type, schema) in [
+            (STATE_ROW, "ghostlight.world_state.consumer.v1"),
+            (COMMIT_ROW, "ghostlight.world_commit.consumer.v1"),
+        ] {
+            let row = CultCacheEnvelope {
+                key: "state".into(),
+                r#type: row_type.into(),
+                payload: Vec::new(),
+                stored_at: Utc::now().to_rfc3339(),
+                schema_id: Some(schema.into()),
+            };
+            let error = recover(vec![row], None).unwrap_err();
+            let JournalError::Corrupt(message) = error else {
+                panic!("expected a corrupt store for {schema}");
+            };
+            assert!(
+                message.contains("has the wrong schema"),
+                "unexpected refusal for {schema}: {message}"
+            );
+        }
+    }
+
     /// The tick is re-derived at replay by the same function that produced it,
     /// so a committed motion rewritten after the fact no longer reduces from
     /// its command. The clock chain refuses a rewritten reading the same way.

@@ -364,8 +364,9 @@ pub(crate) enum Confidence {
     Certain,
 }
 
-/// Three sources, three writers, no overlap: `Witnessed` and `Evidenced` are
-/// written by `AcquireKnowledge`, `Told` only by `Communicate`.
+/// Three sources with named writers: `Witnessed` is written by
+/// `AcquireKnowledge` and by `Witness`, `Evidenced` by `AcquireKnowledge`, and
+/// `Told` only by `Communicate`.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(tag = "source", rename_all = "snake_case")]
 pub(crate) enum KnowledgeSource {
@@ -666,6 +667,12 @@ pub(crate) enum Precondition {
 /// `CloseForum` are absent because constituting an office or a forum has no
 /// live in-play reader an affordance would serve; they stay patch-lane only.
 ///
+/// `Witness` is a slot and `Communicate` is not, because a witnessed event is
+/// world-caused and names no speaker, while speech is the actor's own act and
+/// reaches an invocation only through the kernel-owned `carries_speech`
+/// lowering: a proposer that could `Communicate` would choose a speaker, and a
+/// proposer that `Witness`es chooses only where.
+///
 /// The four civic variants carry their payload on the variant rather than on
 /// the slot or the invocation: an authority kind and an office name are not
 /// referents, so they cannot be roles, and a proposer's only degree of freedom
@@ -697,6 +704,15 @@ pub(crate) enum ComponentOpKind {
     /// Source is fixed to `Witnessed`: only `Communicate` writes a teller, and
     /// `Evidenced` needs a patch's evidence list, which an invocation has not.
     AcquireKnowledge {
+        confidence: Confidence,
+    },
+    /// A world-authored event with no speaker: a beacon, a bell, a blast. The
+    /// slot names a fact and a place, never a subject, so a proposer's only
+    /// degree of freedom is which declared place the entry binds. The source is
+    /// `Witnessed` by construction — `ComponentOp::Witness` has no field a
+    /// teller could enter — so this lowering cannot forge one however it is
+    /// bound.
+    Witness {
         confidence: Confidence,
     },
     Forget,
@@ -756,6 +772,7 @@ impl ComponentOpKind {
             Self::AcquireKnowledge { .. } | Self::Forget => {
                 vec![subject(), RoleKindRule::Exact(FACT)]
             }
+            Self::Witness { .. } => vec![RoleKindRule::Exact(FACT), RoleKindRule::Exact(PLACE)],
             // Promisor and counterparty. A `Goal` slot is refused at admission
             // with `GoalWithCounterparty`: a promise to oneself has no second
             // referent to bind, so the action lane authors `Routine` and
@@ -1071,6 +1088,17 @@ pub(crate) enum ComponentOp {
         speaker: Ref<SubjectId>,
         fact: Ref<EntityId>,
         to: AudienceRef,
+    },
+    /// One witnessed event over a place subtree: a beacon, a bell, a blast, an
+    /// asteroid. It names no speaker, because the row it lands is
+    /// `KnowledgeSource::Witnessed` — there is no teller to forge and none is
+    /// implied. It stores the place, never the recipients: the subtree is
+    /// re-derived at apply from live `positions`. Everyone already holding the
+    /// fact is untouched, and a witness that reaches nobody is refused.
+    Witness {
+        fact: Ref<EntityId>,
+        place: Ref<EntityId>,
+        confidence: Confidence,
     },
     Forget {
         subject: Ref<SubjectId>,
@@ -1703,6 +1731,15 @@ pub(crate) enum ResolvedOp {
         speaker: SubjectId,
         fact: EntityId,
         to: Audience,
+    },
+    /// Stores the place, never the recipients. `apply_operation` re-derives the
+    /// subtree from live `positions`, so a forged effect cannot assert a
+    /// landing the world does not have. There is no speaker field, so this
+    /// operation cannot write `KnowledgeSource::Told` however it is forged.
+    Witness {
+        fact: EntityId,
+        place: EntityId,
+        confidence: Confidence,
     },
     Forget {
         subject: SubjectId,
@@ -3097,23 +3134,29 @@ pub(super) fn resolve_patch(
         })
         .collect();
     // Keys and payload, so an `AcquireKnowledge` that changes nothing is
-    // `NoOperationEffect` before any ID is minted. A `Communicate` never enters:
-    // its fan-out is re-derived at apply, and a telling is a canonical change
-    // whatever the room holds.
+    // `NoOperationEffect` before any ID is minted. `Witness` is modelled here
+    // too: its landing is a subtree of `positions`, both maps are candidate
+    // maps, and so the fan-out it will perform at apply is derivable now — a
+    // subject this patch relocated into the subtree counts, and a witness that
+    // reaches nobody is refused at resolve exactly as `apply_operation`
+    // refuses it.
     //
-    // This candidate map does not model `Communicate` at all — it has no case
-    // that inserts a `Told` entry into it, so it cannot answer "does this
-    // patch already know what a pending telling would land." That is safe
-    // today only because no `ComponentOp` can construct a `KnowledgeSource`
-    // carrying `Told`: `AcquireKnowledge` takes an `AuthoredSource`, and that
-    // type has exactly two variants, `Witnessed` and `Evidenced` — `Told` is
-    // unrepresentable there by construction (see `AuthoredSource`'s own doc
-    // comment), and `action::no_component_op_kind_lowers_to_a_told_knowledge_write`
-    // pins the one lowering site that could otherwise drift. If a future
-    // operation is ever given the power to write `Told` directly — bypassing
-    // `Communicate`'s own apply-time fan-out — it must model that fan-out into
-    // this candidate graph first, or `resolve_patch` will silently reason
-    // about a knowledge state the apply pass will not produce.
+    // `Communicate` never enters, and the difference is not scale. A telling is
+    // an act whose occurrence does not depend on its reception: its empty
+    // fan-out is legal, so there is nothing for this map to refuse and no
+    // refusal for it to predict. A witnessed event is only its reception, so
+    // its landing is its legality.
+    //
+    // Neither operation can write `Told`. This map can represent a `Told`
+    // entry, but no `ComponentOp` can construct one: `AcquireKnowledge` takes
+    // an `AuthoredSource`, `Witness` takes no source at all, and neither type
+    // has a `Told` variant —
+    // `action::no_component_op_kind_lowers_to_a_told_knowledge_write` pins both
+    // lowering sites that could otherwise drift. If a future operation is ever
+    // given the power to write `Told` directly — bypassing `Communicate`'s own
+    // apply-time fan-out — it must model that fan-out into this candidate graph
+    // first, or `resolve_patch` will silently reason about a knowledge state
+    // the apply pass will not produce.
     let mut knowledge: BTreeMap<(Key<SubjectId>, Key<EntityId>), KnowledgeCandidate> = state
         .knowledge
         .iter()
@@ -4255,6 +4298,59 @@ pub(super) fn resolve_patch(
                     });
                 }
             }
+            ComponentOp::Witness {
+                fact,
+                place,
+                confidence,
+            } => {
+                let fact_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Fact,
+                    fact,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                let place_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Place,
+                    place,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                let (Some(fact_key), Some(place_key)) = (fact_key, place_key) else {
+                    continue;
+                };
+                // The apply-time fan-out, modelled: every candidate subject
+                // standing under the place — canonical positions plus this
+                // patch's own declarations and its own relocations, which
+                // earlier arms have already written into `positions` — less
+                // everyone this map already has holding the fact, which is the
+                // same "already a knower" test `unheld` applies over committed
+                // state.
+                let entry = KnowledgeCandidate {
+                    confidence: *confidence,
+                    source: KnowledgeSourceKey::Witnessed,
+                };
+                let recipients: Vec<Key<SubjectId>> = positions
+                    .iter()
+                    .filter(|(subject_key, standing)| {
+                        key_covers_place(&place_key, standing, &containers)
+                            && !knowledge.contains_key(&((*subject_key).clone(), fact_key.clone()))
+                    })
+                    .map(|(subject_key, _)| (*subject_key).clone())
+                    .collect();
+                if recipients.is_empty() {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                } else {
+                    for subject_key in recipients {
+                        knowledge.insert((subject_key, fact_key.clone()), entry.clone());
+                    }
+                }
+            }
             ComponentOp::SetReach { channel, reach } => {
                 let channel_key = resolve_entity(
                     Site::Operation(position),
@@ -4976,6 +5072,15 @@ pub(super) fn resolve_patch(
                 fact: entity_id_of(&key_of(fact)),
                 to: audience_of(to),
             },
+            ComponentOp::Witness {
+                fact,
+                place,
+                confidence,
+            } => ResolvedOp::Witness {
+                fact: entity_id_of(&key_of(fact)),
+                place: entity_id_of(&key_of(place)),
+                confidence: *confidence,
+            },
             ComponentOp::Forget { subject, fact } => ResolvedOp::Forget {
                 subject: subject_id_of(&key_of(subject)),
                 fact: entity_id_of(&key_of(fact)),
@@ -5686,6 +5791,16 @@ pub(crate) const PATCH_TOOLS: &[PatchTool] = &[
         },
     },
     PatchTool {
+        name: "witness",
+        description: "One witnessed event over a place. Every subject standing anywhere under that place learns the fact. There is no speaker: the knowledge lands as witnessed, not as told. Anyone who already holds the fact is untouched, and a witness that reaches nobody is refused. The recipients are re-derived from live positions.",
+        fields: &[
+            field("fact", PatchFieldKind::Reference("fact")),
+            field("place", PatchFieldKind::Reference("place")),
+            field("confidence", PatchFieldKind::Choice(CONFIDENCES)),
+        ],
+        shape: PatchToolShape::Operate { variant: "witness" },
+    },
+    PatchTool {
         name: "forget",
         description: "Remove one fact from one subject's knowledge.",
         fields: &[
@@ -6375,6 +6490,39 @@ mod catalog_tests {
         }
     }
 
+    /// The witness tool is built from field kinds the catalog already emits, so
+    /// it needs no `CompositeShape` and no emitter arm: its exemplar decodes to
+    /// the variant, exactly one entry accepts it, and its schema is strict on
+    /// the same terms as every other tool's.
+    #[test]
+    fn the_witness_tool_round_trips_and_its_schema_is_strict() {
+        let entry = PATCH_TOOLS
+            .iter()
+            .find(|entry| entry.name == "witness")
+            .expect("the catalog carries a witness tool");
+        let arguments = arguments_for(entry);
+        assert_eq!(arguments.get("op").and_then(Value::as_str), Some("witness"));
+        let operation: ComponentOp =
+            serde_json::from_value(arguments.clone()).expect("the witness exemplar decodes");
+        assert!(matches!(operation, ComponentOp::Witness { .. }));
+        assert_eq!(
+            PATCH_TOOLS
+                .iter()
+                .filter(|other| names(other, &arguments))
+                .count(),
+            1
+        );
+        let schema: Value = serde_json::from_str(
+            &patch_tools()
+                .into_iter()
+                .find(|tool| tool.name == "witness")
+                .expect("the emitter names it")
+                .parameters_json,
+        )
+        .unwrap();
+        super::super::tool_schema::assert_strict(&schema, "witness");
+    }
+
     /// One arguments object per entry, one example value per field, with the
     /// entry's serde tag and its fixed pairs injected exactly as the evaluator
     /// injects them.
@@ -6469,7 +6617,7 @@ mod catalog_tests {
 
         // Seven declaration shapes over six `Declaration` variants — `Entity`
         // splits by kind, because a `kind` field would be a door slammed for
-        // half its values — plus twenty-eight operations and two session tools.
+        // half its values — plus twenty-nine operations and two session tools.
         // `assert_exhaustive` below breaks the build when a variant is added;
         // these counts are where the addition is restated.
         let declarations = PATCH_TOOLS
@@ -6480,7 +6628,7 @@ mod catalog_tests {
             .iter()
             .filter(|entry| matches!(entry.shape, PatchToolShape::Operate { .. }))
             .count();
-        assert_eq!((declarations, operations, PATCH_TOOLS.len()), (7, 28, 37));
+        assert_eq!((declarations, operations, PATCH_TOOLS.len()), (7, 29, 38));
 
         // Every declaration variant the vocabulary owns is reachable, and the
         // two payload-carrying entity kinds are not exposed as an `Entity`
@@ -6564,6 +6712,7 @@ mod catalog_tests {
                 ComponentOp::CloseForum { .. } => "close_forum",
                 ComponentOp::AcquireKnowledge { .. } => "acquire_knowledge",
                 ComponentOp::Communicate { .. } => "communicate",
+                ComponentOp::Witness { .. } => "witness",
                 ComponentOp::Forget { .. } => "forget",
                 ComponentOp::SetReach { .. } => "set_reach",
                 ComponentOp::SetController { .. } => "set_controller",
@@ -6623,7 +6772,7 @@ mod catalog_tests {
             .count();
         assert_eq!(
             (declare_tools, operate_tools, PATCH_TOOLS.len()),
-            (7, 28, 37)
+            (7, 29, 38)
         );
 
         let declarations = every_declaration();

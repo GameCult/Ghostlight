@@ -2228,7 +2228,7 @@ mod tests {
         assert!(super::super::journal::verify_state_shape(&previous).is_err());
         assert_eq!(
             super::super::STATE_SCHEMA,
-            "ghostlight.world_state.consumer.v1"
+            "ghostlight.world_state.consumer.v2"
         );
     }
 

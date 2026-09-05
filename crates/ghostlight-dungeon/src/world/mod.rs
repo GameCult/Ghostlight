@@ -76,8 +76,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v1";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v1";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v2";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v2";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -2553,6 +2553,42 @@ fn apply_operation(
                 );
             }
         }
+        ResolvedOp::Witness {
+            fact,
+            place,
+            confidence,
+        } => {
+            if !state.facts.contains_key(fact)
+                || !state
+                    .entities
+                    .get(place)
+                    .is_some_and(|record| record.kind == EntityKind::Place)
+            {
+                return Err(KernelError::Invariant(
+                    "a witness names no live fact or place".into(),
+                ));
+            }
+            // Recipients are derived here and never stored: everyone standing
+            // under the place, less everyone who already holds the fact. A
+            // witness that reaches nobody is refused, because a witnessed event
+            // is only its reception — `resolve_patch` refuses the same case over
+            // the candidate graph, so the two layers cannot disagree.
+            let recipients = unheld(state, *fact, under_place(state, *place));
+            if recipients.is_empty() {
+                return Err(KernelError::Invariant(
+                    "a witness reaches nobody who does not already hold the fact".into(),
+                ));
+            }
+            for witness in recipients {
+                state.knowledge.entry(witness).or_default().insert(
+                    *fact,
+                    Knowledge {
+                        confidence: *confidence,
+                        source: KnowledgeSource::Witnessed,
+                    },
+                );
+            }
+        }
         ResolvedOp::SetReach { channel, reach } => {
             let current = state
                 .channels
@@ -4387,6 +4423,13 @@ fn operation_ground(
             (vec![*subject], Vec::new(), Vec::new())
         }
         ResolvedOp::Communicate { speaker, .. } => (vec![*speaker], Vec::new(), Vec::new()),
+        // The place is the whole ground. Confining by it is not weaker than
+        // confining by the recipients: `covers_place` is transitive, so every
+        // subject the fan-out selects stands under the place, and a place
+        // admitted under a root puts all of them under that root. Naming the
+        // recipients here would be a second statement of the same rule,
+        // computed from state this function does not read.
+        ResolvedOp::Witness { place, .. } => (Vec::new(), places(vec![*place]), Vec::new()),
         ResolvedOp::SetReach { channel, reach } => {
             let mut subjects = Vec::new();
             let mut named = Vec::new();
@@ -10476,6 +10519,848 @@ mod soul_knowledge_tests {
         for subject in kernel.snapshot().unwrap().subjects {
             assert!(subject.knowledge.is_empty());
         }
+    }
+}
+
+/// One witnessed event over a place subtree: who it reaches, who it leaves
+/// alone, where it is refused, and what it costs an in-flight binding.
+#[cfg(test)]
+mod witness_tests {
+    use super::patch::Site;
+    use super::tests::{
+        activate, auth_principal, command, creation, operations, opportunity_for, owner,
+        reject_owner, submit_owner,
+    };
+    use super::*;
+
+    /// Nesting, because "under a place" is the whole question. A hemisphere
+    /// holds a region and a far coast; the region holds a village and one
+    /// unwalked hollow; subjects stand in the village, on the coast, and in the
+    /// hemisphere under neither. The hollow is empty so an elaborator has a
+    /// boundary to answer and a witness has a place that reaches nobody.
+    struct Nesting {
+        hemisphere: EntityId,
+        region: EntityId,
+        village: EntityId,
+        coast: EntityId,
+        hollow: EntityId,
+        villager: SubjectId,
+        neighbour: SubjectId,
+        coaster: SubjectId,
+        drifter: SubjectId,
+        asteroid: EntityId,
+        moon: EntityId,
+        ferry: EdgeId,
+    }
+
+    fn place(handle: &str, label: &str, container: Option<&str>) -> Declaration {
+        Declaration::Entity(EntityDeclaration {
+            handle: DraftHandle::new(handle),
+            label: label.into(),
+            kind: EntityKind::Place,
+            container: container.map(|value| Ref::Draft(DraftHandle::new(value))),
+        })
+    }
+
+    fn stander(handle: &str, label: &str, place: &str, speak: &Ref<AffordanceId>) -> Declaration {
+        Declaration::Subject(SubjectDeclaration {
+            handle: DraftHandle::new(handle),
+            label: label.into(),
+            kind: SubjectKind::Person,
+            controller: NewController::NarrativePersona,
+            affordances: BTreeSet::from([speak.clone(), Ref::Draft(DraftHandle::new("beacon"))]),
+            position: Some(Ref::Draft(DraftHandle::new(place))),
+        })
+    }
+
+    fn sky_fact(handle: &str, label: &str, statement: &str, evidence: &str) -> Declaration {
+        Declaration::Fact(FactDeclaration {
+            handle: DraftHandle::new(handle),
+            label: label.into(),
+            statement: Statement::new(statement).unwrap(),
+            standing: FactStandingRef::Canonical {
+                evidence: EvidenceRef::new(evidence),
+            },
+        })
+    }
+
+    fn witness(fact: EntityId, place: EntityId, confidence: Confidence) -> ComponentOp {
+        ComponentOp::Witness {
+            fact: Ref::Existing(fact),
+            place: Ref::Existing(place),
+            confidence,
+        }
+    }
+
+    fn nesting_kernel(path: &Path, title: &str) -> (WorldKernel, Nesting, WorldSnapshot) {
+        let mut kernel = WorldKernel::create(
+            path.join("world.cc"),
+            creation(CommandId::new(), title),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let before = kernel.snapshot().unwrap();
+        let speak = super::tests::speak_entry(&kernel);
+        submit_owner(
+            &mut kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![
+                        place("hemisphere", "The Lit Hemisphere", None),
+                        place("region", "The Rhythm Region", Some("hemisphere")),
+                        place("village", "The Anchor Village", Some("region")),
+                        place("hollow", "The Unwalked Hollow", Some("region")),
+                        place("coast", "The Far Coast", Some("hemisphere")),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("ferry"),
+                            label: "The Coast Ferry".into(),
+                            from: Ref::Draft(DraftHandle::new("coast")),
+                            to: Ref::Draft(DraftHandle::new("village")),
+                            access: AccessKind::Public,
+                            cost: Cost(1),
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("path"),
+                            label: "The Hollow Path".into(),
+                            from: Ref::Draft(DraftHandle::new("village")),
+                            to: Ref::Draft(DraftHandle::new("hollow")),
+                            access: AccessKind::Public,
+                            cost: Cost(1),
+                        }),
+                        // A world-authored verb with no speaker in it: the
+                        // proposer chooses which declared place the entry
+                        // binds and nothing else.
+                        Declaration::Affordance(AffordanceDeclaration {
+                            handle: DraftHandle::new("beacon"),
+                            kind: AffordanceKindName("beacon".into()),
+                            roles: vec![
+                                RoleSpec {
+                                    role: Role("fact".into()),
+                                    kind: RefKind::Entity(EntityKind::Fact),
+                                },
+                                RoleSpec {
+                                    role: Role("place".into()),
+                                    kind: RefKind::Entity(EntityKind::Place),
+                                },
+                            ],
+                            preconditions: Vec::new(),
+                            effect_slots: vec![EffectSlot {
+                                op_kind: ComponentOpKind::Witness {
+                                    confidence: Confidence::Believed,
+                                },
+                                roles: vec![Role("fact".into()), Role("place".into())],
+                                bounds: Bounds::None,
+                            }],
+                            outcome_bands: vec![OutcomeBand {
+                                weight: 1,
+                                effects: vec![0],
+                            }],
+                            carries_speech: false,
+                        }),
+                        stander("villager", "The Anchor Villager", "village", &speak),
+                        stander("neighbour", "The Anchor Neighbour", "village", &speak),
+                        stander("coaster", "The Coast Watcher", "coast", &speak),
+                        stander("drifter", "The Open Drifter", "hemisphere", &speak),
+                        sky_fact(
+                            "asteroid",
+                            "the asteroid over the region",
+                            "An asteroid crossed the sky above the region.",
+                            "vault:asteroid",
+                        ),
+                        sky_fact(
+                            "moon",
+                            "the second moon",
+                            "A second moon rose over the hemisphere.",
+                            "vault:moon",
+                        ),
+                    ],
+                    operations: Vec::new(),
+                    evidence: vec![
+                        EvidenceRef::new("vault:asteroid"),
+                        EvidenceRef::new("vault:moon"),
+                    ],
+                },
+            },
+        );
+        let entity = |label: &str| {
+            *kernel
+                .state
+                .entities
+                .iter()
+                .find(|(_, record)| record.label == label)
+                .expect("a declared entity")
+                .0
+        };
+        let subject = |label: &str| {
+            *kernel
+                .state
+                .subjects
+                .iter()
+                .find(|(_, record)| record.label == label)
+                .expect("a declared subject")
+                .0
+        };
+        let nesting = Nesting {
+            hemisphere: entity("The Lit Hemisphere"),
+            region: entity("The Rhythm Region"),
+            village: entity("The Anchor Village"),
+            coast: entity("The Far Coast"),
+            hollow: entity("The Unwalked Hollow"),
+            villager: subject("The Anchor Villager"),
+            neighbour: subject("The Anchor Neighbour"),
+            coaster: subject("The Coast Watcher"),
+            drifter: subject("The Open Drifter"),
+            asteroid: entity("the asteroid over the region"),
+            moon: entity("the second moon"),
+            ferry: *kernel
+                .state
+                .edges
+                .iter()
+                .find(|(_, record)| record.label() == "The Coast Ferry")
+                .expect("a declared route")
+                .0,
+        };
+        let active = activate(&mut kernel);
+        (kernel, nesting, active)
+    }
+
+    fn knows(kernel: &WorldKernel, subject: SubjectId, fact: EntityId) -> Option<Knowledge> {
+        kernel
+            .state
+            .knowledge
+            .get(&subject)
+            .and_then(|held| held.get(&fact))
+            .copied()
+    }
+
+    fn seen(confidence: Confidence) -> Option<Knowledge> {
+        Some(Knowledge {
+            confidence,
+            source: KnowledgeSource::Witnessed,
+        })
+    }
+
+    /// The subtree is the whole reach: everyone under the named place, nobody
+    /// beside it, and a wider place reaches the wider set.
+    #[test]
+    fn a_witness_reaches_every_subject_under_the_place_and_no_other() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "Reach");
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![witness(
+                world.asteroid,
+                world.region,
+                Confidence::Believed,
+            )]),
+        );
+        assert_eq!(
+            knows(&kernel, world.villager, world.asteroid),
+            seen(Confidence::Believed)
+        );
+        assert_eq!(
+            knows(&kernel, world.neighbour, world.asteroid),
+            seen(Confidence::Believed)
+        );
+        assert_eq!(knows(&kernel, world.coaster, world.asteroid), None);
+        assert_eq!(knows(&kernel, world.drifter, world.asteroid), None);
+
+        let after = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &after,
+            operations(vec![witness(
+                world.moon,
+                world.hemisphere,
+                Confidence::Certain,
+            )]),
+        );
+        for subject in [
+            world.villager,
+            world.neighbour,
+            world.coaster,
+            world.drifter,
+        ] {
+            assert_eq!(
+                knows(&kernel, subject, world.moon),
+                seen(Confidence::Certain)
+            );
+        }
+
+        // No witness names a teller, so nothing in the world was told.
+        assert!(
+            kernel
+                .state
+                .knowledge
+                .values()
+                .flat_map(|held| held.values())
+                .all(|entry| !matches!(entry.source, KnowledgeSource::Told { .. })),
+            "a witness wrote a told row"
+        );
+    }
+
+    /// The knower owns its credence. A holder is dropped from the landing
+    /// whatever it holds and however it came by it, so a witness cannot reset a
+    /// mind by repeating itself.
+    #[test]
+    fn a_witness_never_overwrites_a_holder() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, world, _) = nesting_kernel(directory.path(), "Holder");
+        // `Told` has exactly one writer, so the holder's row is planted at the
+        // layer that can hold one and the witness is applied beside it.
+        let held = Knowledge {
+            confidence: Confidence::Doubted,
+            source: KnowledgeSource::Told {
+                by: world.coaster,
+                via: None,
+            },
+        };
+        let mut state = kernel.state.clone();
+        state
+            .knowledge
+            .entry(world.villager)
+            .or_default()
+            .insert(world.asteroid, held);
+        apply_operation(
+            &mut state,
+            &ResolvedOp::Witness {
+                fact: world.asteroid,
+                place: world.region,
+                confidence: Confidence::Certain,
+            },
+            &[],
+        )
+        .expect("the witness lands");
+        assert_eq!(state.knowledge[&world.villager][&world.asteroid], held);
+        assert_eq!(
+            state.knowledge[&world.neighbour][&world.asteroid],
+            Knowledge {
+                confidence: Confidence::Certain,
+                source: KnowledgeSource::Witnessed,
+            }
+        );
+    }
+
+    /// A witnessed event is only its reception, so a landing that reaches
+    /// nobody is not an event the world recorded. Both layers refuse it, and
+    /// they refuse the same two cases: an empty subtree, and a subtree whose
+    /// every stander already holds the fact.
+    #[test]
+    fn a_witness_over_nobody_is_refused_at_resolve_and_at_apply() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "Nobody");
+        let forged = |place: EntityId, state: &WorldState| {
+            let mut state = state.clone();
+            apply_operation(
+                &mut state,
+                &ResolvedOp::Witness {
+                    fact: world.asteroid,
+                    place,
+                    confidence: Confidence::Certain,
+                },
+                &[],
+            )
+            .unwrap_err()
+        };
+
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![witness(
+                    world.asteroid,
+                    world.hollow,
+                    Confidence::Certain
+                )]),
+            ),
+            vec![Mismatch::NoOperationEffect { operation: 0 }]
+        );
+        assert!(matches!(
+            forged(world.hollow, &kernel.state),
+            KernelError::Invariant(message)
+                if message == "a witness reaches nobody who does not already hold the fact"
+        ));
+
+        // Every stander already holds it, which is the same refusal.
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![witness(
+                world.asteroid,
+                world.village,
+                Confidence::Certain,
+            )]),
+        );
+        let after = kernel.snapshot().unwrap();
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &after,
+                operations(vec![witness(
+                    world.asteroid,
+                    world.village,
+                    Confidence::Certain
+                )]),
+            ),
+            vec![Mismatch::NoOperationEffect { operation: 0 }]
+        );
+        assert!(matches!(
+            forged(world.village, &kernel.state),
+            KernelError::Invariant(message)
+                if message == "a witness reaches nobody who does not already hold the fact"
+        ));
+
+        // A forged effect naming a place that is not one, or no live fact, is
+        // refused by the arm's own kind check before any of that.
+        let mut state = kernel.state.clone();
+        assert!(matches!(
+            apply_operation(
+                &mut state,
+                &ResolvedOp::Witness {
+                    fact: world.asteroid,
+                    place: world.asteroid,
+                    confidence: Confidence::Certain,
+                },
+                &[],
+            )
+            .unwrap_err(),
+            KernelError::Invariant(message) if message == "a witness names no live fact or place"
+        ));
+    }
+
+    /// The candidate map models the fan-out, so a subject this patch moved into
+    /// the subtree is a recipient and a subject it moved out is not. The resolve
+    /// layer and the apply layer agree on both.
+    #[test]
+    fn a_mid_patch_relocation_into_the_subtree_counts() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "Relocation");
+        // The village's own standers already hold it, so the relocated coaster
+        // is the only candidate recipient left.
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![witness(
+                world.asteroid,
+                world.village,
+                Confidence::Believed,
+            )]),
+        );
+        let seeded = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &seeded,
+            operations(vec![
+                ComponentOp::Relocate {
+                    subject: Ref::Existing(world.coaster),
+                    via: Ref::Existing(world.ferry),
+                },
+                witness(world.asteroid, world.village, Confidence::Certain),
+            ]),
+        );
+        assert_eq!(
+            kernel.state.positions[&world.coaster],
+            Position {
+                place: world.village
+            }
+        );
+        assert_eq!(
+            knows(&kernel, world.coaster, world.asteroid),
+            seen(Confidence::Certain)
+        );
+
+        // The inverse: the coast's only stander leaves before the witness, so
+        // the coast reaches nobody. Both layers say so.
+        let moved = kernel.snapshot().unwrap();
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &moved,
+                operations(vec![witness(world.moon, world.coast, Confidence::Certain)]),
+            ),
+            vec![Mismatch::NoOperationEffect { operation: 0 }]
+        );
+        let mut state = kernel.state.clone();
+        assert!(matches!(
+            apply_operations(
+                &mut state,
+                &[ResolvedOp::Witness {
+                    fact: world.moon,
+                    place: world.coast,
+                    confidence: Confidence::Certain,
+                }],
+                &[],
+            )
+            .unwrap_err(),
+            KernelError::Invariant(message)
+                if message == "a witness reaches nobody who does not already hold the fact"
+        ));
+    }
+
+    /// The place is the whole ground, and it is not a weaker confinement than
+    /// the recipients: everyone the fan-out selects stands under it. An
+    /// elaborator witnesses inside its root, and nowhere outside or above it.
+    #[test]
+    fn an_elaborator_may_witness_inside_its_root_and_not_outside_or_above() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, _) = nesting_kernel(directory.path(), "Jurisdiction");
+        let answer = derive_boundaries(&kernel.state)
+            .unwrap()
+            .into_iter()
+            .find(|boundary| {
+                matches!(boundary, CausalBoundary::UnelaboratedDestination { place, .. }
+                    if *place == world.hollow)
+            })
+            .expect("the hollow is an unelaborated destination");
+        let submit = |kernel: &mut WorldKernel, place: EntityId| {
+            let snapshot = kernel.snapshot().unwrap();
+            let caller = CallerId::System(SystemCapability::Elaborator {
+                jurisdiction: JurisdictionKey::PlaceSubtree(world.region),
+            });
+            kernel.submit(
+                command(
+                    &snapshot,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::AdmitPatch {
+                        answers: Some(PatchAnswer::Boundary(answer.clone())),
+                        patch: WorldPatch {
+                            // The boundary the elaborator answers: the hollow
+                            // grows a room. The witness rides beside it, and
+                            // only the witness is confined by its place.
+                            declarations: vec![Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("shed"),
+                                label: "The Hollow Shed".into(),
+                                kind: EntityKind::Place,
+                                container: Some(Ref::Existing(world.hollow)),
+                            })],
+                            operations: vec![witness(world.asteroid, place, Confidence::Believed)],
+                            evidence: Vec::new(),
+                        },
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+        };
+        let outside = |result: Result<SubmitReceipt, KernelError>| match result {
+            Err(KernelError::PatchRejected(set)) => set,
+            other => panic!("expected a confined refusal, got {other:?}"),
+        };
+
+        assert_eq!(
+            outside(submit(&mut kernel, world.coast)),
+            vec![Mismatch::OutsideJurisdiction {
+                site: Site::Operation(0)
+            }]
+        );
+        assert_eq!(
+            outside(submit(&mut kernel, world.hemisphere)),
+            vec![Mismatch::OutsideJurisdiction {
+                site: Site::Operation(0)
+            }]
+        );
+        let admitted = submit(&mut kernel, world.village);
+        assert!(
+            matches!(admitted, Ok(SubmitReceipt::Applied(_))),
+            "{admitted:?}"
+        );
+        assert_eq!(
+            knows(&kernel, world.villager, world.asteroid),
+            seen(Confidence::Believed)
+        );
+    }
+
+    /// A consumer names no ground, and a jurisdiction over placeless subjects
+    /// names no place. Both refuse every witness through the same closure, with
+    /// no rule in `confine_to_ground` naming the operation.
+    #[test]
+    fn a_consumer_cannot_witness() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, world, _) = nesting_kernel(directory.path(), "Consumer");
+        let resolved = patch::resolve_patch(
+            &kernel.state,
+            CommandId::new(),
+            &WorldPatch {
+                declarations: Vec::new(),
+                operations: vec![witness(world.asteroid, world.village, Confidence::Certain)],
+                evidence: Vec::new(),
+            },
+            None,
+        )
+        .expect("the witness resolves over committed state");
+        for ground in [
+            PatchGround::Consumer(ConsumerId::of_name("witness.consumer")),
+            PatchGround::Jurisdiction(JurisdictionKey::Uncovered),
+        ] {
+            assert_eq!(
+                confine_to_ground(&kernel.state, &resolved, ground),
+                Err(vec![Mismatch::OutsideJurisdiction {
+                    site: Site::Operation(0)
+                }]),
+                "{ground:?} admitted a witness"
+            );
+        }
+    }
+
+    /// The digest reads the keys of a subject's own knowledge, so a witness
+    /// moves exactly the digests of the subjects that learned something.
+    #[test]
+    fn a_witness_moves_every_recipients_scope_digest_and_nobody_elses() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "Digest");
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::AcquireKnowledge {
+                subject: Ref::Existing(world.neighbour),
+                fact: Ref::Existing(world.asteroid),
+                source: AuthoredSource::Witnessed,
+                confidence: Confidence::Doubted,
+            }]),
+        );
+        let digest = |kernel: &WorldKernel, subject_id: SubjectId| {
+            scope_digest(&kernel.state, DecisionScope { subject_id }).unwrap()
+        };
+        let learner = digest(&kernel, world.villager);
+        let holder = digest(&kernel, world.neighbour);
+        let outsider = digest(&kernel, world.coaster);
+
+        let seeded = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &seeded,
+            operations(vec![witness(
+                world.asteroid,
+                world.region,
+                Confidence::Certain,
+            )]),
+        );
+        assert_ne!(digest(&kernel, world.villager), learner);
+        assert_eq!(digest(&kernel, world.neighbour), holder);
+        assert_eq!(digest(&kernel, world.coaster), outsider);
+    }
+
+    /// A witness is the loudest producer of a moved scope: every subject that
+    /// learned something loses its in-flight binding, and every subject that
+    /// already knew keeps it. What the learner sees carries no speaker.
+    #[test]
+    fn a_witness_between_a_bound_opportunity_and_its_exercise_is_a_scope_change() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "Interruption");
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::AcquireKnowledge {
+                subject: Ref::Existing(world.neighbour),
+                fact: Ref::Existing(world.asteroid),
+                source: AuthoredSource::Witnessed,
+                confidence: Confidence::Doubted,
+            }]),
+        );
+        let bound = kernel.snapshot().unwrap();
+        let learner = opportunity_for(&bound, world.villager);
+        let holder = opportunity_for(&bound, world.neighbour);
+        submit_owner(
+            &mut kernel,
+            &bound,
+            operations(vec![witness(
+                world.asteroid,
+                world.region,
+                Confidence::Certain,
+            )]),
+        );
+
+        let exercise = |kernel: &mut WorldKernel, opportunity: &DecisionOpportunity| {
+            let snapshot = kernel.snapshot().unwrap();
+            let speak = *opportunity
+                .affordance_ids
+                .iter()
+                .find(|id| {
+                    snapshot
+                        .affordances
+                        .iter()
+                        .any(|entry| entry.id == **id && entry.entry.carries_speech)
+                })
+                .expect("the scope holds a speech-carrying entry");
+            let caller = CallerId::Controller(opportunity.controller_id);
+            kernel.submit(
+                command(
+                    &snapshot,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        invocation: DecisionInvocation {
+                            affordance: speak,
+                            bindings: Vec::new(),
+                            proposed: Vec::new(),
+                            speech: Some(Statement::new("The sky moved.").unwrap()),
+                        },
+                        opportunity: opportunity.clone(),
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+        };
+        let error = exercise(&mut kernel, &learner).unwrap_err();
+        let KernelError::ScopeChanged {
+            scope,
+            expected,
+            actual,
+        } = error
+        else {
+            panic!("expected a changed scope, got {error:?}");
+        };
+        assert_eq!(scope, learner.scope);
+        assert_eq!(expected, learner.scope_digest);
+        assert_ne!(expected, actual);
+
+        // The subject that already held the fact learned nothing, so its
+        // binding survives the same witness.
+        let kept = exercise(&mut kernel, &holder);
+        assert!(matches!(kept, Ok(SubmitReceipt::Applied(_))), "{kept:?}");
+
+        // What the learner now holds names no speaker: it knows the thing, not
+        // the telling.
+        let entry = knows(&kernel, world.villager, world.asteroid).expect("the learner holds it");
+        assert_eq!(entry.source, KnowledgeSource::Witnessed);
+        let snapshot = kernel.snapshot().unwrap();
+        let held = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == world.villager)
+            .expect("the learner is snapshotted")
+            .knowledge
+            .iter()
+            .find(|row| row.fact == world.asteroid)
+            .expect("the learner's snapshot carries the fact");
+        assert_eq!(held.source, KnowledgeSource::Witnessed);
+        assert!(
+            held.spoken_at.is_none(),
+            "a witnessed row named a speech act"
+        );
+    }
+
+    /// The slot names a fact and a place, never a subject, so an exercised
+    /// witness lands the subtree with no teller anywhere in it. A slot whose
+    /// place position binds a subject is refused before it is ever declared.
+    #[test]
+    fn a_witness_affordance_lowers_with_no_speaker() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "Affordance");
+        let opportunity = opportunity_for(&active, world.villager);
+        let beacon = *opportunity
+            .affordance_ids
+            .iter()
+            .find(|id| {
+                active
+                    .affordances
+                    .iter()
+                    .any(|entry| entry.id == **id && entry.entry.kind.0 == "beacon")
+            })
+            .expect("the villager holds the beacon entry");
+        let caller = CallerId::Controller(opportunity.controller_id);
+        kernel
+            .submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        invocation: DecisionInvocation {
+                            affordance: beacon,
+                            bindings: vec![
+                                RoleBinding {
+                                    role: Role("fact".into()),
+                                    target: Target::Entity(world.asteroid),
+                                },
+                                RoleBinding {
+                                    role: Role("place".into()),
+                                    target: Target::Entity(world.region),
+                                },
+                            ],
+                            proposed: vec![ProposedEffect {
+                                slot: 0,
+                                magnitude: Magnitude::None,
+                            }],
+                            speech: None,
+                        },
+                        opportunity: opportunity.clone(),
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .expect("the beacon lands");
+        assert_eq!(
+            kernel
+                .state
+                .events
+                .last()
+                .expect("a committed event")
+                .effects,
+            vec![ResolvedOp::Witness {
+                fact: world.asteroid,
+                place: world.region,
+                confidence: Confidence::Believed,
+            }]
+        );
+        assert_eq!(
+            knows(&kernel, world.villager, world.asteroid),
+            seen(Confidence::Believed)
+        );
+        assert_eq!(
+            knows(&kernel, world.neighbour, world.asteroid),
+            seen(Confidence::Believed)
+        );
+        assert_eq!(knows(&kernel, world.coaster, world.asteroid), None);
+
+        // The second role is a place, and a subject cannot serve it, so a slot
+        // that named one is refused at affordance declaration.
+        let rules = ComponentOpKind::Witness {
+            confidence: Confidence::Believed,
+        }
+        .arity();
+        assert_eq!(rules.len(), 2);
+        assert!(patch::role_kind_fits(
+            &rules[0],
+            RefKind::Entity(EntityKind::Fact)
+        ));
+        assert!(patch::role_kind_fits(
+            &rules[1],
+            RefKind::Entity(EntityKind::Place)
+        ));
+        assert!(!patch::role_kind_fits(&rules[1], RefKind::Subject(None)));
+    }
+
+    /// A journal carrying a witness replays to digest equality, and the rows it
+    /// wrote pass the shape check with no clause of their own.
+    #[test]
+    fn a_world_with_a_witness_replays() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "Replay");
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![witness(
+                world.asteroid,
+                world.region,
+                Confidence::Certain,
+            )]),
+        );
+        assert!(journal::verify_state_shape(&kernel.state).is_ok());
+        let world_id = kernel.state.world_id;
+        let committed = kernel.state.clone();
+        drop(kernel);
+        let reopened =
+            WorldKernel::open(directory.path().join("world.cc"), world_id).expect("it replays");
+        assert_eq!(reopened.state, committed);
+        assert_eq!(
+            knows(&reopened, world.villager, world.asteroid),
+            seen(Confidence::Certain)
+        );
     }
 }
 

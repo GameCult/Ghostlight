@@ -950,6 +950,11 @@ fn lower(
                     confidence: *confidence,
                 }
             }
+            ComponentOpKind::Witness { confidence } => patch::ComponentOp::Witness {
+                fact: entity(0)?,
+                place: entity(1)?,
+                confidence: *confidence,
+            },
             ComponentOpKind::Forget => patch::ComponentOp::Forget {
                 subject: subject(0)?,
                 fact: entity(1)?,
@@ -2642,12 +2647,12 @@ mod tests {
     /// fan-out (see the comment beside its construction in `patch.rs`), and
     /// that omission is safe only because no `ComponentOpKind` an affordance
     /// may declare can lower to a knowledge write carrying
-    /// `KnowledgeSource::Told`. `AcquireKnowledge` is the only
-    /// `ComponentOpKind` that touches knowledge at all, and `lower` fixes its
-    /// source to `AuthoredSource::Witnessed` here, at the one call site that
-    /// turns a declared slot into a `ComponentOp` — a type that has no `Told`
-    /// variant to begin with. This test pins that lowering so a future author
-    /// cannot widen it without this assertion naming the change.
+    /// `KnowledgeSource::Told`. Two kinds touch knowledge: `AcquireKnowledge`,
+    /// whose source `lower` fixes to `AuthoredSource::Witnessed` — a type with
+    /// no `Told` variant to begin with — and `Witness`, which carries no source
+    /// field and no speaker field at all. This test pins both lowerings, at the
+    /// call sites that turn a declared slot into a `ComponentOp`, so a future
+    /// author cannot widen either without this assertion naming the change.
     #[test]
     fn no_component_op_kind_lowers_to_a_told_knowledge_write() {
         let directory = tempfile::tempdir().unwrap();
@@ -2700,6 +2705,46 @@ mod tests {
                 confidence: Confidence::Believed,
             }],
             "AcquireKnowledge must lower with a Witnessed source, never a forged teller"
+        );
+
+        let witnessing = Affordance {
+            kind: AffordanceKindName("beacon".into()),
+            roles: Vec::new(),
+            preconditions: Vec::new(),
+            effect_slots: vec![EffectSlot {
+                op_kind: ComponentOpKind::Witness {
+                    confidence: Confidence::Believed,
+                },
+                roles: vec![Role("fact".into()), Role("place".into())],
+                bounds: Bounds::None,
+            }],
+            outcome_bands: vec![OutcomeBand {
+                weight: 1,
+                effects: vec![0],
+            }],
+            carries_speech: false,
+        };
+        let places = BTreeMap::from([
+            (Role("fact".into()), Target::Entity(bench.tithe)),
+            (Role("place".into()), Target::Entity(bench.yard)),
+        ]);
+        let lowered = lower(
+            &witnessing,
+            0,
+            bench.clerk,
+            FictionalMinutes::default(),
+            &invocation,
+            &places,
+        )
+        .expect("the witness slot lowers");
+        assert_eq!(
+            lowered,
+            vec![ComponentOp::Witness {
+                fact: PatchRef::Existing(bench.tithe),
+                place: PatchRef::Existing(bench.yard),
+                confidence: Confidence::Believed,
+            }],
+            "Witness must lower with no speaker field to forge"
         );
     }
 }
