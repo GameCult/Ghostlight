@@ -2,11 +2,15 @@
 
 ## Current Subgoal
 
-None. Steps 9 and 10 are landed with their follow-ups at `651bfb2`; no
-worktree exists. The next slice opens on the outbound consumer response batch
-with a non-loopback CultMesh lease, the deployment gate, the Eve "overtaken"
-result-state question, or operator decision (b) `world.run_tick` (see
-`notes/fresh-workspace-handoff.md`). No road run until a provider is available.
+Claude connector pass (operator order, 2026-09-06). Pipeline: Modeling
+(`modeling-claude-connector.md`, read-only) -> Imagination -> Hands -> Soul ->
+integrate, across CodexConnector (second backend, second request shape, one
+daemon, one wire law) and Ghostlight (inference port lowers to the new shape;
+pin `68fe94b` moves). Nothing edited at `06236a4`. Settle before Hands: which
+CodexConnector head the pin targets (`origin/main` `b2e7684` vs the checkout
+branch `codex/ghostlight-release-binding` at `6519289`); how a backend is
+selected (model name or setting); the API-key credential path beside the
+`codex app-server` child; and the `AGENTS.md` amendment the operator owns.
 
 ## Working Notes
 

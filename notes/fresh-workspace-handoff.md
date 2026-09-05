@@ -420,11 +420,48 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    vocabulary needs a fourth state for "overtaken" instead of rendering an
    interruption as `denied`.
 
-   Constraint: no road run is possible until a provider is available again.
-   The Codex subscription lapsed mid-build and the twelve seeded runs
-   consumed half the operator's monthly free quota; a Claude connector is a
-   candidate. The interruption pass proves itself under fixture inference
-   ports until then; the connector is stopped and the smoke substrate at
+   In flight: the operator ordered "Build the Claude connector" on
+   2026-09-06. Nothing is edited; Modeling is mapping read-only into the
+   session scratchpad `modeling-claude-connector.md`, then Imagination,
+   Hands, Soul, integrate. Cross-repo: CodexConnector and Ghostlight.
+   Operating assumptions recorded from the coordinator, any of which the
+   operator may overrule before Hands starts: (1) the credential is an
+   Anthropic API key against the Messages API, because the connector
+   contract (consumer-derived exact request bytes, no prompt policy in the
+   daemon) cannot be kept through a subscription path that runs the Claude
+   Code harness; (2) it lives in the CodexConnector repo as a second
+   provider backend and second typed request shape behind one daemon and
+   one wire law, not a sibling repo, because a sibling would fork wire law
+   the doctrine says consumers consume; (3) the Ghostlight inference port
+   learns to lower to the new shape and the Cargo pin moves to the new
+   head. Steward findings before the cut: the pin is `68fe94b` in
+   `Cargo.toml:21`, an ancestor of the CodexConnector checkout `6519289`
+   on branch `codex/ghostlight-release-binding`, five commits behind it;
+   CodexConnector `origin/main` is at `b2e7684` "Admit multiple models per
+   connector caller" and is an ancestor of that checkout: the release-binding
+   branch is ahead of main and main has not been fast-forwarded, so "the
+   new head" must name the branch, or main must be fast-forwarded first. Ghostlight
+   binds Codex-named types in four files (`controllers.rs:25`,
+   `elaboration.rs:31`, `patch.rs:20`, `tool_schema.rs:9`:
+   `CodexProviderRequest`, `CodexInputItem`, `CodexToolDefinition`,
+   `CodexToolChoice`, the client and transport types) behind one
+   `InferencePort::prepare` (`controllers.rs:226`); the default model names
+   in `runtime.rs:427-434` are `gpt-5.6-luna/sol/terra`, so backend
+   selection by model name or by a new setting is a spec question. No
+   Ghostlight steering surface says the connector is Codex-only; the
+   CodexConnector doctrine does (`AGENTS.md` lines 3-4, 12, 19; `README.md`
+   lines 4, 10, 25, 107) and the operator owns that amendment. CodexConnector
+   has no `state/`, `notes/`, handoff, or evidence surface: its Mind is
+   `AGENTS.md` (31 lines, shared with `CLAUDE.md`), `README.md`, and
+   `deployment/idunn`; this task stewards those by proposal only. The
+   smoke runbook describes only the Codex credential path (`codex-home`,
+   `codex app-server` child) and will need a second path.
+
+   Constraint, which this pass may lift: no road run is possible until a
+   provider is available. The Codex subscription lapsed mid-build and the
+   twelve seeded runs consumed half the operator monthly free quota. Until
+   the Claude backend lands, work proves itself under fixture inference
+   ports; the Codex connector is stopped and the smoke substrate at
    `F:\Projects\Ghostlight-smoke` stays.
 
    Next seams: the outbound consumer response
