@@ -1696,15 +1696,22 @@ async fn run_cover_tick(state: &AppState) {
         let permits = state.controller_permits.clone();
         let quarantined = state.controller_quarantined.clone();
         running.spawn(async move {
-            // Quarantine has a clean edge: no permit is granted after the flag
-            // is set, and turns already holding one finish on their own
-            // bindings.
+            // Checked once up front, as a fast path that skips contending for
+            // a permit at all, and once more after acquiring one: a cell
+            // already parked behind the pool when a sibling's fault raises
+            // the flag must not proceed just because it queued before the
+            // flag flipped. A permit already held when the flag is set still
+            // finishes on its own binding — quarantine stops the *next* cell
+            // to reach either check, not one already mid-turn.
             if quarantined.load(Ordering::SeqCst) {
                 return;
             }
             let Ok(_permit) = permits.acquire().await else {
                 return;
             };
+            if quarantined.load(Ordering::SeqCst) {
+                return;
+            }
             match runner.run_cell(&cell).await {
                 // A tick that reports nothing is a tick nobody can debug. One
                 // line per coarse cell, naming what it consumed and what it
@@ -2870,17 +2877,20 @@ mod tests {
         }
     }
 
-    /// `run_cover_tick`'s per-cell task checks `controller_quarantined` once,
-    /// before it ever contends for a permit — spawned together in one
-    /// `JoinSet`, both of this tick's cells pass that check before either can
-    /// reach the port and raise it. The flag's real teeth are at the top of
-    /// `run_cover_tick` itself: once a cell's fault sets it mid-tick, the
-    /// *next* tick returns before deriving a cover at all, so no further cell
-    /// of any later tick ever reaches the port again. That is what this test
-    /// proves, rather than an intra-tick race between two sibling tasks that
-    /// this driver does not resolve.
+    /// `run_cover_tick`'s per-cell task checks `controller_quarantined` twice:
+    /// once up front, before contending for a permit at all, and once more
+    /// right after acquiring one. With the pool sized to one, only one of
+    /// this tick's two cells can ever hold the permit at a time, and the
+    /// second cannot be granted it until the first has fully returned —
+    /// which, for a faulting cell, means the flag is already set. So the
+    /// second cell's post-acquire check always sees it and returns without
+    /// ever reaching the port, deterministically, regardless of which cell
+    /// happened to acquire first. The flag's cross-tick teeth are separate:
+    /// `run_cover_tick`'s own top-of-function guard means the *next* tick
+    /// never derives a cover at all once quarantined, so no cell of any later
+    /// tick reaches the port either. Both edges are asserted here.
     #[tokio::test]
-    async fn quarantine_raised_mid_tick_stops_every_later_tick_from_reaching_the_port() {
+    async fn quarantine_raised_mid_tick_stops_the_sibling_cell_and_every_later_tick() {
         let fixture = fixture().await;
         active_two_cell_world(&fixture.state, &fixture.cookie).await;
 
@@ -2894,6 +2904,10 @@ mod tests {
             Arc::new(AlwaysFreshWorkStore),
             test_controller_models(),
         )));
+        // One permit, two cells: the second cell cannot even attempt the
+        // port until the first has returned, which is what makes the
+        // post-acquire recheck deterministic rather than a race.
+        state.controller_permits = Arc::new(Semaphore::new(1));
 
         run_cover_tick(&state).await;
         assert!(
@@ -2901,9 +2915,10 @@ mod tests {
             "an integrity-violating fault must quarantine the cognition organ"
         );
         let calls_after_first_tick = port.calls.load(Ordering::SeqCst);
-        assert!(
-            calls_after_first_tick >= 1,
-            "the faulting cell must have reached the port before quarantine could be observed"
+        assert_eq!(
+            calls_after_first_tick, 1,
+            "the sibling cell waiting on the permit must not reach the port \
+             once the first cell's fault raised the flag"
         );
 
         run_cover_tick(&state).await;
