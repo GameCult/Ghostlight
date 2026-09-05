@@ -336,36 +336,52 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    source, plus one integration test. The connector is stopped after the
    run; the smoke substrate at `F:\Projects\Ghostlight-smoke` stays.
 
-   In flight, plan step 9, the interruption pass (operator-approved
-   2026-09-05): Hands is cutting in the worktree
-   `F:\Projects\Ghostlight-interrupt` on `hands/interruption`, branched from
-   `a7c9b8e`, first commit `79f5a64` "Interrupt the narrative turn instead
-   of losing it" with further uncommitted edits in `world/controllers.rs`.
-   The spec is the session-scratchpad `imagination-interruption.md` (with
-   `modeling-interruption.md` and `interruption_tests.rs` beside it). Its
-   six forks, all taken: A delete the narrative lane's three scope checks
-   so the kernel is the sole `ScopeChanged` detector; B `SubjectSnapshot`
-   carries `components: ScopeComponents` and loses five duplicate fields;
-   C persist `Overheard { speaker, statement, confidence }`; D a fresh
-   opportunity without `speak` ends the turn `Interrupted`; E `NoProposal`
-   is re-lowered too; F the re-lowering uses the configured interpreter
-   model. Schema bumps: `controller_work.v11`, `persona_turn_receipt.v3`.
-   Shape, unchanged: the Persona is never re-run; on `ScopeChanged` the
-   runner re-lowers once through the Interpreter with the delta the subject
-   perceived since its turn, rendered from the scope components and the
-   fan-out; the result is an ordinary `ExerciseDecision` on the fresh
-   digest; one re-lowering per subject per tick; no kernel arm changes.
-   First invariant: the delta equals exactly what the membrane already lets
-   the subject perceive, proven by a leakage test. The ontology paragraph
-   (lines 695 to 704, `a7c9b8e`) scopes the promise to narrative subjects
-   in singleton cells; a grouped constituent has no Persona turn and no
-   Interpreter, so its refused proposal stays refused. Rejected on the way:
-   a joint-per-room Interpreter; the digest, not the room, is the unit.
-   This resolved former operator decision (a). Integration follows the
-   usual recipe: Soul in the worktree, fast-forward, focused test, push.
+   Plan step 9, the interruption pass, is integrated. Tip is `711f6ec`
+   (step-9 docs) over `d20dc51` (Soul), `ad124ea` and `1a19fb2` (Hands),
+   `1ef973a` (machine), on `a62708f`. The push follows a background crate
+   test and the branch read `ahead 5` at the time of writing; `git status
+   -sb` is the witness. What landed: the narrative lane no longer checks
+   scope itself; the kernel is the sole `ScopeChanged` detector and the
+   lane handles the refusal at `controllers.rs:3537` by interrupting (the
+   operational lane keeps its one `ensure_scope_unchanged` at :2689, and
+   the check at :1916 is the checkpoint-progression rule, not a lane
+   check). `SubjectSnapshot` carries `components: ScopeComponents` and lost
+   `holdings`, `dependencies`, `incident_routes`, `authority`, `controls`.
+   `PersonaTurnBinding::interrupted_from`; `Overheard` (:1014),
+   `Interruption` (:1027), `interpreter_round` (:1043), `select_fresh`
+   (:1095), `select_scope` (:1104), `NarrativeRun::Interrupted`;
+   `controller_work.v11` and `ghostlight.persona_turn_receipt.v3`;
+   `ControllerHttpResult::Interrupted` renders as Eve `denied` with the
+   detail in the receipt (`runtime.rs:1111`). Baseline at `711f6ec`: 354
+   test functions in `world/*.rs`, 406 crate source, 13 in
+   `ghostlight-persona-projection`, plus one integration test (Soul ran
+   353 / 400 / 13; the usual counting-rule gap).
 
-   In design, plan step 10, witnessed events over a place subtree
-   (`e2392de`): the operator ruled that regional and global effects matter
+   Soul verdict: the leak invariant holds structurally, fixed English per
+   changed field, and a counterparty id inside the persisted components
+   never reaches the prompt. Fork A corrected: a turn whose scope moved
+   before binding is still `NoOpportunity` at zero cost; the cut affects a
+   bound turn and costs at most one extra Interpreter round. Fork D is
+   dead code, because grants are insert-only. Recipe lesson from the
+   integration: the first fast-forward refused because main had moved by
+   two doc commits, and the chained command deleted the branch pointer
+   before that was noticed; the commits were recovered by SHA, rebased,
+   and integrated. Never chain `merge --ff-only` with `branch -D` on one
+   line; run the merge, confirm it, then delete.
+
+   In flight, not landed: `hands/interruption-followups` in the worktree
+   `F:\Projects\Ghostlight-interruptfu` at `d20dc51`, no commits yet:
+   delete the dead fork-D branch; widen `InferencePurpose`,
+   `PreparedInference::purpose`, and `InferenceEvent` to `pub(crate)` and
+   write the driver test end to end. New Eve question from Soul, owned by
+   the Eve owner: whether the command-result vocabulary needs a fourth
+   state for "overtaken" instead of rendering an interruption as `denied`.
+
+   In flight, plan step 10, witnessed events over a place subtree
+   (`e2392de`), with Hands in the worktree `F:\Projects\Ghostlight-witness`
+   on `hands/witness` at `16d464f` "Witness: one speakerless event over a
+   place subtree", which must rebase over step 9 before Soul and
+   integration: the operator ruled that regional and global effects matter
    (an asteroid over a region, the moon over a hemisphere) and that places
    nest for exactly this. The answer is one operation, `Witness { fact,
    place }`, landing `Witnessed` knowledge on every subject positioned
@@ -377,8 +393,7 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    one, confinement treats the place like any other ground. It lands as its
    own small pass behind the interruption cut, because every witness's
    scope digest moves and that is what makes a global event interrupt
-   whoever was mid-thought. Modeling is mapping into the session-scratchpad
-   `modeling-witness.md` (not on disk yet at the time of writing). Two
+   whoever was mid-thought. Modeling mapped into the session-scratchpad `modeling-witness.md`. Two
    source facts the steward checked that the design can lean on:
    `KnowledgeSource` (`patch.rs:371`) already has `Witnessed` beside
    `Told { by, via }` and `Evidenced`, and `AuthoredSource::Witnessed`
