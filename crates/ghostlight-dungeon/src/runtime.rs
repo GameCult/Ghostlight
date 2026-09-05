@@ -3001,9 +3001,10 @@ mod tests {
     }
 
     use crate::world::{
-        ControllerWork, ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError,
-        ControllerWorkWrite, InferenceFault, InferenceOutput, InferencePort, InferenceRequest,
-        PreparedInference, fixture_inference_output, fixture_prepared_inference,
+        ControllerPort, ControllerWork, ControllerWorkLookup, ControllerWorkStore,
+        ControllerWorkStoreError, ControllerWorkWrite, InferenceEvent, InferenceFault,
+        InferenceOutput, InferencePort, InferencePurpose, InferenceRequest, PreparedInference,
+        SubjectId, fixture_inference_events, fixture_inference_output, fixture_prepared_inference,
     };
     use std::sync::atomic::AtomicUsize;
 
@@ -3266,6 +3267,187 @@ mod tests {
             port.calls.load(Ordering::SeqCst),
             calls_after_first_tick,
             "a quarantined organ must not let a later tick's cells reach the port"
+        );
+    }
+
+    /// Lands a real commit on the world's operational agent, through its own
+    /// granted `speak` affordance and `WorldMailbox::submit_controller` — the
+    /// same production port a controller's own decision uses, not a test-only
+    /// ingress. Mirrors `world::controllers`'s own `MidTurnCommit::Speech`,
+    /// but from outside the `world` module, using only what this module's
+    /// tests already have `pub(crate)` access to.
+    async fn speak_through(mailbox: &WorldMailbox, speaker: SubjectId, text: &str) {
+        let port = ControllerPort::new(mailbox.clone());
+        let snapshot = port.snapshot().await.unwrap();
+        let opportunity = snapshot
+            .opportunities
+            .iter()
+            .find(|entry| entry.scope.subject_id == speaker)
+            .expect("the speaker has a live opportunity")
+            .clone();
+        let entry = snapshot
+            .affordances
+            .iter()
+            .find(|entry| {
+                entry.entry.kind.0 == "speak" && opportunity.affordance_ids.contains(&entry.id)
+            })
+            .expect("the speaker was granted speech")
+            .clone();
+        port.submit_controller(
+            CommandId::new(),
+            &opportunity,
+            DecisionInvocation {
+                affordance: entry.id,
+                bindings: Vec::new(),
+                proposed: Vec::new(),
+                speech: Some(Statement::new(text.to_string()).unwrap()),
+            },
+        )
+        .await
+        .expect("the mid-turn speech committed");
+    }
+
+    /// Answers a narrative cell's inference by purpose, landing a real
+    /// commit on the world's operational agent just before each Interpreter
+    /// round returns. Every other purpose — the operational agent's own
+    /// cell, spawned into the same tick — declines immediately: its outcome
+    /// is not this test's subject, and this port scripts one narrative turn
+    /// only.
+    struct InterruptingCoverPort {
+        mailbox: WorldMailbox,
+        source: String,
+        speech_start: usize,
+        speech_end: usize,
+        speaker: SubjectId,
+        interpreter_calls: AtomicUsize,
+    }
+
+    #[async_trait::async_trait]
+    impl InferencePort for InterruptingCoverPort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            fixture_prepared_inference(request)
+        }
+
+        async fn infer(
+            &self,
+            request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            match request.purpose {
+                InferencePurpose::Projector => Ok(fixture_inference_output(
+                    "The room holds its breath.",
+                    "projector",
+                )),
+                InferencePurpose::Persona => {
+                    Ok(fixture_inference_output(self.source.clone(), "persona"))
+                }
+                InferencePurpose::Interpreter => {
+                    let round = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
+                    let text = if round == 0 {
+                        "The tollhouse ledger is short."
+                    } else {
+                        "A second bell rings over the yard."
+                    };
+                    speak_through(&self.mailbox, self.speaker, text).await;
+                    Ok(fixture_inference_events(
+                        vec![
+                            InferenceEvent::ToolCall {
+                                call_id: format!("call_speak_{round}"),
+                                name: "speak".into(),
+                                arguments: json!({
+                                    "source_start_byte": self.speech_start,
+                                    "source_end_byte": self.speech_end,
+                                })
+                                .to_string(),
+                            },
+                            InferenceEvent::ToolCall {
+                                call_id: format!("call_finish_{round}"),
+                                name: "finish_interpretation".into(),
+                                arguments: "{}".into(),
+                            },
+                        ],
+                        &format!("interpreter-{round}"),
+                    ))
+                }
+                // The operational agent's own cell shares this tick and this
+                // port; declining every other purpose keeps this fixture to
+                // the one narrative turn it scripts.
+                InferencePurpose::OperationalAgent
+                | InferencePurpose::GroupedAgent
+                | InferencePurpose::Elaboration => Err(InferenceFault::fixture_recovery_required(
+                    "fixture agent declines every purpose but the narrative one",
+                )),
+            }
+        }
+    }
+
+    /// Soul's follow-up: the driver's own `Interrupted` arm
+    /// (`Ok(CellRun::Narrative(NarrativeRun::Interrupted(..)))` in
+    /// `run_cover_tick`), exercised through the tick driver rather than
+    /// `ControllerRunner::run_narrative` directly. The operational agent
+    /// speaks once between the narrative cell's Persona turn and its first
+    /// submit — a re-lowering, per `world::controllers`'s own
+    /// `a_neighbours_speech_between_the_turn_and_submit_is_re_lowered_once`
+    /// — and once more between the re-lowered submit and its own commit,
+    /// spending the one re-lowering the turn is owed
+    /// (`a_second_scope_change_after_the_re_lowering_spends_nothing`'s own
+    /// shape, reached here through the driver instead of the runner). The
+    /// gap the pass exists to close: the tick commits exactly the
+    /// operational agent's two acts and nothing from the overtaken turn.
+    #[tokio::test]
+    async fn a_second_mid_turn_change_reaches_the_drivers_interrupted_arm() {
+        use crate::world::ControllerMode;
+
+        let fixture = fixture().await;
+        active_two_cell_world(&fixture.state, &fixture.cookie).await;
+
+        let snapshot = fixture.state.world.snapshot().await.unwrap();
+        let operational_agent = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.controller_mode == Some(ControllerMode::OperationalAgent))
+            .expect("the genesis world grants an operational agent")
+            .id;
+
+        let source = "I say, \"Hold the line at the gate.\"";
+        let speech = "Hold the line at the gate.";
+        let start = source.find(speech).unwrap();
+
+        let port = Arc::new(InterruptingCoverPort {
+            mailbox: fixture.state.world.clone(),
+            source: source.into(),
+            speech_start: start,
+            speech_end: start + speech.len(),
+            speaker: operational_agent,
+            interpreter_calls: AtomicUsize::new(0),
+        });
+        let mut state = fixture.state.clone();
+        state.controllers = Some(Arc::new(ControllerRunner::with_test_ports(
+            state.world.clone(),
+            port.clone(),
+            Arc::new(AlwaysFreshWorkStore),
+            test_controller_models(),
+        )));
+        // One permit serializes the two cells' full runs (see
+        // `the_tick_driver_never_exceeds_its_controller_permit_pool`), so the
+        // operational agent's own turn — which this port declines on its
+        // first call — can never interleave with the narrative cell's
+        // Interpreter rounds.
+        state.controller_permits = Arc::new(Semaphore::new(1));
+
+        let committed_before = fixture.state.world.operator_log().await.unwrap().len();
+        run_cover_tick(&state).await;
+        let committed_after = fixture.state.world.operator_log().await.unwrap().len();
+
+        assert_eq!(
+            port.interpreter_calls.load(Ordering::SeqCst),
+            2,
+            "the turn should spend exactly its one re-lowering, not loop or stop short"
+        );
+        assert_eq!(
+            committed_after - committed_before,
+            2,
+            "only the operational agent's two mid-turn acts land; the \
+             overtaken narrative turn commits nothing"
         );
     }
 

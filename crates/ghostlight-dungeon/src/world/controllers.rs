@@ -115,12 +115,12 @@ pub(crate) struct InferenceRequest {
 /// it under the same request ID would be a replay conflict.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct PreparedInference {
-    purpose: InferencePurpose,
+    pub(crate) purpose: InferencePurpose,
     pub(super) invocation: CodexTransportInvocation,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(super) enum InferenceEvent {
+pub(crate) enum InferenceEvent {
     Text(String),
     ToolCall {
         call_id: String,
@@ -211,6 +211,15 @@ impl InferenceFault {
     pub(crate) fn fixture_integrity_violation(detail: impl Into<String>) -> Self {
         Self::integrity_violation(detail)
     }
+
+    /// The non-quarantining counterpart: a test port outside this module that
+    /// needs one purpose to fail without raising
+    /// `ControllerError::requires_quarantine` (so a sibling cell in the same
+    /// tick is unaffected) has no other legal way to build one.
+    #[cfg(test)]
+    pub(crate) fn fixture_recovery_required(detail: impl Into<String>) -> Self {
+        Self::new(detail)
+    }
 }
 
 #[async_trait]
@@ -254,6 +263,20 @@ pub(crate) fn fixture_prepared_inference(
 pub(crate) fn fixture_inference_output(text: impl Into<String>, receipt: &str) -> InferenceOutput {
     InferenceOutput {
         events: vec![InferenceEvent::Text(text.into())],
+        receipt_digest: format!("sha256:{receipt}"),
+    }
+}
+
+/// The same seam as `fixture_inference_output`, for a test port outside this
+/// module that needs to answer with something other than plain prose — an
+/// Interpreter's `speak`/`finish_interpretation` tool calls, in particular.
+#[cfg(test)]
+pub(crate) fn fixture_inference_events(
+    events: Vec<InferenceEvent>,
+    receipt: &str,
+) -> InferenceOutput {
+    InferenceOutput {
+        events,
         receipt_digest: format!("sha256:{receipt}"),
     }
 }
@@ -3604,15 +3627,12 @@ impl ControllerRunner {
                 actual: fresh.opportunity.scope_digest,
             }));
         }
-        if !fresh
-            .granted
-            .iter()
-            .any(|entry| entry.entry.kind.0 == SPEAK_KIND)
-        {
-            // Lowering prose into an invocation the fresh grant set cannot
-            // express is a round bought to produce `SpeakUnavailable`.
-            return overtaken(&checkpoint, Some(fresh.opportunity.scope_digest.clone()));
-        }
+        // No branch here checks the fresh grant set for `SPEAK_KIND`: grants
+        // are recorded in an insert-only ledger (`affordance_grants` never
+        // removes an entry), and this checkpoint could only reach
+        // `ReadyToSubmit`/`NoProposal` by having speech granted for this
+        // scope already, so a fresh opportunity on the same scope always
+        // carries it too.
         let interruption = Interruption {
             components: fresh.subject.components.clone(),
             overheard: fresh.overheard_since(turn.binding().world_revision),
@@ -10707,6 +10727,12 @@ mod tests {
         /// custody, a route closing under the actor's feet, a grant revoked out
         /// from under it, a commitment that names a counterparty.
         Ops(Vec<crate::world::patch::ComponentOp>),
+        /// An owner patch witnessing a pre-declared fact over `place`. Unlike a
+        /// neighbour's speech, this names no speaker and writes no `spoken_at`
+        /// row: `KnowledgeSource::Witnessed` is not `Told`, so
+        /// `overheard_since` finds nothing and the section renders only the
+        /// anonymous `knows` line.
+        Witness { fact: EntityId, place: EntityId },
     }
 
     async fn apply_mid_turn(mailbox: &WorldMailbox, commit: &MidTurnCommit) {
@@ -10799,6 +10825,35 @@ mod tests {
                     )
                     .await
                     .expect("the mid-turn operations committed");
+            }
+            MidTurnCommit::Witness { fact, place } => {
+                let owner = PrincipalId::new("owner");
+                let authenticated =
+                    AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+                mailbox
+                    .submit_fixture(
+                        CommandEnvelope {
+                            id: CommandId::new(),
+                            world_id: snapshot.world_id,
+                            expected_revision: snapshot.revision,
+                            caller: CallerId::Principal(owner),
+                            body: CommandBody::AdmitPatch {
+                                answers: None,
+                                patch: WorldPatch {
+                                    declarations: Vec::new(),
+                                    operations: vec![crate::world::patch::ComponentOp::Witness {
+                                        fact: Ref::Existing(*fact),
+                                        place: Ref::Existing(*place),
+                                        confidence: Confidence::Certain,
+                                    }],
+                                    evidence: Vec::new(),
+                                },
+                            },
+                        },
+                        &authenticated,
+                    )
+                    .await
+                    .expect("the mid-turn witness committed");
             }
         }
     }
@@ -11198,6 +11253,183 @@ mod tests {
         // Two patches landed; the actor never reached the world.
         let log = mailbox.operator_log().await.unwrap();
         assert!(log.is_empty(), "an overtaken turn reached the world");
+
+        drop(turn.runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// The same genesis as `active_cell_mailbox`, plus one canonical fact
+    /// declared and evidenced at genesis (so it needs no post-genesis
+    /// `PatchAnswer`) that nobody yet knows: a live `EntityId` a mid-turn
+    /// `Witness` can land over the commons without declaring anything itself.
+    async fn witness_cell_mailbox() -> (
+        tempfile::TempDir,
+        WorldMailbox,
+        tokio::task::JoinHandle<()>,
+        EntityId,
+        EntityId,
+    ) {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let ledger = EvidenceRef::new("the fixture's own witnessed bell");
+        let declarations = vec![
+            Declaration::Entity(EntityDeclaration {
+                handle: DraftHandle::new("commons"),
+                label: "The Commons".into(),
+                kind: EntityKind::Place,
+                container: None,
+            }),
+            Declaration::Fact(crate::world::patch::FactDeclaration {
+                handle: DraftHandle::new("bell"),
+                label: "A bell rings over the yard".into(),
+                statement: Statement::new("A bell rings over the yard.").unwrap(),
+                standing: crate::world::patch::FactStandingRef::Canonical {
+                    evidence: ledger.clone(),
+                },
+            }),
+            Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new("subject0"),
+                label: "Subject 0".into(),
+                kind: SubjectKind::Person,
+                controller: NewController::NarrativePersona,
+                affordances: kernel_speak_grant(),
+                position: Some(Ref::Draft(DraftHandle::new("commons"))),
+            }),
+            Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new("subject1"),
+                label: "Subject 1".into(),
+                kind: SubjectKind::Person,
+                controller: NewController::OperationalAgent,
+                affordances: kernel_speak_grant(),
+                position: Some(Ref::Draft(DraftHandle::new("commons"))),
+            }),
+        ];
+        let creation = mailbox
+            .create_fixture(
+                CreateWorld {
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Witness Fixture".into(),
+                    patch: WorldPatch {
+                        declarations,
+                        // Genesis is Draft phase, exempt from the post-genesis
+                        // `PatchAnswer` a declaring `AdmitPatch` would need, so
+                        // Subject 1 (never the narrative actor) is handed the
+                        // fact here rather than through a second patch — a
+                        // live `EntityId` to read back, not a fact this test's
+                        // actor is meant to already know.
+                        operations: vec![crate::world::patch::ComponentOp::AcquireKnowledge {
+                            subject: Ref::Draft(DraftHandle::new("subject1")),
+                            fact: Ref::Draft(DraftHandle::new("bell")),
+                            source: crate::world::patch::AuthoredSource::Witnessed,
+                            confidence: Confidence::Certain,
+                        }],
+                        evidence: vec![ledger],
+                    },
+                    scale_intent: WorldScaleIntentRef::default(),
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: creation.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        let commons = snapshot.places[0].id;
+        let bell = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.label == "Subject 1")
+            .and_then(|subject| subject.knowledge.first())
+            .map(|entry| entry.fact)
+            .expect("Subject 1 was handed the bell at genesis");
+        (directory, mailbox, task, bell, commons)
+    }
+
+    /// Soul's follow-up on the witness pass (step 10): a `Witness` landing
+    /// between the actor's bound narrative turn and its submit re-lowers like
+    /// every other un-authored cause, over the same anonymous `knows` line as
+    /// `every_un_authored_cause_is_re_lowered_with_no_actor_and_no_value`'s own
+    /// `AcquireKnowledge`-shaped causes. Unlike a neighbour's speech, the row a
+    /// witness writes carries no `spoken_at` (`KnowledgeSource::Witnessed` is
+    /// not `Told`), so `overheard_since` finds nothing this turn's binding
+    /// postdates, and the section must carry no `Overheard` block at all — not
+    /// even an empty one.
+    #[tokio::test]
+    async fn a_witness_between_the_turn_and_submit_carries_no_overheard_row() {
+        let (_directory, mailbox, task, bell, commons) = witness_cell_mailbox().await;
+        let (_actor, opportunity) = narrative_opportunity(&mailbox).await;
+
+        let source = "I say, \"The western brace is giving way.\"";
+        let speech = "The western brace is giving way.";
+        let turn = interrupted_turn(
+            &mailbox,
+            source,
+            speech,
+            2,
+            vec![(
+                2,
+                MidTurnCommit::Witness {
+                    fact: bell,
+                    place: commons,
+                },
+            )],
+        );
+        let run = turn
+            .runner
+            .run_narrative(CommandId::new(), &opportunity)
+            .await
+            .unwrap();
+        assert!(
+            matches!(run, NarrativeRun::Completed(_)),
+            "a witness did not re-lower to a commit: {run:?}"
+        );
+        // Exactly one extra Interpreter inference, the one re-lowering owed.
+        assert_eq!(turn.calls.load(Ordering::SeqCst), 4);
+
+        let seen = turn.seen.lock().unwrap();
+        let second_interpreter = seen[3].clone();
+        drop(seen);
+        let section = interruption_section_of(&second_interpreter)
+            .expect("the re-lowered prompt has no section");
+        assert!(
+            section.contains("- what this person knows changed"),
+            "the witness cause did not report the anonymous knows line: {section}"
+        );
+        assert!(
+            !section.contains("What was said to this person since:"),
+            "a witness produced an overheard block: {section}"
+        );
+        for leaked in [
+            "Subject 0",
+            "Subject 1",
+            " said:",
+            "came to know",
+            "spoken_at",
+        ] {
+            assert!(
+                !section.contains(leaked),
+                "the witness section leaked `{leaked}`: {section}"
+            );
+        }
 
         drop(turn.runner);
         drop(mailbox);
