@@ -2789,6 +2789,20 @@ fn channel_referents_exist(state: &WorldState, record: &ChannelRecord) -> bool {
             .is_none_or(|subject_id| state.subjects.contains_key(&subject_id))
 }
 
+/// Everyone standing anywhere under one place. The one downward-facing read of
+/// `positions`: `audience`'s `Reach::Place` arm and `ResolvedOp::Witness` are
+/// its two callers, so what "under a place" means cannot drift between a
+/// declared broadcast area and a witnessed event. A subject with no position is
+/// under nothing.
+fn under_place(state: &WorldState, root: EntityId) -> BTreeSet<SubjectId> {
+    state
+        .positions
+        .iter()
+        .filter(|(_, position)| patch::covers_place(&state.entities, root, position.place))
+        .map(|(subject_id, _)| *subject_id)
+        .collect()
+}
+
 /// The one statement of reach. Called by both speech preconditions, by a
 /// `Communicate`'s admission, and by its apply. Nothing else computes an
 /// audience.
@@ -2815,14 +2829,7 @@ fn audience(state: &WorldState, actor: SubjectId, of: &Audience) -> BTreeSet<Sub
             };
             match &record.reach {
                 Reach::Subjects(members) => members.clone(),
-                Reach::Place(root) => state
-                    .positions
-                    .iter()
-                    .filter(|(_, position)| {
-                        patch::covers_place(&state.entities, *root, position.place)
-                    })
-                    .map(|(subject_id, _)| *subject_id)
-                    .collect(),
+                Reach::Place(root) => under_place(state, *root),
             }
         }
     }
@@ -2849,11 +2856,30 @@ fn can_broadcast(state: &WorldState, actor: SubjectId, of: &Audience) -> bool {
     }
 }
 
-/// Who gains knowledge from one telling: the audience, less the speaker and less
-/// anyone who already holds the fact. A telling never overwrites and never
-/// downgrades — the knower owns its own credence, and a speaker who could reset
-/// a listener's confidence by repeating itself would own another subject's mind
-/// through an effect nobody checked. `Believed` is fixed by the kernel and is
+/// A knowledge landing never overwrites and never downgrades a holder: whoever
+/// already holds the fact is dropped, whatever it holds and however it came by
+/// it. The knower owns its own credence, and a landing that could reset it by
+/// repeating itself would own another subject's mind through an effect nobody
+/// checked. `fan_out` and `ResolvedOp::Witness` are the two callers, so a
+/// telling and a witnessed event cannot disagree about who is already a knower.
+fn unheld(
+    state: &WorldState,
+    fact: EntityId,
+    listeners: BTreeSet<SubjectId>,
+) -> BTreeSet<SubjectId> {
+    listeners
+        .into_iter()
+        .filter(|listener| {
+            !state
+                .knowledge
+                .get(listener)
+                .is_some_and(|held| held.contains_key(&fact))
+        })
+        .collect()
+}
+
+/// Who gains knowledge from one telling: the audience, less the speaker, less
+/// anyone who already holds the fact. `Believed` is fixed by the kernel and is
 /// not a field on the operation, so a speaker cannot choose how much a listener
 /// believes it.
 fn fan_out(
@@ -2862,16 +2888,9 @@ fn fan_out(
     fact: EntityId,
     to: &Audience,
 ) -> BTreeSet<SubjectId> {
-    audience(state, speaker, to)
-        .into_iter()
-        .filter(|listener| {
-            *listener != speaker
-                && !state
-                    .knowledge
-                    .get(listener)
-                    .is_some_and(|held| held.contains_key(&fact))
-        })
-        .collect()
+    let mut listeners = audience(state, speaker, to);
+    listeners.remove(&speaker);
+    unheld(state, fact, listeners)
 }
 
 /// Whether an authority target names a live subject or a live place.
