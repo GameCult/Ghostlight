@@ -369,42 +369,40 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    and integrated. Never chain `merge --ff-only` with `branch -D` on one
    line; run the merge, confirm it, then delete.
 
-   In flight, not landed: `hands/interruption-followups` in the worktree
-   `F:\Projects\Ghostlight-interruptfu` at `d20dc51`, no commits yet:
-   delete the dead fork-D branch; widen `InferencePurpose`,
-   `PreparedInference::purpose`, and `InferenceEvent` to `pub(crate)` and
-   write the driver test end to end. New Eve question from Soul, owned by
-   the Eve owner: whether the command-result vocabulary needs a fourth
-   state for "overtaken" instead of rendering an interruption as `denied`.
+   Plan step 10, the witness operation, is integrated. Tip is `1244595`
+   (step-10 docs) over `70ea6b1` (Soul), `ecdeb92` (the operation),
+   `307d8a5` (refactors: one owner for "under a place", one for "already a
+   knower"), on `f6cd3b5`. The push follows a background crate test and the
+   branch read `ahead 4` at the time of writing; `git status -sb` is the
+   witness. Integration was gated this time: rebase, merge, confirm the
+   tip, then remove the worktree. What landed: `under_place` is the one
+   reach owner and `unheld` the one already-holder filter; `audience`,
+   `fan_out`, and the `Witness` apply arm all call them. `ComponentOp::Witness
+   { fact, place, confidence }` with resolve, apply, and lowering arms;
+   `operation_ground` returns the place, so confinement treats it like any
+   other ground and a consumer cannot witness by construction.
+   `ComponentOpKind::Witness { confidence }`, so a world-authored
+   affordance can cause a witnessed event with no speaker. Tool `witness`;
+   the catalog is pinned at 7 declarations, 29 operations, 38 tools, and
+   the ontology doc now says twenty-nine (lines 443, 498, 796), aligned to
+   the pinned count after the docs writer found it one behind. Schemas are
+   `world_state.consumer.v2` / `world_commit.consumer.v2`. An empty
+   subtree is `NoOperationEffect` at both layers. Soul pinned two-layer
+   agreement over draft subjects and forget-then-witness, and made the
+   no-`Told` pin exhaustive over all nineteen operation kinds. Baseline at
+   `1244595`: 372 test functions in `world/*.rs`, 424 crate source, 13 in
+   `ghostlight-persona-projection`, plus one integration test (Soul ran
+   371 / 418).
 
-   In flight, plan step 10, witnessed events over a place subtree
-   (`e2392de`), with Hands in the worktree `F:\Projects\Ghostlight-witness`
-   on `hands/witness` at `16d464f` "Witness: one speakerless event over a
-   place subtree", which must rebase over step 9 before Soul and
-   integration: the operator ruled that regional and global effects matter
-   (an asteroid over a region, the moon over a hemisphere) and that places
-   nest for exactly this. The answer is one operation, `Witness { fact,
-   place }`, landing `Witnessed` knowledge on every subject positioned
-   under the place subtree, recipients derived at apply time from live
-   positions exactly as speech `fan_out` derives its audience, never
-   stored, naming no speaker. Cut line from the plan: no second fan-out
-   owner, no stored recipient list, the subtree walk reuses the one
-   covering predicate, the tool surface and exemplar lists grow by exactly
-   one, confinement treats the place like any other ground. It lands as its
-   own small pass behind the interruption cut, because every witness's
-   scope digest moves and that is what makes a global event interrupt
-   whoever was mid-thought. Modeling mapped into the session-scratchpad `modeling-witness.md`. Two
-   source facts the steward checked that the design can lean on:
-   `KnowledgeSource` (`patch.rs:371`) already has `Witnessed` beside
-   `Told { by, via }` and `Evidenced`, and `AuthoredSource::Witnessed`
-   (`patch.rs:393`) already lowers to it (`mod.rs:2494`), so `Witness` adds
-   no source variant; `ScopeComponents` (`mod.rs:2958`) carries position,
-   routes, holdings, dependencies, authority, delegated grants, and
-   knowledge keys, and no actor field, so a digest change is always noticed
-   and its cause is perceivable only when a `Told { by }` landed. That is
-   the ruling the coordinator gave the operator, "anonymous means the cause
-   is not perceivable, not that the change is not noticed", and it holds
-   against the map.
+   In flight, not landed, the only open branch: `hands/interruption-followups`
+   in the worktree `F:\Projects\Ghostlight-interruptfu` at `d20dc51`, no
+   commits yet: delete the dead fork-D branch; widen `InferencePurpose`,
+   `PreparedInference::purpose`, and `InferenceEvent` to `pub(crate)` and
+   write the driver test end to end; and, routed here because this worker
+   owns `controllers.rs`, test the interruption section against a witness,
+   which is untested. New Eve question from Soul, owned by the Eve owner:
+   whether the command-result vocabulary needs a fourth state for
+   "overtaken" instead of rendering an interruption as `denied`.
 
    Constraint: no road run is possible until a provider is available again.
    The Codex subscription lapsed mid-build and the twelve seeded runs
@@ -413,7 +411,7 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    ports until then; the connector is stopped and the smoke substrate at
    `F:\Projects\Ghostlight-smoke` stays.
 
-   Next seams after steps 9 and 10: the outbound consumer response
+   Next seams after the interruption follow-ups: the outbound consumer response
    batch with the non-loopback CultMesh lease; then the deployment gate
    below. The elaborator swarm's ideas still sit on
    `slot/<world>/<title>/<stamp>` branches and the four ledger directories;

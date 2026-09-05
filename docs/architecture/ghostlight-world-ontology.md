@@ -793,7 +793,7 @@ Deleted before replacement behavior is added, with no compatibility path:
 
 ## Subtraction budget
 
-- 20 component kinds → 12; 18 `WorldMutation` variants → 29 named operations
+- 20 component kinds → 12; 18 `WorldMutation` variants → the pinned catalog count (29 at `1244595`)
   under 1 patch primitive, replacing both the mutation enum and the separate
   outcome-effect sum;
 - 5 qualification and verification types plus 1 outcome resolver → 0;
