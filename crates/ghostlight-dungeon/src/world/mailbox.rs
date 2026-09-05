@@ -1,10 +1,11 @@
 use super::{
-    AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CommandId, CreateWorld,
-    CreateWorldIntent, CreationReceipt, DecisionInvocation, DecisionOpportunity, Declaration,
-    DraftHandle, EntityDeclaration, EntityKind, JurisdictionKey, KernelError, NewController,
-    OperatorEvent, PatchAnswer, PrincipalCommandIntent, PrincipalId, Ref, SubjectDeclaration,
-    SubjectKind, SubmitReceipt, SystemCapability, TickMinutes, WorldKernel, WorldPatch,
-    WorldScaleIntentRef, WorldSnapshot, journal, patch::kernel_speak_grant, prepare_creation,
+    AgencyGraph, AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CommandId,
+    CreateWorld, CreateWorldIntent, CreationReceipt, DecisionInvocation, DecisionOpportunity,
+    Declaration, DraftHandle, EntityDeclaration, EntityKind, JurisdictionKey, KernelError,
+    NewController, OperatorEvent, PatchAnswer, PrincipalCommandIntent, PrincipalId, Ref,
+    SubjectDeclaration, SubjectKind, SubmitReceipt, SystemCapability, TickMinutes, WorldKernel,
+    WorldPatch, WorldScaleIntentRef, WorldSnapshot, journal, patch::kernel_speak_grant,
+    prepare_creation,
 };
 use crate::app_session::VerifiedPrincipalEvidence;
 use std::path::Path;
@@ -57,6 +58,12 @@ enum Request {
     /// controller lane can reach an unscoped event log.
     OperatorLog {
         reply: oneshot::Sender<Result<Vec<OperatorEvent>, KernelError>>,
+    },
+    /// The scheduler's adjacency projection. Separate from `Snapshot` for the
+    /// same reason the story feed is: it is wider than any subject view, and
+    /// only the tick driver may hold it.
+    AgencyGraph {
+        reply: oneshot::Sender<Result<AgencyGraph, KernelError>>,
     },
     ControllerReceipt {
         command_id: CommandId,
@@ -377,6 +384,22 @@ impl WorldMailbox {
 
     /// The human operator's story feed. It is not a perception surface, and no
     /// controller lane calls it.
+    /// The tick driver's adjacency projection. It is on `WorldMailbox` and on
+    /// neither `ControllerPort` nor `ElaborationPort`: a controller organ that
+    /// tried to read adjacency would fail to compile.
+    pub(crate) async fn agency_graph(&self) -> Result<AgencyGraph, MailboxError> {
+        let (reply, response) = oneshot::channel();
+        self.sender
+            .send(Request::AgencyGraph { reply })
+            .await
+            .map_err(|_| MailboxError::Unavailable)?;
+
+        response
+            .await
+            .map_err(|_| MailboxError::Unavailable)?
+            .map_err(MailboxError::Kernel)
+    }
+
     pub(crate) async fn operator_log(&self) -> Result<Vec<OperatorEvent>, MailboxError> {
         let (reply, response) = oneshot::channel();
         self.sender
@@ -658,6 +681,19 @@ async fn run_owner(mut owned: OwnedWorld, mut receiver: mpsc::Receiver<Request>)
                 let result = match &owned {
                     OwnedWorld::Empty(_) => Err(KernelError::WorldNotCreated),
                     OwnedWorld::Live(kernel) => kernel.operator_log(),
+                };
+                let owner_must_stop = result
+                    .as_ref()
+                    .is_err_and(KernelError::requires_owner_restart);
+                let _ = reply.send(result);
+                if owner_must_stop {
+                    return;
+                }
+            }
+            Request::AgencyGraph { reply } => {
+                let result = match &owned {
+                    OwnedWorld::Empty(_) => Err(KernelError::WorldNotCreated),
+                    OwnedWorld::Live(kernel) => kernel.agency_graph(),
                 };
                 let owner_must_stop = result
                     .as_ref()

@@ -10,11 +10,12 @@ use crate::{
     },
     mesh::{self, MeshPublisher, MeshRuntimeIdentity},
     world::{
-        AffordanceId, CommandBody, CommandId, ControllerError, ControllerModels,
-        ControllerPendingReason, ControllerRunner, ControllerWorkCustody, CreateWorldIntent,
-        DecisionInvocation, DecisionOpportunity, KernelError, MailboxError, NarrativeRun,
-        OperationalRun, PrincipalCommandIntent, PrincipalId, Statement, SubmissionDisposition,
-        SubmitReceipt, TickMinutes, WorldMailbox, WorldSnapshot,
+        AffordanceId, CellRun, CommandBody, CommandId, ControllerError, ControllerModels,
+        ControllerPendingReason, ControllerRunner, ControllerWorkCustody, Cover, CoverBudget,
+        CreateWorldIntent, DecisionInvocation, DecisionOpportunity, KernelError, MailboxError,
+        NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId, Statement,
+        SubmissionDisposition, SubmitReceipt, TickMinutes, WorldMailbox, WorldSnapshot,
+        derive_cover,
     },
 };
 use anyhow::{Context, bail, ensure};
@@ -36,8 +37,18 @@ use cultnet_rs::{
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::{convert::Infallible, fs, net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
-use tokio::sync::{Mutex, broadcast, mpsc};
+use std::{
+    convert::Infallible,
+    fs,
+    net::SocketAddr,
+    path::PathBuf,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::Duration,
+};
+use tokio::sync::{Mutex, Semaphore, broadcast, mpsc};
 use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
 
@@ -53,7 +64,20 @@ struct RuntimeHealthOwner {
 #[derive(Clone)]
 struct AppState {
     world: WorldMailbox,
-    controllers: Arc<Mutex<Option<ControllerRunner>>>,
+    /// The one cognition organ, shared. Concurrency is owned by
+    /// `controller_permits` and quarantine by `controller_quarantined`: an
+    /// exclusive lock here would be a second owner of both, and a tick spends a
+    /// budget of inferences rather than one.
+    controllers: Option<Arc<ControllerRunner>>,
+    controller_permits: Arc<Semaphore>,
+    /// Set once a turn loses its local invariant. No further permit is granted;
+    /// in-flight turns finish or fail on their own bindings.
+    controller_quarantined: Arc<AtomicBool>,
+    cover_budget: CoverBudget,
+    /// Display-only, written by the tick driver and read by Eve and the mesh
+    /// projection. It decides nothing: the cover it summarises was derived,
+    /// used, and dropped before this was written.
+    cover: Arc<Mutex<Option<CoverSummary>>>,
     sessions: Arc<Mutex<AppSessionOwner>>,
     heimdall: Arc<HeimdallClient>,
     mesh: Option<MeshPublisher>,
@@ -61,6 +85,45 @@ struct AppState {
     runtime_health: Option<RuntimeHealthOwner>,
     revisions: broadcast::Sender<u64>,
     fatal: mpsc::UnboundedSender<String>,
+}
+
+/// What one tick's cover looked like, for the operator surfaces. A projection
+/// of a derived value, never an input to the next tick.
+#[derive(Clone, Copy, Debug)]
+struct CoverSummary {
+    tick: u64,
+    cells: usize,
+    singletons: usize,
+    groups: usize,
+    oversubscribed: bool,
+}
+
+/// The read-only projection of the budget and the last tick, for Eve.
+async fn cover_panel(state: &AppState) -> eve::CoverPanel {
+    eve::CoverPanel {
+        cells: state.cover_budget.cells,
+        constituent_cap: state.cover_budget.constituent_cap,
+        urgency_slots: state.cover_budget.urgency_slots,
+        last: state.cover.lock().await.map(|summary| eve::CoverPanelTick {
+            tick: summary.tick,
+            cells: summary.cells,
+            singletons: summary.singletons,
+            groups: summary.groups,
+            oversubscribed: summary.oversubscribed,
+        }),
+    }
+}
+
+impl CoverSummary {
+    fn of(cover: &Cover) -> Self {
+        Self {
+            tick: cover.tick.0,
+            cells: cover.cells.len(),
+            singletons: cover.singletons(),
+            groups: cover.groups(),
+            oversubscribed: cover.oversubscribed,
+        }
+    }
 }
 
 struct ProductionAdmission {
@@ -211,9 +274,14 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
     };
     require_no_runtime_custody_failure(&mut fatal_events)?;
     let (revisions, _) = broadcast::channel(32);
+    let cover_budget = configured_cover_budget()?;
     let mut state = AppState {
         world,
-        controllers: Arc::new(Mutex::new(controllers)),
+        controllers: controllers.map(Arc::new),
+        controller_permits: Arc::new(Semaphore::new(configured_controller_concurrency())),
+        controller_quarantined: Arc::new(AtomicBool::new(false)),
+        cover_budget,
+        cover: Arc::new(Mutex::new(None)),
         sessions: Arc::new(Mutex::new(sessions)),
         heimdall,
         mesh,
@@ -254,7 +322,7 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         _ => bail!("managed runtime health authority is partial"),
     };
     tokio::spawn(maintain_mesh_projection(state.clone()));
-    tokio::spawn(advance_world_clock(state.clone()));
+    tokio::spawn(drive_cover_tick(state.clone(), configured_tick_interval()));
     tokio::spawn(elaborate_world(state.clone()));
     let app = app_router(state.clone(), web_root);
     tracing::info!(address = %bound_address, "Ghostlight Dungeon world owner serving");
@@ -452,10 +520,16 @@ async fn eve_surface(
     let Some(principal) = authenticated_principal(&headers, &state).await else {
         return Json(eve::anonymous_surface()).into_response();
     };
+    let panel = cover_panel(&state).await;
     match current_operator_view(&state)
         .await
         .and_then(|(snapshot, log)| {
-            eve::authenticated_surface(principal.account_subject_hash(), snapshot.as_ref(), &log)
+            eve::authenticated_surface(
+                principal.account_subject_hash(),
+                snapshot.as_ref(),
+                &log,
+                &panel,
+            )
         }) {
         Ok(surface) => Json(surface).into_response(),
         Err(error) => (
@@ -857,11 +931,11 @@ async fn dispatch_controller(
         }
     };
 
-    // Keep the sole runner borrowed from its availability slot for the full
-    // turn. Quarantine therefore has a clean edge: no second runner can cross
-    // another provider boundary after this one loses its local invariant.
-    let mut controller_slot = state.controllers.lock().await;
-    let Some(controller) = controller_slot.as_ref() else {
+    let available = state
+        .controllers
+        .as_ref()
+        .filter(|_| !state.controller_quarantined.load(Ordering::SeqCst));
+    let Some(controller) = available else {
         return Json(eve::command_result(
             &invocation,
             "unknown",
@@ -875,6 +949,9 @@ async fn dispatch_controller(
         ))
         .into_response();
     };
+    // One permit for the whole turn, from the same pool the tick driver spends.
+    // There is no second concurrency owner.
+    let permit = state.controller_permits.clone().acquire_owned().await;
     let result = match opportunity.controller_mode {
         crate::world::ControllerMode::NarrativePersona => controller
             .run_narrative(command_id, &opportunity)
@@ -886,6 +963,7 @@ async fn dispatch_controller(
             .map(controller_operational_result),
         crate::world::ControllerMode::Human => unreachable!("human opportunity was not admitted"),
     };
+    drop(permit);
     let quarantine = match &result {
         Ok(ControllerHttpResult::Pending { quarantine, .. }) => *quarantine,
         Ok(ControllerHttpResult::Completed { .. }) => false,
@@ -893,9 +971,8 @@ async fn dispatch_controller(
     };
     if quarantine {
         tracing::error!("controller cognition quarantined after losing its local invariant");
-        controller_slot.take();
+        state.controller_quarantined.store(true, Ordering::SeqCst);
     }
-    drop(controller_slot);
 
     match result {
         Ok(ControllerHttpResult::Completed {
@@ -1409,20 +1486,23 @@ async fn runtime_readiness(state: &AppState) -> anyhow::Result<Value> {
         },
         None => "unavailable",
     };
-    let controller_status = match state.controllers.try_lock() {
-        Ok(slot) => match slot.as_ref() {
-            Some(controller) => {
-                match tokio::time::timeout(Duration::from_millis(100), controller.custody_probe())
-                    .await
-                {
-                    Ok(Ok(ControllerWorkCustody::Owned { .. })) => "ok",
-                    Ok(Ok(ControllerWorkCustody::Uncertain { .. })) | Ok(Err(_)) => "degraded",
-                    Err(_) => "busy",
+    let controller_status = match state.controllers.as_deref() {
+        _ if state.controller_quarantined.load(Ordering::SeqCst) => "unavailable",
+        Some(controller) => {
+            match tokio::time::timeout(Duration::from_millis(100), controller.custody_probe()).await
+            {
+                Ok(Ok(ControllerWorkCustody::Owned { .. })) => {
+                    if state.controller_permits.available_permits() == 0 {
+                        "active"
+                    } else {
+                        "ok"
+                    }
                 }
+                Ok(Ok(ControllerWorkCustody::Uncertain { .. })) | Ok(Err(_)) => "degraded",
+                Err(_) => "busy",
             }
-            None => "unavailable",
-        },
-        Err(_) => "active",
+        }
+        None => "unavailable",
     };
     health["projectionStatus"] = Value::String(projection_status.into());
     health["controllerStatus"] = Value::String(controller_status.into());
@@ -1480,11 +1560,12 @@ async fn elaborate_world(state: AppState) {
     interval.tick().await;
     loop {
         interval.tick().await;
-        let runner = {
-            let controllers = state.controllers.lock().await;
-            controllers.as_ref().map(ControllerRunner::elaborator)
-        };
-        let Some(runner) = runner else {
+        let Some(runner) = state
+            .controllers
+            .as_deref()
+            .filter(|_| !state.controller_quarantined.load(Ordering::SeqCst))
+            .map(ControllerRunner::elaborator)
+        else {
             continue;
         };
         if let Err(error) = runner.sweep().await {
@@ -1493,19 +1574,134 @@ async fn elaborate_world(state: AppState) {
     }
 }
 
-/// The world clock's only driver.
-async fn advance_world_clock(state: AppState) {
+/// The compute budget, read at open exactly as the model names are. It is not
+/// world data and does not live beside `WorldScaleIntent`, which is the authored
+/// target count of goal-bearing subjects: the two are numerically related and
+/// have different owners. Changing either number is a restart.
+fn configured_cover_budget() -> anyhow::Result<CoverBudget> {
+    let read = |name: &str, default: u16| -> u16 {
+        std::env::var(name)
+            .ok()
+            .and_then(|value| value.trim().parse().ok())
+            .unwrap_or(default)
+    };
+    CoverBudget {
+        cells: read("GHOSTLIGHT_COVER_CELL_BUDGET", 240),
+        constituent_cap: read("GHOSTLIGHT_COVER_CONSTITUENT_CAP", 24),
+        urgency_slots: read("GHOSTLIGHT_COVER_URGENCY_SLOTS", 36),
+    }
+    .validated()
+    .context("cover budget configuration is not usable")
+}
+
+/// Sized to the connector's per-caller quota. `Capacity` and `InFlight`
+/// refusals are already retryable faults, so a pool above that quota degrades
+/// to retry rather than to corruption.
+fn configured_controller_concurrency() -> usize {
+    std::env::var("GHOSTLIGHT_CONTROLLER_MAX_CONCURRENT")
+        .ok()
+        .and_then(|value| value.trim().parse::<usize>().ok())
+        .filter(|value| *value >= 1)
+        .unwrap_or(4)
+}
+
+fn configured_tick_interval() -> Duration {
+    std::env::var("GHOSTLIGHT_TICK_INTERVAL_SECONDS")
+        .ok()
+        .and_then(|value| value.trim().parse::<u64>().ok())
+        .filter(|value| *value >= 1)
+        .map_or(CLOCK_TICK_INTERVAL, Duration::from_secs)
+}
+
+/// The world's only driver: one owner of the tick's cadence, of the cover, and
+/// of the clock. It derives a cover from one snapshot, runs each cell under a
+/// permit, and then advances the clock — after the cells, so every cell in a
+/// tick sees the same `now` and therefore the same tick index, which is what
+/// makes the derived command ids stable and the rotation phase well defined.
+///
+/// The kernel learns one `AdvanceTime` and `0..N` ordinary one-opportunity
+/// submissions. It never learns a tick happened.
+async fn drive_cover_tick(state: AppState, interval: Duration) {
     let Some(minutes) = TickMinutes::new(CLOCK_TICK_MINUTES) else {
         tracing::error!("the configured clock tick is outside one year of minutes");
         return;
     };
-    let mut interval = tokio::time::interval(CLOCK_TICK_INTERVAL);
-    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-    interval.tick().await;
+    let mut ticker = tokio::time::interval(interval);
+    ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    ticker.tick().await;
     loop {
-        interval.tick().await;
+        ticker.tick().await;
+        run_cover_tick(&state).await;
         submit_clock_tick(minutes, |id, minutes| state.world.submit_clock(id, minutes)).await;
+        if let Err(error) = publish_projection(&state).await {
+            tracing::debug!(%error, "world revision could not be read after a tick");
+        }
     }
+}
+
+/// One tick's cognition, apart from the clock and the wall clock that decides
+/// when to run it.
+async fn run_cover_tick(state: &AppState) {
+    let Some(runner) = state.controllers.clone() else {
+        return;
+    };
+    if state.controller_quarantined.load(Ordering::SeqCst) {
+        return;
+    }
+    let (Ok(snapshot), Ok(graph)) = (
+        state.world.snapshot().await,
+        state.world.agency_graph().await,
+    ) else {
+        return;
+    };
+    let cover = derive_cover(
+        snapshot.world_id,
+        snapshot.now,
+        CLOCK_TICK_MINUTES,
+        &snapshot.opportunities,
+        &graph,
+        state.cover_budget,
+    );
+    *state.cover.lock().await = Some(CoverSummary::of(&cover));
+
+    let mut running = tokio::task::JoinSet::new();
+    for cell in cover.cells {
+        let runner = runner.clone();
+        let permits = state.controller_permits.clone();
+        let quarantined = state.controller_quarantined.clone();
+        running.spawn(async move {
+            // Quarantine has a clean edge: no permit is granted after the flag
+            // is set, and turns already holding one finish on their own
+            // bindings.
+            if quarantined.load(Ordering::SeqCst) {
+                return;
+            }
+            let Ok(_permit) = permits.acquire().await else {
+                return;
+            };
+            match runner.run_cell(&cell).await {
+                Ok(run) => {
+                    if let CellRun::Grouped(grouped) = &run
+                        && let Some(reason) = grouped.pending
+                    {
+                        tracing::debug!(?reason, "a coarse cell did not finish its submissions");
+                    }
+                }
+                Err(error) => {
+                    // A cell that faults does not abort the tick. Custody loss
+                    // does: the work journal is one lock and one custody claim,
+                    // so it is a tick-level outcome rather than a per-cell one.
+                    if error.requires_quarantine() {
+                        tracing::error!(%error, "controller cognition quarantined mid-tick");
+                        quarantined.store(true, Ordering::SeqCst);
+                    } else {
+                        tracing::debug!(%error, "a cell did not complete this tick");
+                    }
+                }
+            }
+        });
+    }
+    while running.join_next().await.is_some() {}
 }
 
 async fn revision_events(State(state): State<AppState>) -> impl IntoResponse {
@@ -1848,6 +2044,10 @@ fn sibling_state_lock_path(path: &std::path::Path) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Small enough that a test can hold every permit and prove a route does
+    /// not cross the provider boundary.
+    const TEST_CONTROLLER_CONCURRENCY: usize = 2;
     use crate::idunn_health::tests::route_observation_fixture;
     use axum::{
         body::{Body, to_bytes},
@@ -1982,7 +2182,15 @@ mod tests {
         let (fatal, _fatal_events) = mpsc::unbounded_channel();
         let state = AppState {
             world,
-            controllers: Arc::new(Mutex::new(Some(controllers))),
+            controllers: Some(Arc::new(controllers)),
+            controller_permits: Arc::new(Semaphore::new(TEST_CONTROLLER_CONCURRENCY)),
+            controller_quarantined: Arc::new(AtomicBool::new(false)),
+            cover_budget: CoverBudget {
+                cells: 240,
+                constituent_cap: 24,
+                urgency_slots: 36,
+            },
+            cover: Arc::new(Mutex::new(None)),
             sessions: Arc::new(Mutex::new(sessions)),
             heimdall: Arc::new(HeimdallClient::fixture()),
             mesh: Some(mesh),
@@ -2111,11 +2319,14 @@ mod tests {
             write_lease: Arc::new(health.write_lease),
         });
 
-        // If this route enters the controller/provider boundary, the held lock
-        // makes the request time out. Route admission and signing need only the
-        // canonical health owner and managed runtime authority.
-        let controllers = fixture.state.controllers.clone();
-        let _provider_execution_barrier = controllers.lock().await;
+        // If this route enters the controller/provider boundary, the exhausted
+        // permit pool makes the request time out. Route admission and signing
+        // need only the canonical health owner and managed runtime authority.
+        let permits = fixture.state.controller_permits.clone();
+        let _provider_execution_barrier = permits
+            .acquire_many(u32::try_from(TEST_CONTROLLER_CONCURRENCY).expect("a small pool"))
+            .await
+            .expect("the controller permit pool is open");
         let response = tokio::time::timeout(
             Duration::from_secs(2),
             api_router(fixture.state.clone()).oneshot(request(

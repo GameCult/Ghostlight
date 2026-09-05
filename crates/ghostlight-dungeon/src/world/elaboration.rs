@@ -13,7 +13,7 @@
 use super::controllers::{
     ControllerError, ControllerNeed, ControllerWork, ControllerWorkLookup, ControllerWorkStore,
     ControllerWorkWrite, InferenceEvent, InferenceOutput, InferencePort, InferencePurpose,
-    InferenceRequest, PreparedInference, canonical_model, prepared_matches_request,
+    InferenceRequest, PreparedInference, RequestShape, canonical_model, prepared_matches_request,
     tool_decode_need, tool_request,
 };
 #[cfg(test)]
@@ -1018,6 +1018,12 @@ pub(super) fn elaboration_request(
         ELABORATION_INSTRUCTIONS,
         input,
         patch_tools(),
+        RequestShape {
+            // A patch turn emits many tool calls where a decision turn emits
+            // one, so the budget belongs to the caller.
+            max_output_tokens: 4_000,
+            parallel_tool_calls: false,
+        },
     )
 }
 

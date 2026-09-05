@@ -11,12 +11,13 @@ use super::elaboration::{
 };
 use super::tool_schema;
 use crate::world::{
-    AffordanceId, AffordanceSnapshot, AuthorityGrant, Bounds, CommandId, CommitReceipt, Confidence,
-    ControllerMode, ControllerPort, Cost, DecisionInvocation, DecisionOpportunity,
-    DependencyTarget, EdgeId, ElaborationPort, EntityId, EntityKind, FactStandingView, KernelError,
-    KnowledgeSnapshot, KnowledgeSource, Magnitude, MailboxError, OfficeSnapshot, ProposedEffect,
-    Quantity, RefKind, RoleBinding, Statement, SubjectId, SubjectSnapshot, SubmitReceipt, Target,
-    WorldMailbox, WorldSnapshot,
+    AffordanceId, AffordanceSnapshot, AuthorityGrant, Bounds, Cell, CellId, CommandId,
+    CommitReceipt, Confidence, Constituent, ControllerMode, ControllerPort, Cost,
+    DecisionInvocation, DecisionOpportunity, DependencyTarget, EdgeId, ElaborationPort, EntityId,
+    EntityKind, FactStandingView, KernelError, KnowledgeSnapshot, KnowledgeSource, Magnitude,
+    MailboxError, OfficeSnapshot, ProposedEffect, Quantity, RefKind, Resolution, RoleBinding,
+    Statement, SubjectId, SubjectSnapshot, SubmitReceipt, Target, TickIndex, WorldMailbox,
+    WorldSnapshot,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -28,17 +29,17 @@ use codex_connector::{
 };
 use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use ghostlight_persona_projection::{
-    CaptureToolFeedback, InterpretationAccumulator, InterpretationFinalization,
-    InterpretationReport, InterpreterPrompt, OperationalAgentPrompt, PersonaPrompt, PersonaTurn,
-    PersonaTurnBinding, ProjectorPrompt, RecordGapToolCall, TranslationGapKind,
-    build_interpreter_prompt, build_operational_agent_prompt, build_persona_prompt,
-    build_projector_prompt, sha256,
+    CaptureToolFeedback, GroupedAgentPrompt, InterpretationAccumulator, InterpretationFinalization,
+    InterpretationReport, InterpreterPrompt, LabeledView, OperationalAgentPrompt, PersonaPrompt,
+    PersonaTurn, PersonaTurnBinding, ProjectorPrompt, RecordGapToolCall, TranslationGapKind,
+    build_grouped_agent_prompt, build_interpreter_prompt, build_operational_agent_prompt,
+    build_persona_prompt, build_projector_prompt, sha256,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     net::SocketAddr,
     path::Path,
     sync::{Arc, Mutex},
@@ -50,9 +51,17 @@ use zeroize::Zeroizing;
 const MAX_CONNECTOR_FRAME_BYTES: usize = 1_052_672;
 const REQUEST_EXPIRY: Duration = Duration::from_secs(300);
 const TOOL_STEP_BUDGET: usize = 4;
+/// The grouped protocol asks for every call in one round, so this budget buys
+/// exactly one repair round after decode gaps are reported back. It deliberately
+/// does not scale with the cell: a cell that needs three rounds of repair is a
+/// cell that should have been smaller.
+const CELL_TOOL_STEP_BUDGET: usize = 2;
+/// Separates a constituent handle from the tool it names. Attribution is
+/// carried by tool identity, never by a model-written argument.
+const HANDLE_SEPARATOR: &str = "__";
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v7";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v7";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v8";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v8";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -76,6 +85,11 @@ pub(crate) enum InferencePurpose {
     Persona,
     Interpreter,
     OperationalAgent,
+    /// One inference over a cell's labeled constituent views. Distinct from
+    /// `OperationalAgent` so a grouped request's derived ids can never collide
+    /// with a detail turn's, and so the output budget and the parallel-call
+    /// shape a cell needs do not leak into the singleton path.
+    GroupedAgent,
     Elaboration,
 }
 
@@ -354,6 +368,55 @@ fn unix_ms() -> Result<u64, InferenceFault> {
     u64::try_from(millis).map_err(|_| InferenceFault::new("system time exceeds u64 milliseconds"))
 }
 
+/// One constituent of a grouped cell, frozen at selection. It carries its own
+/// opportunity, so its controller, scope, and authority are exactly what the
+/// detail path would have submitted: grouping changes representation, never
+/// authority. There is no `controller_mode` beside the opportunity's, because a
+/// second copy of a digest-bound value is a value that can disagree.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ConstituentWork {
+    subject: SubjectId,
+    opportunity: DecisionOpportunity,
+    granted: Vec<AffordanceSnapshot>,
+    /// Derived from `(world, cell, subject, tick)`, so a resumed cell re-submits
+    /// the same id and the kernel answers from its idempotency ledger.
+    command_id: CommandId,
+}
+
+/// One cell, one inference, one row. A third variant rather than a widened
+/// pair: making the twelve singleton progression comparisons vector-wise for a
+/// path that is always length one would buy nothing, and it would put the
+/// batched prompt in the same type as the byte-identical singleton one.
+///
+/// There is no persisted per-constituent outcome. The submission loop is
+/// idempotent by construction — every constituent's command id is derived, and
+/// `submit_controller_world` probes the kernel's receipt before committing — so
+/// a resumed `Submitting` re-runs the loop and the ledger answers with the
+/// original receipts. A stored outcome would be a second, weaker record of what
+/// the ledger already owns.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "stage", rename_all = "snake_case")]
+enum GroupedCheckpoint {
+    AgentInFlight {
+        command_id: CommandId,
+        cell: CellId,
+        tick: TickIndex,
+        agent_prompt: String,
+        constituents: Vec<ConstituentWork>,
+        completed: Vec<InferenceOutput>,
+        invocation: PreparedInference,
+    },
+    Submitting {
+        command_id: CommandId,
+        cell: CellId,
+        tick: TickIndex,
+        agent_prompt: String,
+        constituents: Vec<ConstituentWork>,
+        completed: Vec<InferenceOutput>,
+    },
+}
+
 /// One command has one durable tagged cognition checkpoint. Every in-flight
 /// variant owns the exact connector invocation before transport; terminal
 /// variants retain completed provider outputs so their capture is derived,
@@ -363,6 +426,10 @@ fn unix_ms() -> Result<u64, InferenceFault> {
 pub(super) enum ControllerWork {
     Narrative(NarrativeCheckpoint),
     Operational(OperationalCheckpoint),
+    /// One coarse cell's cognition. The only durable trace a cover leaves, and
+    /// it lives in the controller-work store, whose custody is separate from
+    /// world custody: representation is cognition evidence, not world truth.
+    Grouped(GroupedCheckpoint),
     /// The authoring lane. One store, one custody probe, one progression check:
     /// forking them would buy nothing and split one authority in three.
     Elaboration(ElaborationCheckpoint),
@@ -375,6 +442,7 @@ pub(super) enum ControllerWork {
 pub(crate) enum WorkLane {
     Narrative,
     Operational,
+    Grouped,
     Elaboration,
 }
 
@@ -458,6 +526,7 @@ impl ControllerWork {
         match self {
             Self::Narrative(checkpoint) => checkpoint.command_id(),
             Self::Operational(checkpoint) => checkpoint.command_id(),
+            Self::Grouped(checkpoint) => checkpoint.command_id(),
             Self::Elaboration(checkpoint) => checkpoint.command_id(),
         }
     }
@@ -466,14 +535,29 @@ impl ControllerWork {
         match self {
             Self::Narrative(_) => WorkLane::Narrative,
             Self::Operational(_) => WorkLane::Operational,
+            Self::Grouped(_) => WorkLane::Grouped,
             Self::Elaboration(_) => WorkLane::Elaboration,
+        }
+    }
+
+    /// How the subjects in this row were represented. Derived from the row's
+    /// own shape rather than stored beside it: a persisted copy would be a
+    /// second spelling of `constituents.len()` that could disagree with it.
+    #[cfg_attr(not(test), expect(dead_code, reason = "read by the resolution test"))]
+    fn resolution(&self) -> Resolution {
+        match self {
+            Self::Narrative(_) | Self::Operational(_) | Self::Elaboration(_) => Resolution::Detail,
+            Self::Grouped(checkpoint) => Resolution::Coarse {
+                constituents: checkpoint.constituents().len(),
+            },
         }
     }
 
     fn is_initial(&self) -> bool {
         match self {
             Self::Narrative(NarrativeCheckpoint::Projector { .. }) => true,
-            Self::Operational(OperationalCheckpoint::AgentInFlight { completed, .. }) => {
+            Self::Operational(OperationalCheckpoint::AgentInFlight { completed, .. })
+            | Self::Grouped(GroupedCheckpoint::AgentInFlight { completed, .. }) => {
                 completed.is_empty()
             }
             Self::Elaboration(ElaborationCheckpoint::ElaboratorInFlight {
@@ -489,6 +573,7 @@ impl ControllerWork {
         match self {
             Self::Narrative(checkpoint) => checkpoint.integrity_is_valid(),
             Self::Operational(checkpoint) => checkpoint.integrity_is_valid(),
+            Self::Grouped(checkpoint) => checkpoint.integrity_is_valid(),
             Self::Elaboration(checkpoint) => checkpoint.integrity_is_valid(),
         }
     }
@@ -730,6 +815,95 @@ impl OperationalCheckpoint {
     }
 }
 
+impl GroupedCheckpoint {
+    fn command_id(&self) -> CommandId {
+        match self {
+            Self::AgentInFlight { command_id, .. } | Self::Submitting { command_id, .. } => {
+                *command_id
+            }
+        }
+    }
+
+    fn cell(&self) -> CellId {
+        match self {
+            Self::AgentInFlight { cell, .. } | Self::Submitting { cell, .. } => *cell,
+        }
+    }
+
+    fn constituents(&self) -> &[ConstituentWork] {
+        match self {
+            Self::AgentInFlight { constituents, .. } | Self::Submitting { constituents, .. } => {
+                constituents
+            }
+        }
+    }
+
+    fn integrity_is_valid(&self) -> bool {
+        let (agent_prompt, constituents, completed) = match self {
+            Self::AgentInFlight {
+                agent_prompt,
+                constituents,
+                completed,
+                ..
+            }
+            | Self::Submitting {
+                agent_prompt,
+                constituents,
+                completed,
+                ..
+            } => (agent_prompt, constituents, completed),
+        };
+        if !cell_constituents_are_valid(constituents) || agent_prompt.is_empty() {
+            return false;
+        }
+        match self {
+            Self::AgentInFlight {
+                command_id,
+                invocation,
+                ..
+            } => {
+                canonical_model(&invocation.invocation.request.model)
+                    && match evaluate_grouped_loop(agent_prompt, constituents, completed) {
+                        Ok(GroupedLoopEvaluation::Continue { conversation }) => grouped_request(
+                            *command_id,
+                            completed.len(),
+                            &invocation.invocation.request.model,
+                            constituents,
+                            conversation,
+                        )
+                        .is_ok_and(|expected| {
+                            prepared_matches_request(
+                                invocation,
+                                &expected,
+                                *command_id,
+                                completed.len(),
+                            )
+                        }),
+                        Ok(GroupedLoopEvaluation::Complete { .. }) | Err(_) => false,
+                    }
+            }
+            Self::Submitting { .. } => {
+                derive_grouped_capture(agent_prompt, constituents, completed).is_ok()
+            }
+        }
+    }
+}
+
+/// A cell's constituents are ascending, distinct, non-empty, each holding
+/// exactly what its own opportunity grants, and each an inference rather than a
+/// human turn. A duplicate subject would make one handle able to submit twice.
+fn cell_constituents_are_valid(constituents: &[ConstituentWork]) -> bool {
+    !constituents.is_empty()
+        && constituents
+            .windows(2)
+            .all(|pair| pair[0].subject < pair[1].subject)
+        && constituents.iter().all(|entry| {
+            entry.subject == entry.opportunity.scope.subject_id
+                && entry.opportunity.controller_mode != ControllerMode::Human
+                && granted_matches_opportunity(&entry.granted, &entry.opportunity)
+        })
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct NarrativeCapture {
     pub(crate) proposal: Option<SourceRange>,
@@ -756,6 +930,72 @@ pub(crate) struct OperationalCapture {
     pub(crate) proposal: Option<DecisionInvocation>,
     pub(crate) needs: Vec<ControllerNeed>,
     pub(crate) inference_receipts: Vec<String>,
+}
+
+/// One opportunity's selection against one snapshot.
+///
+/// The expected controller mode is read from the opportunity rather than
+/// supplied by the caller. Representation and controller mode used to be the
+/// same value here, which made a coarsely represented `NarrativePersona`
+/// unrepresentable; the lane gate that still matters — whether this turn may
+/// enter the Persona membrane — lives at the lane's own entry, where entering
+/// the membrane is decided.
+fn select_one(
+    snapshot: &WorldSnapshot,
+    exact_opportunity: &DecisionOpportunity,
+) -> Result<SelectedDecision, ControllerError> {
+    let expected = exact_opportunity.controller_mode;
+    let subject_id = exact_opportunity.scope.subject_id;
+    let Some(subject) = snapshot
+        .subjects
+        .iter()
+        .find(|subject| subject.id == subject_id)
+        .cloned()
+    else {
+        return Err(ControllerError::NoOpportunity { expected });
+    };
+    if subject.controller_mode != expected {
+        return Err(ControllerError::NoOpportunity { expected });
+    }
+    if exact_opportunity.controller_id != subject.controller_id {
+        return Err(ControllerError::OpportunityMismatch);
+    }
+    let matches = snapshot
+        .opportunities
+        .iter()
+        .filter(|opportunity| {
+            opportunity.scope == exact_opportunity.scope
+                && opportunity.scope_digest == exact_opportunity.scope_digest
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    let [opportunity] = matches.as_slice() else {
+        return if matches.is_empty() {
+            Err(ControllerError::NoOpportunity { expected })
+        } else {
+            Err(ControllerError::AmbiguousOpportunity)
+        };
+    };
+    let granted: Vec<AffordanceSnapshot> = snapshot
+        .affordances
+        .iter()
+        .filter(|entry| {
+            subject.affordances.contains(&entry.id)
+                && opportunity.affordance_ids.contains(&entry.id)
+        })
+        .cloned()
+        .collect();
+    if granted.is_empty() {
+        return Err(ControllerError::NoGrantedAffordance);
+    }
+    Ok(SelectedDecision {
+        snapshot: snapshot.clone(),
+        subject,
+        // The run's own bound value, not the fresh snapshot's: one run binds
+        // one opportunity, persists it, and submits it unchanged.
+        opportunity: exact_opportunity.clone(),
+        granted,
+    })
 }
 
 fn base_checkpoint_is_valid(
@@ -1187,10 +1427,69 @@ fn valid_controller_work_progression(existing: &ControllerWork, next: &Controlle
         (ControllerWork::Operational(existing), ControllerWork::Operational(next)) => {
             valid_operational_progression(existing, next)
         }
+        (ControllerWork::Grouped(existing), ControllerWork::Grouped(next)) => {
+            valid_grouped_progression(existing, next)
+        }
         (ControllerWork::Elaboration(existing), ControllerWork::Elaboration(next)) => {
             valid_elaboration_progression(existing, next)
         }
         _ => false,
+    }
+}
+
+/// The identity of a grouped row is frozen and its evidence only appends. The
+/// constituent vector is part of that identity: a resumed cell may not gain,
+/// lose, reorder, or re-permission a handle, because a handle is a position in
+/// a prompt that has already been sent.
+fn valid_grouped_progression(existing: &GroupedCheckpoint, next: &GroupedCheckpoint) -> bool {
+    let frozen = |left: &GroupedCheckpoint, right: &GroupedCheckpoint| {
+        let identity = |work: &GroupedCheckpoint| match work {
+            GroupedCheckpoint::AgentInFlight {
+                command_id,
+                cell,
+                tick,
+                agent_prompt,
+                constituents,
+                ..
+            }
+            | GroupedCheckpoint::Submitting {
+                command_id,
+                cell,
+                tick,
+                agent_prompt,
+                constituents,
+                ..
+            } => (
+                *command_id,
+                *cell,
+                *tick,
+                agent_prompt.clone(),
+                constituents.clone(),
+            ),
+        };
+        identity(left) == identity(right)
+    };
+    fn completed(work: &GroupedCheckpoint) -> &[InferenceOutput] {
+        match work {
+            GroupedCheckpoint::AgentInFlight { completed, .. }
+            | GroupedCheckpoint::Submitting { completed, .. } => completed.as_slice(),
+        }
+    }
+    if !frozen(existing, next) {
+        return false;
+    }
+    match (existing, next) {
+        (
+            GroupedCheckpoint::AgentInFlight { .. },
+            GroupedCheckpoint::AgentInFlight { .. } | GroupedCheckpoint::Submitting { .. },
+        ) => completed_advances(completed(existing), completed(next)),
+        // Submitting is terminal: the submission loop replays against the
+        // kernel's ledger rather than advancing a persisted outcome, so the row
+        // never changes again and never regresses to another inference.
+        (GroupedCheckpoint::Submitting { .. }, GroupedCheckpoint::Submitting { .. }) => {
+            completed(existing) == completed(next)
+        }
+        (GroupedCheckpoint::Submitting { .. }, GroupedCheckpoint::AgentInFlight { .. }) => false,
     }
 }
 
@@ -1623,6 +1922,36 @@ pub(crate) enum OperationalRun {
     Pending(OperationalPending),
 }
 
+/// What one cell's run produced. A singleton delegates to the lane its
+/// subject's controller mode names, and its outcome is that lane's own: the
+/// detail path is not wrapped, re-shaped, or summarised.
+#[derive(Debug)]
+pub(crate) enum CellRun {
+    Narrative(NarrativeRun),
+    Operational(OperationalRun),
+    Grouped(GroupedRun),
+}
+
+#[derive(Debug)]
+pub(crate) struct ConstituentSubmission {
+    pub(crate) subject: SubjectId,
+    pub(crate) submission: SubmissionDisposition,
+}
+
+/// One coarse cell's outcome: one inference, N ordinary one-opportunity
+/// submissions, and whatever the decode could not attribute.
+#[derive(Debug)]
+pub(crate) struct GroupedRun {
+    pub(crate) cell: CellId,
+    pub(crate) resolution: Resolution,
+    pub(crate) submissions: Vec<ConstituentSubmission>,
+    pub(crate) needs: Vec<ControllerNeed>,
+    /// Set when the run stopped before every constituent was submitted. The
+    /// constituents already in `submissions` are committed; the rest resume from
+    /// the persisted row against the kernel's idempotency ledger.
+    pub(crate) pending: Option<ControllerPendingReason>,
+}
+
 #[derive(Debug)]
 pub(crate) struct OperationalPending {
     work: OperationalCheckpoint,
@@ -1793,6 +2122,14 @@ impl ControllerRunner {
         command_id: CommandId,
         opportunity: &DecisionOpportunity,
     ) -> Result<NarrativeRun, ControllerError> {
+        // The lane gate, where entering the Persona membrane is decided. It is
+        // not `select`'s job: `select` proves the opportunity is live, and this
+        // proves this lane may run it. Grouping never reaches here.
+        if opportunity.controller_mode != ControllerMode::NarrativePersona {
+            return Err(ControllerError::NoOpportunity {
+                expected: ControllerMode::NarrativePersona,
+            });
+        }
         match self.work.lookup(command_id).await? {
             ControllerWorkLookup::Confirmed(ControllerWork::Narrative(checkpoint)) => {
                 if !binds_same_scope(checkpoint.opportunity(), opportunity) {
@@ -1812,22 +2149,20 @@ impl ControllerRunner {
                 ));
             }
             ControllerWorkLookup::Confirmed(
-                ControllerWork::Operational(_) | ControllerWork::Elaboration(_),
+                ControllerWork::Operational(_)
+                | ControllerWork::Grouped(_)
+                | ControllerWork::Elaboration(_),
             )
             | ControllerWorkLookup::CustodyUncertain(
-                ControllerWork::Operational(_) | ControllerWork::Elaboration(_),
+                ControllerWork::Operational(_)
+                | ControllerWork::Grouped(_)
+                | ControllerWork::Elaboration(_),
             ) => {
                 return Err(ControllerError::CommandMismatch);
             }
             ControllerWorkLookup::Missing => {}
         }
-        let selected = self
-            .select(
-                opportunity.scope.subject_id,
-                ControllerMode::NarrativePersona,
-                opportunity,
-            )
-            .await?;
+        let selected = self.select(opportunity).await?;
         let identity = selected.subject.label.clone();
         let typed_view = selected.typed_view()?;
         let projector_context = selected.projector_context()?;
@@ -1872,6 +2207,14 @@ impl ControllerRunner {
         command_id: CommandId,
         opportunity: &DecisionOpportunity,
     ) -> Result<OperationalRun, ControllerError> {
+        // The detail operational lane runs a subject the world assigned to an
+        // operational agent. A coarsely represented `NarrativePersona` goes
+        // through the grouped lane, never through this one.
+        if opportunity.controller_mode != ControllerMode::OperationalAgent {
+            return Err(ControllerError::NoOpportunity {
+                expected: ControllerMode::OperationalAgent,
+            });
+        }
         match self.work.lookup(command_id).await? {
             ControllerWorkLookup::Confirmed(ControllerWork::Operational(checkpoint)) => {
                 if !binds_same_scope(checkpoint.opportunity(), opportunity) {
@@ -1891,28 +2234,26 @@ impl ControllerRunner {
                 ));
             }
             ControllerWorkLookup::Confirmed(
-                ControllerWork::Narrative(_) | ControllerWork::Elaboration(_),
+                ControllerWork::Narrative(_)
+                | ControllerWork::Grouped(_)
+                | ControllerWork::Elaboration(_),
             )
             | ControllerWorkLookup::CustodyUncertain(
-                ControllerWork::Narrative(_) | ControllerWork::Elaboration(_),
+                ControllerWork::Narrative(_)
+                | ControllerWork::Grouped(_)
+                | ControllerWork::Elaboration(_),
             ) => {
                 return Err(ControllerError::CommandMismatch);
             }
             ControllerWorkLookup::Missing => {}
         }
-        let selected = self
-            .select(
-                opportunity.scope.subject_id,
-                ControllerMode::OperationalAgent,
-                opportunity,
-            )
-            .await?;
+        let selected = self.select(opportunity).await?;
         let identity = selected.subject.label.clone();
         let typed_view = selected.typed_view()?;
         let agent_prompt = build_operational_agent_prompt(&OperationalAgentPrompt {
             identity: &identity,
             typed_view: &typed_view,
-            available_tools: &catalog_signatures(&selected.granted),
+            available_tools: &catalog_signatures("", &selected.granted),
             decision_pressure: "Choose whether this decision owner should speak now.",
             domain_guidance: "",
             step_budget: TOOL_STEP_BUDGET,
@@ -2071,6 +2412,388 @@ impl ControllerRunner {
             }
         }
     }
+    /// One cell's cognition. It receives a `&Cell` and never a `Cover`: it
+    /// cannot see other cells, the budget, or the agency graph, and the tick
+    /// index reaches it only as an opaque value threaded into id derivation.
+    pub(crate) async fn run_cell(&self, cell: &Cell) -> Result<CellRun, ControllerError> {
+        match cell {
+            Cell::Singleton { id, tick, member } => {
+                // The driver's singleton turn takes a derived id, so it is as
+                // replayable as its grouped ones. The operator's manual button
+                // keeps issuing a fresh id, and that is correct: a manual turn
+                // is not part of a replayable tick.
+                let command_id = CommandId::for_cell_constituent(
+                    member.opportunity.world_id,
+                    *id,
+                    member.subject,
+                    *tick,
+                );
+                match member.opportunity.controller_mode {
+                    ControllerMode::NarrativePersona => self
+                        .run_narrative(command_id, &member.opportunity)
+                        .await
+                        .map(CellRun::Narrative),
+                    ControllerMode::OperationalAgent => self
+                        .run_operational(command_id, &member.opportunity)
+                        .await
+                        .map(CellRun::Operational),
+                    ControllerMode::Human => Err(ControllerError::NoOpportunity {
+                        expected: ControllerMode::OperationalAgent,
+                    }),
+                }
+            }
+            Cell::Group { id, tick, members } => self
+                .run_group(*id, *tick, members)
+                .await
+                .map(CellRun::Grouped),
+        }
+    }
+
+    async fn run_group(
+        &self,
+        cell: CellId,
+        tick: TickIndex,
+        members: &[Constituent],
+    ) -> Result<GroupedRun, ControllerError> {
+        let Some(first) = members.first() else {
+            return Err(ControllerError::NoOpportunity {
+                expected: ControllerMode::OperationalAgent,
+            });
+        };
+        let world_id = first.opportunity.world_id;
+        let command_id = CommandId::for_cell(world_id, cell, tick);
+        match self.work.lookup(command_id).await? {
+            ControllerWorkLookup::Confirmed(ControllerWork::Grouped(checkpoint)) => {
+                if checkpoint.cell() != cell {
+                    return Err(ControllerError::OpportunityMismatch);
+                }
+                return self.resume_persisted_group(command_id, checkpoint).await;
+            }
+            ControllerWorkLookup::CustodyUncertain(ControllerWork::Grouped(checkpoint)) => {
+                if checkpoint.cell() != cell {
+                    return Err(ControllerError::OpportunityMismatch);
+                }
+                return Ok(grouped_pending(
+                    checkpoint,
+                    ControllerPendingReason::StoreReopenRequired,
+                ));
+            }
+            ControllerWorkLookup::Confirmed(
+                ControllerWork::Narrative(_)
+                | ControllerWork::Operational(_)
+                | ControllerWork::Elaboration(_),
+            )
+            | ControllerWorkLookup::CustodyUncertain(
+                ControllerWork::Narrative(_)
+                | ControllerWork::Operational(_)
+                | ControllerWork::Elaboration(_),
+            ) => {
+                return Err(ControllerError::CommandMismatch);
+            }
+            ControllerWorkLookup::Missing => {}
+        }
+
+        // One snapshot for the whole cell, and no mid-stage rechecks. The detail
+        // lanes' per-stage recheck is an early exit, not a correctness gate: the
+        // scope digest is re-derived at admission, so a stale grouped proposal is
+        // refused with an honest `ScopeChanged` rather than committed.
+        let snapshot = self
+            .mailbox
+            .snapshot()
+            .await
+            .map_err(ControllerError::Snapshot)?;
+        let mut selected = Vec::new();
+        let mut constituents = Vec::new();
+        let mut needs = Vec::new();
+        for member in members {
+            match select_one(&snapshot, &member.opportunity) {
+                Ok(decision) => {
+                    constituents.push(ConstituentWork {
+                        subject: member.subject,
+                        opportunity: decision.opportunity.clone(),
+                        granted: decision.granted.clone(),
+                        command_id: CommandId::for_cell_constituent(
+                            world_id,
+                            cell,
+                            member.subject,
+                            tick,
+                        ),
+                    });
+                    selected.push(decision);
+                }
+                // A subject whose opportunity moved between the cover and the
+                // cell was not active when the cell ran. It is dropped rather
+                // than declined: declining a stale opportunity would be refused
+                // anyway, and the drop is recorded where a reader can see it.
+                Err(error) => needs.push(ControllerNeed {
+                    detail: format!("a constituent left the cell before selection: {error}"),
+                }),
+            }
+        }
+        if constituents.is_empty() {
+            return Ok(GroupedRun {
+                cell,
+                resolution: Resolution::Coarse { constituents: 0 },
+                submissions: Vec::new(),
+                needs,
+                pending: None,
+            });
+        }
+
+        let views = partitioned_views(&selected)?;
+        let labeled: Vec<LabeledView<'_>> = views
+            .iter()
+            .map(|view| LabeledView {
+                handle: &view.handle,
+                identity: &view.identity,
+                typed_view: &view.typed_view,
+                tool_signatures: &view.tool_signatures,
+            })
+            .collect();
+        let agent_prompt = build_grouped_agent_prompt(&GroupedAgentPrompt {
+            views: &labeled,
+            decision_pressure: "Choose whether each decision owner should act now.",
+            domain_guidance: "",
+            step_budget: CELL_TOOL_STEP_BUDGET,
+        });
+        let initial_conversation = match evaluate_grouped_loop(&agent_prompt, &constituents, &[])? {
+            GroupedLoopEvaluation::Continue { conversation } => conversation,
+            GroupedLoopEvaluation::Complete { .. } => {
+                return Err(ControllerError::Serialization(
+                    "empty grouped evidence unexpectedly finalized".into(),
+                ));
+            }
+        };
+        let checkpoint = GroupedCheckpoint::AgentInFlight {
+            command_id,
+            cell,
+            tick,
+            agent_prompt,
+            completed: Vec::new(),
+            invocation: self.prepare(grouped_request(
+                command_id,
+                0,
+                &self.models.operational_agent,
+                &constituents,
+                initial_conversation,
+            )?)?,
+            constituents,
+        };
+        let mut run = if self
+            .persist(ControllerWork::Grouped(checkpoint.clone()))
+            .await?
+            == ControllerWorkWrite::CustodyUncertain
+        {
+            grouped_pending(checkpoint, ControllerPendingReason::StoreReopenRequired)
+        } else {
+            self.resume_persisted_group(command_id, checkpoint).await?
+        };
+        // The constituents that left the cell are reported beside the run they
+        // were dropped from, not written into the row: they produced no
+        // cognition, so they are not cognition evidence.
+        run.needs.splice(0..0, needs);
+        Ok(run)
+    }
+
+    async fn resume_persisted_group(
+        &self,
+        command_id: CommandId,
+        checkpoint: GroupedCheckpoint,
+    ) -> Result<GroupedRun, ControllerError> {
+        if checkpoint.command_id() != command_id {
+            return Err(ControllerError::CommandMismatch);
+        }
+        match checkpoint {
+            checkpoint @ GroupedCheckpoint::AgentInFlight { .. } => {
+                self.run_group_pending(checkpoint).await
+            }
+            checkpoint @ GroupedCheckpoint::Submitting { .. } => {
+                self.submit_group(checkpoint).await
+            }
+        }
+    }
+
+    async fn run_group_pending(
+        &self,
+        mut checkpoint: GroupedCheckpoint,
+    ) -> Result<GroupedRun, ControllerError> {
+        loop {
+            let GroupedCheckpoint::AgentInFlight {
+                command_id,
+                cell,
+                tick,
+                agent_prompt,
+                constituents,
+                mut completed,
+                invocation,
+            } = checkpoint.clone()
+            else {
+                return Err(ControllerError::Serialization(
+                    "grouped runner received a terminal checkpoint".into(),
+                ));
+            };
+            let model = invocation.invocation.request.model.clone();
+            let output = match self.infer(invocation).await {
+                Ok(output) => output,
+                Err(error) => match inference_pending_reason(&error) {
+                    Some(reason) => return Ok(grouped_pending(checkpoint, reason)),
+                    None => return Err(error),
+                },
+            };
+            completed.push(output);
+            match evaluate_grouped_loop(&agent_prompt, &constituents, &completed) {
+                Ok(GroupedLoopEvaluation::Complete { .. }) => {
+                    let next = GroupedCheckpoint::Submitting {
+                        command_id,
+                        cell,
+                        tick,
+                        agent_prompt,
+                        constituents,
+                        completed,
+                    };
+                    if self.persist(ControllerWork::Grouped(next.clone())).await?
+                        == ControllerWorkWrite::CustodyUncertain
+                    {
+                        return Ok(grouped_pending(
+                            next,
+                            ControllerPendingReason::StoreReopenRequired,
+                        ));
+                    }
+                    return self.submit_group(next).await;
+                }
+                Ok(GroupedLoopEvaluation::Continue { conversation }) => {
+                    let round = completed.len();
+                    let next = GroupedCheckpoint::AgentInFlight {
+                        command_id,
+                        cell,
+                        tick,
+                        agent_prompt,
+                        invocation: self.prepare(grouped_request(
+                            command_id,
+                            round,
+                            &model,
+                            &constituents,
+                            conversation,
+                        )?)?,
+                        completed,
+                        constituents,
+                    };
+                    match self.persist(ControllerWork::Grouped(next.clone())).await? {
+                        ControllerWorkWrite::Applied | ControllerWorkWrite::AlreadyPresent => {
+                            checkpoint = next;
+                        }
+                        ControllerWorkWrite::CustodyUncertain => {
+                            return Ok(grouped_pending(
+                                next,
+                                ControllerPendingReason::StoreReopenRequired,
+                            ));
+                        }
+                    }
+                }
+                Err(error) => match inference_pending_reason(&error) {
+                    Some(reason) => return Ok(grouped_pending(checkpoint, reason)),
+                    None => return Err(error),
+                },
+            }
+        }
+    }
+
+    /// One constituent at a time, in handle order, each through the same
+    /// `submit_controller_world` a detail turn uses. There is no batch command
+    /// body and no aggregate receipt: the only way a cell reaches the kernel is
+    /// one opportunity at a time, which is what keeps a cell-owned proposal
+    /// unrepresentable.
+    ///
+    /// A constituent that proposed nothing declines. Otherwise the world cannot
+    /// tell "was attended and stayed silent" from "was never attended", and the
+    /// resume path loses its only record that the turn finished.
+    async fn submit_group(
+        &self,
+        checkpoint: GroupedCheckpoint,
+    ) -> Result<GroupedRun, ControllerError> {
+        let GroupedCheckpoint::Submitting {
+            cell,
+            agent_prompt,
+            constituents,
+            completed,
+            ..
+        } = &checkpoint
+        else {
+            return Err(ControllerError::Serialization(
+                "grouped submission requires terminal controller work".into(),
+            ));
+        };
+        if matches!(
+            self.work.custody_probe().await?,
+            ControllerWorkCustody::Uncertain { .. }
+        ) {
+            return Ok(grouped_pending(
+                checkpoint.clone(),
+                ControllerPendingReason::StoreReopenRequired,
+            ));
+        }
+        let capture = derive_grouped_capture(agent_prompt, constituents, completed)?;
+        let resolution = Resolution::Coarse {
+            constituents: constituents.len(),
+        };
+        let mut needs = capture.needs;
+        let mut submissions = Vec::new();
+        // Declines first. A decline changes no other subject's scope, so every
+        // silent constituent's turn is consumed. An exercise can change what its
+        // neighbours bound to, and co-located subjects are exactly
+        // the ones a connected cover groups. The kernel refuses a proposal
+        // reasoned from a scope that no longer holds. That refusal is the honest
+        // outcome; ordering the non-mutating submissions ahead of it loses no
+        // turns and costs nothing.
+        let mut ordered: Vec<(usize, &ConstituentWork)> = constituents.iter().enumerate().collect();
+        ordered.sort_by_key(|(handle, _)| capture.proposals.contains_key(handle));
+        for (handle, constituent) in ordered {
+            let command = match capture.proposals.get(&handle) {
+                Some(invocation) => ControllerWorldCommand::Exercise(invocation.clone()),
+                None => ControllerWorldCommand::Decline,
+            };
+            match self
+                .submit_controller_world(constituent.command_id, &constituent.opportunity, command)
+                .await
+            {
+                Ok(ControllerWorldSubmission::Completed(submission)) => {
+                    submissions.push(ConstituentSubmission {
+                        subject: constituent.subject,
+                        submission,
+                    });
+                }
+                Ok(ControllerWorldSubmission::Pending(reason)) => {
+                    return Ok(GroupedRun {
+                        cell: *cell,
+                        resolution,
+                        submissions,
+                        needs,
+                        pending: Some(reason),
+                    });
+                }
+                // One constituent's refusal is that constituent's outcome. The
+                // cell is not a transaction: every other handle's proposal was
+                // bound to its own opportunity and is unaffected.
+                Err(ControllerError::World(error)) => needs.push(ControllerNeed {
+                    detail: format!("constituent c{handle} was refused by the world: {error}"),
+                }),
+                Err(error) => return Err(error),
+            }
+        }
+        submissions.sort_by_key(|entry| {
+            constituents
+                .iter()
+                .position(|constituent| constituent.subject == entry.subject)
+                .unwrap_or(usize::MAX)
+        });
+        Ok(GroupedRun {
+            cell: *cell,
+            resolution,
+            submissions,
+            needs,
+            pending: None,
+        })
+    }
 
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, ControllerError> {
         let purpose = request.purpose;
@@ -2089,8 +2812,6 @@ impl ControllerRunner {
 
     async fn select(
         &self,
-        subject_id: SubjectId,
-        expected: ControllerMode,
         exact_opportunity: &DecisionOpportunity,
     ) -> Result<SelectedDecision, ControllerError> {
         let snapshot = self
@@ -2098,59 +2819,7 @@ impl ControllerRunner {
             .snapshot()
             .await
             .map_err(ControllerError::Snapshot)?;
-        let Some(subject) = snapshot
-            .subjects
-            .iter()
-            .find(|subject| subject.id == subject_id)
-            .cloned()
-        else {
-            return Err(ControllerError::NoOpportunity { expected });
-        };
-        if subject.controller_mode != expected {
-            return Err(ControllerError::NoOpportunity { expected });
-        }
-        if exact_opportunity.scope.subject_id != subject.id
-            || exact_opportunity.controller_id != subject.controller_id
-            || exact_opportunity.controller_mode != expected
-        {
-            return Err(ControllerError::OpportunityMismatch);
-        }
-        let matches = snapshot
-            .opportunities
-            .iter()
-            .filter(|opportunity| {
-                opportunity.scope == exact_opportunity.scope
-                    && opportunity.scope_digest == exact_opportunity.scope_digest
-            })
-            .cloned()
-            .collect::<Vec<_>>();
-        let [opportunity] = matches.as_slice() else {
-            return if matches.is_empty() {
-                Err(ControllerError::NoOpportunity { expected })
-            } else {
-                Err(ControllerError::AmbiguousOpportunity)
-            };
-        };
-        let granted: Vec<AffordanceSnapshot> = snapshot
-            .affordances
-            .iter()
-            .filter(|entry| {
-                subject.affordances.contains(&entry.id)
-                    && opportunity.affordance_ids.contains(&entry.id)
-            })
-            .cloned()
-            .collect();
-        if granted.is_empty() {
-            return Err(ControllerError::NoGrantedAffordance);
-        }
-        Ok(SelectedDecision {
-            snapshot,
-            subject,
-            // The run's own bound value, not the fresh snapshot's: one run binds
-            // one opportunity, persists it, and submits it unchanged.
-            opportunity: exact_opportunity.clone(),
-            granted,
-        })
+        select_one(&snapshot, exact_opportunity)
     }
 
     /// The scope this run bound still derives the same digest. A commit
@@ -2159,13 +2828,7 @@ impl ControllerRunner {
         &self,
         opportunity: &DecisionOpportunity,
     ) -> Result<(), ControllerError> {
-        self.select(
-            opportunity.scope.subject_id,
-            opportunity.controller_mode,
-            opportunity,
-        )
-        .await
-        .map(|_| ())
+        self.select(opportunity).await.map(|_| ())
     }
 
     async fn resume_persisted_narrative(
@@ -3257,6 +3920,311 @@ fn evaluate_interpreter_loop(
     Ok(InterpreterLoopEvaluation::Continue { conversation })
 }
 
+/// One constituent's prompt block, owned so the borrow of the selection ends
+/// before the prompt is built.
+struct PartitionedView {
+    handle: String,
+    identity: String,
+    typed_view: String,
+    tool_signatures: String,
+}
+
+/// Each block is the verbatim output of the same per-subject `typed_view()` the
+/// detail path renders, under its own handle. There is no cross-resolution, no
+/// merge, no dedup, and no shared header: a fact held under two handles appears
+/// twice, and that duplication is the invariant.
+fn partitioned_views(
+    selected: &[SelectedDecision],
+) -> Result<Vec<PartitionedView>, ControllerError> {
+    selected
+        .iter()
+        .enumerate()
+        .map(|(handle, decision)| {
+            Ok(PartitionedView {
+                handle: format!("c{handle}"),
+                identity: decision.subject.label.clone(),
+                typed_view: decision.typed_view()?,
+                tool_signatures: catalog_signatures(&handle_prefix(handle), &decision.granted),
+            })
+        })
+        .collect()
+}
+
+fn handle_prefix(handle: usize) -> String {
+    format!("c{handle}{HANDLE_SEPARATOR}")
+}
+
+/// One tool set per constituent, name-namespaced, so an attributed proposal is
+/// decided by which tool was called rather than by an argument the model writes.
+/// A shared tool with a `subject` argument is the forgeable shape: it would let
+/// one constituent's turn propose for another.
+fn cell_catalog_tools(constituents: &[ConstituentWork]) -> Vec<CodexToolDefinition> {
+    constituents
+        .iter()
+        .enumerate()
+        .flat_map(|(handle, entry)| catalog_tools(&handle_prefix(handle), &entry.granted))
+        .collect()
+}
+
+/// `c<index>__<tool>`, with one spelling per handle: a padded, signed, or
+/// non-numeric index is not a handle, and a handle outside the cell does not
+/// exist.
+fn split_handle(name: &str, constituents: usize) -> Option<(usize, &str)> {
+    let (prefix, tool) = name.split_once(HANDLE_SEPARATOR)?;
+    let digits = prefix.strip_prefix('c')?;
+    if digits.is_empty() || (digits.len() > 1 && digits.starts_with('0')) {
+        return None;
+    }
+    if !digits.bytes().all(|byte| byte.is_ascii_digit()) {
+        return None;
+    }
+    let handle: usize = digits.parse().ok()?;
+    (handle < constituents).then_some((handle, tool))
+}
+
+/// The batched decode. Vector-valued by construction: the singleton evaluator
+/// keeps its scalar proposal and is not touched.
+struct GroupedCapture {
+    /// Handle to proposal. A handle absent here proposed nothing and declines.
+    proposals: BTreeMap<usize, DecisionInvocation>,
+    needs: Vec<ControllerNeed>,
+    inference_receipts: Vec<String>,
+}
+
+enum GroupedLoopEvaluation {
+    Continue { conversation: Vec<CodexInputItem> },
+    Complete { capture: GroupedCapture },
+}
+
+fn evaluate_grouped_loop(
+    prompt: &str,
+    constituents: &[ConstituentWork],
+    completed: &[InferenceOutput],
+) -> Result<GroupedLoopEvaluation, ControllerError> {
+    let mut conversation = vec![CodexInputItem::UserText {
+        text: prompt.to_owned(),
+    }];
+    let mut proposals: BTreeMap<usize, DecisionInvocation> = BTreeMap::new();
+    let mut terminal: BTreeSet<usize> = BTreeSet::new();
+    let mut needs = Vec::new();
+    let mut receipts = Vec::new();
+
+    for (round, output) in completed.iter().enumerate() {
+        if output.receipt_digest.is_empty() || output.receipt_digest.trim() != output.receipt_digest
+        {
+            return Err(ControllerError::ProviderContract {
+                purpose: InferencePurpose::GroupedAgent,
+                detail: "provider output has no canonical receipt digest".into(),
+            });
+        }
+        receipts.push(output.receipt_digest.clone());
+        let mut called_tool = false;
+        for event in &output.events {
+            match event {
+                InferenceEvent::Text(text) => {
+                    if !text.is_empty() {
+                        conversation.push(CodexInputItem::AssistantText { text: text.clone() });
+                    }
+                }
+                InferenceEvent::ToolCall {
+                    call_id,
+                    name,
+                    arguments,
+                } => {
+                    called_tool = true;
+                    conversation.push(CodexInputItem::ToolCall {
+                        call_id: call_id.clone(),
+                        name: name.clone(),
+                        arguments: arguments.clone(),
+                    });
+                    let result: String = match split_handle(name, constituents.len()) {
+                        // A model that writes `c99__carry` has not proposed
+                        // anything. It has produced a gap.
+                        None => {
+                            needs.push(tool_decode_need(
+                                name,
+                                arguments,
+                                "tool names no handle in this cell",
+                            ));
+                            "unattributable tool recorded as a need".into()
+                        }
+                        Some((handle, tool)) => {
+                            let granted = &constituents[handle].granted;
+                            let entry = granted.iter().find(|entry| entry.entry.kind.0 == tool);
+                            match tool {
+                                _ if entry.is_some() => {
+                                    if terminal.contains(&handle) {
+                                        needs.push(ControllerNeed {
+                                            detail: format!(
+                                                "Handle c{handle} was offered more than one terminal choice for one opportunity."
+                                            ),
+                                        });
+                                        "one terminal choice is already captured for this handle"
+                                            .into()
+                                    } else {
+                                        match decode_catalog_call(
+                                            entry.expect("the entry matched above"),
+                                            arguments,
+                                        ) {
+                                            Ok(invocation) => {
+                                                proposals.insert(handle, invocation);
+                                                terminal.insert(handle);
+                                                "invocation captured".into()
+                                            }
+                                            Err(detail) => {
+                                                needs.push(tool_decode_need(
+                                                    name, arguments, &detail,
+                                                ));
+                                                "arguments recorded as a need".into()
+                                            }
+                                        }
+                                    }
+                                }
+                                RECORD_NEED_TOOL => {
+                                    match serde_json::from_str::<RecordNeedCall>(arguments) {
+                                        Ok(call) => {
+                                            needs.push(ControllerNeed {
+                                                detail: format!("c{handle}: {}", call.detail),
+                                            });
+                                            "need recorded".into()
+                                        }
+                                        Err(error) => {
+                                            needs.push(tool_decode_need(
+                                                name,
+                                                arguments,
+                                                &error.to_string(),
+                                            ));
+                                            "arguments recorded as a need".into()
+                                        }
+                                    }
+                                }
+                                FINISH_WITHOUT_PROPOSAL_TOOL => {
+                                    match serde_json::from_str::<EmptyToolCall>(arguments) {
+                                        Ok(_) if terminal.contains(&handle) => {
+                                            return Err(ControllerError::ProviderContract {
+                                                purpose: InferencePurpose::GroupedAgent,
+                                                detail: "finish_without_proposal contradicted an existing terminal choice".into(),
+                                            });
+                                        }
+                                        Ok(_) => {
+                                            terminal.insert(handle);
+                                            "decision finished without a proposal".into()
+                                        }
+                                        Err(error) => {
+                                            needs.push(tool_decode_need(
+                                                name,
+                                                arguments,
+                                                &error.to_string(),
+                                            ));
+                                            "arguments recorded as a need".into()
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    needs.push(tool_decode_need(
+                                        name,
+                                        arguments,
+                                        "tool is not available to this handle",
+                                    ));
+                                    "unavailable tool recorded as a need".into()
+                                }
+                            }
+                        }
+                    };
+                    conversation.push(CodexInputItem::ToolResult {
+                        call_id: call_id.clone(),
+                        output: result,
+                    });
+                }
+            }
+        }
+
+        let is_complete = terminal.len() == constituents.len()
+            || !called_tool
+            || round + 1 == CELL_TOOL_STEP_BUDGET;
+        if is_complete {
+            if round + 1 != completed.len() {
+                return Err(ControllerError::Serialization(
+                    "grouped evidence continued after total finalization".into(),
+                ));
+            }
+            if round + 1 == CELL_TOOL_STEP_BUDGET
+                && terminal.len() < constituents.len()
+                && called_tool
+            {
+                needs.push(ControllerNeed {
+                    detail: "The grouped step budget ended before every handle finished.".into(),
+                });
+            }
+            return Ok(GroupedLoopEvaluation::Complete {
+                capture: GroupedCapture {
+                    proposals,
+                    needs,
+                    inference_receipts: receipts,
+                },
+            });
+        }
+    }
+
+    if completed.len() >= CELL_TOOL_STEP_BUDGET {
+        return Err(ControllerError::Serialization(
+            "grouped evidence exceeded its step budget".into(),
+        ));
+    }
+    Ok(GroupedLoopEvaluation::Continue { conversation })
+}
+
+fn derive_grouped_capture(
+    prompt: &str,
+    constituents: &[ConstituentWork],
+    completed: &[InferenceOutput],
+) -> Result<GroupedCapture, ControllerError> {
+    match evaluate_grouped_loop(prompt, constituents, completed)? {
+        GroupedLoopEvaluation::Complete { capture } => Ok(capture),
+        GroupedLoopEvaluation::Continue { .. } => Err(ControllerError::Serialization(
+            "terminal grouped checkpoint has unfinished evidence".into(),
+        )),
+    }
+}
+
+fn grouped_request(
+    command_id: CommandId,
+    round: usize,
+    model: &str,
+    constituents: &[ConstituentWork],
+    input: Vec<CodexInputItem>,
+) -> Result<InferenceRequest, ControllerError> {
+    tool_request(
+        command_id,
+        round,
+        InferencePurpose::GroupedAgent,
+        model,
+        "Use only the supplied tools. Every tool belongs to exactly one handle, and calling one is how a proposal is attributed. Returning no proposal for a handle is valid.",
+        input,
+        cell_catalog_tools(constituents),
+        RequestShape {
+            // Output tokens, not the connector frame, are the real bound on a
+            // cell: one call per handle, plus its arguments.
+            max_output_tokens: 8_000
+                .min(600 + 200 * u32::try_from(constituents.len()).unwrap_or(u32::MAX)),
+            // The grouped protocol asks for every call in one round, so the
+            // provider must be allowed to emit them together.
+            parallel_tool_calls: true,
+        },
+    )
+}
+
+fn grouped_pending(checkpoint: GroupedCheckpoint, reason: ControllerPendingReason) -> GroupedRun {
+    GroupedRun {
+        cell: checkpoint.cell(),
+        resolution: Resolution::Coarse {
+            constituents: checkpoint.constituents().len(),
+        },
+        submissions: Vec::new(),
+        needs: Vec::new(),
+        pending: Some(reason),
+    }
+}
 enum OperationalLoopEvaluation {
     Continue { conversation: Vec<CodexInputItem> },
     Complete { capture: OperationalCapture },
@@ -3512,6 +4480,7 @@ fn interpreter_request(
         "Translate the preserved Persona prose using only the supplied capture tools. Untranslatable meaning is recorded, never repaired or rejected.",
         input,
         interpreter_tools(),
+        DECISION_REQUEST_SHAPE,
     )
 }
 
@@ -3529,9 +4498,26 @@ fn operational_request(
         model,
         "Use only the supplied tools for this permissioned decision. Returning no proposal is valid.",
         input,
-        catalog_tools(granted),
+        catalog_tools("", granted),
+        DECISION_REQUEST_SHAPE,
     )
 }
+
+/// The two knobs a request's *shape* needs beyond its tools: how much the
+/// provider may write, and whether it may write more than one call at once. A
+/// patch turn emits many calls where a decision turn emits one, and a cell emits
+/// one per handle, so these belong to the caller rather than to one constant
+/// shared by every catalog.
+pub(super) struct RequestShape {
+    pub(super) max_output_tokens: u32,
+    pub(super) parallel_tool_calls: bool,
+}
+
+/// One decision, one call: the shape both detail lanes have always had.
+const DECISION_REQUEST_SHAPE: RequestShape = RequestShape {
+    max_output_tokens: 1_200,
+    parallel_tool_calls: false,
+};
 
 pub(super) fn tool_request(
     command_id: CommandId,
@@ -3541,6 +4527,7 @@ pub(super) fn tool_request(
     instructions: &str,
     input: Vec<CodexInputItem>,
     tools: Vec<CodexToolDefinition>,
+    shape: RequestShape,
 ) -> Result<InferenceRequest, ControllerError> {
     let mut provider = CodexProviderRequest::new(
         provider_request_id(command_id, purpose, round)?,
@@ -3552,16 +4539,10 @@ pub(super) fn tool_request(
     provider.reasoning_effort = Some("medium".into());
     provider.tools = tools;
     provider.tool_choice = CodexToolChoice::Auto;
-    provider.parallel_tool_calls = false;
+    provider.parallel_tool_calls = shape.parallel_tool_calls;
     provider.output_format_name = None;
     provider.output_schema_json = None;
-    // A patch turn emits many tool calls where a decision turn emits one, so
-    // the budget is per purpose rather than one constant shared by both
-    // catalogs.
-    provider.max_output_tokens = Some(match purpose {
-        InferencePurpose::Elaboration => 4_000,
-        _ => 1_200,
-    });
+    provider.max_output_tokens = Some(shape.max_output_tokens);
     Ok(InferenceRequest { purpose, provider })
 }
 
@@ -3628,7 +4609,10 @@ fn interpreter_tools() -> Vec<CodexToolDefinition> {
 /// slots — never an affordance id, an opportunity, a revision, a world, a
 /// controller, or a caller. `record_need` and `finish_without_proposal` survive
 /// because they are not world operations: they end a turn without proposing.
-fn catalog_tools(granted: &[AffordanceSnapshot]) -> Vec<CodexToolDefinition> {
+/// `prefix` is empty on the detail path, so its schemas stay byte-identical,
+/// and `c<handle>__` on the grouped path, where the tool name is what attributes
+/// a proposal to one constituent. One owner, two spellings of the same catalog.
+fn catalog_tools(prefix: &str, granted: &[AffordanceSnapshot]) -> Vec<CodexToolDefinition> {
     let mut tools: Vec<CodexToolDefinition> = granted
         .iter()
         .map(|entry| {
@@ -3656,14 +4640,22 @@ fn catalog_tools(granted: &[AffordanceSnapshot]) -> Vec<CodexToolDefinition> {
                 ));
             }
             tool_schema::tool(
-                &entry.entry.kind.0,
-                &format!("Invoke the {} affordance.", entry.entry.kind.0),
+                &format!("{prefix}{}", entry.entry.kind.0),
+                &if prefix.is_empty() {
+                    format!("Invoke the {} affordance.", entry.entry.kind.0)
+                } else {
+                    format!(
+                        "Invoke the {} affordance for {}.",
+                        entry.entry.kind.0,
+                        prefix.trim_end_matches(HANDLE_SEPARATOR)
+                    )
+                },
                 tool_schema::object(properties),
             )
         })
         .collect();
     tools.push(tool_schema::tool(
-        RECORD_NEED_TOOL,
+        &format!("{prefix}{RECORD_NEED_TOOL}"),
         "Record information or capability the agent would need but does not currently have.",
         tool_schema::object(vec![(
             "detail".into(),
@@ -3671,7 +4663,7 @@ fn catalog_tools(granted: &[AffordanceSnapshot]) -> Vec<CodexToolDefinition> {
         )]),
     ));
     tools.push(tool_schema::tool(
-        FINISH_WITHOUT_PROPOSAL_TOOL,
+        &format!("{prefix}{FINISH_WITHOUT_PROPOSAL_TOOL}"),
         "Finish this opportunity without proposing an action.",
         tool_schema::empty_schema(),
     ));
@@ -3680,7 +4672,7 @@ fn catalog_tools(granted: &[AffordanceSnapshot]) -> Vec<CodexToolDefinition> {
 
 /// The same iteration rendered as one prose line, so the prompt's tool list and
 /// the schemas have one owner.
-fn catalog_signatures(granted: &[AffordanceSnapshot]) -> String {
+fn catalog_signatures(prefix: &str, granted: &[AffordanceSnapshot]) -> String {
     let mut signatures: Vec<String> = granted
         .iter()
         .map(|entry| {
@@ -3700,11 +4692,11 @@ fn catalog_signatures(granted: &[AffordanceSnapshot]) -> String {
             if entry.entry.carries_speech {
                 parameters.push("text".into());
             }
-            format!("{}({})", entry.entry.kind.0, parameters.join(", "))
+            format!("{prefix}{}({})", entry.entry.kind.0, parameters.join(", "))
         })
         .collect();
-    signatures.push("record_need(detail)".into());
-    signatures.push("finish_without_proposal()".into());
+    signatures.push(format!("{prefix}record_need(detail)"));
+    signatures.push(format!("{prefix}finish_without_proposal()"));
     signatures.join(", ")
 }
 
@@ -3851,6 +4843,7 @@ fn purpose_name(purpose: InferencePurpose) -> &'static str {
         InferencePurpose::Persona => "persona",
         InferencePurpose::Interpreter => "interpreter",
         InferencePurpose::OperationalAgent => "operational",
+        InferencePurpose::GroupedAgent => "grouped",
         InferencePurpose::Elaboration => "elaboration",
     }
 }
@@ -3858,8 +4851,8 @@ fn purpose_name(purpose: InferencePurpose) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::WorldScaleIntentRef;
     use crate::world::patch::{kernel_speak_entry, kernel_speak_grant};
+    use crate::world::{CoverBudget, WorldScaleIntentRef, derive_cover};
 
     /// The granted catalog every controller fixture works against: the
     /// kernel-built Speak entry under a fixture id.
@@ -4497,7 +5490,7 @@ mod tests {
         let granted = vec![speak_snapshot(AffordanceId::issue())];
         for definition in interpreter_tools()
             .into_iter()
-            .chain(catalog_tools(&granted))
+            .chain(catalog_tools("", &granted))
         {
             let schema: Value = serde_json::from_str(&definition.parameters_json).unwrap();
             assert_eq!(schema["additionalProperties"], false);
@@ -4517,7 +5510,7 @@ mod tests {
             }
         }
         assert_eq!(
-            catalog_tools(&granted)
+            catalog_tools("", &granted)
                 .iter()
                 .map(|tool| tool.name.as_str())
                 .collect::<Vec<_>>(),
@@ -4587,7 +5580,7 @@ mod tests {
         // The tool names are exactly the granted entries' kind names plus the
         // two turn-enders, in that order.
         assert_eq!(
-            catalog_tools(&granted)
+            catalog_tools("", &granted)
                 .iter()
                 .map(|tool| tool.name.as_str())
                 .collect::<Vec<_>>(),
@@ -4602,7 +5595,7 @@ mod tests {
         // Each tool requires exactly its roles, its bounded slots, and `text`
         // where the entry carries speech, and each bounded slot states its own
         // ceiling.
-        let tools = catalog_tools(&granted);
+        let tools = catalog_tools("", &granted);
         let schema_of = |name: &str| -> Value {
             serde_json::from_str(
                 &tools
@@ -4631,7 +5624,7 @@ mod tests {
         // The three model-facing surfaces name the same entries in the same
         // order, so none of them can drift from the kernel's grant.
         assert_eq!(
-            catalog_signatures(&granted),
+            catalog_signatures("", &granted),
             "carry(recipient, resource, slot_0_qty), speak(text), record_need(detail), finish_without_proposal()"
         );
         assert_eq!(
@@ -4641,7 +5634,7 @@ mod tests {
 
         // A subject granted nothing gets no world tools, only the turn-enders.
         assert_eq!(
-            catalog_tools(&[])
+            catalog_tools("", &[])
                 .iter()
                 .map(|tool| tool.name.as_str())
                 .collect::<Vec<_>>(),
@@ -4649,7 +5642,7 @@ mod tests {
         );
 
         // No generated schema carries an affordance id or an authority envelope.
-        for tool in catalog_tools(&granted) {
+        for tool in catalog_tools("", &granted) {
             let schema: Value = serde_json::from_str(&tool.parameters_json).unwrap();
             let properties = schema["properties"].as_object().unwrap();
             for forbidden in [
@@ -6198,9 +7191,557 @@ mod tests {
 
     /// The store refuses the version immediately before it, not merely some
     /// older one: `v7` is the bump this pass made and `v6` is what a store
+
+    /// An active world with several non-human subjects standing in one room, so
+    /// a cover has something to group.
+    async fn active_cell_mailbox(
+        controllers: Vec<NewController>,
+    ) -> (tempfile::TempDir, WorldMailbox, tokio::task::JoinHandle<()>) {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let mut declarations = vec![Declaration::Entity(crate::world::EntityDeclaration {
+            handle: DraftHandle::new("commons"),
+            label: "The Commons".into(),
+            kind: EntityKind::Place,
+            container: None,
+        })];
+        for (index, controller) in controllers.into_iter().enumerate() {
+            declarations.push(Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new(&format!("subject{index}")),
+                label: format!("Subject {index}"),
+                kind: SubjectKind::Person,
+                controller,
+                affordances: kernel_speak_grant(),
+                position: Some(crate::world::Ref::Draft(DraftHandle::new("commons"))),
+            }));
+        }
+        let creation = mailbox
+            .create_fixture(
+                CreateWorld {
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Cover Fixture".into(),
+                    patch: WorldPatch {
+                        declarations,
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
+                    scale_intent: WorldScaleIntentRef::default(),
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: creation.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        (directory, mailbox, task)
+    }
+
+    /// One cell holding every active subject, derived by the real scheduler
+    /// rather than hand-built: a test that mints its own cell would prove the
+    /// runner works on a partition the cover cannot produce.
+    async fn one_group(mailbox: &WorldMailbox) -> Cell {
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let graph = mailbox.agency_graph().await.unwrap();
+        let cover = derive_cover(
+            snapshot.world_id,
+            snapshot.now,
+            60,
+            &snapshot.opportunities,
+            &graph,
+            CoverBudget {
+                cells: 1,
+                constituent_cap: 8,
+                urgency_slots: 0,
+            },
+        );
+        let [cell] = cover.cells.as_slice() else {
+            panic!("a one-cell budget derived {} cells", cover.cells.len());
+        };
+        assert!(matches!(cell, Cell::Group { .. }), "the cell is not coarse");
+        cell.clone()
+    }
+
+    fn grouped_runner(
+        mailbox: &WorldMailbox,
+        outputs: Vec<Result<InferenceOutput, InferenceFault>>,
+    ) -> (ControllerRunner, Arc<RecordingWorkStore>) {
+        let persisted = Arc::new(AtomicBool::new(true));
+        let port = Arc::new(RecordingPort {
+            outputs: Mutex::new(outputs),
+            persisted_before_interpreter: persisted.clone(),
+        });
+        let store = Arc::new(RecordingWorkStore {
+            persisted,
+            work: Mutex::new(BTreeMap::new()),
+        });
+        (
+            ControllerRunner::with_test_ports(mailbox.clone(), port, store.clone(), models()),
+            store,
+        )
+    }
+
+    fn speak_call(call_id: &str, name: &str, text: &str) -> InferenceEvent {
+        InferenceEvent::ToolCall {
+            call_id: call_id.into(),
+            name: name.into(),
+            arguments: json!({ "text": text }).to_string(),
+        }
+    }
+
+    /// Verification 20. One inference proposes for `c0`, names a handle outside
+    /// the cell, and says nothing for the rest. The valid call commits under its
+    /// own opportunity; the out-of-cell name produces a gap and reaches no
+    /// mailbox; every silent handle declines, so "attended and stayed silent" is
+    /// distinguishable from "was never attended".
+    #[tokio::test]
+    async fn soul_a_batched_turn_attributes_by_tool_identity_and_refuses_an_outside_handle() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let cell = one_group(&mailbox).await;
+        assert_eq!(cell.members().len(), 3);
+        assert_eq!(cell.resolution(), Resolution::Coarse { constituents: 3 });
+
+        let (runner, _store) = grouped_runner(
+            &mailbox,
+            vec![
+                output(
+                    vec![
+                        speak_call("c0", "c0__speak", "Close the western span."),
+                        speak_call("outside", "c7__speak", "I speak for someone else."),
+                    ],
+                    "grouped-one",
+                ),
+                output(
+                    vec![InferenceEvent::Text("Nothing further.".into())],
+                    "grouped-two",
+                ),
+            ],
+        );
+        let CellRun::Grouped(run) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a coarse cell did not run the grouped lane")
+        };
+        assert!(run.pending.is_none());
+        assert_eq!(run.submissions.len(), 3, "every constituent finished");
+        let first = cell.members()[0].subject;
+        assert!(matches!(
+            run.submissions
+                .iter()
+                .find(|entry| entry.subject == first)
+                .map(|entry| &entry.submission),
+            Some(SubmissionDisposition::Completed(_))
+        ));
+        for entry in run
+            .submissions
+            .iter()
+            .filter(|entry| entry.subject != first)
+        {
+            assert!(
+                matches!(entry.submission, SubmissionDisposition::NoProposal(_)),
+                "a silent constituent did not decline"
+            );
+        }
+        assert!(
+            run.needs
+                .iter()
+                .any(|need| need.detail.contains("c7__speak")),
+            "the out-of-cell call left no gap: {:?}",
+            run.needs
+        );
+        // Exactly one act was committed, by exactly one subject.
+        let log = mailbox.operator_log().await.unwrap();
+        assert_eq!(log.len(), 1);
+        assert_eq!(log[0].speaker, first);
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Verification 20b. No spelling of a handle outside the cell decodes, and
+    /// the index-to-subject mapping is scheduler-owned rather than
+    /// model-supplied: a shared tool with a `subject` argument would be the
+    /// forgeable shape.
+    #[test]
+    fn soul_no_out_of_cell_handle_has_a_decodable_spelling() {
+        for name in [
+            "c9__speak",
+            "speak",
+            "c__speak",
+            "cx__speak",
+            "c01__speak",
+            "c-1__speak",
+            "c 0__speak",
+            "__speak",
+        ] {
+            assert_eq!(
+                split_handle(name, 3),
+                None,
+                "`{name}` decoded to a handle inside a three-constituent cell"
+            );
+        }
+        assert_eq!(split_handle("c0__speak", 3), Some((0, "speak")));
+        assert_eq!(split_handle("c2__record_need", 3), Some((2, "record_need")));
+        // In-cell but not granted: a handle, and still no proposal.
+        assert_eq!(split_handle("c0__notgranted", 3), Some((0, "notgranted")));
+    }
+
+    /// A handle that names a tool it was not granted produces a gap, never a
+    /// proposal.
+    #[test]
+    fn an_ungranted_tool_under_a_live_handle_is_a_gap() {
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let constituents = vec![ConstituentWork {
+            subject: opportunity.scope.subject_id,
+            opportunity: opportunity.clone(),
+            granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
+            command_id: CommandId::new(),
+        }];
+        let completed = vec![
+            InferenceOutput {
+                events: vec![speak_call("call", "c0__notgranted", "Anything.")],
+                receipt_digest: "sha256:grouped".into(),
+            },
+            // The repair round the grouped budget buys. It calls nothing, so the
+            // handle finishes silent.
+            InferenceOutput {
+                events: vec![InferenceEvent::Text("Nothing further.".into())],
+                receipt_digest: "sha256:grouped-repair".into(),
+            },
+        ];
+        let GroupedLoopEvaluation::Complete { capture } =
+            evaluate_grouped_loop("prompt", &constituents, &completed).unwrap()
+        else {
+            panic!("the round did not finalize")
+        };
+        assert!(capture.proposals.is_empty());
+        assert_eq!(capture.needs.len(), 1);
+    }
+
+    /// Each constituent's view stays under its own handle. Nothing is unioned,
+    /// nothing is deduplicated, and the detail path's prompt is untouched: a
+    /// shared builder is how the singleton prompt drifts by one byte and every
+    /// persisted checkpoint fails its request-shape check on resume.
+    #[test]
+    fn soul_partitioned_views_do_not_cross_labels() {
+        let mine = "ONLY-MINE-TAG";
+        let yours = "ONLY-YOURS-TAG";
+        let views = [
+            LabeledView {
+                handle: "c0",
+                identity: "Mara",
+                typed_view: mine,
+                tool_signatures: "c0__speak(text)",
+            },
+            LabeledView {
+                handle: "c1",
+                identity: "Iris",
+                typed_view: yours,
+                tool_signatures: "c1__speak(text)",
+            },
+        ];
+        let prompt = build_grouped_agent_prompt(&GroupedAgentPrompt {
+            views: &views,
+            decision_pressure: "pressure",
+            domain_guidance: "",
+            step_budget: CELL_TOOL_STEP_BUDGET,
+        });
+        assert_eq!(prompt.matches(mine).count(), 1);
+        assert_eq!(prompt.matches(yours).count(), 1);
+        let blocks: Vec<&str> = prompt.split("### ").skip(1).collect();
+        assert_eq!(blocks.len(), 2);
+        assert!(blocks[0].contains(mine) && !blocks[0].contains(yours));
+        assert!(blocks[1].contains(yours) && !blocks[1].contains(mine));
+
+        // The detail path's tool names and signatures are unprefixed, and its
+        // prompt has no handle blocks at all.
+        let granted = vec![speak_snapshot(AffordanceId::issue())];
+        assert_eq!(
+            catalog_signatures("", &granted),
+            "speak(text), record_need(detail), finish_without_proposal()"
+        );
+        let singleton = build_operational_agent_prompt(&OperationalAgentPrompt {
+            identity: "Mara",
+            typed_view: mine,
+            available_tools: &catalog_signatures("", &granted),
+            decision_pressure: "Choose whether this decision owner should speak now.",
+            domain_guidance: "",
+            step_budget: TOOL_STEP_BUDGET,
+        });
+        assert!(!singleton.contains("### c0"));
+        assert!(!singleton.contains("c0__"));
+        assert_eq!(
+            catalog_signatures("c1__", &granted),
+            "c1__speak(text), c1__record_need(detail), c1__finish_without_proposal()"
+        );
+    }
+
+    /// A `NarrativePersona` grouped this tick is represented operationally at
+    /// coarse resolution. The membrane is not weakened; it is not entered: one
+    /// inference, no Projector, no Persona, no Interpreter, and no Persona turn
+    /// receipt. Its controller, scope, and authority do not change, and the
+    /// kernel cannot tell the difference.
+    #[tokio::test]
+    async fn soul_a_coarse_narrative_persona_keeps_its_controller_and_enters_no_membrane() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::NarrativePersona,
+        ])
+        .await;
+        let cell = one_group(&mailbox).await;
+        let before = mailbox.snapshot().await.unwrap();
+        for member in cell.members() {
+            assert_eq!(
+                member.opportunity.controller_mode,
+                ControllerMode::NarrativePersona,
+                "grouping changed a controller mode"
+            );
+        }
+
+        // Exactly one output is supplied. A membrane turn would need three, and
+        // the port panics when it runs dry.
+        let (runner, store) = grouped_runner(
+            &mailbox,
+            vec![output(
+                vec![
+                    speak_call("c0", "c0__speak", "The hinge is flooding."),
+                    InferenceEvent::ToolCall {
+                        call_id: "c1".into(),
+                        name: "c1__finish_without_proposal".into(),
+                        arguments: "{}".into(),
+                    },
+                ],
+                "coarse-narrative",
+            )],
+        );
+        let CellRun::Grouped(run) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a coarse cell did not run the grouped lane")
+        };
+        assert!(run.pending.is_none());
+        assert_eq!(run.submissions.len(), 2);
+
+        // No Persona turn was minted, and the stored row is a grouped one.
+        let rows = store.work.lock().unwrap().clone();
+        assert_eq!(rows.len(), 1);
+        let row = rows.values().next().unwrap().clone();
+        assert!(matches!(row, ControllerWork::Grouped(_)));
+        assert_eq!(row.resolution(), Resolution::Coarse { constituents: 2 });
+        let encoded = serde_json::to_string(&row).unwrap();
+        assert!(
+            !encoded.contains("persona_turn"),
+            "a coarse turn minted a receipt"
+        );
+        assert!(!encoded.contains("projector"));
+        assert!(!encoded.contains("interpreter"));
+
+        // Controller, mode, and scope are exactly what they were.
+        let after = mailbox.snapshot().await.unwrap();
+        for subject in &after.subjects {
+            let was = before
+                .subjects
+                .iter()
+                .find(|entry| entry.id == subject.id)
+                .unwrap();
+            assert_eq!(subject.controller_id, was.controller_id);
+            assert_eq!(subject.controller_mode, was.controller_mode);
+        }
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// A resumed cell re-derives the same command ids, so the kernel answers
+    /// from its idempotency ledger instead of committing a second time. There is
+    /// no persisted per-constituent outcome doing this job: the ledger already
+    /// owns it.
+    #[tokio::test]
+    async fn soul_a_resumed_cell_re_derives_its_ids_and_commits_nothing_twice() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let cell = one_group(&mailbox).await;
+        let (runner, _store) = grouped_runner(
+            &mailbox,
+            vec![output(
+                vec![
+                    speak_call("c0", "c0__speak", "Hold the bridge."),
+                    InferenceEvent::ToolCall {
+                        call_id: "c1".into(),
+                        name: "c1__finish_without_proposal".into(),
+                        arguments: "{}".into(),
+                    },
+                ],
+                "grouped",
+            )],
+        );
+        let CellRun::Grouped(first) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a coarse cell did not run the grouped lane")
+        };
+        assert_eq!(first.submissions.len(), 2);
+        assert!(matches!(
+            first.submissions[0].submission,
+            SubmissionDisposition::Completed(_)
+        ));
+        assert!(matches!(
+            first.submissions[1].submission,
+            SubmissionDisposition::NoProposal(_)
+        ));
+        let committed = mailbox.operator_log().await.unwrap().len();
+        assert_eq!(committed, 1);
+
+        // The port has no outputs left: a second inference would panic. The
+        // resumed row goes straight to submission, and every constituent's
+        // derived id answers from the ledger.
+        let CellRun::Grouped(second) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a resumed coarse cell did not run the grouped lane")
+        };
+        assert!(
+            matches!(
+                second.submissions[0].submission,
+                SubmissionDisposition::PreviouslyConfirmed(_)
+            ),
+            "a resumed cell committed again: {:?}",
+            second.submissions
+        );
+        assert!(matches!(
+            second.submissions[1].submission,
+            SubmissionDisposition::NoProposal(SubmitReceipt::AlreadyApplied(_))
+        ));
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), committed);
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// A cell is not a transaction, and one inference does not buy N commits.
+    ///
+    /// Two co-located constituents both propose. The first commits; the second
+    /// was reasoned from a scope its neighbour has since changed, and the kernel
+    /// refuses it with `ScopeChanged` rather than committing a proposal whose
+    /// binding no longer holds. The batch buys one inference, never one
+    /// admission rule.
+    ///
+    /// This is the live cost of a connected cover: the cover groups subjects
+    /// precisely because they are causally coupled, and coupled subjects
+    /// contend for the same scope.
+    #[tokio::test]
+    async fn soul_a_second_act_in_one_cell_is_refused_rather_than_committed_on_a_stale_scope() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let cell = one_group(&mailbox).await;
+        let (runner, _store) = grouped_runner(
+            &mailbox,
+            vec![output(
+                vec![
+                    speak_call("c0", "c0__speak", "The hinge is flooding."),
+                    speak_call("c1", "c1__speak", "Then we close the span."),
+                ],
+                "two-acts",
+            )],
+        );
+        let CellRun::Grouped(run) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a coarse cell did not run the grouped lane")
+        };
+        assert_eq!(run.submissions.len(), 1, "two acts committed from one cell");
+        assert!(matches!(
+            run.submissions[0].submission,
+            SubmissionDisposition::Completed(_)
+        ));
+        assert!(
+            run.needs
+                .iter()
+                .any(|need| need.detail.contains("scope changed")),
+            "the refused act was not recorded: {:?}",
+            run.needs
+        );
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// The cover is derived and disposable. Nothing the kernel persists or
+    /// hands out names a cell, a handle, or a resolution: the only durable
+    /// trace is the controller-work row, whose custody is separate from world
+    /// custody.
+    #[tokio::test]
+    async fn soul_a_cell_leaves_no_trace_in_world_state() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let cell = one_group(&mailbox).await;
+        let (runner, _store) = grouped_runner(
+            &mailbox,
+            vec![output(
+                vec![
+                    speak_call("c0", "c0__speak", "Hold the bridge."),
+                    InferenceEvent::ToolCall {
+                        call_id: "c1".into(),
+                        name: "c1__finish_without_proposal".into(),
+                        arguments: "{}".into(),
+                    },
+                ],
+                "grouped",
+            )],
+        );
+        runner.run_cell(&cell).await.unwrap();
+
+        let snapshot = mailbox.snapshot().await.unwrap();
+        for opportunity in &snapshot.opportunities {
+            let encoded = serde_json::to_string(opportunity).unwrap();
+            for forbidden in ["cell", "resolution", "constituent", "handle"] {
+                assert!(
+                    !encoded.contains(forbidden),
+                    "an opportunity carries `{forbidden}`"
+                );
+            }
+        }
+        assert!(
+            !serde_json::to_string(&snapshot.state_digest)
+                .unwrap()
+                .is_empty()
+        );
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
     /// written before it holds.
     #[test]
-    fn soul_a_controller_work_row_from_v6_is_refused_at_open() {
+    fn soul_a_controller_work_row_from_v7_is_refused_at_open() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("controller-work.cc");
         let command_id = CommandId::new();
@@ -6217,15 +7758,15 @@ mod tests {
             store
                 .push(&CultCacheEnvelope {
                     key: store_key(command_id).unwrap(),
-                    r#type: "controller_work.v6".into(),
+                    r#type: "controller_work.v7".into(),
                     payload: rmp_serde::to_vec_named(&work).unwrap(),
                     stored_at: Utc::now().to_rfc3339(),
-                    schema_id: Some("ghostlight.controller_work.v6".into()),
+                    schema_id: Some("ghostlight.controller_work.v7".into()),
                 })
                 .unwrap();
         }
         let Err(error) = CultCacheControllerWorkStore::open(&path) else {
-            panic!("a v6 row was accepted by the v7 store");
+            panic!("a v7 row was accepted by the v8 store");
         };
         assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
     }

@@ -103,10 +103,62 @@ fn anonymous_surface_at(version: u64) -> Value {
 /// `operator_log` arrives beside the snapshot rather than inside it: the story
 /// feed is the human operator's surface, and no subject-facing lane may reach an
 /// unscoped event log.
+/// The scheduler's compute budget and what the last tick's cover did with it.
+/// Rendered read-only, with no command anywhere: an Eve control to change it
+/// would make a projection an owner. Change is a restart, like the model names.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct CoverPanel {
+    pub(crate) cells: u16,
+    pub(crate) constituent_cap: u16,
+    pub(crate) urgency_slots: u16,
+    /// `None` until the first tick has run.
+    pub(crate) last: Option<CoverPanelTick>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct CoverPanelTick {
+    pub(crate) tick: u64,
+    pub(crate) cells: usize,
+    pub(crate) singletons: usize,
+    pub(crate) groups: usize,
+    pub(crate) oversubscribed: bool,
+}
+
+fn cover_card(panel: &CoverPanel) -> Value {
+    let detail = match panel.last {
+        None => "No tick has run yet.".to_owned(),
+        Some(last) => format!(
+            "Tick {}: {} cells, {} in detail, {} coarse.{}",
+            last.tick,
+            last.cells,
+            last.singletons,
+            last.groups,
+            if last.oversubscribed {
+                " The world has outgrown the constituent cap; the cap yielded so every subject stayed covered."
+            } else {
+                ""
+            }
+        ),
+    };
+    json!({
+        "id":"world.cover",
+        "kind":"card",
+        "props":{
+            "title":"Attention budget",
+            "detail":detail,
+            "cellBudget":panel.cells,
+            "constituentCap":panel.constituent_cap,
+            "urgencySlots":panel.urgency_slots
+        },
+        "children":[]
+    })
+}
+
 pub(crate) fn authenticated_surface(
     account: &str,
     snapshot: Option<&WorldSnapshot>,
     operator_log: &[OperatorEvent],
+    cover: &CoverPanel,
 ) -> anyhow::Result<Value> {
     let version = surface_version(snapshot);
     let mut children = vec![json!({
@@ -322,6 +374,7 @@ pub(crate) fn authenticated_surface(
                     }
 
                     if world.owner == crate::world::PrincipalId::new(account) {
+                        children.push(cover_card(cover));
                         let mut has_controller_command = false;
                         for (index, opportunity) in world
                             .opportunities
@@ -537,6 +590,15 @@ fn short_principal(principal: &str) -> String {
 mod tests {
     use super::*;
 
+    fn fixture_cover() -> CoverPanel {
+        CoverPanel {
+            cells: 240,
+            constituent_cap: 24,
+            urgency_slots: 36,
+            last: None,
+        }
+    }
+
     fn invocation(operation: &str, schema: &str, payload: Value) -> EveCommandInvocation {
         EveCommandInvocation {
             schema: "gamecult.eve.command_invocation.v1".into(),
@@ -570,7 +632,7 @@ mod tests {
 
     #[test]
     fn empty_authenticated_surface_has_create_without_session_zero() {
-        let surface = authenticated_surface("sha256:owner", None, &[]).unwrap();
+        let surface = authenticated_surface("sha256:owner", None, &[], &fixture_cover()).unwrap();
         let encoded = serde_json::to_string(&surface).unwrap();
         assert!(encoded.contains("world.create"));
         assert!(encoded.contains("narrative_persona_label"));

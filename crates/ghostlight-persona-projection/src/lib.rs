@@ -121,6 +121,62 @@ pub fn build_interpreter_prompt(input: &InterpreterPrompt<'_>) -> String {
     )
 }
 
+/// One constituent's block in a batched prompt. Built by calling the caller's
+/// existing per-subject view builder once per constituent: there is no union
+/// step anywhere in this type's construction, and a fact held by two
+/// constituents appears twice, under each of their handles. That duplication is
+/// the invariant, not waste.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LabeledView<'a> {
+    /// `c0`, `c1`, … — the constituent's index in its cell.
+    pub handle: &'a str,
+    pub identity: &'a str,
+    /// Verbatim per-subject typed view, for this subject alone.
+    pub typed_view: &'a str,
+    /// This constituent's tool signatures, already handle-prefixed.
+    pub tool_signatures: &'a str,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct GroupedAgentPrompt<'a> {
+    pub views: &'a [LabeledView<'a>],
+    pub decision_pressure: &'a str,
+    pub domain_guidance: &'a str,
+    pub step_budget: usize,
+}
+
+/// A distinct builder, not the singleton builder widened. The singleton prompt
+/// must stay byte-identical or every persisted checkpoint's request-shape check
+/// fails on resume, and a shared builder with a vector arity is how that drifts
+/// by one byte.
+///
+/// The only shared text is the instruction and the attribution contract. There
+/// is no shared header, no cell summary, no "who is present", and no
+/// cross-reference between handles: each of those is a union with a friendly
+/// name.
+pub fn build_grouped_agent_prompt(input: &GroupedAgentPrompt<'_>) -> String {
+    let blocks = input
+        .views
+        .iter()
+        .map(|view| {
+            format!(
+                "### {handle} — {identity}\n{body}\nTools for {handle}: {tools}",
+                handle = view.handle,
+                identity = view.identity,
+                body = view.typed_view,
+                tools = view.tool_signatures,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    format!(
+        "<!-- membrane:{MEMBRANE_SCHEMA}:grouped-agent -->\nYou are an operational decision agent deciding for several subjects at once, not a Persona and not a prose roleplay surface. Each subject's view appears under its own handle. A subject knows only what appears under its own handle. Call at most one tool per handle. A handle you were not given does not exist. Do not invent identifiers, permissions, observations, resources, or completed consequences, and never propose for one handle out of another handle's view.\n\nDomain guidance and exact permissions:\n{guidance}\n\nCurrent decision pressure:\n{pressure}\n\n{blocks}\n\nUse at most {step_budget} tool steps, and emit every call you intend to make in the first step. Returning no proposal for a handle is valid.",
+        guidance = input.domain_guidance,
+        pressure = input.decision_pressure,
+        step_budget = input.step_budget,
+    )
+}
+
 pub fn build_operational_agent_prompt(input: &OperationalAgentPrompt<'_>) -> String {
     format!(
         "<!-- membrane:{MEMBRANE_SCHEMA}:operational-agent -->\nYou are an operational decision agent, not a Persona and not a prose roleplay surface. Read the permissioned typed view directly and use only the supplied typed tools. Choose proposals for this decision owner; the owning runtime validates and commits them. Do not invent identifiers, permissions, observations, resources, or completed consequences. Efficient structured reasoning is appropriate here.\n\nDomain guidance and exact permissions:\n{guidance}\n\nDecision owner:\n{identity}\n\nCurrent decision pressure:\n{pressure}\n\nPermissioned typed view:\n{view}\n\nAvailable typed tools:\n{tools}\n\nUse at most {step_budget} tool steps. Returning no proposal is valid.",
