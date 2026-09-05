@@ -9599,7 +9599,6 @@ mod tests {
     #[tokio::test]
     async fn a_controller_work_row_written_before_this_pass_is_refused() {
         let directory = tempfile::tempdir().unwrap();
-        let path = directory.path().join("controller-work.cc");
         let command_id = CommandId::new();
         let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
         let work = operational_in_flight(
@@ -9609,22 +9608,29 @@ mod tests {
             "operational-model",
             vec![],
         );
-        {
-            let mut store = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
-            store
-                .push(&CultCacheEnvelope {
-                    key: store_key(command_id).unwrap(),
-                    r#type: "controller_work.v9".into(),
-                    payload: rmp_serde::to_vec_named(&work).unwrap(),
-                    stored_at: Utc::now().to_rfc3339(),
-                    schema_id: Some("ghostlight.controller_work.v9".into()),
-                })
-                .unwrap();
+        // The version immediately before this pass, and the one before that.
+        // Each is refused at open; none is migrated and none is dual-read.
+        for version in ["v10", "v9"] {
+            let path = directory
+                .path()
+                .join(format!("controller-work-{version}.cc"));
+            {
+                let mut store = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
+                store
+                    .push(&CultCacheEnvelope {
+                        key: store_key(command_id).unwrap(),
+                        r#type: format!("controller_work.{version}"),
+                        payload: rmp_serde::to_vec_named(&work).unwrap(),
+                        stored_at: Utc::now().to_rfc3339(),
+                        schema_id: Some(format!("ghostlight.controller_work.{version}")),
+                    })
+                    .unwrap();
+            }
+            let Err(error) = CultCacheControllerWorkStore::open(&path) else {
+                panic!("a {version} row was accepted by the {CONTROLLER_WORK_ROW} store");
+            };
+            assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
         }
-        let Err(error) = CultCacheControllerWorkStore::open(&path) else {
-            panic!("a v9 row was accepted by the v10 store");
-        };
-        assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
 
         // A real seed row, taken from a session that committed.
         let fixture = seed_mailbox(6).await;
@@ -10678,4 +10684,812 @@ mod tests {
         drop(fixture.mailbox);
         fixture.task.await.unwrap();
     }
+
+    // ---------------------------------------------------------------- step 9
+    use crate::world::{ControllerAssignment, ScopePreimage, digest as world_digest};
+    use ghostlight_persona_projection::PersonaTurnIntegrityError;
+    use std::sync::atomic::AtomicUsize;
+
+    // The interruption pass. A scope digest that moved between a subject's
+    // prose and its commit is one event with one detector — the kernel — and
+    // one handler, which renews the turn's binding without re-running the
+    // Persona and lowers the same prose a second time.
+
+    /// What lands on the world in the window between a turn's prose and its
+    /// commit. Both shapes move the acting subject's own components; only the
+    /// first is something it may perceive as having an author.
+    enum MidTurnCommit {
+        /// A co-located neighbour speaks. `fan_out` gives the fact to the actor,
+        /// so its `knows` grows and its digest moves.
+        Speech { speaker: SubjectId, text: String },
+        /// An owner patch creates a commitment on the actor. Its `commitments`
+        /// move and nothing names a mover anywhere in the components.
+        Commitment { subject: SubjectId },
+    }
+
+    async fn apply_mid_turn(mailbox: &WorldMailbox, commit: &MidTurnCommit) {
+        let snapshot = mailbox.snapshot().await.unwrap();
+        match commit {
+            MidTurnCommit::Speech { speaker, text } => {
+                let opportunity = snapshot
+                    .opportunities
+                    .iter()
+                    .find(|entry| entry.scope.subject_id == *speaker)
+                    .expect("the speaker has a live opportunity")
+                    .clone();
+                let entry = snapshot
+                    .affordances
+                    .iter()
+                    .find(|entry| {
+                        entry.entry.kind.0 == SPEAK_KIND
+                            && opportunity.affordance_ids.contains(&entry.id)
+                    })
+                    .expect("the speaker was granted speech");
+                mailbox
+                    .submit_controller(
+                        CommandId::new(),
+                        &opportunity,
+                        DecisionInvocation {
+                            affordance: entry.id,
+                            bindings: Vec::new(),
+                            proposed: Vec::new(),
+                            speech: Some(Statement::new(text.clone()).unwrap()),
+                        },
+                    )
+                    .await
+                    .expect("the mid-turn speech committed");
+            }
+            MidTurnCommit::Commitment { subject } => {
+                let owner = PrincipalId::new("owner");
+                let authenticated =
+                    AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+                mailbox
+                    .submit_fixture(
+                        CommandEnvelope {
+                            id: CommandId::new(),
+                            world_id: snapshot.world_id,
+                            expected_revision: snapshot.revision,
+                            caller: CallerId::Principal(owner),
+                            body: CommandBody::AdmitPatch {
+                                answers: None,
+                                patch: WorldPatch {
+                                    declarations: Vec::new(),
+                                    operations: vec![
+                                        crate::world::patch::ComponentOp::CreateCommitment {
+                                            subject: Ref::Existing(*subject),
+                                            counterparty: None,
+                                            kind: CommitmentKind::Goal,
+                                            due: crate::world::FictionalMinutes(600),
+                                            period: None,
+                                            checks: Vec::new(),
+                                        },
+                                    ],
+                                    evidence: Vec::new(),
+                                },
+                            },
+                        },
+                        &authenticated,
+                    )
+                    .await
+                    .expect("the mid-turn patch committed");
+            }
+        }
+    }
+
+    /// An inference port that lands a real commit on the world at chosen call
+    /// indexes. The interruption a test produces is therefore the kernel's own
+    /// refusal over real committed state, not a hand-built digest.
+    struct InterruptingPort {
+        mailbox: WorldMailbox,
+        outputs: Mutex<Vec<Result<InferenceOutput, InferenceFault>>>,
+        calls: Arc<AtomicUsize>,
+        /// `(call index, what to commit)`, applied just before that call
+        /// returns.
+        commits: Vec<(usize, MidTurnCommit)>,
+        /// Every prompt this port was asked to run, in order.
+        seen: Arc<Mutex<Vec<String>>>,
+    }
+
+    #[async_trait]
+    impl InferencePort for InterruptingPort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            fixture_prepared(request)
+        }
+
+        async fn infer(
+            &self,
+            request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            let index = self.calls.fetch_add(1, Ordering::SeqCst);
+            self.seen
+                .lock()
+                .unwrap()
+                .push(serde_json::to_string(&request.invocation.request.input).unwrap());
+            for (at, commit) in &self.commits {
+                if *at == index {
+                    apply_mid_turn(&self.mailbox, commit).await;
+                }
+            }
+            let mut outputs = self.outputs.lock().unwrap();
+            if outputs.is_empty() {
+                // A round the fixture did not script leaves the run pending
+                // against its persisted row, which is what a test that inspects
+                // that row wants.
+                return Err(InferenceFault::retryable("the fixture script ran out"));
+            }
+            outputs.remove(0)
+        }
+    }
+
+    /// The first line of the interruption section. `build_interpreter_prompt`
+    /// names `Interrupted:` unconditionally in its instructions, so a test that
+    /// split on the bare word would find the instruction and not the section.
+    const SECTION_HEADER: &str =
+        "Interrupted: the world moved after this turn's prose was written.";
+
+    /// The interruption section of a prompt, or `None` when it carries none.
+    fn interruption_section_of(prompt: &str) -> Option<String> {
+        prompt.split(SECTION_HEADER).nth(1).map(str::to_owned)
+    }
+
+    /// The Interpreter's whole conversation for one round: capture the quoted
+    /// span, then finish.
+    fn speak_span(
+        source: &str,
+        speech: &str,
+        receipt: &str,
+    ) -> Result<InferenceOutput, InferenceFault> {
+        let start = source
+            .find(speech)
+            .expect("the fixture prose quotes itself");
+        output(
+            vec![
+                InferenceEvent::ToolCall {
+                    call_id: format!("call_speak_{receipt}"),
+                    name: INTERPRETER_SPEAK_TOOL.into(),
+                    arguments: json!({
+                        "source_start_byte": start,
+                        "source_end_byte": start + speech.len(),
+                    })
+                    .to_string(),
+                },
+                InferenceEvent::ToolCall {
+                    call_id: format!("call_finish_{receipt}"),
+                    name: FINISH_INTERPRETATION_TOOL.into(),
+                    arguments: "{}".into(),
+                },
+            ],
+            receipt,
+        )
+    }
+
+    struct InterruptedTurn {
+        runner: ControllerRunner,
+        store: Arc<RecordingWorkStore>,
+        calls: Arc<AtomicUsize>,
+        seen: Arc<Mutex<Vec<String>>>,
+    }
+
+    /// One narrative turn whose prose is `source` and whose Interpreter quotes
+    /// `speech` on every round, with `commits` landing on the world at the given
+    /// inference indexes: 0 is the Projector, 1 the Persona, 2 the first
+    /// Interpreter round, 3 the re-lowered one.
+    fn interrupted_turn(
+        mailbox: &WorldMailbox,
+        source: &str,
+        speech: &str,
+        rounds: usize,
+        commits: Vec<(usize, MidTurnCommit)>,
+    ) -> InterruptedTurn {
+        let mut outputs = vec![
+            output(
+                vec![InferenceEvent::Text("The room holds its breath.".into())],
+                "projector",
+            ),
+            output(vec![InferenceEvent::Text(source.into())], "persona"),
+        ];
+        for round in 0..rounds {
+            outputs.push(speak_span(source, speech, &format!("interpreter-{round}")));
+        }
+        let calls = Arc::new(AtomicUsize::new(0));
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let port = Arc::new(InterruptingPort {
+            mailbox: mailbox.clone(),
+            outputs: Mutex::new(outputs),
+            calls: calls.clone(),
+            commits,
+            seen: seen.clone(),
+        });
+        let store = Arc::new(RecordingWorkStore {
+            persisted: Arc::new(AtomicBool::new(true)),
+            work: Mutex::new(BTreeMap::new()),
+        });
+        InterruptedTurn {
+            runner: ControllerRunner::with_test_ports(
+                mailbox.clone(),
+                port,
+                store.clone(),
+                models(),
+            ),
+            store,
+            calls,
+            seen,
+        }
+    }
+
+    fn narrative_row(store: &RecordingWorkStore) -> NarrativeCheckpoint {
+        let stored = store.work.lock().unwrap();
+        assert_eq!(stored.len(), 1, "one turn, one row");
+        let ControllerWork::Narrative(checkpoint) = stored.values().next().unwrap().clone() else {
+            panic!("the narrative turn left another lane's row")
+        };
+        checkpoint
+    }
+
+    fn row_scope_digest(store: &RecordingWorkStore) -> String {
+        match narrative_row(store) {
+            NarrativeCheckpoint::ReadyToSubmit { opportunity, .. }
+            | NarrativeCheckpoint::NoProposal { opportunity, .. }
+            | NarrativeCheckpoint::InterpreterInFlight { opportunity, .. } => {
+                opportunity.scope_digest.as_str().to_owned()
+            }
+            _ => panic!("the turn's row never reached the Interpreter"),
+        }
+    }
+
+    /// The acting subject and the opportunity the driver would bind for it.
+    async fn narrative_opportunity(mailbox: &WorldMailbox) -> (SubjectId, DecisionOpportunity) {
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let subject = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.controller_mode == Some(ControllerMode::NarrativePersona))
+            .expect("a narrative subject")
+            .id;
+        let opportunity = snapshot
+            .opportunities
+            .iter()
+            .find(|entry| entry.scope.subject_id == subject)
+            .expect("a live opportunity")
+            .clone();
+        (subject, opportunity)
+    }
+
+    /// Tests 1 and 4. A co-located speaker commits after the Persona turn is
+    /// recorded and before the subject's submit. The prose is lowered exactly
+    /// once more, the section names the speaker and the statement, the renewed
+    /// binding carries the one it replaced, and the act commits against the
+    /// fresh digest.
+    #[tokio::test]
+    async fn a_neighbours_speech_between_the_turn_and_submit_is_re_lowered_once() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let (actor, opportunity) = narrative_opportunity(&mailbox).await;
+        let neighbour = mailbox
+            .snapshot()
+            .await
+            .unwrap()
+            .subjects
+            .iter()
+            .find(|subject| subject.id != actor)
+            .expect("a neighbour")
+            .id;
+
+        let source = "I say, \"The western brace is giving way.\"";
+        let speech = "The western brace is giving way.";
+        let turn = interrupted_turn(
+            &mailbox,
+            source,
+            speech,
+            2,
+            vec![(
+                2,
+                MidTurnCommit::Speech {
+                    speaker: neighbour,
+                    text: "The tollhouse ledger is short.".into(),
+                },
+            )],
+        );
+        let run = turn
+            .runner
+            .run_narrative(CommandId::new(), &opportunity)
+            .await
+            .unwrap();
+        let NarrativeRun::Completed(decision) = run else {
+            panic!("the interrupted turn did not commit")
+        };
+
+        // Exactly one extra Interpreter inference: Projector, Persona, and two
+        // Interpreter rounds.
+        assert_eq!(turn.calls.load(Ordering::SeqCst), 4);
+
+        // The Persona is never re-run: the prose and both inference receipts are
+        // carried, and the binding is the only thing renewed.
+        let renewed = decision.persona_turn().binding().clone();
+        let prior = renewed
+            .interrupted_from
+            .as_deref()
+            .expect("the committed turn does not record its interruption")
+            .clone();
+        assert_eq!(decision.persona_turn().source_prose(), source);
+        assert_eq!(
+            renewed.projector_receipt_digest,
+            prior.projector_receipt_digest
+        );
+        assert_eq!(
+            renewed.persona_inference_receipt_digest,
+            prior.persona_inference_receipt_digest
+        );
+        assert_eq!(prior.scope_digest, opportunity.scope_digest.as_str());
+        assert_ne!(renewed.scope_digest, prior.scope_digest);
+        assert!(prior.interrupted_from.is_none());
+        assert!(decision.persona_turn().receipt_is_valid());
+
+        // The commit is bound to the fresh digest the row holds, and the world
+        // took the act exactly once.
+        assert_eq!(renewed.scope_digest, row_scope_digest(&turn.store));
+        let log = mailbox.operator_log().await.unwrap();
+        assert_eq!(log.len(), 2, "the neighbour spoke once and the actor once");
+        assert_eq!(log[1].speaker, actor);
+
+        // The second prompt is the first plus the interruption section, and it
+        // names the speaker and the statement and nothing else.
+        let seen = turn.seen.lock().unwrap();
+        assert_eq!(seen.len(), 4);
+        let first_interpreter = seen[2].clone();
+        let second_interpreter = seen[3].clone();
+        drop(seen);
+        assert!(
+            interruption_section_of(&first_interpreter).is_none(),
+            "the first lowering was born interrupted"
+        );
+        let section = interruption_section_of(&second_interpreter)
+            .expect("the re-lowered prompt has no section");
+        for expected in [
+            "- what this person knows changed",
+            "What was said to this person since:",
+            "Subject 1 said:",
+            "The tollhouse ledger is short.",
+        ] {
+            assert!(
+                section.contains(expected),
+                "the interruption section dropped `{expected}`: {section}"
+            );
+        }
+        // No fact id, no revision, no digest, and no `spoken_at`.
+        for leaked in ["spoken_at", "sha256:", "revision", "scope_digest"] {
+            assert!(
+                !section.contains(leaked),
+                "the interruption section leaked `{leaked}`"
+            );
+        }
+
+        drop(turn.runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Tests 2 and 3. A patch landing mid-turn moves a component that names no
+    /// actor anywhere. The section carries the anonymous line for the moved
+    /// field and no `What was said to this person since:` block at all.
+    #[tokio::test]
+    async fn a_change_with_no_author_is_re_lowered_with_no_overheard_block() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let (actor, opportunity) = narrative_opportunity(&mailbox).await;
+
+        let source = "I say, \"Then we go by the lower stair.\"";
+        let speech = "Then we go by the lower stair.";
+        let turn = interrupted_turn(
+            &mailbox,
+            source,
+            speech,
+            2,
+            vec![(2, MidTurnCommit::Commitment { subject: actor })],
+        );
+        let run = turn
+            .runner
+            .run_narrative(CommandId::new(), &opportunity)
+            .await
+            .unwrap();
+        assert!(matches!(run, NarrativeRun::Completed(_)));
+        assert_eq!(turn.calls.load(Ordering::SeqCst), 4);
+
+        let seen = turn.seen.lock().unwrap();
+        let second_interpreter = seen[3].clone();
+        drop(seen);
+        let section = interruption_section_of(&second_interpreter)
+            .expect("the re-lowered prompt has no section");
+        assert!(section.contains("- what this person owes changed"));
+        assert!(
+            !section.contains("What was said to this person since:"),
+            "an anonymous change produced an overheard block: {section}"
+        );
+        for leaked in ["Subject 1", " said:", "came to know"] {
+            assert!(
+                !section.contains(leaked),
+                "the anonymous section leaked `{leaked}`"
+            );
+        }
+
+        drop(turn.runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Test 5. The digest moves again during the re-lowered submit. The bound of
+    /// one re-lowering is already spent, so the turn ends carrying the overtaken
+    /// gap with zero further inference and nothing submitted.
+    #[tokio::test]
+    async fn a_second_scope_change_after_the_re_lowering_spends_nothing() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let (actor, opportunity) = narrative_opportunity(&mailbox).await;
+
+        let source = "I say, \"Hold the line at the gate.\"";
+        let speech = "Hold the line at the gate.";
+        let turn = interrupted_turn(
+            &mailbox,
+            source,
+            speech,
+            2,
+            vec![
+                (2, MidTurnCommit::Commitment { subject: actor }),
+                (3, MidTurnCommit::Commitment { subject: actor }),
+            ],
+        );
+        let run = turn
+            .runner
+            .run_narrative(CommandId::new(), &opportunity)
+            .await
+            .unwrap();
+        let NarrativeRun::Interrupted(interruption) = run else {
+            panic!("a spent re-lowering did not end the turn")
+        };
+        assert_eq!(interruption.gap().kind, TranslationGapKind::Unresolved);
+        assert_eq!(interruption.gap().detail, OVERTAKEN_DETAIL);
+        assert_eq!(interruption.subject(), actor);
+        assert_eq!(
+            interruption.bound_scope_digest(),
+            row_scope_digest(&turn.store),
+            "the report names a digest the row does not hold"
+        );
+        // The bound was read before any selection, so no fresh digest was taken.
+        assert_eq!(interruption.fresh_scope_digest(), None);
+        assert_eq!(interruption.persona_turn().source_prose(), source);
+        // Four inferences, exactly as the single re-lowering allows.
+        assert_eq!(turn.calls.load(Ordering::SeqCst), 4);
+        // Two patches landed; the actor never reached the world.
+        let log = mailbox.operator_log().await.unwrap();
+        assert!(log.is_empty(), "an overtaken turn reached the world");
+
+        drop(turn.runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Test 6. The row a re-lowering persists rebuilds its own request byte for
+    /// byte from `(turn, prompt, completed)` at the derived round and takes no
+    /// snapshot to do it — which is exactly what a resumed runner does with it.
+    #[tokio::test]
+    async fn a_checkpoint_resumed_mid_re_lowering_rebuilds_the_same_request() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let (actor, opportunity) = narrative_opportunity(&mailbox).await;
+        let source = "I say, \"Wait for the bell.\"";
+        let speech = "Wait for the bell.";
+        // One scripted Interpreter round only, so the run stops with the
+        // re-lowered row persisted and unanswered.
+        let turn = interrupted_turn(
+            &mailbox,
+            source,
+            speech,
+            1,
+            vec![(2, MidTurnCommit::Commitment { subject: actor })],
+        );
+        let outcome = turn
+            .runner
+            .run_narrative(CommandId::new(), &opportunity)
+            .await;
+        assert!(
+            matches!(outcome, Ok(NarrativeRun::Pending(_))),
+            "the re-lowered round did not leave its row pending"
+        );
+
+        let checkpoint = narrative_row(&turn.store);
+        let NarrativeCheckpoint::InterpreterInFlight {
+            turn: renewed,
+            interruption,
+            completed,
+            invocation,
+            ..
+        } = checkpoint.clone()
+        else {
+            panic!("the re-lowering did not persist an in-flight row")
+        };
+        let interruption = interruption.expect("the re-lowered row records no interruption");
+        assert!(
+            completed.is_empty(),
+            "the re-lowering restarted carrying evidence"
+        );
+        assert_eq!(
+            interruption.discarded.len(),
+            1,
+            "the first round was dropped"
+        );
+        assert!(renewed.binding().interrupted_from.is_some());
+        // The round continues the row's numbering, so two conversations under
+        // one command id cannot collide.
+        assert_eq!(interpreter_round(&Some(interruption), &completed), 1);
+        assert!(
+            invocation
+                .invocation
+                .request
+                .conversation_id
+                .ends_with("-interpreter-1"),
+            "the re-lowering reused the first conversation: {}",
+            invocation.invocation.request.conversation_id
+        );
+        // The whole rebuild, byte for byte.
+        assert!(ControllerWork::Narrative(checkpoint).integrity_is_valid());
+
+        drop(turn.runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Test 7. Three forgeries, each refused at the gate that owns it: an
+    /// ancestry no row ever held, a chained re-lowering, and a row whose
+    /// interruption and turn disagree about the same fact.
+    #[test]
+    fn a_forged_interruption_ancestry_is_refused() {
+        let opportunity = fixture_opportunity(ControllerMode::NarrativePersona);
+        let mut moved = opportunity.clone();
+        moved.scope_digest = ScopeDigest::fixture("sha256:fixture-state-moved");
+        let source = "I say, \"The brace is giving way.\"";
+        let command_id = CommandId::new();
+        let first = fixture_persona_turn(&opportunity, source);
+
+        let ready = NarrativeCheckpoint::ReadyToSubmit {
+            command_id,
+            turn: first.clone(),
+            interpreter_prompt: "prompt".into(),
+            components: fixture_components(),
+            interruption: None,
+            opportunity: opportunity.clone(),
+            granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
+            completed: Vec::new(),
+        };
+        let renewed_binding = |prior: &PersonaTurnBinding| PersonaTurnBinding {
+            scope_digest: moved.scope_digest.as_str().to_owned(),
+            opportunity_digest: moved.digest().unwrap(),
+            interrupted_from: Some(Box::new(prior.clone())),
+            ..prior.clone()
+        };
+        let interruption = Interruption {
+            components: fixture_components(),
+            overheard: Vec::new(),
+            discarded: Vec::new(),
+        };
+        let in_flight = |turn: PersonaTurn, interruption: Option<Interruption>| {
+            NarrativeCheckpoint::InterpreterInFlight {
+                command_id,
+                turn,
+                interpreter_prompt: "prompt".into(),
+                components: fixture_components(),
+                interruption,
+                opportunity: moved.clone(),
+                granted: vec![speak_snapshot(moved.affordance_ids[0])],
+                completed: Vec::new(),
+                invocation: fixture_prepared(
+                    interpreter_request(command_id, 1, "interpreter", Vec::new()).unwrap(),
+                )
+                .unwrap(),
+            }
+        };
+
+        // An ancestry naming a binding this row's turn never held.
+        let stranger = fixture_persona_turn(&moved, source);
+        let forged = PersonaTurn::record(renewed_binding(stranger.binding()), source);
+        assert!(
+            !valid_narrative_progression(&ready, &in_flight(forged, Some(interruption.clone()))),
+            "a fabricated ancestry was admitted"
+        );
+
+        // A re-lowered turn whose predecessor was itself re-lowered.
+        let once = renewed_binding(first.binding());
+        let twice = PersonaTurn::record(renewed_binding(&once), source);
+        assert!(!twice.receipt_is_valid());
+        assert_eq!(
+            PersonaTurn::rehydrate(
+                twice.binding().clone(),
+                twice.source_prose(),
+                twice.source_digest(),
+                twice.receipt_digest(),
+            ),
+            Err(PersonaTurnIntegrityError::InterruptionChained)
+        );
+
+        // The two records of one fact may not disagree, in either direction.
+        let honest = PersonaTurn::record(once, source);
+        assert!(
+            !in_flight(first, Some(interruption)).integrity_is_valid(),
+            "a row claimed an interruption its turn does not carry"
+        );
+        assert!(
+            !in_flight(honest, None).integrity_is_valid(),
+            "a re-lowered turn's row dropped its interruption"
+        );
+    }
+
+    /// Test 8. The leak proof over the delta surface, in the idiom of
+    /// `a_subject_does_not_perceive_speech_it_was_not_in_reach_of` and over real
+    /// committed state. An actor out of the listener's reach speaks; the
+    /// listener is interrupted by something else entirely, and neither that
+    /// actor's label nor its utterance may appear on the listener's surface.
+    #[tokio::test]
+    async fn the_interruption_section_names_no_actor_it_was_not_told_by() {
+        let (_directory, mailbox, task) = apart_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let (listener, opportunity) = narrative_opportunity(&mailbox).await;
+        let far = mailbox
+            .snapshot()
+            .await
+            .unwrap()
+            .subjects
+            .iter()
+            .find(|subject| subject.id != listener)
+            .expect("a subject out of reach")
+            .id;
+
+        let source = "I say, \"The stair is sound.\"";
+        let speech = "The stair is sound.";
+        let turn = interrupted_turn(
+            &mailbox,
+            source,
+            speech,
+            2,
+            vec![
+                (
+                    1,
+                    MidTurnCommit::Speech {
+                        speaker: far,
+                        text: "The vault seal is broken.".into(),
+                    },
+                ),
+                (2, MidTurnCommit::Commitment { subject: listener }),
+            ],
+        );
+        let run = turn
+            .runner
+            .run_narrative(CommandId::new(), &opportunity)
+            .await
+            .unwrap();
+        assert!(matches!(run, NarrativeRun::Completed(_)));
+
+        let seen = turn.seen.lock().unwrap();
+        let second_interpreter = seen[3].clone();
+        drop(seen);
+        let section = interruption_section_of(&second_interpreter)
+            .expect("the re-lowered prompt has no section");
+        assert!(section.contains("- what this person owes changed"));
+        assert!(!section.contains("What was said to this person since:"));
+        for leaked in [
+            "The vault seal is broken.",
+            "Subject 1",
+            encoded_id(&far).unwrap().as_str(),
+        ] {
+            assert!(
+                !section.contains(leaked),
+                "the interruption section leaked `{leaked}`"
+            );
+        }
+        // Nor does the out-of-reach utterance reach any surface of this turn.
+        assert!(!second_interpreter.contains("The vault seal is broken."));
+
+        drop(turn.runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Test 11, the negative check the deleted stage detectors owe. A digest
+    /// that moves before the Persona inference is lowered rather than aborted:
+    /// the run proceeds and the interruption is reported once at submit, not
+    /// three times and not as `NoOpportunity`.
+    #[tokio::test]
+    async fn a_scope_that_moves_before_the_persona_inference_is_lowered_not_aborted() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let (actor, opportunity) = narrative_opportunity(&mailbox).await;
+        let source = "I say, \"We leave before the bell.\"";
+        let speech = "We leave before the bell.";
+        // The commit lands during the Projector round, before the Persona has
+        // been asked anything at all.
+        let turn = interrupted_turn(
+            &mailbox,
+            source,
+            speech,
+            2,
+            vec![(0, MidTurnCommit::Commitment { subject: actor })],
+        );
+        let run = turn
+            .runner
+            .run_narrative(CommandId::new(), &opportunity)
+            .await
+            .unwrap();
+        let NarrativeRun::Completed(decision) = run else {
+            panic!("an early scope change aborted the turn")
+        };
+        assert_eq!(
+            turn.calls.load(Ordering::SeqCst),
+            4,
+            "one re-lowering, no more"
+        );
+        assert!(
+            decision.persona_turn().binding().interrupted_from.is_some(),
+            "the turn committed without recording the interruption"
+        );
+        let log = mailbox.operator_log().await.unwrap();
+        assert_eq!(log.len(), 1);
+        assert_eq!(log[0].speaker, actor);
+
+        drop(turn.runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Test 13. This pass adds `Deserialize` to `ScopeComponents` and no field,
+    /// so `ScopePreimage`'s serialization is unchanged and every scope digest is
+    /// byte-identical. The pin is over a hand-built preimage with fixed ids, so
+    /// any future field, order, or serde-attribute change on either type fails
+    /// here rather than silently reissuing every bound proposal in every live
+    /// world.
+    #[test]
+    fn the_scope_digest_is_unchanged_by_this_pass() {
+        let fixed = |value: &str| Value::String(value.into());
+        let world: WorldId =
+            serde_json::from_value(fixed("33333333-3333-4333-8333-333333333333")).unwrap();
+        let subject: SubjectId =
+            serde_json::from_value(fixed("44444444-4444-4444-8444-444444444444")).unwrap();
+        let controller: ControllerId =
+            serde_json::from_value(fixed("55555555-5555-4555-8555-555555555555")).unwrap();
+        let affordance: AffordanceId =
+            serde_json::from_value(fixed("66666666-6666-4666-8666-666666666666")).unwrap();
+        let assignment = ControllerAssignment::NarrativePersona {
+            controller_id: controller,
+        };
+        let entry = kernel_speak_entry();
+        let components = fixture_components();
+        let digest = world_digest(&ScopePreimage {
+            world_id: world,
+            subject_id: subject,
+            controller: &assignment,
+            affordances: BTreeMap::from([(affordance, &entry)]),
+            components: &components,
+        })
+        .unwrap();
+        assert_eq!(digest, PINNED_SCOPE_DIGEST);
+    }
+
+    /// The value `the_scope_digest_is_unchanged_by_this_pass` guards.
+    const PINNED_SCOPE_DIGEST: &str =
+        "sha256:39c881f8052be4e1fb278e78d20dcf9e081750affebafa33bd244de11ae18c9e";
 }
