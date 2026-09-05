@@ -3,9 +3,10 @@
 ## Status
 
 Bounded cooperative multiplayer is implemented in the current MVP: one to
-eight authenticated players complete Session Zero and begin in one shared
-scene with sequential public actions, actor-filtered surfaces, pooled
-Persona-cell entitlements, and unanimous time, travel, and budget governance.
+eight authenticated players create and seed a world (`world.create` v2,
+`world.seed`) and begin in one shared scene with sequential public actions,
+actor-filtered surfaces, pooled Persona-cell entitlements, and unanimous time,
+travel, and budget governance.
 The broader model in this document remains the direction for split parties,
 private play actions, simultaneous declarations, delegation, and PvP.
 

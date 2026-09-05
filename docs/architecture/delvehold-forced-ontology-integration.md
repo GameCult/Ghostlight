@@ -13,8 +13,9 @@ Use Ghostlight's live external-world simulation as an ordinary API consumer
 without making it the owner of DELVE/HOLD players, workshops, dungeons, civic
 state, or quantitative economy. DELVE/HOLD provides an authored ontology and
 fixed seed for one canonical outside world through consumer-neutral Ghostlight
-operations. This bypasses Session Zero world generation, not `WorldKernel`,
-typed validation, the mutation algebra, or atomic CultCache commits.
+operations. A consumer seed does not pass through the seed lane; it enters as
+a consumer document, and this bypasses none of `WorldKernel`, typed
+validation, the mutation algebra, or atomic CultCache commits.
 
 ## Core and consumer cut
 
@@ -83,8 +84,9 @@ Major committed events cross promptly. Ordinary material flow closes hourly. Rec
 
 Ghostlight needs:
 
-1. one seed admission primitive (`AdmitPatch` in Draft) shared by the seed
-   producer and consumer seed authors;
+1. one seed admission primitive, `AdmitPatch`, shared by the world owner, the
+   Draft seed lane acting as the owner, the Active elaborator, and the
+   external consumer;
 2. generic external-subject ownership metadata enforced by selection and
    mutation gates;
 3. generic consumer effect-schema registration or supply;

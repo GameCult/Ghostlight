@@ -4,8 +4,9 @@
 
 Ghostlight exposes one actor-filtered logical surface, `ghostlight.play`. Eve
 owns its editable bindings, command invocation, receipts, plugin composition,
-and browser lowering. Ghostlight continues to own Session Zero and world
-admission; Heimdall continues to own authentication and entitlement decisions.
+and browser lowering. Ghostlight continues to own world creation
+(`world.create` v2), the Draft seed lane (`world.seed`), and world admission;
+Heimdall continues to own authentication and entitlement decisions.
 
 ```text
 Ghostlight projection
@@ -23,7 +24,7 @@ Ghostlight projection
   changes, Heimdall owns OAuth attempts and claims, and Ghostlight's app-session
   owner binds a verified Heimdall subject to a local cookie.
 - Inputs: the provider projector reads only the caller's app session,
-  membership, actor-filtered campaign or Session Zero slice, and public
+  membership, actor-filtered campaign or Draft world slice, and public
   Heimdall gate state. Command ingress reads one canonical Eve invocation and
   derives member and actor identity server-side.
 - Outputs: one `gamecult.eve.surface.v1` document and one persisted
@@ -34,9 +35,9 @@ Ghostlight projection
   interaction state. None grants access or mutates fiction.
 - Forbidden writers: the browser, Eve lowerer, Heimdall plugin, SSE stream,
   account preferences, and old auth store cannot choose an actor, establish
-  membership, approve a Session Zero decision, or commit world state.
+  membership, approve a Draft admission, or commit world state.
 - Shared paths: every UI operation resolves the authenticated account and
-  exact membership, then calls the existing Session Zero or world mailbox.
+  exact membership, then calls the existing world mailbox.
   SSE carries invalidation only and the host refetches the same surface.
 - Cut line: the bespoke browser renderers and product-specific API routes are
   removed from the public router. Ghostlight's backend callback and local
@@ -82,8 +83,9 @@ account-subject hash, Heimdall session/revision, capabilities, expiries, and
 wrapped refresh claim persist in `app-sessions.cc`. Campaign authorization is
 always derived from `campaign_membership.v1`; account preferences contain only
 the selected campaign. `campaign.entry` may clear only that preference so the
-same authenticated player can return to the campaign list or begin another
-Session Zero; it cannot leave, reset, fork, or mutate any campaign.
+same authenticated player can return to the campaign list or begin creating
+another world with `world.create`; it cannot leave, reset, fork, or mutate any
+campaign.
 Session Zero registry lookup treats only non-terminal negotiations as active:
 `published` and `archived` records remain durable history but cannot replace the
 campaign-entry surface after the preference is cleared.

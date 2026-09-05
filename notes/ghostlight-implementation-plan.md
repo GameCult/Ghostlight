@@ -303,30 +303,50 @@ world acceptance run may start while Yggdrasil serves the legacy body.
 
 ### 7. Contract verification
 
-### 8. Seed producer — in design
+### 8. Seed producer — landed
 
 Objective: a world that is alive at genesis rather than three subjects in one
 room. The first live smoke (`notes/local-live-smoke.md`) proved the road and
 showed that genesis yields thin prose because nothing authored exists to want
 or be wanted.
 
-Current mechanism: `WorldMailbox::create` builds a fixed genesis of three
-subjects in `commons` and writes an empty `WorldScaleIntentRef`, so a fresh
-world has zero deficit; the only Draft-phase author is the owner through the
-same command, and no production path admits a second Draft patch. The
-elaboration lane is Active-only by its answer selection; `EvidenceSource` is
-a live trait whose production impl is null.
+What landed: `world_create.v2` carries `WorldScaleIntent` (targets and
+jurisdiction roots) into the genesis patch itself, write-once; a v1-announcing
+invocation is refused before any handler runs. `qualifies` lost its
+Draft-excluding phase clause, so a Draft world's scale deficit is live and
+falls as structure is authored; the Draft-answer refusal that used to hide
+behind that clause now lives only in `require_answer`. The Draft seed lane —
+`SeedPort` (two methods, `snapshot` and `submit_seed`), `SeedRunner`,
+`SeedSession`/`SeedCheckpoint`, `ControllerWork::Seed` and `WorkLane::Seed` on
+`controller_work.v10` — runs one authoring session per `world.seed`
+invocation on the existing elaboration repair loop, admitting at most one
+Draft patch as `CallerId::Principal(owner)` through the unconfined owner lane;
+there is no marker in the journal distinguishing a seed-authored patch from a
+hand-authored one. `VaultEvidenceSource` (`world/vault.rs`) is the seed lane's
+production `EvidenceSource`: a read-only markdown directory reader whose
+evidence reference is a note's vault-relative `.md` path.
+`world.advance_time`'s missing `operation_schema` entry — every invocation of
+it was silently unreachable — was fixed ahead of `world.seed`, and
+`every_operation_the_panel_emits_has_a_schema` is the totality test that makes
+that class of gap fail loudly instead of silently.
 
-Intended change: a Draft-phase authoring session on the existing elaboration
-repair loop, reading a local markdown Vault through an `EvidenceSource`,
-producing seed patches admitted in Draft for the owner to approve before
-activation, planned against the scale deficit of a `WorldScaleIntent` that
-must now arrive at creation. Triggered by an owner-only Eve command.
+`SeedRequest` is resolved in the negative: Draft answers nothing, and the
+seed lane's port cannot express an answered patch, so nothing ever needed
+`SeedRequest` to bind. It stays representable in the `CausalBoundary`
+vocabulary and uninhabited in practice.
+
+Left undone: the seeded live run (the extended local live smoke seeds a world
+from a real Vault before ticking it, but has not yet been run against a real
+connector — see `notes/local-live-smoke.md`); `ControllerWorkCustody::Owned`
+gained a `seed_commands` count while `Grouped` still has none, an asymmetry
+named and not fixed; the Vault's keyword fallback scores by raw token-count
+match rather than any real relevance ranking; and `VaultEvidenceSource::open`
+reads its whole configured
+scope into memory on every invocation rather than caching across sessions.
 
 Cut line: no new reducer, ID allocator, conservation check, or
 `SystemCapability`; no second tool surface; no compatibility path for the
-three-subject genesis. `SeedRequest` is inhabited only if the spec shows Draft
-needs an answer to bind, which today it does not.
+three-subject genesis.
 
 
 Required black-box proofs:

@@ -307,39 +307,59 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    Still deferred by design: `PolityInCausalRange`, `IndividuationRequired`,
    and Verification 13 wait for relations and population slices.
 
-   In flight: the operator ordered "Build the seed producer" on 2026-09-05.
-   Nothing is edited yet; Modeling is mapping the source into the session
-   scratchpad `modeling-seed.md`, then Imagination, Hands in an isolation
-   worktree, Soul in that tree, coordinator integrates. Operating assumption
-   recorded from the coordinator: a Draft-phase authoring session on the
-   existing elaboration repair loop, a local markdown Vault as
-   `EvidenceSource`, seed patches admitted in Draft for owner approval,
-   driven by the scale deficit from `WorldScaleIntent` at world creation,
-   triggered by an owner-only Eve command; no new reducer, ID allocator, or
-   `SystemCapability`. Two source facts the steward checked that the
-   assumption must absorb before Hands cuts: (1) `CreateWorldIntent`
-   (`world/mod.rs:311`) carries no scale intent and `WorldMailbox::create`
-   seeds genesis with `WorldScaleIntentRef::default()` (`mailbox.rs:169`),
-   so at creation the intent is empty and the deficit is zero; the genesis
-   patch lane already carries `Option<WorldScaleIntentRef>`
-   (`patch.rs:1805`), so the intent must arrive there or `CreateWorldIntent`
-   must grow it; (2) `SeedRequest` is not inhabited and Draft answers
-   nothing (`mod.rs:1563`, `require_answer`), so the ontology doc's
-   draft-phase `SeedRequest` answer (ontology lines 516 to 533, plan step 6
-   pass 8) is a promise, not a live mechanism, and the elaboration loop's
-   answer binding is Active-only today. What is live: `EvidenceSource`
-   (`elaboration.rs:229`, production supplies `NullEvidenceSource`);
-   `AdmitPatch` against a draft world under draft authority as the one seed
-   admission path (ontology 539 to 541, consumer-api 11 to 12);
-   `WorldScaleIntent` and `derive_scale_deficit` (ontology 138, 562). No
-   plan step names this organ; it is new scope after step 6.
+   The seed producer is integrated: plan step 8 landed. Tip is `697ed07`
+   (Soul: five reproducers, eight bounds) over `e73ef5c` and `681f706`
+   (Hands), on `70600d8` (plan step 8 opened). The push follows a background
+   crate test and the branch read `ahead 3` at the time of writing;
+   `git status -sb` is the witness. What landed: `world/vault.rs` with
+   `VaultEvidenceSource` and its caps; `SeedPort` (`snapshot`,
+   `submit_seed`) in `world/mailbox.rs`; `SeedRunner`, `SeedSession`,
+   `SeedCheckpoint`, `SeedOutcome` in `world/elaboration.rs` sharing
+   `prompt_body` with the elaborator; `ControllerWork::Seed`,
+   `WorkLane::Seed`, `controller_work.v10`; `qualifies` is phase-free and
+   `require_answer` owns the Draft refusal; `world_create.v2` carries
+   `targets` and `jurisdictions` and `world_create.v1` is refused;
+   `world.seed` in the Eve schema, arm, button, descriptor, and card; the
+   `world.advance_time` schema gap is closed with a totality test;
+   `GHOSTLIGHT_SEED_VAULT_ROOT` (`runtime.rs:1689`) is required and the
+   runner refuses to seed without it; one session per invocation. Baseline
+   at `697ed07`: 339 test functions in `world/*.rs`, 390 crate source, plus
+   one integration test. The two pre-cut questions are answered in source:
+   the scale intent arrives through `world_create.v2`, and Draft seeding
+   answers nothing by design with `require_answer` as the refusal owner.
+
+   Soul verdict: integrate with follow-ups. Two real defects (a junction
+   escape in the Vault walk; absolute paths in `VaultError` reaching the
+   owner receipt), one overclaim (Active is refused once, by the runner,
+   not twice), one fixture dependence (boundaries come from obligations,
+   not goals), one lifetime gap (`VerifiedPrincipalEvidence` has no
+   expiry). Correction to a claim carried since pass 8: `derive_id` does
+   not have two call sites; production has eight. The invariant that
+   steers is that no pass adds a `derive_id` call site, and every ID still
+   derives by sha256 over world, command, and handle.
+
+   In flight, not landed: `hands/seed-followups` in the worktree
+   `F:\Projects\Ghostlight-seedfu`, branched from `697ed07` with no commits
+   yet: canonicalize during the Vault walk and refuse reparse points;
+   `VaultError` without absolute paths; `SeedPort` phase-bound revision
+   submission; obligations in the brief; evidence `valid_until` enforced at
+   `submit_principal`; a receipt-cap guard. Main carries uncommitted doc
+   edits by a docs worker under coordinator ownership: the ontology
+   "Current mechanism" seed paragraph, the mvp doc, the Delvehold boundary
+   doc, the Eve native interface doc, the multiplayer intention doc, plan
+   step 8 marked landed, and a seeded run block in
+   `notes/local-live-smoke.md`. That run block currently points
+   `GHOSTLIGHT_SEED_VAULT_ROOT` at the fixture path
+   `F:\Projects\Ghostlight-smoke\vault` (line 58); the coordinator will run
+   the seeded road against Kalsa Public with root label "Low Sere" and
+   correct the note. The seeded road run follows the follow-ups.
 
    Decisions the operator owns: (a) whether a refused coupled constituent
    may re-submit once inside the same tick, to be taken with the
    submitted-versus-committed number in hand; (b) the authority for an
-   owner-only Eve `world.run_tick` command, which is not built; (c) is taken:
-   the seed producer is cut next, ahead of the outbound consumer response
-   batch with the non-loopback CultMesh lease and the deployment gate below.
+   owner-only Eve `world.run_tick` command, which is not built. Behind the seeded road run wait the outbound
+   consumer response batch with the non-loopback CultMesh lease and the
+   deployment gate below.
    The ten specs and maps (`imagination-pass1..10.md`,
    `modeling-pass1..10.md`) remain in the session scratchpad only and are
    history, not steering; the docs own the design.
@@ -439,9 +459,5 @@ otesaculty-workflow-lessons-2026-09-04.md`
   state root or validate a complete allowed-path contract.
 - Keep this handoff compact. Move chronology to Git, evidence, or the frozen
   system map.
-- `docs/architecture/ghostlight-world-consumer-api.md` is drift: it names
-  `CampaignRegistry`, `WorldSeed`, and `publish_session_zero`, none of which
-  exist in the sealed kernel. Pending rewrite against
-  `ghostlight-world-ontology.md`; do not design from it.
 - `docs/architecture/ghostlight-transition-algebra.md` is teardown evidence,
   not vocabulary authority.

@@ -209,6 +209,37 @@ travels over two wire schema constants, `CONSUMER_PATCH_SCHEMA` and
 (state-schema generation `world-v3`); a store written under an earlier schema
 is refused, not migrated.
 
+`WorldScaleIntent` now arrives at creation, not as a later admission:
+`world_create.v2` declares targets and jurisdiction roots top-level in the
+genesis patch beside `commons`; a v1-announcing invocation is refused before
+any handler runs, and the intent is write-once, set once at genesis and
+resolved nowhere else. `qualifies` is phase-free — a controller, a non-empty
+grant set, and a held `Goal`, checked the same way in Draft and Active — and
+the Draft-answer refusal lives only in `require_answer`, which refuses every
+Draft answer regardless of what `qualifies` says; so a Draft world's deficit
+measures what the seed lane has left to author, not a frozen count. The seed
+lane (`SeedPort`'s two methods `snapshot` and `submit_seed`, `SeedRunner`,
+`SeedSession`, `ControllerWork::Seed`, `controller_work.v10`) admits seed
+patches as `CallerId::Principal(owner)` through the existing unconfined owner
+lane, in Draft only: the journal carries no marker distinguishing a
+model-authored seed patch from a hand-authored one, because the model is the
+owner's Hands during Draft and the owner's `ApproveDraft` plus `ActivateWorld`
+remain the only path to Active. Evidence for a seed session comes from
+`VaultEvidenceSource`, a read-only markdown directory reader in
+`world/vault.rs`: the reference it hands back is the note's vault-relative
+`.md` path, and its caps (`MAX_VAULT_RECEIPTS`, `MAX_HITS_PER_REFERENT`,
+`MAX_LINK_FANOUT`, `MAX_EXCERPT_CHARS`) bound what one referent can retrieve.
+One `world.seed` invocation runs one session and commits at most one patch
+within the existing patch caps, driven by `select_row` choosing the first
+`ScaleDeficitRow` with a nonzero deficit off the snapshot; `prompt_body`, the
+evidence-and-mismatch tail of an authoring prompt, is shared by both the
+elaboration lane and the seed lane so the two cannot drift on what a citation
+rule says. One correction against the vocabulary above: a `Goal` commitment
+carries no counterparty and by itself manufactures no `MissingStructure`
+boundary; a commitment with a counterparty does, which is why a seeded
+subject's bare goal is exactly the boundary the Active elaborator exists to
+answer.
+
 Opportunities bind to a `ScopeDigest` over one `scope_components` owner
 (controller assignment, grants, delegated grants, own authority, position,
 incident routes, own holdings, own dependencies, known fact ids, controlled
@@ -219,8 +250,8 @@ rejected with `KernelError::ScopeChanged` otherwise. State schema is
 `ghostlight.world_commit.consumer.v1`, controller work `controller_work.v9`;
 earlier stores are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
-Step 6 of the plan is complete; the outbound consumer response is the next
-seam.
+Step 6 of the plan is complete. The next seam is the seeded live run against a
+real Vault and a real connector, then the outbound consumer response.
 
 ## The failure this vocabulary is designed against
 

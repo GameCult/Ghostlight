@@ -130,8 +130,9 @@ commit, or declare the world complete.
 The following cannot decide canonical state:
 
 - HTTP, native, Eve, CultMesh, or chat handlers;
-- Session Zero directors, compilers, elaborators, Projectors, Personas,
-  Interpreters, assessors, verifiers, reconcilers, narrators, and copy desks;
+- Projectors, Personas, Interpreters, assessors, verifiers, reconcilers,
+  narrators, and copy desks; the elaborator decides nothing directly and
+  writes only through its confined `AdmitPatch` capability;
 - schedulers, attention planners, initiative selectors, and resolution covers;
 - acceptance drivers, smoke binaries, checkpoints, resume journals, caches,
   and compaction summaries;
@@ -288,8 +289,7 @@ The closed command vocabulary includes lifecycle and membership changes,
 contract and boundary changes, speech, ontology construction, subject
 decisions, time advance, external snapshots, evidence admission, and archive.
 Every command lowers to the same mutation vocabulary. There is no
-`commit_elaboration`, separate component-batch ingress, direct compiler install,
-or reload repair path.
+`commit_elaboration`, separate component-batch ingress, or reload repair path.
 
 ## Inference boundary
 
@@ -564,7 +564,10 @@ the road is exercised against a real controller is the local live smoke
 membrane, operational lane, clock, and elaboration sweep against a
 CodexConnector on a genesis world. Its first run (2026-09-05) proved the path
 end to end and showed that a three-subject, one-room genesis yields thin
-prose; a seed producer is the gap that finding names.
+prose; a seed producer is the gap that finding names. Step 8 landed that seed
+producer: `world.create` v2 carries the scale intent at genesis, `world.seed`
+runs one `SeedRunner` session per invocation against a `VaultEvidenceSource`,
+and the extended live smoke seeds a world before it ticks.
 
 Focused tests must prove:
 

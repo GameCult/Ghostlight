@@ -2,15 +2,13 @@
 
 ## Current Subgoal
 
-Seed producer (operator order, 2026-09-05). Pipeline: Modeling
-(`modeling-seed.md` in the session scratchpad) -> Imagination -> Hands in an
-isolation worktree -> Soul in that tree -> integrate onto
-`codex/ghostlight-dungeon-mvp`. Nothing edited yet at `f9a1c3e`.
-
-Before Hands cuts, the spec must settle: how `WorldScaleIntent` reaches genesis
-(`CreateWorldIntent` has none; genesis uses `WorldScaleIntentRef::default()`;
-the genesis patch lane carries `Option<WorldScaleIntentRef>`), and how a Draft
-patch is bound when `SeedRequest` is uninhabited and Draft answers nothing.
+Seed follow-ups with Hands in `F:\Projects\Ghostlight-seedfu` on
+`hands/seed-followups` from `697ed07` (Vault walk canonicalization and reparse
+refusal; `VaultError` without absolute paths; `SeedPort` phase-bound revision;
+obligations in the brief; `valid_until` at `submit_principal`; receipt-cap
+guard), then the seeded road run against Kalsa Public, root label "Low Sere",
+per `notes/local-live-smoke.md` once its run block is corrected. Main tip
+`697ed07`; plan step 8 landed.
 
 ## Working Notes
 

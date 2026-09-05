@@ -1,11 +1,12 @@
 # Local Live Smoke
 
-The one place the road is tested: the production tick driver, elaboration
-sweep, and clock against a real CodexConnector on a genesis world, for a
-configured number of ticks. Everything else proves the machine under fixture
-inference ports. The harness is the ignored test
-`runtime::tests::live_smoke_ticks_a_genesis_world_against_the_connector`; its
-log is the deliverable.
+The one place the road is tested: the seed lane, the production tick driver,
+elaboration sweep, and clock against a real CodexConnector on a created
+world, for a configured number of seed sessions and ticks. Everything else
+proves the machine under fixture inference ports. The harness is the ignored
+test
+`runtime::tests::live_smoke_seeds_then_ticks_a_world_against_the_connector`;
+its log is the deliverable.
 
 ## Substrate
 
@@ -53,13 +54,24 @@ export GHOSTLIGHT_CONTROLLER_CONNECTOR=127.0.0.1:4103 \
   GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL=gpt-5.6-terra \
   GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL=gpt-5.6-terra \
   GHOSTLIGHT_SMOKE_TICKS=3 \
-  GHOSTLIGHT_SMOKE_LOG='F:\Projects\Ghostlight-smoke\logs\smoke-ticks.log'
-cargo test -p ghostlight-dungeon --bin ghostlight-dungeon live_smoke_ticks -- --ignored --nocapture
+  GHOSTLIGHT_SMOKE_LOG='F:\Projects\Ghostlight-smoke\logs\smoke-ticks.log' \
+  GHOSTLIGHT_SEED_VAULT_ROOT='F:\Projects\Kalsa\Kalsa' \
+  GHOSTLIGHT_SMOKE_VAULT_SCOPE='Public' \
+  GHOSTLIGHT_SMOKE_SEED_SESSIONS=4 \
+  GHOSTLIGHT_SMOKE_SEED_TARGET=6 \
+  GHOSTLIGHT_SMOKE_SEED_ROOT_LABEL='Low Sere' \
+  GHOSTLIGHT_SMOKE_SEED_BRIEF='A dry basin town that owes its water to the gate above it.'
+cargo test -p ghostlight-dungeon --bin ghostlight-dungeon live_smoke_seeds_then_ticks -- --ignored --nocapture
 ```
 
-The caller runtime id must equal the one the connector config admits.
+`GHOSTLIGHT_SEED_VAULT_ROOT` is required; the runner refuses to seed with it
+unset. `GHOSTLIGHT_SMOKE_VAULT_SCOPE` and `GHOSTLIGHT_SMOKE_SEED_BRIEF` are
+optional. The scope is a directory under the root; Kalsa's spoiler split is
+that scope, so a world that must not see `Spoilers` is seeded from `Public`.
+The root label must name a place the Vault knows; Low Sere has a Public note. The caller runtime id must equal the one the
+connector config admits.
 
-## First run, 2026-09-05
+## First run, 2026-09-05, before the seed lane
 
 Genesis: Active, three subjects (Operator, Persona, Operational Agent) in
 `commons`, three opportunities, no boundaries, no deficit rows (no scale
@@ -85,3 +97,8 @@ the seed-producer gap, not a cognition fault.
 The older ignored test `real_codex_connector_cognition_modes_commit_speech`
 in `world/controllers.rs` predates pass 6 and declares its subjects unplaced,
 so it fails at `NoAudience` before reaching the provider; retire or place it.
+
+## Seeded run
+
+Not yet run. The harness now seeds a created world from a real Vault before
+ticking it; the numbers land here once that road run happens.
