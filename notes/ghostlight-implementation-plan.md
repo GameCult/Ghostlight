@@ -486,6 +486,34 @@ region-wide or global witness still discards a grouped cell's in-flight work
 for every constituent it touches, which is the debt this pass explicitly
 declined to pay.
 
+### 11. Claude SDK inference port — in design
+
+Objective: run Ghostlight's inference lanes on the Claude subscription while
+no Codex subscription or API budget exists, without moving the harness.
+
+Current mechanism: one `InferencePort` implementation, the CodexConnector
+client, behind which every lane derives its exact request and owns its loop;
+the connector's request types leak into four files.
+
+Intended change: a second port, `SdkInferencePort`, that spawns a Node
+sidecar (a small TypeScript package in this repo on the Claude Agent SDK)
+over stdio with length-prefixed MessagePack frames. One request is one SDK
+query with the system prompt replaced, built-ins stripped, settings sources
+empty, the request's tools registered as in-process SDK tools, a turn cap,
+and the request's model. Execute-through: each tool call the model makes is
+handed back over the pipe and answered with the result Ghostlight's own
+evaluator would produce, so the SDK loop runs on real results and one query
+returns as one round. Persona and Projector are single completions. The
+credential is Claude Code's own; Ghostlight holds none.
+
+Cut line: no second identity scheme (checkpoints re-derive the same request
+identity); no daemon, network port, or CultMesh surface for the sidecar; no
+credential handling in Ghostlight; the connector port is untouched; the
+port is chosen per lane by the configured model. Stopgap by design: the
+receipt is the SDK's message, not wire bytes, and that liability is named
+where the port is defined. Rejected: a Messages-API backend (no API spend);
+a backend inside CodexConnector (a deliberately isolated Codex fork).
+
 ## Subtraction budget
 
 Prefer deletion, collapse, or reuse before adding surfaces. The replacement

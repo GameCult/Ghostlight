@@ -427,13 +427,19 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    CodexConnector repo, because CodexConnector is a deliberate fork of
    Codex cut so that Epiphany stops compiling Codex, and nothing goes into
    it. The Modeling map `modeling-claude-connector.md` was stopped mid-map
-   and is void even if partial text is on disk. Standing premise, not yet
-   a design: the credential is the Claude subscription through the Agent
-   SDK or the Claude Code CLI, as a stopgap; the connector is a separate
-   small organ; its shape waits on a read-only research pass
-   (`research-agent-sdk.md` in the session scratchpad) establishing whether
-   the SDK can act as a transport that returns tool calls unexecuted, and
-   on the operator saying go. Nothing is edited in either repo. Facts that
+   and is void even if partial text is on disk. The operator then gave the go: "Wait for the research, then build the
+   SDK port." Adopted shape: a Ghostlight `InferencePort` implementation
+   over the Claude Agent SDK, with the subscription credential held by
+   Claude Code and never by Ghostlight, as a stopgap transport and not a
+   harness inversion; a separate small organ, not a CodexConnector
+   backend. Persona and Projector are single plain completions and need
+   nothing special. The tool lanes (Interpreter, operational, elaborator,
+   seed, grouped) need the SDK to return tool calls unexecuted; the
+   read-only research pass `research-agent-sdk.md` is establishing whether
+   it can. If capture fails, those lanes stay on Codex and the split costs
+   no code, because models are already configured per lane. The
+   "harnessed Persona" idea is withdrawn: the Persona turn is non-agentic.
+   Nothing is cut yet; Hands waits on the research result. Nothing is edited in either repo. Facts that
    survive the overturn: Ghostlight binds Codex-named types in four files
    (`controllers.rs:25`, `elaboration.rs:31`, `patch.rs:20`,
    `tool_schema.rs:9`) behind one `InferencePort::prepare`
