@@ -13,8 +13,8 @@
 use super::controllers::{
     ControllerError, ControllerNeed, ControllerWork, ControllerWorkLookup, ControllerWorkStore,
     ControllerWorkWrite, InferenceEvent, InferenceOutput, InferencePort, InferencePurpose,
-    InferenceRequest, PreparedInference, RequestShape, canonical_model, prepared_matches_request,
-    tool_decode_need, tool_request,
+    InferenceRequest, PreparedInference, RequestShape, ToolResultOracle, canonical_model,
+    prepared_matches_request, tool_decode_need, tool_request,
 };
 #[cfg(test)]
 use super::patch::RECORD_GAP_PATCH_TOOL;
@@ -41,11 +41,11 @@ use uuid::Uuid;
 /// The elaborator wants many tool calls inside one round and several rounds for
 /// repair, where the operational agent wants one terminal choice.
 /// `TOOL_STEP_BUDGET` is left alone for the lane it belongs to.
-const ELABORATION_ROUND_BUDGET: usize = 6;
+pub(super) const ELABORATION_ROUND_BUDGET: usize = 6;
 /// A seed session authors a whole shortfall, not one answer: several subjects,
 /// each with a grant, a goal, and an obligation, then a submit. Measured on
 /// the road at one declaration per response, six rounds discarded everything.
-const SEED_ROUND_BUDGET: usize = 24;
+pub(super) const SEED_ROUND_BUDGET: usize = 24;
 
 const ELABORATION_NAMESPACE: &str = "ghostlight.command.elaboration.v1";
 
@@ -414,6 +414,10 @@ impl ElaborationRunner {
                         invocation: invocation.clone(),
                     })
                     .await?;
+                    self.inference.lend_tool_results(
+                        &invocation,
+                        Box::new(ElaborationOracle::new(&completed, ELABORATION_ROUND_BUDGET)),
+                    );
                     let output =
                         self.inference
                             .infer(invocation.clone())
@@ -924,6 +928,65 @@ pub(super) fn evaluate_elaboration_loop(
         ));
     }
     Ok(ElaborationLoopEvaluation::Continue { conversation })
+}
+
+/// The authoring lanes' replay-then-answer oracle. The budget is an argument
+/// because elaboration and seed share one `InferencePurpose` and differ only in
+/// how many rounds they may spend, which is why the cap rides here and not on
+/// the purpose.
+pub(super) struct ElaborationOracle {
+    draft: WorldPatch,
+    gaps: Vec<ControllerNeed>,
+    submitted: bool,
+    remaining: u32,
+}
+
+impl ElaborationOracle {
+    pub(super) fn new(completed: &[InferenceOutput], budget: usize) -> Self {
+        let mut oracle = Self {
+            draft: WorldPatch {
+                declarations: Vec::new(),
+                operations: Vec::new(),
+                evidence: Vec::new(),
+            },
+            gaps: Vec::new(),
+            submitted: false,
+            remaining: budget.saturating_sub(completed.len()) as u32,
+        };
+        for output in completed {
+            for event in &output.events {
+                if let InferenceEvent::ToolCall {
+                    name, arguments, ..
+                } = event
+                {
+                    let _ = apply_tool_call(
+                        name,
+                        arguments,
+                        &mut oracle.draft,
+                        &mut oracle.gaps,
+                        &mut oracle.submitted,
+                    );
+                }
+            }
+        }
+        oracle
+    }
+}
+
+impl ToolResultOracle for ElaborationOracle {
+    fn remaining_rounds(&self) -> u32 {
+        self.remaining
+    }
+
+    fn answer(&mut self, name: &str, arguments: &str) -> Result<String, ControllerError> {
+        Ok(apply_tool_call(
+            name,
+            arguments,
+            &mut self.draft,
+            &mut self.gaps,
+            &mut self.submitted,
+        ))
+    }
 }
 
 fn apply_tool_call(
@@ -1442,6 +1505,10 @@ impl SeedRunner {
                         invocation: invocation.clone(),
                     })
                     .await?;
+                    self.inference.lend_tool_results(
+                        &invocation,
+                        Box::new(ElaborationOracle::new(&completed, SEED_ROUND_BUDGET)),
+                    );
                     let output = self.inference.infer(invocation).await.map_err(|source| {
                         ControllerError::Inference {
                             purpose: InferencePurpose::Elaboration,

@@ -14,8 +14,8 @@ use crate::{
         ConsumerPort, ConsumerRegistry, ControllerError, ControllerModels, ControllerPendingReason,
         ControllerRunner, ControllerWorkCustody, Cover, CoverBudget, CreateJurisdictionIntent,
         CreateWorldIntent, DecisionInvocation, DecisionOpportunity, KernelError, MailboxError,
-        NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId, SeedOutcome, SeedPort,
-        Statement, SubjectKind, SubmissionDisposition, SubmitReceipt, TickMinutes,
+        NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId, SdkBinding, SeedOutcome,
+        SeedPort, Statement, SubjectKind, SubmissionDisposition, SubmitReceipt, TickMinutes,
         VaultEvidenceSource, WorldMailbox, WorldPhase, WorldSnapshot, derive_cover,
         open_controller_work, open_inference,
     },
@@ -434,7 +434,18 @@ fn open_controller(
             key_path,
             caller_runtime_id: runtime_id.to_owned(),
         });
-    let inference = open_inference(connector, &models)?;
+    // Ghostlight reads no credential for this transport. The sidecar inherits
+    // the ambient Claude Code login; this process never names, copies, or logs
+    // it.
+    let sdk = std::env::var_os("GHOSTLIGHT_SDK_SIDECAR")
+        .map(PathBuf::from)
+        .map(|sidecar_entry| SdkBinding {
+            sidecar_entry,
+            caller_runtime_id: runtime_id.to_owned(),
+            model_prefix: std::env::var("GHOSTLIGHT_SDK_MODEL_PREFIX")
+                .unwrap_or_else(|_| "claude".into()),
+        });
+    let inference = open_inference(connector, sdk, &models)?;
     let work = open_controller_work(service_root.join("controller-work.cc"))?;
     ControllerRunner::open(world.clone(), inference, work, models).map_err(Into::into)
 }
@@ -2462,6 +2473,9 @@ mod tests {
         endpoint: SocketAddr,
         credential: PathBuf,
         runtime_id: String,
+        /// Present only when the smoke is run against the Claude SDK sidecar
+        /// instead of, or alongside, the connector.
+        sdk: Option<SdkBinding>,
         models: ControllerModels,
     }
 
@@ -2492,6 +2506,7 @@ mod tests {
             endpoint: "127.0.0.1:9".parse().unwrap(),
             credential: controller_key.clone(),
             runtime_id: "ghostlight-runtime-test".into(),
+            sdk: None,
             models: ControllerModels {
                 projector: "gpt-5.6-luna".into(),
                 persona: "gpt-5.6-sol".into(),
@@ -2504,8 +2519,9 @@ mod tests {
             Some(ConnectorBinding {
                 endpoint: live.endpoint,
                 key_path: live.credential.clone(),
-                caller_runtime_id: live.runtime_id,
+                caller_runtime_id: live.runtime_id.clone(),
             }),
+            live.sdk,
             &live.models,
         )
         .unwrap();
@@ -3601,16 +3617,25 @@ mod tests {
     /// deficit per round, subjects qualified, and the prose a tick produces
     /// from a world that now has people in it.
     #[tokio::test]
-    #[ignore = "requires a running CodexConnector and a vault; see GHOSTLIGHT_SMOKE_* environment"]
+    #[ignore = "requires a vault plus either a running CodexConnector or a built Claude SDK sidecar with an ambient Claude Code login; see GHOSTLIGHT_SMOKE_* and GHOSTLIGHT_SDK_* environment"]
     async fn live_smoke_seeds_then_ticks_a_world_against_the_connector() {
         let _ = tracing_subscriber::fmt()
             .with_env_filter(EnvFilter::from_default_env())
             .try_init();
         let env = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("{name} is required"));
+        let runtime_id = env("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID");
         let live = LiveController {
             endpoint: env("GHOSTLIGHT_CONTROLLER_CONNECTOR").parse().unwrap(),
             credential: PathBuf::from(env("GHOSTLIGHT_CONTROLLER_CREDENTIAL")),
-            runtime_id: env("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID"),
+            runtime_id: runtime_id.clone(),
+            sdk: std::env::var_os("GHOSTLIGHT_SDK_SIDECAR")
+                .map(PathBuf::from)
+                .map(|sidecar_entry| SdkBinding {
+                    sidecar_entry,
+                    caller_runtime_id: runtime_id,
+                    model_prefix: std::env::var("GHOSTLIGHT_SDK_MODEL_PREFIX")
+                        .unwrap_or_else(|_| "claude".into()),
+                }),
             models: ControllerModels {
                 projector: env("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL"),
                 persona: env("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL"),

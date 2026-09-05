@@ -14,6 +14,7 @@ mod elaboration;
 mod journal;
 mod mailbox;
 mod patch;
+mod sdk_inference;
 mod tool_schema;
 mod vault;
 
@@ -54,6 +55,7 @@ use patch::{
 };
 #[cfg(test)]
 pub(crate) use patch::{AuthorityGrantRef, AuthorityTargetRef};
+pub(crate) use sdk_inference::SdkBinding;
 pub(crate) use vault::VaultEvidenceSource;
 // Test-only narrowing of the controller organ's inference and work-store
 // seams, so `runtime`'s own spec tests can drive `ControllerRunner` over a

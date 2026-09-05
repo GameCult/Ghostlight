@@ -10,6 +10,9 @@ use super::elaboration::{
     ElaborationCheckpoint, ElaborationRunner, EvidenceSource, NullEvidenceSource, SeedCheckpoint,
     SeedRunner, valid_elaboration_progression, valid_seed_progression,
 };
+use super::sdk_inference::{
+    ChildProcessLink, DEFAULT_SDK_MODEL_PREFIX, RoutedInferencePort, SdkBinding, SdkInferencePort,
+};
 use super::tool_schema;
 use crate::world::{
     AffordanceId, AffordanceSnapshot, AuthorityGrant, Bounds, Cell, CellId, CommandId,
@@ -53,18 +56,18 @@ const MAX_CONNECTOR_FRAME_BYTES: usize = 1_052_672;
 /// How far ahead an invocation may claim to be valid. The connector refuses
 /// an expiry beyond its own skew bound as `Expired`, so this is the daemon's
 /// number, not ours; it is admission validity, not generation time.
-const REQUEST_EXPIRY: Duration = Duration::from_secs(300);
+pub(super) const REQUEST_EXPIRY: Duration = Duration::from_secs(300);
 /// One provider round's whole lifetime as seen from this side of the socket:
 /// the connector replies once at the end, so the read timeout bounds an
 /// entire generation, and a seed patch at medium effort was measured past
 /// five minutes.
-const RESPONSE_TIMEOUT: Duration = Duration::from_secs(900);
-const TOOL_STEP_BUDGET: usize = 4;
+pub(super) const RESPONSE_TIMEOUT: Duration = Duration::from_secs(900);
+pub(super) const TOOL_STEP_BUDGET: usize = 4;
 /// The grouped protocol asks for every call in one round, so this budget buys
 /// exactly one repair round after decode gaps are reported back. It deliberately
 /// does not scale with the cell: a cell that needs three rounds of repair is a
 /// cell that should have been smaller.
-const CELL_TOOL_STEP_BUDGET: usize = 2;
+pub(super) const CELL_TOOL_STEP_BUDGET: usize = 2;
 /// Separates a constituent handle from the tool it names. Attribution is
 /// carried by tool identity, never by a model-written argument.
 const HANDLE_SEPARATOR: &str = "__";
@@ -110,6 +113,14 @@ pub(crate) struct InferenceRequest {
     provider: CodexProviderRequest,
 }
 
+impl InferenceRequest {
+    /// The model this request names, read before it is prepared. Routing is the
+    /// one decision that has to be made on an unprepared request.
+    pub(super) fn provider_model(&self) -> &str {
+        &self.provider.model
+    }
+}
+
 /// The exact connector invocation, including expiry and native provenance.
 /// Replaying this value may recover a completed connector response; rebuilding
 /// it under the same request ID would be a replay conflict.
@@ -136,7 +147,10 @@ pub(crate) struct InferenceOutput {
 }
 
 impl InferenceOutput {
-    fn prose_only(self, purpose: InferencePurpose) -> Result<(String, String), ControllerError> {
+    pub(super) fn prose_only(
+        self,
+        purpose: InferencePurpose,
+    ) -> Result<(String, String), ControllerError> {
         let mut prose = String::new();
         for event in self.events {
             match event {
@@ -174,32 +188,32 @@ enum InferenceFaultDisposition {
 }
 
 impl InferenceFault {
-    fn new(detail: impl Into<String>) -> Self {
+    pub(super) fn new(detail: impl Into<String>) -> Self {
         Self {
             disposition: InferenceFaultDisposition::RecoveryRequired,
             detail: detail.into(),
         }
     }
 
-    fn retryable(detail: impl Into<String>) -> Self {
+    pub(super) fn retryable(detail: impl Into<String>) -> Self {
         Self {
             disposition: InferenceFaultDisposition::Retryable,
             detail: detail.into(),
         }
     }
 
-    fn integrity_violation(detail: impl Into<String>) -> Self {
+    pub(super) fn integrity_violation(detail: impl Into<String>) -> Self {
         Self {
             disposition: InferenceFaultDisposition::IntegrityViolation,
             detail: detail.into(),
         }
     }
 
-    fn recovery_required(&self) -> bool {
+    pub(super) fn recovery_required(&self) -> bool {
         self.disposition == InferenceFaultDisposition::RecoveryRequired
     }
 
-    fn integrity_was_violated(&self) -> bool {
+    pub(super) fn integrity_was_violated(&self) -> bool {
         self.disposition == InferenceFaultDisposition::IntegrityViolation
     }
 
@@ -222,11 +236,36 @@ impl InferenceFault {
     }
 }
 
+/// One lane's own answer to "what does this tool call return", lent to the
+/// inference port for exactly one query. A port that runs the tool loop needs a
+/// real result before the model will take another turn, and the only correct
+/// result is the one the lane's evaluator will recompute when it re-derives the
+/// finished round from `completed`. So this is not a second implementation: it
+/// is the same fold, over the calls made so far, into fresh state. A port that
+/// computed its own answer would put a string in front of the model that no
+/// durable evidence records and no check can catch.
+pub(crate) trait ToolResultOracle: Send {
+    /// The lane's remaining round budget, lowered to a transport's turn cap so
+    /// one query cannot exceed what the evaluator would have allowed.
+    fn remaining_rounds(&self) -> u32;
+
+    /// The next call in this query. Errors are the lane's own hard contract
+    /// errors; the port aborts the query rather than inventing a string.
+    fn answer(&mut self, name: &str, arguments: &str) -> Result<String, ControllerError>;
+}
+
 #[async_trait]
 pub(crate) trait InferencePort: Send + Sync {
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault>;
 
     async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault>;
+
+    /// Lends a lane's tool-result owner to the port for one query, keyed by the
+    /// prepared request's own id. The default ignores it: the connector returns
+    /// tool calls inert and the evaluator computes every result at
+    /// re-derivation, so only a port that runs the tool loop needs one.
+    fn lend_tool_results(&self, _prepared: &PreparedInference, _oracle: Box<dyn ToolResultOracle>) {
+    }
 }
 
 /// Builds a `PreparedInference` outside the real CodexConnector wiring. Exists
@@ -434,7 +473,7 @@ impl InferencePort for CodexConnectorInferencePort {
     }
 }
 
-fn unix_ms() -> Result<u64, InferenceFault> {
+pub(super) fn unix_ms() -> Result<u64, InferenceFault> {
     let millis = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|error| InferenceFault::new(error.to_string()))?
@@ -2061,7 +2100,10 @@ pub(crate) struct ControllerModels {
     pub(crate) operational_agent: String,
     /// The authoring lane's model. The existing config shape already gates
     /// cognition by model name, so the driver starts on this and no mode flag
-    /// is added.
+    /// is added. The model name also selects the transport: a
+    /// `GHOSTLIGHT_SDK_MODEL_PREFIX`-prefixed model reaches the SDK sidecar and
+    /// anything else reaches the connector, which is why there is still no mode
+    /// flag.
     pub(crate) elaborator: String,
 }
 
@@ -2094,6 +2136,8 @@ pub(crate) enum ControllerOpenError {
     WorkStore(String),
     #[error("no configured inference backend claims the controller model `{model}`")]
     UnroutableModel { model: String },
+    #[error("the SDK sidecar entry `{path}` is not a file")]
+    SdkSidecarMissing { path: String },
 }
 
 /// Everything the CodexConnector transport needs to open, gathered so
@@ -2108,6 +2152,7 @@ pub(crate) struct ConnectorBinding {
 /// backend claims fails here, at open, rather than at its first tick.
 pub(crate) fn open_inference(
     connector: Option<ConnectorBinding>,
+    sdk: Option<SdkBinding>,
     models: &ControllerModels,
 ) -> Result<Arc<dyn InferencePort>, ControllerOpenError> {
     let connector: Option<Arc<dyn InferencePort>> = match connector {
@@ -2118,12 +2163,31 @@ pub(crate) fn open_inference(
         )?)),
         None => None,
     };
-    let Some(connector) = connector else {
-        return Err(ControllerOpenError::UnroutableModel {
-            model: models.projector.clone(),
-        });
+    let mut sdk_model_prefix = DEFAULT_SDK_MODEL_PREFIX.to_owned();
+    let sdk: Option<Arc<dyn InferencePort>> = match sdk {
+        Some(binding) => {
+            if !binding.sidecar_entry.is_file() {
+                return Err(ControllerOpenError::SdkSidecarMissing {
+                    path: binding.sidecar_entry.display().to_string(),
+                });
+            }
+            sdk_model_prefix = binding.model_prefix;
+            Some(Arc::new(SdkInferencePort::new(
+                Arc::new(ChildProcessLink::new(binding.sidecar_entry)),
+                binding.caller_runtime_id,
+            )))
+        }
+        None => None,
     };
-    Ok(connector)
+    let routed = RoutedInferencePort::new(connector, sdk, sdk_model_prefix);
+    for model in models.each() {
+        if routed.route(model).is_none() {
+            return Err(ControllerOpenError::UnroutableModel {
+                model: model.clone(),
+            });
+        }
+    }
+    Ok(Arc::new(routed))
 }
 
 impl From<ControllerWorkStoreError> for ControllerOpenError {
@@ -2728,6 +2792,10 @@ impl ControllerRunner {
             };
             self.ensure_scope_unchanged(&opportunity).await?;
             let model = invocation.invocation.request.model.clone();
+            self.inference.lend_tool_results(
+                &invocation,
+                Box::new(OperationalOracle::new(&granted, &completed)),
+            );
             let output = match self.infer(invocation).await {
                 Ok(output) => output,
                 Err(error) => match inference_pending_reason(&error) {
@@ -3027,6 +3095,10 @@ impl ControllerRunner {
                 ));
             };
             let model = invocation.invocation.request.model.clone();
+            self.inference.lend_tool_results(
+                &invocation,
+                Box::new(GroupedOracle::new(&constituents, &completed)),
+            );
             let output = match self.infer(invocation).await {
                 Ok(output) => output,
                 Err(error) => match inference_pending_reason(&error) {
@@ -3440,6 +3512,10 @@ impl ControllerRunner {
                 ));
             };
             let model = invocation.invocation.request.model.clone();
+            self.inference.lend_tool_results(
+                &invocation,
+                Box::new(InterpreterOracle::new(&turn, &completed)),
+            );
             let output = match self.infer(invocation).await {
                 Ok(output) => output,
                 Err(error) => match inference_pending_reason(&error) {
@@ -4584,6 +4660,51 @@ pub(super) fn interpreter_tool_result(
     }
 }
 
+/// Replays every completed round's calls into fresh state, then answers this
+/// query's calls in order. Construction is the replay: after it, `answer` is
+/// exactly the evaluator's next step.
+pub(super) struct InterpreterOracle {
+    source: PersonaTurn,
+    fold: InterpreterFold,
+    remaining: u32,
+}
+
+impl InterpreterOracle {
+    pub(super) fn new(source: &PersonaTurn, completed: &[InferenceOutput]) -> Self {
+        let mut fold = InterpreterFold::new(source.clone());
+        for output in completed {
+            for event in &output.events {
+                if let InferenceEvent::ToolCall {
+                    name, arguments, ..
+                } = event
+                {
+                    let _ = interpreter_tool_result(source, &mut fold, name, arguments);
+                }
+            }
+        }
+        Self {
+            source: source.clone(),
+            fold,
+            remaining: TOOL_STEP_BUDGET.saturating_sub(completed.len()) as u32,
+        }
+    }
+}
+
+impl ToolResultOracle for InterpreterOracle {
+    fn remaining_rounds(&self) -> u32 {
+        self.remaining
+    }
+
+    fn answer(&mut self, name: &str, arguments: &str) -> Result<String, ControllerError> {
+        Ok(interpreter_tool_result(
+            &self.source,
+            &mut self.fold,
+            name,
+            arguments,
+        ))
+    }
+}
+
 fn evaluate_interpreter_loop(
     source: &PersonaTurn,
     prompt: &str,
@@ -4849,6 +4970,45 @@ pub(super) fn grouped_tool_result(
     })
 }
 
+/// The grouped lane's replay-then-answer oracle. Same shape as the
+/// interpreter's, over `CELL_TOOL_STEP_BUDGET`.
+pub(super) struct GroupedOracle {
+    constituents: Vec<ConstituentWork>,
+    fold: GroupedFold,
+    remaining: u32,
+}
+
+impl GroupedOracle {
+    pub(super) fn new(constituents: &[ConstituentWork], completed: &[InferenceOutput]) -> Self {
+        let mut fold = GroupedFold::new();
+        for output in completed {
+            for event in &output.events {
+                if let InferenceEvent::ToolCall {
+                    name, arguments, ..
+                } = event
+                {
+                    let _ = grouped_tool_result(constituents, &mut fold, name, arguments);
+                }
+            }
+        }
+        Self {
+            constituents: constituents.to_vec(),
+            fold,
+            remaining: CELL_TOOL_STEP_BUDGET.saturating_sub(completed.len()) as u32,
+        }
+    }
+}
+
+impl ToolResultOracle for GroupedOracle {
+    fn remaining_rounds(&self) -> u32 {
+        self.remaining
+    }
+
+    fn answer(&mut self, name: &str, arguments: &str) -> Result<String, ControllerError> {
+        grouped_tool_result(&self.constituents, &mut self.fold, name, arguments)
+    }
+}
+
 fn evaluate_grouped_loop(
     prompt: &str,
     constituents: &[ConstituentWork],
@@ -5080,6 +5240,48 @@ pub(super) fn operational_tool_result(
             "unavailable tool recorded as a need".into()
         }
     })
+}
+
+/// The operational lane's replay-then-answer oracle. `begin_round` runs at
+/// every replayed round boundary and once more after the replay, so the live
+/// query's first call sees `terminal_choice: None` exactly as round *n* does.
+pub(super) struct OperationalOracle {
+    granted: Vec<AffordanceSnapshot>,
+    fold: OperationalFold,
+    remaining: u32,
+}
+
+impl OperationalOracle {
+    pub(super) fn new(granted: &[AffordanceSnapshot], completed: &[InferenceOutput]) -> Self {
+        let mut fold = OperationalFold::new();
+        for output in completed {
+            fold.begin_round();
+            for event in &output.events {
+                if let InferenceEvent::ToolCall {
+                    name, arguments, ..
+                } = event
+                {
+                    let _ = operational_tool_result(granted, &mut fold, name, arguments);
+                }
+            }
+        }
+        fold.begin_round();
+        Self {
+            granted: granted.to_vec(),
+            fold,
+            remaining: TOOL_STEP_BUDGET.saturating_sub(completed.len()) as u32,
+        }
+    }
+}
+
+impl ToolResultOracle for OperationalOracle {
+    fn remaining_rounds(&self) -> u32 {
+        self.remaining
+    }
+
+    fn answer(&mut self, name: &str, arguments: &str) -> Result<String, ControllerError> {
+        operational_tool_result(&self.granted, &mut self.fold, name, arguments)
+    }
 }
 
 fn evaluate_operational_loop(
@@ -5406,7 +5608,10 @@ fn interpreter_tools() -> Vec<CodexToolDefinition> {
 /// `prefix` is empty on the detail path, so its schemas stay byte-identical,
 /// and `c<handle>__` on the grouped path, where the tool name is what attributes
 /// a proposal to one constituent. One owner, two spellings of the same catalog.
-fn catalog_tools(prefix: &str, granted: &[AffordanceSnapshot]) -> Vec<CodexToolDefinition> {
+pub(super) fn catalog_tools(
+    prefix: &str,
+    granted: &[AffordanceSnapshot],
+) -> Vec<CodexToolDefinition> {
     let mut tools: Vec<CodexToolDefinition> = granted
         .iter()
         .map(|entry| {
@@ -6683,6 +6888,207 @@ mod tests {
         )
     }
 
+    /// A tool-call event as the SDK port would report one.
+    fn oracle_call(call_id: &str, name: &str, arguments: &str) -> InferenceEvent {
+        InferenceEvent::ToolCall {
+            call_id: call_id.into(),
+            name: name.into(),
+            arguments: arguments.into(),
+        }
+    }
+
+    fn oracle_round(calls: &[(&str, &str, &str)], receipt: &str) -> InferenceOutput {
+        InferenceOutput {
+            events: calls
+                .iter()
+                .map(|(id, name, arguments)| oracle_call(id, name, arguments))
+                .collect(),
+            receipt_digest: format!("sha256:{receipt}"),
+        }
+    }
+
+    fn tool_results(conversation: &[CodexInputItem]) -> Vec<String> {
+        conversation
+            .iter()
+            .filter_map(|item| match item {
+                CodexInputItem::ToolResult { output, .. } => Some(output.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// Spec test 1, interpreter lane. The string the oracle hands the model is
+    /// the string the evaluator recomputes for the same call, in order.
+    #[test]
+    fn the_interpreter_oracle_answers_what_its_evaluator_recomputes() {
+        let opportunity = fixture_opportunity(ControllerMode::NarrativePersona);
+        let source = "I say, \"The rain has teeth tonight.\"";
+        let turn = fixture_persona_turn(&opportunity, source);
+        let speech = "The rain has teeth tonight.";
+        let start = source.find(speech).unwrap();
+        let span = json!({
+            "source_start_byte": start,
+            "source_end_byte": start + speech.len(),
+        })
+        .to_string();
+        let calls: Vec<(&str, &str, &str)> = vec![
+            ("call-0", INTERPRETER_SPEAK_TOOL, span.as_str()),
+            // A second speak, so `captured_speech` is exercised.
+            ("call-1", INTERPRETER_SPEAK_TOOL, span.as_str()),
+            ("call-2", INTERPRETER_RECORD_GAP_TOOL, "not json at all"),
+            ("call-3", "speek", "{}"),
+        ];
+        let mut oracle = InterpreterOracle::new(&turn, &[]);
+        let answers: Vec<String> = calls
+            .iter()
+            .map(|(_, name, arguments)| oracle.answer(name, arguments).unwrap())
+            .collect();
+        let output = oracle_round(&calls, "interpreter-oracle");
+        let InterpreterLoopEvaluation::Continue { conversation } =
+            evaluate_interpreter_loop(&turn, "Translate the prose.", &[output]).unwrap()
+        else {
+            panic!("a non-terminal interpreter round finalized")
+        };
+        assert_eq!(answers, tool_results(&conversation));
+    }
+
+    /// Spec test 1, operational lane, plus spec test 2's replay: an oracle
+    /// seeded from a completed round continues the same fold, and its
+    /// `terminal_choice` resets at the round boundary while `needs` does not.
+    #[test]
+    fn the_operational_oracle_answers_what_its_evaluator_recomputes() {
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let granted = vec![speak_snapshot(opportunity.affordance_ids[0])];
+        let speak = granted[0].entry.kind.0.clone();
+        let first: Vec<(&str, &str, &str)> = vec![
+            ("call-0", RECORD_NEED_TOOL, r#"{"detail":"no route"}"#),
+            ("call-1", RECORD_NEED_TOOL, "not json at all"),
+            // A granted tool whose arguments do not decode: a need, not a
+            // terminal choice, so the round stays open.
+            ("call-2", speak.as_str(), "not json at all"),
+            ("call-3", "speek", "{}"),
+        ];
+        let mut oracle = OperationalOracle::new(&granted, &[]);
+        let answers: Vec<String> = first
+            .iter()
+            .map(|(_, name, arguments)| oracle.answer(name, arguments).unwrap())
+            .collect();
+        let round_zero = oracle_round(&first, "operational-oracle");
+        let OperationalLoopEvaluation::Continue { conversation } =
+            evaluate_operational_loop("Hold the bridge.", &granted, &[round_zero.clone()]).unwrap()
+        else {
+            panic!("a non-terminal operational round finalized")
+        };
+        assert_eq!(answers, tool_results(&conversation));
+
+        // Round one, from an oracle constructed over round zero.
+        let second: Vec<(&str, &str, &str)> = vec![
+            ("call-4", RECORD_NEED_TOOL, r#"{"detail":"still no route"}"#),
+            ("call-5", "speek", "{}"),
+        ];
+        let mut resumed = OperationalOracle::new(&granted, &[round_zero.clone()]);
+        let resumed_answers: Vec<String> = second
+            .iter()
+            .map(|(_, name, arguments)| resumed.answer(name, arguments).unwrap())
+            .collect();
+        let round_one = oracle_round(&second, "operational-oracle-one");
+        let OperationalLoopEvaluation::Continue { conversation } =
+            evaluate_operational_loop("Hold the bridge.", &granted, &[round_zero, round_one])
+                .unwrap()
+        else {
+            panic!("a non-terminal operational round finalized")
+        };
+        assert_eq!(
+            resumed_answers,
+            tool_results(&conversation)[first.len()..].to_vec()
+        );
+
+        // The one string a terminal choice owns, and the one the lane has no
+        // string for at all.
+        let mut terminal = OperationalOracle::new(&granted, &[]);
+        let speech = json!({ "text": "Hold the bridge." }).to_string();
+        assert_eq!(
+            terminal.answer(&speak, &speech).unwrap(),
+            "invocation captured"
+        );
+        assert_eq!(
+            terminal.answer(&speak, &speech).unwrap(),
+            "one terminal choice is already captured"
+        );
+        assert!(matches!(
+            terminal.answer(FINISH_WITHOUT_PROPOSAL_TOOL, "{}"),
+            Err(ControllerError::ProviderContract { .. })
+        ));
+    }
+
+    /// Spec test 1, grouped lane. Two handles, and a tool that names none.
+    #[test]
+    fn the_grouped_oracle_answers_what_its_evaluator_recomputes() {
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let constituents = vec![
+            ConstituentWork {
+                subject: opportunity.scope.subject_id,
+                opportunity: opportunity.clone(),
+                granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
+                command_id: CommandId::new(),
+            },
+            ConstituentWork {
+                subject: opportunity.scope.subject_id,
+                opportunity: opportunity.clone(),
+                granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
+                command_id: CommandId::new(),
+            },
+        ];
+        let speak = constituents[0].granted[0].entry.kind.0.clone();
+        let handle_one = format!("c0__{speak}");
+        let calls: Vec<(&str, &str, &str)> = vec![
+            ("call-0", "c99__carry", "{}"),
+            ("call-1", "c0__record_need", r#"{"detail":"no route"}"#),
+            ("call-2", "c1__record_need", "not json at all"),
+            ("call-3", handle_one.as_str(), "not json at all"),
+            ("call-4", "c1__notgranted", "{}"),
+        ];
+        let mut oracle = GroupedOracle::new(&constituents, &[]);
+        let answers: Vec<String> = calls
+            .iter()
+            .map(|(_, name, arguments)| oracle.answer(name, arguments).unwrap())
+            .collect();
+        let output = oracle_round(&calls, "grouped-oracle");
+        let GroupedLoopEvaluation::Continue { conversation } =
+            evaluate_grouped_loop("Decide together.", &constituents, &[output]).unwrap()
+        else {
+            panic!("a non-terminal grouped round finalized")
+        };
+        assert_eq!(answers, tool_results(&conversation));
+    }
+
+    /// Spec test 4, and the reachable half of spec test 3: two ports that
+    /// prepare under the same identity produce the same `PreparedInference`,
+    /// and it satisfies the checkpoint's own identity check.
+    #[test]
+    fn both_ports_prepare_the_same_invocation() {
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let granted = vec![speak_snapshot(opportunity.affordance_ids[0])];
+        let command_id = CommandId::new();
+        let build = || {
+            operational_request(
+                command_id,
+                0,
+                "claude-opus-5",
+                &granted,
+                vec![CodexInputItem::UserText {
+                    text: "Hold the bridge.".into(),
+                }],
+            )
+            .unwrap()
+        };
+        let expiry = 4_102_444_800_000;
+        let connector_side = prepare_invocation("ghostlight-runtime", expiry, build()).unwrap();
+        let sdk_side = prepare_invocation("ghostlight-runtime", expiry, build()).unwrap();
+        assert_eq!(connector_side, sdk_side);
+        assert!(prepared_matches_request(&sdk_side, &build(), command_id, 0));
+    }
+
     fn narrative_interpreter_in_flight(
         command_id: CommandId,
         opportunity: &DecisionOpportunity,
@@ -7537,6 +7943,7 @@ mod tests {
                 key_path: connector_credential.into(),
                 caller_runtime_id: runtime_id,
             }),
+            None,
             &models,
         )
         .unwrap();
