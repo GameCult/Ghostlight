@@ -2133,7 +2133,6 @@ pub(crate) enum NarrativeRun {
 #[derive(Debug)]
 pub(crate) struct NarrativeInterruption {
     turn: PersonaTurn,
-    capture: NarrativeCapture,
     subject: SubjectId,
     bound_scope_digest: String,
     /// Absent when the bound re-lowering was already spent, because the runner
@@ -2149,10 +2148,6 @@ pub(crate) struct NarrativeInterruption {
 impl NarrativeInterruption {
     pub(crate) fn persona_turn(&self) -> &PersonaTurn {
         &self.turn
-    }
-
-    pub(crate) fn capture(&self) -> &NarrativeCapture {
-        &self.capture
     }
 
     pub(crate) fn subject(&self) -> SubjectId {
@@ -4380,11 +4375,14 @@ fn overtaken(
             ));
         }
     };
-    let capture = derive_narrative_capture(turn, interpreter_prompt, completed)?;
-    let source = capture.proposal.unwrap_or(SourceRange {
-        start_byte: 0,
-        end_byte: turn.source_prose().len(),
-    });
+    // The gap points at the proposal span the interpretation captured, or at
+    // the whole prose when it captured none.
+    let source = derive_narrative_capture(turn, interpreter_prompt, completed)?
+        .proposal
+        .unwrap_or(SourceRange {
+            start_byte: 0,
+            end_byte: turn.source_prose().len(),
+        });
     Ok(NarrativeRun::Interrupted(NarrativeInterruption {
         subject: opportunity.scope.subject_id,
         bound_scope_digest: opportunity.scope_digest.as_str().to_owned(),
@@ -4395,7 +4393,6 @@ fn overtaken(
             detail: OVERTAKEN_DETAIL.into(),
         },
         turn: turn.clone(),
-        capture,
     }))
 }
 
