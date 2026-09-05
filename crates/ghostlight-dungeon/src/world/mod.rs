@@ -11362,6 +11362,374 @@ mod witness_tests {
             seen(Confidence::Certain)
         );
     }
+
+    /// The two callers of the shared owners answer the same question. A
+    /// `Reach::Place` channel's fan-out and a witness over the same place select
+    /// the same subjects over the same state, so "under a place" and "already a
+    /// knower" cannot drift between a declared broadcast area and a witnessed
+    /// event. A grep proves there is one body; this proves the two lanes reach
+    /// it.
+    #[test]
+    fn soul_a_place_reach_fan_out_and_a_witness_select_the_same_subjects() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, world, _) = nesting_kernel(directory.path(), "One owner");
+        let mut state = kernel.state.clone();
+        // One holder, so the already-holds half of the selection is exercised
+        // and not merely the subtree half.
+        state.knowledge.entry(world.neighbour).or_default().insert(
+            world.asteroid,
+            Knowledge {
+                confidence: Confidence::Doubted,
+                source: KnowledgeSource::Witnessed,
+            },
+        );
+        for root in [world.hemisphere, world.region, world.village, world.coast] {
+            let horn = state
+                .entities
+                .keys()
+                .copied()
+                .find(|id| !state.channels.contains_key(id))
+                .expect("an unused key for the horn");
+            state.channels.insert(
+                horn,
+                patch::ChannelRecord {
+                    reach: patch::Reach::Place(root),
+                    controller: None,
+                },
+            );
+            for speaker in [world.coaster, world.drifter, world.villager] {
+                // `fan_out` is exactly the shared pair with the speaker taken
+                // out; the speaker clause is the only thing it owns itself.
+                let mut expected = under_place(&state, root);
+                expected.remove(&speaker);
+                assert_eq!(
+                    fan_out(
+                        &state,
+                        speaker,
+                        world.asteroid,
+                        &patch::Audience::Channel(horn),
+                    ),
+                    unheld(&state, world.asteroid, expected),
+                    "the two lanes disagreed about {root:?} for {speaker:?}"
+                );
+            }
+            state.channels.remove(&horn);
+        }
+    }
+
+    /// Presence in the subtree is read from `positions` alone. A place covers
+    /// itself, covers its children transitively, and covers nothing beside it;
+    /// a subject standing nowhere is under nothing, at every root including the
+    /// world's widest.
+    #[test]
+    fn soul_under_place_covers_itself_and_below_and_never_the_placeless() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, world, _) = nesting_kernel(directory.path(), "Nesting");
+        let under = |root: EntityId| under_place(&kernel.state, root);
+        // The village holds its two standers and nobody else.
+        assert_eq!(
+            under(world.village),
+            BTreeSet::from([world.villager, world.neighbour])
+        );
+        // The region covers the village transitively and the drifter standing
+        // one level above it is not swept in.
+        assert_eq!(
+            under(world.region),
+            BTreeSet::from([world.villager, world.neighbour])
+        );
+        // The hemisphere covers everything below it and the drifter standing
+        // exactly at it, not merely below.
+        assert_eq!(
+            under(world.hemisphere),
+            BTreeSet::from([
+                world.villager,
+                world.neighbour,
+                world.coaster,
+                world.drifter,
+            ])
+        );
+        assert_eq!(under(world.coast), BTreeSet::from([world.coaster]));
+        assert!(under(world.hollow).is_empty());
+
+        // A subject with no position is under nothing, at every root including
+        // the world's widest, and the widest witness in the world does not
+        // reach it. Presence is read from `positions` alone: there is no second
+        // notion of being somewhere for a placeless subject to fall back on.
+        let mut adrift = kernel.state.clone();
+        adrift.positions.remove(&world.drifter);
+        for root in [
+            world.hemisphere,
+            world.region,
+            world.village,
+            world.coast,
+            world.hollow,
+        ] {
+            assert!(
+                !under_place(&adrift, root).contains(&world.drifter),
+                "a placeless subject was under {root:?}"
+            );
+        }
+        apply_operation(
+            &mut adrift,
+            &ResolvedOp::Witness {
+                fact: world.moon,
+                place: world.hemisphere,
+                confidence: Confidence::Certain,
+            },
+            &[],
+        )
+        .expect("the hemisphere still reaches the standers");
+        assert!(
+            !adrift
+                .knowledge
+                .get(&world.drifter)
+                .is_some_and(|held| held.contains_key(&world.moon)),
+            "a placeless subject witnessed the widest event in the world"
+        );
+        for subject in [world.villager, world.neighbour, world.coaster] {
+            assert_eq!(
+                adrift.knowledge[&subject][&world.moon],
+                Knowledge {
+                    confidence: Confidence::Certain,
+                    source: KnowledgeSource::Witnessed,
+                }
+            );
+        }
+    }
+
+    /// The candidate model and the apply arm are handed a patch built so they
+    /// could disagree: the only subject the witness can reach is one this same
+    /// patch declares and places, and every subject already standing there
+    /// already holds the fact. If the resolver did not see the draft stander it
+    /// would refuse a landing the apply pass performs; if the apply pass did
+    /// not see it, it would refuse a landing the resolver admitted. Both see
+    /// it. The inverse — a draft subject declared with no position — is refused
+    /// by both.
+    #[test]
+    fn soul_a_subject_declared_and_placed_in_one_patch_is_a_recipient_at_both_layers() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "Draft stander");
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![witness(
+                world.asteroid,
+                world.village,
+                Confidence::Believed,
+            )]),
+        );
+        // An active world admits declarations only through the elaborator lane,
+        // which is also the lane whose confinement the witness must satisfy.
+        let answer = derive_boundaries(&kernel.state)
+            .unwrap()
+            .into_iter()
+            .find(|boundary| {
+                matches!(boundary, CausalBoundary::UnelaboratedDestination { place, .. }
+                    if *place == world.hollow)
+            })
+            .expect("the hollow is an unelaborated destination");
+        let beacon = *kernel
+            .state
+            .affordance_catalog
+            .iter()
+            .find(|(_, entry)| entry.kind.0 == "beacon")
+            .expect("the beacon entry is declared")
+            .0;
+        let arrival =
+            |kernel: &mut WorldKernel, handle: &str, label: &str, position: Option<EntityId>| {
+                let snapshot = kernel.snapshot().unwrap();
+                let caller = CallerId::System(SystemCapability::Elaborator {
+                    jurisdiction: JurisdictionKey::PlaceSubtree(world.region),
+                });
+                kernel.submit(
+                    command(
+                        &snapshot,
+                        CommandId::new(),
+                        caller.clone(),
+                        CommandBody::AdmitPatch {
+                            answers: Some(PatchAnswer::Boundary(answer.clone())),
+                            patch: WorldPatch {
+                                declarations: vec![
+                                    Declaration::Entity(EntityDeclaration {
+                                        handle: DraftHandle::new("shed"),
+                                        label: format!("The Hollow Shed for {handle}"),
+                                        kind: EntityKind::Place,
+                                        container: Some(Ref::Existing(world.hollow)),
+                                    }),
+                                    Declaration::Subject(SubjectDeclaration {
+                                        handle: DraftHandle::new(handle),
+                                        label: label.into(),
+                                        kind: SubjectKind::Person,
+                                        controller: NewController::NarrativePersona,
+                                        // Every non-mirror subject must hold one.
+                                        affordances: BTreeSet::from([Ref::Existing(beacon)]),
+                                        position: position.map(Ref::Existing),
+                                    }),
+                                ],
+                                operations: vec![witness(
+                                    world.asteroid,
+                                    world.village,
+                                    Confidence::Certain,
+                                )],
+                                evidence: Vec::new(),
+                            },
+                        },
+                    ),
+                    &AuthenticatedCaller::fixture(caller),
+                )
+            };
+
+        // Declared with no position: under nothing, so the witness still
+        // reaches nobody and the resolver says so.
+        match arrival(&mut kernel, "ghost", "The Unplaced Arrival", None) {
+            Err(KernelError::PatchRejected(set)) => assert_eq!(
+                set,
+                vec![Mismatch::NoOperationEffect { operation: 0 }],
+                "a placeless draft subject was counted as a recipient"
+            ),
+            other => panic!("expected a refusal, got {other:?}"),
+        }
+
+        // Declared and placed under the witnessed place: the resolver's
+        // candidate map carries the draft position, and the apply pass derives
+        // the same subject from live state.
+        let receipt = arrival(
+            &mut kernel,
+            "arrival",
+            "The Village Arrival",
+            Some(world.village),
+        );
+        assert!(
+            matches!(receipt, Ok(SubmitReceipt::Applied(_))),
+            "{receipt:?}"
+        );
+        let arrived = *kernel
+            .state
+            .subjects
+            .iter()
+            .find(|(_, record)| record.label == "The Village Arrival")
+            .expect("the arrival is declared")
+            .0;
+        assert_eq!(
+            knows(&kernel, arrived, world.asteroid),
+            seen(Confidence::Certain)
+        );
+        // The standers who already held it kept their own rows, so the landing
+        // was exactly the draft subject.
+        assert_eq!(
+            knows(&kernel, world.villager, world.asteroid),
+            seen(Confidence::Believed)
+        );
+        assert_eq!(
+            knows(&kernel, world.neighbour, world.asteroid),
+            seen(Confidence::Believed)
+        );
+    }
+
+    /// The other way the two layers could disagree about who already holds the
+    /// fact: an earlier operation in the same patch takes it away. The
+    /// resolver's candidate map drops the row and the apply pass drops the
+    /// stored one, so a forget-then-witness lands rather than being refused as
+    /// reaching nobody.
+    #[test]
+    fn soul_a_forget_before_a_witness_agrees_at_both_layers() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "Forget first");
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![witness(
+                world.asteroid,
+                world.village,
+                Confidence::Believed,
+            )]),
+        );
+        // Everyone under the village holds it, so the witness alone is refused.
+        let seeded = kernel.snapshot().unwrap();
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &seeded,
+                operations(vec![witness(
+                    world.asteroid,
+                    world.village,
+                    Confidence::Certain
+                )]),
+            ),
+            vec![Mismatch::NoOperationEffect { operation: 0 }]
+        );
+
+        let seeded = kernel.snapshot().unwrap();
+        let receipt = submit_owner(
+            &mut kernel,
+            &seeded,
+            operations(vec![
+                ComponentOp::Forget {
+                    subject: Ref::Existing(world.villager),
+                    fact: Ref::Existing(world.asteroid),
+                },
+                witness(world.asteroid, world.village, Confidence::Certain),
+            ]),
+        );
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)), "{receipt:?}");
+        assert_eq!(
+            knows(&kernel, world.villager, world.asteroid),
+            seen(Confidence::Certain),
+            "the forgotten subject was not re-reached"
+        );
+        assert_eq!(
+            knows(&kernel, world.neighbour, world.asteroid),
+            seen(Confidence::Believed),
+            "a holder the patch did not touch was overwritten"
+        );
+    }
+
+    /// What a witness hands the narrative lane's interruption renderer. The
+    /// renderer takes a subject's own `ScopeComponents` and its own knowledge
+    /// rows and nothing else, so both of its inputs are pinned here rather than
+    /// in the lane that owns the prose: exactly one component moved, `knows`,
+    /// which is the anonymous line and names no author; and the row the witness
+    /// wrote carries no `spoken_at`, which is the sole gate on an `Overheard`
+    /// row, so no attributable line can be built from it.
+    #[test]
+    fn soul_a_witness_moves_only_knows_and_writes_no_spoken_row() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "Anonymous");
+        let before = scope_components(&kernel.state, world.villager);
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![witness(
+                world.asteroid,
+                world.region,
+                Confidence::Certain,
+            )]),
+        );
+        let after = scope_components(&kernel.state, world.villager);
+        assert_ne!(before.knows, after.knows);
+        assert_eq!(
+            after,
+            ScopeComponents {
+                knows: after.knows.clone(),
+                ..before
+            },
+            "a witness moved a component other than what this person knows"
+        );
+
+        let snapshot = kernel.snapshot().unwrap();
+        let held = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == world.villager)
+            .expect("the learner is snapshotted");
+        assert!(
+            held.knowledge
+                .iter()
+                .filter(|row| row.fact == world.asteroid)
+                .all(|row| row.spoken_at.is_none() && row.source == KnowledgeSource::Witnessed),
+            "a witnessed row carried a speech act"
+        );
+    }
 }
 
 /// The clock, commitments, pressure, ordered attention, boundaries, and scale.

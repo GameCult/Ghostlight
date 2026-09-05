@@ -2747,4 +2747,56 @@ mod tests {
             "Witness must lower with no speaker field to forge"
         );
     }
+
+    /// The pin above names two knowledge-touching kinds by example, and a list
+    /// by example goes stale in silence. This match is exhaustive, so a new
+    /// `ComponentOpKind` breaks the build here and its author must say whether
+    /// it touches knowledge. The set that does is `AcquireKnowledge`, `Witness`,
+    /// and `Forget`; the first two are pinned above as unable to carry a teller,
+    /// and `Forget` writes no row at all — it only removes one, so it has no
+    /// source to forge.
+    #[test]
+    fn soul_every_knowledge_touching_op_kind_is_named_by_the_told_pin() {
+        fn touches_knowledge(kind: &ComponentOpKind) -> bool {
+            match kind {
+                ComponentOpKind::AcquireKnowledge { .. }
+                | ComponentOpKind::Witness { .. }
+                | ComponentOpKind::Forget => true,
+                ComponentOpKind::Relocate
+                | ComponentOpKind::OpenRoute
+                | ComponentOpKind::CloseRoute
+                | ComponentOpKind::AlterCost
+                | ComponentOpKind::Transfer
+                | ComponentOpKind::Transform
+                | ComponentOpKind::Consume
+                | ComponentOpKind::Bind
+                | ComponentOpKind::Release
+                | ComponentOpKind::GrantAuthority { .. }
+                | ComponentOpKind::RevokeAuthority { .. }
+                | ComponentOpKind::InstallIncumbent { .. }
+                | ComponentOpKind::VacateOffice { .. }
+                | ComponentOpKind::CreateCommitment { .. }
+                | ComponentOpKind::AdvancePressure { .. }
+                | ComponentOpKind::ReducePressure { .. }
+                | ComponentOpKind::ResolvePressure => false,
+            }
+        }
+
+        let confidence = Confidence::Believed;
+        let touching = [
+            ComponentOpKind::AcquireKnowledge { confidence },
+            ComponentOpKind::Witness { confidence },
+            ComponentOpKind::Forget,
+            ComponentOpKind::Relocate,
+            ComponentOpKind::Transfer,
+            ComponentOpKind::ResolvePressure,
+        ]
+        .iter()
+        .filter(|kind| touches_knowledge(kind))
+        .count();
+        assert_eq!(
+            touching, 3,
+            "the knowledge-touching set is not the one this pin names"
+        );
+    }
 }
