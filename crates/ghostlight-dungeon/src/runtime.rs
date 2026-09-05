@@ -10,13 +10,14 @@ use crate::{
     },
     mesh::{self, MeshPublisher, MeshRuntimeIdentity},
     world::{
-        AffordanceId, CONSUMER_BODY_LIMIT, CellRun, CommandBody, CommandId, ConsumerPort,
-        ConsumerRegistry, ControllerError, ControllerModels, ControllerPendingReason,
+        AffordanceId, CONSUMER_BODY_LIMIT, CellRun, CommandBody, CommandId, ConnectorBinding,
+        ConsumerPort, ConsumerRegistry, ControllerError, ControllerModels, ControllerPendingReason,
         ControllerRunner, ControllerWorkCustody, Cover, CoverBudget, CreateJurisdictionIntent,
         CreateWorldIntent, DecisionInvocation, DecisionOpportunity, KernelError, MailboxError,
         NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId, SeedOutcome, SeedPort,
         Statement, SubjectKind, SubmissionDisposition, SubmitReceipt, TickMinutes,
         VaultEvidenceSource, WorldMailbox, WorldPhase, WorldSnapshot, derive_cover,
+        open_controller_work, open_inference,
     },
 };
 use anyhow::{Context, bail, ensure};
@@ -414,29 +415,28 @@ fn open_controller(
     runtime_id: &str,
     endpoint: SocketAddr,
 ) -> anyhow::Result<ControllerRunner> {
-    let credential = std::env::var_os("GHOSTLIGHT_CONTROLLER_CREDENTIAL")
+    let models = ControllerModels {
+        projector: std::env::var("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL")
+            .unwrap_or_else(|_| "gpt-5.6-luna".into()),
+        persona: std::env::var("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL")
+            .unwrap_or_else(|_| "gpt-5.6-sol".into()),
+        interpreter: std::env::var("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL")
+            .unwrap_or_else(|_| "gpt-5.6-terra".into()),
+        operational_agent: std::env::var("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL")
+            .unwrap_or_else(|_| "gpt-5.6-terra".into()),
+        elaborator: std::env::var("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL")
+            .unwrap_or_else(|_| "gpt-5.6-terra".into()),
+    };
+    let connector = std::env::var_os("GHOSTLIGHT_CONTROLLER_CREDENTIAL")
         .map(PathBuf::from)
-        .context("GHOSTLIGHT_CONTROLLER_CREDENTIAL is required")?;
-    ControllerRunner::open(
-        world.clone(),
-        endpoint,
-        credential,
-        runtime_id.to_owned(),
-        service_root.join("controller-work.cc"),
-        ControllerModels {
-            projector: std::env::var("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL")
-                .unwrap_or_else(|_| "gpt-5.6-luna".into()),
-            persona: std::env::var("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL")
-                .unwrap_or_else(|_| "gpt-5.6-sol".into()),
-            interpreter: std::env::var("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL")
-                .unwrap_or_else(|_| "gpt-5.6-terra".into()),
-            operational_agent: std::env::var("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL")
-                .unwrap_or_else(|_| "gpt-5.6-terra".into()),
-            elaborator: std::env::var("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL")
-                .unwrap_or_else(|_| "gpt-5.6-terra".into()),
-        },
-    )
-    .map_err(Into::into)
+        .map(|key_path| ConnectorBinding {
+            endpoint,
+            key_path,
+            caller_runtime_id: runtime_id.to_owned(),
+        });
+    let inference = open_inference(connector, &models)?;
+    let work = open_controller_work(service_root.join("controller-work.cc"))?;
+    ControllerRunner::open(world.clone(), inference, work, models).map_err(Into::into)
 }
 
 fn open_mesh(
@@ -2500,15 +2500,18 @@ mod tests {
                 elaborator: "gpt-5.6-terra".into(),
             },
         });
-        let controllers = ControllerRunner::open(
-            world.clone(),
-            live.endpoint,
-            &live.credential,
-            live.runtime_id,
-            directory.path().join("controller-work.cc"),
-            live.models,
+        let inference = open_inference(
+            Some(ConnectorBinding {
+                endpoint: live.endpoint,
+                key_path: live.credential.clone(),
+                caller_runtime_id: live.runtime_id,
+            }),
+            &live.models,
         )
         .unwrap();
+        let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
+        let controllers =
+            ControllerRunner::open(world.clone(), inference, work, live.models).unwrap();
         let mesh = MeshPublisher::open(
             directory.path().join("mesh.cc"),
             None,
@@ -3173,12 +3176,15 @@ mod tests {
 
         let port = Arc::new(CountingInferencePort::new());
         let mut state = fixture.state.clone();
-        state.controllers = Some(Arc::new(ControllerRunner::with_test_ports(
-            state.world.clone(),
-            port.clone(),
-            Arc::new(AlwaysFreshWorkStore),
-            test_controller_models(),
-        )));
+        state.controllers = Some(Arc::new(
+            ControllerRunner::open(
+                state.world.clone(),
+                port.clone(),
+                Arc::new(AlwaysFreshWorkStore),
+                test_controller_models(),
+            )
+            .expect("the fixture ports open"),
+        ));
         state.controller_permits = Arc::new(Semaphore::new(1));
 
         run_cover_tick(&state).await;
@@ -3239,12 +3245,15 @@ mod tests {
             calls: AtomicUsize::new(0),
         });
         let mut state = fixture.state.clone();
-        state.controllers = Some(Arc::new(ControllerRunner::with_test_ports(
-            state.world.clone(),
-            port.clone(),
-            Arc::new(AlwaysFreshWorkStore),
-            test_controller_models(),
-        )));
+        state.controllers = Some(Arc::new(
+            ControllerRunner::open(
+                state.world.clone(),
+                port.clone(),
+                Arc::new(AlwaysFreshWorkStore),
+                test_controller_models(),
+            )
+            .expect("the fixture ports open"),
+        ));
         // One permit, two cells: the second cell cannot even attempt the
         // port until the first has returned, which is what makes the
         // post-acquire recheck deterministic rather than a race.
@@ -3421,12 +3430,15 @@ mod tests {
             interpreter_calls: AtomicUsize::new(0),
         });
         let mut state = fixture.state.clone();
-        state.controllers = Some(Arc::new(ControllerRunner::with_test_ports(
-            state.world.clone(),
-            port.clone(),
-            Arc::new(AlwaysFreshWorkStore),
-            test_controller_models(),
-        )));
+        state.controllers = Some(Arc::new(
+            ControllerRunner::open(
+                state.world.clone(),
+                port.clone(),
+                Arc::new(AlwaysFreshWorkStore),
+                test_controller_models(),
+            )
+            .expect("the fixture ports open"),
+        ));
         // One permit serializes the two cells' full runs (see
         // `the_tick_driver_never_exceeds_its_controller_permit_pool`), so the
         // operational agent's own turn — which this port declines on its

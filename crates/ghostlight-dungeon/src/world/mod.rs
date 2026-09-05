@@ -24,10 +24,11 @@ pub(crate) use consumer::{
     CONSUMER_RECEIPT_SCHEMA, ConsumerRegistry, admit_document, encode_receipt,
 };
 pub(crate) use controllers::{
-    CellRun, ControllerError, ControllerModels, ControllerOpenError, ControllerPendingReason,
-    ControllerRunner, ControllerWorkCustody, NarrativeCapture, NarrativeDecision, NarrativePending,
-    NarrativeRun, OperationalCapture, OperationalDecision, OperationalPending, OperationalRun,
-    SourceRange, SubmissionDisposition, TranslationGapSummary,
+    CellRun, ConnectorBinding, ControllerError, ControllerModels, ControllerOpenError,
+    ControllerPendingReason, ControllerRunner, ControllerWorkCustody, NarrativeCapture,
+    NarrativeDecision, NarrativePending, NarrativeRun, OperationalCapture, OperationalDecision,
+    OperationalPending, OperationalRun, SourceRange, SubmissionDisposition, TranslationGapSummary,
+    open_controller_work, open_inference,
 };
 pub(crate) use cover::{
     AgencyGraph, Cell, CellId, Constituent, Cover, CoverBudget, Resolution, TickIndex, derive_cover,

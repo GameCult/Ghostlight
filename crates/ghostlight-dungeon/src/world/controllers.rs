@@ -42,7 +42,7 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, BTreeSet},
     net::SocketAddr,
-    path::Path,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -238,15 +238,25 @@ pub(crate) trait InferencePort: Send + Sync {
 pub(crate) fn fixture_prepared_inference(
     request: InferenceRequest,
 ) -> Result<PreparedInference, InferenceFault> {
-    let native_request_sha256 = Sha256::digest(
-        serde_json::to_vec(&request).map_err(|error| InferenceFault::new(error.to_string()))?,
-    )
-    .into();
+    prepare_invocation("ghostlight-controller-test", 4_102_444_800_000, request)
+}
+
+/// The one place a `PreparedInference` is built. Every port calls it, so a
+/// request prepared by one transport and a request prepared by another are the
+/// same value under the same digests, and every `integrity_is_valid` variant
+/// validates one identity scheme rather than two.
+pub(super) fn prepare_invocation(
+    caller_runtime_id: &str,
+    expires_at_unix_ms: u64,
+    request: InferenceRequest,
+) -> Result<PreparedInference, InferenceFault> {
+    let request_bytes =
+        serde_json::to_vec(&request).map_err(|error| InferenceFault::new(error.to_string()))?;
     let purpose = request.purpose;
     let invocation = CodexTransportInvocation::new(
-        "ghostlight-controller-test",
-        4_102_444_800_000,
-        native_request_sha256,
+        caller_runtime_id,
+        expires_at_unix_ms,
+        Sha256::digest(request_bytes).into(),
         request.provider,
     )
     .map_err(|error| InferenceFault::new(error.to_string()))?;
@@ -334,25 +344,6 @@ impl CodexConnectorInferencePort {
         Self::new(endpoint, key.to_owned(), caller_runtime_id)
     }
 
-    fn prepare_request(
-        &self,
-        request: InferenceRequest,
-    ) -> Result<PreparedInference, InferenceFault> {
-        let request_bytes =
-            serde_json::to_vec(&request).map_err(|error| InferenceFault::new(error.to_string()))?;
-        let invocation = CodexTransportInvocation::new(
-            self.caller_runtime_id.clone(),
-            unix_ms()?.saturating_add(REQUEST_EXPIRY.as_millis() as u64),
-            Sha256::digest(request_bytes).into(),
-            request.provider,
-        )
-        .map_err(|error| InferenceFault::new(error.to_string()))?;
-        Ok(PreparedInference {
-            purpose: request.purpose,
-            invocation,
-        })
-    }
-
     fn execute(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
         if request.invocation.caller_runtime_id != self.caller_runtime_id {
             return Err(InferenceFault::integrity_violation(
@@ -428,7 +419,11 @@ impl CodexConnectorInferencePort {
 #[async_trait]
 impl InferencePort for CodexConnectorInferencePort {
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-        self.prepare_request(request)
+        prepare_invocation(
+            &self.caller_runtime_id,
+            unix_ms()?.saturating_add(REQUEST_EXPIRY.as_millis() as u64),
+            request,
+        )
     }
 
     async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
@@ -454,7 +449,7 @@ fn unix_ms() -> Result<u64, InferenceFault> {
 /// second copy of a digest-bound value is a value that can disagree.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct ConstituentWork {
+pub(super) struct ConstituentWork {
     subject: SubjectId,
     opportunity: DecisionOpportunity,
     granted: Vec<AffordanceSnapshot>,
@@ -1410,6 +1405,14 @@ struct CultCacheControllerWorkStore {
     journal: Mutex<ControllerWorkJournal>,
 }
 
+/// The production controller-work owner, opened for the caller that names its
+/// path. The store type stays private; only the trait object leaves here.
+pub(crate) fn open_controller_work(
+    path: impl AsRef<Path>,
+) -> Result<Arc<dyn ControllerWorkStore>, ControllerOpenError> {
+    Ok(Arc::new(CultCacheControllerWorkStore::open(path)?))
+}
+
 impl CultCacheControllerWorkStore {
     fn open(path: impl AsRef<Path>) -> Result<Self, ControllerWorkStoreError> {
         let store = OwnedRedbMessagePackBackingStore::new(path.as_ref())
@@ -2063,7 +2066,10 @@ pub(crate) struct ControllerModels {
 }
 
 impl ControllerModels {
-    fn are_canonical(&self) -> bool {
+    /// Every model a configured backend must claim, in one place, so the
+    /// open-time routing check and the canonical-identifier gate read the same
+    /// list.
+    pub(crate) fn each(&self) -> [&String; 5] {
         [
             &self.projector,
             &self.persona,
@@ -2071,8 +2077,10 @@ impl ControllerModels {
             &self.operational_agent,
             &self.elaborator,
         ]
-        .into_iter()
-        .all(|model| canonical_model(model))
+    }
+
+    fn are_canonical(&self) -> bool {
+        self.each().into_iter().all(|model| canonical_model(model))
     }
 }
 
@@ -2084,6 +2092,38 @@ pub(crate) enum ControllerOpenError {
     Connector(#[from] InferenceFault),
     #[error("controller work journal could not open: {0}")]
     WorkStore(String),
+    #[error("no configured inference backend claims the controller model `{model}`")]
+    UnroutableModel { model: String },
+}
+
+/// Everything the CodexConnector transport needs to open, gathered so
+/// `ControllerRunner::open` takes a port rather than building one.
+pub(crate) struct ConnectorBinding {
+    pub(crate) endpoint: SocketAddr,
+    pub(crate) key_path: PathBuf,
+    pub(crate) caller_runtime_id: String,
+}
+
+/// Builds the one port every lane shares. A lane whose model no configured
+/// backend claims fails here, at open, rather than at its first tick.
+pub(crate) fn open_inference(
+    connector: Option<ConnectorBinding>,
+    models: &ControllerModels,
+) -> Result<Arc<dyn InferencePort>, ControllerOpenError> {
+    let connector: Option<Arc<dyn InferencePort>> = match connector {
+        Some(binding) => Some(Arc::new(CodexConnectorInferencePort::from_secret_file(
+            binding.endpoint,
+            binding.key_path,
+            binding.caller_runtime_id,
+        )?)),
+        None => None,
+    };
+    let Some(connector) = connector else {
+        return Err(ControllerOpenError::UnroutableModel {
+            model: models.projector.clone(),
+        });
+    };
+    Ok(connector)
 }
 
 impl From<ControllerWorkStoreError> for ControllerOpenError {
@@ -2399,35 +2439,28 @@ pub(crate) struct ControllerRunner {
 }
 
 impl ControllerRunner {
-    /// Opens the complete production controller organ. Runtime supplies
-    /// deployment configuration, but cannot replace either the inference
-    /// transport or the durable controller-work owner. The caller still hands
-    /// over a whole `WorldMailbox` — that stays the one owner-facing type —
-    /// but this constructor is where it narrows to a `ControllerPort` before
-    /// the runner ever sees it, so nothing inside this module can reach past
-    /// the five requests a controller lane makes.
+    /// Opens the complete controller organ around ports the caller supplies.
+    /// Runtime binds the inference transport and the durable controller-work
+    /// owner, because runtime is where the deployment configuration that names
+    /// them lives. The caller still hands over a whole `WorldMailbox` — that
+    /// stays the one owner-facing type — but this constructor is where it
+    /// narrows to a `ControllerPort` before the runner ever sees it, so nothing
+    /// inside this module can reach past the five requests a controller lane
+    /// makes.
     pub(crate) fn open(
         mailbox: WorldMailbox,
-        connector_endpoint: SocketAddr,
-        connector_key_path: impl AsRef<Path>,
-        caller_runtime_id: impl Into<String>,
-        controller_work_path: impl AsRef<Path>,
+        inference: Arc<dyn InferencePort>,
+        work: Arc<dyn ControllerWorkStore>,
         models: ControllerModels,
     ) -> Result<Self, ControllerOpenError> {
         if !models.are_canonical() {
             return Err(ControllerOpenError::InvalidModels);
         }
-        let inference = CodexConnectorInferencePort::from_secret_file(
-            connector_endpoint,
-            connector_key_path,
-            caller_runtime_id,
-        )?;
-        let work = CultCacheControllerWorkStore::open(controller_work_path)?;
         Ok(Self {
             mailbox: ControllerPort::new(mailbox.clone()),
             elaboration: ElaborationPort::new(mailbox),
-            inference: Arc::new(inference),
-            work: Arc::new(work),
+            inference,
+            work,
             models,
         })
     }
@@ -2465,22 +2498,6 @@ impl ControllerRunner {
             self.models.elaborator.clone(),
             brief,
         )
-    }
-
-    #[cfg(test)]
-    pub(crate) fn with_test_ports(
-        mailbox: WorldMailbox,
-        inference: Arc<dyn InferencePort>,
-        work: Arc<dyn ControllerWorkStore>,
-        models: ControllerModels,
-    ) -> Self {
-        Self {
-            mailbox: ControllerPort::new(mailbox.clone()),
-            elaboration: ElaborationPort::new(mailbox),
-            inference,
-            work,
-            models,
-        }
     }
 
     pub(crate) async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerError> {
@@ -4477,6 +4494,96 @@ enum InterpreterLoopEvaluation {
     Complete { capture: NarrativeCapture },
 }
 
+/// The interpreter lane's cross-round accumulator, held apart from the loop so
+/// one function computes every tool result string and both the batch evaluator
+/// and the tool-result oracle call it. `finished` rides along because the call
+/// that sets it is the same call that names it; it is read by the evaluator's
+/// terminality check and never by a result string.
+pub(super) struct InterpreterFold {
+    accumulator: InterpretationAccumulator<SpeakProposal>,
+    captured_speech: bool,
+    finished: bool,
+}
+
+impl InterpreterFold {
+    pub(super) fn new(source: PersonaTurn) -> Self {
+        Self {
+            accumulator: InterpretationAccumulator::new(source),
+            captured_speech: false,
+            finished: false,
+        }
+    }
+}
+
+/// One interpreter tool call folded into `fold`, returning exactly the string
+/// the model is owed for it.
+pub(super) fn interpreter_tool_result(
+    source: &PersonaTurn,
+    fold: &mut InterpreterFold,
+    name: &str,
+    arguments: &str,
+) -> String {
+    match name {
+        INTERPRETER_SPEAK_TOOL => match serde_json::from_str::<InterpreterSpeakCall>(arguments) {
+            Ok(call) if !fold.captured_speech => {
+                let derived_text = source
+                    .source_prose()
+                    .get(call.source_start_byte..call.source_end_byte)
+                    .unwrap_or_default()
+                    .to_owned();
+                let feedback = fold.accumulator.capture_proposal(
+                    SpeakProposal { text: derived_text },
+                    call.source_start_byte,
+                    call.source_end_byte,
+                );
+                fold.captured_speech = feedback == CaptureToolFeedback::Accepted;
+                format!("{feedback:?}")
+            }
+            Ok(call) => {
+                let feedback = fold.accumulator.record_gap(RecordGapToolCall {
+                    kind: TranslationGapKind::Ambiguity,
+                    source_start_byte: call.source_start_byte,
+                    source_end_byte: call.source_end_byte,
+                    detail: "More than one speech proposal was offered; this runner permits one decision invocation per opportunity.".into(),
+                });
+                format!("{feedback:?}")
+            }
+            Err(error) => format!(
+                "{:?}",
+                fold.accumulator
+                    .record_tool_decode_failure(name, arguments, &error.to_string())
+            ),
+        },
+        INTERPRETER_RECORD_GAP_TOOL => match serde_json::from_str::<RecordGapToolCall>(arguments) {
+            Ok(call) => format!("{:?}", fold.accumulator.record_gap(call)),
+            Err(error) => format!(
+                "{:?}",
+                fold.accumulator
+                    .record_tool_decode_failure(name, arguments, &error.to_string())
+            ),
+        },
+        FINISH_INTERPRETATION_TOOL => match serde_json::from_str::<EmptyToolCall>(arguments) {
+            Ok(_) => {
+                fold.finished = true;
+                "interpretation finished".into()
+            }
+            Err(error) => format!(
+                "{:?}",
+                fold.accumulator
+                    .record_tool_decode_failure(name, arguments, &error.to_string())
+            ),
+        },
+        _ => format!(
+            "{:?}",
+            fold.accumulator.record_tool_decode_failure(
+                name,
+                arguments,
+                "tool is not available for this exact opportunity",
+            )
+        ),
+    }
+}
+
 fn evaluate_interpreter_loop(
     source: &PersonaTurn,
     prompt: &str,
@@ -4485,8 +4592,7 @@ fn evaluate_interpreter_loop(
     let mut conversation = vec![CodexInputItem::UserText {
         text: prompt.to_owned(),
     }];
-    let mut accumulator = InterpretationAccumulator::new(source.clone());
-    let mut captured_speech = false;
+    let mut fold = InterpreterFold::new(source.clone());
     let mut receipts = Vec::new();
 
     for (round, output) in completed.iter().enumerate() {
@@ -4499,7 +4605,6 @@ fn evaluate_interpreter_loop(
         }
         receipts.push(output.receipt_digest.clone());
         let mut called_tool = false;
-        let mut finished = false;
         for event in &output.events {
             match event {
                 InferenceEvent::Text(text) => {
@@ -4518,80 +4623,7 @@ fn evaluate_interpreter_loop(
                         name: name.clone(),
                         arguments: arguments.clone(),
                     });
-                    let result = match name.as_str() {
-                        INTERPRETER_SPEAK_TOOL => {
-                            match serde_json::from_str::<InterpreterSpeakCall>(arguments) {
-                                Ok(call) if !captured_speech => {
-                                    let derived_text = source
-                                        .source_prose()
-                                        .get(call.source_start_byte..call.source_end_byte)
-                                        .unwrap_or_default()
-                                        .to_owned();
-                                    let feedback = accumulator.capture_proposal(
-                                        SpeakProposal { text: derived_text },
-                                        call.source_start_byte,
-                                        call.source_end_byte,
-                                    );
-                                    captured_speech = feedback == CaptureToolFeedback::Accepted;
-                                    format!("{feedback:?}")
-                                }
-                                Ok(call) => {
-                                    let feedback = accumulator.record_gap(RecordGapToolCall {
-                                    kind: TranslationGapKind::Ambiguity,
-                                    source_start_byte: call.source_start_byte,
-                                    source_end_byte: call.source_end_byte,
-                                    detail: "More than one speech proposal was offered; this runner permits one decision invocation per opportunity.".into(),
-                                });
-                                    format!("{feedback:?}")
-                                }
-                                Err(error) => format!(
-                                    "{:?}",
-                                    accumulator.record_tool_decode_failure(
-                                        name,
-                                        arguments,
-                                        &error.to_string(),
-                                    )
-                                ),
-                            }
-                        }
-                        INTERPRETER_RECORD_GAP_TOOL => {
-                            match serde_json::from_str::<RecordGapToolCall>(arguments) {
-                                Ok(call) => format!("{:?}", accumulator.record_gap(call)),
-                                Err(error) => format!(
-                                    "{:?}",
-                                    accumulator.record_tool_decode_failure(
-                                        name,
-                                        arguments,
-                                        &error.to_string(),
-                                    )
-                                ),
-                            }
-                        }
-                        FINISH_INTERPRETATION_TOOL => {
-                            match serde_json::from_str::<EmptyToolCall>(arguments) {
-                                Ok(_) => {
-                                    finished = true;
-                                    "interpretation finished".into()
-                                }
-                                Err(error) => format!(
-                                    "{:?}",
-                                    accumulator.record_tool_decode_failure(
-                                        name,
-                                        arguments,
-                                        &error.to_string(),
-                                    )
-                                ),
-                            }
-                        }
-                        _ => format!(
-                            "{:?}",
-                            accumulator.record_tool_decode_failure(
-                                name,
-                                arguments,
-                                "tool is not available for this exact opportunity",
-                            )
-                        ),
-                    };
+                    let result = interpreter_tool_result(source, &mut fold, name, arguments);
                     conversation.push(CodexInputItem::ToolResult {
                         call_id: call_id.clone(),
                         output: result,
@@ -4600,7 +4632,7 @@ fn evaluate_interpreter_loop(
             }
         }
 
-        let finalization = if finished || !called_tool {
+        let finalization = if fold.finished || !called_tool {
             Some(InterpretationFinalization::InterpreterFinished)
         } else if round + 1 == TOOL_STEP_BUDGET {
             Some(InterpretationFinalization::StepBudgetExhausted)
@@ -4613,7 +4645,7 @@ fn evaluate_interpreter_loop(
                     "interpreter evidence continued after total finalization".into(),
                 ));
             }
-            let report = accumulator.finalize(finalization);
+            let report = fold.accumulator.finalize(finalization);
             return Ok(InterpreterLoopEvaluation::Complete {
                 capture: narrative_capture(&report, receipts),
             });
@@ -4703,6 +4735,120 @@ enum GroupedLoopEvaluation {
     Complete { capture: GroupedCapture },
 }
 
+/// The grouped lane's cross-round accumulator. Every field outlives the round
+/// that wrote it, so the fold has no per-round reset.
+pub(super) struct GroupedFold {
+    proposals: BTreeMap<usize, DecisionInvocation>,
+    terminal: BTreeSet<usize>,
+    needs: Vec<ControllerNeed>,
+}
+
+impl GroupedFold {
+    pub(super) fn new() -> Self {
+        Self {
+            proposals: BTreeMap::new(),
+            terminal: BTreeSet::new(),
+            needs: Vec::new(),
+        }
+    }
+}
+
+/// One grouped tool call folded into `fold`. The `Err` arm is the lane's own
+/// hard contract error, not a result string: there is no answer for a
+/// `finish_without_proposal` that contradicts a terminal choice already made.
+pub(super) fn grouped_tool_result(
+    constituents: &[ConstituentWork],
+    fold: &mut GroupedFold,
+    name: &str,
+    arguments: &str,
+) -> Result<String, ControllerError> {
+    Ok(match split_handle(name, constituents.len()) {
+        // A model that writes `c99__carry` has not proposed anything. It has
+        // produced a gap.
+        None => {
+            fold.needs.push(tool_decode_need(
+                name,
+                arguments,
+                "tool names no handle in this cell",
+            ));
+            "unattributable tool recorded as a need".into()
+        }
+        Some((handle, tool)) => {
+            let granted = &constituents[handle].granted;
+            let entry = granted.iter().find(|entry| entry.entry.kind.0 == tool);
+            match tool {
+                _ if entry.is_some() => {
+                    if fold.terminal.contains(&handle) {
+                        fold.needs.push(ControllerNeed {
+                            detail: format!(
+                                "Handle c{handle} was offered more than one terminal choice for one opportunity."
+                            ),
+                        });
+                        "one terminal choice is already captured for this handle".into()
+                    } else {
+                        match decode_catalog_call(
+                            entry.expect("the entry matched above"),
+                            arguments,
+                        ) {
+                            Ok(invocation) => {
+                                fold.proposals.insert(handle, invocation);
+                                fold.terminal.insert(handle);
+                                "invocation captured".into()
+                            }
+                            Err(detail) => {
+                                fold.needs.push(tool_decode_need(name, arguments, &detail));
+                                "arguments recorded as a need".into()
+                            }
+                        }
+                    }
+                }
+                RECORD_NEED_TOOL => match serde_json::from_str::<RecordNeedCall>(arguments) {
+                    Ok(call) => {
+                        fold.needs.push(ControllerNeed {
+                            detail: format!("c{handle}: {}", call.detail),
+                        });
+                        "need recorded".into()
+                    }
+                    Err(error) => {
+                        fold.needs
+                            .push(tool_decode_need(name, arguments, &error.to_string()));
+                        "arguments recorded as a need".into()
+                    }
+                },
+                FINISH_WITHOUT_PROPOSAL_TOOL => {
+                    match serde_json::from_str::<EmptyToolCall>(arguments) {
+                        Ok(_) if fold.terminal.contains(&handle) => {
+                            return Err(ControllerError::ProviderContract {
+                                purpose: InferencePurpose::GroupedAgent,
+                                detail:
+                                    "finish_without_proposal contradicted an existing terminal choice"
+                                        .into(),
+                            });
+                        }
+                        Ok(_) => {
+                            fold.terminal.insert(handle);
+                            "decision finished without a proposal".into()
+                        }
+                        Err(error) => {
+                            fold.needs
+                                .push(tool_decode_need(name, arguments, &error.to_string()));
+                            "arguments recorded as a need".into()
+                        }
+                    }
+                }
+                _ => {
+                    fold.needs.push(tool_decode_need(
+                        name,
+                        arguments,
+                        "tool is not available to this handle",
+                    ));
+                    "unavailable tool recorded as a need".into()
+                }
+            }
+        }
+    })
+}
+
 fn evaluate_grouped_loop(
     prompt: &str,
     constituents: &[ConstituentWork],
@@ -4711,9 +4857,7 @@ fn evaluate_grouped_loop(
     let mut conversation = vec![CodexInputItem::UserText {
         text: prompt.to_owned(),
     }];
-    let mut proposals: BTreeMap<usize, DecisionInvocation> = BTreeMap::new();
-    let mut terminal: BTreeSet<usize> = BTreeSet::new();
-    let mut needs = Vec::new();
+    let mut fold = GroupedFold::new();
 
     for (round, output) in completed.iter().enumerate() {
         if output.receipt_digest.is_empty() || output.receipt_digest.trim() != output.receipt_digest
@@ -4742,100 +4886,7 @@ fn evaluate_grouped_loop(
                         name: name.clone(),
                         arguments: arguments.clone(),
                     });
-                    let result: String = match split_handle(name, constituents.len()) {
-                        // A model that writes `c99__carry` has not proposed
-                        // anything. It has produced a gap.
-                        None => {
-                            needs.push(tool_decode_need(
-                                name,
-                                arguments,
-                                "tool names no handle in this cell",
-                            ));
-                            "unattributable tool recorded as a need".into()
-                        }
-                        Some((handle, tool)) => {
-                            let granted = &constituents[handle].granted;
-                            let entry = granted.iter().find(|entry| entry.entry.kind.0 == tool);
-                            match tool {
-                                _ if entry.is_some() => {
-                                    if terminal.contains(&handle) {
-                                        needs.push(ControllerNeed {
-                                            detail: format!(
-                                                "Handle c{handle} was offered more than one terminal choice for one opportunity."
-                                            ),
-                                        });
-                                        "one terminal choice is already captured for this handle"
-                                            .into()
-                                    } else {
-                                        match decode_catalog_call(
-                                            entry.expect("the entry matched above"),
-                                            arguments,
-                                        ) {
-                                            Ok(invocation) => {
-                                                proposals.insert(handle, invocation);
-                                                terminal.insert(handle);
-                                                "invocation captured".into()
-                                            }
-                                            Err(detail) => {
-                                                needs.push(tool_decode_need(
-                                                    name, arguments, &detail,
-                                                ));
-                                                "arguments recorded as a need".into()
-                                            }
-                                        }
-                                    }
-                                }
-                                RECORD_NEED_TOOL => {
-                                    match serde_json::from_str::<RecordNeedCall>(arguments) {
-                                        Ok(call) => {
-                                            needs.push(ControllerNeed {
-                                                detail: format!("c{handle}: {}", call.detail),
-                                            });
-                                            "need recorded".into()
-                                        }
-                                        Err(error) => {
-                                            needs.push(tool_decode_need(
-                                                name,
-                                                arguments,
-                                                &error.to_string(),
-                                            ));
-                                            "arguments recorded as a need".into()
-                                        }
-                                    }
-                                }
-                                FINISH_WITHOUT_PROPOSAL_TOOL => {
-                                    match serde_json::from_str::<EmptyToolCall>(arguments) {
-                                        Ok(_) if terminal.contains(&handle) => {
-                                            return Err(ControllerError::ProviderContract {
-                                                purpose: InferencePurpose::GroupedAgent,
-                                                detail: "finish_without_proposal contradicted an existing terminal choice".into(),
-                                            });
-                                        }
-                                        Ok(_) => {
-                                            terminal.insert(handle);
-                                            "decision finished without a proposal".into()
-                                        }
-                                        Err(error) => {
-                                            needs.push(tool_decode_need(
-                                                name,
-                                                arguments,
-                                                &error.to_string(),
-                                            ));
-                                            "arguments recorded as a need".into()
-                                        }
-                                    }
-                                }
-                                _ => {
-                                    needs.push(tool_decode_need(
-                                        name,
-                                        arguments,
-                                        "tool is not available to this handle",
-                                    ));
-                                    "unavailable tool recorded as a need".into()
-                                }
-                            }
-                        }
-                    };
+                    let result = grouped_tool_result(constituents, &mut fold, name, arguments)?;
                     conversation.push(CodexInputItem::ToolResult {
                         call_id: call_id.clone(),
                         output: result,
@@ -4844,7 +4895,7 @@ fn evaluate_grouped_loop(
             }
         }
 
-        let is_complete = terminal.len() == constituents.len()
+        let is_complete = fold.terminal.len() == constituents.len()
             || !called_tool
             || round + 1 == CELL_TOOL_STEP_BUDGET;
         if is_complete {
@@ -4854,15 +4905,18 @@ fn evaluate_grouped_loop(
                 ));
             }
             if round + 1 == CELL_TOOL_STEP_BUDGET
-                && terminal.len() < constituents.len()
+                && fold.terminal.len() < constituents.len()
                 && called_tool
             {
-                needs.push(ControllerNeed {
+                fold.needs.push(ControllerNeed {
                     detail: "The grouped step budget ended before every handle finished.".into(),
                 });
             }
             return Ok(GroupedLoopEvaluation::Complete {
-                capture: GroupedCapture { proposals, needs },
+                capture: GroupedCapture {
+                    proposals: fold.proposals,
+                    needs: fold.needs,
+                },
             });
         }
     }
@@ -4931,6 +4985,103 @@ enum OperationalLoopEvaluation {
     Complete { capture: OperationalCapture },
 }
 
+/// The operational lane's accumulator. `proposal` and `needs` outlive the round
+/// that wrote them; `terminal_choice` is the one local a result string depends
+/// on that a round boundary clears, which is what `begin_round` is for.
+pub(super) struct OperationalFold {
+    proposal: Option<DecisionInvocation>,
+    needs: Vec<ControllerNeed>,
+    terminal_choice: Option<String>,
+}
+
+impl OperationalFold {
+    pub(super) fn new() -> Self {
+        Self {
+            proposal: None,
+            needs: Vec::new(),
+            terminal_choice: None,
+        }
+    }
+
+    pub(super) fn begin_round(&mut self) {
+        self.terminal_choice = None;
+    }
+}
+
+/// One operational tool call folded into `fold`. The `Err` arm is the lane's
+/// own hard contract error; there is no result string for a
+/// `finish_without_proposal` that contradicts a terminal choice already made.
+pub(super) fn operational_tool_result(
+    granted: &[AffordanceSnapshot],
+    fold: &mut OperationalFold,
+    name: &str,
+    arguments: &str,
+) -> Result<String, ControllerError> {
+    let entry = granted.iter().find(|entry| entry.entry.kind.0 == *name);
+    Ok(match name {
+        _ if entry.is_some() => {
+            match decode_catalog_call(entry.expect("the entry matched above"), arguments) {
+                Ok(invocation) if fold.terminal_choice.is_none() => {
+                    fold.proposal = Some(invocation);
+                    fold.terminal_choice = Some(name.to_owned());
+                    "invocation captured".into()
+                }
+                Ok(_) => {
+                    fold.needs.push(ControllerNeed {
+                        detail:
+                            "The agent offered more than one terminal choice for one opportunity."
+                                .into(),
+                    });
+                    "one terminal choice is already captured".into()
+                }
+                Err(detail) => {
+                    fold.needs.push(tool_decode_need(name, arguments, &detail));
+                    "arguments recorded as a need".into()
+                }
+            }
+        }
+        RECORD_NEED_TOOL => match serde_json::from_str::<RecordNeedCall>(arguments) {
+            Ok(call) => {
+                fold.needs.push(ControllerNeed {
+                    detail: call.detail,
+                });
+                "need recorded".into()
+            }
+            Err(error) => {
+                fold.needs
+                    .push(tool_decode_need(name, arguments, &error.to_string()));
+                "arguments recorded as a need".into()
+            }
+        },
+        FINISH_WITHOUT_PROPOSAL_TOOL => match serde_json::from_str::<EmptyToolCall>(arguments) {
+            Ok(_) => {
+                if fold.terminal_choice.is_some() {
+                    return Err(ControllerError::ProviderContract {
+                        purpose: InferencePurpose::OperationalAgent,
+                        detail: "finish_without_proposal contradicted an existing terminal choice"
+                            .into(),
+                    });
+                }
+                fold.terminal_choice = Some(FINISH_WITHOUT_PROPOSAL_TOOL.to_owned());
+                "decision finished without a proposal".into()
+            }
+            Err(error) => {
+                fold.needs
+                    .push(tool_decode_need(name, arguments, &error.to_string()));
+                "arguments recorded as a need".into()
+            }
+        },
+        _ => {
+            fold.needs.push(tool_decode_need(
+                name,
+                arguments,
+                "tool is not available for this exact opportunity",
+            ));
+            "unavailable tool recorded as a need".into()
+        }
+    })
+}
+
 fn evaluate_operational_loop(
     prompt: &str,
     granted: &[AffordanceSnapshot],
@@ -4939,8 +5090,7 @@ fn evaluate_operational_loop(
     let mut conversation = vec![CodexInputItem::UserText {
         text: prompt.to_owned(),
     }];
-    let mut proposal = None;
-    let mut needs = Vec::new();
+    let mut fold = OperationalFold::new();
     let mut receipts = Vec::new();
 
     for (round, output) in completed.iter().enumerate() {
@@ -4953,7 +5103,7 @@ fn evaluate_operational_loop(
         }
         receipts.push(output.receipt_digest.clone());
         let mut called_tool = false;
-        let mut terminal_choice = None;
+        fold.begin_round();
         for event in &output.events {
             match event {
                 InferenceEvent::Text(text) => {
@@ -4972,72 +5122,7 @@ fn evaluate_operational_loop(
                         name: name.clone(),
                         arguments: arguments.clone(),
                     });
-                    let entry = granted.iter().find(|entry| entry.entry.kind.0 == *name);
-                    let result = match name.as_str() {
-                        _ if entry.is_some() => match decode_catalog_call(
-                            entry.expect("the entry matched above"),
-                            arguments,
-                        ) {
-                            Ok(invocation) if terminal_choice.is_none() => {
-                                proposal = Some(invocation);
-                                terminal_choice = Some(name.clone());
-                                "invocation captured".into()
-                            }
-                            Ok(_) => {
-                                needs.push(ControllerNeed {
-                                    detail: "The agent offered more than one terminal choice for one opportunity.".into(),
-                                });
-                                "one terminal choice is already captured".into()
-                            }
-                            Err(detail) => {
-                                needs.push(tool_decode_need(name, arguments, &detail));
-                                "arguments recorded as a need".into()
-                            }
-                        },
-                        RECORD_NEED_TOOL => match serde_json::from_str::<RecordNeedCall>(arguments)
-                        {
-                            Ok(call) => {
-                                needs.push(ControllerNeed {
-                                    detail: call.detail,
-                                });
-                                "need recorded".into()
-                            }
-                            Err(error) => {
-                                needs.push(tool_decode_need(name, arguments, &error.to_string()));
-                                "arguments recorded as a need".into()
-                            }
-                        },
-                        FINISH_WITHOUT_PROPOSAL_TOOL => {
-                            match serde_json::from_str::<EmptyToolCall>(arguments) {
-                                Ok(_) => {
-                                    if terminal_choice.is_some() {
-                                        return Err(ControllerError::ProviderContract {
-                                            purpose: InferencePurpose::OperationalAgent,
-                                            detail: "finish_without_proposal contradicted an existing terminal choice".into(),
-                                        });
-                                    }
-                                    terminal_choice = Some(FINISH_WITHOUT_PROPOSAL_TOOL.to_owned());
-                                    "decision finished without a proposal".into()
-                                }
-                                Err(error) => {
-                                    needs.push(tool_decode_need(
-                                        name,
-                                        arguments,
-                                        &error.to_string(),
-                                    ));
-                                    "arguments recorded as a need".into()
-                                }
-                            }
-                        }
-                        _ => {
-                            needs.push(tool_decode_need(
-                                name,
-                                arguments,
-                                "tool is not available for this exact opportunity",
-                            ));
-                            "unavailable tool recorded as a need".into()
-                        }
-                    };
+                    let result = operational_tool_result(granted, &mut fold, name, arguments)?;
                     conversation.push(CodexInputItem::ToolResult {
                         call_id: call_id.clone(),
                         output: result,
@@ -5047,23 +5132,23 @@ fn evaluate_operational_loop(
         }
 
         let is_complete =
-            terminal_choice.is_some() || !called_tool || round + 1 == TOOL_STEP_BUDGET;
+            fold.terminal_choice.is_some() || !called_tool || round + 1 == TOOL_STEP_BUDGET;
         if is_complete {
             if round + 1 != completed.len() {
                 return Err(ControllerError::Serialization(
                     "operational evidence continued after total finalization".into(),
                 ));
             }
-            if round + 1 == TOOL_STEP_BUDGET && terminal_choice.is_none() && called_tool {
-                needs.push(ControllerNeed {
+            if round + 1 == TOOL_STEP_BUDGET && fold.terminal_choice.is_none() && called_tool {
+                fold.needs.push(ControllerNeed {
                     detail: "The operational-agent step budget ended before explicit completion."
                         .into(),
                 });
             }
             return Ok(OperationalLoopEvaluation::Complete {
                 capture: OperationalCapture {
-                    proposal,
-                    needs,
+                    proposal: fold.proposal,
+                    needs: fold.needs,
                     inference_receipts: receipts,
                 },
             });
@@ -6827,7 +6912,8 @@ mod tests {
             persisted,
             work: Mutex::new(BTreeMap::new()),
         });
-        let runner = ControllerRunner::with_test_ports(mailbox.clone(), port, store, models());
+        let runner = ControllerRunner::open(mailbox.clone(), port, store, models())
+            .expect("the fixture ports open");
         let opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
         let command_id = CommandId::new();
         let run = runner
@@ -6909,7 +6995,8 @@ mod tests {
             persisted,
             work: Mutex::new(BTreeMap::new()),
         });
-        let runner = ControllerRunner::with_test_ports(mailbox.clone(), port, store, models());
+        let runner = ControllerRunner::open(mailbox.clone(), port, store, models())
+            .expect("the fixture ports open");
         let opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
         let command_id = CommandId::new();
         let run = runner
@@ -6984,7 +7071,8 @@ mod tests {
             persisted,
             work: Mutex::new(BTreeMap::new()),
         });
-        let runner = ControllerRunner::with_test_ports(mailbox.clone(), port, store, models());
+        let runner = ControllerRunner::open(mailbox.clone(), port, store, models())
+            .expect("the fixture ports open");
         let opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
         let command_id = CommandId::new();
         let NarrativeRun::Completed(decision) = runner
@@ -7073,7 +7161,8 @@ mod tests {
             persisted,
             work: Mutex::new(BTreeMap::new()),
         });
-        let runner = ControllerRunner::with_test_ports(mailbox.clone(), port, store, models());
+        let runner = ControllerRunner::open(mailbox.clone(), port, store, models())
+            .expect("the fixture ports open");
         let opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
         let command_id = CommandId::new();
         let OperationalRun::Completed(decision) = runner
@@ -7122,7 +7211,7 @@ mod tests {
         let speech = "The rain has teeth tonight.";
         let start = source.find(speech).unwrap();
         let persisted = Arc::new(AtomicBool::new(true));
-        let runner = ControllerRunner::with_test_ports(
+        let runner = ControllerRunner::open(
             mailbox.clone(),
             Arc::new(RecordingPort {
                 outputs: Mutex::new(vec![
@@ -7137,7 +7226,8 @@ mod tests {
             }),
             store.clone(),
             models(),
-        );
+        )
+        .expect("the fixture ports open");
         let opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
         let command_id = CommandId::new();
         let NarrativeRun::Pending(first_pending) = runner
@@ -7214,12 +7304,13 @@ mod tests {
             ))),
             seen: AtomicBool::new(false),
         });
-        let recovery_runner = ControllerRunner::with_test_ports(
+        let recovery_runner = ControllerRunner::open(
             mailbox.clone(),
             replay_port.clone(),
             reopened.clone(),
             models(),
-        );
+        )
+        .expect("the fixture ports open");
         let NarrativeRun::Completed(decision) = recovery_runner
             .run_narrative(command_id, &opportunity)
             .await
@@ -7440,15 +7531,17 @@ mod tests {
             .unwrap();
         assert!(matches!(seed_receipt, SubmitReceipt::Applied(_)));
 
-        let runner = ControllerRunner::open(
-            mailbox.clone(),
-            connector_endpoint,
-            connector_credential,
-            runtime_id,
-            directory.path().join("controller-work.cc"),
-            models,
+        let inference = open_inference(
+            Some(ConnectorBinding {
+                endpoint: connector_endpoint,
+                key_path: connector_credential.into(),
+                caller_runtime_id: runtime_id,
+            }),
+            &models,
         )
         .unwrap();
+        let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
+        let runner = ControllerRunner::open(mailbox.clone(), inference, work, models).unwrap();
 
         snapshot = mailbox.snapshot().await.unwrap();
         let log = mailbox.operator_log().await.unwrap();
@@ -8063,7 +8156,8 @@ mod tests {
             work: Mutex::new(BTreeMap::new()),
         });
         (
-            ControllerRunner::with_test_ports(mailbox.clone(), port, store.clone(), models()),
+            ControllerRunner::open(mailbox.clone(), port, store.clone(), models())
+                .expect("the fixture ports open"),
             store,
         )
     }
@@ -10987,12 +11081,8 @@ mod tests {
             work: Mutex::new(BTreeMap::new()),
         });
         InterruptedTurn {
-            runner: ControllerRunner::with_test_ports(
-                mailbox.clone(),
-                port,
-                store.clone(),
-                models(),
-            ),
+            runner: ControllerRunner::open(mailbox.clone(), port, store.clone(), models())
+                .expect("the fixture ports open"),
             store,
             calls,
             seen,
@@ -12222,7 +12312,7 @@ mod tests {
             work: Mutex::new(BTreeMap::new()),
         });
         let opening_calls = Arc::new(AtomicUsize::new(0));
-        let opening = ControllerRunner::with_test_ports(
+        let opening = ControllerRunner::open(
             mailbox.clone(),
             // No scripted round at all: the opening call faults retryably, so
             // the lane leaves its `AgentInFlight` row persisted and unanswered.
@@ -12235,7 +12325,8 @@ mod tests {
             }),
             opening_store.clone(),
             models(),
-        );
+        )
+        .expect("the fixture ports open");
         let opened = opening
             .run_operational(operational_command, &operational)
             .await;
@@ -12263,7 +12354,7 @@ mod tests {
         // The operational lane checks the digest at the top of its loop and
         // stops without asking the provider anything.
         let operational_calls = Arc::new(AtomicUsize::new(0));
-        let refused = ControllerRunner::with_test_ports(
+        let refused = ControllerRunner::open(
             mailbox.clone(),
             Arc::new(InterruptingPort {
                 mailbox: mailbox.clone(),
@@ -12278,6 +12369,7 @@ mod tests {
             opening_store.clone(),
             models(),
         )
+        .expect("the fixture ports open")
         .run_operational(operational_command, &operational)
         .await;
         assert!(
@@ -12292,7 +12384,7 @@ mod tests {
 
         // The narrative lane has prose to preserve, so it runs on.
         let narrative_calls = Arc::new(AtomicUsize::new(0));
-        let run = ControllerRunner::with_test_ports(
+        let run = ControllerRunner::open(
             mailbox.clone(),
             Arc::new(InterruptingPort {
                 mailbox: mailbox.clone(),
@@ -12307,6 +12399,7 @@ mod tests {
             first.store.clone(),
             models(),
         )
+        .expect("the fixture ports open")
         .run_narrative(narrative_command, &narrative)
         .await
         .expect("a resumed narrative row on a moved scope is no longer an error");

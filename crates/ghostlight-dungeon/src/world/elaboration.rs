@@ -54,7 +54,7 @@ const ELABORATION_INSTRUCTIONS: &str = "Use only the supplied tools to author st
 /// The answer a session is bound to, plus the ancestry it was built against.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct ElaboratorSession {
+pub(crate) struct ElaboratorSession {
     pub(super) world_id: WorldId,
     pub(super) jurisdiction: JurisdictionKey,
     pub(super) answer: PatchAnswer,
@@ -73,7 +73,7 @@ pub(super) struct ElaboratorSession {
 /// came from the kernel, not the model.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "stage", rename_all = "snake_case")]
-pub(super) enum ElaborationCheckpoint {
+pub(crate) enum ElaborationCheckpoint {
     ElaboratorInFlight {
         command_id: CommandId,
         session: ElaboratorSession,
@@ -1111,7 +1111,7 @@ const SEED_INSTRUCTIONS: &str = "Use only the supplied tools to author living st
 /// answer field it must never submit would be a field that lies.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct SeedSession {
+pub(crate) struct SeedSession {
     pub(super) world_id: WorldId,
     pub(super) jurisdiction: JurisdictionKey,
     pub(super) kind: SubjectKind,
@@ -1139,7 +1139,7 @@ fn seed_command_id(session: &SeedSession) -> Result<CommandId, ControllerError> 
 /// the conversation does not produce.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "stage", rename_all = "snake_case")]
-pub(super) enum SeedCheckpoint {
+pub(crate) enum SeedCheckpoint {
     SeedInFlight {
         command_id: CommandId,
         session: SeedSession,
