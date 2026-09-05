@@ -122,6 +122,11 @@ impl WorldMailbox {
                 position: Some(Ref::Draft(DraftHandle::new(GENESIS_PLACE))),
             })
         };
+        // Roots stand beside the commons, not inside it: a root contained by
+        // the commons would make every commons subject count toward that root
+        // through `covers_place`, and the world's first person belongs to no
+        // jurisdiction's population target. The owner subject lands in
+        // `Uncovered`, visible and reducing nothing.
         let mut declarations = vec![
             Declaration::Entity(EntityDeclaration {
                 handle: DraftHandle::new(GENESIS_PLACE),
@@ -154,6 +159,22 @@ impl WorldMailbox {
                 NewController::OperationalAgent,
             ));
         }
+        for root in &input.jurisdictions {
+            declarations.push(Declaration::Entity(EntityDeclaration {
+                handle: DraftHandle::new(root.handle.clone()),
+                label: root.label.trim().to_owned(),
+                kind: EntityKind::Place,
+                container: None,
+            }));
+        }
+        let scale_intent = WorldScaleIntentRef {
+            targets: input.targets,
+            jurisdictions: input
+                .jurisdictions
+                .iter()
+                .map(|root| (DraftHandle::new(root.handle.clone()), root.permille))
+                .collect(),
+        };
         self.create_authenticated(
             CreateWorld {
                 id: input.id,
@@ -164,9 +185,7 @@ impl WorldMailbox {
                     operations: Vec::new(),
                     evidence: Vec::new(),
                 },
-                // World ingress authors no scale target: the intent names
-                // jurisdiction roots, and genesis declares only the commons.
-                scale_intent: WorldScaleIntentRef::default(),
+                scale_intent,
             },
             AuthenticatedCaller::verified_principal(principal_id),
         )
@@ -535,6 +554,64 @@ impl ElaborationPort {
     ) -> Result<SubmitReceipt, MailboxError> {
         self.mailbox
             .submit_elaboration(command_id, jurisdiction, answers, patch)
+            .await
+    }
+}
+
+/// The seeding organ's narrowing of the mailbox. It reads a snapshot and
+/// commits one unanswered Draft patch as the owner. It has no `operator_log`,
+/// no `agency_graph`, no `submit_clock`, and no `ApproveDraft`/`ActivateWorld`:
+/// those are not methods on this type, so reaching for one fails to compile.
+///
+/// It carries the owner's `VerifiedPrincipalEvidence` for the session's
+/// lifetime because a multi-round session cannot re-derive it: the only minter
+/// is `AppSessionOwner` holding a live cookie, and a checkpoint that stored an
+/// account hash so the runner could re-mint one would be a second minter and an
+/// offline forge path. The evidence is captured from the request that asked for
+/// the work and dies with the port.
+#[derive(Clone)]
+pub(crate) struct SeedPort {
+    mailbox: WorldMailbox,
+    principal: VerifiedPrincipalEvidence,
+}
+
+impl SeedPort {
+    pub(crate) fn new(mailbox: WorldMailbox, principal: VerifiedPrincipalEvidence) -> Self {
+        Self { mailbox, principal }
+    }
+
+    pub(super) async fn snapshot(&self) -> Result<WorldSnapshot, MailboxError> {
+        self.mailbox.snapshot().await
+    }
+
+    /// One body, hardcoded. The seed lane cannot express an answered patch, so
+    /// it meets exactly one answer gate — `require_answer`'s Draft branch — and
+    /// the owner arm of `require_patch_author`, which is unconfined.
+    ///
+    /// It takes `expected_revision` rather than stamping one: a world that
+    /// moved under a long session fails `StaleRevision` and the runner reports
+    /// `Superseded`, where a stamped submission would silently commit against a
+    /// world the model never saw.
+    pub(super) async fn submit_seed(
+        &self,
+        command_id: CommandId,
+        world_id: WorldId,
+        expected_revision: u64,
+        patch: WorldPatch,
+    ) -> Result<SubmitReceipt, MailboxError> {
+        self.mailbox
+            .submit_principal(
+                PrincipalCommandIntent {
+                    id: command_id,
+                    world_id,
+                    expected_revision,
+                    body: CommandBody::AdmitPatch {
+                        answers: None,
+                        patch,
+                    },
+                },
+                &self.principal,
+            )
             .await
     }
 }

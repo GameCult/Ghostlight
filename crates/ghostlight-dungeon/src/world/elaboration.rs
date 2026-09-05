@@ -24,8 +24,8 @@ use super::patch::{
 };
 use super::{
     BoundaryDigest, CausalBoundary, CommandId, Declaration, ElaborationPort, EntityId, EvidenceRef,
-    JurisdictionKey, KernelError, MailboxError, Mismatch, PatchAnswer, SubjectId, WorldId,
-    WorldPatch, WorldPhase, WorldSnapshot,
+    JurisdictionKey, KernelError, MailboxError, Mismatch, PatchAnswer, ScaleDeficitRow, SeedPort,
+    SubjectId, SubjectKind, WorldId, WorldPatch, WorldPhase, WorldSnapshot,
 };
 use async_trait::async_trait;
 use codex_connector::CodexInputItem;
@@ -201,20 +201,20 @@ pub(super) fn valid_elaboration_progression(
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
 #[error("{detail}")]
-pub(super) struct EvidenceError {
+pub(crate) struct EvidenceError {
     detail: String,
 }
 
 /// The referents the answer names, as world labels.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct EvidenceQuery {
-    pub(super) referents: Vec<String>,
+pub(crate) struct EvidenceQuery {
+    pub(crate) referents: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct EvidenceReceipt {
+pub(crate) struct EvidenceReceipt {
     /// The exact reference an admitted patch may carry.
-    pub(super) reference: EvidenceRef,
+    pub(crate) reference: EvidenceRef,
     /// What the elaborator is allowed to read. Prompt material, never state.
     pub(super) excerpt: String,
     pub(super) source: String,
@@ -226,7 +226,7 @@ pub(super) struct EvidenceReceipt {
 /// string is canonical and that an `Admit`'s reference is listed in the same
 /// patch.
 #[async_trait]
-pub(super) trait EvidenceSource: Send + Sync {
+pub(crate) trait EvidenceSource: Send + Sync {
     async fn retrieve(&self, query: &EvidenceQuery) -> Result<Vec<EvidenceReceipt>, EvidenceError>;
 }
 
@@ -235,7 +235,7 @@ pub(super) trait EvidenceSource: Send + Sync {
 /// structure and operate on it, but cannot mint quantity, because `admit`
 /// requires a listed reference and there are none. Creation of quantity without
 /// provenance should be impossible, not merely discouraged.
-pub(super) struct NullEvidenceSource;
+pub(crate) struct NullEvidenceSource;
 
 #[async_trait]
 impl EvidenceSource for NullEvidenceSource {
@@ -720,6 +720,15 @@ fn build_prompt(
         "Answer: {}\n\n",
         render_answer(snapshot, &session.answer)
     ));
+    prompt_body(&mut prompt, receipts, last_mismatches);
+    prompt
+}
+
+/// The half of an authoring prompt that is neither jurisdiction- nor
+/// phase-specific: what may be cited, what must be repaired, and which tools
+/// exist. One owner, so the two lanes cannot drift on what a citation rule says
+/// or on which tools are offered.
+fn prompt_body(prompt: &mut String, receipts: &[EvidenceReceipt], last_mismatches: &[Mismatch]) {
     if receipts.is_empty() {
         prompt.push_str(
             "No evidence receipts were retrieved. You may declare structure and operate on it; you cannot admit quantity without a receipt.\n\n",
@@ -744,7 +753,6 @@ fn build_prompt(
         prompt.push('\n');
     }
     prompt.push_str(&format!("Tools: {}\n", patch_tool_signatures()));
-    prompt
 }
 
 fn render_jurisdiction(snapshot: &WorldSnapshot, jurisdiction: JurisdictionKey) -> String {
@@ -1045,6 +1053,704 @@ fn digest_of<T: Serialize>(value: &T) -> Result<String, ControllerError> {
     let bytes = rmp_serde::to_vec_named(value)
         .map_err(|error| ControllerError::Serialization(error.to_string()))?;
     Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
+}
+
+// ---- The seed lane -------------------------------------------------------
+//
+// Draft's authoring session, beside Active's. It shares this file's round loop,
+// tool application, evidence filter, cap check, repair prompt, and checkpoint
+// discipline; it differs in three places and no fourth — the phase it runs in,
+// the row it selects, and the port it submits through.
+
+const SEED_NAMESPACE: &str = "ghostlight.command.seed.v1";
+
+const SEED_INSTRUCTIONS: &str = "Use only the supplied tools to author living structure inside your jurisdiction. A subject counts only when it has a controller, at least one affordance grant, and holds a goal commitment. Author the shortfall you were given, then submit. Recording a gap changes nothing.";
+
+/// The row a session answers, plus the ancestry it was built against. There is
+/// no `PatchAnswer` here: a seed answers nothing, and giving this session an
+/// answer field it must never submit would be a field that lies.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct SeedSession {
+    pub(super) world_id: WorldId,
+    pub(super) jurisdiction: JurisdictionKey,
+    pub(super) kind: SubjectKind,
+    pub(super) target: u32,
+    pub(super) qualified: u32,
+    /// The commit digest the draft is built against, so each landed patch opens
+    /// a fresh session and the sweep advances instead of resubmitting one id.
+    pub(super) ancestry: String,
+}
+
+/// Derived from the world, the row, and the ancestry, so a crashed loop resumes
+/// the same store row without a registry. `patch::derive_id` keeps exactly two
+/// call sites: this is a command key, not a referent id.
+fn seed_command_id(session: &SeedSession) -> Result<CommandId, ControllerError> {
+    let scope = digest_of(&(session.world_id, session.jurisdiction, session.kind))?;
+    Ok(CommandId::derived(
+        SEED_NAMESPACE,
+        &[&scope, &session.ancestry],
+    ))
+}
+
+/// `ElaborationCheckpoint`'s stages with `SeedSession` substituted and nothing
+/// added. The draft is not a field, for the same reason it is not one there: it
+/// is re-derived from `completed`, so a resumed session cannot submit a draft
+/// the conversation does not produce.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "stage", rename_all = "snake_case")]
+pub(super) enum SeedCheckpoint {
+    SeedInFlight {
+        command_id: CommandId,
+        session: SeedSession,
+        agent_prompt: String,
+        last_mismatches: Vec<Mismatch>,
+        completed: Vec<InferenceOutput>,
+        invocation: PreparedInference,
+    },
+    ReadyToSubmit {
+        command_id: CommandId,
+        session: SeedSession,
+        agent_prompt: String,
+        last_mismatches: Vec<Mismatch>,
+        completed: Vec<InferenceOutput>,
+    },
+    /// The round budget ran out, or the model finished without a submit. The
+    /// shortfall stays derived; nothing is repaired by waiting.
+    NoPatch {
+        command_id: CommandId,
+        session: SeedSession,
+        agent_prompt: String,
+        completed: Vec<InferenceOutput>,
+        gaps: Vec<ControllerNeed>,
+    },
+}
+
+impl SeedCheckpoint {
+    pub(super) fn command_id(&self) -> CommandId {
+        match self {
+            Self::SeedInFlight { command_id, .. }
+            | Self::ReadyToSubmit { command_id, .. }
+            | Self::NoPatch { command_id, .. } => *command_id,
+        }
+    }
+
+    fn session(&self) -> &SeedSession {
+        match self {
+            Self::SeedInFlight { session, .. }
+            | Self::ReadyToSubmit { session, .. }
+            | Self::NoPatch { session, .. } => session,
+        }
+    }
+
+    pub(super) fn is_initial(&self) -> bool {
+        matches!(
+            self,
+            Self::SeedInFlight {
+                completed,
+                last_mismatches,
+                ..
+            } if completed.is_empty() && last_mismatches.is_empty()
+        )
+    }
+
+    pub(super) fn integrity_is_valid(&self) -> bool {
+        match self {
+            Self::SeedInFlight {
+                command_id,
+                agent_prompt,
+                last_mismatches,
+                completed,
+                invocation,
+                ..
+            } => {
+                !agent_prompt.is_empty()
+                    && canonical_model(&invocation.invocation.request.model)
+                    && match evaluate_elaboration_loop(agent_prompt, last_mismatches, completed) {
+                        Ok(ElaborationLoopEvaluation::Continue { conversation }) => seed_request(
+                            *command_id,
+                            completed.len(),
+                            &invocation.invocation.request.model,
+                            conversation,
+                        )
+                        .is_ok_and(|expected| {
+                            prepared_matches_request(
+                                invocation,
+                                &expected,
+                                *command_id,
+                                completed.len(),
+                            )
+                        }),
+                        Ok(ElaborationLoopEvaluation::Complete { .. }) | Err(_) => false,
+                    }
+            }
+            Self::ReadyToSubmit {
+                agent_prompt,
+                last_mismatches,
+                completed,
+                ..
+            } => derive_elaboration_capture(agent_prompt, last_mismatches, completed)
+                .is_ok_and(|capture| capture.submitted),
+            Self::NoPatch {
+                agent_prompt,
+                completed,
+                ..
+            } => derive_elaboration_capture(agent_prompt, &[], completed)
+                .is_ok_and(|capture| !capture.submitted),
+        }
+    }
+}
+
+/// A session may gather more evidence and may end, but it may never rewrite the
+/// row it bound to.
+pub(super) fn valid_seed_progression(existing: &SeedCheckpoint, next: &SeedCheckpoint) -> bool {
+    if existing.command_id() != next.command_id() || existing.session() != next.session() {
+        return false;
+    }
+    match (existing, next) {
+        (
+            SeedCheckpoint::SeedInFlight {
+                completed: existing,
+                ..
+            },
+            SeedCheckpoint::SeedInFlight {
+                completed: next, ..
+            }
+            | SeedCheckpoint::ReadyToSubmit {
+                completed: next, ..
+            }
+            | SeedCheckpoint::NoPatch {
+                completed: next, ..
+            },
+        ) => next.len() >= existing.len() && next.starts_with(existing),
+        // A rejection reopens the same command id for repair. A rejected
+        // command mutates nothing, so the round evidence starts over.
+        (
+            SeedCheckpoint::ReadyToSubmit { .. },
+            SeedCheckpoint::SeedInFlight {
+                last_mismatches, ..
+            },
+        ) => !last_mismatches.is_empty(),
+        _ => false,
+    }
+}
+
+/// What one seed `step` did, for the transport that asked for it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SeedOutcome {
+    /// Every row's deficit is zero: the terminating condition.
+    Clean,
+    /// The world is not Draft. Seeding is Draft's lane exactly as elaboration
+    /// is Active's.
+    NotDraft,
+    Committed,
+    /// The patch committed and the row's deficit did not strictly fall. A fixed
+    /// point, not a retry.
+    NoProgress,
+    /// The kernel returned a complete mismatch set; the next round repairs it.
+    Rejected,
+    /// The world moved under the session. Re-select; this is not a retry loop.
+    Superseded,
+    /// The round budget was spent without a submit.
+    NoPatch,
+}
+
+impl SeedOutcome {
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            Self::Clean => "clean",
+            Self::NotDraft => "not_draft",
+            Self::Committed => "committed",
+            Self::NoProgress => "no_progress",
+            Self::Rejected => "rejected",
+            Self::Superseded => "superseded",
+            Self::NoPatch => "no_patch",
+        }
+    }
+}
+
+/// The Draft authoring loop. Holds no state between steps; every field is a
+/// port, an identity, or the owner's own one-sentence brief.
+pub(crate) struct SeedRunner {
+    mailbox: SeedPort,
+    inference: Arc<dyn InferencePort>,
+    evidence: Arc<dyn EvidenceSource>,
+    work: Arc<dyn ControllerWorkStore>,
+    model: String,
+    brief: Option<String>,
+}
+
+impl SeedRunner {
+    pub(super) fn new(
+        mailbox: SeedPort,
+        inference: Arc<dyn InferencePort>,
+        evidence: Arc<dyn EvidenceSource>,
+        work: Arc<dyn ControllerWorkStore>,
+        model: String,
+        brief: Option<String>,
+    ) -> Self {
+        Self {
+            mailbox,
+            inference,
+            evidence,
+            work,
+            model,
+            brief,
+        }
+    }
+
+    /// One shortfall row, start to finish.
+    pub(crate) async fn step(&self) -> Result<SeedOutcome, ControllerError> {
+        let snapshot = self.mailbox.snapshot().await.map_err(snapshot_error)?;
+        if snapshot.phase != WorldPhase::Draft {
+            return Ok(SeedOutcome::NotDraft);
+        }
+        let Some(row) = select_row(&snapshot) else {
+            return Ok(SeedOutcome::Clean);
+        };
+        let session = SeedSession {
+            world_id: snapshot.world_id,
+            jurisdiction: row.jurisdiction,
+            kind: row.kind,
+            target: row.target,
+            qualified: row.qualified,
+            ancestry: snapshot.last_commit_digest.clone().unwrap_or_default(),
+        };
+        let command_id = seed_command_id(&session)?;
+
+        let receipts = self
+            .evidence
+            .retrieve(&EvidenceQuery {
+                referents: seed_referents(&snapshot, &session, self.brief.as_deref()),
+            })
+            .await
+            .map_err(|error| ControllerError::WorkPersistence(error.to_string()))?;
+        let allowed: BTreeSet<EvidenceRef> = receipts
+            .iter()
+            .map(|receipt| receipt.reference.clone())
+            .collect();
+
+        let existing = match self.work.lookup(command_id).await? {
+            ControllerWorkLookup::Missing => None,
+            ControllerWorkLookup::Confirmed(ControllerWork::Seed(checkpoint))
+            | ControllerWorkLookup::CustodyUncertain(ControllerWork::Seed(checkpoint)) => {
+                if checkpoint.session() != &session {
+                    return Ok(SeedOutcome::Superseded);
+                }
+                Some(checkpoint)
+            }
+            ControllerWorkLookup::Confirmed(_) | ControllerWorkLookup::CustodyUncertain(_) => {
+                return Err(ControllerError::CommandMismatch);
+            }
+        };
+
+        let (agent_prompt, mut last_mismatches, mut completed) = match existing {
+            Some(SeedCheckpoint::NoPatch { .. }) => return Ok(SeedOutcome::NoPatch),
+            Some(
+                SeedCheckpoint::SeedInFlight {
+                    agent_prompt,
+                    last_mismatches,
+                    completed,
+                    ..
+                }
+                | SeedCheckpoint::ReadyToSubmit {
+                    agent_prompt,
+                    last_mismatches,
+                    completed,
+                    ..
+                },
+            ) => (agent_prompt, last_mismatches, completed),
+            None => (
+                build_seed_prompt(&snapshot, &session, self.brief.as_deref(), &receipts, &[]),
+                Vec::new(),
+                Vec::new(),
+            ),
+        };
+
+        loop {
+            match evaluate_elaboration_loop(&agent_prompt, &last_mismatches, &completed)? {
+                ElaborationLoopEvaluation::Continue { conversation } => {
+                    let request =
+                        seed_request(command_id, completed.len(), &self.model, conversation)?;
+                    let invocation = self.inference.prepare(request).map_err(|source| {
+                        ControllerError::Inference {
+                            purpose: InferencePurpose::Elaboration,
+                            source,
+                        }
+                    })?;
+                    self.persist(SeedCheckpoint::SeedInFlight {
+                        command_id,
+                        session: session.clone(),
+                        agent_prompt: agent_prompt.clone(),
+                        last_mismatches: last_mismatches.clone(),
+                        completed: completed.clone(),
+                        invocation: invocation.clone(),
+                    })
+                    .await?;
+                    let output = self.inference.infer(invocation).await.map_err(|source| {
+                        ControllerError::Inference {
+                            purpose: InferencePurpose::Elaboration,
+                            source,
+                        }
+                    })?;
+                    completed.push(output);
+                }
+                ElaborationLoopEvaluation::Complete { capture } => {
+                    if !capture.submitted {
+                        self.persist(SeedCheckpoint::NoPatch {
+                            command_id,
+                            session,
+                            agent_prompt,
+                            completed,
+                            gaps: capture.gaps,
+                        })
+                        .await?;
+                        return Ok(SeedOutcome::NoPatch);
+                    }
+                    self.persist(SeedCheckpoint::ReadyToSubmit {
+                        command_id,
+                        session: session.clone(),
+                        agent_prompt: agent_prompt.clone(),
+                        last_mismatches: last_mismatches.clone(),
+                        completed: completed.clone(),
+                    })
+                    .await?;
+                    let draft = filter_evidence(capture.draft, &allowed);
+                    if let Err(error) = patch::check_patch_caps(&draft) {
+                        return Err(ControllerError::Serialization(format!(
+                            "seed draft exceeded a patch item cap: {error:?}"
+                        )));
+                    }
+                    let submitted = self
+                        .mailbox
+                        .submit_seed(command_id, snapshot.world_id, snapshot.revision, draft)
+                        .await;
+                    return match submitted {
+                        // Termination is the deficit, not a counter the runner
+                        // keeps: a commit that did not strictly lower this
+                        // row's shortfall is a fixed point.
+                        Ok(_) => {
+                            let after = self.mailbox.snapshot().await.map_err(snapshot_error)?;
+                            let remaining = row_deficit(&after, &session);
+                            Ok(if remaining < row.deficit {
+                                SeedOutcome::Committed
+                            } else {
+                                SeedOutcome::NoProgress
+                            })
+                        }
+                        Err(MailboxError::Kernel(KernelError::PatchRejected(mismatches))) => {
+                            last_mismatches = mismatches;
+                            let repaired = build_seed_prompt(
+                                &snapshot,
+                                &session,
+                                self.brief.as_deref(),
+                                &receipts,
+                                &last_mismatches,
+                            );
+                            self.persist_repair(command_id, &session, &repaired, &last_mismatches)
+                                .await?;
+                            Ok(SeedOutcome::Rejected)
+                        }
+                        Err(MailboxError::Kernel(KernelError::RevisionMismatch { .. })) => {
+                            Ok(SeedOutcome::Superseded)
+                        }
+                        Err(error) => Err(snapshot_error(error)),
+                    };
+                }
+            }
+        }
+    }
+
+    /// One bounded sweep. The budget is the caller's, because who may spend a
+    /// paid endpoint is a transport question and how far a deficit has fallen
+    /// is not.
+    pub(crate) async fn sweep(&self, sessions: usize) -> Result<SeedOutcome, ControllerError> {
+        let mut last = SeedOutcome::Clean;
+        for _ in 0..sessions {
+            last = self.step().await?;
+            if !matches!(last, SeedOutcome::Committed) {
+                break;
+            }
+        }
+        Ok(last)
+    }
+
+    async fn persist(&self, checkpoint: SeedCheckpoint) -> Result<(), ControllerError> {
+        match self.work.persist(&ControllerWork::Seed(checkpoint)).await? {
+            ControllerWorkWrite::Applied | ControllerWorkWrite::AlreadyPresent => Ok(()),
+            ControllerWorkWrite::CustodyUncertain => Err(ControllerError::WorkPersistence(
+                "controller work custody is uncertain".into(),
+            )),
+        }
+    }
+
+    async fn persist_repair(
+        &self,
+        command_id: CommandId,
+        session: &SeedSession,
+        agent_prompt: &str,
+        last_mismatches: &[Mismatch],
+    ) -> Result<(), ControllerError> {
+        let conversation = match evaluate_elaboration_loop(agent_prompt, last_mismatches, &[])? {
+            ElaborationLoopEvaluation::Continue { conversation } => conversation,
+            ElaborationLoopEvaluation::Complete { .. } => {
+                return Err(ControllerError::Serialization(
+                    "a repair round completed before any evidence".into(),
+                ));
+            }
+        };
+        let request = seed_request(command_id, 0, &self.model, conversation)?;
+        let invocation =
+            self.inference
+                .prepare(request)
+                .map_err(|source| ControllerError::Inference {
+                    purpose: InferencePurpose::Elaboration,
+                    source,
+                })?;
+        self.persist(SeedCheckpoint::SeedInFlight {
+            command_id,
+            session: session.clone(),
+            agent_prompt: agent_prompt.to_owned(),
+            last_mismatches: last_mismatches.to_vec(),
+            completed: Vec::new(),
+            invocation,
+        })
+        .await
+    }
+}
+
+/// The first shortfall the world reports, in the order the snapshot reports
+/// them. The panel calls this too, so the card and the runner cannot disagree
+/// about what happens next.
+pub(crate) fn select_row(snapshot: &WorldSnapshot) -> Option<ScaleDeficitRow> {
+    snapshot
+        .scale_deficit
+        .iter()
+        .find(|row| row.deficit > 0)
+        .copied()
+}
+
+fn row_deficit(snapshot: &WorldSnapshot, session: &SeedSession) -> u32 {
+    snapshot
+        .scale_deficit
+        .iter()
+        .find(|row| row.jurisdiction == session.jurisdiction && row.kind == session.kind)
+        .map_or(0, |row| row.deficit)
+}
+
+fn seed_request(
+    command_id: CommandId,
+    round: usize,
+    model: &str,
+    input: Vec<CodexInputItem>,
+) -> Result<InferenceRequest, ControllerError> {
+    tool_request(
+        command_id,
+        round,
+        InferencePurpose::Elaboration,
+        model,
+        SEED_INSTRUCTIONS,
+        input,
+        patch_tools(),
+        RequestShape {
+            max_output_tokens: 4_000,
+            parallel_tool_calls: false,
+        },
+    )
+}
+
+/// What the Vault is asked about. Deliberately not `answer_referents`, which
+/// returns nothing for the uncovered residual — the only jurisdiction a genesis
+/// world has. A one-room world retrieves against its own title and the labels
+/// of the places that already exist rather than against nothing.
+fn seed_referents(
+    snapshot: &WorldSnapshot,
+    session: &SeedSession,
+    brief: Option<&str>,
+) -> Vec<String> {
+    let mut referents = Vec::new();
+    match session.jurisdiction {
+        JurisdictionKey::PlaceSubtree(root) => referents.extend(
+            snapshot
+                .places
+                .iter()
+                .find(|entry| entry.id == root)
+                .map(|entry| entry.label.clone()),
+        ),
+        JurisdictionKey::Uncovered => referents.push(snapshot.title.clone()),
+    }
+    if let Some(brief) = brief.map(str::trim).filter(|value| !value.is_empty()) {
+        referents.push(brief.to_owned());
+    }
+    referents.extend(
+        snapshot
+            .places
+            .iter()
+            .take(8)
+            .map(|entry| entry.label.clone()),
+    );
+    referents.dedup();
+    referents
+}
+
+fn build_seed_prompt(
+    snapshot: &WorldSnapshot,
+    session: &SeedSession,
+    brief: Option<&str>,
+    receipts: &[EvidenceReceipt],
+    last_mismatches: &[Mismatch],
+) -> String {
+    let mut prompt = String::new();
+    prompt.push_str("You are seeding a world before it opens. Nothing here is running yet.\n\n");
+    prompt.push_str(&format!("World: {}\n", snapshot.title));
+    prompt.push_str(&format!(
+        "Jurisdiction: {}\n",
+        render_jurisdiction(snapshot, session.jurisdiction)
+    ));
+    prompt.push_str(&format!(
+        "Shortfall: this jurisdiction is meant to hold {} {} who are alive in it; {} qualify today. Author the rest.\n",
+        session.target,
+        render_kind(session.kind),
+        session.qualified
+    ));
+    if let Some(brief) = brief.map(str::trim).filter(|value| !value.is_empty()) {
+        prompt.push_str(&format!("{brief}\n"));
+    }
+    prompt.push_str(
+        "\nA subject qualifies only when it has a controller, at least one affordance grant, and holds a goal commitment. Declare people, institutions, and populations who want something; give each a controller, grants, a position, and a goal. Give them the rest of a life: routines and obligations that recur, counterparties, channels they speak on and who controls them, authority and the offices that lend it, holdings and the dependencies those holdings serve, routes between the places they move through. A subject with no counterparty who can command or litigate its goal leaves a boundary for the elaborator; that is allowed and expected, not an error.\nYou may not declare a human-controlled subject: only the world's first person is human, and that was genesis.\n\n",
+    );
+    prompt.push_str(&render_world_structure(snapshot));
+    prompt.push('\n');
+    prompt_body(&mut prompt, receipts, last_mismatches);
+    prompt
+}
+
+fn render_kind(kind: SubjectKind) -> &'static str {
+    match kind {
+        SubjectKind::Person => "persons",
+        SubjectKind::Institution => "institutions",
+        SubjectKind::Population => "populations",
+    }
+}
+
+/// The world the session is authoring into, rendered from snapshot fields that
+/// already exist. A renderer beside `render_jurisdiction` and `render_answer`,
+/// and seed-only: widening the Active elaborator's prompt is a behaviour change
+/// to a working lane and belongs to whoever measures it.
+fn render_world_structure(snapshot: &WorldSnapshot) -> String {
+    let place_label = |id: EntityId| {
+        snapshot
+            .places
+            .iter()
+            .find(|entry| entry.id == id)
+            .map_or_else(
+                || "an unnamed place".to_owned(),
+                |entry| entry.label.clone(),
+            )
+    };
+    let mut out = String::from("Standing structure:\n");
+    out.push_str("  Places:");
+    if snapshot.places.is_empty() {
+        out.push_str(" none");
+    }
+    for place in &snapshot.places {
+        match place.container {
+            Some(container) => {
+                out.push_str(&format!(
+                    " {} (in {});",
+                    place.label,
+                    place_label(container)
+                ));
+            }
+            None => out.push_str(&format!(" {};", place.label)),
+        }
+    }
+    out.push_str("\n  Routes:");
+    if snapshot.routes.is_empty() {
+        out.push_str(" none");
+    }
+    for route in &snapshot.routes {
+        out.push_str(&format!(
+            " {}: {} -> {}, {:?}, {};",
+            route.label,
+            place_label(route.from),
+            place_label(route.to),
+            route.access,
+            if route.open { "open" } else { "closed" }
+        ));
+    }
+    out.push_str("\n  Subjects:");
+    if snapshot.subjects.is_empty() {
+        out.push_str(" none");
+    }
+    for subject in &snapshot.subjects {
+        out.push_str(&format!(
+            " {} ({:?}, {}, in {}, grants: {}, {});",
+            subject.label,
+            subject.kind,
+            subject
+                .controller_mode
+                .map_or_else(|| "external".to_owned(), |mode| format!("{mode:?}")),
+            subject
+                .position
+                .map_or_else(|| "nowhere".to_owned(), place_label),
+            subject.affordances.len(),
+            if subject.qualified {
+                "counts"
+            } else {
+                "does not count"
+            }
+        ));
+    }
+    out.push_str("\n  Affordances:");
+    if snapshot.affordances.is_empty() {
+        out.push_str(" none");
+    }
+    for affordance in &snapshot.affordances {
+        out.push_str(&format!(
+            " {}, roles: {}, {};",
+            affordance.entry.kind.0,
+            if affordance.entry.roles.is_empty() {
+                "none".to_owned()
+            } else {
+                affordance
+                    .entry
+                    .roles
+                    .iter()
+                    .map(|role| role.role.0.clone())
+                    .collect::<Vec<_>>()
+                    .join("/")
+            },
+            if affordance.entry.carries_speech {
+                "speech"
+            } else {
+                "silent"
+            }
+        ));
+    }
+    out.push_str("\n  Resources:");
+    if snapshot.resources.is_empty() {
+        out.push_str(" none");
+    }
+    for resource in &snapshot.resources {
+        out.push_str(&format!(" {};", resource.label));
+    }
+    out.push_str("\n  Shortfall rows:");
+    if snapshot.scale_deficit.is_empty() {
+        out.push_str(" none");
+    }
+    for row in &snapshot.scale_deficit {
+        out.push_str(&format!(
+            " {} {}: target {}, qualified {}, short {};",
+            render_jurisdiction(snapshot, row.jurisdiction),
+            render_kind(row.kind),
+            row.target,
+            row.qualified,
+            row.deficit
+        ));
+    }
+    out.push('\n');
+    out
 }
 
 #[cfg(test)]

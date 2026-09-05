@@ -12,10 +12,11 @@ use crate::{
     world::{
         AffordanceId, CONSUMER_BODY_LIMIT, CellRun, CommandBody, CommandId, ConsumerPort,
         ConsumerRegistry, ControllerError, ControllerModels, ControllerPendingReason,
-        ControllerRunner, ControllerWorkCustody, Cover, CoverBudget, CreateWorldIntent,
-        DecisionInvocation, DecisionOpportunity, KernelError, MailboxError, NarrativeRun,
-        OperationalRun, PrincipalCommandIntent, PrincipalId, Statement, SubmissionDisposition,
-        SubmitReceipt, TickMinutes, WorldMailbox, WorldSnapshot, derive_cover,
+        ControllerRunner, ControllerWorkCustody, Cover, CoverBudget, CreateJurisdictionIntent,
+        CreateWorldIntent, DecisionInvocation, DecisionOpportunity, KernelError, MailboxError,
+        NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId, SeedOutcome, SeedPort,
+        Statement, SubjectKind, SubmissionDisposition, SubmitReceipt, TickMinutes,
+        VaultEvidenceSource, WorldMailbox, WorldPhase, WorldSnapshot, derive_cover,
     },
 };
 use anyhow::{Context, bail, ensure};
@@ -38,6 +39,7 @@ use cultnet_rs::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::{
+    collections::BTreeMap,
     convert::Infallible,
     fs,
     net::SocketAddr,
@@ -145,6 +147,51 @@ struct CreatePayload {
     narrative_persona_label: Option<String>,
     #[serde(default)]
     operational_agent_label: Option<String>,
+    /// World-wide target of goal-bearing subjects per kind. Required, and may
+    /// be empty: a world with no target is a deliberate choice, not a default
+    /// that arrives because nobody said anything. A payload that omits it is
+    /// refused, which is what `world_create.v2` means.
+    targets: BTreeMap<SubjectKind, u32>,
+    /// The jurisdiction roots, declared by genesis beside the commons because
+    /// `resolve_patch` only resolves roots the same patch declares. A duplicate
+    /// handle and a permille sum over 1000 are refused by the resolver, not
+    /// pre-checked here: a pre-check would be a second reducer.
+    jurisdictions: Vec<CreateJurisdiction>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CreateJurisdiction {
+    /// The draft handle genesis declares the root under, and the intent's key.
+    handle: String,
+    label: String,
+    permille: u32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SeedPayload {
+    /// A subdirectory of the configured vault root, or empty for the whole
+    /// vault. Relative and `..`-free, refused at `VaultEvidenceSource::open`.
+    /// The root itself is configuration: a payload carrying an absolute path
+    /// would turn an authenticated Eve button into a read primitive over the
+    /// server's filesystem.
+    #[serde(default)]
+    vault_scope: String,
+    /// One sentence of the owner's own intent, carried into the brief verbatim
+    /// and into the Vault query as a referent.
+    #[serde(default)]
+    brief: Option<String>,
+}
+
+/// The shape a jurisdiction handle may take. Checked at ingress because the
+/// handle becomes a draft-index key the model reads back in mismatches, and a
+/// handle carrying whitespace or case would make that text unusable.
+fn is_handle_shape(value: &str) -> bool {
+    let mut chars = value.chars();
+    value.len() <= 48
+        && chars.next().is_some_and(|first| first.is_ascii_lowercase())
+        && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '-')
 }
 
 #[derive(Debug, Deserialize)]
@@ -1324,6 +1371,16 @@ async fn execute_world(
     if invocation.operation.operation_id == "world.create" {
         let payload: CreatePayload = serde_json::from_value(invocation.payload.clone())
             .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+        if let Some(root) = payload
+            .jurisdictions
+            .iter()
+            .find(|root| !is_handle_shape(&root.handle))
+        {
+            return Err(RuntimeCommandError::Payload(format!(
+                "jurisdiction handle {} is not a draft handle",
+                root.handle
+            )));
+        }
         let receipt = state
             .world
             .create(
@@ -1333,6 +1390,16 @@ async fn execute_world(
                     human_subject_label: payload.subject_label,
                     narrative_persona_label: payload.narrative_persona_label,
                     operational_agent_label: payload.operational_agent_label,
+                    targets: payload.targets,
+                    jurisdictions: payload
+                        .jurisdictions
+                        .into_iter()
+                        .map(|root| CreateJurisdictionIntent {
+                            handle: root.handle,
+                            label: root.label,
+                            permille: root.permille,
+                        })
+                        .collect(),
                 },
                 verified_principal,
             )
@@ -1396,6 +1463,25 @@ async fn execute_world(
                     RuntimeCommandError::Payload("time span is outside one year of minutes".into())
                 })?,
             }
+        }
+        // The one arm that builds no `CommandBody`: the seed runner submits
+        // through its own port, as the owner, and the receipt reports what one
+        // session did rather than what one command committed.
+        "world.seed" => {
+            let payload: SeedPayload = serde_json::from_value(invocation.payload.clone())
+                .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+            let outcome = seed_once(state, verified_principal, &snapshot, payload).await?;
+            let after = current_world(state)
+                .await
+                .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+            return Ok(json!({
+                "kind":"seeded",
+                "outcome":outcome.name(),
+                "revision":after.as_ref().map(|world| world.revision),
+                "deficit":after
+                    .as_ref()
+                    .map(|world| world.scale_deficit.iter().map(|row| u64::from(row.deficit)).sum::<u64>()),
+            }));
         }
         operation => {
             return Err(RuntimeCommandError::Payload(format!(
@@ -1595,6 +1681,62 @@ where
         Ok(_) => {}
         Err(error) => tracing::debug!(%error, "world clock tick was not admitted"),
     }
+}
+
+/// Where the seed lane's read-only markdown vault lives. Configuration, read at
+/// open exactly as every other runtime path is: the payload names a relative
+/// scope inside it and never the root.
+const SEED_VAULT_ROOT_ENVIRONMENT: &str = "GHOSTLIGHT_SEED_VAULT_ROOT";
+
+/// One seeding session, inside the request that asked for it. There is no
+/// background task and no stop channel: a spawned sweep would need the owner's
+/// verified evidence to outlive the request that carried it, and then two new
+/// authorities in `AppState` to be stoppable. The checkpoint discipline already
+/// makes a long request safe — a transport timeout loses the response, not the
+/// work — so the owner's repetition is the sweep and not pressing the button
+/// again is the stop.
+///
+/// Every refusal here happens before anything is spent. The reducer refuses a
+/// non-owner too, at `require_patch_author`, and the runner refuses an Active
+/// world again at its own phase gate; this is the gate that keeps a paid
+/// session from running first.
+async fn seed_once(
+    state: &AppState,
+    verified_principal: &VerifiedPrincipalEvidence,
+    snapshot: &WorldSnapshot,
+    payload: SeedPayload,
+) -> Result<SeedOutcome, RuntimeCommandError> {
+    if snapshot.owner != PrincipalId::new(verified_principal.account_subject_hash()) {
+        return Err(RuntimeCommandError::Payload(
+            "seeding a world is its owner's lane".into(),
+        ));
+    }
+    if snapshot.phase != WorldPhase::Draft {
+        return Ok(SeedOutcome::NotDraft);
+    }
+    let Some(controllers) = state
+        .controllers
+        .as_deref()
+        .filter(|_| !state.controller_quarantined.load(Ordering::SeqCst))
+    else {
+        return Err(RuntimeCommandError::Payload(
+            "the cognition organ is closed or quarantined".into(),
+        ));
+    };
+    let root = std::env::var(SEED_VAULT_ROOT_ENVIRONMENT).map_err(|_| {
+        RuntimeCommandError::Payload(format!("{SEED_VAULT_ROOT_ENVIRONMENT} is not configured"))
+    })?;
+    let vault = VaultEvidenceSource::open(std::path::Path::new(&root), &payload.vault_scope)
+        .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+    let runner = controllers.seeder(
+        SeedPort::new(state.world.clone(), verified_principal.clone()),
+        Arc::new(vault),
+        payload.brief,
+    );
+    runner
+        .sweep(1)
+        .await
+        .map_err(|error| RuntimeCommandError::Payload(error.to_string()))
 }
 
 /// How often the authoring lane takes one sweep. Slow, and skipping: a sweep
@@ -2606,9 +2748,14 @@ mod tests {
             &fixture.cookie,
             invocation(
                 "world.create",
-                "ghostlight.world_create.v1",
+                "ghostlight.world_create.v2",
                 0,
-                json!({"title":"Cutover World","subject_label":"Operator"}),
+                json!({
+                    "title":"Cutover World",
+                    "subject_label":"Operator",
+                    "targets":{},
+                    "jurisdictions":[]
+                }),
                 &uuid::Uuid::new_v4().to_string(),
             ),
         )
@@ -2681,9 +2828,14 @@ mod tests {
         let id = uuid::Uuid::new_v4().to_string();
         let command = invocation(
             "world.create",
-            "ghostlight.world_create.v1",
+            "ghostlight.world_create.v2",
             0,
-            json!({"title":"Retry World","subject_label":"Operator"}),
+            json!({
+                "title":"Retry World",
+                "subject_label":"Operator",
+                "targets":{},
+                "jurisdictions":[]
+            }),
             &id,
         );
         let first = post(&fixture.state, &fixture.cookie, command.clone()).await;
@@ -2804,6 +2956,19 @@ mod tests {
     /// surface into the kernel's private command types the rest of this
     /// module deliberately does not name.
     async fn active_two_cell_world(state: &AppState, cookie: &str) {
+        two_cell_world(state, cookie, BTreeMap::new(), Vec::new(), true).await;
+    }
+
+    /// The same genesis, with an authored scale intent and without the
+    /// approve/activate pair, so a test can look at the Draft world the seed
+    /// lane actually runs against.
+    async fn two_cell_world(
+        state: &AppState,
+        cookie: &str,
+        targets: BTreeMap<SubjectKind, u32>,
+        jurisdictions: Vec<CreateJurisdictionIntent>,
+        activate: bool,
+    ) {
         let principal = state
             .sessions
             .lock()
@@ -2820,12 +2985,17 @@ mod tests {
                     human_subject_label: "Operator".into(),
                     narrative_persona_label: Some("Persona".into()),
                     operational_agent_label: Some("Operational Agent".into()),
+                    targets,
+                    jurisdictions,
                 },
                 &principal,
             )
             .await
             .unwrap();
         let mut snapshot = state.world.snapshot().await.unwrap();
+        if !activate {
+            return;
+        }
         for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
             state
                 .world
@@ -2881,6 +3051,7 @@ mod tests {
                 narrative_commands: 0,
                 operational_commands: 0,
                 elaboration_commands: 0,
+                seed_commands: 0,
             })
         }
     }

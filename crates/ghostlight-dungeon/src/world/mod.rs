@@ -15,6 +15,7 @@ mod journal;
 mod mailbox;
 mod patch;
 mod tool_schema;
+mod vault;
 
 pub(crate) use action::ActionMismatch;
 pub(crate) use clock::{FictionalMinutes, Motion, TickMinutes};
@@ -31,8 +32,9 @@ pub(crate) use controllers::{
 pub(crate) use cover::{
     AgencyGraph, Cell, CellId, Constituent, Cover, CoverBudget, Resolution, TickIndex, derive_cover,
 };
+pub(crate) use elaboration::{SeedOutcome, select_row};
 pub(crate) use mailbox::{
-    ConsumerPort, ControllerPort, ElaborationPort, MailboxError, WorldMailbox,
+    ConsumerPort, ControllerPort, ElaborationPort, MailboxError, SeedPort, WorldMailbox,
 };
 pub(crate) use patch::{
     AccessKind, Affordance, AffordanceKindName, Audience, AuthoredSource, AuthorityGrant,
@@ -51,6 +53,7 @@ use patch::{
 };
 #[cfg(test)]
 pub(crate) use patch::{AuthorityGrantRef, AuthorityTargetRef};
+pub(crate) use vault::VaultEvidenceSource;
 // Test-only narrowing of the controller organ's inference and work-store
 // seams, so `runtime`'s own spec tests can drive `ControllerRunner` over a
 // counting/scripted `InferencePort` and an in-memory `ControllerWorkStore`
@@ -314,6 +317,23 @@ pub(crate) struct CreateWorldIntent {
     pub(crate) human_subject_label: String,
     pub(crate) narrative_persona_label: Option<String>,
     pub(crate) operational_agent_label: Option<String>,
+    /// World-wide target of goal-bearing subjects per kind. Required, and may
+    /// be empty: a world with no target is a deliberate choice, not a default
+    /// that arrives because nobody said anything.
+    pub(crate) targets: BTreeMap<SubjectKind, u32>,
+    /// The jurisdiction roots genesis declares beside the commons, because
+    /// `resolve_patch` only resolves roots the same patch declares.
+    pub(crate) jurisdictions: Vec<CreateJurisdictionIntent>,
+}
+
+/// One jurisdiction root as ingress states it. The handle is a string here and
+/// a `DraftHandle` inside the world subtree, which is the one lowering: the
+/// handle constructor is not reachable from runtime ingress.
+#[derive(Clone, Debug)]
+pub(crate) struct CreateJurisdictionIntent {
+    pub(crate) handle: String,
+    pub(crate) label: String,
+    pub(crate) permille: u32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -871,6 +891,11 @@ pub(crate) struct SubjectSnapshot {
     /// subject's state, and the actor already sees the commitment that produced
     /// it.
     pub(crate) pressures: Vec<PressureSnapshot>,
+    /// A projection of `qualifies`, not a stored flag and not a second count:
+    /// whether this subject already reduces its jurisdiction's scale deficit.
+    /// The seed brief needs to say which subjects count; recomputing the
+    /// conjunction outside the kernel would be a second definition of alive.
+    pub(crate) qualified: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -3411,6 +3436,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                         magnitude: *magnitude,
                     })
                     .collect(),
+                qualified: qualifies(state, *subject_id),
             })
         })
         .collect::<Result<Vec<_>, KernelError>>()?;
@@ -3660,19 +3686,25 @@ pub(crate) struct ScaleDeficitRow {
     pub(crate) deficit: u32,
 }
 
-/// Whether a subject counts toward the world's scale target. Three of the four
-/// clauses cannot currently fail — the world-level phase gate, the one-
-/// controller rule, and the non-empty grant set are already enforced elsewhere
-/// — so `Goal` carries the whole discrimination at this pass. The conjunction
-/// is written once anyway, because retirement and grant revocation make two of
-/// the clauses live later and a scattered count would then be wrong in three
-/// places. "Executable" is structural, never "preconditions currently hold":
-/// evaluating them per subject per snapshot would make the deficit flicker as
-/// routes open and close.
+/// Whether a subject counts toward the world's scale target. Aliveness is
+/// structural and phase-free: a controller, a non-empty grant set, and a held
+/// `Goal`. A Draft world's deficit is what the seed lane has left to author; an
+/// Active world's is what the elaborator has left to answer.
+///
+/// There is no phase clause here because `require_answer` already owns the
+/// Draft-answer refusal: it refuses every Draft answer outright, so a phase
+/// clause in this predicate would protect nothing and would only pin a Draft
+/// world's deficit at the authored intent forever, leaving the seed lane no
+/// derived termination.
+///
+/// The conjunction is written once, because retirement and grant revocation
+/// make the first two clauses live later and a scattered count would then be
+/// wrong in three places. "Executable" is structural, never "preconditions
+/// currently hold": evaluating them per subject per snapshot would make the
+/// deficit flicker as routes open and close.
 fn qualifies(state: &WorldState, subject_id: SubjectId) -> bool {
     let scope = DecisionScope { subject_id };
-    state.phase == WorldPhase::Active
-        && state.controller_assignments.contains_key(&scope)
+    state.controller_assignments.contains_key(&scope)
         && state
             .affordance_grants
             .get(&scope)

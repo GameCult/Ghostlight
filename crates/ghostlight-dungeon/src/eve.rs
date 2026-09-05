@@ -2,7 +2,7 @@
 
 use crate::{
     mesh::{COMMAND_BOUNDARY, COMMAND_RESULT_SCHEMA, PROVIDER_ID, SURFACE_ID},
-    world::{ControllerMode, OperatorEvent, WorldPhase, WorldSnapshot},
+    world::{ControllerMode, JurisdictionKey, OperatorEvent, WorldPhase, WorldSnapshot},
 };
 use anyhow::{Context, bail};
 use chrono::{DateTime, Utc};
@@ -45,6 +45,19 @@ pub(crate) struct EveRouteHint {
     pub(crate) source_version: Option<u64>,
     pub(crate) transport: Option<String>,
 }
+
+/// The `world_create.v2` payload, in one place, so the button that captures it
+/// and the descriptor that advertises it cannot drift.
+const CREATE_BINDINGS: [&str; 6] = [
+    "title",
+    "subject_label",
+    "narrative_persona_label",
+    "operational_agent_label",
+    "targets",
+    "jurisdictions",
+];
+
+const SEED_BINDINGS: [&str; 2] = ["vault_scope", "brief"];
 
 pub(crate) fn surface_version(snapshot: Option<&WorldSnapshot>) -> u64 {
     snapshot
@@ -154,6 +167,74 @@ fn cover_card(panel: &CoverPanel) -> Value {
     })
 }
 
+/// What the seed lane has done and what it will answer next. Everything here is
+/// derived from `scale_deficit` and `revision`: in Draft every commit is a patch
+/// admission, so `revision - 1` is exactly the seed patches committed since
+/// genesis, and "next shortfall" calls the runner's own `select_row` so the card
+/// and the runner cannot disagree about what happens next.
+///
+/// It shows no in-flight session and no last outcome. Both would need a second
+/// reader of the controller-work store from here and a status cache in
+/// `AppState`; the last outcome is already in the invocation's own
+/// `command_result` receipt, which is where a command's result belongs.
+fn seed_card(world: &WorldSnapshot) -> Value {
+    let next = crate::world::select_row(world).map_or_else(
+        || "Nothing short.".to_owned(),
+        |row| {
+            format!(
+                "{} · {:?} · short {}",
+                jurisdiction_label(world, row.jurisdiction),
+                row.kind,
+                row.deficit
+            )
+        },
+    );
+    let rows = world
+        .scale_deficit
+        .iter()
+        .enumerate()
+        .map(|(index, row)| {
+            json!({
+                "id":format!("world.seed.row.{index}"),
+                "kind":"text",
+                "props":{"value":format!(
+                    "{} · {:?} · target {} · alive {} · short {}",
+                    jurisdiction_label(world, row.jurisdiction),
+                    row.kind,
+                    row.target,
+                    row.qualified,
+                    row.deficit
+                )},
+                "children":[]
+            })
+        })
+        .collect::<Vec<_>>();
+    json!({
+        "id":"world.seed.card",
+        "kind":"card",
+        "props":{
+            "title":"Seed",
+            "detail":format!("Draft patches committed: {}", world.revision.saturating_sub(1)),
+            "nextShortfall":next
+        },
+        "children":rows
+    })
+}
+
+fn jurisdiction_label(world: &WorldSnapshot, jurisdiction: JurisdictionKey) -> String {
+    match jurisdiction {
+        JurisdictionKey::PlaceSubtree(root) => world
+            .places
+            .iter()
+            .find(|entry| entry.id == root)
+            .map_or_else(
+                || "an unnamed place subtree".to_owned(),
+                |entry| entry.label.clone(),
+            ),
+        JurisdictionKey::Uncovered => "everything no declared root covers".to_owned(),
+    }
+}
+
 pub(crate) fn authenticated_surface(
     account: &str,
     snapshot: Option<&WorldSnapshot>,
@@ -205,28 +286,32 @@ pub(crate) fn authenticated_surface(
                     "stateBindings":[local_draft("operational_agent_label", "string")],
                     "children":[]
                 }),
+                json!({
+                    "id":"world.create.targets",
+                    "kind":"control.input.textarea",
+                    "props":{"label":"Scale target","rows":2,"placeholder":"{\"person\": 12, \"institution\": 3}"},
+                    "stateBindings":[local_draft("targets", "json")],
+                    "children":[]
+                }),
+                json!({
+                    "id":"world.create.jurisdictions",
+                    "kind":"control.input.textarea",
+                    "props":{"label":"Jurisdiction roots","rows":3,"placeholder":"[{\"handle\":\"low_sere\",\"label\":\"The Low Sere\",\"permille\":700}]"},
+                    "stateBindings":[local_draft("jurisdictions", "json")],
+                    "children":[]
+                }),
                 command_button(
                     "world.create",
                     "Create world",
                     "world.create",
                     json!({}),
-                    &[
-                        "title",
-                        "subject_label",
-                        "narrative_persona_label",
-                        "operational_agent_label",
-                    ],
+                    &CREATE_BINDINGS,
                 ),
             ]);
             commands.push(command_descriptor(
                 "world.create",
-                "ghostlight.world_create.v1",
-                &[
-                    "title",
-                    "subject_label",
-                    "narrative_persona_label",
-                    "operational_agent_label",
-                ],
+                "ghostlight.world_create.v2",
+                &CREATE_BINDINGS,
                 "WorldMailbox",
             ));
         }
@@ -263,6 +348,38 @@ pub(crate) fn authenticated_surface(
                             "ghostlight.world_approve.v0",
                             &[],
                             "WorldMailbox",
+                        ));
+                    }
+                    if world.owner == crate::world::PrincipalId::new(account) {
+                        children.extend([
+                            json!({
+                                "id":"world.seed.vault_scope",
+                                "kind":"control.input.text",
+                                "props":{"label":"Vault scope (optional)","placeholder":"A subdirectory of the configured vault"},
+                                "stateBindings":[local_draft("vault_scope", "string")],
+                                "children":[]
+                            }),
+                            json!({
+                                "id":"world.seed.brief",
+                                "kind":"control.input.textarea",
+                                "props":{"label":"Brief (optional)","rows":2,"placeholder":"One sentence of what this world is for"},
+                                "stateBindings":[local_draft("brief", "string")],
+                                "children":[]
+                            }),
+                            command_button(
+                                "world.seed",
+                                "Seed the world",
+                                "world.seed",
+                                json!({}),
+                                &SEED_BINDINGS,
+                            ),
+                            seed_card(world),
+                        ]);
+                        commands.push(command_descriptor(
+                            "world.seed",
+                            "ghostlight.world_seed.v1",
+                            &SEED_BINDINGS,
+                            "SeedPort",
                         ));
                     }
                     if world.owner == crate::world::PrincipalId::new(account)
@@ -495,9 +612,11 @@ pub(crate) fn operation_schema(operation: &str) -> Option<&'static str> {
         "heimdall.auth.begin" => "heimdall.auth_begin_command.v1",
         "heimdall.auth.complete" => "heimdall.auth_complete_command.v1",
         "app.auth.logout" => "ghostlight.app_logout.v2",
-        "world.create" => "ghostlight.world_create.v1",
+        "world.create" => "ghostlight.world_create.v2",
         "world.approve" => "ghostlight.world_approve.v0",
         "world.activate" => "ghostlight.world_activate.v0",
+        "world.advance_time" => "ghostlight.world_advance_time.v0",
+        "world.seed" => "ghostlight.world_seed.v1",
         "world.speak" => "ghostlight.world_speak.v0",
         "world.controller.act" => "ghostlight.world_controller_act.v0",
         _ => return None,

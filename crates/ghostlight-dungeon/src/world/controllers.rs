@@ -7,7 +7,8 @@
 //! affordance fields.
 
 use super::elaboration::{
-    ElaborationCheckpoint, ElaborationRunner, NullEvidenceSource, valid_elaboration_progression,
+    ElaborationCheckpoint, ElaborationRunner, EvidenceSource, NullEvidenceSource, SeedCheckpoint,
+    SeedRunner, valid_elaboration_progression, valid_seed_progression,
 };
 use super::tool_schema;
 use crate::world::{
@@ -16,8 +17,8 @@ use crate::world::{
     DecisionInvocation, DecisionOpportunity, DependencyTarget, EdgeId, ElaborationPort, EntityId,
     EntityKind, FactStandingView, KernelError, KnowledgeSnapshot, KnowledgeSource, Magnitude,
     MailboxError, OfficeSnapshot, ProposedEffect, Quantity, RefKind, Resolution, RoleBinding,
-    Statement, SubjectId, SubjectSnapshot, SubmitReceipt, Target, TickIndex, WorldMailbox,
-    WorldSnapshot,
+    SeedPort, Statement, SubjectId, SubjectSnapshot, SubmitReceipt, Target, TickIndex,
+    WorldMailbox, WorldSnapshot,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -60,8 +61,8 @@ const CELL_TOOL_STEP_BUDGET: usize = 2;
 /// carried by tool identity, never by a model-written argument.
 const HANDLE_SEPARATOR: &str = "__";
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v9";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v9";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v10";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v10";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -480,6 +481,12 @@ pub(crate) enum ControllerWork {
     /// The authoring lane. One store, one custody probe, one progression check:
     /// forking them would buy nothing and split one authority in three.
     Elaboration(ElaborationCheckpoint),
+    /// Draft's authoring lane. A separate variant rather than a reused
+    /// `Elaboration` row, because an elaboration session carries a `PatchAnswer`
+    /// and a seed answers nothing: sharing the row would mean either widening a
+    /// kernel enum read by `require_answer` and `ground_covers`, or a session
+    /// whose answer field is never submitted.
+    Seed(SeedCheckpoint),
 }
 
 /// Which lane a stored checkpoint belongs to. Distinct from `ControllerMode`,
@@ -491,6 +498,7 @@ pub(crate) enum WorkLane {
     Operational,
     Grouped,
     Elaboration,
+    Seed,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -575,6 +583,7 @@ impl ControllerWork {
             Self::Operational(checkpoint) => checkpoint.command_id(),
             Self::Grouped(checkpoint) => checkpoint.command_id(),
             Self::Elaboration(checkpoint) => checkpoint.command_id(),
+            Self::Seed(checkpoint) => checkpoint.command_id(),
         }
     }
 
@@ -584,6 +593,7 @@ impl ControllerWork {
             Self::Operational(_) => WorkLane::Operational,
             Self::Grouped(_) => WorkLane::Grouped,
             Self::Elaboration(_) => WorkLane::Elaboration,
+            Self::Seed(_) => WorkLane::Seed,
         }
     }
 
@@ -593,7 +603,9 @@ impl ControllerWork {
     #[cfg_attr(not(test), expect(dead_code, reason = "read by the resolution test"))]
     fn resolution(&self) -> Resolution {
         match self {
-            Self::Narrative(_) | Self::Operational(_) | Self::Elaboration(_) => Resolution::Detail,
+            Self::Narrative(_) | Self::Operational(_) | Self::Elaboration(_) | Self::Seed(_) => {
+                Resolution::Detail
+            }
             Self::Grouped(checkpoint) => Resolution::Coarse {
                 constituents: checkpoint.constituents().len(),
             },
@@ -612,6 +624,7 @@ impl ControllerWork {
                 last_mismatches,
                 ..
             }) => completed.is_empty() && last_mismatches.is_empty(),
+            Self::Seed(checkpoint) => checkpoint.is_initial(),
             _ => false,
         }
     }
@@ -622,6 +635,7 @@ impl ControllerWork {
             Self::Operational(checkpoint) => checkpoint.integrity_is_valid(),
             Self::Grouped(checkpoint) => checkpoint.integrity_is_valid(),
             Self::Elaboration(checkpoint) => checkpoint.integrity_is_valid(),
+            Self::Seed(checkpoint) => checkpoint.integrity_is_valid(),
         }
     }
 }
@@ -1236,6 +1250,10 @@ pub(crate) enum ControllerWorkCustody {
         narrative_commands: usize,
         operational_commands: usize,
         elaboration_commands: usize,
+        seed_commands: usize,
+        // `Grouped` still has no count here. That asymmetry is the grouped
+        // lane's debt, named rather than fixed: widening it in this pass would
+        // be work with no consumer.
     },
     /// A compare-and-swap or post-write ownership check did not confirm. The
     /// process must reopen the journal before doing any other controller work.
@@ -1444,6 +1462,7 @@ impl ControllerWorkStore for CultCacheControllerWorkStore {
             narrative_commands: count(WorkLane::Narrative),
             operational_commands: count(WorkLane::Operational),
             elaboration_commands: count(WorkLane::Elaboration),
+            seed_commands: count(WorkLane::Seed),
         })
     }
 }
@@ -1481,6 +1500,9 @@ fn valid_controller_work_progression(existing: &ControllerWork, next: &Controlle
         }
         (ControllerWork::Elaboration(existing), ControllerWork::Elaboration(next)) => {
             valid_elaboration_progression(existing, next)
+        }
+        (ControllerWork::Seed(existing), ControllerWork::Seed(next)) => {
+            valid_seed_progression(existing, next)
         }
         _ => false,
     }
@@ -2146,6 +2168,28 @@ impl ControllerRunner {
         )
     }
 
+    /// Draft's authoring lane, built from the same inference transport and the
+    /// same work store. The port is not one this runner holds: it carries the
+    /// owner's verified evidence and therefore belongs to the request that
+    /// asked for the work, and the evidence source is supplied by that request
+    /// too. `NullEvidenceSource` stays the elaborator's; there is no mode flag
+    /// choosing between them.
+    pub(crate) fn seeder(
+        &self,
+        port: SeedPort,
+        evidence: Arc<dyn EvidenceSource>,
+        brief: Option<String>,
+    ) -> SeedRunner {
+        SeedRunner::new(
+            port,
+            Arc::clone(&self.inference),
+            evidence,
+            Arc::clone(&self.work),
+            self.models.elaborator.clone(),
+            brief,
+        )
+    }
+
     #[cfg(test)]
     pub(crate) fn with_test_ports(
         mailbox: WorldMailbox,
@@ -2200,12 +2244,14 @@ impl ControllerRunner {
             ControllerWorkLookup::Confirmed(
                 ControllerWork::Operational(_)
                 | ControllerWork::Grouped(_)
-                | ControllerWork::Elaboration(_),
+                | ControllerWork::Elaboration(_)
+                | ControllerWork::Seed(_),
             )
             | ControllerWorkLookup::CustodyUncertain(
                 ControllerWork::Operational(_)
                 | ControllerWork::Grouped(_)
-                | ControllerWork::Elaboration(_),
+                | ControllerWork::Elaboration(_)
+                | ControllerWork::Seed(_),
             ) => {
                 return Err(ControllerError::CommandMismatch);
             }
@@ -2285,12 +2331,14 @@ impl ControllerRunner {
             ControllerWorkLookup::Confirmed(
                 ControllerWork::Narrative(_)
                 | ControllerWork::Grouped(_)
-                | ControllerWork::Elaboration(_),
+                | ControllerWork::Elaboration(_)
+                | ControllerWork::Seed(_),
             )
             | ControllerWorkLookup::CustodyUncertain(
                 ControllerWork::Narrative(_)
                 | ControllerWork::Grouped(_)
-                | ControllerWork::Elaboration(_),
+                | ControllerWork::Elaboration(_)
+                | ControllerWork::Seed(_),
             ) => {
                 return Err(ControllerError::CommandMismatch);
             }
@@ -2530,12 +2578,14 @@ impl ControllerRunner {
             ControllerWorkLookup::Confirmed(
                 ControllerWork::Narrative(_)
                 | ControllerWork::Operational(_)
-                | ControllerWork::Elaboration(_),
+                | ControllerWork::Elaboration(_)
+                | ControllerWork::Seed(_),
             )
             | ControllerWorkLookup::CustodyUncertain(
                 ControllerWork::Narrative(_)
                 | ControllerWork::Operational(_)
-                | ControllerWork::Elaboration(_),
+                | ControllerWork::Elaboration(_)
+                | ControllerWork::Seed(_),
             ) => {
                 return Err(ControllerError::CommandMismatch);
             }
@@ -5142,6 +5192,7 @@ mod tests {
             controls: BTreeSet::new(),
             commitments: Vec::new(),
             pressures: Vec::new(),
+            qualified: false,
         };
         let speaker = SubjectSnapshot {
             id: speaker_id,
@@ -5170,6 +5221,7 @@ mod tests {
             controls: BTreeSet::new(),
             commitments: Vec::new(),
             pressures: Vec::new(),
+            qualified: false,
         };
         let snapshot = WorldSnapshot {
             world_id: opportunity.world_id,
@@ -5382,6 +5434,7 @@ mod tests {
             controls: BTreeSet::new(),
             commitments: Vec::new(),
             pressures: Vec::new(),
+            qualified: false,
         };
         let other = SubjectSnapshot {
             id: other_id,
@@ -5403,6 +5456,7 @@ mod tests {
             controls: BTreeSet::new(),
             commitments: Vec::new(),
             pressures: Vec::new(),
+            qualified: false,
         };
         let named_place = |id, label: &str| PlaceSnapshot {
             id,
@@ -5955,6 +6009,7 @@ mod tests {
                 narrative_commands: count(WorkLane::Narrative),
                 operational_commands: count(WorkLane::Operational),
                 elaboration_commands: count(WorkLane::Elaboration),
+                seed_commands: count(WorkLane::Seed),
             })
         }
     }
@@ -8224,11 +8279,13 @@ mod tests {
                 narrative_commands: 0,
                 operational_commands: 0,
                 elaboration_commands: 1,
+                seed_commands: 0,
             },
             ControllerWorkCustody::Owned {
                 narrative_commands: 0,
                 operational_commands: 1,
                 elaboration_commands: 0,
+                seed_commands: 0,
             }
         );
     }
