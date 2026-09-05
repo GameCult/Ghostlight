@@ -96,7 +96,7 @@ pub(crate) enum InferencePurpose {
 /// One exact provider request. Keeping the native request visible at this seam
 /// makes the prose-only Persona boundary structurally inspectable.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(super) struct InferenceRequest {
+pub(crate) struct InferenceRequest {
     purpose: InferencePurpose,
     provider: CodexProviderRequest,
 }
@@ -105,7 +105,7 @@ pub(super) struct InferenceRequest {
 /// Replaying this value may recover a completed connector response; rebuilding
 /// it under the same request ID would be a replay conflict.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(super) struct PreparedInference {
+pub(crate) struct PreparedInference {
     purpose: InferencePurpose,
     pub(super) invocation: CodexTransportInvocation,
 }
@@ -121,7 +121,7 @@ pub(super) enum InferenceEvent {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(super) struct InferenceOutput {
+pub(crate) struct InferenceOutput {
     pub(super) events: Vec<InferenceEvent>,
     pub(super) receipt_digest: String,
 }
@@ -193,13 +193,60 @@ impl InferenceFault {
     fn integrity_was_violated(&self) -> bool {
         self.disposition == InferenceFaultDisposition::IntegrityViolation
     }
+
+    /// The one disposition that makes `ControllerError::requires_quarantine`
+    /// true for an `Inference` fault. A test port outside this module needs to
+    /// raise exactly this to exercise the tick driver's quarantine edge, and
+    /// this is that one legal way in.
+    #[cfg(test)]
+    pub(crate) fn fixture_integrity_violation(detail: impl Into<String>) -> Self {
+        Self::integrity_violation(detail)
+    }
 }
 
 #[async_trait]
-pub(super) trait InferencePort: Send + Sync {
+pub(crate) trait InferencePort: Send + Sync {
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault>;
 
     async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault>;
+}
+
+/// Builds a `PreparedInference` outside the real CodexConnector wiring. Exists
+/// so a test port defined outside this module (`runtime`'s own spec tests, for
+/// the tick driver's concurrency and quarantine behaviour) has one legal way to
+/// answer `InferencePort::prepare` without reaching into `PreparedInference`'s
+/// private fields or standing up a real connector.
+#[cfg(test)]
+pub(crate) fn fixture_prepared_inference(
+    request: InferenceRequest,
+) -> Result<PreparedInference, InferenceFault> {
+    let native_request_sha256 = Sha256::digest(
+        serde_json::to_vec(&request).map_err(|error| InferenceFault::new(error.to_string()))?,
+    )
+    .into();
+    let purpose = request.purpose;
+    let invocation = CodexTransportInvocation::new(
+        "ghostlight-controller-test",
+        4_102_444_800_000,
+        native_request_sha256,
+        request.provider,
+    )
+    .map_err(|error| InferenceFault::new(error.to_string()))?;
+    Ok(PreparedInference {
+        purpose,
+        invocation,
+    })
+}
+
+/// The `infer` half of the same seam: a canned prose output a test port can
+/// return without naming `InferenceOutput`'s or `InferenceEvent`'s private
+/// fields.
+#[cfg(test)]
+pub(crate) fn fixture_inference_output(text: impl Into<String>, receipt: &str) -> InferenceOutput {
+    InferenceOutput {
+        events: vec![InferenceEvent::Text(text.into())],
+        receipt_digest: format!("sha256:{receipt}"),
+    }
 }
 
 /// Production lowering to CodexConnector. There is deliberately no retry,
@@ -423,7 +470,7 @@ enum GroupedCheckpoint {
 /// never separately persisted.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "mode", content = "checkpoint", rename_all = "snake_case")]
-pub(super) enum ControllerWork {
+pub(crate) enum ControllerWork {
     Narrative(NarrativeCheckpoint),
     Operational(OperationalCheckpoint),
     /// One coarse cell's cognition. The only durable trace a cover leaves, and
@@ -1134,7 +1181,7 @@ fn persona_request_shape_is_valid(request: &PreparedInference) -> bool {
 }
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
-pub(super) enum ControllerWorkStoreError {
+pub(crate) enum ControllerWorkStoreError {
     #[error("Eve command ID already belongs to the other controller mode")]
     CommandModeConflict,
     #[error("{detail}")]
@@ -1150,7 +1197,7 @@ impl ControllerWorkStoreError {
 }
 
 #[async_trait]
-pub(super) trait ControllerWorkStore: Send + Sync {
+pub(crate) trait ControllerWorkStore: Send + Sync {
     async fn lookup(
         &self,
         command_id: CommandId,
@@ -1168,14 +1215,14 @@ pub(super) trait ControllerWorkStore: Send + Sync {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) enum ControllerWorkLookup {
+pub(crate) enum ControllerWorkLookup {
     Missing,
     Confirmed(ControllerWork),
     CustodyUncertain(ControllerWork),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum ControllerWorkWrite {
+pub(crate) enum ControllerWorkWrite {
     Applied,
     AlreadyPresent,
     CustodyUncertain,
@@ -2098,7 +2145,7 @@ impl ControllerRunner {
     }
 
     #[cfg(test)]
-    fn with_test_ports(
+    pub(crate) fn with_test_ports(
         mailbox: WorldMailbox,
         inference: Arc<dyn InferencePort>,
         work: Arc<dyn ControllerWorkStore>,

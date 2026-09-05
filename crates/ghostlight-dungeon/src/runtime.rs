@@ -1631,12 +1631,38 @@ async fn drive_cover_tick(state: AppState, interval: Duration) {
     ticker.tick().await;
     loop {
         ticker.tick().await;
-        run_cover_tick(&state).await;
-        submit_clock_tick(minutes, |id, minutes| state.world.submit_clock(id, minutes)).await;
+        drive_one_tick(
+            minutes,
+            || run_cover_tick(&state),
+            |id, minutes| state.world.submit_clock(id, minutes),
+        )
+        .await;
         if let Err(error) = publish_projection(&state).await {
             tracing::debug!(%error, "world revision could not be read after a tick");
         }
     }
+}
+
+/// One tick's ordering, narrowed the same way `submit_clock_tick` narrows the
+/// clock port: `run_cover` is opaque here, never `run_cover_tick` by name, so a
+/// test can substitute a recording fake for the whole cognition organ and
+/// observe call order without a controller runner, a mailbox, or tokio's
+/// timer. Sequencing, not concurrency, is the invariant this buys: the cover
+/// always finishes before the clock is asked to advance, which is what makes
+/// every cell's derived tick index agree with the `AdvanceTime` that follows
+/// it.
+async fn drive_one_tick<RunCover, RunCoverFut, SubmitClock, SubmitClockFut>(
+    minutes: TickMinutes,
+    run_cover: RunCover,
+    submit_clock: SubmitClock,
+) where
+    RunCover: FnOnce() -> RunCoverFut,
+    RunCoverFut: std::future::Future<Output = ()>,
+    SubmitClock: FnOnce(CommandId, TickMinutes) -> SubmitClockFut,
+    SubmitClockFut: std::future::Future<Output = Result<SubmitReceipt, MailboxError>>,
+{
+    run_cover().await;
+    submit_clock_tick(minutes, submit_clock).await;
 }
 
 /// One tick's cognition, apart from the clock and the wall clock that decides
@@ -2644,5 +2670,335 @@ mod tests {
         .await;
         let submitted = captured.lock().unwrap().expect("the tick submitted a span");
         assert_eq!(submitted.minutes(), CLOCK_TICK_MINUTES);
+    }
+
+    use crate::world::{
+        ControllerWork, ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError,
+        ControllerWorkWrite, InferenceFault, InferenceOutput, InferencePort, InferenceRequest,
+        PreparedInference, fixture_inference_output, fixture_prepared_inference,
+    };
+    use std::sync::atomic::AtomicUsize;
+
+    /// Builds an active world with exactly two controller-bearing subjects — a
+    /// narrative persona and an operational agent — beside its one Human
+    /// subject. `derive_cover` skips the Human opportunity, so this cover is
+    /// always exactly two singleton cells: the most `world.create`'s own
+    /// intent can produce without reaching past the production ingress
+    /// surface into the kernel's private command types the rest of this
+    /// module deliberately does not name.
+    async fn active_two_cell_world(state: &AppState, cookie: &str) {
+        let principal = state
+            .sessions
+            .lock()
+            .await
+            .account_for_cookie(cookie, Utc::now())
+            .unwrap()
+            .expect("the fixture cookie names a live session");
+        let receipt = state
+            .world
+            .create(
+                CreateWorldIntent {
+                    id: CommandId::new(),
+                    title: "Cover Tick Fixture".into(),
+                    human_subject_label: "Operator".into(),
+                    narrative_persona_label: Some("Persona".into()),
+                    operational_agent_label: Some("Operational Agent".into()),
+                },
+                &principal,
+            )
+            .await
+            .unwrap();
+        let mut snapshot = state.world.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            state
+                .world
+                .submit_principal(
+                    PrincipalCommandIntent {
+                        id: CommandId::new(),
+                        world_id: receipt.world_id,
+                        expected_revision: snapshot.revision,
+                        body,
+                    },
+                    &principal,
+                )
+                .await
+                .unwrap();
+            snapshot = state.world.snapshot().await.unwrap();
+        }
+    }
+
+    fn test_controller_models() -> ControllerModels {
+        ControllerModels {
+            projector: "projector".into(),
+            persona: "persona".into(),
+            interpreter: "interpreter".into(),
+            operational_agent: "operator".into(),
+            elaborator: "elaborator".into(),
+        }
+    }
+
+    /// A store that never remembers anything: every command looks unwritten
+    /// and every write lands clean. Sufficient for tests whose subject is the
+    /// tick driver's permit and quarantine handling rather than checkpoint
+    /// resumption.
+    struct AlwaysFreshWorkStore;
+
+    #[async_trait::async_trait]
+    impl ControllerWorkStore for AlwaysFreshWorkStore {
+        async fn lookup(
+            &self,
+            _command_id: CommandId,
+        ) -> Result<ControllerWorkLookup, ControllerWorkStoreError> {
+            Ok(ControllerWorkLookup::Missing)
+        }
+
+        async fn persist(
+            &self,
+            _work: &ControllerWork,
+        ) -> Result<ControllerWorkWrite, ControllerWorkStoreError> {
+            Ok(ControllerWorkWrite::Applied)
+        }
+
+        async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError> {
+            Ok(ControllerWorkCustody::Owned {
+                narrative_commands: 0,
+                operational_commands: 0,
+                elaboration_commands: 0,
+            })
+        }
+    }
+
+    /// Counts concurrent `infer` calls. Each call increments an in-flight
+    /// counter, records the running high-water mark, yields once so a
+    /// concurrently spawned cell gets a chance to run, then decrements. If
+    /// `run_cover_tick` ever let two cells' inference calls overlap, this
+    /// would observe it.
+    struct CountingInferencePort {
+        in_flight: AtomicUsize,
+        high_water: AtomicUsize,
+        calls: AtomicUsize,
+    }
+
+    impl CountingInferencePort {
+        fn new() -> Self {
+            Self {
+                in_flight: AtomicUsize::new(0),
+                high_water: AtomicUsize::new(0),
+                calls: AtomicUsize::new(0),
+            }
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl InferencePort for CountingInferencePort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            fixture_prepared_inference(request)
+        }
+
+        async fn infer(
+            &self,
+            _request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            let in_flight = self.in_flight.fetch_add(1, Ordering::SeqCst) + 1;
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            self.high_water.fetch_max(in_flight, Ordering::SeqCst);
+            tokio::task::yield_now().await;
+            self.in_flight.fetch_sub(1, Ordering::SeqCst);
+            Ok(fixture_inference_output(
+                "The cover tick fixture speaks.",
+                "counting-port",
+            ))
+        }
+    }
+
+    /// The tick driver spawns one task per cell into one `JoinSet` up front,
+    /// each gated by `state.controller_permits` before it may call the port.
+    /// This proves that gate is load-bearing: with the pool sized to one and
+    /// a cover of two singleton cells (the most a genesis world's two
+    /// controller-bearing subjects can produce), the counting port must never
+    /// observe a second concurrent `infer` call while the first is still
+    /// in flight, even though both cells were spawned before either ran.
+    #[tokio::test]
+    async fn the_tick_driver_never_exceeds_its_controller_permit_pool() {
+        let fixture = fixture().await;
+        active_two_cell_world(&fixture.state, &fixture.cookie).await;
+
+        let port = Arc::new(CountingInferencePort::new());
+        let mut state = fixture.state.clone();
+        state.controllers = Some(Arc::new(ControllerRunner::with_test_ports(
+            state.world.clone(),
+            port.clone(),
+            Arc::new(AlwaysFreshWorkStore),
+            test_controller_models(),
+        )));
+        state.controller_permits = Arc::new(Semaphore::new(1));
+
+        run_cover_tick(&state).await;
+
+        assert!(
+            port.calls.load(Ordering::SeqCst) >= 2,
+            "both singleton cells should have reached the port at least once"
+        );
+        assert_eq!(
+            port.high_water.load(Ordering::SeqCst),
+            1,
+            "a permit pool of one must never admit a second concurrent call"
+        );
+    }
+
+    /// Raises `ControllerError::requires_quarantine` on every call. Used to
+    /// prove the tick driver's quarantine edge rather than any cognition
+    /// outcome.
+    struct QuarantiningInferencePort {
+        calls: AtomicUsize,
+    }
+
+    #[async_trait::async_trait]
+    impl InferencePort for QuarantiningInferencePort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            fixture_prepared_inference(request)
+        }
+
+        async fn infer(
+            &self,
+            _request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            Err(InferenceFault::fixture_integrity_violation(
+                "the fixture port disputes every receipt",
+            ))
+        }
+    }
+
+    /// `run_cover_tick`'s per-cell task checks `controller_quarantined` once,
+    /// before it ever contends for a permit — spawned together in one
+    /// `JoinSet`, both of this tick's cells pass that check before either can
+    /// reach the port and raise it. The flag's real teeth are at the top of
+    /// `run_cover_tick` itself: once a cell's fault sets it mid-tick, the
+    /// *next* tick returns before deriving a cover at all, so no further cell
+    /// of any later tick ever reaches the port again. That is what this test
+    /// proves, rather than an intra-tick race between two sibling tasks that
+    /// this driver does not resolve.
+    #[tokio::test]
+    async fn quarantine_raised_mid_tick_stops_every_later_tick_from_reaching_the_port() {
+        let fixture = fixture().await;
+        active_two_cell_world(&fixture.state, &fixture.cookie).await;
+
+        let port = Arc::new(QuarantiningInferencePort {
+            calls: AtomicUsize::new(0),
+        });
+        let mut state = fixture.state.clone();
+        state.controllers = Some(Arc::new(ControllerRunner::with_test_ports(
+            state.world.clone(),
+            port.clone(),
+            Arc::new(AlwaysFreshWorkStore),
+            test_controller_models(),
+        )));
+
+        run_cover_tick(&state).await;
+        assert!(
+            state.controller_quarantined.load(Ordering::SeqCst),
+            "an integrity-violating fault must quarantine the cognition organ"
+        );
+        let calls_after_first_tick = port.calls.load(Ordering::SeqCst);
+        assert!(
+            calls_after_first_tick >= 1,
+            "the faulting cell must have reached the port before quarantine could be observed"
+        );
+
+        run_cover_tick(&state).await;
+        assert_eq!(
+            port.calls.load(Ordering::SeqCst),
+            calls_after_first_tick,
+            "a quarantined organ must not let a later tick's cells reach the port"
+        );
+    }
+
+    /// `drive_one_tick` never names `run_cover_tick`: `run_cover` is opaque to
+    /// it, so this test substitutes a fake that walks a real `Cover` (three
+    /// singleton cells, from three fabricated opportunities) and records each
+    /// cell's tick index, alongside a fake clock submitter that records its
+    /// own call. Asserts the ordering invariant `drive_one_tick` exists to
+    /// buy — every cell recorded before the clock — and that every recorded
+    /// cell carries the one tick index `derive_cover` stamped on the whole
+    /// cover, matching `drive_cover_tick`'s own doc comment.
+    #[tokio::test]
+    async fn drive_one_tick_runs_every_cell_before_the_clock_and_all_share_one_tick() {
+        use crate::world::{
+            AgencyGraph, Cell, ControllerMode, FictionalMinutes, TickIndex,
+            fixture_controller_opportunities,
+        };
+
+        let opportunities = fixture_controller_opportunities(&[
+            ControllerMode::NarrativePersona,
+            ControllerMode::OperationalAgent,
+            ControllerMode::OperationalAgent,
+        ]);
+        let world_id = opportunities[0].world_id;
+        let now = FictionalMinutes(u64::from(CLOCK_TICK_MINUTES) * 7);
+        let cover = derive_cover(
+            world_id,
+            now,
+            CLOCK_TICK_MINUTES,
+            &opportunities,
+            &AgencyGraph::default(),
+            CoverBudget {
+                cells: 240,
+                constituent_cap: 24,
+                urgency_slots: 36,
+            },
+        );
+        assert_eq!(
+            cover.cells.len(),
+            3,
+            "three distinct subjects should derive three singleton cells"
+        );
+
+        #[derive(Debug, Clone, PartialEq, Eq)]
+        enum Event {
+            Cell(TickIndex),
+            Clock,
+        }
+        let order: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(Vec::new()));
+
+        let cell_order = order.clone();
+        let cells = cover.cells.clone();
+        let run_cover = move || {
+            let order = cell_order.clone();
+            let cells = cells.clone();
+            async move {
+                for cell in cells {
+                    let tick = match cell {
+                        Cell::Singleton { tick, .. } | Cell::Group { tick, .. } => tick,
+                    };
+                    order.lock().await.push(Event::Cell(tick));
+                }
+            }
+        };
+        let clock_order = order.clone();
+        let minutes = TickMinutes::new(CLOCK_TICK_MINUTES).expect("a valid configured tick");
+        drive_one_tick(minutes, run_cover, move |_id, _minutes| {
+            let order = clock_order.clone();
+            async move {
+                order.lock().await.push(Event::Clock);
+                Ok(SubmitReceipt::AlreadyApplied(controller_commit()))
+            }
+        })
+        .await;
+
+        let recorded = order.lock().await.clone();
+        let (cell_events, clock_events) = recorded.split_at(recorded.len() - 1);
+        assert_eq!(
+            clock_events,
+            [Event::Clock],
+            "the clock must be the last thing recorded"
+        );
+        assert_eq!(cell_events.len(), 3, "every cell must have run");
+        assert!(
+            cell_events
+                .iter()
+                .all(|event| matches!(event, Event::Cell(tick) if *tick == cover.tick)),
+            "every cell in the tick must carry the same tick index"
+        );
     }
 }

@@ -44,6 +44,17 @@ use patch::{
 };
 #[cfg(test)]
 pub(crate) use patch::{AuthorityGrantRef, AuthorityTargetRef};
+// Test-only narrowing of the controller organ's inference and work-store
+// seams, so `runtime`'s own spec tests can drive `ControllerRunner` over a
+// counting/scripted `InferencePort` and an in-memory `ControllerWorkStore`
+// instead of the real CodexConnector and CultCache-backed store. Production
+// code never sees these names.
+#[cfg(test)]
+pub(crate) use controllers::{
+    ControllerWork, ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError,
+    ControllerWorkWrite, InferenceFault, InferenceOutput, InferencePort, InferenceRequest,
+    PreparedInference, fixture_inference_output, fixture_prepared_inference,
+};
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch, Site};
 
 use chrono::{DateTime, Utc};
@@ -356,6 +367,33 @@ impl DecisionOpportunity {
     pub(crate) fn digest(&self) -> Result<String, KernelError> {
         digest(self)
     }
+}
+
+/// One opportunity per requested mode, all in one freshly issued world with a
+/// freshly issued subject each. Not a committed scope — nothing here is
+/// verifiable against a kernel — just enough shape to hand `derive_cover` a
+/// cover to partition. Exists so `runtime`'s tick-driver tests can build a
+/// small `Cover` without reaching into this module's private ID issuance
+/// (`WorldId::issue`, `SubjectId::issue`, `ControllerId::issue`) themselves.
+#[cfg(test)]
+pub(crate) fn fixture_controller_opportunities(
+    modes: &[ControllerMode],
+) -> Vec<DecisionOpportunity> {
+    let world_id = WorldId::issue();
+    modes
+        .iter()
+        .map(|mode| DecisionOpportunity {
+            world_id,
+            revision: 1,
+            scope_digest: ScopeDigest::fixture("fixture-scope"),
+            scope: DecisionScope {
+                subject_id: SubjectId::issue(),
+            },
+            controller_id: ControllerId::issue(),
+            controller_mode: *mode,
+            affordance_ids: Vec::new(),
+        })
+        .collect()
 }
 
 /// The referent a role is bound to. Canonical IDs only: an invocation happens

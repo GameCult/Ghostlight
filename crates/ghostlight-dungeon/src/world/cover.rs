@@ -760,30 +760,6 @@ mod tests {
         assert_eq!(one, other);
     }
 
-    /// Shuffling the input changes the attention order, which is a real input.
-    /// Shuffling *within* one priority class does not change the partition:
-    /// the merge reads the order, and grouping is keyed by id.
-    #[test]
-    fn merges_are_deterministic_in_subject_order() {
-        let opportunities = active(40);
-        let graph = AgencyGraph::default();
-        let one = derive(&opportunities, &graph, budget(6, 8, 1), 3);
-        let mut reversed = opportunities.clone();
-        reversed.reverse();
-        let other = derive(&reversed, &graph, budget(6, 8, 1), 3);
-        let members = |cover: &Cover| {
-            let mut cells: Vec<Vec<SubjectId>> = cover
-                .cells
-                .iter()
-                .map(|cell| cell.members().iter().map(|entry| entry.subject).collect())
-                .collect();
-            cells.sort();
-            cells
-        };
-        assert_eq!(covered(&one), covered(&other));
-        assert_eq!(members(&one).len(), members(&other).len());
-    }
-
     /// Connected subjects land in one cell when the budget allows it.
     #[test]
     fn a_connected_component_becomes_one_coarse_cell() {
@@ -1029,6 +1005,15 @@ mod tests {
             singletons(&one),
             singletons(&permuted),
             "the attention order is not an input to the partition"
+        );
+        // Coverage survives a permutation, but so does the sizing decision
+        // that partition made: shuffling the same subjects must not change
+        // how many cells they filled, only which subjects the singleton slots
+        // picked out.
+        assert_eq!(
+            one.cells.len(),
+            permuted.cells.len(),
+            "a permutation changed how many cells the same subjects filled"
         );
     }
 
