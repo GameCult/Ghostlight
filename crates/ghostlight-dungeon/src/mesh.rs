@@ -5,7 +5,7 @@
 
 use crate::{
     eve,
-    world::{STATE_SCHEMA, WorldSnapshot},
+    world::{CONSUMER_PATCH_SCHEMA, CONSUMER_RECEIPT_SCHEMA, STATE_SCHEMA, WorldSnapshot},
 };
 use anyhow::Result;
 use chrono::{DateTime, Utc};
@@ -241,7 +241,9 @@ pub(crate) fn provider_advertisement(identity: &MeshRuntimeIdentity, updated_at:
             "gamecult.eve.command_invocation.v1",
             COMMAND_RESULT_SCHEMA,
             "heimdall.access_gate_state.v1",
-            STATE_SCHEMA
+            STATE_SCHEMA,
+            CONSUMER_PATCH_SCHEMA,
+            CONSUMER_RECEIPT_SCHEMA
         ],
         "witnesses":[{
             "kind":"source-commit",

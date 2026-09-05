@@ -811,7 +811,10 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             .get(&scope)
             .ok_or_else(|| JournalError::Corrupt("decision subject has no controller".into()))?;
         super::validate_assignment(assignment).map_err(kernel_error)?;
-        if !controller_ids.insert(assignment.id()) {
+        // A mirror has no controller id, so it joins no uniqueness set.
+        if let Some(controller_id) = assignment.id()
+            && !controller_ids.insert(controller_id)
+        {
             return Err(JournalError::Corrupt(
                 "controller ID owns more than one canonical scope".into(),
             ));
@@ -838,13 +841,17 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             ));
         }
     }
+    // Both ways, the pairing `admit_resolved` decided: a mirror holds no grant,
+    // and every controller-bearing scope holds one.
     if state
         .controller_assignments
-        .keys()
-        .any(|scope| !state.affordance_grants.contains_key(scope))
+        .iter()
+        .any(|(scope, assignment)| {
+            state.affordance_grants.contains_key(scope) != assignment.mode().is_some()
+        })
     {
         return Err(JournalError::Corrupt(
-            "decision scope has no affordance grant".into(),
+            "controller assignment and affordance grant do not pair".into(),
         ));
     }
     // Every stored entry still passes the declaration validator, so a forged
@@ -891,7 +898,9 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             || event.revision == 0
             || event.revision > state.revision
             || event.revision <= previous_event_revision
-            || event.controller_id != assignment.id()
+            // A forged history in which a mirror acted fails here: its
+            // assignment has no controller id to match.
+            || Some(event.controller_id) != assignment.id()
             || !state
                 .affordance_grants
                 .get(&event.scope)

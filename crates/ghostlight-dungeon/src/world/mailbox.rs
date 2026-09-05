@@ -1,11 +1,11 @@
 use super::{
     AgencyGraph, AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CommandId,
-    CreateWorld, CreateWorldIntent, CreationReceipt, DecisionInvocation, DecisionOpportunity,
-    Declaration, DraftHandle, EntityDeclaration, EntityKind, JurisdictionKey, KernelError,
-    NewController, OperatorEvent, PatchAnswer, PrincipalCommandIntent, PrincipalId, Ref,
-    SubjectDeclaration, SubjectKind, SubmitReceipt, SystemCapability, TickMinutes, WorldKernel,
-    WorldPatch, WorldScaleIntentRef, WorldSnapshot, journal, patch::kernel_speak_grant,
-    prepare_creation,
+    ConsumerId, CreateWorld, CreateWorldIntent, CreationReceipt, DecisionInvocation,
+    DecisionOpportunity, Declaration, DraftHandle, EntityDeclaration, EntityKind, JurisdictionKey,
+    KernelError, NewController, OperatorEvent, PatchAnswer, PrincipalCommandIntent, PrincipalId,
+    Ref, SubjectDeclaration, SubjectKind, SubmitReceipt, SystemCapability, TickMinutes, WorldId,
+    WorldKernel, WorldPatch, WorldScaleIntentRef, WorldSnapshot, journal,
+    patch::kernel_speak_grant, prepare_creation,
 };
 use crate::app_session::VerifiedPrincipalEvidence;
 use std::path::Path;
@@ -362,6 +362,33 @@ impl WorldMailbox {
         .await
     }
 
+    /// The consumer lane's one door, and the only constructor of a `Consumer`
+    /// capability. It takes the revision the consumer built against rather than
+    /// stamping one: a caller that cannot name its revision cannot be told its
+    /// batch is stale, and telling it so is the whole point of the field.
+    pub(super) async fn submit_consumer(
+        &self,
+        world_id: WorldId,
+        expected_revision: u64,
+        command_id: CommandId,
+        consumer: ConsumerId,
+        answers: Option<PatchAnswer>,
+        patch: WorldPatch,
+    ) -> Result<SubmitReceipt, MailboxError> {
+        let capability = SystemCapability::Consumer { consumer };
+        self.submit_authenticated(
+            CommandEnvelope {
+                id: command_id,
+                world_id,
+                expected_revision,
+                caller: CallerId::System(capability),
+                body: CommandBody::AdmitPatch { answers, patch },
+            },
+            AuthenticatedCaller::verified_system(capability),
+        )
+        .await
+    }
+
     #[cfg(test)]
     pub(super) async fn create_fixture(
         &self,
@@ -508,6 +535,42 @@ impl ElaborationPort {
     ) -> Result<SubmitReceipt, MailboxError> {
         self.mailbox
             .submit_elaboration(command_id, jurisdiction, answers, patch)
+            .await
+    }
+}
+
+/// The consumer ingress's narrowing of the mailbox: one method. The ingress
+/// has no reason to read the world — it selects no answer, pre-validates
+/// nothing, and returns a receipt rather than state — so a snapshot method here
+/// would be authority granted before the pass that needs it.
+#[derive(Clone)]
+pub(crate) struct ConsumerPort {
+    mailbox: WorldMailbox,
+}
+
+impl ConsumerPort {
+    pub(crate) fn new(mailbox: WorldMailbox) -> Self {
+        Self { mailbox }
+    }
+
+    pub(super) async fn submit_consumer(
+        &self,
+        world_id: WorldId,
+        expected_revision: u64,
+        command_id: CommandId,
+        consumer: ConsumerId,
+        answers: Option<PatchAnswer>,
+        patch: WorldPatch,
+    ) -> Result<SubmitReceipt, MailboxError> {
+        self.mailbox
+            .submit_consumer(
+                world_id,
+                expected_revision,
+                command_id,
+                consumer,
+                answers,
+                patch,
+            )
             .await
     }
 }

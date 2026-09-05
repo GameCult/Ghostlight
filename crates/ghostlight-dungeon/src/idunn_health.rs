@@ -44,7 +44,7 @@ pub const IDUNN_RUNTIME_CANDIDATE_BIND_ENVIRONMENT: &str = "GAMECULT_IDUNN_CANDI
 pub const IDUNN_PROCESS_WRITE_LEASE_ENVIRONMENT: &str = "GAMECULT_IDUNN_PROCESS_WRITE_LEASE";
 
 pub(crate) const TARGET: &str = "ghostlight";
-const STATE_SCHEMA_GENERATION: &str = "world-v2";
+const STATE_SCHEMA_GENERATION: &str = "world-v3";
 const STATE_CONTRACT_SHA256: &str =
     "sha256-bf6ec06d885a59ddb237c6224d0abb4ccceac8c7ba23761d1326d7f562a4c21e";
 const CULTNET_RUDP_PROTOCOL_ID: &str = "cultnet.transport.rudp.v0";
@@ -173,7 +173,7 @@ impl RuntimePresencePublisher {
             expected.state_schema_generation.as_deref() == Some(STATE_SCHEMA_GENERATION)
                 && expected.state_contract_sha256.as_deref() == Some(STATE_CONTRACT_SHA256)
                 && expected.write_lease_required,
-            "Expected does not name Ghostlight's writable world-v2 state"
+            "Expected does not name Ghostlight's writable world-v3 state"
         );
         ensure!(
             activation.expected_projection_sha256 == expected.canonical_sha256()?
@@ -1390,7 +1390,7 @@ pub(crate) mod tests {
         assert!(
             error
                 .to_string()
-                .contains("does not name Ghostlight's writable world-v2 state")
+                .contains("does not name Ghostlight's writable world-v3 state")
         );
     }
 

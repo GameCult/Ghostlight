@@ -1001,10 +1001,12 @@ fn select_one(
     else {
         return Err(ControllerError::NoOpportunity { expected });
     };
-    if subject.controller_mode != expected {
+    // Fail closed on a subject with no controller: a mirror has neither a mode
+    // nor a controller id, so neither comparison can accidentally hold.
+    if subject.controller_mode != Some(expected) {
         return Err(ControllerError::NoOpportunity { expected });
     }
-    if exact_opportunity.controller_id != subject.controller_id {
+    if Some(exact_opportunity.controller_id) != subject.controller_id {
         return Err(ControllerError::OpportunityMismatch);
     }
     let matches = snapshot
@@ -5111,8 +5113,8 @@ mod tests {
             id: actor_id,
             label: "Mara at the rain gate".into(),
             kind: SubjectKind::Person,
-            controller_id: actor_controller,
-            controller_mode: ControllerMode::NarrativePersona,
+            controller_id: Some(actor_controller),
+            controller_mode: Some(ControllerMode::NarrativePersona),
             human_controller: None,
             affordances: BTreeSet::from([speak_affordance]),
             position: None,
@@ -5142,8 +5144,8 @@ mod tests {
             id: speaker_id,
             label: "Iris in the tollhouse".into(),
             kind: SubjectKind::Person,
-            controller_id: speaker_controller,
-            controller_mode: ControllerMode::OperationalAgent,
+            controller_id: Some(speaker_controller),
+            controller_mode: Some(ControllerMode::OperationalAgent),
             human_controller: None,
             affordances: BTreeSet::new(),
             position: None,
@@ -5361,8 +5363,8 @@ mod tests {
             id: actor_id,
             label: "The Walker".into(),
             kind: SubjectKind::Person,
-            controller_id: actor_controller,
-            controller_mode: ControllerMode::OperationalAgent,
+            controller_id: Some(actor_controller),
+            controller_mode: Some(ControllerMode::OperationalAgent),
             human_controller: None,
             affordances: BTreeSet::from([speak_affordance]),
             position: Some(yard),
@@ -5382,8 +5384,8 @@ mod tests {
             id: other_id,
             label: "The Vault Keeper".into(),
             kind: SubjectKind::Person,
-            controller_id: other_controller,
-            controller_mode: ControllerMode::OperationalAgent,
+            controller_id: Some(other_controller),
+            controller_mode: Some(ControllerMode::OperationalAgent),
             human_controller: None,
             affordances: BTreeSet::new(),
             position: Some(vault),
@@ -6670,7 +6672,7 @@ mod tests {
         let human_opportunity = snapshot
             .opportunities
             .iter()
-            .find(|opportunity| opportunity.controller_id == human_subject.controller_id)
+            .find(|opportunity| Some(opportunity.controller_id) == human_subject.controller_id)
             .cloned()
             .unwrap();
         let human_speak = *snapshot
@@ -6724,13 +6726,13 @@ mod tests {
         let narrative_subject = snapshot
             .subjects
             .iter()
-            .find(|subject| subject.controller_mode == ControllerMode::NarrativePersona)
+            .find(|subject| subject.controller_mode == Some(ControllerMode::NarrativePersona))
             .cloned()
             .unwrap();
         let narrative_opportunity = snapshot
             .opportunities
             .iter()
-            .find(|opportunity| opportunity.controller_id == narrative_subject.controller_id)
+            .find(|opportunity| Some(opportunity.controller_id) == narrative_subject.controller_id)
             .cloned()
             .unwrap();
         let narrative_command = CommandId::new();
@@ -6831,13 +6833,15 @@ mod tests {
         let operational_subject = snapshot
             .subjects
             .iter()
-            .find(|subject| subject.controller_mode == ControllerMode::OperationalAgent)
+            .find(|subject| subject.controller_mode == Some(ControllerMode::OperationalAgent))
             .cloned()
             .unwrap();
         let operational_opportunity = snapshot
             .opportunities
             .iter()
-            .find(|opportunity| opportunity.controller_id == operational_subject.controller_id)
+            .find(|opportunity| {
+                Some(opportunity.controller_id) == operational_subject.controller_id
+            })
             .cloned()
             .unwrap();
         let operational_command = CommandId::new();

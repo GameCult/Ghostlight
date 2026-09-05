@@ -18,7 +18,7 @@ use super::controllers::{
 };
 #[cfg(test)]
 use super::patch::RECORD_GAP_PATCH_TOOL;
-use super::patch::{ComponentOp, FactStandingRef};
+use super::patch::{self, ComponentOp, FactStandingRef};
 use super::patch::{
     PATCH_TOOLS, PatchToolShape, SUBMIT_PATCH_TOOL, patch_tool_signatures, patch_tools,
 };
@@ -35,18 +35,13 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 use thiserror::Error;
+#[cfg(test)]
 use uuid::Uuid;
 
 /// The elaborator wants many tool calls inside one round and several rounds for
 /// repair, where the operational agent wants one terminal choice.
 /// `TOOL_STEP_BUDGET` is left alone for the lane it belongs to.
 const ELABORATION_ROUND_BUDGET: usize = 6;
-
-/// The author owns the size of what it authors. The kernel gets no cap:
-/// `resolve_patch` is total, and a cap there would be a second authority over
-/// what a patch may be.
-const MAX_DRAFT_DECLARATIONS: usize = 64;
-const MAX_DRAFT_OPERATIONS: usize = 128;
 
 const ELABORATION_NAMESPACE: &str = "ghostlight.command.elaboration.v1";
 
@@ -924,7 +919,7 @@ fn apply_tool_call(
             }
         },
         PatchToolShape::Declare { variant, fixed } => {
-            if draft.declarations.len() >= MAX_DRAFT_DECLARATIONS {
+            if draft.declarations.len() >= patch::MAX_PATCH_DECLARATIONS {
                 gaps.push(tool_decode_need(
                     name,
                     arguments,
@@ -954,7 +949,7 @@ fn apply_tool_call(
             }
         }
         PatchToolShape::Operate { variant } => {
-            if draft.operations.len() >= MAX_DRAFT_OPERATIONS {
+            if draft.operations.len() >= patch::MAX_PATCH_OPERATIONS {
                 gaps.push(tool_decode_need(
                     name,
                     arguments,
@@ -1029,24 +1024,15 @@ pub(super) fn elaboration_request(
 
 /// A session's identity is derived from the world, the jurisdiction, and the
 /// answer's digest, so a crashed loop resumes the same store row and the
-/// mailbox's idempotency probe sees the same command. No `uuid/v5`: the digest
-/// is sha256 and its first sixteen bytes become the id.
+/// mailbox's idempotency probe sees the same command. The derivation itself is
+/// `CommandId::derived`, which is the one recipe every derived command key
+/// uses.
 fn session_command_id(session: &ElaboratorSession) -> Result<CommandId, ControllerError> {
-    let mut hasher = Sha256::new();
-    hasher.update(ELABORATION_NAMESPACE.as_bytes());
-    hasher.update(
-        rmp_serde::to_vec_named(&(
-            session.world_id,
-            session.jurisdiction,
-            &session.answer_digest,
-        ))
-        .map_err(|error| ControllerError::Serialization(error.to_string()))?,
-    );
-    let bytes: [u8; 16] = hasher.finalize()[..16]
-        .try_into()
-        .expect("sha256 yields at least sixteen bytes");
-    CommandId::parse_uuid(&Uuid::from_bytes(bytes).to_string())
-        .map_err(|error| ControllerError::Serialization(error.to_string()))
+    let scope = digest_of(&(session.world_id, session.jurisdiction))?;
+    Ok(CommandId::derived(
+        ELABORATION_NAMESPACE,
+        &[&scope, session.answer_digest.text()],
+    ))
 }
 
 fn digest_of<T: Serialize>(value: &T) -> Result<String, ControllerError> {
@@ -1128,7 +1114,7 @@ mod tests {
     /// The author owns the size of what it authors. The kernel gets no cap.
     #[test]
     fn a_draft_past_the_size_cap_becomes_a_gap() {
-        let mut calls: Vec<(&str, Value)> = (0..=MAX_DRAFT_DECLARATIONS)
+        let mut calls: Vec<(&str, Value)> = (0..=patch::MAX_PATCH_DECLARATIONS)
             .map(|index| {
                 (
                     "declare_place",
@@ -1142,7 +1128,10 @@ mod tests {
             .collect();
         calls.push((SUBMIT_PATCH_TOOL, serde_json::json!({})));
         let capture = capture(&vec![output(calls)]);
-        assert_eq!(capture.draft.declarations.len(), MAX_DRAFT_DECLARATIONS);
+        assert_eq!(
+            capture.draft.declarations.len(),
+            patch::MAX_PATCH_DECLARATIONS
+        );
         assert!(
             capture.gaps.iter().any(|gap| gap.detail.contains("cap")),
             "the call past the cap was not recorded as a gap"

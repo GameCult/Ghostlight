@@ -1142,6 +1142,68 @@ pub(crate) struct WorldPatch {
     pub(crate) evidence: Vec<EvidenceRef>,
 }
 
+/// The one byte bound on a `WorldPatch` frame from any external source, and
+/// the three item bounds on a `WorldPatch` as a value. One owner, two
+/// consumers: the consumer ingress decodes against them, and the elaboration
+/// lane checks its own draft against the same two item caps.
+pub(crate) const MAX_PATCH_BYTES: usize = 256 * 1024;
+pub(crate) const MAX_PATCH_DECLARATIONS: usize = 64;
+pub(crate) const MAX_PATCH_OPERATIONS: usize = 128;
+pub(crate) const MAX_PATCH_EVIDENCE: usize = 64;
+
+/// Why a patch was refused before the resolver ever saw it. Not a second
+/// structural vocabulary: nothing here reads world state.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum PatchDecodeError {
+    TooLarge { bytes: usize },
+    NotCanonical,
+    Malformed,
+    TooManyDeclarations { count: usize },
+    TooManyOperations { count: usize },
+    TooManyEvidence { count: usize },
+}
+
+/// The one decode owner for a `WorldPatch` from a byte source. The byte cap is
+/// applied to the frame before `rmp_serde` sees it, so no item is deserialized
+/// out of a frame the world would not accept; the item caps are checked on the
+/// decoded value before `resolve_patch`, which is the first thing that costs
+/// `state ∪ patch`.
+pub(crate) fn decode_patch(bytes: &[u8]) -> Result<WorldPatch, PatchDecodeError> {
+    if bytes.len() > MAX_PATCH_BYTES {
+        return Err(PatchDecodeError::TooLarge { bytes: bytes.len() });
+    }
+    let patch: WorldPatch =
+        rmp_serde::from_slice(bytes).map_err(|_| PatchDecodeError::Malformed)?;
+    // The canonical round-trip the journal and the presence route already
+    // require, so one frame has one encoding.
+    if rmp_serde::to_vec_named(&patch).map_err(|_| PatchDecodeError::Malformed)? != bytes {
+        return Err(PatchDecodeError::NotCanonical);
+    }
+    check_patch_caps(&patch)?;
+    Ok(patch)
+}
+
+/// The same three item caps against an in-memory draft, for the lane that
+/// builds rather than decodes.
+pub(crate) fn check_patch_caps(patch: &WorldPatch) -> Result<(), PatchDecodeError> {
+    if patch.declarations.len() > MAX_PATCH_DECLARATIONS {
+        return Err(PatchDecodeError::TooManyDeclarations {
+            count: patch.declarations.len(),
+        });
+    }
+    if patch.operations.len() > MAX_PATCH_OPERATIONS {
+        return Err(PatchDecodeError::TooManyOperations {
+            count: patch.operations.len(),
+        });
+    }
+    if patch.evidence.len() > MAX_PATCH_EVIDENCE {
+        return Err(PatchDecodeError::TooManyEvidence {
+            count: patch.evidence.len(),
+        });
+    }
+    Ok(())
+}
+
 /// One named structural check that a patch failed. A rejection carries the
 /// complete set, never the first failure. It never enters `WorldState`,
 /// `WorldEffect`, `CommandEnvelope`, or `WorldCommit`; the serde derives exist
@@ -1177,8 +1239,11 @@ pub(crate) enum Mismatch {
     UnadmittedController {
         handle: DraftHandle,
     },
-    NoAffordances {
-        handle: DraftHandle,
+    /// A declared subject's controller and affordance grant do not pair: a
+    /// mirror was granted an affordance, or an ordinary controller was granted
+    /// none. `admit_resolved` re-decides the same rule.
+    ControllerGrantMismatch {
+        site: Site,
     },
     EmptyEvidence {
         position: usize,
@@ -2876,9 +2941,13 @@ pub(super) fn resolve_patch(
             }
         }
         if let Declaration::Subject(subject) = declaration {
-            if subject.affordances.is_empty() {
-                mismatches.push(Mismatch::NoAffordances {
-                    handle: handle.clone(),
+            // Both ways. A mirror receives no opportunity, so it may hold no
+            // affordance; every other controller must hold one.
+            if matches!(subject.controller, NewController::External { .. })
+                != subject.affordances.is_empty()
+            {
+                mismatches.push(Mismatch::ControllerGrantMismatch {
+                    site: Site::Declaration(handle.clone()),
                 });
             }
             if let NewController::Human { principal } = &subject.controller
@@ -4526,23 +4595,29 @@ pub(super) fn resolve_patch(
             });
         }
         allocated_subjects.insert(input.handle.clone(), subject_id);
-        let controller_id = ControllerId(derive_id(
-            CONTROLLER_NAMESPACE,
-            world_id,
-            command_id,
-            &input.handle,
-            None,
-        ));
+        let mut controller_id = || {
+            ControllerId(derive_id(
+                CONTROLLER_NAMESPACE,
+                world_id,
+                command_id,
+                &input.handle,
+                None,
+            ))
+        };
         let controller = match input.controller.clone() {
             NewController::Human { principal } => ControllerAssignment::Human {
-                controller_id,
+                controller_id: controller_id(),
                 principal,
             },
-            NewController::NarrativePersona => {
-                ControllerAssignment::NarrativePersona { controller_id }
-            }
-            NewController::OperationalAgent => {
-                ControllerAssignment::OperationalAgent { controller_id }
+            NewController::NarrativePersona => ControllerAssignment::NarrativePersona {
+                controller_id: controller_id(),
+            },
+            NewController::OperationalAgent => ControllerAssignment::OperationalAgent {
+                controller_id: controller_id(),
+            },
+            // No controller id is derived, because there is no controller.
+            NewController::External { consumer } => {
+                ControllerAssignment::ExternallyControlled { consumer }
             }
         };
         let granted = input

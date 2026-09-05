@@ -7,6 +7,7 @@
 
 mod action;
 mod clock;
+mod consumer;
 mod controllers;
 mod cover;
 mod elaboration;
@@ -17,6 +18,10 @@ mod tool_schema;
 
 pub(crate) use action::ActionMismatch;
 pub(crate) use clock::{FictionalMinutes, Motion, TickMinutes};
+pub(crate) use consumer::{
+    CONSUMER_BODY_LIMIT, CONSUMER_CREDENTIALS_ENVIRONMENT, CONSUMER_PATCH_SCHEMA,
+    CONSUMER_RECEIPT_SCHEMA, ConsumerRegistry, admit_document, encode_receipt,
+};
 pub(crate) use controllers::{
     CellRun, ControllerError, ControllerModels, ControllerOpenError, ControllerPendingReason,
     ControllerRunner, ControllerWorkCustody, NarrativeCapture, NarrativeDecision, NarrativePending,
@@ -26,7 +31,9 @@ pub(crate) use controllers::{
 pub(crate) use cover::{
     AgencyGraph, Cell, CellId, Constituent, Cover, CoverBudget, Resolution, TickIndex, derive_cover,
 };
-pub(crate) use mailbox::{ControllerPort, ElaborationPort, MailboxError, WorldMailbox};
+pub(crate) use mailbox::{
+    ConsumerPort, ControllerPort, ElaborationPort, MailboxError, WorldMailbox,
+};
 pub(crate) use patch::{
     AccessKind, Affordance, AffordanceKindName, Audience, AuthoredSource, AuthorityGrant,
     AuthorityKindName, AuthorityTarget, BoundPrecondition, Bounds, ChannelRecord, Commitment,
@@ -66,8 +73,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.elaboration.v1";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.elaboration.v1";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v1";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v1";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -134,12 +141,33 @@ impl CommandId {
         Self(cover::cell_constituent_uuid(world, cell, subject, tick))
     }
 
+    /// sha256 over a namespace and its ordered, length-prefixed parts, first
+    /// sixteen bytes. A command key, not a referent id: `patch::derive_id`
+    /// still has exactly two call sites. No `uuid/v5`.
+    pub(crate) fn derived(namespace: &str, parts: &[&str]) -> Self {
+        let mut hasher = Sha256::new();
+        hasher.update(namespace.as_bytes());
+        for part in parts {
+            hasher.update((part.len() as u64).to_be_bytes());
+            hasher.update(part.as_bytes());
+        }
+        let bytes: [u8; 16] = hasher.finalize()[..16]
+            .try_into()
+            .expect("sha256 yields at least sixteen bytes");
+        Self(Uuid::from_bytes(bytes))
+    }
+
     fn key(self) -> String {
         self.0.to_string()
     }
 }
 
 impl WorldId {
+    /// Canonical text, for the key derivations that hash a world identity.
+    pub(crate) fn text(self) -> String {
+        self.0.to_string()
+    }
+
     /// A named zero for tests that need a world identity and no world.
     #[cfg(test)]
     pub(super) fn nil_for_test() -> Self {
@@ -228,12 +256,42 @@ pub(crate) enum ControllerMode {
     OperationalAgent,
 }
 
+/// A configured external consumer. Opaque inside the kernel: derived from the
+/// consumer's configured name at the ingress registry and never spelled back
+/// out, so no consumer name can reach a match arm.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[serde(transparent)]
+pub(crate) struct ConsumerId(Uuid);
+
+/// The one namespace a configured consumer name lowers through.
+const CONSUMER_ID_NAMESPACE: &str = "ghostlight.consumer.id.v0";
+
+impl ConsumerId {
+    /// The one lowering from a configured name, through `CommandId::derived`'s
+    /// recipe over its own namespace. Called only by the ingress registry.
+    pub(crate) fn of_name(name: &str) -> Self {
+        Self(CommandId::derived(CONSUMER_ID_NAMESPACE, &[name]).0)
+    }
+
+    /// Canonical text, for the command-key derivation that hashes it.
+    pub(crate) fn text(self) -> String {
+        self.0.to_string()
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub(crate) enum NewController {
-    Human { principal: PrincipalId },
+    Human {
+        principal: PrincipalId,
+    },
     NarrativePersona,
     OperationalAgent,
+    /// Declared as a mirror of state this world does not own. Mints no
+    /// controller, no mode, and no opportunity.
+    External {
+        consumer: ConsumerId,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -280,6 +338,28 @@ enum SystemCapability {
     Elaborator {
         jurisdiction: JurisdictionKey,
     },
+    /// One external consumer, authoring only the subjects this world has
+    /// admitted as its mirrors. Minted by exactly one mailbox method, after the
+    /// ingress has authenticated the document; never derived from session
+    /// evidence.
+    Consumer {
+        consumer: ConsumerId,
+    },
+}
+
+/// What a confined patch author may write. `None` from `require_patch_author`
+/// still means unconfined: the owner.
+///
+/// Deliberately not `AuthorityTarget`. That is in-world grant vocabulary read
+/// by `covers` and `targets_overlap`; this names a caller's write scope, and
+/// its consumer arm names a caller rather than a subject — the subject set is
+/// derived from `controller_assignments` at decision time.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PatchGround {
+    /// A place subtree. The elaborator's shape, unchanged in meaning.
+    Jurisdiction(JurisdictionKey),
+    /// Every subject bound to this consumer.
+    Consumer(ConsumerId),
 }
 
 #[derive(Clone, Debug)]
@@ -509,22 +589,30 @@ enum ControllerAssignment {
     OperationalAgent {
         controller_id: ControllerId,
     },
+    /// A mirror of state this world does not own. It has no controller id and
+    /// no mode, because the kernel will not keep a fictional one so an accessor
+    /// can stay infallible.
+    ExternallyControlled {
+        consumer: ConsumerId,
+    },
 }
 
 impl ControllerAssignment {
-    fn id(&self) -> ControllerId {
+    fn id(&self) -> Option<ControllerId> {
         match self {
             Self::Human { controller_id, .. }
             | Self::NarrativePersona { controller_id }
-            | Self::OperationalAgent { controller_id } => *controller_id,
+            | Self::OperationalAgent { controller_id } => Some(*controller_id),
+            Self::ExternallyControlled { .. } => None,
         }
     }
 
-    fn mode(&self) -> ControllerMode {
+    fn mode(&self) -> Option<ControllerMode> {
         match self {
-            Self::Human { .. } => ControllerMode::Human,
-            Self::NarrativePersona { .. } => ControllerMode::NarrativePersona,
-            Self::OperationalAgent { .. } => ControllerMode::OperationalAgent,
+            Self::Human { .. } => Some(ControllerMode::Human),
+            Self::NarrativePersona { .. } => Some(ControllerMode::NarrativePersona),
+            Self::OperationalAgent { .. } => Some(ControllerMode::OperationalAgent),
+            Self::ExternallyControlled { .. } => None,
         }
     }
 
@@ -534,13 +622,31 @@ impl ControllerAssignment {
             Self::NarrativePersona { controller_id } | Self::OperationalAgent { controller_id } => {
                 CallerId::Controller(*controller_id)
             }
+            // The only caller that could ever act for this scope, and the
+            // controller lane cannot mint it.
+            Self::ExternallyControlled { consumer } => {
+                CallerId::System(SystemCapability::Consumer {
+                    consumer: *consumer,
+                })
+            }
+        }
+    }
+
+    fn consumer(&self) -> Option<ConsumerId> {
+        match self {
+            Self::ExternallyControlled { consumer } => Some(*consumer),
+            Self::Human { .. } | Self::NarrativePersona { .. } | Self::OperationalAgent { .. } => {
+                None
+            }
         }
     }
 
     fn human_principal(&self) -> Option<&PrincipalId> {
         match self {
             Self::Human { principal, .. } => Some(principal),
-            Self::NarrativePersona { .. } | Self::OperationalAgent { .. } => None,
+            Self::NarrativePersona { .. }
+            | Self::OperationalAgent { .. }
+            | Self::ExternallyControlled { .. } => None,
         }
     }
 }
@@ -726,8 +832,10 @@ pub(crate) struct SubjectSnapshot {
     pub(crate) id: SubjectId,
     pub(crate) label: String,
     pub(crate) kind: SubjectKind,
-    pub(crate) controller_id: ControllerId,
-    pub(crate) controller_mode: ControllerMode,
+    /// Absent for an externally controlled mirror, which has no controller and
+    /// no turn. Every reader fails closed on `None`; none gets a default.
+    pub(crate) controller_id: Option<ControllerId>,
+    pub(crate) controller_mode: Option<ControllerMode>,
     pub(crate) human_controller: Option<PrincipalId>,
     pub(crate) affordances: BTreeSet<AffordanceId>,
     pub(crate) position: Option<EntityId>,
@@ -1409,9 +1517,8 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
             let confinement = require_patch_author(state, &command.caller, answers.as_ref())?;
             let resolved = patch::resolve_patch(state, command.id, patch, None)
                 .map_err(KernelError::PatchRejected)?;
-            if let Some(jurisdiction) = confinement {
-                confine_to_jurisdiction(state, &resolved, jurisdiction)
-                    .map_err(KernelError::PatchRejected)?;
+            if let Some(ground) = confinement {
+                confine_to_ground(state, &resolved, ground).map_err(KernelError::PatchRejected)?;
             }
             Ok(WorldEffect::PatchAdmitted {
                 answers: answers.clone(),
@@ -1431,7 +1538,7 @@ fn require_system_capability(caller: &CallerId, body: &CommandBody) -> Result<()
         (capability, body),
         (SystemCapability::Clock, CommandBody::AdvanceTime { .. })
             | (
-                SystemCapability::Elaborator { .. },
+                SystemCapability::Elaborator { .. } | SystemCapability::Consumer { .. },
                 CommandBody::AdmitPatch { .. }
             )
     );
@@ -1660,7 +1767,7 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
     let mut controller_ids: BTreeSet<ControllerId> = state
         .controller_assignments
         .values()
-        .map(ControllerAssignment::id)
+        .filter_map(ControllerAssignment::id)
         .collect();
     for entry in &resolved.affordances {
         if state
@@ -1688,9 +1795,17 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
                 "only world genesis may bind a human controller".into(),
             ));
         }
-        if subject.affordances.is_empty() {
+        // Controller-shaped, both ways: a mirror receives no affordance, and
+        // every other controller must receive one. That is what makes the
+        // mirror's exclusion from opportunity derivation consistent rather than
+        // merely enforced.
+        if matches!(
+            subject.controller,
+            ControllerAssignment::ExternallyControlled { .. }
+        ) != subject.affordances.is_empty()
+        {
             return Err(KernelError::Invariant(
-                "admitted subject has no affordance".into(),
+                "admitted subject's controller and affordance grant do not pair".into(),
             ));
         }
         if let Some(position) = subject.position
@@ -1703,7 +1818,9 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
                 "admitted position does not name a canonical place".into(),
             ));
         }
-        if !controller_ids.insert(subject.controller.id()) {
+        if let Some(controller_id) = subject.controller.id()
+            && !controller_ids.insert(controller_id)
+        {
             return Err(KernelError::Invariant(
                 "admitted controller ID collision".into(),
             ));
@@ -3020,7 +3137,9 @@ fn agency_graph(state: &WorldState) -> AgencyGraph {
     let active: BTreeSet<SubjectId> = state
         .controller_assignments
         .iter()
-        .filter(|(_, controller)| controller.mode() != ControllerMode::Human)
+        .filter(|(_, controller)| {
+            matches!(controller.mode(), Some(mode) if mode != ControllerMode::Human)
+        })
         .map(|(scope, _)| scope.subject_id)
         .collect();
     let mut graph = AgencyGraph {
@@ -3396,6 +3515,11 @@ pub(crate) enum CausalBoundary {
 pub(crate) struct BoundaryDigest(String);
 
 impl BoundaryDigest {
+    /// The digest text, for the one command-key derivation that hashes it.
+    pub(super) fn text(&self) -> &str {
+        &self.0
+    }
+
     /// The deficit lane's answer has no preimage of its own: its digest is the
     /// session's, produced by the same `sha256:` spelling.
     pub(super) fn from_digest(value: String) -> Self {
@@ -3694,7 +3818,16 @@ fn derive_opportunities(state: &WorldState) -> Result<Vec<DecisionOpportunity>, 
     state
         .controller_assignments
         .iter()
+        // World truth, not a scheduling preference: a mirror has no turn, so it
+        // never mints an opportunity and never trips the empty-grant invariant.
+        .filter(|(_, controller)| controller.mode().is_some())
         .map(|(scope, controller)| {
+            let (Some(controller_id), Some(controller_mode)) = (controller.id(), controller.mode())
+            else {
+                return Err(KernelError::Invariant(
+                    "decision scope has no controller turn".into(),
+                ));
+            };
             let affordance_ids: Vec<_> = state
                 .affordance_grants
                 .get(scope)
@@ -3712,8 +3845,8 @@ fn derive_opportunities(state: &WorldState) -> Result<Vec<DecisionOpportunity>, 
                 revision: state.revision,
                 scope_digest: scope_digest(state, *scope)?,
                 scope: *scope,
-                controller_id: controller.id(),
-                controller_mode: controller.mode(),
+                controller_id,
+                controller_mode,
                 affordance_ids,
             })
         })
@@ -3848,15 +3981,29 @@ fn require_patch_author(
     state: &WorldState,
     caller: &CallerId,
     answers: Option<&PatchAnswer>,
-) -> Result<Option<JurisdictionKey>, KernelError> {
+) -> Result<Option<PatchGround>, KernelError> {
     match caller {
         CallerId::Principal(principal) if principal == &state.owner => Ok(None),
         CallerId::System(SystemCapability::Elaborator { jurisdiction }) => {
             let answer = answers.ok_or(KernelError::Unauthorized)?;
-            if !jurisdiction_covers(state, *jurisdiction, answer) {
+            let ground = PatchGround::Jurisdiction(*jurisdiction);
+            if !ground_covers(state, ground, answer) {
                 return Err(KernelError::Unauthorized);
             }
-            Ok(Some(*jurisdiction))
+            Ok(Some(ground))
+        }
+        CallerId::System(SystemCapability::Consumer { consumer }) => {
+            // Authority over its own mirrors is not jurisdictional and does not
+            // depend on an answer. An answer, when present, must name a subject
+            // this consumer is bound to, so a consumer cannot claim credit for
+            // structure it is confined out of writing.
+            let ground = PatchGround::Consumer(*consumer);
+            if let Some(answer) = answers
+                && !ground_covers(state, ground, answer)
+            {
+                return Err(KernelError::Unauthorized);
+            }
+            Ok(Some(ground))
         }
         _ => Err(KernelError::Unauthorized),
     }
@@ -3871,7 +4018,21 @@ fn require_patch_author(
 /// roots' targets, so a parent answering a child's row would reduce two targets
 /// with one subject and drain a child's queue while its own row stays red.
 /// Boundaries name a thing; deficits name a row.
-fn jurisdiction_covers(state: &WorldState, held: JurisdictionKey, answer: &PatchAnswer) -> bool {
+/// A consumer's arm is narrower on purpose: it may answer only a
+/// `MissingStructure` boundary on one of its own mirrors. A deficit is
+/// jurisdictional and a consumer holds no jurisdiction; a boundary about a
+/// foreign subject is not its business.
+fn ground_covers(state: &WorldState, held: PatchGround, answer: &PatchAnswer) -> bool {
+    let held = match held {
+        PatchGround::Jurisdiction(jurisdiction) => jurisdiction,
+        PatchGround::Consumer(consumer) => {
+            let PatchAnswer::Boundary(CausalBoundary::MissingStructure { subject, .. }) = answer
+            else {
+                return false;
+            };
+            return bound_to_consumer(state, *subject, consumer);
+        }
+    };
     match answer {
         PatchAnswer::Boundary(CausalBoundary::UnelaboratedDestination { place, .. }) => {
             place_in(state, held, *place)
@@ -3891,6 +4052,20 @@ fn jurisdiction_covers(state: &WorldState, held: JurisdictionKey, answer: &Patch
         },
         PatchAnswer::Deficit(key) => *key == held,
     }
+}
+
+/// Is this committed subject one of that consumer's mirrors? The consumer's
+/// ground is derived here, at decision time, and never carried on the wire: a
+/// binding a later commit revoked shrinks the consumer's authority with no
+/// ingress change.
+fn bound_to_consumer(state: &WorldState, subject: SubjectId, consumer: ConsumerId) -> bool {
+    state
+        .controller_assignments
+        .get(&DecisionScope {
+            subject_id: subject,
+        })
+        .and_then(ControllerAssignment::consumer)
+        == Some(consumer)
 }
 
 fn place_in(state: &WorldState, held: JurisdictionKey, place: EntityId) -> bool {
@@ -3929,16 +4104,32 @@ fn candidate_places(
 /// patch that satisfies its answer may also declare unrelated structure inside
 /// its jurisdiction, because "the minimum the boundary needs" is a semantic
 /// verdict the kernel must not hold.
-fn confine_to_jurisdiction(
+fn confine_to_ground(
     state: &WorldState,
     resolved: &ResolvedPatch,
-    held: JurisdictionKey,
+    held: PatchGround,
 ) -> Result<(), Vec<Mismatch>> {
     let entities = candidate_places(state, resolved);
+    // A consumer names no ground, so every place, every route, and every
+    // place-shaped reach is refused with no extra rule: relocation, route
+    // opening and closing, cost changes, and place-subtree grants are
+    // unrepresentable for it because they carry a place or a route.
     let inside = |place: EntityId| match held {
-        JurisdictionKey::PlaceSubtree(root) => patch::covers_place(&entities, root, place),
-        JurisdictionKey::Uncovered => false,
+        PatchGround::Jurisdiction(JurisdictionKey::PlaceSubtree(root)) => {
+            patch::covers_place(&entities, root, place)
+        }
+        PatchGround::Jurisdiction(JurisdictionKey::Uncovered) | PatchGround::Consumer(_) => false,
     };
+    // Every subject's consumer binding over `state ∪ patch`, so a consumer's
+    // first document can declare its own mirror and write it in one patch.
+    let mut bindings: BTreeMap<SubjectId, Option<ConsumerId>> = state
+        .controller_assignments
+        .iter()
+        .map(|(scope, assignment)| (scope.subject_id, assignment.consumer()))
+        .collect();
+    for declared in &resolved.subjects {
+        bindings.insert(declared.subject_id, declared.controller.consumer());
+    }
     let mut positions: BTreeMap<SubjectId, Option<EntityId>> = state
         .positions
         .iter()
@@ -3961,9 +4152,18 @@ fn confine_to_jurisdiction(
 
     let mut mismatches = Vec::new();
     let mut confine_subject = |site: &Site, subject: SubjectId, mismatches: &mut Vec<Mismatch>| {
-        let admitted = match positions.get(&subject).copied().flatten() {
-            Some(place) => inside(place),
-            None => held == JurisdictionKey::Uncovered,
+        let admitted = match held {
+            PatchGround::Jurisdiction(jurisdiction) => {
+                match positions.get(&subject).copied().flatten() {
+                    Some(place) => inside(place),
+                    None => jurisdiction == JurisdictionKey::Uncovered,
+                }
+            }
+            // Position is unconfined for a consumer: what binds a mirror is who
+            // controls it, not where it stands.
+            PatchGround::Consumer(consumer) => {
+                bindings.get(&subject).copied().flatten() == Some(consumer)
+            }
         };
         if !admitted {
             mismatches.push(Mismatch::OutsideJurisdiction { site: site.clone() });
@@ -3997,9 +4197,17 @@ fn confine_to_jurisdiction(
         confine_place(&site, to, &mut mismatches);
     }
     for declared in &resolved.facts {
-        if let FactStanding::Claimed { by } = declared.fact.standing {
-            let site = Site::Declaration(declared.handle.clone());
-            confine_subject(&site, by, &mut mismatches);
+        let site = Site::Declaration(declared.handle.clone());
+        match declared.fact.standing {
+            FactStanding::Claimed { by } => confine_subject(&site, by, &mut mismatches),
+            // A consumer's citation is its own provenance claim, and that claim
+            // buys an `Admit` into its own custody and a claimed fact. It
+            // cannot canonize.
+            FactStanding::Canonical { .. } => {
+                if matches!(held, PatchGround::Consumer(_)) {
+                    mismatches.push(Mismatch::OutsideJurisdiction { site });
+                }
+            }
         }
     }
     for declared in &resolved.channels {
@@ -4245,7 +4453,7 @@ fn apply_effect(
             (capability, effect),
             (SystemCapability::Clock, WorldEffect::TimeAdvanced { .. })
                 | (
-                    SystemCapability::Elaborator { .. },
+                    SystemCapability::Elaborator { .. } | SystemCapability::Consumer { .. },
                     WorldEffect::PatchAdmitted { .. }
                 )
         );
@@ -4267,10 +4475,10 @@ fn apply_effect(
                         "admitted patch does not satisfy admission authority".into(),
                     )
                 })?;
-            if let Some(jurisdiction) = confinement {
-                confine_to_jurisdiction(state, resolved, jurisdiction).map_err(|_| {
+            if let Some(ground) = confinement {
+                confine_to_ground(state, resolved, ground).map_err(|_| {
                     KernelError::Invariant(
-                        "admitted patch wrote outside its author's jurisdiction".into(),
+                        "admitted patch wrote outside its author's ground".into(),
                     )
                 })?;
             }
@@ -5992,7 +6200,7 @@ mod tests {
             .get_mut(&scope)
             .unwrap();
         *assignment = ControllerAssignment::NarrativePersona {
-            controller_id: assignment.id(),
+            controller_id: assignment.id().expect("the fixture scope has a controller"),
         };
         assert_ne!(scope_digest(&changed_controller, scope).unwrap(), base);
 

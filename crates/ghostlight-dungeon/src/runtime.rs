@@ -10,12 +10,12 @@ use crate::{
     },
     mesh::{self, MeshPublisher, MeshRuntimeIdentity},
     world::{
-        AffordanceId, CellRun, CommandBody, CommandId, ControllerError, ControllerModels,
-        ControllerPendingReason, ControllerRunner, ControllerWorkCustody, Cover, CoverBudget,
-        CreateWorldIntent, DecisionInvocation, DecisionOpportunity, KernelError, MailboxError,
-        NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId, Statement,
-        SubmissionDisposition, SubmitReceipt, TickMinutes, WorldMailbox, WorldSnapshot,
-        derive_cover,
+        AffordanceId, CONSUMER_BODY_LIMIT, CellRun, CommandBody, CommandId, ConsumerPort,
+        ConsumerRegistry, ControllerError, ControllerModels, ControllerPendingReason,
+        ControllerRunner, ControllerWorkCustody, Cover, CoverBudget, CreateWorldIntent,
+        DecisionInvocation, DecisionOpportunity, KernelError, MailboxError, NarrativeRun,
+        OperationalRun, PrincipalCommandIntent, PrincipalId, Statement, SubmissionDisposition,
+        SubmitReceipt, TickMinutes, WorldMailbox, WorldSnapshot, derive_cover,
     },
 };
 use anyhow::{Context, bail, ensure};
@@ -64,6 +64,11 @@ struct RuntimeHealthOwner {
 #[derive(Clone)]
 struct AppState {
     world: WorldMailbox,
+    /// The consumer ingress's narrow view of the same owner, and the configured
+    /// consumers it authenticates against. The registry is read once at startup
+    /// and holds only digests; a missing file means no consumers.
+    consumer: ConsumerPort,
+    consumers: Arc<ConsumerRegistry>,
     /// The one cognition organ, shared. Concurrency is owned by
     /// `controller_permits` and quarantine by `controller_quarantined`: an
     /// exclusive lock here would be a second owner of both, and a tick spends a
@@ -275,7 +280,10 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
     require_no_runtime_custody_failure(&mut fatal_events)?;
     let (revisions, _) = broadcast::channel(32);
     let cover_budget = configured_cover_budget()?;
+    let consumers = Arc::new(open_consumer_registry());
     let mut state = AppState {
+        consumer: ConsumerPort::new(world.clone()),
+        consumers,
         world,
         controllers: controllers.map(Arc::new),
         controller_permits: Arc::new(Semaphore::new(configured_controller_concurrency())),
@@ -404,11 +412,60 @@ fn api_router(state: AppState) -> Router {
             "/cultnet/snapshot",
             post(cultnet_snapshot).layer(DefaultBodyLimit::max(CULTNET_SNAPSHOT_BODY_LIMIT)),
         )
+        .route(
+            "/cultnet/world-patch",
+            post(cultnet_world_patch).layer(DefaultBodyLimit::max(CONSUMER_BODY_LIMIT)),
+        )
         .route("/api/eve/provider", get(eve_provider))
         .route("/api/eve/surfaces/{surface_id}", get(eve_surface))
         .route("/api/eve/commands", post(eve_command))
         .route("/api/eve/events", get(revision_events))
         .with_state(state)
+}
+
+/// The consumer ingress's door. Loopback and content type are the two gates
+/// `/cultnet/snapshot` already established; everything past them belongs to
+/// `world::consumer`, which owns decode, bounds, authentication, and the one
+/// receipt. This handler holds no opinion about a patch.
+async fn cultnet_world_patch(
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    if !peer.ip().is_loopback() {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    if headers.get(header::CONTENT_TYPE) != Some(&HeaderValue::from_static("application/msgpack")) {
+        return StatusCode::UNSUPPORTED_MEDIA_TYPE.into_response();
+    }
+    let receipt = crate::world::admit_document(&state.consumer, &state.consumers, &body).await;
+    match crate::world::encode_receipt(&receipt) {
+        Ok(bytes) => (
+            StatusCode::OK,
+            [(header::CONTENT_TYPE, "application/msgpack")],
+            bytes,
+        )
+            .into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+/// Read once at startup. A missing or unset path means no configured
+/// consumers, which is the fail-closed default; a malformed file is fatal to
+/// the registry rather than silently empty, so a mistyped credential cannot
+/// read as "no consumers configured".
+fn open_consumer_registry() -> ConsumerRegistry {
+    let Ok(path) = std::env::var(crate::world::CONSUMER_CREDENTIALS_ENVIRONMENT) else {
+        return ConsumerRegistry::empty();
+    };
+    match ConsumerRegistry::from_secret_file(&path) {
+        Ok(registry) => registry,
+        Err(error) => {
+            tracing::warn!(%error, "consumer credentials are unreadable; no consumer is configured");
+            ConsumerRegistry::empty()
+        }
+    }
 }
 
 async fn cultnet_snapshot(
@@ -2247,6 +2304,8 @@ mod tests {
         let (revisions, _) = broadcast::channel(8);
         let (fatal, _fatal_events) = mpsc::unbounded_channel();
         let state = AppState {
+            consumer: ConsumerPort::new(world.clone()),
+            consumers: Arc::new(ConsumerRegistry::empty()),
             world,
             controllers: Some(Arc::new(controllers)),
             controller_permits: Arc::new(Semaphore::new(TEST_CONTROLLER_CONCURRENCY)),
