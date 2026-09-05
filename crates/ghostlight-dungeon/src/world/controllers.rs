@@ -7728,6 +7728,339 @@ mod tests {
         task.await.unwrap();
     }
 
+    /// The same fixture, with every subject standing in its own room. The
+    /// agency graph relates none of them, so the cell that packs them together
+    /// holds constituents that cannot change each other's scope.
+    async fn apart_cell_mailbox(
+        controllers: Vec<NewController>,
+    ) -> (tempfile::TempDir, WorldMailbox, tokio::task::JoinHandle<()>) {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let mut declarations = Vec::new();
+        for (index, controller) in controllers.into_iter().enumerate() {
+            declarations.push(Declaration::Entity(crate::world::EntityDeclaration {
+                handle: DraftHandle::new(&format!("room{index}")),
+                label: format!("Room {index}"),
+                kind: EntityKind::Place,
+                container: None,
+            }));
+            declarations.push(Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new(&format!("subject{index}")),
+                label: format!("Subject {index}"),
+                kind: SubjectKind::Person,
+                controller,
+                affordances: kernel_speak_grant(),
+                position: Some(crate::world::Ref::Draft(DraftHandle::new(&format!(
+                    "room{index}"
+                )))),
+            }));
+        }
+        let creation = mailbox
+            .create_fixture(
+                CreateWorld {
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Apart Fixture".into(),
+                    patch: WorldPatch {
+                        declarations,
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
+                    scale_intent: WorldScaleIntentRef::default(),
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: creation.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        (directory, mailbox, task)
+    }
+
+    /// The contention finding is a fact about coupling, not about grouping. Two
+    /// constituents in separate rooms both propose from one inference and both
+    /// commit: the refusal a coupled cell earns is not a per-cell quota, and it
+    /// is not the world revision moving underneath the second submission.
+    #[tokio::test]
+    async fn soul_b_an_uncoupled_grouped_cell_commits_every_constituent() {
+        let (_directory, mailbox, task) = apart_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let graph = mailbox.agency_graph().await.unwrap();
+        assert!(
+            graph.edges.is_empty(),
+            "subjects in separate rooms were related: {:?}",
+            graph.edges
+        );
+        let cell = one_group(&mailbox).await;
+        assert_eq!(cell.members().len(), 2);
+
+        let (runner, _store) = grouped_runner(
+            &mailbox,
+            vec![output(
+                vec![
+                    speak_call("c0", "c0__speak", "The east hinge is dry."),
+                    speak_call("c1", "c1__speak", "The west hinge is dry."),
+                ],
+                "two-uncoupled-acts",
+            )],
+        );
+        let CellRun::Grouped(run) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a coarse cell did not run the grouped lane")
+        };
+        assert!(run.pending.is_none());
+        assert_eq!(
+            run.submissions.len(),
+            2,
+            "an uncoupled constituent was refused: {:?}",
+            run.needs
+        );
+        for entry in &run.submissions {
+            assert!(matches!(
+                entry.submission,
+                SubmissionDisposition::Completed(_)
+            ));
+        }
+        assert!(run.needs.is_empty(), "{:?}", run.needs);
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 2);
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// The refusal a coupled cell earns is honest: the second constituent's
+    /// scope digest really is different after its neighbour acted. A refusal
+    /// that fired on a moved world revision rather than on a moved scope would
+    /// leave this digest untouched.
+    #[tokio::test]
+    async fn soul_b_the_refused_constituent_bound_a_scope_that_really_changed() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let cell = one_group(&mailbox).await;
+        let second = cell.members()[1].subject;
+        let digest_of = |snapshot: &WorldSnapshot, subject: SubjectId| {
+            snapshot
+                .opportunities
+                .iter()
+                .find(|entry| entry.scope.subject_id == subject)
+                .map(|entry| entry.scope_digest.clone())
+        };
+        let before = digest_of(&mailbox.snapshot().await.unwrap(), second)
+            .expect("the second constituent has an opportunity before the cell runs");
+
+        let (runner, _store) = grouped_runner(
+            &mailbox,
+            vec![output(
+                vec![
+                    speak_call("c0", "c0__speak", "The hinge is flooding."),
+                    speak_call("c1", "c1__speak", "Then we close the span."),
+                ],
+                "coupled-acts",
+            )],
+        );
+        let CellRun::Grouped(run) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a coarse cell did not run the grouped lane")
+        };
+        assert_eq!(run.submissions.len(), 1);
+        assert!(
+            run.needs
+                .iter()
+                .any(|need| need.detail.contains("scope changed")),
+            "{:?}",
+            run.needs
+        );
+
+        let after = digest_of(&mailbox.snapshot().await.unwrap(), second)
+            .expect("the refused constituent still has an opportunity");
+        assert_ne!(
+            before, after,
+            "the refusal named a scope change that did not happen"
+        );
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// The other checkpoint's resume. A retryable fault leaves the row at
+    /// `AgentInFlight` with nothing committed; the resumed run re-derives the
+    /// same constituent ids from the persisted row, infers once, and commits
+    /// once. Both grouped checkpoints therefore resume without a second commit.
+    #[tokio::test]
+    async fn soul_b_a_cell_resumed_from_agent_in_flight_commits_nothing_twice() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let cell = one_group(&mailbox).await;
+        let (runner, store) = grouped_runner(
+            &mailbox,
+            vec![
+                Err(InferenceFault::retryable("the provider is busy")),
+                output(
+                    vec![
+                        speak_call("c0", "c0__speak", "Hold the bridge."),
+                        InferenceEvent::ToolCall {
+                            call_id: "c1".into(),
+                            name: "c1__finish_without_proposal".into(),
+                            arguments: "{}".into(),
+                        },
+                    ],
+                    "grouped-after-retry",
+                ),
+            ],
+        );
+
+        let CellRun::Grouped(first) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a coarse cell did not run the grouped lane")
+        };
+        assert!(
+            first.pending.is_some(),
+            "a retryable fault did not park the cell"
+        );
+        assert!(first.submissions.is_empty());
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 0);
+
+        let parked = store.work.lock().unwrap().values().next().unwrap().clone();
+        let ControllerWork::Grouped(GroupedCheckpoint::AgentInFlight { constituents, .. }) =
+            &parked
+        else {
+            panic!("the parked row is not an in-flight grouped checkpoint: {parked:?}")
+        };
+        let parked_ids: Vec<CommandId> = constituents
+            .iter()
+            .map(|constituent| constituent.command_id)
+            .collect();
+
+        let CellRun::Grouped(second) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a resumed coarse cell did not run the grouped lane")
+        };
+        assert!(second.pending.is_none());
+        assert_eq!(second.submissions.len(), 2);
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
+
+        let resumed = store.work.lock().unwrap().values().next().unwrap().clone();
+        let ControllerWork::Grouped(GroupedCheckpoint::Submitting { constituents, .. }) = &resumed
+        else {
+            panic!("the resumed row did not reach submission: {resumed:?}")
+        };
+        assert_eq!(
+            parked_ids,
+            constituents
+                .iter()
+                .map(|constituent| constituent.command_id)
+                .collect::<Vec<_>>(),
+            "a resumed cell derived different constituent ids"
+        );
+
+        // A third pass has no inference left: it must answer from the ledger.
+        let CellRun::Grouped(third) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a twice-resumed coarse cell did not run the grouped lane")
+        };
+        assert!(matches!(
+            third.submissions[0].submission,
+            SubmissionDisposition::PreviouslyConfirmed(_)
+        ));
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// The replay half of the grouped-tick verification. A coarse cell reaches
+    /// the kernel as ordinary one-opportunity submissions, so the store it
+    /// leaves must replay from genesis to the same digest and the same events.
+    /// If a cell were a command shape, this is where it would show.
+    #[tokio::test]
+    async fn soul_b_a_grouped_tick_replays_to_an_identical_state_digest() {
+        let (directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+            NewController::NarrativePersona,
+        ])
+        .await;
+        let path = directory.path().join("world.cc");
+        let cell = one_group(&mailbox).await;
+        assert_eq!(cell.members().len(), 3);
+        let (runner, _store) = grouped_runner(
+            &mailbox,
+            vec![
+                output(
+                    vec![
+                        speak_call("c0", "c0__speak", "The hinge is flooding."),
+                        speak_call("outside", "c9__speak", "I speak for someone else."),
+                    ],
+                    "replay-one",
+                ),
+                output(
+                    vec![InferenceEvent::Text("Nothing further.".into())],
+                    "replay-two",
+                ),
+            ],
+        );
+        let CellRun::Grouped(run) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a coarse cell did not run the grouped lane")
+        };
+        assert!(run.pending.is_none());
+        assert_eq!(run.submissions.len(), 3);
+
+        let live = mailbox.snapshot().await.unwrap();
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+
+        let replayed =
+            crate::world::WorldKernel::open(&path, live.world_id).expect("the world store replays");
+        assert_eq!(
+            replayed.state.state_digest, live.state_digest,
+            "a grouped tick did not replay to the same digest"
+        );
+        assert_eq!(replayed.state.revision, live.revision);
+        // The event sequence, not just its digest: a replay that agreed on a
+        // digest while disagreeing on what happened would be a worse bug.
+        let events = serde_json::to_string(&replayed.state.events).unwrap();
+        assert!(events.contains("The hinge is flooding."));
+        for forbidden in ["cell-act", "cell-work", "c0__", "constituent", "resolution"] {
+            assert!(
+                !events.contains(forbidden),
+                "the replayed event sequence names `{forbidden}`"
+            );
+        }
+        // A second open is the same open: replay is a function of the store.
+        let expected = replayed.state.clone();
+        drop(replayed);
+        let again = crate::world::WorldKernel::open(&path, live.world_id)
+            .expect("the world store replays twice");
+        assert_eq!(again.state, expected);
+    }
+
     /// The cover is derived and disposable. Nothing the kernel persists or
     /// hands out names a cell, a handle, or a resolution: the only durable
     /// trace is the controller-work row, whose custody is separate from world

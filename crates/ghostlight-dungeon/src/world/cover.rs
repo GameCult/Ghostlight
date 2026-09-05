@@ -897,4 +897,235 @@ mod tests {
         );
         assert!(budget(4, 2, 0).validated().is_ok());
     }
+
+    /// The rotation guarantee at the design profile rather than at a toy size.
+    /// `K = 146`, `U = 36`, so the reserve is `R = 110` and the window closes in
+    /// `ceil(2400 / 110) = 22` ticks. Membership is stable across the sweep,
+    /// which is the precondition the tight bound is stated under.
+    #[test]
+    fn soul_b_the_profile_rotation_closes_over_every_subject_in_ceil_n_over_reserve_ticks() {
+        let opportunities = active(2_400);
+        let budget = budget(240, 24, 36);
+        let reserve = 146 - 36;
+        let cycle = 2_400usize.div_ceil(reserve);
+        assert_eq!(cycle, 22, "the profile's window is not 22 ticks wide");
+
+        let mut seen: BTreeSet<SubjectId> = BTreeSet::new();
+        for tick in 0..cycle as u64 {
+            let cover = derive(&opportunities, &AgencyGraph::default(), budget, tick);
+            assert_eq!(cover.singletons(), 146);
+            for cell in &cover.cells {
+                if let Cell::Singleton { member, .. } = cell {
+                    seen.insert(member.subject);
+                }
+            }
+        }
+        assert_eq!(
+            seen.len(),
+            2_400,
+            "{} subjects never reached detail inside the window",
+            2_400 - seen.len()
+        );
+
+        // One tick short of the cycle must not already close it, or the bound
+        // is being read off a coincidence rather than the arithmetic.
+        let mut short: BTreeSet<SubjectId> = BTreeSet::new();
+        for tick in 0..(cycle - 1) as u64 {
+            for cell in &derive(&opportunities, &AgencyGraph::default(), budget, tick).cells {
+                if let Cell::Singleton { member, .. } = cell {
+                    short.insert(member.subject);
+                }
+            }
+        }
+        assert!(short.len() < 2_400, "the window closed a tick early");
+    }
+
+    /// The urgency slots go to the head of the attention order the kernel
+    /// already owns, and the rotation window goes to ascending id order. The
+    /// fixture arrives in descending id order so the two rankings cannot be
+    /// confused with each other, and no third ranking exists to explain the
+    /// result.
+    #[test]
+    fn soul_b_urgency_slots_follow_the_attention_order_not_the_id_order() {
+        let mut opportunities = active(40);
+        opportunities.reverse();
+        // N = 40, B = 10, C = 8 → K = floor((80 - 40) / 7) = 5, U = 3, R = 2.
+        let cover = derive(&opportunities, &AgencyGraph::default(), budget(10, 8, 3), 0);
+        let singletons: BTreeSet<SubjectId> = cover
+            .cells
+            .iter()
+            .filter_map(|cell| match cell {
+                Cell::Singleton { member, .. } => Some(member.subject),
+                Cell::Group { .. } => None,
+            })
+            .collect();
+        assert_eq!(singletons.len(), 5);
+
+        let head: BTreeSet<SubjectId> = opportunities[..3]
+            .iter()
+            .map(|entry| entry.scope.subject_id)
+            .collect();
+        assert!(
+            head.is_subset(&singletons),
+            "the urgency slots did not follow the attention order"
+        );
+        // The window is the ascending-id reserve, which here is the tail of the
+        // attention order: two rankings, both honoured, neither invented.
+        assert!(
+            singletons.contains(&subject(1)) && singletons.contains(&subject(2)),
+            "the rotation window did not follow ascending id order"
+        );
+    }
+
+    /// The partition is a pure function of its arguments, and the attention
+    /// order is one of those arguments rather than an incidental input. Equal
+    /// inputs derive an equal cover; a permuted order derives a different one,
+    /// because urgency and backfill read that order and `order_opportunities`
+    /// is its one owner.
+    #[test]
+    fn soul_b_the_cover_is_pure_and_the_attention_order_is_a_real_input() {
+        let opportunities = active(40);
+        let mut graph = AgencyGraph::default();
+        graph.link(subject(11), subject(12));
+        let budget = budget(10, 8, 3);
+        let ids = |cover: &Cover| -> Vec<CellId> {
+            cover
+                .cells
+                .iter()
+                .map(|cell| match cell {
+                    Cell::Singleton { id, .. } | Cell::Group { id, .. } => *id,
+                })
+                .collect()
+        };
+
+        let one = derive(&opportunities, &graph, budget, 5);
+        let other = derive(&opportunities, &graph, budget, 5);
+        assert_eq!(one, other, "identical inputs derived different covers");
+        assert_eq!(
+            serde_json::to_string(&ids(&one)).unwrap(),
+            serde_json::to_string(&ids(&other)).unwrap(),
+            "identical inputs derived different cell ids"
+        );
+
+        let mut reversed = opportunities.clone();
+        reversed.reverse();
+        let permuted = derive(&reversed, &graph, budget, 5);
+        assert_eq!(
+            covered(&one),
+            covered(&permuted),
+            "a permutation lost or duplicated a subject"
+        );
+        let singletons = |cover: &Cover| -> BTreeSet<SubjectId> {
+            cover
+                .cells
+                .iter()
+                .filter_map(|cell| match cell {
+                    Cell::Singleton { member, .. } => Some(member.subject),
+                    Cell::Group { .. } => None,
+                })
+                .collect()
+        };
+        assert_ne!(
+            singletons(&one),
+            singletons(&permuted),
+            "the attention order is not an input to the partition"
+        );
+    }
+
+    /// Every cell in one cover carries that cover's tick index. This is what the
+    /// driver's "advance the clock after the cells" ordering buys: one `now`,
+    /// one phase, one set of derived command ids per tick.
+    #[test]
+    fn soul_b_every_cell_shares_the_covers_tick_index() {
+        let opportunities = active(60);
+        for tick in [0u64, 1, 7, 4_000] {
+            let cover = derive(
+                &opportunities,
+                &AgencyGraph::default(),
+                budget(10, 8, 2),
+                tick,
+            );
+            assert_eq!(cover.tick, TickIndex(tick));
+            for cell in &cover.cells {
+                let carried = match cell {
+                    Cell::Singleton { tick, .. } | Cell::Group { tick, .. } => *tick,
+                };
+                assert_eq!(carried, cover.tick, "a cell carried another tick's index");
+            }
+        }
+    }
+
+    /// Derived ids are collision-free across every cell of every tick in a full
+    /// sweep, and a cell key never collides with a constituent key.
+    #[test]
+    fn soul_b_derived_ids_do_not_collide_across_a_sweep_of_ticks() {
+        let world = WorldId::nil_for_test();
+        let opportunities = active(600);
+        let budget = budget(60, 24, 6);
+        let mut cells: BTreeSet<CellId> = BTreeSet::new();
+        let mut keys: BTreeSet<Uuid> = BTreeSet::new();
+        let mut cell_count = 0usize;
+        let mut key_count = 0usize;
+        for tick in 0..12u64 {
+            let cover = derive(&opportunities, &AgencyGraph::default(), budget, tick);
+            for cell in &cover.cells {
+                let id = match cell {
+                    Cell::Singleton { id, .. } | Cell::Group { id, .. } => *id,
+                };
+                cells.insert(id);
+                cell_count += 1;
+                keys.insert(cell_work_uuid(world, id, cover.tick));
+                key_count += 1;
+                for member in cell.members() {
+                    keys.insert(cell_constituent_uuid(world, id, member.subject, cover.tick));
+                    key_count += 1;
+                }
+            }
+        }
+        assert!(
+            cell_count >= 700,
+            "the sweep was too small to mean anything"
+        );
+        assert_eq!(cells.len(), cell_count, "two cells share one id");
+        assert_eq!(keys.len(), key_count, "two derived command keys collide");
+    }
+
+    /// The cap yields for exactly one reason: no partition inside the budget
+    /// respects it. Token capacity alone does not decide that — component shapes
+    /// do. Here `C * B = 12 >= N = 9`, and the cap still yields, because two
+    /// three-member components and two isolates cannot pack into two cells of
+    /// four. Coverage holds and the operator is told.
+    #[test]
+    fn soul_b_the_cap_yields_when_component_shapes_cannot_pack_inside_the_budget() {
+        let opportunities = active(9);
+        let mut graph = AgencyGraph::default();
+        graph.link(subject(2), subject(3));
+        graph.link(subject(3), subject(4));
+        graph.link(subject(5), subject(6));
+        graph.link(subject(6), subject(7));
+        let cover = derive(&opportunities, &graph, budget(3, 4, 0), 0);
+
+        assert_eq!(covered(&cover).len(), 9);
+        assert_eq!(covered(&cover).iter().collect::<BTreeSet<_>>().len(), 9);
+        assert!(cover.cells.len() <= 3);
+        assert!(
+            cover.cells.iter().any(|cell| cell.members().len() > 4),
+            "the cap did not yield: {:?}",
+            cover
+                .cells
+                .iter()
+                .map(|cell| cell.members().len())
+                .collect::<Vec<_>>()
+        );
+        assert!(
+            cover.oversubscribed,
+            "the cap yielded without telling the operator"
+        );
+
+        // The same subjects with no edges pack cleanly and the flag stays down,
+        // so the flag tracks the partition rather than the subject count.
+        let loose = derive(&opportunities, &AgencyGraph::default(), budget(3, 4, 0), 0);
+        assert!(!loose.oversubscribed);
+        assert!(loose.cells.iter().all(|cell| cell.members().len() <= 4));
+    }
 }
