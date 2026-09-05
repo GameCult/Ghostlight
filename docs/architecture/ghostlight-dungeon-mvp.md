@@ -78,10 +78,15 @@ The only mutation input is a `CommandEnvelope` containing:
 - one closed command body;
 - exact evidence references where the command depends on source material.
 
-The caller supplies identity evidence, not an authority verdict. The kernel
-derives a `MutationAuthorityEnvelope` from canonical membership, lifecycle,
-subject authority, external-owner grants, and the command kind. Callers cannot
-grant themselves scope by serializing a persuasive envelope.
+The caller supplies identity evidence, not an authority verdict. For a patch
+command the kernel derives the caller's authority itself:
+`require_patch_author` reads the caller and committed state to decide who may
+submit `AdmitPatch` and what ground it holds (the world owner unconfined, an
+elaborator confined to a jurisdiction, or a consumer confined to the subjects
+it controls), and `confine_to_ground` checks every declaration and operation
+in the candidate patch against that ground before it is admitted. Callers
+cannot grant themselves scope by serializing a persuasive envelope; the
+kernel derives it from state it already committed.
 
 Interpreters and operational agents submit the same typed commands through
 narrower schemas. Narrative Personas never see those schemas or tools. No
@@ -189,8 +194,13 @@ A subject is a stable identity with a declared kind:
 
 - person;
 - institution;
-- autonomous population;
-- external subject mirror.
+- autonomous population.
+
+An externally controlled mirror is not a fourth kind. It is an ordinary
+subject of one of these three whose `ControllerAssignment` is
+`ExternallyControlled { consumer }`: no controller ID, no controller mode, no
+decision opportunity, and no affordance, mutable only through its own
+consumer and the world owner.
 
 Demographic descriptors and statistical aggregates are not automatically
 subjects. A canonical action owner is derived structurally from an active
@@ -250,7 +260,8 @@ The reducer validates only structural promises:
 - knowledge additions cite an existing accessible fact or a newly admitted
   evidenced fact;
 - population slices are disjoint beneath their declared parent;
-- external-owned components can change only through their admitted owner;
+- an externally controlled subject's components can change only through its
+  own consumer, confined by `PatchGround::Consumer`;
 - a batch either reduces completely or not at all.
 
 Interestingness, novelty, ideological distribution, prose style, and counts do

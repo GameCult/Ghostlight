@@ -35,9 +35,9 @@ not from a model agreeing that the world is deep.
 
 ## Current mechanism
 
-Passes 1 through 9 of the widening are landed (`5e53beb`, `e99af63`,
+Passes 1 through 10 of the widening are landed (`5e53beb`, `e99af63`,
 `d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`, `1852ddd`, `3ed3868`,
-`8aebfb6`). The sealed kernel holds subjects with a label and a
+`8aebfb6`, `b4d1943`). The sealed kernel holds subjects with a label and a
 kind (`Person | Institution | Population`); a `positions` partition with
 `Position`; entities with `container` under containment acyclicity; `Route`
 as an `EdgeRecord` variant carrying `AccessKind { Public, Restricted }`, a
@@ -172,7 +172,7 @@ head, rotates the remaining subjects through singleton cells by debt, and
 packs the rest into grouped cells by connected component of the agency graph
 (scheduler-only; reachable from no prompt builder). `Cell`, `Cover`,
 `CellId`, `Resolution`, `TickIndex`, and `AgencyGraph` are derived and
-disposable; the only durable trace of a tick is the `controller_work.v8` row
+disposable; the only durable trace of a tick is the `controller_work.v9` row
 (`ControllerWork::Grouped`), custody-separate from world custody. A grouped
 cell is one inference over partitioned per-constituent views returning zero
 or one attributed proposal per constituent; declines are submitted first and
@@ -183,16 +183,44 @@ Cell and constituent command ids are sha256-derived. The runtime's
 the bounded concurrency permit pool, the quarantine flag, and the clock,
 which advances after the cells so every cell in a tick shares one `now`.
 
+`AdmitPatch` has a third author: `CallerId::System(SystemCapability::Consumer
+{ consumer })`, minted only by `WorldMailbox::submit_consumer` after the
+consumer ingress (`world/consumer.rs`) has authenticated a document against a
+configured secret digest. `require_patch_author` and `confine_to_ground`
+widen from jurisdiction-only to `PatchGround { Jurisdiction(JurisdictionKey),
+Consumer(ConsumerId) }`; a consumer's ground is derived from
+`controller_assignments` at decision time, never carried on the wire, and
+confines it to the subjects it controls, with no place, route, or `Canonical`
+fact ever inside that ground. A subject declared
+`NewController::External { consumer }` receives
+`ControllerAssignment::ExternallyControlled { consumer }`: it mints no
+controller ID or mode (both accessors are `Option`), derives no opportunity,
+is excluded from `agency_graph` and the cover, and may hold no affordance
+(`admit_resolved`'s controller-shaped pairing rejects a non-empty grant set as
+`Mismatch::ControllerGrantMismatch`). It remains an ordinary subject in the
+snapshot, related to and targeted like any other, mutable only through its
+own consumer and the always-unconfined world owner. `patch::decode_patch` is
+the one decode bound for both the elaboration lane and the consumer lane,
+under four caps — `MAX_PATCH_BYTES`, `MAX_PATCH_DECLARATIONS`,
+`MAX_PATCH_OPERATIONS`, `MAX_PATCH_EVIDENCE` — and the consumer document
+travels over two wire schema constants, `CONSUMER_PATCH_SCHEMA` and
+`CONSUMER_RECEIPT_SCHEMA`, both `.v0`. The state and commit schemas bump to
+`ghostlight.world_state.consumer.v1` and `ghostlight.world_commit.consumer.v1`
+(state-schema generation `world-v3`); a store written under an earlier schema
+is refused, not migrated.
+
 Opportunities bind to a `ScopeDigest` over one `scope_components` owner
 (controller assignment, grants, delegated grants, own authority, position,
 incident routes, own holdings, own dependencies, known fact ids, controlled
 channels, own commitments; never `now`, occupancy, forum state, or another
 subject's knowledge); a proposal commits at any later revision with unchanged scope and is
 rejected with `KernelError::ScopeChanged` otherwise. State schema is
-`world_state.elaboration.v1`, commit schema `world_commit.elaboration.v1`,
-controller work `controller_work.v8`; earlier stores are refused. Ghostlight owns a conserved narrative ledger;
+`ghostlight.world_state.consumer.v1`, commit schema
+`ghostlight.world_commit.consumer.v1`, controller work `controller_work.v9`;
+earlier stores are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
-Pass 10 adds the consumer ingress.
+Step 6 of the plan is complete; the outbound consumer response is the next
+seam.
 
 ## The failure this vocabulary is designed against
 
@@ -265,12 +293,15 @@ resolver, or reconciler is needed.
 Three namespaces, three newtypes, issued only by the reducer.
 
 ```text
-SubjectId   person, institution, population, external mirror   — can decide
+SubjectId   person, institution, population                    — can decide
 EntityId    place, resource, fact, channel                     — cannot decide
 EdgeId      route, relation, commitment, pressure              — connects the above
 ```
 
 Display names are labels. They never resolve a reference or bind structure.
+An externally controlled mirror is an ordinary subject of one of these three
+kinds; what is external is its `ControllerAssignment`
+(`ExternallyControlled { consumer }`), not a fourth `SubjectKind`.
 
 ## Components
 
@@ -373,7 +404,8 @@ The reducer checks only these:
 - knowledge additions cite an accessible or newly evidenced fact;
 - communication reaches only subjects inside the channel's reach set;
 - population slices are disjoint beneath their declared parent;
-- externally owned components change only through their admitted owner;
+- an externally controlled subject's components change only through its own
+  consumer, confined by `PatchGround::Consumer`;
 - the patch produces at least one canonical change.
 
 Interestingness, novelty, political diversity, name quality, prose quality, and

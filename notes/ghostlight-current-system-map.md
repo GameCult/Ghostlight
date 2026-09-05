@@ -76,7 +76,7 @@ source cutover is not deployment evidence.
   are wired to that mailbox boundary in the committed source.
 - **Cut line:** source subtraction is complete. Production cutover now belongs
   to Idunn's typed deployment path: admit the replacement release and exclusive
-  world-v2 state without a dual-write or compatibility bridge, prove restart
+  world-v3 state without a dual-write or compatibility bridge, prove restart
   and negative legacy authority, then remove the old hosted body and state.
 - **Verification layer:** the reducer checks exact authentication, world,
   revision, lifecycle, approver, controller, opportunity, scope, affordance,

@@ -233,7 +233,7 @@ promote without the exact frozen Odin Ready receipt for that runtime instance
 and presence digest. Idunn never manufactures Ready locally.
 
 Deploy CodexConnector first, then Ghostlight. Ghostlight's live cut archives the
-entire legacy state root, creates a clean world-v2 root, and validates a complete
+entire legacy state root, creates a clean world-v3 root, and validates a complete
 allowed live layout. After route, health, process, write lease, restart, and
 negative legacy checks agree, delete the old units, releases, state roots,
 acceptance debris, gamecult-ops target deploy programs, and local run
@@ -278,11 +278,23 @@ Implementation order, each pass landing tests before the next begins:
    singleton detail focus, grouped coarse cells with partitioned views and
    per-constituent attribution, debt rotation. Scheduler-owned; the kernel
    never sees a cell.
-10. Consumer ingress: the typed CultNet ingress through which an external
-    consumer submits a `WorldPatch` or proposal to the sealed kernel. Until
-    this lands the elaborator lane is the only production author of a
-    `WorldPatch`, and the kernel has no decode-time bound of its own; pass 10
-    gives it one owner for both lanes.
+10. Consumer ingress: landed in pass 10. `SystemCapability::Consumer` is the
+    world's third `AdmitPatch` author, minted only by
+    `WorldMailbox::submit_consumer` after `world/consumer.rs` authenticates a
+    `ConsumerPatchDocument` against a `ConsumerRegistry` secret digest.
+    `require_patch_author`/`confine_to_ground` widen to `PatchGround::Consumer`,
+    confining a consumer to the subjects declared
+    `NewController::External { consumer }` (`ControllerAssignment::ExternallyControlled`,
+    no controller ID, no mode, no opportunity, no affordance). `patch::decode_patch`
+    is the one decode bound, shared by the elaborator lane and the consumer
+    lane, under `MAX_PATCH_BYTES`/`_DECLARATIONS`/`_OPERATIONS`/`_EVIDENCE`. The
+    transport is `POST /cultnet/world-patch`, loopback-only, canonical
+    MessagePack, schemas `ghostlight.consumer_patch.v0` and
+    `ghostlight.consumer_receipt.v0`; the state/commit schemas bumped to
+    `ghostlight.world_state.consumer.v1` / `ghostlight.world_commit.consumer.v1`
+    (`world-v3`). The outbound consumer response — a consumer reading its own
+    projection or an attributed proposal — is the next seam, not part of this
+    pass.
 
 The deployment cutover (step 5) is deferred behind this stage, not cancelled. No
 world acceptance run may start while Yggdrasil serves the legacy body.

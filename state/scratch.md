@@ -2,12 +2,13 @@
 
 ## Current Subgoal
 
-Pass-9 follow-ups with Hands in `F:\Projects\Ghostlight-pass9fu` on
-`hands/pass9-followups` from `8aebfb6`, and pass 10 (consumer ingress) design:
-`modeling-pass10.md` on disk, `imagination-pass10.md` in progress under the
-ten rulings. Main tip `8aebfb6`, passes 1-9 integrated. Open operator
-decisions: bounded in-tick re-submission for a refused constituent; Eve
-`world.run_tick` authority.
+Pass-10 follow-ups with Hands in `F:\Projects\Ghostlight-pass10fu` on
+`hands/pass10-followups` from `a1fd645` (`controller_work.v9`, fatal malformed
+credentials, redacting `Debug`, `check_patch_caps` in the elaboration lane),
+then series close-out: commit the docs-worker edits, integrate, remove the
+worktree. Main tip `a1fd645`; step 6 complete. Then the operator decides:
+in-tick re-submission, Eve `world.run_tick` authority, outbound consumer
+response versus the deployment gate.
 
 ## Working Notes
 

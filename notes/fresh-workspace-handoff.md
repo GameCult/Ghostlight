@@ -225,98 +225,79 @@ outcome bands, four derived `CausalBoundary` kinds, scope-digest binding, one
 are teardown evidence. Plan step 6 is nine implementation passes; pass 1 is
 landed, passes 2 through 9 are not.
 
-1. Passes 1 through 9 are integrated; the ontology widening machine is
-   complete and only pass 10 (consumer ingress) remains in step 6.
-   `codex/ghostlight-dungeon-mvp` tip is `8aebfb6` (Soul) over `f013c1d`
-   and `71d8c53` (Hands, pass 9), on `7dbbc81` (pass-8 docs and handoff) and
-   `b5443d5` (pass-8 follow-ups). Earlier passes: `5e53beb`, `e99af63`,
-   `d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`, `1852ddd`, `3ed3868`. The
-   push follows a background crate test and the branch read `ahead 3` at
-   the time of writing; `git status -sb` is the witness.
+1. Plan step 6, the ontology widening, is complete: all ten passes are
+   integrated on `codex/ghostlight-dungeon-mvp`. Tip is `a1fd645` (Soul)
+   over `b4d1943` (pass 10 machine) and `e0c6f9c` (patch author widened to
+   a confined external consumer), on `1203aa3` (pass-9 docs and handoff) and
+   `962f711` (intra-tick quarantine race closed). Pass tips in order:
+   `5e53beb`, `e99af63`, `d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`,
+   `1852ddd`, `3ed3868`, `8aebfb6`, `a1fd645`. The push follows a
+   background crate test and the branch read `ahead 3` at the time of
+   writing; `git status -sb` is the witness. The series is distilled as one
+   evidence record dated 2026-09-05 in `state/evidence.jsonl`.
 
-   Pass 9 facts: new module `world/cover.rs` (`TickIndex`, `Resolution`,
-   `CellId`, `Cell`, `Cover`, `CoverBudget`, `AgencyGraph`, `derive_cover`);
-   `ControllerWork::Grouped` with `GroupedCheckpoint`;
-   `InferencePurpose::GroupedAgent`; owner-only `Request::AgencyGraph`,
-   port-narrowed rather than principal-authenticated; the runtime task
-   `drive_cover_tick` (`runtime.rs`) is the single owner of tick cadence,
-   cover derivation, and the clock, and advances the clock after the cells
-   (the pass-7 `advance_world_clock` task is gone, verified absent from
-   source); a `Semaphore` plus `AtomicBool` quarantine replaced the
-   controller mutex; environment `GHOSTLIGHT_COVER_CELL_BUDGET`,
-   `GHOSTLIGHT_COVER_CONSTITUENT_CAP`, `GHOSTLIGHT_COVER_URGENCY_SLOTS`,
-   `GHOSTLIGHT_CONTROLLER_MAX_CONCURRENT`, `GHOSTLIGHT_TICK_INTERVAL_SECONDS`;
-   `controller_work.v8`; world state and commit schemas stay at
-   `elaboration.v1`; no `Cargo.toml` change and no `uuid/v5`, verified.
-   Rulings adopted: fairness is ceil(N/R) with R = cells minus urgency
-   slots, verified at the 2,400/240 profile to close in 22 ticks, not 21;
-   the constituent cap yields for two reasons, capacity and packing, while
-   the cell budget never yields and oversubscribed is the signal; the cover
-   is pure and the attention order is a real input; coupled constituents in
-   a grouped cell contend and the second act is honestly refused with
-   `ScopeChanged`, and the grouping heuristic stays; the open operator
-   decision is whether to allow a bounded in-tick re-submission for a
-   refused constituent, to be taken with the submitted-versus-committed
-   number in hand. The owner-only Eve `world.run_tick` command is not built;
-   its authority decision is pending. Baseline at `8aebfb6`: 283 test
-   functions in `world/*.rs`, 323 crate source, plus one integration test
-   (the focused `world::` run reports 282 / 318; different counting rules,
-   compare like with like).
+   What the kernel is now: twelve decision-constraining component kinds
+   over twenty-seven named operations under one `WorldPatch`, one reducer,
+   one CAS commit, one decode bound for both authoring lanes
+   (`patch::decode_patch` with `MAX_PATCH_BYTES`, `MAX_PATCH_DECLARATIONS`,
+   `MAX_PATCH_OPERATIONS`, `MAX_PATCH_EVIDENCE`; the `MAX_DRAFT_*` bounds
+   are deleted), and three confined `SystemCapability` arms: `Clock`,
+   `Elaborator { jurisdiction }`, `Consumer { consumer }`. Pass 10 added
+   `world/consumer.rs`; `PatchGround { Jurisdiction, Consumer }` with
+   `confine_to_ground` as the one confinement function (renamed from
+   `confine_to_jurisdiction`); `ControllerAssignment::ExternallyControlled
+   { consumer }`, with `id()` and `mode()` now `Option` and every reader
+   failing closed; `Mismatch::ControllerGrantMismatch` replacing
+   `NoAffordances`; `CommandId::derived` shared by `session_command_id`;
+   `ConsumerPort` (one method) in `world/mailbox.rs` and
+   `WorldMailbox::submit_consumer`; route `POST /cultnet/world-patch`,
+   loopback, msgpack, `CONSUMER_BODY_LIMIT`; `ConsumerRegistry` loaded from
+   the file named by `GHOSTLIGHT_CONSUMER_CREDENTIALS`, digests only.
+   Schemas are `world_state.consumer.v1` / `world_commit.consumer.v1`;
+   `controller_work.v9`; `STATE_SCHEMA_GENERATION` in
+   `idunn_health.rs` is now `world-v3`, so the Idunn expectation and every
+   "world-v2" phrase in the deployment gate below now mean world-v3.
+   Baseline at `a1fd645`: 313 test functions in `world/*.rs`, 357 crate
+   source, plus one integration test (the focused `world::` run reports
+   312 / 352; different counting rules, compare like with like).
 
-   In flight, not landed:
-   - `hands/pass9-followups` in the worktree `F:\Projects\Ghostlight-pass9fu`,
-     branched from `8aebfb6` with no commits yet: `with_test_ports`,
-     `InferencePort`, and `ControllerWorkStore` to `pub(crate)` with spec
-     test 13.12 for concurrency plus quarantine; `drive_cover_tick` behind
-     narrow ports with an ordering test; `merges_are_deterministic_in_subject_order`
-     retired.
-   - Pass 10 design: `modeling-pass10.md` is on disk in the session
-     scratchpad; `imagination-pass10.md` is being written under ten rulings,
-     the load-bearing ones being: the consumer is a third `SystemCapability`
-     arm confined to one externally controlled subject; externally
-     controlled subjects get no opportunity and are skipped by the cover;
-     one atomic verdict per document, no partial acceptance; one kernel-side
-     decode bound for both lanes; transport follows the `POST
-     /cultnet/snapshot` precedent, not an `execute_world` literal; a
-     `ConsumerPort` as narrow as `ElaborationPort`; no Delvehold names in
-     core. No pass-10 worktree exists yet.
-   Main carries uncommitted coordinator edits to
-   `docs/architecture/ghostlight-world-ontology.md` (pass-9 scale paragraph,
-   the contention finding, and two stale claims Modeling caught: `AdmitPatch`
-   has no phase gate of its own, and `EvidenceRef::new` is `pub(super)`
-   bounded by `filter_evidence`, not `#[cfg(test)]`),
-   `docs/architecture/ghostlight-dungeon-mvp.md` (derived state, membrane,
-   tick driver and environment values), and the plan's step-6 pass-10 line.
-   Witness for pass 10: main-branch `git log` past `8aebfb6`, and
-   `git worktree list`.
+   Rulings adopted in pass 10: no migration for the moved
+   `session_command_id` derivation; `controller_work` is v9 so the refusal
+   is structural; a malformed credentials file is fatal at startup
+   (`open_consumer_registry` in `runtime.rs` returns the registry's error;
+   a missing file still means no consumers); the outbound consumer response
+   batch and a non-loopback CultMesh lease are the next seams, not this
+   pass. Soul's series judgment: the eleven plan invariants hold
+   structurally at the end of ten passes; the pairing invariant is
+   re-decided at three gates by doctrine, not by a repair loop.
 
-   Pipeline for pass 10: specs `imagination-pass1.md` through
-   `imagination-pass9.md` and maps `modeling-pass1.md` through
-   `modeling-pass9.md` are on disk in the session scratchpad
-   `C:\Users\Meta\AppData\Local\Temp\claude\F--Projects-Ghostlight\2fd50f5e-f7ba-4e5d-82bc-c7033e6074d2\scratchpad`,
-   not in `state/`; if that directory is gone, regenerate the specs from
-   `docs/architecture/ghostlight-world-ontology.md`. Each pass: Hands in an
-   isolation worktree whose first line is `git reset --hard
-   codex/ghostlight-dungeon-mvp`, then Soul in that tree, then the coordinator
-   integrates with `git -C <wt> rebase -q codex/ghostlight-dungeon-mvp && git
-   merge --ff-only <wt-branch> && cargo test -q -p ghostlight-dungeon --bin
-   ghostlight-dungeon world:: && git push -q && git worktree remove --force
-   <wt> && git branch -D <wt-branch>`, then a steward pass and the doc
-   proposal. Rulings that bind Hands: pass 7 keeps `check_ledger` single-site;
-   pass 8 adds no HTTP `AdmitPatch` ingress (that is pass 10, consumer
-   ingress, in the plan); pass 9 must not enable `uuid/v5` and derives each
-   `CommandId` via sha256 into `Uuid::from_bytes` like `derive_id`.
+   The pass-10 follow-ups are landed (`8173c9c`): `controller_work.v9`;
+   fatal malformed credentials; redacting `Debug` on the consumer document;
+   the elaboration lane calls `check_patch_caps` so `MAX_PATCH_EVIDENCE`
+   binds on both lanes; distinct item-cap refusals in the receipt; one
+   duplicate test deleted. Nothing is in flight and no worktree exists.
+   Docs landed with them: `ghostlight-world-consumer-api.md` rewritten
+   as a live contract (no longer drift); the ontology "Current mechanism"
+   through pass 10 closing with "Step 6 of the plan is complete; the
+   outbound consumer response is the next seam."; the mvp doc's
+   `MutationAuthorityEnvelope` and external-mirror-as-subject-kind
+   corrected; the plan's step-6 pass-10 line in past tense. Queued doc
+   edits: none.
 
    Still deferred by design: `PolityInCausalRange`, `IndividuationRequired`,
-   and Verification 13 wait for relations and population slices. Pass 10
-   (consumer ingress) carries four named debts: authority, decode-time size
-   bounds, phase, and boundary answering, plus the `mesh.rs` inbound ruling.
+   and Verification 13 wait for relations and population slices.
 
-   Queued doc edits, coordinator-owned: the pass-9 "Current mechanism"
-   paragraph, written with the follow-ups; and a config note for
-   `GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL`, which no doc names yet. The
-   pass-9 environment variables are in the uncommitted mvp edit (line 449)
-   and the ceil(N/R) wording in the uncommitted ontology edit (line 601).
+   Decisions the operator owns, recorded nowhere else durable than here and
+   the series evidence record: (a) whether a refused coupled constituent may
+   re-submit once inside the same tick, to be taken with the
+   submitted-versus-committed number in hand; (b) the authority for an
+   owner-only Eve `world.run_tick` command, which is not built; (c) whether
+   the outbound consumer response batch and the non-loopback CultMesh lease
+   are cut next or the deployment gate below resumes first. The ten specs
+   and maps (`imagination-pass1..10.md`, `modeling-pass1..10.md`) remain in
+   the session scratchpad only and are now history, not steering; the docs
+   own the design.
+
 2. First-generation world fixtures are banked and pushed, one per world, each
    with Ink, training sidecar, visual plan, lore grounding, and BFL manifest,
    reviewer-accepted except visual replay, which waits on a scene-set
@@ -374,7 +355,7 @@ continuity, route preservation, split-brain fencing, signed health, Odin-outage
 freeze, and negative legacy-authority checks must all agree before purge.
 
 Deploy the Connector and then Ghostlight through that contract. Runtime restart,
-route continuity, signed health, exact receipts, exclusive world-v2 state, and
+route continuity, signed health, exact receipts, exclusive world-v3 state, and
 negative checks must agree before deleting old services, releases, state,
 acceptance roots, and local run scaffolding.
 
@@ -405,7 +386,7 @@ otesaculty-workflow-lessons-2026-09-04.md`
 - Do not invoke the current bounded Connector or Ghostlight redeploy helpers;
   they fail at the root/Idunn Git boundary and still embody duplicate target
   deployment authority.
-- Do not prove world-v2 purity with a short deny list. Archive the complete old
+- Do not prove world-v3 purity with a short deny list. Archive the complete old
   state root or validate a complete allowed-path contract.
 - Keep this handoff compact. Move chronology to Git, evidence, or the frozen
   system map.
