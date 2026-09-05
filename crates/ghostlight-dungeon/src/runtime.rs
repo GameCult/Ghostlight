@@ -2377,6 +2377,43 @@ mod tests {
         }
     }
 
+    /// The consumer door's two transport gates, the same two
+    /// `/cultnet/snapshot` established. Everything past them belongs to
+    /// `world::consumer`, which is tested there.
+    #[tokio::test]
+    async fn a_non_loopback_peer_is_forbidden_and_a_wrong_content_type_is_unsupported() {
+        let fixture = fixture().await;
+        let request = |peer: &str, content_type: &str| {
+            Request::builder()
+                .method("POST")
+                .uri("/cultnet/world-patch")
+                .extension(ConnectInfo(peer.parse::<SocketAddr>().unwrap()))
+                .header(header::CONTENT_TYPE, content_type)
+                .body(Body::from(Vec::new()))
+                .unwrap()
+        };
+
+        let remote = api_router(fixture.state.clone())
+            .oneshot(request("192.0.2.9:39001", "application/msgpack"))
+            .await
+            .unwrap();
+        assert_eq!(remote.status(), StatusCode::FORBIDDEN);
+
+        let wrong_media = api_router(fixture.state.clone())
+            .oneshot(request("127.0.0.1:39001", "application/json"))
+            .await
+            .unwrap();
+        assert_eq!(wrong_media.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE);
+
+        // A loopback peer with the right media type reaches the ingress, which
+        // refuses an empty frame with a receipt rather than a status.
+        let admitted = api_router(fixture.state.clone())
+            .oneshot(request("127.0.0.1:39001", "application/msgpack"))
+            .await
+            .unwrap();
+        assert_eq!(admitted.status(), StatusCode::OK);
+    }
+
     #[tokio::test]
     async fn http_route_probe_bypasses_provider_and_enforces_exact_admission() {
         let mut fixture = fixture().await;

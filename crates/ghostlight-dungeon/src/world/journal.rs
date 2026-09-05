@@ -469,7 +469,7 @@ fn verify_commitments_are_future(
     Ok(())
 }
 
-fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
+pub(super) fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
     if state.schema != STATE_SCHEMA {
         return Err(JournalError::Corrupt("invalid state schema".into()));
     }

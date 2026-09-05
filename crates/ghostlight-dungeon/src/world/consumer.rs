@@ -425,3 +425,1355 @@ pub(crate) fn build_document(
         patch: rmp_serde::to_vec_named(patch).map_err(|error| error.to_string())?,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::tests::{
+        activate, auth_principal, command, creation, operations, owner, speak_entry, submit_owner,
+    };
+    use super::super::{
+        AffordanceId, AuthenticatedCaller, AuthorityGrantRef, AuthorityKindName,
+        AuthorityTargetRef, CallerId, CausalBoundary, CommandBody, CommandEnvelope, CommitmentKind,
+        ComponentOp, CoverBudget, DecisionOpportunity, DecisionScope, Declaration, DraftHandle,
+        EntityDeclaration, EntityId, EntityKind, EvidenceRef, FactDeclaration, FactStandingRef,
+        FictionalMinutes, JurisdictionKey, NewController, PatchGround, Quantity, Ref,
+        RouteDeclaration, Statement, SubjectDeclaration, SubjectId, SubjectKind, SystemCapability,
+        WorldId, WorldKernel, WorldMailbox, agency_graph, derive_boundaries, derive_cover,
+        derive_opportunities, ground_covers,
+    };
+    use super::*;
+    use std::collections::BTreeSet;
+    use std::path::Path;
+
+    const CONSUMER: &str = "mirror-consumer";
+    /// The fixture generates its own credential. No real secret lives here, and
+    /// the registry only ever holds its digest.
+    const SECRET: &str = "fixture-consumer-secret-4f2a";
+    const OTHER: &str = "other-consumer";
+    const MIRROR_EVIDENCE: &str = "mirror:opening-count";
+    const HOLD_KIND: &str = "hold";
+
+    fn consumer() -> ConsumerId {
+        ConsumerId::of_name(CONSUMER)
+    }
+
+    fn registry() -> ConsumerRegistry {
+        ConsumerRegistry::with_secret(CONSUMER, SECRET)
+    }
+
+    /// Two mirrors bound to one consumer, one ordinary Ghostlight subject, one
+    /// resource, and one commitment from the first mirror to the second — which
+    /// is what derives a `MissingStructure` boundary the consumer may answer.
+    struct Mirror {
+        commons: EntityId,
+        grain: EntityId,
+        first: SubjectId,
+        second: SubjectId,
+        local: SubjectId,
+    }
+
+    fn mirror_patch(commons: EntityId, speak: Ref<AffordanceId>) -> WorldPatch {
+        let subject = |handle: &str, label: &str, controller: NewController| {
+            Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new(handle),
+                label: label.into(),
+                kind: SubjectKind::Institution,
+                affordances: match &controller {
+                    NewController::External { .. } => BTreeSet::new(),
+                    _ => BTreeSet::from([speak.clone()]),
+                },
+                controller,
+                position: Some(Ref::Existing(commons)),
+            })
+        };
+        WorldPatch {
+            declarations: vec![
+                Declaration::Entity(EntityDeclaration {
+                    handle: DraftHandle::new("grain"),
+                    label: "Winter Grain".into(),
+                    kind: EntityKind::Resource,
+                    container: None,
+                }),
+                subject(
+                    "first",
+                    "The Sunk Hold",
+                    NewController::External {
+                        consumer: consumer(),
+                    },
+                ),
+                subject(
+                    "second",
+                    "The Deeper Hold",
+                    NewController::External {
+                        consumer: consumer(),
+                    },
+                ),
+                subject("local", "The Rhythm Hall", NewController::OperationalAgent),
+            ],
+            operations: vec![
+                ComponentOp::Admit {
+                    holder: Ref::Draft(DraftHandle::new("first")),
+                    resource: Ref::Draft(DraftHandle::new("grain")),
+                    qty: Quantity(9),
+                    evidence: EvidenceRef::new(MIRROR_EVIDENCE),
+                },
+                ComponentOp::CreateCommitment {
+                    subject: Ref::Draft(DraftHandle::new("first")),
+                    counterparty: Some(Ref::Draft(DraftHandle::new("second"))),
+                    kind: CommitmentKind::Obligation,
+                    due: FictionalMinutes(600),
+                    period: None,
+                    checks: Vec::new(),
+                },
+                // A second unlitigable promise, this one held by an ordinary
+                // Ghostlight subject: the foreign boundary a consumer may not
+                // answer.
+                ComponentOp::CreateCommitment {
+                    subject: Ref::Draft(DraftHandle::new("local")),
+                    counterparty: Some(Ref::Draft(DraftHandle::new("second"))),
+                    kind: CommitmentKind::Obligation,
+                    due: FictionalMinutes(600),
+                    period: None,
+                    checks: Vec::new(),
+                },
+            ],
+            evidence: vec![EvidenceRef::new(MIRROR_EVIDENCE)],
+        }
+    }
+
+    fn subject_named(kernel: &WorldKernel, label: &str) -> SubjectId {
+        *kernel
+            .state
+            .subjects
+            .iter()
+            .find(|(_, subject)| subject.label == label)
+            .expect("a declared subject")
+            .0
+    }
+
+    fn entity_named(kernel: &WorldKernel, label: &str) -> EntityId {
+        *kernel
+            .state
+            .entities
+            .iter()
+            .find(|(_, record)| record.label == label)
+            .expect("a declared entity")
+            .0
+    }
+
+    fn draft_kernel(path: &Path, title: &str) -> (WorldKernel, Mirror) {
+        let mut kernel = WorldKernel::create(
+            path.join("world.cc"),
+            creation(CommandId::new(), title),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let before = kernel.snapshot().unwrap();
+        let commons = entity_named(&kernel, "The Commons");
+        let speak = speak_entry(&kernel);
+        submit_owner(
+            &mut kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: mirror_patch(commons, speak),
+            },
+        );
+        let mirror = Mirror {
+            commons,
+            grain: entity_named(&kernel, "Winter Grain"),
+            first: subject_named(&kernel, "The Sunk Hold"),
+            second: subject_named(&kernel, "The Deeper Hold"),
+            local: subject_named(&kernel, "The Rhythm Hall"),
+        };
+        (kernel, mirror)
+    }
+
+    fn mirror_kernel(path: &Path, title: &str) -> (WorldKernel, Mirror) {
+        let (mut kernel, mirror) = draft_kernel(path, title);
+        activate(&mut kernel);
+        (kernel, mirror)
+    }
+
+    fn consumer_caller(id: ConsumerId) -> CallerId {
+        CallerId::System(SystemCapability::Consumer { consumer: id })
+    }
+
+    fn submit_as(
+        kernel: &mut WorldKernel,
+        caller: CallerId,
+        body: CommandBody,
+    ) -> Result<SubmitReceipt, KernelError> {
+        let snapshot = kernel.snapshot().unwrap();
+        kernel.submit(
+            command(&snapshot, CommandId::new(), caller.clone(), body),
+            &AuthenticatedCaller::fixture(caller),
+        )
+    }
+
+    fn as_consumer(
+        kernel: &mut WorldKernel,
+        body: CommandBody,
+    ) -> Result<SubmitReceipt, KernelError> {
+        submit_as(kernel, consumer_caller(consumer()), body)
+    }
+
+    fn declaring(declarations: Vec<Declaration>) -> CommandBody {
+        CommandBody::AdmitPatch {
+            answers: None,
+            patch: WorldPatch {
+                declarations,
+                operations: Vec::new(),
+                evidence: Vec::new(),
+            },
+        }
+    }
+
+    fn outside(result: &Result<SubmitReceipt, KernelError>) -> bool {
+        matches!(
+            result,
+            Err(KernelError::PatchRejected(set))
+                if !set.is_empty()
+                    && set
+                        .iter()
+                        .all(|mismatch| matches!(mismatch, Mismatch::OutsideJurisdiction { .. }))
+        )
+    }
+
+    fn missing_structure(kernel: &WorldKernel, subject: SubjectId) -> CausalBoundary {
+        derive_boundaries(&kernel.state)
+            .unwrap()
+            .into_iter()
+            .find(|boundary| {
+                matches!(
+                    boundary,
+                    CausalBoundary::MissingStructure { subject: named, .. } if *named == subject
+                )
+            })
+            .expect("the fixture derives this boundary")
+    }
+
+    /// Granting the counterparty command over the promisor clears a
+    /// `MissingStructure` boundary. Both subjects are the consumer's mirrors, so
+    /// the whole answer sits inside its own ground.
+    fn clearing_grant(mirror: &Mirror) -> Vec<ComponentOp> {
+        vec![ComponentOp::GrantAuthority {
+            holder: Ref::Existing(mirror.second),
+            grant: AuthorityGrantRef {
+                kind: AuthorityKindName(HOLD_KIND.into()),
+                over: AuthorityTargetRef::Subject(Ref::Existing(mirror.first)),
+            },
+        }]
+    }
+
+    fn consumer_ops(mirror: &Mirror, qty: u64) -> WorldPatch {
+        WorldPatch {
+            declarations: Vec::new(),
+            operations: vec![ComponentOp::Consume {
+                holder: Ref::Existing(mirror.first),
+                resource: Ref::Existing(mirror.grain),
+                qty: Quantity(qty),
+            }],
+            evidence: Vec::new(),
+        }
+    }
+
+    // ---- the three negative proofs the consumer profile demands ---------
+
+    #[test]
+    fn ordinary_strategic_waves_cannot_select_an_external_mirror() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Waves");
+        let snapshot = kernel.snapshot().unwrap();
+
+        let opportunities = derive_opportunities(&kernel.state).unwrap();
+        let scopes: BTreeSet<SubjectId> = opportunities
+            .iter()
+            .map(|opportunity| opportunity.scope.subject_id)
+            .collect();
+        assert!(!scopes.contains(&mirror.first) && !scopes.contains(&mirror.second));
+        assert!(scopes.contains(&mirror.local));
+
+        let graph = agency_graph(&kernel.state);
+        assert!(!graph.subjects.contains(&mirror.first));
+        let cover = derive_cover(
+            snapshot.world_id,
+            snapshot.now,
+            30,
+            &opportunities,
+            &graph,
+            CoverBudget {
+                cells: 8,
+                constituent_cap: 8,
+                urgency_slots: 8,
+            },
+        );
+        assert!(
+            !cover
+                .cells
+                .iter()
+                .flat_map(|cell| cell.members().iter())
+                .any(|constituent| constituent.subject == mirror.first)
+        );
+
+        // The mirror is an ordinary subject in the snapshot throughout, with no
+        // controller and no turn.
+        let seen = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == mirror.first)
+            .expect("the mirror is visible");
+        assert_eq!(seen.controller_mode, None);
+        assert_eq!(seen.controller_id, None);
+        assert!(seen.affordances.is_empty());
+
+        // A hand-built opportunity naming the mirror's scope reaches the
+        // controller lane and is refused there.
+        let borrowed = opportunities.first().expect("an ordinary opportunity");
+        let forged = DecisionOpportunity {
+            scope: DecisionScope {
+                subject_id: mirror.first,
+            },
+            ..borrowed.clone()
+        };
+        let error = submit_as(
+            &mut kernel,
+            CallerId::Controller(borrowed.controller_id),
+            CommandBody::DeclineDecision {
+                opportunity: forged,
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(error, KernelError::OpportunityMismatch),
+            "{error:?}"
+        );
+    }
+
+    #[test]
+    fn a_malformed_or_stale_batch_commits_nothing() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Stale");
+        let before = kernel.snapshot().unwrap();
+        let patch = consumer_ops(&mirror, 1);
+
+        // (a) bytes that are not canonical MessagePack, and bytes that are not
+        // MessagePack at all.
+        let noncanonical = rmp_serde::to_vec(&patch).unwrap();
+        assert!(
+            matches!(
+                patch::decode_patch(&noncanonical),
+                Err(PatchDecodeError::NotCanonical | PatchDecodeError::Malformed)
+            ),
+            "a non-canonical frame decoded"
+        );
+        assert_eq!(
+            patch::decode_patch(&noncanonical[..3]),
+            Err(PatchDecodeError::Malformed)
+        );
+
+        // (b) a frame one byte over the cap.
+        let oversize = vec![0u8; patch::MAX_PATCH_BYTES + 1];
+        assert_eq!(
+            patch::decode_patch(&oversize),
+            Err(PatchDecodeError::TooLarge {
+                bytes: patch::MAX_PATCH_BYTES + 1
+            })
+        );
+
+        // (c) a revision one behind, after an intervening commit.
+        let intervening = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &intervening,
+            operations(consumer_ops(&mirror, 1).operations),
+        );
+        let after_intervening = kernel.snapshot().unwrap();
+        let stale = kernel
+            .submit(
+                CommandEnvelope {
+                    id: CommandId::new(),
+                    world_id: after_intervening.world_id,
+                    expected_revision: after_intervening.revision - 1,
+                    caller: consumer_caller(consumer()),
+                    body: CommandBody::AdmitPatch {
+                        answers: None,
+                        patch: patch.clone(),
+                    },
+                },
+                &AuthenticatedCaller::fixture(consumer_caller(consumer())),
+            )
+            .unwrap_err();
+        let KernelError::RevisionMismatch { actual, .. } = stale else {
+            panic!("{stale:?}")
+        };
+        assert_eq!(actual, after_intervening.revision);
+
+        // (d) a structurally invalid patch: the complete mismatch set, nothing
+        // committed.
+        let guarded = kernel.snapshot().unwrap();
+        let broken = as_consumer(
+            &mut kernel,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::Consume {
+                        holder: Ref::Draft(DraftHandle::new("nowhere")),
+                        resource: Ref::Existing(mirror.grain),
+                        qty: Quantity(1),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(broken, KernelError::PatchRejected(_)),
+            "{broken:?}"
+        );
+        let after = kernel.snapshot().unwrap();
+        assert_eq!(after.revision, guarded.revision);
+        assert_eq!(after.state_digest, guarded.state_digest);
+        assert_ne!(after.state_digest, before.state_digest);
+    }
+
+    #[test]
+    fn foreign_effects_become_local_consequences_only_after_the_receipt() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Custody");
+        let transfer = vec![ComponentOp::Transfer {
+            from: Ref::Existing(mirror.first),
+            to: Ref::Existing(mirror.local),
+            resource: Ref::Existing(mirror.grain),
+            qty: Quantity(2),
+        }];
+        let before = kernel.state.holdings.clone();
+        let refused = as_consumer(&mut kernel, operations(transfer.clone()));
+        assert!(outside(&refused), "{refused:?}");
+        assert_eq!(kernel.state.holdings, before);
+
+        // The same transfer through the world owner commits, so the refusal is
+        // the consumer's confinement rather than a broken operation.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(&mut kernel, &snapshot, operations(transfer));
+        assert_ne!(kernel.state.holdings, before);
+    }
+
+    // ---- end to end ------------------------------------------------------
+
+    async fn submit_through(
+        mailbox: &WorldMailbox,
+        principal: crate::world::PrincipalId,
+        body: CommandBody,
+    ) -> SubmitReceipt {
+        let snapshot = mailbox.snapshot().await.unwrap();
+        mailbox
+            .submit_fixture(
+                CommandEnvelope {
+                    id: CommandId::new(),
+                    world_id: snapshot.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(principal.clone()),
+                    body,
+                },
+                &auth_principal(principal),
+            )
+            .await
+            .expect("the owner lane commits")
+    }
+
+    /// The same fixture world, authored through the mailbox rather than the
+    /// kernel, because the ingress talks to the owner task and nothing else.
+    async fn mirror_mailbox(
+        path: &Path,
+    ) -> (
+        WorldMailbox,
+        tokio::task::JoinHandle<()>,
+        ConsumerPort,
+        Mirror,
+        WorldId,
+    ) {
+        let (mailbox, task) = WorldMailbox::open(path.join("world.cc")).expect("an empty world");
+        mailbox
+            .create_fixture(
+                creation(CommandId::new(), "Ingress"),
+                &auth_principal(owner()),
+            )
+            .await
+            .expect("a created world");
+        let genesis = mailbox.snapshot().await.unwrap();
+        let commons = genesis
+            .places
+            .iter()
+            .find(|place| place.label == "The Commons")
+            .expect("the genesis place")
+            .id;
+        let speak = Ref::Existing(
+            genesis
+                .affordances
+                .iter()
+                .find(|entry| entry.entry.kind.0 == "speak")
+                .expect("the kernel Speak entry")
+                .id,
+        );
+        submit_through(
+            &mailbox,
+            owner(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: mirror_patch(commons, speak),
+            },
+        )
+        .await;
+        submit_through(&mailbox, owner(), CommandBody::ApproveDraft).await;
+        submit_through(
+            &mailbox,
+            crate::world::tests::player(),
+            CommandBody::ApproveDraft,
+        )
+        .await;
+        submit_through(&mailbox, owner(), CommandBody::ActivateWorld).await;
+
+        let active = mailbox.snapshot().await.unwrap();
+        let subject = |label: &str| {
+            active
+                .subjects
+                .iter()
+                .find(|subject| subject.label == label)
+                .expect("a declared subject")
+                .id
+        };
+        let mirror = Mirror {
+            commons,
+            grain: active
+                .resources
+                .iter()
+                .find(|resource| resource.label == "Winter Grain")
+                .expect("the declared resource")
+                .id,
+            first: subject("The Sunk Hold"),
+            second: subject("The Deeper Hold"),
+            local: subject("The Rhythm Hall"),
+        };
+        let port = ConsumerPort::new(mailbox.clone());
+        let world_id = active.world_id;
+        (mailbox, task, port, mirror, world_id)
+    }
+
+    #[tokio::test]
+    async fn inbound_bytes_reach_a_committed_effect_and_a_receipt() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task, port, mirror, world_id) = mirror_mailbox(directory.path()).await;
+        let before = mailbox.snapshot().await.unwrap();
+        let bytes = encode_document(
+            &build_document(
+                world_id,
+                CONSUMER,
+                SECRET,
+                "batch-1",
+                before.revision,
+                None,
+                &consumer_ops(&mirror, 3),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+
+        let receipt = admit_document(&port, &registry(), &bytes).await;
+        let decoded: ConsumerReceiptDocument =
+            rmp_serde::from_slice(&encode_receipt(&receipt).unwrap()).unwrap();
+        assert_eq!(decoded.schema, CONSUMER_RECEIPT_SCHEMA);
+        assert!(
+            matches!(decoded.outcome, ConsumerOutcome::Applied { .. }),
+            "{:?}",
+            decoded.outcome
+        );
+        let after = mailbox.snapshot().await.unwrap();
+        assert_eq!(after.revision, before.revision + 1);
+        assert_eq!(decoded.revision, Some(after.revision));
+
+        // The port holds its own clone of the mailbox: the owner task ends
+        // when the last sender does.
+        drop(port);
+        drop(mailbox);
+        task.await.unwrap();
+        // Replaying the journal reproduces the same state digest, and the
+        // committed effect moved the mirror's components.
+        let replayed = WorldKernel::open(directory.path().join("world.cc"), world_id).unwrap();
+        let replayed_snapshot = replayed.snapshot().unwrap();
+        assert_eq!(replayed_snapshot.state_digest, after.state_digest);
+        assert_eq!(
+            replayed_snapshot
+                .subjects
+                .iter()
+                .find(|subject| subject.id == mirror.first)
+                .and_then(|subject| subject.holdings.get(&mirror.grain).copied()),
+            Some(Quantity(6))
+        );
+    }
+
+    #[tokio::test]
+    async fn an_identical_resubmission_returns_the_original_receipt_and_a_new_body_conflicts() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task, port, mirror, world_id) = mirror_mailbox(directory.path()).await;
+        let revision = mailbox.snapshot().await.unwrap().revision;
+        let bytes = encode_document(
+            &build_document(
+                world_id,
+                CONSUMER,
+                SECRET,
+                "batch-1",
+                revision,
+                None,
+                &consumer_ops(&mirror, 3),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let first = admit_document(&port, &registry(), &bytes).await;
+        let ConsumerOutcome::Applied {
+            commit_digest,
+            state_digest,
+        } = first.outcome.clone()
+        else {
+            panic!("{:?}", first.outcome)
+        };
+
+        // The same bytes at a moved revision: the ledger answers before the
+        // revision check, so resubmission is the probe.
+        let moved = mailbox.snapshot().await.unwrap().revision;
+        assert_ne!(moved, revision);
+        let again = admit_document(&port, &registry(), &bytes).await;
+        assert_eq!(
+            again.outcome,
+            ConsumerOutcome::AlreadyApplied {
+                commit_digest,
+                state_digest,
+            }
+        );
+        assert_eq!(mailbox.snapshot().await.unwrap().revision, moved);
+
+        // A different body under the same key conflicts and commits nothing.
+        let conflicting = encode_document(
+            &build_document(
+                world_id,
+                CONSUMER,
+                SECRET,
+                "batch-1",
+                moved,
+                None,
+                &consumer_ops(&mirror, 1),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let refused = admit_document(&port, &registry(), &conflicting).await;
+        assert_eq!(
+            refused.outcome,
+            ConsumerOutcome::Refused {
+                gate: ConsumerRefusal::CommandIdConflict,
+                mismatches: Vec::new(),
+            }
+        );
+        assert_eq!(mailbox.snapshot().await.unwrap().revision, moved);
+
+        // The port holds its own clone of the mailbox: the owner task ends
+        // when the last sender does.
+        drop(port);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    // ---- caller and capability -------------------------------------------
+
+    #[test]
+    fn consumer_cannot_approve_activate_exercise_decline_or_advance_time() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Capability");
+        let opportunity = derive_opportunities(&kernel.state)
+            .unwrap()
+            .into_iter()
+            .find(|value| value.scope.subject_id == mirror.local)
+            .expect("the local subject has an opportunity");
+        for body in [
+            CommandBody::ApproveDraft,
+            CommandBody::ActivateWorld,
+            CommandBody::DeclineDecision {
+                opportunity: opportunity.clone(),
+            },
+            CommandBody::AdvanceTime {
+                minutes: super::super::TickMinutes::new(30).unwrap(),
+            },
+        ] {
+            let error = as_consumer(&mut kernel, body).unwrap_err();
+            assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+        }
+    }
+
+    #[test]
+    fn elaborator_and_clock_cannot_write_a_consumer_ground() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Lanes");
+        let body = operations(consumer_ops(&mirror, 1).operations);
+        for caller in [
+            CallerId::System(SystemCapability::Clock),
+            CallerId::System(SystemCapability::Elaborator {
+                jurisdiction: JurisdictionKey::PlaceSubtree(mirror.commons),
+            }),
+        ] {
+            let error = submit_as(&mut kernel, caller, body.clone()).unwrap_err();
+            assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+        }
+    }
+
+    #[test]
+    fn an_unbound_consumer_can_write_nothing_but_its_own_binding() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Unbound");
+        let stranger = ConsumerId::of_name(OTHER);
+        let refused = submit_as(
+            &mut kernel,
+            consumer_caller(stranger),
+            operations(consumer_ops(&mirror, 1).operations),
+        );
+        assert!(outside(&refused), "{refused:?}");
+
+        // In Draft, the same unbound consumer may declare its own mirror and
+        // nothing else. That is the whole bootstrap.
+        let draft = tempfile::tempdir().unwrap();
+        let mut fresh = WorldKernel::create(
+            draft.path().join("world.cc"),
+            creation(CommandId::new(), "Bootstrap"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let commons = entity_named(&fresh, "The Commons");
+        let own = |consumer| {
+            declaring(vec![Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new("mine"),
+                label: "The Bound Hold".into(),
+                kind: SubjectKind::Institution,
+                controller: NewController::External { consumer },
+                affordances: BTreeSet::new(),
+                position: Some(Ref::Existing(commons)),
+            })])
+        };
+        // A binding to another consumer is outside its ground.
+        let foreign = submit_as(&mut fresh, consumer_caller(stranger), own(consumer()));
+        assert!(outside(&foreign), "{foreign:?}");
+        // Its own binding commits.
+        submit_as(&mut fresh, consumer_caller(stranger), own(stranger))
+            .expect("a consumer may declare its own mirror");
+    }
+
+    #[test]
+    fn apply_effect_re_decides_consumer_authority() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, mirror) = draft_kernel(directory.path(), "Redecide");
+        let command_id = CommandId::new();
+        let foreign = WorldPatch {
+            declarations: Vec::new(),
+            operations: vec![ComponentOp::Admit {
+                holder: Ref::Existing(mirror.local),
+                resource: Ref::Existing(mirror.grain),
+                qty: Quantity(1),
+                evidence: EvidenceRef::new(MIRROR_EVIDENCE),
+            }],
+            evidence: vec![EvidenceRef::new(MIRROR_EVIDENCE)],
+        };
+        let resolved = patch::resolve_patch(&kernel.state, command_id, &foreign, None)
+            .expect("the patch resolves");
+        let effect = super::super::WorldEffect::PatchAdmitted {
+            answers: None,
+            resolved,
+        };
+        let mut candidate = kernel.state.clone();
+        let error = super::super::apply_effect(
+            &mut candidate,
+            command_id,
+            &consumer_caller(consumer()),
+            &effect,
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::Invariant(_)), "{error:?}");
+        assert_eq!(candidate, kernel.state);
+    }
+
+    #[test]
+    fn journal_replay_refuses_a_forged_consumer_row() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, mirror) = mirror_kernel(directory.path(), "Forged");
+        // A state whose event claims the mirror acted: the mirror's assignment
+        // has no controller id, so the shape check cannot match one.
+        let mut forged = kernel.state.clone();
+        let event = forged.events.first().cloned();
+        if let Some(mut event) = event {
+            event.scope = DecisionScope {
+                subject_id: mirror.first,
+            };
+            forged.events = vec![event];
+            assert!(
+                super::super::journal::verify_state_shape(&forged).is_err(),
+                "a forged consumer row replayed"
+            );
+        }
+        // And a mirror carrying an affordance grant is refused by the same
+        // shape check, both ways.
+        let mut granted = kernel.state.clone();
+        let scope = DecisionScope {
+            subject_id: mirror.first,
+        };
+        granted
+            .affordance_grants
+            .insert(scope, BTreeSet::from([AffordanceId::issue()]));
+        assert!(super::super::journal::verify_state_shape(&granted).is_err());
+    }
+
+    // ---- confinement, per row --------------------------------------------
+
+    #[test]
+    fn a_consumer_cannot_declare_a_place_a_route_or_a_canonical_fact() {
+        let directory = tempfile::tempdir().unwrap();
+        // Draft: the phase where declaring answers nothing, so what refuses
+        // these three is the consumer's confinement and not the answer rule.
+        let (mut kernel, mirror) = draft_kernel(directory.path(), "Declarations");
+        let place = Declaration::Entity(EntityDeclaration {
+            handle: DraftHandle::new("vault"),
+            label: "The Deep Vault".into(),
+            kind: EntityKind::Place,
+            container: Some(Ref::Existing(mirror.commons)),
+        });
+        let route = Declaration::Route(RouteDeclaration {
+            handle: DraftHandle::new("shaft"),
+            label: "The Long Shaft".into(),
+            from: Ref::Existing(mirror.commons),
+            to: Ref::Draft(DraftHandle::new("vault")),
+            access: super::super::AccessKind::Public,
+            cost: super::super::Cost(3),
+        });
+        let canonical = Declaration::Fact(FactDeclaration {
+            handle: DraftHandle::new("count"),
+            label: "The Count".into(),
+            statement: Statement::new("The hold is counted.").unwrap(),
+            standing: FactStandingRef::Canonical {
+                evidence: EvidenceRef::new(MIRROR_EVIDENCE),
+            },
+        });
+        let cited = |declarations: Vec<Declaration>| CommandBody::AdmitPatch {
+            answers: None,
+            patch: WorldPatch {
+                declarations,
+                operations: Vec::new(),
+                evidence: vec![EvidenceRef::new(MIRROR_EVIDENCE)],
+            },
+        };
+        for declarations in [
+            vec![place.clone()],
+            vec![place.clone(), route.clone()],
+            vec![canonical.clone()],
+        ] {
+            let refused = as_consumer(&mut kernel, cited(declarations));
+            assert!(outside(&refused), "{refused:?}");
+        }
+
+        // The owner's identical patch commits, so the refusal is confinement
+        // and not a broken declaration.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![place, route, canonical],
+                    operations: Vec::new(),
+                    evidence: vec![EvidenceRef::new(MIRROR_EVIDENCE)],
+                },
+            },
+        );
+    }
+
+    #[test]
+    fn a_consumer_cannot_relocate_open_close_or_alter_a_route() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = draft_kernel(directory.path(), "Routes");
+        // One route the owner declares, so every route operation has a live
+        // referent to name.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("vault"),
+                            label: "The Deep Vault".into(),
+                            kind: EntityKind::Place,
+                            container: None,
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("shaft"),
+                            label: "The Long Shaft".into(),
+                            from: Ref::Existing(mirror.commons),
+                            to: Ref::Draft(DraftHandle::new("vault")),
+                            access: super::super::AccessKind::Public,
+                            cost: super::super::Cost(3),
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("gallery"),
+                            label: "The Shut Gallery".into(),
+                            from: Ref::Draft(DraftHandle::new("vault")),
+                            to: Ref::Existing(mirror.commons),
+                            access: super::super::AccessKind::Public,
+                            cost: super::super::Cost(3),
+                        }),
+                    ],
+                    // Declared shut, so `OpenRoute` names a change and
+                    // `CloseRoute` on the shaft names one too.
+                    operations: vec![ComponentOp::CloseRoute {
+                        route: Ref::Draft(DraftHandle::new("gallery")),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        let edge = |label: &str| {
+            *kernel
+                .state
+                .edges
+                .iter()
+                .find(|(_, record)| record.label() == label)
+                .expect("the declared route")
+                .0
+        };
+        let shaft = edge("The Long Shaft");
+        let gallery = edge("The Shut Gallery");
+        for operation in [
+            ComponentOp::Relocate {
+                subject: Ref::Existing(mirror.first),
+                via: Ref::Existing(shaft),
+            },
+            ComponentOp::OpenRoute {
+                route: Ref::Existing(gallery),
+            },
+            ComponentOp::CloseRoute {
+                route: Ref::Existing(shaft),
+            },
+            ComponentOp::AlterCost {
+                route: Ref::Existing(shaft),
+                cost: super::super::Cost(9),
+            },
+        ] {
+            let refused = as_consumer(&mut kernel, operations(vec![operation]));
+            assert!(outside(&refused), "{refused:?}");
+        }
+    }
+
+    #[test]
+    fn a_consumer_admits_and_consumes_inside_its_own_custody() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = draft_kernel(directory.path(), "Custody Positive");
+        let receipt = as_consumer(
+            &mut kernel,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![
+                        ComponentOp::Admit {
+                            holder: Ref::Existing(mirror.first),
+                            resource: Ref::Existing(mirror.grain),
+                            qty: Quantity(4),
+                            evidence: EvidenceRef::new("mirror:second-count"),
+                        },
+                        ComponentOp::Consume {
+                            holder: Ref::Existing(mirror.first),
+                            resource: Ref::Existing(mirror.grain),
+                            qty: Quantity(2),
+                        },
+                    ],
+                    evidence: vec![EvidenceRef::new("mirror:second-count")],
+                },
+            },
+        )
+        .expect("a consumer writes inside its own custody");
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+        assert_eq!(
+            kernel
+                .state
+                .holdings
+                .get(&mirror.first)
+                .and_then(|held| held.get(&mirror.grain))
+                .copied(),
+            Some(Quantity(11))
+        );
+    }
+
+    // ---- separation and shape --------------------------------------------
+
+    #[test]
+    fn mismatch_never_appears_in_a_world_commit_but_does_appear_in_a_receipt() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Separation");
+        as_consumer(&mut kernel, operations(consumer_ops(&mirror, 1).operations))
+            .expect("the consumer batch commits");
+        let bytes = rmp_serde::to_vec_named(&kernel.state).expect("state encodes");
+        let text = String::from_utf8_lossy(&bytes);
+        for tag in [
+            "outside_jurisdiction",
+            "controller_grant_mismatch",
+            "mismatch",
+        ] {
+            assert!(!text.contains(tag), "{tag} reached world state");
+        }
+
+        // The refusal receipt does carry them.
+        let receipt = ConsumerReceiptDocument {
+            schema: CONSUMER_RECEIPT_SCHEMA.into(),
+            world_id: None,
+            command_id: None,
+            revision: None,
+            outcome: ConsumerOutcome::Refused {
+                gate: ConsumerRefusal::Structural,
+                mismatches: vec![Mismatch::OutsideJurisdiction {
+                    site: patch::Site::Operation(0),
+                }],
+            },
+        };
+        let encoded = encode_receipt(&receipt).unwrap();
+        assert!(String::from_utf8_lossy(&encoded).contains("outside_jurisdiction"));
+    }
+
+    #[tokio::test]
+    async fn no_consumer_secret_reaches_the_journal_the_receipt_or_a_log() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task, port, mirror, world_id) = mirror_mailbox(directory.path()).await;
+        let revision = mailbox.snapshot().await.unwrap().revision;
+        let bytes = encode_document(
+            &build_document(
+                world_id,
+                CONSUMER,
+                SECRET,
+                "secret-batch",
+                revision,
+                None,
+                &consumer_ops(&mirror, 2),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let receipt = admit_document(&port, &registry(), &bytes).await;
+        assert!(!String::from_utf8_lossy(&encode_receipt(&receipt).unwrap()).contains(SECRET));
+        assert!(!format!("{receipt:?}").contains(SECRET));
+        // The port holds its own clone of the mailbox: the owner task ends
+        // when the last sender does.
+        drop(port);
+        drop(mailbox);
+        task.await.unwrap();
+        let journal = std::fs::read(directory.path().join("world.cc")).unwrap();
+        assert!(!String::from_utf8_lossy(&journal).contains(SECRET));
+    }
+
+    #[test]
+    fn the_external_mirror_has_no_controller_and_no_affordance() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = draft_kernel(directory.path(), "Pairing");
+        let speak = speak_entry(&kernel);
+        let declare = |controller: NewController, affordances: BTreeSet<Ref<AffordanceId>>| {
+            declaring(vec![Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new("candidate"),
+                label: "The Candidate".into(),
+                kind: SubjectKind::Institution,
+                controller,
+                affordances,
+                position: Some(Ref::Existing(mirror.commons)),
+            })])
+        };
+        let pairing = |result: Result<SubmitReceipt, KernelError>| {
+            matches!(
+                result,
+                Err(KernelError::PatchRejected(set))
+                    if set
+                        .iter()
+                        .any(|mismatch| matches!(
+                            mismatch,
+                            Mismatch::ControllerGrantMismatch { .. }
+                        ))
+            )
+        };
+        let granted_mirror = submit_owner_result(
+            &mut kernel,
+            declare(
+                NewController::External {
+                    consumer: consumer(),
+                },
+                BTreeSet::from([speak.clone()]),
+            ),
+        );
+        assert!(pairing(granted_mirror));
+        let ungranted_ordinary = submit_owner_result(
+            &mut kernel,
+            declare(NewController::OperationalAgent, BTreeSet::new()),
+        );
+        assert!(pairing(ungranted_ordinary));
+    }
+
+    fn submit_owner_result(
+        kernel: &mut WorldKernel,
+        body: CommandBody,
+    ) -> Result<SubmitReceipt, KernelError> {
+        submit_as(kernel, CallerId::Principal(owner()), body)
+    }
+
+    // ---- bounds, one owner ------------------------------------------------
+
+    #[test]
+    fn the_patch_caps_have_one_owner() {
+        let over_cap = WorldPatch {
+            declarations: (0..=patch::MAX_PATCH_DECLARATIONS)
+                .map(|index| {
+                    Declaration::Entity(EntityDeclaration {
+                        handle: DraftHandle::new(&format!("shed-{index}")),
+                        label: format!("Shed {index}"),
+                        kind: EntityKind::Place,
+                        container: None,
+                    })
+                })
+                .collect(),
+            operations: Vec::new(),
+            evidence: Vec::new(),
+        };
+        assert_eq!(
+            patch::check_patch_caps(&over_cap),
+            Err(PatchDecodeError::TooManyDeclarations {
+                count: patch::MAX_PATCH_DECLARATIONS + 1
+            })
+        );
+        let bytes = rmp_serde::to_vec_named(&over_cap).unwrap();
+        assert_eq!(
+            patch::decode_patch(&bytes),
+            Err(PatchDecodeError::TooManyDeclarations {
+                count: patch::MAX_PATCH_DECLARATIONS + 1
+            })
+        );
+    }
+
+    // ---- transport --------------------------------------------------------
+
+    #[tokio::test]
+    async fn a_document_is_refused_at_its_own_gate_before_the_kernel_is_reached() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task, port, mirror, world_id) = mirror_mailbox(directory.path()).await;
+        let before = mailbox.snapshot().await.unwrap();
+        let good = build_document(
+            world_id,
+            CONSUMER,
+            SECRET,
+            "gate",
+            before.revision,
+            None,
+            &consumer_ops(&mirror, 1),
+        )
+        .unwrap();
+
+        let gate_of = |receipt: &ConsumerReceiptDocument| match &receipt.outcome {
+            ConsumerOutcome::Refused { gate, .. } => *gate,
+            other => panic!("{other:?}"),
+        };
+
+        // An unknown schema string.
+        let mut wrong_schema = good.clone();
+        wrong_schema.schema = "ghostlight.consumer_patch.v99".into();
+        let receipt =
+            admit_document(&port, &registry(), &encode_document(&wrong_schema).unwrap()).await;
+        assert_eq!(gate_of(&receipt), ConsumerRefusal::Schema);
+        assert_eq!(receipt.command_id, None);
+
+        // An unregistered consumer, a wrong secret, and a missing registry.
+        let mut unregistered = good.clone();
+        unregistered.consumer = OTHER.into();
+        let mut wrong_secret = good.clone();
+        wrong_secret.secret = "not-the-secret".into();
+        for (document, registry) in [
+            (unregistered, registry()),
+            (wrong_secret, registry()),
+            (good.clone(), ConsumerRegistry::empty()),
+        ] {
+            let receipt =
+                admit_document(&port, &registry, &encode_document(&document).unwrap()).await;
+            assert_eq!(gate_of(&receipt), ConsumerRefusal::Unauthenticated);
+        }
+
+        // A non-canonical outer frame, and a nested frame over the patch cap.
+        let receipt = admit_document(&port, &registry(), &rmp_serde::to_vec(&good).unwrap()).await;
+        assert!(matches!(
+            gate_of(&receipt),
+            ConsumerRefusal::NotCanonical | ConsumerRefusal::Malformed
+        ));
+        let mut oversize = good.clone();
+        oversize.patch = vec![0u8; patch::MAX_PATCH_BYTES + 1];
+        let receipt =
+            admit_document(&port, &registry(), &encode_document(&oversize).unwrap()).await;
+        assert_eq!(gate_of(&receipt), ConsumerRefusal::TooLarge);
+
+        // Nothing above reached the kernel.
+        assert_eq!(mailbox.snapshot().await.unwrap().revision, before.revision);
+        // The port holds its own clone of the mailbox: the owner task ends
+        // when the last sender does.
+        drop(port);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    // ---- phase -------------------------------------------------------------
+
+    #[test]
+    fn a_component_only_active_consumer_patch_answers_nothing_and_commits() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Component Only");
+        let receipt = as_consumer(&mut kernel, operations(consumer_ops(&mirror, 2).operations))
+            .expect("the ordinary batch commits");
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+    }
+
+    #[test]
+    fn a_declaring_active_consumer_patch_without_an_answer_is_answer_required() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Answer Required");
+        let error = as_consumer(
+            &mut kernel,
+            declaring(vec![Declaration::Fact(FactDeclaration {
+                handle: DraftHandle::new("claim"),
+                label: "The Shortfall".into(),
+                statement: Statement::new("The hold reports a shortfall.").unwrap(),
+                standing: FactStandingRef::Claimed {
+                    by: Ref::Existing(mirror.first),
+                },
+            })]),
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::AnswerRequired), "{error:?}");
+    }
+
+    #[test]
+    fn a_consumer_answers_a_missing_structure_boundary_on_its_own_mirror() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Boundary");
+        let answered = missing_structure(&kernel, mirror.first);
+
+        let answering = |answer: PatchAnswer| CommandBody::AdmitPatch {
+            answers: Some(answer),
+            patch: WorldPatch {
+                declarations: Vec::new(),
+                operations: clearing_grant(&mirror),
+                evidence: Vec::new(),
+            },
+        };
+
+        // A boundary about a foreign subject is not covered by a consumer's
+        // ground: `require_patch_author` refuses it.
+        let foreign = missing_structure(&kernel, mirror.local);
+        let error =
+            as_consumer(&mut kernel, answering(PatchAnswer::Boundary(foreign))).unwrap_err();
+        assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+
+        // A deficit is jurisdictional and a consumer holds no jurisdiction.
+        // `ground_covers` would refuse it, but this fixture names no scale
+        // intent, so `require_answer` — which runs first — refuses it as
+        // underived. Either way the consumer never reaches the deficit lane.
+        for jurisdiction in [
+            JurisdictionKey::Uncovered,
+            JurisdictionKey::PlaceSubtree(mirror.commons),
+        ] {
+            let error = as_consumer(&mut kernel, answering(PatchAnswer::Deficit(jurisdiction)))
+                .unwrap_err();
+            assert!(matches!(error, KernelError::AnswerNotDerived), "{error:?}");
+            assert!(!ground_covers(
+                &kernel.state,
+                PatchGround::Consumer(consumer()),
+                &PatchAnswer::Deficit(jurisdiction)
+            ));
+        }
+
+        // A patch that does not satisfy the boundary it answered is refused.
+        let unsatisfying = as_consumer(
+            &mut kernel,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered.clone())),
+                patch: consumer_ops(&mirror, 1),
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(unsatisfying, KernelError::AnswerNotSatisfied),
+            "{unsatisfying:?}"
+        );
+
+        // And the honest answer commits, clearing exactly what it named.
+        as_consumer(
+            &mut kernel,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered.clone())),
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: clearing_grant(&mirror),
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .expect("the consumer answers its own boundary");
+        assert!(
+            !derive_boundaries(&kernel.state)
+                .unwrap()
+                .contains(&answered)
+        );
+    }
+
+    // ---- replay -------------------------------------------------------------
+
+    #[test]
+    fn consumer_admission_replays_to_the_same_state_digest() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = mirror_kernel(directory.path(), "Replay");
+        let world_id = kernel.snapshot().unwrap().world_id;
+        as_consumer(&mut kernel, operations(consumer_ops(&mirror, 1).operations)).unwrap();
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            CommandBody::AdvanceTime {
+                minutes: super::super::TickMinutes::new(30).unwrap(),
+            },
+        );
+        as_consumer(&mut kernel, operations(consumer_ops(&mirror, 2).operations)).unwrap();
+        let accepted = kernel.snapshot().unwrap();
+        drop(kernel);
+
+        let replayed = WorldKernel::open(directory.path().join("world.cc"), world_id).unwrap();
+        assert_eq!(replayed.snapshot().unwrap(), accepted);
+        drop(replayed);
+
+        // A store written under the previous state schema is refused rather
+        // than migrated.
+        let path = directory.path().join("world.cc");
+        let mut bytes = std::fs::read(&path).unwrap();
+        let live = super::super::STATE_SCHEMA.as_bytes();
+        let previous = b"ghostlight.world_state.consumer.v0";
+        assert_eq!(live.len(), previous.len());
+        let mut rewritten = 0;
+        for index in 0..bytes.len().saturating_sub(live.len()) {
+            if &bytes[index..index + live.len()] == live {
+                bytes[index..index + live.len()].copy_from_slice(previous);
+                rewritten += 1;
+            }
+        }
+        assert!(rewritten > 0, "the store names no state schema");
+        std::fs::write(&path, bytes).unwrap();
+        assert!(WorldKernel::open(&path, world_id).is_err());
+    }
+}
