@@ -99,8 +99,8 @@ projection of committed history.
    Interpreter does not accept, reject, or commit world state.
 5. Structural invalidity is rejected deterministically before persistence and
    without a model verifier. A failed batch changes nothing.
-6. Private knowledge remains scoped until an explicit communication command
-   changes it.
+6. Private knowledge remains scoped until an explicit communication command or
+   a witnessed event under the subject's place changes it.
 7. External consumers retain sovereignty. Ghostlight views, proposals, and
    acknowledgements cannot mutate external-owned state.
 8. Sparse causal sufficiency governs structural validity; counts and
@@ -429,29 +429,61 @@ a live provider — none exists yet for the narrative lane's re-lowering
 round, so the next road run is the first evidence of `interpreter_round`
 producing a real second request.
 
-### 10. Witnessed events over a place subtree — in design
+### 10. Witnessed events over a place subtree — landed
 
 Objective: stories that carry regional and global effects. An asteroid is
 witnessed by everyone under a region's root; the moon going dark by everyone
 under a hemisphere's; a subject standing in a village under both sees both.
 
-Current mechanism: knowledge enters a subject through `AcquireKnowledge`
-(one operation per subject), through speech fan-out (`Communicate`, which
-names a speaker and follows a channel's `Reach`), or through evidence. An
-event with no speaker that a thousand people saw costs a thousand operations
-and hits the patch caps.
-
-Intended change: one operation, `Witness { fact, place }`, that lands
+Landed mechanism: `ComponentOp::Witness { fact, place, confidence }` lands
 `Witnessed` knowledge of the fact on every subject positioned anywhere under
-the place, recipients derived at apply time from live positions exactly as
-speech fan-out derives its audience, never stored. Every witness's scope
-digest moves, which is what makes a global event interrupt whoever was
-mid-thought (step 9).
+the place. Recipients are never stored; `ResolvedOp::Witness`'s apply arm
+derives them at apply time through `under_place`, the same subtree walk
+`audience`'s `Reach::Place` arm now calls, so a declared broadcast area and a
+witnessed event share one definition of "under a place". Whoever already
+holds the fact is dropped through `unheld`, factored out of `fan_out`'s old
+inlined filter so `Communicate` and `Witness` cannot disagree about who
+already knows. A telling still occurs into an empty room, so `Communicate`'s
+empty fan-out stays a legal no-op; a witnessed event is only its reception,
+so a `Witness` over an empty subtree, or one where every standing subject
+already holds the fact, is refused as `Mismatch::NoOperationEffect` at
+resolve (over the candidate graph, including this patch's own relocations)
+and `KernelError::Invariant("a witness reaches nobody who does not already
+hold the fact")` at apply — one rule, both layers. Confinement runs through
+one new `operation_ground` arm returning the named place as the whole
+ground: an elaborator may witness only under its own jurisdiction root, and a
+`PatchGround::Consumer` patch can never witness, because its ground names no
+place. Every recipient's scope digest moves and nobody else's does, which is
+what makes a regional or global event interrupt whoever was mid-thought
+(step 9).
 
-Cut line: no second fan-out owner; no stored recipient list; a witness names
-no speaker; the subtree walk reuses the one covering predicate; the tool
-surface and exemplar lists grow by exactly one; confinement treats the place
-like any other operation ground.
+Beyond the operation itself, an affordance slot,
+`ComponentOpKind::Witness { confidence }` with roles `[fact, place]` and no
+subject role, was not anticipated by this plan's text but was needed to let
+a world-authored affordance (a bell, a beacon) cause a witnessed event
+without a proposer ever naming a speaker; the source is `Witnessed` by
+construction, since `ComponentOp::Witness` has no field a teller could enter.
+One `PATCH_TOOLS` entry, `witness`, rounds out the model-facing surface.
+Both store schemas moved to `ghostlight.world_state.consumer.v2` and
+`ghostlight.world_commit.consumer.v2`; a store written under the prior schema
+is refused, not migrated.
+
+Cut line held: one fan-out owner (`under_place`), shared by `audience` and
+`Witness`; one never-overwrite owner (`unheld`), shared by `fan_out` and
+`Witness`; no stored recipient list; a witness names no speaker, so `Told`
+stays unrepresentable outside `Communicate`; no new `Mismatch`,
+`KernelError` variant, `CommandBody`, `SystemCapability`, or
+`CompositeShape`; `verify_state_shape`, `can_broadcast`, and
+`candidate_in_audience` untouched.
+
+What is undone: the affordance-declaration refusal for a slot whose second
+role binds a subject is proved directly through `arity` and
+`role_kind_fits`, not by submitting a malformed `AffordanceDeclaration`
+through admission — the gate is the one gate either way, but the submission
+path itself is untested. The grouped lane's cost is untouched: a
+region-wide or global witness still discards a grouped cell's in-flight work
+for every constituent it touches, which is the debt this pass explicitly
+declined to pay.
 
 ## Subtraction budget
 

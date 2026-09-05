@@ -139,6 +139,10 @@ those subjects (`confine_to_ground`, the `PatchGround::Consumer` arm):
 - a declared place, a declared route, `Relocate`, `OpenRoute`, `CloseRoute`,
   and `AlterCost` are always refused — they carry a place or a route, and a
   consumer's ground names no place;
+- `Witness` is always refused, for the same reason: its ground is the named
+  place, never the acting subject, and a consumer's ground names no place.
+  A consumer tells what its mirror knows through `AcquireKnowledge` on its own
+  bound subject; it cannot cause a place-wide witnessed event;
 - a `Claimed { by }` fact must name a bound subject; a `Canonical` fact
   declaration is refused outright — a consumer's evidence buys an `Admit`
   into its own custody and a `Claimed` fact, never a canonization;
@@ -175,8 +179,8 @@ enters a log, a receipt, or the journal.
 
 The consumer capability's tag is part of the commit digest and the
 externally controlled assignment is part of the state shape, so both bump the
-schema: state schema `ghostlight.world_state.consumer.v1` (state-schema
-generation `world-v3`), commit schema `ghostlight.world_commit.consumer.v1`.
+schema: state schema `ghostlight.world_state.consumer.v2` (state-schema
+generation `world-v3`), commit schema `ghostlight.world_commit.consumer.v2`.
 A store written under an earlier schema is refused, not migrated.
 
 ## Not in this pass

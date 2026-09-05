@@ -103,7 +103,9 @@ target, otherwise `ActionMismatch::DelegationNotMonotone`.
 A `Fact` is an entity with a `Statement` and a `FactStanding`: `Canonical`
 with evidence, or `Claimed { by }`. `Knowledge` is subject-keyed per fact with
 a `Confidence` and a `KnowledgeSource { Witnessed, Told { by, via }, Evidenced }`;
-a telling never overwrites a holder. A `Channel` is an entity with a
+a telling never overwrites a holder. `Witnessed` is minted by an authored
+patch's `AcquireKnowledge` and, with no author at all, by `Witness` (below). A
+`Channel` is an entity with a
 `Reach { Subjects, Place }` and a controller. Speech is an affordance whose
 entry declares exactly one `Audience { Colocated, Channel }`: `exercise`
 mints the `Claimed` fact through `derive_id` (one of the fixed set of `derive_id`
@@ -119,6 +121,31 @@ log; the story feed is `operator_log`, an owner-only projection that the
 controller lane cannot name because `ControllerRunner` holds a
 `ControllerPort`, not the mailbox. `WorldMailbox::create` declares the genesis
 place `commons` and stands genesis subjects there.
+
+`Witness` is one speakerless event over a place subtree: a beacon, a bell, a
+blast. It names a fact, a place, and a confidence, and no speaker at all.
+Recipients are never stored; they are derived at apply time by `under_place`,
+the same subtree walk `audience`'s `Reach::Place` arm uses, so a declared
+broadcast area and a witnessed event cannot disagree about who is "under" a
+place. Every subject standing anywhere under the place learns the fact;
+whoever already holds it is untouched (`unheld`, the same never-overwrite rule
+`Communicate`'s fan-out applies). The landed row is `KnowledgeSource::Witnessed`
+at the authored `confidence`. A telling still occurred even into an empty room,
+so `Communicate`'s empty fan-out is a legal no-op; a witnessed event is only
+its reception, so a `Witness` over an empty subtree — or one where every
+standing subject already holds the fact — is refused as
+`Mismatch::NoOperationEffect` at resolve and `KernelError::Invariant` at apply,
+the same rule at both layers. Confinement runs through `operation_ground`
+returning the named place as the whole ground: an elaborator may witness only
+under its own jurisdiction root, and a consumer patch may never witness at all,
+because `PatchGround::Consumer` and `Jurisdiction(Uncovered)` refuse every
+place. `ComponentOpKind::Witness { confidence }` puts the same operation behind
+an affordance slot naming `[fact, place]` roles and no subject role, so a
+world-authored affordance can cause a witnessed event with no proposer ever
+choosing a speaker. Because every recipient's `knows` component changes, every
+recipient's scope digest moves — nobody else's does — which is what lets a
+regional or global event interrupt whoever was mid-thought under that place
+(the interruption mechanism of pass 9).
 
 Time is `now: FictionalMinutes`, moved only by `CommandBody::AdvanceTime`
 from `CallerId::System(SystemCapability::Clock)`; the runtime tick submits
@@ -205,7 +232,7 @@ under four caps — `MAX_PATCH_BYTES`, `MAX_PATCH_DECLARATIONS`,
 `MAX_PATCH_OPERATIONS`, `MAX_PATCH_EVIDENCE` — and the consumer document
 travels over two wire schema constants, `CONSUMER_PATCH_SCHEMA` and
 `CONSUMER_RECEIPT_SCHEMA`, both `.v0`. The state and commit schemas bump to
-`ghostlight.world_state.consumer.v1` and `ghostlight.world_commit.consumer.v1`
+`ghostlight.world_state.consumer.v2` and `ghostlight.world_commit.consumer.v2`
 (state-schema generation `world-v3`); a store written under an earlier schema
 is refused, not migrated.
 
@@ -254,8 +281,8 @@ is the typed component diff against the fresh components plus the
 knowledge row, and never another subject's snapshot. The re-lowering's
 provider request is a distinct round (`interpreter_round`) with its own
 content-addressed request id, so it cannot collide with the first lowering's
-request. State schema is `ghostlight.world_state.consumer.v1`, commit schema
-`ghostlight.world_commit.consumer.v1`, controller work `controller_work.v11`,
+request. State schema is `ghostlight.world_state.consumer.v2`, commit schema
+`ghostlight.world_commit.consumer.v2`, controller work `controller_work.v11`,
 Persona turn receipt `ghostlight.persona_turn_receipt.v3`; earlier stores and
 earlier rows are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
@@ -404,7 +431,7 @@ Authority        grant(subject, scope, kind), revoke
 Selection        open_office, close_office, install(office, incumbent), vacate
 Redress          open_forum(kind, forum, standing), close_forum
 Knowledge        acquire(subject, fact, source, confidence), communicate(speaker, fact,
-                 channel), forget
+                 channel), witness(fact, place, confidence), forget
 Channel          set_reach, set_controller
 Commitment       create(subject, counterparty, kind, due, period, checks), discharge
 Pressure         advance, reduce, resolve
@@ -413,7 +440,7 @@ Retirement       retire(referent, reason)
 Time             advance(minutes)
 ```
 
-Twenty-seven operations. Adding one is a design change to this document and a
+Twenty-nine operations. Adding one is a design change to this document and a
 code change to the reducer; it is never a runtime patch.
 
 ## Patch construction
@@ -468,7 +495,7 @@ counts do not appear here and may not be added.
 The kernel owns component operations. A **world** owns its affordance catalog.
 This is the generality lever: a setting with spellcraft, insurance claims,
 oath-rhythms, or memetic sovereignty authors affordances from the same
-twenty-seven operations, and the kernel never learns a genre.
+twenty-nine operations, and the kernel never learns a genre.
 
 ```text
 Affordance
@@ -766,7 +793,7 @@ Deleted before replacement behavior is added, with no compatibility path:
 
 ## Subtraction budget
 
-- 20 component kinds → 12; 18 `WorldMutation` variants → 27 named operations
+- 20 component kinds → 12; 18 `WorldMutation` variants → 29 named operations
   under 1 patch primitive, replacing both the mutation enum and the separate
   outcome-effect sum;
 - 5 qualification and verification types plus 1 outcome resolver → 0;
