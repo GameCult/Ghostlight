@@ -307,59 +307,45 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    Still deferred by design: `PolityInCausalRange`, `IndividuationRequired`,
    and Verification 13 wait for relations and population slices.
 
-   The seed producer is integrated: plan step 8 landed. Tip is `697ed07`
-   (Soul: five reproducers, eight bounds) over `e73ef5c` and `681f706`
-   (Hands), on `70600d8` (plan step 8 opened). The push follows a background
-   crate test and the branch read `ahead 3` at the time of writing;
-   `git status -sb` is the witness. What landed: `world/vault.rs` with
-   `VaultEvidenceSource` and its caps; `SeedPort` (`snapshot`,
-   `submit_seed`) in `world/mailbox.rs`; `SeedRunner`, `SeedSession`,
-   `SeedCheckpoint`, `SeedOutcome` in `world/elaboration.rs` sharing
-   `prompt_body` with the elaborator; `ControllerWork::Seed`,
-   `WorkLane::Seed`, `controller_work.v10`; `qualifies` is phase-free and
-   `require_answer` owns the Draft refusal; `world_create.v2` carries
-   `targets` and `jurisdictions` and `world_create.v1` is refused;
-   `world.seed` in the Eve schema, arm, button, descriptor, and card; the
-   `world.advance_time` schema gap is closed with a totality test;
-   `GHOSTLIGHT_SEED_VAULT_ROOT` (`runtime.rs:1689`) is required and the
-   runner refuses to seed without it; one session per invocation. Baseline
-   at `697ed07`: 339 test functions in `world/*.rs`, 390 crate source, plus
-   one integration test. The two pre-cut questions are answered in source:
-   the scale intent arrives through `world_create.v2`, and Draft seeding
-   answers nothing by design with `require_answer` as the refusal owner.
+   The seed producer is landed and proven on the road. Tip is `b7042f1`
+   (seed producer recorded, Soul follow-ups closed) over `491b06e` (the six
+   seed-lane follow-ups) and `697ed07` (Soul), both pushed; no worktree
+   exists. The seeded live smoke passed on the twelfth run, 2026-09-05:
+   from the Kalsa Public vault (`GHOSTLIGHT_SEED_VAULT_ROOT` at
+   `F:\Projects\Kalsa\Kalsa`, root label "Low Sere"), one seed session
+   authored six qualified persons into Low Sere in one round (39 s),
+   deficit 6 to 0; the world activated with nine subjects and six
+   boundaries; three ticks of eight singleton cells each (95 to 123 s) with
+   the seeded people speaking to each other by name. The run block and the
+   "Seeded run, 2026-09-05" table are in `notes/local-live-smoke.md`; the
+   evidence record is dated 2026-09-05T17:36Z; the ontology "Current
+   mechanism" gained a "Rules the road imposed" paragraph (line 256).
 
-   Soul verdict: integrate with follow-ups. Two real defects (a junction
-   escape in the Vault walk; absolute paths in `VaultError` reaching the
-   owner receipt), one overclaim (Active is refused once, by the runner,
-   not twice), one fixture dependence (boundaries come from obligations,
-   not goals), one lifetime gap (`VerifiedPrincipalEvidence` has no
-   expiry). Correction to a claim carried since pass 8: `derive_id` does
-   not have two call sites; production has eight. The invariant that
-   steers is that no pass adds a `derive_id` call site, and every ID still
-   derives by sha256 over world, command, and handle.
+   Uncommitted on main at the time of writing, to be committed once the
+   unit suite is green: the road fixes in `runtime.rs`, `controllers.rs`,
+   `elaboration.rs`, `patch.rs`, `tool_schema.rs` (strict-schema `anyOf`
+   and typed const tags with an offline test over both lanes; connector
+   `REQUEST_EXPIRY` 300 s and `RESPONSE_TIMEOUT` 900 s; content-addressed
+   `provider_request_id`; `SEED_ROUND_BUDGET` 24 with budget-end submitting
+   a non-empty draft; `SEED_INSTRUCTIONS` pacing and obligation rule; the
+   brief prints ids and a placement rule; classified faults and cell
+   outcomes logged at info; the live harness asserts a landed seed and
+   speech, counts `NoProgress` as landed, continues through `Rejected`),
+   plus the ontology paragraph, the smoke note, and the evidence record.
+   Baseline at that tree: 342 test functions in `world/*.rs`, 394 crate
+   source, plus one integration test. The connector is stopped after the
+   run; the smoke substrate at `F:\Projects\Ghostlight-smoke` stays.
 
-   In flight, not landed: `hands/seed-followups` in the worktree
-   `F:\Projects\Ghostlight-seedfu`, branched from `697ed07` with no commits
-   yet: canonicalize during the Vault walk and refuse reparse points;
-   `VaultError` without absolute paths; `SeedPort` phase-bound revision
-   submission; obligations in the brief; evidence `valid_until` enforced at
-   `submit_principal`; a receipt-cap guard. Main carries uncommitted doc
-   edits by a docs worker under coordinator ownership: the ontology
-   "Current mechanism" seed paragraph, the mvp doc, the Delvehold boundary
-   doc, the Eve native interface doc, the multiplayer intention doc, plan
-   step 8 marked landed, and a seeded run block in
-   `notes/local-live-smoke.md`. That run block currently points
-   `GHOSTLIGHT_SEED_VAULT_ROOT` at the fixture path
-   `F:\Projects\Ghostlight-smoke\vault` (line 58); the coordinator will run
-   the seeded road against Kalsa Public with root label "Low Sere" and
-   correct the note. The seeded road run follows the follow-ups.
+   Next seams, in the order the operator has so far implied: the outbound
+   consumer response batch with the non-loopback CultMesh lease; then the
+   deployment gate below. The elaborator swarm's ideas still sit on
+   `slot/<world>/<title>/<stamp>` branches and the four ledger directories;
+   their integration remains owed and deferred (item 2).
 
    Decisions the operator owns: (a) whether a refused coupled constituent
    may re-submit once inside the same tick, to be taken with the
    submitted-versus-committed number in hand; (b) the authority for an
-   owner-only Eve `world.run_tick` command, which is not built. Behind the seeded road run wait the outbound
-   consumer response batch with the non-loopback CultMesh lease and the
-   deployment gate below.
+   owner-only Eve `world.run_tick` command, which is not built.
    The ten specs and maps (`imagination-pass1..10.md`,
    `modeling-pass1..10.md`) remain in the session scratchpad only and are
    history, not steering; the docs own the design.
