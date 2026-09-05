@@ -245,10 +245,19 @@ Opportunities bind to a `ScopeDigest` over one `scope_components` owner
 incident routes, own holdings, own dependencies, known fact ids, controlled
 channels, own commitments; never `now`, occupancy, forum state, or another
 subject's knowledge); a proposal commits at any later revision with unchanged scope and is
-rejected with `KernelError::ScopeChanged` otherwise. State schema is
-`ghostlight.world_state.consumer.v1`, commit schema
-`ghostlight.world_commit.consumer.v1`, controller work `controller_work.v9`;
-earlier stores are refused. Ghostlight owns a conserved narrative ledger;
+rejected with `KernelError::ScopeChanged` otherwise. `SubjectSnapshot` carries
+the subject's whole `ScopeComponents` rather than five duplicate projected
+fields; the narrative lane's persisted before-state is those components
+frozen at turn time, and the delta shown to the Interpreter on a re-lowering
+is the typed component diff against the fresh components plus the
+`Overheard` rows later than the turn's bound revision — never a raw
+knowledge row, and never another subject's snapshot. The re-lowering's
+provider request is a distinct round (`interpreter_round`) with its own
+content-addressed request id, so it cannot collide with the first lowering's
+request. State schema is `ghostlight.world_state.consumer.v1`, commit schema
+`ghostlight.world_commit.consumer.v1`, controller work `controller_work.v11`,
+Persona turn receipt `ghostlight.persona_turn_receipt.v3`; earlier stores and
+earlier rows are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
 Step 6 of the plan is complete. The next seam is the seeded live run against a
 real Vault and a real connector, then the outbound consumer response.
@@ -700,7 +709,16 @@ Interpreter, so its refused proposal stays refused. A narrative subject in a
 singleton cell is interrupted rather than silently refused: the lane
 re-lowers once through the Interpreter with the delta the subject could
 perceive since its turn, bound to the fresh digest, at the cost of one
-Interpreter inference and no Persona re-run (plan step 9, in design).
+Interpreter inference and no Persona re-run. Three rules govern it: the
+kernel's own scope digest is the one detector of a moved scope for the
+narrative lane, because the lane's own early checks are gone and only the
+operational lane keeps its early check; an author is named only for speech
+the subject actually heard (`Overheard`), and every other change that moved
+the digest — a transfer, a route closing, a revocation, a vacated office, a
+routine's `due` rolling, an elaborator patch, a consumer document — is
+anonymous by construction; and a turn is lowered at most twice, because a
+re-lowered binding carries the one it replaced (`interrupted_from`) and no
+progression arm gives that one a successor.
 
 ## What stays open
 

@@ -139,3 +139,16 @@ the kernel, and each became a rule the tree now carries:
 
 The harness fails when no seed patch lands or nobody speaks, so a run that
 reaches the provider and gets nothing back is a failed run.
+
+## Interrupted cell
+
+Not yet run. The next road run must show a subject whose room changed mid-turn
+getting one re-lowering, not a lost turn: its scope digest moves between the
+Persona's prose and the commit, the runner re-lowers the same prose once
+through the Interpreter against the fresh opportunity, and the resulting
+`ghostlight.persona_turn_receipt.v3` row carries `interrupted_from` pointing
+at the binding it replaced. The log line for that cell must carry the subject
+and both scope digests — the one the turn was bound to and the one it was
+re-lowered against — and the operator log must show the act once, not once
+per lowering. This has not been exercised against a live provider; the eight
+tests landed for step 9 all run against fixture ports.

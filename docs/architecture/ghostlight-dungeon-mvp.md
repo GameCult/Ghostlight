@@ -46,10 +46,10 @@ mutation.
 6. Qualitative interest, political diversity, prose quality, name repetition,
    and actor counts are evaluation evidence. They are never mutation gates.
 7. A failed or interrupted inference (infrastructure interruption of an
-   inference; a world-scope interruption between intent and commit is plan
-   step 9 and is narrated, not discarded) leaves no half-owned world state.
-   Recovery starts from the last committed revision and derives pending work
-   again.
+   inference; a world-scope interruption between intent and commit is
+   narrated, not discarded — the narrative lane re-lowers the same prose once
+   against the fresh scope) leaves no half-owned world state. Recovery starts
+   from the last committed revision and derives pending work again.
 
 ## Canonical owner
 
@@ -472,7 +472,18 @@ commit the planner derives a fresh queue. Parallel inference may speculate on
 one snapshot; a proposal binds to the scope digest of the components its
 verification reads, commits at any later revision where that digest is
 unchanged, and is rejected with a typed `ScopeChanged` when it is not. Nothing
-is rebased and nothing is discarded merely because the world moved elsewhere.
+is rebased and nothing is discarded merely because the world moved elsewhere:
+for the narrative lane, `ScopeChanged` on submit is one re-lowering, not a
+lost turn. The runner re-lowers the same prose once through the Interpreter
+against a fresh opportunity, with the delta the subject could perceive since
+its bound revision (`Overheard` rows plus the typed component diff); the
+Persona is never re-run, and the renewed binding carries the one it replaced
+(`interrupted_from`) so a second interruption of the same turn ends it rather
+than lowering it again. Eve reports an overtaken turn through
+`ControllerHttpResult::Interrupted`, which renders in the command result as
+`denied` today; the owner sees the interruption itself — subject, both scope
+digests, the persona prose and receipt, and the untranslatable gap — in that
+result's receipt text, not in the state name.
 
 Resolution covers and grouping are compute budgets for projection. They do not
 create, merge, fission, or qualify identities. Every active subject is in the

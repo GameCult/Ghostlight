@@ -378,34 +378,56 @@ serve as an ontology or completeness gate. No live Delvehold acceptance run is
 admitted before the focused suite passes and the old writers are structurally
 unable to override the aggregate.
 
-### 9. Interruption — in design
+### 9. Interruption — landed
 
 Objective: a subject whose world moved between forming an intent and
 committing it is interrupted, not silently refused, and the interruption is
 narrated from what it could perceive.
 
-Current mechanism: a proposal binds to the scope digest of the components its
-verification reads; when another commit moves that digest before the proposal
-lands, the kernel refuses it with `ScopeChanged`. The narrative lane spent
-three inferences (projector, persona, interpreter) on that proposal and
-records nothing of what overtook it. Coupled subjects in one tick therefore
-pay for acts the kernel will refuse, and nothing in the vocabulary lets an
-act be cut short by an event.
+Landed mechanism: a proposal binds to the scope digest of the components its
+verification reads; when another commit moves that digest before the
+proposal lands, the kernel refuses it with `ScopeChanged`. The narrative
+lane's own early scope checks are deleted — the kernel's `exact_opportunity`
+is the sole detector for the narrative lane, and `ScopeChanged` on submit is
+the one event with one handler, `submit_narrative`'s `interrupted` arm. The
+Persona is never re-run: on `ScopeChanged` the runner re-lowers the same
+prose once through the Interpreter against a fresh opportunity
+(`select_fresh`/`select_scope`), with a second input — an `Interruption`
+carrying the fresh `ScopeComponents`, the `Overheard` rows later than the
+turn's bound revision, and the discarded first-lowering evidence. The
+re-lowered turn is `PersonaTurn::record`ed fresh, never mutated, and carries
+`interrupted_from` pointing at the binding it replaced; a turn whose binding
+already carries `interrupted_from` is not re-lowered again — it ends as
+`NarrativeRun::Interrupted`, structurally, because no progression arm gives a
+re-lowered binding a second successor. A fresh opportunity whose granted set
+has lost `Speak` also ends the turn as `Interrupted` rather than spending an
+Interpreter round on an invocation it cannot express. Interruption is
+defined by the digest, so a neighbour's act, a clock tick that rolls a
+routine's `due`, an elaborator patch, a consumer document, and a world-scale
+event are one case, indistinguishable at the handler. Schema bumps:
+`controller_work.v11` and `ghostlight.persona_turn_receipt.v3`; prior rows
+are refused, not migrated. Eve reports the interruption through
+`ControllerHttpResult::Interrupted`, which renders as `denied` in the
+command result today; the receipt text carries the subject, both scope
+digests, the persona prose and receipt digest, and the untranslatable gap.
 
-Intended change: the Persona is never re-run. On `ScopeChanged` the runner
-re-lowers once through the Interpreter with a second input, the delta the
-subject perceived since its turn, rendered from the same components the
-digest reads and the same fan-out that bounds knowledge; the re-lowered
-proposal is an ordinary `ExerciseDecision` bound to the fresh digest. One
-re-lowering per subject per tick. Interruption is defined by the digest, so
-a neighbour's act, a clock tick, an elaborator patch, a consumer document,
-and a world-scale event are one case.
-
-Cut line: no new kernel arm, bundle, or joint command; no second Persona
+Cut line held: no new kernel arm, bundle, or joint command; no second Persona
 turn; no event log reaches a controller; the delta shown to the Interpreter
-is exactly what the membrane already lets the subject perceive, proven by a
-leakage test. The joint-per-room Interpreter was considered and rejected:
-the room is not the unit of interruption, the digest is.
+is exactly what the membrane already lets the subject perceive
+(`Overheard` is built only from `Told` rows with a resolved speaker label,
+never a raw knowledge row). The joint-per-room Interpreter was considered and
+rejected: the room is not the unit of interruption, the digest is.
+
+What is undone: Fork D (a fresh opportunity with no `Speak` ends the turn
+without spending inference) has no test exercising it — the eight landed
+tests cover a co-located neighbour's speech and an anonymous owner-patch
+move, not that branch. Transfer, route-closing, and elaborator-patch causes
+are not separately tested; only the generic "a change with no author" case
+stands in for them. There is no end-to-end `drive_cover_tick` test carrying
+an interruption through a real tick. No road run has exercised this against
+a live provider — none exists yet for the narrative lane's re-lowering
+round, so the next road run is the first evidence of `interpreter_round`
+producing a real second request.
 
 ### 10. Witnessed events over a place subtree — in design
 
