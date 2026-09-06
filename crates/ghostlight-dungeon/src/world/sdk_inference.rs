@@ -352,7 +352,7 @@ const SDK_RECEIPT_SCHEMA: &str = "ghostlight.sdk_inference_receipt.v1";
 /// one. It holds even with no SDK port built, so a `claude-`prefixed lane on a
 /// connector-only deployment is refused at open instead of quietly reaching the
 /// wrong backend.
-pub(super) const DEFAULT_SDK_MODEL_PREFIX: &str = "claude";
+pub(crate) const DEFAULT_SDK_MODEL_PREFIX: &str = "claude";
 
 /// Everything the SDK sidecar needs to open, gathered so `open_inference` takes
 /// a binding rather than reading the environment itself.
@@ -675,6 +675,10 @@ impl InferencePort for SdkInferencePort {
     }
 
     async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
+        // Above every gate, so the lend is reclaimed on every exit path. An
+        // oracle left behind by a refused invocation would keep a dead lane's
+        // tool-result owner alive under a request id nothing will call again.
+        let oracle = self.take_oracle(&request.invocation.request.request_id);
         if request.invocation.caller_runtime_id != self.caller_runtime_id {
             return Err(InferenceFault::integrity_violation(
                 "persisted inference caller does not match the configured runtime identity",
@@ -685,7 +689,6 @@ impl InferencePort for SdkInferencePort {
                 "persisted inference invocation expired before it reached the SDK sidecar",
             ));
         }
-        let oracle = self.take_oracle(&request.invocation.request.request_id);
         let has_tools = !request.invocation.request.tools.is_empty();
         let turn_cap = match (&oracle, has_tools) {
             (Some(oracle), true) => oracle.remaining_rounds(),
@@ -1516,13 +1519,10 @@ mod tests {
         assert!(fault.integrity_was_violated(), "{fault:?}");
     }
 
-    /// Soul: a lend whose `infer` is refused before the oracle is taken leaves
-    /// the entry in the map. The port's own doc says the entry is removed on
-    /// every exit path of `infer`; the caller-identity and expiry gates run
-    /// before the take, so it is not. Bounded by the request id's uniqueness
-    /// and therefore not a leak that grows, but the claim as written is false.
+    /// Soul: the take runs above every gate, so a refused `infer` reclaims the
+    /// lend rather than leaving a dead lane's tool-result owner in the map.
     #[tokio::test]
-    async fn soul_a_lend_refused_before_the_take_is_not_reclaimed() {
+    async fn soul_a_lend_refused_before_the_query_is_still_reclaimed() {
         let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
         let stale = prepare_invocation(TEST_RUNTIME, 1_000, prose_request("Say something true."))
             .expect("the stale invocation builds");
@@ -1531,13 +1531,12 @@ mod tests {
             Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
         );
         assert!(port.infer(stale.clone()).await.is_err());
-        assert_eq!(
-            port.oracles.lock().unwrap().len(),
-            1,
-            "the expiry gate now reclaims the lend; update this test's claim"
+        assert!(
+            port.oracles.lock().unwrap().is_empty(),
+            "the expiry gate left the lend behind"
         );
 
-        // A caller-identity mismatch does the same.
+        // A caller-identity mismatch reclaims it too.
         let other = SdkInferencePort::new(ScriptedLink::new(Vec::new()), "ghostlight-other");
         other.lend_tool_results(
             &stale,
@@ -1548,7 +1547,10 @@ mod tests {
             .await
             .expect_err("a foreign caller's invocation ran");
         assert!(fault.integrity_was_violated(), "{fault:?}");
-        assert_eq!(other.oracles.lock().unwrap().len(), 1);
+        assert!(
+            other.oracles.lock().unwrap().is_empty(),
+            "the caller-identity gate left the lend behind"
+        );
 
         // A completed query does reclaim its own lend.
         let link = ScriptedLink::new(vec![SidecarFrame::Output {

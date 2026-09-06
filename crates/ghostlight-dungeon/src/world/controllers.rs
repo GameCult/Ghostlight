@@ -6749,7 +6749,7 @@ mod tests {
     #[async_trait]
     impl InferencePort for RecordingPort {
         fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            fixture_prepared(request)
+            fixture_prepared_inference(request)
         }
 
         async fn infer(
@@ -6783,25 +6783,6 @@ mod tests {
             assert!(!self.seen.swap(true, Ordering::SeqCst));
             self.output.lock().unwrap().take().unwrap()
         }
-    }
-
-    fn fixture_prepared(request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-        let native_request_sha256 = Sha256::digest(
-            serde_json::to_vec(&request).map_err(|error| InferenceFault::new(error.to_string()))?,
-        )
-        .into();
-        let purpose = request.purpose;
-        let invocation = CodexTransportInvocation::new(
-            "ghostlight-controller-test",
-            4_102_444_800_000,
-            native_request_sha256,
-            request.provider,
-        )
-        .map_err(|error| InferenceFault::new(error.to_string()))?;
-        Ok(PreparedInference {
-            purpose,
-            invocation,
-        })
     }
 
     /// The digest-bound components a fixture subject carries. A literal rather
@@ -6868,7 +6849,7 @@ mod tests {
             opportunity: opportunity.clone(),
             granted,
             completed,
-            invocation: fixture_prepared(request).unwrap(),
+            invocation: fixture_prepared_inference(request).unwrap(),
         })
     }
 
@@ -7522,7 +7503,7 @@ mod tests {
             opportunity: opportunity.clone(),
             granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
             completed,
-            invocation: fixture_prepared(request).unwrap(),
+            invocation: fixture_prepared_inference(request).unwrap(),
         })
     }
 
@@ -8571,7 +8552,7 @@ mod tests {
     #[async_trait]
     impl InferencePort for ElaborationScript {
         fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            fixture_prepared(request)
+            fixture_prepared_inference(request)
         }
 
         async fn infer(
@@ -11785,7 +11766,7 @@ mod tests {
     #[async_trait]
     impl InferencePort for InterruptingPort {
         fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            fixture_prepared(request)
+            fixture_prepared_inference(request)
         }
 
         async fn infer(
@@ -12458,7 +12439,7 @@ mod tests {
                 opportunity: moved.clone(),
                 granted: vec![speak_snapshot(moved.affordance_ids[0])],
                 completed: Vec::new(),
-                invocation: fixture_prepared(
+                invocation: fixture_prepared_inference(
                     interpreter_request(command_id, 1, "interpreter", Vec::new()).unwrap(),
                 )
                 .unwrap(),

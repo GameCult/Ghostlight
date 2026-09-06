@@ -13,11 +13,11 @@ use crate::{
         AffordanceId, CONSUMER_BODY_LIMIT, CellRun, CommandBody, CommandId, ConnectorBinding,
         ConsumerPort, ConsumerRegistry, ControllerError, ControllerModels, ControllerPendingReason,
         ControllerRunner, ControllerWorkCustody, Cover, CoverBudget, CreateJurisdictionIntent,
-        CreateWorldIntent, DecisionInvocation, DecisionOpportunity, KernelError, MailboxError,
-        NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId, SdkBinding, SeedOutcome,
-        SeedPort, Statement, SubjectKind, SubmissionDisposition, SubmitReceipt, TickMinutes,
-        VaultEvidenceSource, WorldMailbox, WorldPhase, WorldSnapshot, derive_cover,
-        open_controller_work, open_inference,
+        CreateWorldIntent, DEFAULT_SDK_MODEL_PREFIX, DecisionInvocation, DecisionOpportunity,
+        KernelError, MailboxError, NarrativeRun, OperationalRun, PrincipalCommandIntent,
+        PrincipalId, SdkBinding, SeedOutcome, SeedPort, Statement, SubjectKind,
+        SubmissionDisposition, SubmitReceipt, TickMinutes, VaultEvidenceSource, WorldMailbox,
+        WorldPhase, WorldSnapshot, derive_cover, open_controller_work, open_inference,
     },
 };
 use anyhow::{Context, bail, ensure};
@@ -443,7 +443,7 @@ fn open_controller(
             sidecar_entry,
             caller_runtime_id: runtime_id.to_owned(),
             model_prefix: std::env::var("GHOSTLIGHT_SDK_MODEL_PREFIX")
-                .unwrap_or_else(|_| "claude".into()),
+                .unwrap_or_else(|_| DEFAULT_SDK_MODEL_PREFIX.into()),
         });
     let inference = open_inference(connector, sdk, &models)?;
     let work = open_controller_work(service_root.join("controller-work.cc"))?;
@@ -3634,7 +3634,7 @@ mod tests {
                     sidecar_entry,
                     caller_runtime_id: runtime_id,
                     model_prefix: std::env::var("GHOSTLIGHT_SDK_MODEL_PREFIX")
-                        .unwrap_or_else(|_| "claude".into()),
+                        .unwrap_or_else(|_| DEFAULT_SDK_MODEL_PREFIX.into()),
                 }),
             models: ControllerModels {
                 projector: env("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL"),

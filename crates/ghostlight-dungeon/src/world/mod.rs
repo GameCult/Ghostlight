@@ -55,7 +55,7 @@ use patch::{
 };
 #[cfg(test)]
 pub(crate) use patch::{AuthorityGrantRef, AuthorityTargetRef};
-pub(crate) use sdk_inference::SdkBinding;
+pub(crate) use sdk_inference::{DEFAULT_SDK_MODEL_PREFIX, SdkBinding};
 pub(crate) use vault::VaultEvidenceSource;
 // Test-only narrowing of the controller organ's inference and work-store
 // seams, so `runtime`'s own spec tests can drive `ControllerRunner` over a
