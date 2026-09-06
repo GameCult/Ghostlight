@@ -427,37 +427,73 @@ are teardown evidence. Plan step 6 is ten implementation passes, all landed.
    CodexConnector repo, because CodexConnector is a deliberate fork of
    Codex cut so that Epiphany stops compiling Codex, and nothing goes into
    it. The Modeling map `modeling-claude-connector.md` was stopped mid-map
-   and is void even if partial text is on disk. The operator gave the go ("Wait for the research, then build the SDK
-   port"), the research landed as an evidence record (2026-09-05T22:25Z,
-   `research-agent-sdk.md`: system prompt replaceable, built-ins
-   strippable, `CLAUDE.md` loading stoppable, tool calls returnable
-   unexecuted), and the design is decided: plan step 11 opened at
-   `634e81f`, map `modeling-sdk-port.md`, spec `imagination-sdk-port.md`
-   with eleven forks, all in the session scratchpad. Hands is cutting in
-   the worktree `F:\Projects\Ghostlight-sdkport` on `hands/sdk-port` from
-   `634e81f`, no commits yet at the time of writing. Load-bearing facts of
-   the design: the organ is a Ghostlight `InferencePort` implementation
-   over the Claude Agent SDK, a stopgap transport and not a harness
-   inversion, with the subscription credential held by Claude Code and
-   never read, copied, or logged by Ghostlight. Checkpoint integrity is
-   transport-agnostic, so the port prepares the same `PreparedInference`
-   and no second identity scheme exists. The sidecar (`sidecar/claude-sdk`,
-   TypeScript, Node 24 pinned, msgpack frames over stdio, one persistent
-   child per runner) never computes a tool result: Rust answers every call
-   through a per-lane `ToolResultOracle` that is the evaluator's own fold,
-   so divergence is impossible by construction, and the oracle carries the
-   lane's remaining round budget (seed and elaboration share a purpose).
-   Rust owns transcript lowering and fault disposition. Routing is per lane
-   by `GHOSTLIGHT_SDK_MODEL_PREFIX` (default `claude`) in `open_inference`;
-   `ControllerRunner::open` becomes injection-only and `with_test_ports`
-   collapses into it. The receipt is the SDK's message, a named liability.
-   Persona and Projector are plain completions; the tool lanes
-   (Interpreter, operational, elaborator, seed, grouped) ride the oracle;
-   if a lane cannot, it stays on Codex at no code cost because models are
-   per lane. The harnessed-Persona idea is withdrawn (the Persona turn is
-   non-agentic). Credential steps for the operator (install the Claude Code
-   CLI, log in or `setup-token`) belong in the smoke runbook; nothing is
-   installed locally yet. Main is untouched; the cut lives in the worktree. Facts that
+   and is void even if partial text is on disk. Plan step 11, the Claude SDK inference port, is integrated. Tip is
+   `0cbbf77` (step-11 docs: plan, system map, smoke runbook Claude SDK
+   route with operator prerequisites, mvp paragraph) over `4f424a5` and
+   `0fa411b` (Soul), `2ff1d43` (sidecar), `b150b5e` (Rust port), `708d621`
+   (collapse of the two prepared-identity bodies and two constructors), on
+   `feb603b`. The push follows a background crate test and the branch read
+   `ahead 6` at the time of writing; `git status -sb` is the witness. The
+   research is the evidence record at 2026-09-05T22:25Z. What landed:
+   `world/sdk_inference.rs` (`SdkInferencePort`, `RoutedInferencePort`,
+   `SidecarLink` with `ChildProcessLink`, the `SidecarFrame` kinds,
+   `lower_query`, `assemble_output`, `SdkInferenceReceipt`);
+   `ToolResultOracle` (`controllers.rs:247`) with `InterpreterOracle`,
+   `GroupedOracle`, `OperationalOracle`, and `ElaborationOracle`
+   (`elaboration.rs:976`) over three extracted folds; `prepare_invocation`
+   (`controllers.rs:287`) shared by both ports; `open_inference` routing by
+   `GHOSTLIGHT_SDK_MODEL_PREFIX` (default `claude`), `GHOSTLIGHT_SDK_SIDECAR`
+   with no default (opt-in; the plan sentence claiming a default was
+   corrected on main), `GHOSTLIGHT_CONTROLLER_CREDENTIAL` required only
+   with a connector binding; `ControllerRunner::open` injection-only,
+   `with_test_ports` gone; `sidecar/claude-sdk` pinned to
+   `@anthropic-ai/claude-agent-sdk` 0.3.261, `@msgpack/msgpack` 3.1.3,
+   `zod` 4.5.4, Node `>=24 <25`; no credential anywhere in the tree.
+   Baseline at `0cbbf77`: 408 test functions in `world/*.rs`, 461 crate
+   source, 13 in `ghostlight-persona-projection`, 24 sidecar, plus one
+   integration test (Soul ran 407 / 455 / 13 / 24).
+
+   Soul verdict: integrate with follow-ups. The port is a retirable
+   stopgap: deleting `world/sdk_inference.rs`, the sidecar package,
+   `SdkBinding`, and the two `GHOSTLIGHT_SDK_*` variables removes it
+   whole, while `prepare_invocation`, `ToolResultOracle` with its folds,
+   and `RoutedInferencePort` survive as improvements. Decisive finding:
+   the SDK Zod layer strips unknown keys and refuses missing required
+   fields before the handler runs, so a `claude` lane would silently admit
+   what the connector refuses and quarantine what the connector records as
+   a gap. Ruling: one validator on both transports, the Rust decoder; the
+   sidecar hands raw arguments through.
+
+   The step-11 follow-ups are integrated at `d72c246` over `a791d55` and
+   `3514d76`; the merge was confirmed by SHA equality before the worktree
+   was removed, and the push followed the test result line. `a791d55`
+   (sidecar): loose schema conversion, every property optional and unknown
+   keys kept, so Rust is the one validator on the SDK transport too;
+   `protocol_violation` kept with its remaining causes stated;
+   `resultFault` exported and tested. `d72c246` (Rust): `take_oracle`
+   above the gates; the four `pub(crate)` widenings reverted (two
+   `private_interfaces` warnings return, matching the three siblings that
+   already warn); `fixture_prepared` collapsed; `DEFAULT_SDK_MODEL_PREFIX`
+   used in `runtime.rs`. `3514d76` made the source-scanning test
+   line-ending neutral. Residual liability, stated in plan step 11: a
+   property whose value has the wrong type reaches Rust as absent, not as
+   the wrong value, because the SDK derives the advertised schema from the
+   same object and refuses a dynamic pass-through. Baseline at `d72c246`:
+   408 test functions in `world/*.rs`, 461 crate source, 13 in
+   `ghostlight-persona-projection`, 29 sidecar, plus one integration test
+   (Hands ran 407 / 455 / 13 / 29). Step 11 is complete with its
+   follow-ups. Nothing is in flight and no worktree exists.
+
+   Gating lesson, the second lapse of this session: `3514d76` was pushed
+   red for ten minutes because the coordinator acted on a test run before
+   reading its result line. Rule: the push follows the result line, never
+   the launch; the first lapse was the chained `merge --ff-only` and
+   `branch -D` that deleted a branch pointer. Both are recorded here and
+   nowhere else durable.
+
+   Next: the operator installs the Claude Code CLI and logs in (or
+   `setup-token`) per `notes/local-live-smoke.md`, then the first SDK road
+   run, which is the belief-changing record still owed. Facts that
    survive the overturn: Ghostlight binds Codex-named types in four files
    (`controllers.rs:25`, `elaboration.rs:31`, `patch.rs:20`,
    `tool_schema.rs:9`) behind one `InferencePort::prepare`

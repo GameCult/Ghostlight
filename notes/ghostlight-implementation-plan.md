@@ -599,6 +599,17 @@ extended, keeping `RoutedInferencePort` and swapping what it routes to.
 Rejected: a backend inside CodexConnector (a deliberately isolated Codex
 fork).
 
+One validator on both transports: the sidecar's schema conversion is loose
+(every property optional, unknown keys kept), so the arguments the model
+emitted reach Rust's decoder unstripped and a refused argument is the gap
+the evaluator already records, on the SDK path exactly as on the connector
+path. Residual: a property whose value has the wrong type reaches Rust as
+absent rather than as the wrong value, because the SDK derives the
+advertised tool schema from the same object and refuses a dynamic
+pass-through; the decoder reports it as missing. The result-subtype mapping
+(`error_max_turns` is an output; every error subtype a named fault) is
+tested in the sidecar without a credential.
+
 ## Subtraction budget
 
 Prefer deletion, collapse, or reuse before adding surfaces. The replacement
