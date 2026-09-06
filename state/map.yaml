@@ -369,8 +369,8 @@ current_status:
     step 9 interruption, step 10 witness, step 11 Claude SDK inference port
     with its follow-ups (one validator on both transports, Rust's decoder).
     Chronology, SHAs, and per-pass facts live in git history, the evidence
-    ledger, notes/fresh-workspace-handoff.md item 1, and the docs; do not
-    rebuild them here. Next, in the operator's order: (a) install the Claude
+    ledger and its archive, and the docs; do not rebuild them here or in
+    the handoff. Next, in the operator's order: (a) install the Claude
     Code CLI and log in per notes/local-live-smoke.md "Claude SDK route",
     then the first SDK-backed road run (the belief-changing record owed);
     (b) the outbound consumer response batch with a non-loopback CultMesh
@@ -382,6 +382,5 @@ current_status:
     holds a credential. The elaborator swarm is drained and handed off
     (C:\Users\Meta\.claude\worlds\README.md); its 98 ideas sit on slot/*
     branches, unmerged; integration into the vaults is owed and deferred.
-    Gating rules learned this session: merge, confirm the tip by SHA, then
-    delete; push only after reading the test result line.
+    Gating rules are in the handoff's re-entry warnings.
   gestalt_population: Gestalt Personas own shared population baselines; persistent member deltas own named individuality; WorldKernel materialization and approval-gated fission preserve lineage and identity. Materialisation/folding changes only representation and the exact member delta, advances resolution epoch, and retires the old cover; it has no Gestalt-wide effect authority. Selected actionable member exceptions are mandatory Projector perspective owners, so aggregation cannot silently erase their decision. Presence projection is limited to nearby active leaves and exact-location dormant members, includes reciprocal player relationship evidence, and may propose an earned cast without committing it. Simulation cells are derived covers only.
