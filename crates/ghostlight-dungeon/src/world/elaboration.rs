@@ -1961,6 +1961,155 @@ mod tests {
             .expect("the loop finalizes")
     }
 
+    /// Soul, the authoring lanes. The oracle's answer for every call in an
+    /// adversarial sequence — a decode failure, a duplicate terminal, a call
+    /// after the terminal, an unknown tool name, and an oversized argument —
+    /// equals the string the evaluator recomputes for the same transcript, and
+    /// the budget the oracle reports is the budget the evaluator still allows.
+    #[test]
+    fn soul_the_elaboration_oracle_equals_its_evaluator_under_adversarial_calls() {
+        let oversized = serde_json::json!({
+            "detail": "\u{e9}bris ".repeat(4_096),
+            "unexpected": true,
+        });
+        let calls: Vec<(&str, Value)> = vec![
+            ("declare_place", place("shed")),
+            (
+                RECORD_GAP_PATCH_TOOL,
+                serde_json::json!({"detail": "no route"}),
+            ),
+            // A `detail` that is not a string: a decode failure under the
+            // lane's own rule.
+            (RECORD_GAP_PATCH_TOOL, serde_json::json!({"detail": 5})),
+            (RECORD_GAP_PATCH_TOOL, oversized),
+            // A declaration whose arguments the kernel vocabulary refuses.
+            ("declare_place", serde_json::json!({"handle": "shed"})),
+            ("speek", serde_json::json!({})),
+        ];
+        let round_zero = output(calls.clone());
+
+        let mut oracle = ElaborationOracle::new(&[], SEED_ROUND_BUDGET);
+        assert_eq!(oracle.remaining_rounds() as usize, SEED_ROUND_BUDGET);
+        let answers: Vec<String> = calls
+            .iter()
+            .map(|(name, arguments)| oracle.answer(name, &arguments.to_string()).unwrap())
+            .collect();
+        let ElaborationLoopEvaluation::Continue { conversation } =
+            evaluate_elaboration_loop("prompt", &[], &[round_zero.clone()], SEED_ROUND_BUDGET)
+                .unwrap()
+        else {
+            panic!("a round with no submit finalized")
+        };
+        let recomputed: Vec<String> = conversation
+            .iter()
+            .filter_map(|item| match item {
+                CodexInputItem::ToolResult { output, .. } => Some(output.clone()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(answers, recomputed);
+
+        // The terminal, the duplicate terminal, and a call after it. The
+        // evaluator finalizes that round, so its strings are compared against
+        // the same fold run straight through both rounds.
+        let terminal: Vec<(&str, Value)> = vec![
+            (SUBMIT_PATCH_TOOL, serde_json::json!({})),
+            (SUBMIT_PATCH_TOOL, serde_json::json!({})),
+            (
+                RECORD_GAP_PATCH_TOOL,
+                serde_json::json!({"detail": "after"}),
+            ),
+        ];
+        let mut seeded = ElaborationOracle::new(&[round_zero.clone()], SEED_ROUND_BUDGET);
+        assert_eq!(
+            seeded.remaining_rounds() as usize,
+            SEED_ROUND_BUDGET - 1,
+            "the oracle offered a turn cap the evaluator would not allow"
+        );
+        let seeded_answers: Vec<String> = terminal
+            .iter()
+            .map(|(name, arguments)| seeded.answer(name, &arguments.to_string()).unwrap())
+            .collect();
+        assert_eq!(
+            seeded_answers,
+            vec![
+                "patch submitted".to_string(),
+                "a submit is already captured".to_string(),
+                "gap recorded".to_string(),
+            ]
+        );
+        let mut replayed = ElaborationOracle::new(&[], SEED_ROUND_BUDGET);
+        let straight: Vec<String> = calls
+            .iter()
+            .chain(terminal.iter())
+            .map(|(name, arguments)| replayed.answer(name, &arguments.to_string()).unwrap())
+            .collect();
+        assert_eq!(straight[..calls.len()], answers[..]);
+        assert_eq!(straight[calls.len()..], seeded_answers[..]);
+
+        // The evaluator finalizes the terminal round, and what it captured is
+        // what the oracle's own fold accumulated over the same calls.
+        let mut draft = WorldPatch {
+            declarations: Vec::new(),
+            operations: Vec::new(),
+            evidence: Vec::new(),
+        };
+        let mut gaps = Vec::new();
+        let mut submitted = false;
+        for (name, arguments) in calls.iter().chain(terminal.iter()) {
+            apply_tool_call(
+                name,
+                &arguments.to_string(),
+                &mut draft,
+                &mut gaps,
+                &mut submitted,
+            );
+        }
+        let ElaborationLoopEvaluation::Complete { capture } = evaluate_elaboration_loop(
+            "prompt",
+            &[],
+            &[round_zero, output(terminal)],
+            SEED_ROUND_BUDGET,
+        )
+        .unwrap() else {
+            panic!("a submitted round stayed open")
+        };
+        assert!(capture.submitted && submitted);
+        assert_eq!(capture.draft.declarations, draft.declarations);
+        assert_eq!(capture.gaps, gaps);
+    }
+
+    /// Soul: the elaboration lane and the seed lane share one
+    /// `InferencePurpose`, so the only thing that distinguishes their turn caps
+    /// is the budget the oracle was built with.
+    #[test]
+    fn soul_the_two_authoring_lanes_carry_different_budgets_on_the_oracle() {
+        assert_ne!(ELABORATION_ROUND_BUDGET, SEED_ROUND_BUDGET);
+        assert_eq!(
+            ElaborationOracle::new(&[], ELABORATION_ROUND_BUDGET).remaining_rounds() as usize,
+            ELABORATION_ROUND_BUDGET
+        );
+        assert_eq!(
+            ElaborationOracle::new(&[], SEED_ROUND_BUDGET).remaining_rounds() as usize,
+            SEED_ROUND_BUDGET
+        );
+        // A spent budget reports zero rather than wrapping. Zero is outside the
+        // sidecar's accepted turn-cap range, so an exhausted lane that somehow
+        // reached the port is refused rather than quietly granted a turn.
+        let spent: Vec<InferenceOutput> = (0..ELABORATION_ROUND_BUDGET + 2)
+            .map(|_| {
+                output(vec![(
+                    RECORD_GAP_PATCH_TOOL,
+                    serde_json::json!({"detail": "x"}),
+                )])
+            })
+            .collect();
+        assert_eq!(
+            ElaborationOracle::new(&spent, ELABORATION_ROUND_BUDGET).remaining_rounds(),
+            0
+        );
+    }
+
     /// Each declaration tool call appends a `Declaration`; each operation call
     /// appends a `ComponentOp`; `submit` is terminal.
     #[test]

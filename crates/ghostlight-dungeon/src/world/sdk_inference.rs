@@ -1377,6 +1377,488 @@ mod tests {
         );
     }
 
+    /// Soul: the port's `prepare` is `prepare_invocation` and nothing else, so
+    /// everything but the expiry stamp is identical to what any other port
+    /// would have written for the same request.
+    #[test]
+    fn soul_the_sdk_port_prepares_the_identity_prepare_invocation_owns() {
+        let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
+        let request = prose_request("Say something true.");
+        let through_port = port.prepare(request.clone()).expect("the port prepares");
+        let through_owner = prepare_invocation(TEST_RUNTIME, 4_102_444_800_000, request.clone())
+            .expect("the owner prepares");
+        assert_eq!(through_port.purpose, through_owner.purpose);
+        assert_eq!(
+            through_port.invocation.request,
+            through_owner.invocation.request
+        );
+        assert_eq!(
+            through_port.invocation.native_request_sha256,
+            through_owner.invocation.native_request_sha256
+        );
+        assert_eq!(
+            through_port.invocation.provider_request_sha256,
+            through_owner.invocation.provider_request_sha256
+        );
+        assert_eq!(
+            through_port.invocation.caller_runtime_id,
+            through_owner.invocation.caller_runtime_id
+        );
+        assert_eq!(
+            through_port.invocation.request.request_id,
+            through_owner.invocation.request.request_id
+        );
+    }
+
+    /// Soul: a frame naming a kind or a fault reason the wire does not carry is
+    /// refused by the codec, before the driver can act on a half-understood
+    /// frame. The closed enums are the gate, and this proves they are closed.
+    #[tokio::test]
+    async fn soul_an_unknown_kind_or_fault_reason_is_refused_at_read_frame() {
+        #[derive(Serialize)]
+        struct Bogus<'a> {
+            kind: &'a str,
+            query_id: u64,
+            reason: &'a str,
+            detail: &'a str,
+        }
+        async fn refuse(body: Vec<u8>) -> InferenceFault {
+            let mut framed = (body.len() as u32).to_be_bytes().to_vec();
+            framed.extend_from_slice(&body);
+            let mut reader = std::io::Cursor::new(framed);
+            link_fault(
+                read_frame(&mut reader)
+                    .await
+                    .expect_err("an unknown shape decoded"),
+            )
+        }
+        // A kind that is not on the wire.
+        let unknown_kind = rmp_serde::to_vec_named(&Bogus {
+            kind: "hallucination",
+            query_id: 1,
+            reason: "rate_limited",
+            detail: "",
+        })
+        .unwrap();
+        assert!(refuse(unknown_kind).await.integrity_was_violated());
+        // A fault whose reason the disposition table does not name. Nothing may
+        // reach `into_fault` that the table has no row for.
+        let unknown_reason = rmp_serde::to_vec_named(&Bogus {
+            kind: "fault",
+            query_id: 1,
+            reason: "the_world_should_be_quarantined",
+            detail: "",
+        })
+        .unwrap();
+        assert!(refuse(unknown_reason).await.integrity_was_violated());
+    }
+
+    /// Soul: every reason the sidecar may name maps to the disposition the
+    /// plan's table assigns, and no TypeScript-named reason can quarantine the
+    /// world except the three the sidecar's own gates raise.
+    #[test]
+    fn soul_every_sidecar_reason_carries_its_named_disposition() {
+        use SidecarFaultReason::*;
+        for reason in [RateLimited, Overloaded, ServerError, ApiTimeout] {
+            let fault = reason.into_fault("detail".into());
+            assert!(
+                !fault.recovery_required() && !fault.integrity_was_violated(),
+                "{reason:?} was not retryable"
+            );
+        }
+        for reason in [
+            AuthenticationFailed,
+            OrgNotAllowed,
+            BillingError,
+            InvalidRequest,
+            ModelNotFound,
+            MaxOutputTokens,
+            MaxBudgetUsd,
+            ExecutionError,
+            Unknown,
+        ] {
+            assert!(
+                reason.into_fault("detail".into()).recovery_required(),
+                "{reason:?} was not recovery-required"
+            );
+        }
+        for reason in [ProtocolViolation, ToolRegistrationFailed, TurnCapRefused] {
+            assert!(
+                reason.into_fault("detail".into()).integrity_was_violated(),
+                "{reason:?} did not violate integrity"
+            );
+        }
+    }
+
+    /// Soul: the lend gate refuses both mismatches, in both directions.
+    #[tokio::test]
+    async fn soul_a_lend_that_does_not_match_the_request_is_refused() {
+        // A tool request with no oracle lent.
+        let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
+        let prepared = seed_prepared(&port, "Author the shortfall.");
+        let fault = port
+            .infer(prepared)
+            .await
+            .expect_err("a tool request ran without its lane's owner");
+        assert!(fault.integrity_was_violated(), "{fault:?}");
+
+        // A prose request with an oracle lent.
+        let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
+        let prepared = prose_prepared(&port, "Say something true.");
+        port.lend_tool_results(
+            &prepared,
+            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+        );
+        let fault = port
+            .infer(prepared)
+            .await
+            .expect_err("a prose request ran with a tool-result owner");
+        assert!(fault.integrity_was_violated(), "{fault:?}");
+    }
+
+    /// Soul: a lend whose `infer` is refused before the oracle is taken leaves
+    /// the entry in the map. The port's own doc says the entry is removed on
+    /// every exit path of `infer`; the caller-identity and expiry gates run
+    /// before the take, so it is not. Bounded by the request id's uniqueness
+    /// and therefore not a leak that grows, but the claim as written is false.
+    #[tokio::test]
+    async fn soul_a_lend_refused_before_the_take_is_not_reclaimed() {
+        let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
+        let stale = prepare_invocation(TEST_RUNTIME, 1_000, prose_request("Say something true."))
+            .expect("the stale invocation builds");
+        port.lend_tool_results(
+            &stale,
+            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+        );
+        assert!(port.infer(stale.clone()).await.is_err());
+        assert_eq!(
+            port.oracles.lock().unwrap().len(),
+            1,
+            "the expiry gate now reclaims the lend; update this test's claim"
+        );
+
+        // A caller-identity mismatch does the same.
+        let other = SdkInferencePort::new(ScriptedLink::new(Vec::new()), "ghostlight-other");
+        other.lend_tool_results(
+            &stale,
+            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+        );
+        let fault = other
+            .infer(stale)
+            .await
+            .expect_err("a foreign caller's invocation ran");
+        assert!(fault.integrity_was_violated(), "{fault:?}");
+        assert_eq!(other.oracles.lock().unwrap().len(), 1);
+
+        // A completed query does reclaim its own lend.
+        let link = ScriptedLink::new(vec![SidecarFrame::Output {
+            query_id: 1,
+            events: Vec::new(),
+            receipt: material(),
+        }]);
+        let port = SdkInferencePort::new(link, TEST_RUNTIME);
+        let prepared = seed_prepared(&port, "Author the shortfall.");
+        port.lend_tool_results(
+            &prepared,
+            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+        );
+        port.infer(prepared).await.expect("the empty query returns");
+        assert!(port.oracles.lock().unwrap().is_empty());
+    }
+
+    /// Soul: the receipt is bound to the request without carrying a word of it.
+    /// Nothing the model was shown, and nothing it wrote, may reach a digest
+    /// that is persisted as provenance.
+    #[test]
+    fn soul_the_receipt_carries_no_prompt_or_tool_text() {
+        let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
+        let secret = "the rain has teeth tonight";
+        let prepared = prose_prepared(&port, secret);
+        let receipt = SdkInferenceReceipt {
+            schema_id: SDK_RECEIPT_SCHEMA.to_owned(),
+            request_id: prepared.invocation.request.request_id.clone(),
+            conversation_id: prepared.invocation.request.conversation_id.clone(),
+            caller_runtime_id: prepared.invocation.caller_runtime_id.clone(),
+            native_request_sha256: prepared.invocation.native_request_sha256,
+            provider_request_sha256: prepared.invocation.provider_request_sha256,
+            model: prepared.invocation.request.model.clone(),
+            session_id: material().session_id,
+            result_uuid: material().result_uuid,
+            subtype: material().subtype,
+            stop_reason: material().stop_reason,
+            num_turns: material().num_turns,
+            assistant_message_uuids: material().assistant_message_uuids,
+            assistant_request_ids: material().assistant_request_ids,
+            usage: material().usage,
+            total_cost_usd_estimate: material().total_cost_usd_estimate,
+        };
+        let bytes = rmp_serde::to_vec_named(&receipt).unwrap();
+        let rendered = String::from_utf8_lossy(&bytes);
+        assert!(!rendered.contains(secret), "the receipt carries the prompt");
+        assert!(
+            !rendered.contains(&prepared.invocation.request.instructions),
+            "the receipt carries the instructions"
+        );
+        // And the digest the output carries is the digest of exactly this.
+        let output = assemble_output(
+            &prepared,
+            vec![SidecarEvent::Text { text: "ok".into() }],
+            material(),
+            &[],
+        )
+        .unwrap();
+        assert_eq!(
+            output.receipt_digest,
+            format!("sha256:{:x}", Sha256::digest(&bytes))
+        );
+        // A different stop reason is a different receipt.
+        let mut stopped = material();
+        stopped.stop_reason = Some("max_tokens".into());
+        assert_ne!(
+            output.receipt_digest,
+            assemble_output(
+                &prepared,
+                vec![SidecarEvent::Text { text: "ok".into() }],
+                stopped,
+                &[]
+            )
+            .unwrap()
+            .receipt_digest
+        );
+    }
+
+    /// Soul: the order of the dispatched calls is part of the gate, not just
+    /// the set. A sidecar that answered the same two calls in the other order
+    /// put a different string in front of the model than the evaluator will
+    /// recompute.
+    #[tokio::test]
+    async fn soul_dispatched_calls_out_of_order_are_refused() {
+        let calls = [
+            ("call-0", RECORD_GAP_PATCH_TOOL, r#"{"detail":"one"}"#),
+            ("call-1", RECORD_GAP_PATCH_TOOL, r#"{"detail":"two"}"#),
+        ];
+        let mut outbound: Vec<SidecarFrame> = calls
+            .iter()
+            .map(|(id, name, arguments)| tool_call_frame(id, name, arguments))
+            .collect();
+        outbound.push(SidecarFrame::Output {
+            query_id: 1,
+            events: vec![
+                dispatched_event(calls[1].0, calls[1].1, calls[1].2),
+                dispatched_event(calls[0].0, calls[0].1, calls[0].2),
+            ],
+            receipt: material(),
+        });
+        let link = ScriptedLink::new(outbound);
+        let port = SdkInferencePort::new(link, TEST_RUNTIME);
+        let prepared = seed_prepared(&port, "Author the shortfall.");
+        port.lend_tool_results(
+            &prepared,
+            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+        );
+        let fault = port
+            .infer(prepared)
+            .await
+            .expect_err("a reordered dispatch produced an output");
+        assert!(fault.integrity_was_violated(), "{fault:?}");
+    }
+
+    /// Soul: the lowering's own gate table, every row.
+    #[test]
+    fn soul_lower_query_refuses_the_shapes_the_gate_table_names() {
+        let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
+        // `lower_query` reads the provider request off the prepared value, so
+        // the shapes it must refuse are written there directly. Nothing here
+        // asserts a digest; the identity tests own that.
+        let build = |input: Vec<CodexInputItem>, effort: Option<&str>| {
+            let mut prepared = prose_prepared(&port, "Say something true.");
+            prepared.invocation.request.input = input;
+            prepared.invocation.request.reasoning_effort = effort.map(str::to_owned);
+            prepared
+        };
+        let user = |text: &str| CodexInputItem::UserText { text: text.into() };
+
+        // Every effort the SDK admits passes; anything else is refused.
+        for effort in SDK_EFFORT_LEVELS {
+            assert!(lower_query(1, &build(vec![user("go")], Some(effort)), 1).is_ok());
+        }
+        let fault = lower_query(1, &build(vec![user("go")], Some("blistering")), 1)
+            .expect_err("an unmapped effort lowered");
+        assert!(fault.integrity_was_violated(), "{fault:?}");
+
+        // The first item must be user text, and it must be the only one.
+        for input in [
+            vec![CodexInputItem::AssistantText { text: "no".into() }],
+            Vec::new(),
+            vec![user("go"), user("again")],
+        ] {
+            let fault = lower_query(1, &build(input, None), 1)
+                .expect_err("a request that opens wrong lowered");
+            assert!(fault.integrity_was_violated(), "{fault:?}");
+        }
+
+        // A prior round renders exactly as the sidecar's fixed header expects.
+        let frame = lower_query(
+            9,
+            &build(
+                vec![
+                    user("go"),
+                    CodexInputItem::AssistantText {
+                        text: "thinking".into(),
+                    },
+                    CodexInputItem::ToolCall {
+                        call_id: "call-0".into(),
+                        name: "record_gap".into(),
+                        arguments: "{}".into(),
+                    },
+                    CodexInputItem::ToolResult {
+                        call_id: "call-0".into(),
+                        output: "gap recorded".into(),
+                    },
+                ],
+                Some("medium"),
+            ),
+            4,
+        )
+        .expect("a multi-item request lowers");
+        let SidecarFrame::Query {
+            query_id,
+            prompt,
+            transcript,
+            turn_cap,
+            effort,
+            ..
+        } = frame
+        else {
+            panic!("the lowering produced something other than a query")
+        };
+        assert_eq!(
+            (query_id, turn_cap, effort.as_deref()),
+            (9, 4, Some("medium"))
+        );
+        assert_eq!(prompt, "go");
+        assert_eq!(
+            transcript,
+            vec![
+                "assistant: thinking".to_string(),
+                "tool call record_gap: {}".to_string(),
+                "tool result: gap recorded".to_string(),
+            ]
+        );
+    }
+
+    /// Soul: an unroutable model is refused at `infer` as well as at open, and
+    /// an SDK-only deployment needs no connector and therefore no credential.
+    #[tokio::test]
+    async fn soul_routing_refuses_rather_than_falling_back() {
+        assert_eq!(DEFAULT_SDK_MODEL_PREFIX, "claude");
+        let connector_only = RoutedInferencePort::new(
+            Some(Arc::new(SdkInferencePort::new(
+                ScriptedLink::new(Vec::new()),
+                TEST_RUNTIME,
+            )) as Arc<dyn InferencePort>),
+            None,
+            DEFAULT_SDK_MODEL_PREFIX,
+        );
+        assert!(connector_only.route(TEST_MODEL).is_none());
+        let prepared =
+            prepare_invocation(TEST_RUNTIME, 4_102_444_800_000, prose_request("Say it.")).unwrap();
+        for fault in [
+            connector_only
+                .prepare(prose_request("Say it."))
+                .expect_err("an unroutable model prepared"),
+            connector_only
+                .infer(prepared)
+                .await
+                .expect_err("an unroutable model inferred"),
+        ] {
+            assert!(fault.integrity_was_violated(), "{fault:?}");
+            assert!(fault.to_string().contains(TEST_MODEL));
+        }
+
+        // An SDK-only deployment opens with no connector binding at all, so no
+        // credential path is read.
+        let directory = tempfile::tempdir().unwrap();
+        let entry = directory.path().join("main.js");
+        std::fs::write(&entry, "// sidecar").unwrap();
+        assert!(
+            open_inference(
+                None,
+                Some(SdkBinding {
+                    sidecar_entry: entry,
+                    caller_runtime_id: TEST_RUNTIME.into(),
+                    model_prefix: DEFAULT_SDK_MODEL_PREFIX.into(),
+                }),
+                &models(TEST_MODEL),
+            )
+            .is_ok()
+        );
+    }
+
+    /// Soul: Ghostlight holds no credential, so no credential name appears in
+    /// the code that opens, routes, or drives this transport.
+    #[test]
+    fn soul_no_credential_name_appears_in_the_ports_own_source() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        // Assembled from halves so this test's own source is not a match.
+        let needles: [String; 8] = [
+            format!(".{}", "credentials.json"),
+            format!("CLAUDE_CODE{}", "_OAUTH_TOKEN"),
+            format!(".{}", "claude.json"),
+            format!("apiKey{}", "Helper"),
+            format!("USER{}", "PROFILE"),
+            format!("home{}", "_dir"),
+            format!("GHOSTLIGHT_SDK{}", "_TOKEN"),
+            format!("GHOSTLIGHT_SDK{}", "_CREDENTIAL"),
+        ];
+        let mut sources = Vec::new();
+        for file in [
+            "world/sdk_inference.rs",
+            "world/controllers.rs",
+            "runtime.rs",
+        ] {
+            let text = std::fs::read_to_string(root.join(file)).expect("the source reads");
+            // Only the production half; a test may name what production must
+            // not.
+            let production = text
+                .split_once("\n#[cfg(test)]\nmod tests {")
+                .map(|(before, _)| before.to_owned())
+                .unwrap_or(text);
+            for needle in &needles {
+                assert!(
+                    !production.contains(needle.as_str()),
+                    "{file} names {needle}"
+                );
+            }
+            // `ANTHROPIC_API_KEY` is named once, in the port's doc comment, as
+            // the condition under which this port is deleted. It must appear
+            // nowhere that could read it.
+            let anthropic = format!("ANTHROPIC{}", "_");
+            for line in production.lines() {
+                if line.contains(anthropic.as_str()) {
+                    assert!(
+                        line.trim_start().starts_with("///") || line.trim_start().starts_with("//"),
+                        "{file} names an ANTHROPIC variable outside a comment: {line}"
+                    );
+                }
+            }
+            sources.push((file, production));
+        }
+        // The one credential path that does exist belongs to the connector and
+        // is read only when a connector binding is built.
+        assert_eq!(
+            sources[1].1.matches("from_secret_file").count(),
+            2,
+            "the connector key is read somewhere new"
+        );
+        // The sidecar child inherits the ambient environment and is given none.
+        assert!(
+            !sources[0].1.contains(".env("),
+            "the port sets a child environment"
+        );
+        assert!(!sources[0].1.contains("env_clear"));
+    }
+
     /// The Rust half of the sidecar's schema-grammar pair (spec test 17):
     /// publishes every `parameters_json` the two catalogs actually emit, so the
     /// sidecar's closed converter is tested against real strings rather than

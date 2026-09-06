@@ -7089,6 +7089,415 @@ mod tests {
         assert!(prepared_matches_request(&sdk_side, &build(), command_id, 0));
     }
 
+    /// Soul: every request builder, prepared exactly as `SdkInferencePort`
+    /// prepares one, satisfies `prepared_matches_request` — and the
+    /// content-addressed request id is the same value the connector's own
+    /// preparation produces, so a checkpoint written under one transport is
+    /// still the same identity under the other.
+    #[test]
+    fn soul_an_sdk_prepared_request_passes_every_builder_identity() {
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let granted = vec![speak_snapshot(opportunity.affordance_ids[0])];
+        let constituents = vec![ConstituentWork {
+            subject: opportunity.scope.subject_id,
+            opportunity: opportunity.clone(),
+            granted: granted.clone(),
+            command_id: CommandId::new(),
+        }];
+        let command_id = CommandId::new();
+        let prompt = || {
+            vec![CodexInputItem::UserText {
+                text: "Hold the bridge.".into(),
+            }]
+        };
+        let model = "claude-opus-5";
+        assert!(
+            canonical_model(model),
+            "the SDK-routed model is not a canonical controller model"
+        );
+        let builders: Vec<(InferencePurpose, usize, Box<dyn Fn() -> InferenceRequest>)> = vec![
+            (
+                InferencePurpose::Projector,
+                0,
+                Box::new(move || {
+                    projector_request(command_id, model, "Render it.".into()).unwrap()
+                }),
+            ),
+            (
+                InferencePurpose::Persona,
+                0,
+                Box::new(move || persona_request(command_id, model, "Speak.".into()).unwrap()),
+            ),
+            (
+                InferencePurpose::Interpreter,
+                0,
+                Box::new(move || interpreter_request(command_id, 0, model, prompt()).unwrap()),
+            ),
+            (
+                InferencePurpose::OperationalAgent,
+                1,
+                Box::new({
+                    let granted = granted.clone();
+                    move || operational_request(command_id, 1, model, &granted, prompt()).unwrap()
+                }),
+            ),
+            (
+                InferencePurpose::GroupedAgent,
+                2,
+                Box::new({
+                    let constituents = constituents.clone();
+                    move || grouped_request(command_id, 2, model, &constituents, prompt()).unwrap()
+                }),
+            ),
+        ];
+        // The two clock stamps the two ports would make. Identity must not
+        // depend on either of them.
+        for (purpose, round, build) in builders {
+            let sdk_side = prepare_invocation("ghostlight-sdk-runtime", 4_102_444_800_000, build())
+                .expect("the SDK-shaped preparation builds");
+            let connector_side =
+                prepare_invocation("ghostlight-sdk-runtime", 4_000_000_000_000, build())
+                    .expect("the connector-shaped preparation builds");
+            assert_eq!(sdk_side.purpose, purpose);
+            assert!(
+                prepared_matches_request(&sdk_side, &build(), command_id, round),
+                "{purpose:?} did not match its own request"
+            );
+            assert_eq!(
+                sdk_side.invocation.request.request_id,
+                connector_side.invocation.request.request_id,
+                "{purpose:?}'s content-addressed id moved between transports"
+            );
+            assert_eq!(
+                sdk_side.invocation.native_request_sha256,
+                connector_side.invocation.native_request_sha256
+            );
+            assert_eq!(
+                sdk_side.invocation.provider_request_sha256,
+                connector_side.invocation.provider_request_sha256
+            );
+            assert_ne!(
+                sdk_side.invocation.expires_at_unix_ms,
+                connector_side.invocation.expires_at_unix_ms
+            );
+        }
+    }
+
+    /// Soul: a checkpoint carrying an SDK-prepared invocation still validates.
+    /// `integrity_is_valid` names no transport, and this is the one variant
+    /// whose fixture already exists, so the claim is pinned where it is
+    /// cheapest to falsify.
+    #[test]
+    fn soul_a_checkpoint_carrying_an_sdk_prepared_invocation_is_valid() {
+        let opportunity = fixture_opportunity(ControllerMode::NarrativePersona);
+        let turn = fixture_persona_turn(&opportunity, "I say, \"Hold.\"");
+        let command_id = CommandId::new();
+        let InterpreterLoopEvaluation::Continue { conversation } =
+            evaluate_interpreter_loop(&turn, "Translate.", &[]).unwrap()
+        else {
+            panic!("an empty interpreter transcript finalized")
+        };
+        let request = interpreter_request(command_id, 0, "claude-opus-5", conversation).unwrap();
+        let work = ControllerWork::Narrative(NarrativeCheckpoint::InterpreterInFlight {
+            command_id,
+            turn: turn.clone(),
+            interpreter_prompt: "Translate.".into(),
+            components: fixture_components(),
+            interruption: None,
+            opportunity: opportunity.clone(),
+            granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
+            completed: Vec::new(),
+            invocation: prepare_invocation("ghostlight-sdk-runtime", 4_102_444_800_000, request)
+                .unwrap(),
+        });
+        assert!(
+            work.integrity_is_valid(),
+            "an SDK-prepared invocation failed a checkpoint's own identity check"
+        );
+    }
+
+    /// A tool argument long enough that nothing on either path can be carrying
+    /// it in a fixed buffer, and shaped so it cannot decode for any lane.
+    fn oversized_arguments() -> String {
+        format!("{{\"detail\":\"{}\"", "\u{e9}bris ".repeat(4_096))
+    }
+
+    /// Soul, interpreter lane. Every adversarial call the transport can carry —
+    /// a decode failure, a duplicate state-changing call, an unknown tool name,
+    /// and an argument far past any plausible buffer — is answered by the oracle
+    /// with exactly the string the evaluator recomputes for the same transcript,
+    /// call for call and in order.
+    #[test]
+    fn soul_the_interpreter_oracle_equals_its_evaluator_under_adversarial_calls() {
+        let opportunity = fixture_opportunity(ControllerMode::NarrativePersona);
+        let source = "I say, \"The rain has teeth tonight.\"";
+        let turn = fixture_persona_turn(&opportunity, source);
+        let speech = "The rain has teeth tonight.";
+        let start = source.find(speech).unwrap();
+        let span = json!({
+            "source_start_byte": start,
+            "source_end_byte": start + speech.len(),
+        })
+        .to_string();
+        // A span past the end of the prose: `get(..)` yields nothing and the
+        // capture is of the empty string, which is a real answer and not a
+        // decode failure.
+        let past_end = json!({
+            "source_start_byte": source.len() + 1,
+            "source_end_byte": source.len() + 9,
+        })
+        .to_string();
+        let oversized = oversized_arguments();
+        let calls: Vec<(&str, &str, &str)> = vec![
+            ("call-0", INTERPRETER_SPEAK_TOOL, span.as_str()),
+            // The duplicate: `captured_speech` is already set, so this one is a
+            // gap under a different string.
+            ("call-1", INTERPRETER_SPEAK_TOOL, span.as_str()),
+            ("call-2", INTERPRETER_SPEAK_TOOL, past_end.as_str()),
+            ("call-3", INTERPRETER_RECORD_GAP_TOOL, "not json at all"),
+            ("call-4", INTERPRETER_RECORD_GAP_TOOL, oversized.as_str()),
+            ("call-5", "speek", "{}"),
+            (
+                "call-6",
+                INTERPRETER_SPEAK_TOOL,
+                "{\"source_start_byte\":0}",
+            ),
+        ];
+        let mut oracle = InterpreterOracle::new(&turn, &[]);
+        assert_eq!(oracle.remaining_rounds() as usize, TOOL_STEP_BUDGET);
+        let answers: Vec<String> = calls
+            .iter()
+            .map(|(_, name, arguments)| oracle.answer(name, arguments).unwrap())
+            .collect();
+        let output = oracle_round(&calls, "soul-interpreter");
+        let InterpreterLoopEvaluation::Continue { conversation } =
+            evaluate_interpreter_loop(&turn, "Translate the prose.", &[output.clone()]).unwrap()
+        else {
+            panic!("a non-terminal interpreter round finalized")
+        };
+        assert_eq!(answers, tool_results(&conversation));
+
+        // Terminality and the remaining budget agree: the evaluator still has
+        // rounds left, and the oracle seeded from the same evidence reports
+        // exactly the rounds the evaluator would still allow.
+        let seeded = InterpreterOracle::new(&turn, &[output.clone()]);
+        assert_eq!(seeded.remaining_rounds() as usize, TOOL_STEP_BUDGET - 1);
+
+        // The one call the evaluator treats as terminal is terminal for the
+        // oracle's budget too: a round carrying it finalizes.
+        let finishing = vec![("call-7", FINISH_INTERPRETATION_TOOL, "{}")];
+        let InterpreterLoopEvaluation::Complete { .. } = evaluate_interpreter_loop(
+            &turn,
+            "Translate the prose.",
+            &[output, oracle_round(&finishing, "soul-interpreter-end")],
+        )
+        .unwrap() else {
+            panic!("a finished interpretation stayed open")
+        };
+    }
+
+    /// Soul, operational lane. The lane's one round-local reset is the only
+    /// thing the oracle could get wrong, so it is checked in both directions:
+    /// a duplicate terminal inside one round is a gap, the same call opening a
+    /// fresh round is a capture, and the transcript the oracle refuses is the
+    /// transcript the evaluator refuses.
+    #[test]
+    fn soul_the_operational_oracle_equals_its_evaluator_under_adversarial_calls() {
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let granted = vec![speak_snapshot(opportunity.affordance_ids[0])];
+        let speak = granted[0].entry.kind.0.clone();
+        let oversized = oversized_arguments();
+        let calls: Vec<(&str, &str, &str)> = vec![
+            ("call-0", RECORD_NEED_TOOL, r#"{"detail":"no route"}"#),
+            ("call-1", RECORD_NEED_TOOL, "not json at all"),
+            ("call-2", RECORD_NEED_TOOL, oversized.as_str()),
+            // A granted tool whose arguments do not decode is a need, so the
+            // round is still open after it.
+            ("call-3", speak.as_str(), "not json at all"),
+            ("call-4", "speek", "{}"),
+        ];
+        let mut oracle = OperationalOracle::new(&granted, &[]);
+        assert_eq!(oracle.remaining_rounds() as usize, TOOL_STEP_BUDGET);
+        let answers: Vec<String> = calls
+            .iter()
+            .map(|(_, name, arguments)| oracle.answer(name, arguments).unwrap())
+            .collect();
+        let round_zero = oracle_round(&calls, "soul-operational");
+        let OperationalLoopEvaluation::Continue { conversation } =
+            evaluate_operational_loop("Hold the bridge.", &granted, &[round_zero.clone()]).unwrap()
+        else {
+            panic!("a non-terminal operational round finalized")
+        };
+        assert_eq!(answers, tool_results(&conversation));
+
+        // The duplicate terminal, and the same call in a new round. One fold,
+        // two round boundaries, two different strings.
+        let speech = json!({ "text": "Hold the bridge." }).to_string();
+        let mut inside = OperationalOracle::new(&granted, &[]);
+        assert_eq!(
+            inside.answer(&speak, &speech).unwrap(),
+            "invocation captured"
+        );
+        assert_eq!(
+            inside.answer(&speak, &speech).unwrap(),
+            "one terminal choice is already captured"
+        );
+        let terminal_round =
+            oracle_round(&[("call-5", speak.as_str(), speech.as_str())], "soul-op-t");
+        let mut across =
+            OperationalOracle::new(&granted, &[round_zero.clone(), terminal_round.clone()]);
+        assert_eq!(
+            across.answer(&speak, &speech).unwrap(),
+            "invocation captured",
+            "the round boundary did not clear the terminal choice"
+        );
+        assert_eq!(across.remaining_rounds() as usize, TOOL_STEP_BUDGET - 2);
+
+        // A call after a terminal that contradicts it: the oracle refuses, and
+        // so does the evaluator re-deriving the same transcript. The port's
+        // abort therefore fires on exactly the transcripts re-derivation would
+        // have hard-errored on.
+        let mut contradicted = OperationalOracle::new(&granted, &[]);
+        contradicted.answer(&speak, &speech).unwrap();
+        assert!(matches!(
+            contradicted.answer(FINISH_WITHOUT_PROPOSAL_TOOL, "{}"),
+            Err(ControllerError::ProviderContract { .. })
+        ));
+        let contradicting_round = oracle_round(
+            &[
+                ("call-6", speak.as_str(), speech.as_str()),
+                ("call-7", FINISH_WITHOUT_PROPOSAL_TOOL, "{}"),
+            ],
+            "soul-op-contradiction",
+        );
+        assert!(matches!(
+            evaluate_operational_loop("Hold the bridge.", &granted, &[contradicting_round]),
+            Err(ControllerError::ProviderContract { .. })
+        ));
+    }
+
+    /// Soul, grouped lane. Two handles, so a terminal for one leaves the round
+    /// open and the whole adversarial sequence — including a call after that
+    /// handle's terminal — stays observable through the evaluator's own
+    /// conversation.
+    #[test]
+    fn soul_the_grouped_oracle_equals_its_evaluator_under_adversarial_calls() {
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let constituents = vec![
+            ConstituentWork {
+                subject: opportunity.scope.subject_id,
+                opportunity: opportunity.clone(),
+                granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
+                command_id: CommandId::new(),
+            },
+            ConstituentWork {
+                subject: opportunity.scope.subject_id,
+                opportunity: opportunity.clone(),
+                granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
+                command_id: CommandId::new(),
+            },
+        ];
+        let speak = constituents[0].granted[0].entry.kind.0.clone();
+        let handle_zero = format!("c0__{speak}");
+        let speech = json!({ "text": "Hold the bridge." }).to_string();
+        let oversized = oversized_arguments();
+        let calls: Vec<(&str, &str, &str)> = vec![
+            ("call-0", "c99__carry", "{}"),
+            ("call-1", "c0__record_need", r#"{"detail":"no route"}"#),
+            ("call-2", "c1__record_need", "not json at all"),
+            ("call-3", "c1__record_need", oversized.as_str()),
+            // Handle zero takes its terminal, then keeps calling.
+            ("call-4", handle_zero.as_str(), speech.as_str()),
+            ("call-5", handle_zero.as_str(), speech.as_str()),
+            ("call-6", "c0__finish_without_proposal", "{}"),
+            ("call-7", "c1__notgranted", "{}"),
+        ];
+        let mut oracle = GroupedOracle::new(&constituents, &[]);
+        assert_eq!(oracle.remaining_rounds() as usize, CELL_TOOL_STEP_BUDGET);
+        // The one call with no answer at all, taken on a throwaway oracle so
+        // the ordered comparison below is not disturbed.
+        let mut refusing = GroupedOracle::new(&constituents, &[]);
+        for (_, name, arguments) in &calls[..6] {
+            refusing.answer(name, arguments).unwrap();
+        }
+        assert!(matches!(
+            refusing.answer("c0__finish_without_proposal", "{}"),
+            Err(ControllerError::ProviderContract { .. })
+        ));
+        let open: Vec<(&str, &str, &str)> = calls
+            .iter()
+            .filter(|(id, _, _)| *id != "call-6")
+            .copied()
+            .collect();
+        let answers: Vec<String> = open
+            .iter()
+            .map(|(_, name, arguments)| oracle.answer(name, arguments).unwrap())
+            .collect();
+        let round_zero = oracle_round(&open, "soul-grouped");
+        let GroupedLoopEvaluation::Continue { conversation } =
+            evaluate_grouped_loop("Decide together.", &constituents, &[round_zero.clone()])
+                .unwrap()
+        else {
+            panic!("a grouped round with one handle still open finalized")
+        };
+        assert_eq!(answers, tool_results(&conversation));
+
+        // And the evaluator refuses the transcript the oracle refuses.
+        let contradicting = oracle_round(
+            &[
+                ("call-8", handle_zero.as_str(), speech.as_str()),
+                ("call-9", "c0__finish_without_proposal", "{}"),
+            ],
+            "soul-grouped-contradiction",
+        );
+        assert!(matches!(
+            evaluate_grouped_loop("Decide together.", &constituents, &[contradicting]),
+            Err(ControllerError::ProviderContract { .. })
+        ));
+
+        // Seeding: the fold carries across rounds and the budget shrinks with
+        // it, so `maxTurns` can never exceed what the evaluator would allow.
+        let seeded = GroupedOracle::new(&constituents, &[round_zero.clone(), round_zero]);
+        assert_eq!(
+            seeded.remaining_rounds() as usize,
+            CELL_TOOL_STEP_BUDGET - 2
+        );
+    }
+
+    /// Soul: the arguments the SDK path can hand an evaluator are the stripped
+    /// ones the SDK's own validation produced, and the connector path refuses
+    /// what that validation quietly admits. Both strings are recorded here so
+    /// the divergence is a fact rather than a guess (see the sidecar's
+    /// `soul-zod-liability.test.ts` for the other half of the chain).
+    #[test]
+    fn soul_a_property_outside_the_schema_is_a_need_on_the_connector_path() {
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let granted = vec![speak_snapshot(opportunity.affordance_ids[0])];
+        let mut fold = OperationalFold::new();
+        // What a model writes, and what the connector's decoder does with it.
+        assert_eq!(
+            operational_tool_result(
+                &granted,
+                &mut fold,
+                RECORD_NEED_TOOL,
+                r#"{"detail":"no route","extra":true}"#,
+            )
+            .unwrap(),
+            "arguments recorded as a need",
+        );
+        // What the SDK's validation hands the oracle for the same call.
+        assert_eq!(
+            operational_tool_result(
+                &granted,
+                &mut fold,
+                RECORD_NEED_TOOL,
+                r#"{"detail":"no route"}"#,
+            )
+            .unwrap(),
+            "need recorded",
+        );
+    }
+
     fn narrative_interpreter_in_flight(
         command_id: CommandId,
         opportunity: &DecisionOpportunity,
