@@ -12,6 +12,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { FrameReader, encodeFrame, type SidecarFrame } from "../src/frames.ts";
+import { QuerySession, SidecarFault } from "../src/main.ts";
 import { encode } from "@msgpack/msgpack";
 
 const entry = fileURLToPath(new URL("../dist/main.js", import.meta.url));
@@ -45,6 +46,30 @@ function framed(body: Uint8Array): Uint8Array {
   out.set(body, 4);
   return out;
 }
+
+test("a tool result for a call the session never issued is a protocol violation", async () => {
+  const sent: SidecarFrame[] = [];
+  const session = new QuerySession(4, (frame) => sent.push(frame));
+  const pending = session.ask("record_gap", { detail: "no route" });
+  assert.deepEqual(session.dispatches, [
+    { call_id: "c0", name: "record_gap", arguments: '{"detail":"no route"}' },
+  ]);
+  assert.throws(
+    () => session.answer("c9", "gap recorded"),
+    (error: unknown) =>
+      error instanceof SidecarFault && error.reason === "protocol_violation",
+  );
+  session.answer("c0", "gap recorded");
+  assert.equal(await pending, "gap recorded");
+  // And a second answer for a call already resolved is refused too, so one
+  // dispatch can never be answered twice.
+  assert.throws(
+    () => session.answer("c0", "gap recorded"),
+    (error: unknown) =>
+      error instanceof SidecarFault && error.reason === "protocol_violation",
+  );
+  assert.equal(sent.length, 1);
+});
 
 test("a frame kind the sidecar does not accept is a protocol violation", async (t) => {
   if (!existsSync(entry)) {
