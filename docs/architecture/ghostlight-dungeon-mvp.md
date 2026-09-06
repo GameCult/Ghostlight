@@ -433,6 +433,20 @@ Inference receipts are operational telemetry in a separate store. The kernel
 does not require a provider, model tier, stage name, output hash, or verifier
 receipt to authorize world state.
 
+Every controller lane reaches one `InferencePort`, but that port now routes
+to either of two transports chosen by the lane's configured model name: the
+CodexConnector daemon peer, unchanged, or `SdkInferencePort`, a Node child
+process running the Claude Agent SDK against the Claude subscription while
+no Codex or Anthropic API budget exists. The SDK route is a named stopgap,
+not a peer design: its receipt attests only that this process's own child
+produced this session, not against a party Ghostlight does not control, and
+a prior round's conversation reaches the model as rendered prose rather than
+typed turns because the SDK owns the assistant side of its own transcript.
+Its exit condition is deletion, not extension — once an API budget exists, a
+Messages-API port is a closer structural match to `InferencePort` (inert
+`tool_use` blocks, a caller-appended `tool_result`, a real request id, no
+subprocess) and replaces it behind the same routed port.
+
 ## Action and consequence
 
 An action proposal names one subject, one executable affordance, exact targets,

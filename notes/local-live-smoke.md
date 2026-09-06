@@ -140,6 +140,65 @@ the kernel, and each became a rule the tree now carries:
 The harness fails when no seed patch lands or nobody speaks, so a run that
 reaches the provider and gets nothing back is a failed run.
 
+## Claude SDK route
+
+Not yet run. `world/sdk_inference.rs`'s `SdkInferencePort` gives the same
+ignored smoke a second transport: a lane whose configured model is
+`claude`-prefixed (matching `GHOSTLIGHT_SDK_MODEL_PREFIX`, default `claude`)
+routes to a Node sidecar instead of the CodexConnector, so the road can run
+on the Claude subscription with no Codex budget. `LiveController` and
+`ControllerRunner::open` (through `open_inference`) already carry this
+optional binding; only the operator side and a real run are outstanding.
+
+**Operator prerequisites, none of which Ghostlight performs:**
+
+1. Install the Claude Code CLI.
+2. Sign in with `/login`, or mint a token with `claude setup-token`.
+3. Verify the login with one plain `claude -p` query.
+
+The harness never reads, copies, forwards, or logs that credential; the
+sidecar inherits it from the ambient environment the same way the CLI does.
+
+**Build the sidecar**, once the CLI login is verified:
+
+```bash
+npm --prefix sidecar/claude-sdk install
+npm run sdk:build
+```
+
+`npm run sdk:build` is the root `package.json` alias for
+`npm --prefix sidecar/claude-sdk run build`, emitting
+`sidecar/claude-sdk/dist/main.js`.
+
+**Environment**, in addition to the connector variables above:
+
+```bash
+GHOSTLIGHT_SDK_SIDECAR='F:\Projects\Ghostlight\sidecar\claude-sdk\dist\main.js'
+GHOSTLIGHT_SDK_MODEL_PREFIX=claude   # optional; this is already the default
+```
+
+`GHOSTLIGHT_SDK_SIDECAR`'s absence means no SDK binding at all — a
+`claude`-prefixed lane model then fails at open with `UnroutableModel`
+rather than silently reaching the connector. Any of the five
+`GHOSTLIGHT_CONTROLLER_*_MODEL` variables can be set to a `claude`-prefixed
+model (for example `claude-opus-5`) to route that lane through the sidecar;
+the connector variables (`GHOSTLIGHT_CONTROLLER_CONNECTOR`,
+`GHOSTLIGHT_CONTROLLER_CREDENTIAL`) are only required for the lanes that
+still route to the connector, and an all-`claude` configuration needs
+neither.
+
+The harness is the same ignored test,
+`runtime::tests::live_smoke_seeds_then_ticks_a_world_against_the_connector`;
+its `#[ignore]` reason names both prerequisites this route adds: "requires a
+vault plus either a running CodexConnector or a built Claude SDK sidecar
+with an ambient Claude Code login; see `GHOSTLIGHT_SMOKE_*` and
+`GHOSTLIGHT_SDK_*` environment."
+
+This route has not been run. This machine has neither the Claude Code CLI on
+PATH nor a stored credential, so nothing beyond the scripted-link unit tests
+in `world/sdk_inference.rs` and the checked-in schema/frame fixtures has
+exercised it.
+
 ## Interrupted cell
 
 Not yet run. The next road run must show a subject whose room changed mid-turn

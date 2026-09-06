@@ -108,6 +108,33 @@ commit. Narrative Persona projection and total interpretation, plus pure-agent
 tool execution, remain controller-side organs to wire onto this boundary; no
 model call exists inside the world owner.
 
+### Inference transport
+
+- **Owner:** `RoutedInferencePort` (`world/sdk_inference.rs`), holding both
+  transports every controller lane shares through one `Arc<dyn InferencePort>`.
+- **Inputs:** the configured model name on each `ControllerModels` field and
+  `GHOSTLIGHT_SDK_MODEL_PREFIX` (default `claude`) decide which transport a
+  lane's request reaches; there is no separate mode flag.
+- **Outputs:** one `InferenceOutput` per query from either transport, under
+  the same `PreparedInference`/receipt-digest shape; nothing downstream can
+  tell which transport produced it.
+- **Derived state:** the two transports are `CodexConnectorInferencePort`
+  (unchanged, a daemon peer over a keyed socket) and `SdkInferencePort`, a
+  Node sidecar (`sidecar/claude-sdk/`) run as a plain child process of the
+  runtime — restarted on fault, holding no query state between queries, no
+  daemon, no listening socket, no CultMesh surface. Every tool result the SDK
+  route hands the model is produced by `ToolResultOracle`, the lane's own
+  evaluator fold lent to the port for one query; the sidecar computes none.
+- **Forbidden writers:** no credential path is read, copied, or logged by
+  Ghostlight or the sidecar; the sidecar inherits the ambient Claude Code
+  login only. `ControllerRunner::open` takes its ports by injection; there is
+  no `#[cfg(test)]` constructor that builds them itself.
+- **Cut line:** stopgap by design. `SdkInferencePort`'s two named liabilities
+  (its receipt attests only to its own child process, and a prior round's
+  conversation reaches the model as prose) are retired only by deleting the
+  port for a Messages-API transport once an API budget exists, not by
+  extending it.
+
 ## Frozen pre-rebuild flow
 
 Campaign creation now has its own pre-world authority:

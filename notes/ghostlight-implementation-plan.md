@@ -486,33 +486,118 @@ region-wide or global witness still discards a grouped cell's in-flight work
 for every constituent it touches, which is the debt this pass explicitly
 declined to pay.
 
-### 11. Claude SDK inference port — in design
+### 11. Claude SDK inference port — landed
 
 Objective: run Ghostlight's inference lanes on the Claude subscription while
 no Codex subscription or API budget exists, without moving the harness.
 
-Current mechanism: one `InferencePort` implementation, the CodexConnector
-client, behind which every lane derives its exact request and owns its loop;
-the connector's request types leak into four files.
+Landed mechanism: two `InferencePort` implementors behind one
+`RoutedInferencePort`, chosen per lane by the configured model's prefix
+(`GHOSTLIGHT_SDK_MODEL_PREFIX`, default `claude`) — a `claude`-prefixed model
+reaches `SdkInferencePort`, anything else reaches the existing
+`CodexConnectorInferencePort` unchanged. `SdkInferencePort` spawns a Node
+sidecar (`sidecar/claude-sdk/`, a TypeScript package on
+`@anthropic-ai/claude-agent-sdk` `0.3.261`, `@msgpack/msgpack` `3.1.3`, and
+`zod` `4.5.4`, all exact-pinned) as a child process over stdio, framed as a
+4-byte big-endian length prefix plus `rmp_serde::to_vec_named` bytes. One
+request is one SDK query with the system prompt replaced, built-ins
+stripped, settings sources empty, the request's tools registered as
+in-process SDK tools, a derived turn cap, and the request's model.
+Execute-through: each tool call the model makes crosses the pipe and is
+answered by `ToolResultOracle`, one trait with four implementors
+(`InterpreterOracle`, `OperationalOracle`, `GroupedOracle`,
+`ElaborationOracle`) — each is the lane's own evaluator fold, extracted
+whole into a free function (`interpreter_tool_result`,
+`operational_tool_result`, `grouped_tool_result`, and the already-factored
+`apply_tool_call`) and replayed over `completed` at construction, so the
+string handed to the model is the same one re-derivation will recompute.
+The sidecar computes no tool result itself.
 
-Intended change: a second port, `SdkInferencePort`, that spawns a Node
-sidecar (a small TypeScript package in this repo on the Claude Agent SDK)
-over stdio with length-prefixed MessagePack frames. One request is one SDK
-query with the system prompt replaced, built-ins stripped, settings sources
-empty, the request's tools registered as in-process SDK tools, a turn cap,
-and the request's model. Execute-through: each tool call the model makes is
-handed back over the pipe and answered with the result Ghostlight's own
-evaluator would produce, so the SDK loop runs on real results and one query
-returns as one round. Persona and Projector are single completions. The
-credential is Claude Code's own; Ghostlight holds none.
+One free function, `prepare_invocation`, is the sole owner of prepared
+identity for both ports; `ControllerRunner::open` is injection-only —
+`with_test_ports` is gone, and `open` takes `Arc<dyn InferencePort>`,
+`Arc<dyn ControllerWorkStore>`, and `ControllerModels` and nothing
+transport-specific. `runtime::open_controller` builds `ConnectorBinding`
+and `SdkBinding` from the environment and calls `open_inference`, then
+`open_controller_work`, then `ControllerRunner::open`; `open_inference`
+routes every one of the five `ControllerModels` at open time and refuses a
+model no configured backend claims (`ControllerOpenError::UnroutableModel`)
+or a sidecar entry that is not a file
+(`ControllerOpenError::SdkSidecarMissing`) before the first tick, not after.
 
-Cut line: no second identity scheme (checkpoints re-derive the same request
-identity); no daemon, network port, or CultMesh surface for the sidecar; no
-credential handling in Ghostlight; the connector port is untouched; the
-port is chosen per lane by the configured model. Stopgap by design: the
-receipt is the SDK's message, not wire bytes, and that liability is named
-where the port is defined. Rejected: a Messages-API backend (no API spend);
-a backend inside CodexConnector (a deliberately isolated Codex fork).
+Environment: `GHOSTLIGHT_SDK_SIDECAR` (the built sidecar entry path; its
+absence means no SDK binding, not a default path) and
+`GHOSTLIGHT_SDK_MODEL_PREFIX` (default `claude`) are read once in
+`runtime::open_controller`. `GHOSTLIGHT_CONTROLLER_CREDENTIAL` is no longer
+unconditionally required — an SDK-only configuration reads no credential
+path at all. `GHOSTLIGHT_WRITE_SIDECAR_FIXTURES` regenerates the checked-in
+schema and frame fixtures the Rust and TypeScript sides pin against each
+other; it is a fixture-authoring switch, not a runtime binding.
+
+Cut line held: no second identity scheme (`prepare_invocation` is the one
+owner, both ports call it); no daemon, network port, or CultMesh surface for
+the sidecar (it is a plain child process, restarted on fault, holding no
+query state between queries); no credential handling in Ghostlight (the
+sidecar inherits the ambient Claude Code login and this repo reads, copies,
+forwards, or logs none of it); the connector port and its `execute` are
+untouched; the port is chosen per lane by the configured model, with no mode
+flag. Two forks the original design did not anticipate: `ControllerRunner::open`
+became injection-only rather than keeping a `#[cfg(test)]` twin, because
+removing the two transport-specific parameters made the twin's only purpose
+vanish; and the turn cap rides on the oracle (`remaining_rounds`) rather than
+on `InferencePurpose`, because the elaboration and seed lanes share one
+purpose but carry different round budgets.
+
+Named liabilities, stated where `SdkInferencePort` is defined, not hidden in
+the lowering:
+
+- The receipt is the SDK's message, not wire bytes. Its identity half is
+  computed from the invocation Ghostlight already holds; its provenance half
+  is a session id and message uuids reported by a child process this port
+  spawned. It attests that this exact request produced this exact SDK
+  session; it does not attest against a party Ghostlight does not control,
+  which is what the connector's receipt does.
+- A prior round's conversation reaches the model as prose, not as typed
+  turns. The SDK owns the assistant side of its own transcript, so typed
+  `tool_call`/`tool_result` turns from an earlier round cannot be replayed
+  into it; they are rendered as strings under one fixed header and appended
+  to the prompt.
+- The Zod validation of a tool call's arguments happens in the sidecar
+  before the handler runs, so a model's undecodable arguments never reach
+  Rust as an argument string the oracle can fold over; the sidecar reports
+  a normal dispatched tool call and Rust's own evaluator recomputes the
+  decode failure as an ordinary gap — on the connector path the same
+  failure is a gap recorded by the evaluator directly. Both are gaps; the
+  divergence in exactly which layer detects an undecodable argument can
+  only reach a later round's prompt through the prose transcript.
+- `error_max_turns` handling is inferred from the SDK's own documentation,
+  not observed: the sidecar is written to catch the throw the TypeScript
+  SDK performs after yielding the error result, assemble the events already
+  collected, and emit a normal `Output` whose receipt records
+  `subtype: "error_max_turns"`, so the lane sees one ordinary round and
+  proceeds rather than faulting. No live query has exercised this path.
+- Because the turn cap is the lane's *remaining* round budget and the lane
+  still counts rounds even when the cap is not reached, a lane whose model
+  never terminates in one turn can spend a triangular number of turns across
+  a round sequence (seed: 24+23+…, bounded by `SEED_ROUND_BUDGET`) against
+  the connector's flat per-round cost. This is unmeasured: no live run has
+  produced a number to weigh it against.
+
+What is undone: no live run has exercised the SDK port at all — this
+machine has neither a Claude Code CLI on PATH nor a stored credential, so
+the ignored ad-hoc smoke (`notes/local-live-smoke.md`) has never been run
+against it. Everything above the ignored smoke is proven by scripted-link
+unit tests and the checked-in schema/frame fixture pairs, not by a real
+sidecar process talking to a real subscription.
+
+Exit condition, unchanged from the port's own doc comment: when an
+`ANTHROPIC_API_KEY` and a budget exist, a Messages-API port is a closer
+structural match to `InferencePort` than the SDK is — inert `tool_use`
+blocks, a caller-appended `tool_result`, a real request id, real
+concurrency, no subprocess — and `SdkInferencePort` is deleted rather than
+extended, keeping `RoutedInferencePort` and swapping what it routes to.
+Rejected: a backend inside CodexConnector (a deliberately isolated Codex
+fork).
 
 ## Subtraction budget
 
