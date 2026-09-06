@@ -13,6 +13,7 @@ VENDOR_SRC = ROOT / "vendor" / "cultcache-py" / "src"
 CACHE_PATH = STATE_DIR / "ghostlight-state.cultcache.jsonl"
 BRANCHES_PATH = STATE_DIR / "branches.json"
 EVIDENCE_PATH = STATE_DIR / "evidence.jsonl"
+ARCHIVE_PATH = STATE_DIR / "evidence.archive.jsonl"
 
 if str(VENDOR_SRC) not in sys.path:
     sys.path.insert(0, str(VENDOR_SRC))
@@ -98,6 +99,28 @@ def append_evidence(record: dict[str, Any]) -> None:
     key = _evidence_key(record, len(existing))
     cache.put(EVIDENCE_DOC, key, record)
     _export_evidence(cache)
+
+
+def replace_evidence(records: list[dict[str, Any]]) -> tuple[int, int]:
+    """Replace the whole evidence document with distilled records.
+
+    Every record currently in the store is appended verbatim to
+    ``state/evidence.archive.jsonl`` before deletion, so the archive stays
+    the complete history and the export carries only what still steers.
+    Returns (archived, kept).
+    """
+    cache = open_state_cache()
+    snapshot = cache.snapshot().get(EVIDENCE_DOC.type, {})
+    archived = sorted(snapshot.values(), key=lambda record: record.get("ts", ""))
+    with ARCHIVE_PATH.open("a", encoding="utf-8") as archive:
+        for record in archived:
+            archive.write(json.dumps(record, ensure_ascii=True) + "\n")
+    for key in list(snapshot):
+        cache.delete(EVIDENCE_DOC, key)
+    for index, record in enumerate(records):
+        cache.put(EVIDENCE_DOC, _evidence_key(record, index), record)
+    _export_evidence(cache)
+    return len(archived), len(records)
 
 
 def migrate_legacy_evidence() -> int:

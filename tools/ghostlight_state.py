@@ -10,6 +10,7 @@ from ghostlight_state_store import (
     append_evidence,
     load_branches,
     migrate_legacy_evidence,
+    replace_evidence,
     save_branches,
 )
 
@@ -35,10 +36,22 @@ def utc_stamp() -> str:
 
 
 def extract_map_field(name: str) -> str | None:
+    """Read one `  name:` field under `current_status`, plain or block scalar."""
     prefix = f"  {name}:"
-    for line in read_text(MAP_PATH).splitlines():
-        if line.startswith(prefix):
-            return line.split(":", 1)[1].strip()
+    lines = read_text(MAP_PATH).splitlines()
+    for index, line in enumerate(lines):
+        if not line.startswith(prefix):
+            continue
+        value = line.split(":", 1)[1].strip()
+        if value not in {">", "|", ">-", "|-"}:
+            return value
+        block: list[str] = []
+        for continuation in lines[index + 1 :]:
+            if continuation.strip() and not continuation.startswith("    "):
+                break
+            block.append(continuation.strip())
+        joiner = "\n" if value.startswith("|") else " "
+        return joiner.join(part for part in block if part).strip() or None
     return None
 
 
@@ -112,6 +125,23 @@ def cmd_add_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_compact_evidence(args: argparse.Namespace) -> int:
+    records: list[dict[str, Any]] = []
+    for number, line in enumerate(read_text(Path(args.replacement)).splitlines(), 1):
+        if not line.strip():
+            continue
+        record = json.loads(line)
+        missing = {"ts", "type", "status", "note"} - set(record)
+        if not isinstance(record, dict) or missing:
+            raise SystemExit(f"replacement line {number} lacks {sorted(missing)}")
+        records.append(record)
+    if not records:
+        raise SystemExit("refusing to compact the ledger to nothing")
+    archived, kept = replace_evidence(records)
+    print(f"Archived {archived} record(s) to state/evidence.archive.jsonl; ledger now holds {kept}.")
+    return 0
+
+
 def cmd_migrate_evidence(_: argparse.Namespace) -> int:
     imported = migrate_legacy_evidence()
     print(f"Imported {imported} legacy evidence record(s) into CultCache.")
@@ -168,6 +198,13 @@ def build_parser() -> argparse.ArgumentParser:
     evidence_parser.add_argument("--note", required=True)
     evidence_parser.add_argument("--branch")
     evidence_parser.set_defaults(func=cmd_add_evidence)
+
+    compact_parser = subparsers.add_parser(
+        "compact-evidence",
+        help="Replace the evidence document with a distilled JSONL file; every current record is archived first.",
+    )
+    compact_parser.add_argument("--replacement", required=True)
+    compact_parser.set_defaults(func=cmd_compact_evidence)
 
     migrate_evidence_parser = subparsers.add_parser(
         "migrate-evidence",

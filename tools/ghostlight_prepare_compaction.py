@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from ghostlight_state import extract_active_subgoals, extract_map_field
+
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE_DIR = ROOT / "state"
@@ -43,31 +45,6 @@ def run_git(args: list[str]) -> str:
         text=True,
     )
     return completed.stdout.strip()
-
-
-def extract_map_field(name: str) -> str | None:
-    prefix = f"  {name}:"
-    for line in read_text(MAP_PATH).splitlines():
-        if line.startswith(prefix):
-            return line.split(":", 1)[1].strip()
-    return None
-
-
-def extract_active_subgoals() -> list[str]:
-    lines = read_text(MAP_PATH).splitlines()
-    results: list[str] = []
-    in_section = False
-    for line in lines:
-        if not in_section:
-            if line.strip() == "active_subgoals:":
-                in_section = True
-            continue
-        if line.startswith("  - "):
-            results.append(line[4:].strip())
-            continue
-        if line and not line.startswith(" "):
-            break
-    return results
 
 
 def current_scratch_subgoal() -> str | None:

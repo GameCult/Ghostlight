@@ -2,7 +2,7 @@
 
 ## Current Subgoal
 
-None.
+No active scratch subgoal.
 
 ## Working Notes
 

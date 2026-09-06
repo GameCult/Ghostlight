@@ -24,7 +24,10 @@ inside another project.
   regenerates `evidence.jsonl` from the CultCache evidence document, so edits
   and deletions that do not go through `tools/ghostlight_state_store.py` look
   applied until the next append restores what you removed. Compaction means
-  deleting from the store and letting the export follow.
+  replacing the store's evidence document through
+  `ghostlight_state.py compact-evidence --replacement <distilled.jsonl>`,
+  which archives every current record verbatim to
+  `state/evidence.archive.jsonl` first; the export follows.
 - Treat `state/evidence.jsonl` as the distilled durable ledger of what was
   learned, verified, rejected, or accepted.
 - Treat `notes/ghostlight-implementation-plan.md` as the current implementation
@@ -63,6 +66,7 @@ npm run state:status
 npm run state:prepare-compaction
 & 'C:\Users\Meta\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' '.\tools\ghostlight_state.py' add-evidence --type research --status ok --note '...'
 & 'C:\Users\Meta\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' '.\tools\ghostlight_state.py' add-branch --id branch-id --hypothesis '...'
+& 'C:\Users\Meta\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' '.\tools\ghostlight_state.py' compact-evidence --replacement '.\distilled.jsonl'
 ```
 
 ## Session Bootstrap And Re-entry Protocol
