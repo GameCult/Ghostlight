@@ -1,7 +1,17 @@
 // The JSON Schema grammar Ghostlight's one emitter produces, converted to the
-// Zod raw shape the SDK's `tool()` takes. It is closed on purpose: anything
-// outside the grammar throws, so an emitter that grows a construct fails a test
-// here rather than silently registering a looser tool.
+// Zod object the SDK's `tool()` registers.
+//
+// The conversion exists for one reason: the model must see the same parameter
+// schema on both transports, and the in-process MCP server derives the schema
+// it advertises from this Zod object. It is not a validator. Rust's decoder is
+// the one validator on both transports, so every object here is loose and every
+// property catches: an extra key, a missing required property, and a mistyped
+// value all reach the handler, travel to Rust unstripped, and become the gap
+// the evaluator already records instead of a tool call the SDK answers itself.
+//
+// A construct outside the emitted grammar still throws. That is a registration
+// failure, not an argument judgement: a schema this module cannot convert is a
+// tool the model would otherwise be shown blind.
 
 import { z } from "zod";
 
@@ -11,6 +21,17 @@ const FORBIDDEN = ["oneOf", "allOf", "not", "$ref"] as const;
 
 function isObject(value: unknown): value is Json {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Wraps one property so it can never refuse the call. The catch value is
+ * static because Zod refuses to render a dynamic one as JSON Schema, and the
+ * advertised schema is the whole point of converting. A value the property's
+ * type refuses therefore arrives at Rust as an absent field, which its decoder
+ * reports the same way it reports any other missing field.
+ */
+function keep(schema: z.ZodTypeAny): z.ZodTypeAny {
+  return schema.catch(undefined as never);
 }
 
 function convert(node: unknown, at: string): z.ZodTypeAny {
@@ -49,7 +70,7 @@ function convert(node: unknown, at: string): z.ZodTypeAny {
   }
   switch (kind) {
     case "object":
-      return z.object(rawShape(node, at)).strict();
+      return objectSchema(node, at);
     case "string": {
       if ("const" in node) {
         if (typeof node.const !== "string") {
@@ -91,36 +112,24 @@ function convert(node: unknown, at: string): z.ZodTypeAny {
   }
 }
 
-function rawShape(node: Json, at: string): Record<string, z.ZodTypeAny> {
-  if (node.additionalProperties !== false) {
-    throw new Error(`${at}: every emitted object is closed`);
-  }
+/** One object node, loose so an unknown key survives to Rust with its value. */
+function objectSchema(node: Json, at: string): z.ZodObject {
   const properties = node.properties;
   if (!isObject(properties)) {
     throw new Error(`${at}: object without properties`);
   }
-  const names = Object.keys(properties).sort();
-  const required = Array.isArray(node.required)
-    ? [...(node.required as unknown[])].map(String).sort()
-    : [];
-  if (names.length !== required.length || names.some((name, index) => name !== required[index])) {
-    throw new Error(`${at}: every emitted property is required`);
-  }
   const shape: Record<string, z.ZodTypeAny> = {};
-  for (const name of names) {
-    shape[name] = convert(properties[name], `${at}/${name}`);
+  for (const name of Object.keys(properties).sort()) {
+    shape[name] = keep(convert(properties[name], `${at}/${name}`));
   }
-  return shape;
+  return z.looseObject(shape);
 }
 
 /**
- * One tool's `parameters_json` as the raw shape `tool()` takes. Throws on any
+ * One tool's `parameters_json` as the schema `tool()` registers. Throws on any
  * node outside the grammar the emitter produces.
  */
-export function toolRawShape(
-  parametersJson: string,
-  at: string,
-): Record<string, z.ZodTypeAny> {
+export function toolInputSchema(parametersJson: string, at: string): z.ZodObject {
   let parsed: unknown;
   try {
     parsed = JSON.parse(parametersJson);
@@ -130,5 +139,5 @@ export function toolRawShape(
   if (!isObject(parsed) || parsed.type !== "object") {
     throw new Error(`${at}: a tool's parameters must be an object schema`);
   }
-  return rawShape(parsed, at);
+  return objectSchema(parsed, at);
 }

@@ -32,7 +32,7 @@ import {
   type SidecarFrame,
   type SidecarTool,
 } from "./frames.ts";
-import { toolRawShape } from "./schema.ts";
+import { toolInputSchema } from "./schema.ts";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -105,7 +105,7 @@ export class QuerySession {
   }
 }
 
-function apiRetryReason(category: unknown): SidecarFaultReason {
+export function apiRetryReason(category: unknown): SidecarFaultReason {
   switch (category) {
     case "rate_limit":
       return "rate_limited";
@@ -130,7 +130,10 @@ function apiRetryReason(category: unknown): SidecarFaultReason {
   }
 }
 
-function resultReason(subtype: string, apiErrorStatus: unknown): SidecarFaultReason {
+export function resultReason(
+  subtype: string,
+  apiErrorStatus: unknown,
+): SidecarFaultReason {
   if (typeof apiErrorStatus === "number") {
     if (apiErrorStatus === 429) {
       return "rate_limited";
@@ -148,6 +151,31 @@ function resultReason(subtype: string, apiErrorStatus: unknown): SidecarFaultRea
     default:
       return "unknown";
   }
+}
+
+/**
+ * One `result` message's verdict: `null` when the round is an ordinary output,
+ * a fault otherwise. Exported so the whole subtype mapping is testable without
+ * a credential.
+ *
+ * `error_max_turns` is not a fault: the cap is the lane's own remaining round
+ * budget, so reaching it means the model spent turns the evaluator would also
+ * have allowed. The lane sees one ordinary round.
+ */
+export function resultFault(message: Record<string, unknown>): SidecarFault | null {
+  const subtype = String(message.subtype ?? "");
+  if (subtype === "success" || subtype === "error_max_turns") {
+    return null;
+  }
+  const errors = Array.isArray(message.errors)
+    ? (message.errors as unknown[]).map(String).join("; ")
+    : "";
+  const category = Array.isArray(message.errors) ? undefined : message.error;
+  const reason =
+    category === undefined
+      ? resultReason(subtype, message.api_error_status)
+      : apiRetryReason(category);
+  return new SidecarFault(reason, `${subtype}: ${errors}`);
 }
 
 function usageRows(modelUsage: unknown): SdkModelUsage[] {
@@ -185,16 +213,20 @@ export function lowerQuery(
     );
   }
   const tools = frame.tools.map((entry: SidecarTool) => {
-    let shape;
+    let schema;
     try {
-      shape = toolRawShape(entry.parameters_json, entry.name);
+      schema = toolInputSchema(entry.parameters_json, entry.name);
     } catch (error) {
       throw new SidecarFault("tool_registration_failed", String(error));
     }
     return tool(
       entry.name,
       entry.description,
-      shape,
+      // `tool()` names a raw shape and the server it registers with takes a
+      // whole schema in the same slot. The whole object is what carries the
+      // looseness the one-validator rule needs: a raw shape is wrapped in a
+      // stripping `z.object` before the arguments are ever seen.
+      schema as unknown as Parameters<typeof tool>[2],
       async (args: unknown) => ({
         content: [
           { type: "text" as const, text: await session.ask(entry.name, args) },
@@ -267,6 +299,12 @@ export function assembleEvents(
       if (registered.has(name)) {
         const dispatch = dispatches[taken++];
         if (!dispatch || dispatch.name !== name) {
+          // No argument reaches this any more: the registered schema refuses
+          // nothing, so a call the model emits is a call the handler runs.
+          // What still reaches it is the call never offered to the handler at
+          // all — a permission decision or an abort taken above this server, a
+          // tool the server disabled, or a pairing where the assistant stream
+          // and the dispatch log disagree about order.
           throw new SidecarFault(
             "protocol_violation",
             `a registered tool_use block for ${name} has no matching dispatch`,
@@ -345,21 +383,9 @@ async function runQuery(
       material.num_turns = Number(message.num_turns ?? 0);
       material.usage = usageRows(message.modelUsage);
       material.total_cost_usd_estimate = String(message.total_cost_usd ?? 0);
-      // `error_max_turns` is not a fault: the cap is the lane's own remaining
-      // round budget, so reaching it means the model spent turns the evaluator
-      // would also have allowed. The lane sees one ordinary round.
-      if (subtype !== "success" && subtype !== "error_max_turns") {
-        const errors = Array.isArray(message.errors)
-          ? (message.errors as unknown[]).map(String).join("; ")
-          : "";
-        const category = Array.isArray(message.errors)
-          ? undefined
-          : (message as Record<string, unknown>).error;
-        const reason =
-          category === undefined
-            ? resultReason(subtype, message.api_error_status)
-            : apiRetryReason(category);
-        throw new SidecarFault(reason, `${subtype}: ${errors}`);
+      const fault = resultFault(message);
+      if (fault) {
+        throw fault;
       }
     }
   } catch (error) {

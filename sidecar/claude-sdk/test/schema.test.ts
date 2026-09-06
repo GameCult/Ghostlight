@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { toolRawShape } from "../src/schema.ts";
+import { toolInputSchema } from "../src/schema.ts";
 
 const emitted: { name: string; parameters_json: string }[] = JSON.parse(
   readFileSync(fileURLToPath(new URL("./schemas.json", import.meta.url)), "utf8"),
@@ -16,16 +16,16 @@ const emitted: { name: string; parameters_json: string }[] = JSON.parse(
 test("every emitted tool schema converts", () => {
   assert.ok(emitted.length > 0, "the schema fixture is empty");
   for (const entry of emitted) {
-    const shape = toolRawShape(entry.parameters_json, entry.name);
+    const schema = toolInputSchema(entry.parameters_json, entry.name);
     const declared = Object.keys(
       JSON.parse(entry.parameters_json).properties as Record<string, unknown>,
     ).sort();
-    assert.deepEqual(Object.keys(shape).sort(), declared, entry.name);
+    assert.deepEqual(Object.keys(schema.shape).sort(), declared, entry.name);
   }
 });
 
-test("a converted shape accepts a value its schema admits", () => {
-  const shape = toolRawShape(
+test("a converted schema carries every property's own type", () => {
+  const schema = toolInputSchema(
     JSON.stringify({
       type: "object",
       additionalProperties: false,
@@ -41,12 +41,32 @@ test("a converted shape accepts a value its schema admits", () => {
     }),
     "sample",
   );
-  assert.equal(shape.detail!.safeParse("ok").success, true);
-  assert.equal(shape.count!.safeParse(2).success, true);
-  assert.equal(shape.count!.safeParse(9).success, false);
-  assert.equal(shape.choice!.safeParse("c").success, false);
-  assert.equal(shape.maybe!.safeParse(null).success, true);
-  assert.equal(shape.many!.safeParse(["a"]).success, true);
+  const admitted = schema.parse({
+    detail: "ok",
+    count: 2,
+    flag: true,
+    choice: "a",
+    maybe: null,
+    many: ["a"],
+  }) as Record<string, unknown>;
+  assert.deepEqual(admitted, {
+    detail: "ok",
+    count: 2,
+    flag: true,
+    choice: "a",
+    maybe: null,
+    many: ["a"],
+  });
+
+  // A value outside a property's own type empties that property and nothing
+  // else. Rust decides what an absent field means.
+  const dropped = schema.parse({ detail: "ok", count: 9, choice: "c" }) as Record<
+    string,
+    unknown
+  >;
+  assert.equal(dropped.detail, "ok");
+  assert.equal(dropped.count, undefined);
+  assert.equal(dropped.choice, undefined);
 });
 
 test("anything outside the grammar throws", () => {
@@ -60,7 +80,7 @@ test("anything outside the grammar throws", () => {
   for (const node of refused) {
     assert.throws(
       () =>
-        toolRawShape(
+        toolInputSchema(
           JSON.stringify({
             type: "object",
             additionalProperties: false,
@@ -74,22 +94,23 @@ test("anything outside the grammar throws", () => {
   }
 });
 
-test("an open object or a partly optional one throws", () => {
-  assert.throws(() =>
-    toolRawShape(
-      JSON.stringify({ type: "object", required: [], properties: {} }),
-      "open",
-    ),
+test("an open object and a partly optional one convert and refuse nothing", () => {
+  // Openness and optionality are Rust's judgements, so neither is a
+  // registration failure here.
+  const open = toolInputSchema(
+    JSON.stringify({ type: "object", required: [], properties: {} }),
+    "open",
   );
-  assert.throws(() =>
-    toolRawShape(
-      JSON.stringify({
-        type: "object",
-        additionalProperties: false,
-        required: ["a"],
-        properties: { a: { type: "string" }, b: { type: "string" } },
-      }),
-      "partial",
-    ),
+  assert.deepEqual(open.parse({ anything: 1 }), { anything: 1 });
+
+  const partial = toolInputSchema(
+    JSON.stringify({
+      type: "object",
+      additionalProperties: false,
+      required: ["a"],
+      properties: { a: { type: "string" }, b: { type: "string" } },
+    }),
+    "partial",
   );
+  assert.deepEqual(partial.parse({ b: "set" }), { b: "set" });
 });

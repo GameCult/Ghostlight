@@ -1,18 +1,18 @@
-// Soul: characterizes what the SDK's own Zod validation does to a tool call
-// whose arguments Ghostlight's evaluators would have recorded as a gap, and
-// asserts the sidecar names no credential and reads no environment.
+// One validator, both transports. These assert that the schema the sidecar
+// registers judges nothing: an argument Ghostlight's evaluators would record as
+// a gap travels through the real in-process MCP server unstripped and reaches
+// the handler, so Rust's decoder is the only thing that can refuse it.
 //
-// Nothing here proposes a fix. The chain is established end to end against the
-// real SDK, with no credential and no network, so the divergence from the
-// connector path is a recorded fact rather than a guess.
+// Established end to end against the real SDK, with no credential and no
+// network. Also asserts the sidecar names no credential and reads no
+// environment.
 
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { z } from "zod";
 import { createSdkMcpServer, tool } from "@anthropic-ai/claude-agent-sdk";
-import { toolRawShape } from "../src/schema.ts";
+import { toolInputSchema } from "../src/schema.ts";
 import { assembleEvents, SidecarFault } from "../src/main.ts";
 
 const emitted: { name: string; parameters_json: string }[] = JSON.parse(
@@ -25,40 +25,54 @@ function schemaFor(name: string): string {
   return entry.parameters_json;
 }
 
-test("the emitted grammar's top level admits an extra property the connector refuses", () => {
-  // `rawShape` builds a bare record; only nested objects are `.strict()`. The
-  // SDK's `tool()` wraps the top-level record in a plain `z.object`, which
-  // strips unknown keys instead of rejecting them — while every emitted schema
-  // says `additionalProperties: false` and every Rust decoder carries
-  // `deny_unknown_fields`.
-  const gap = z.object(toolRawShape(schemaFor("record_gap"), "record_gap"));
+test("the registered schema keeps an extra property instead of stripping it", () => {
+  const gap = toolInputSchema(schemaFor("record_gap"), "record_gap");
   const admitted = gap.safeParse({ detail: "no route", extra: true });
-  assert.equal(admitted.success, true, "the top-level object refused an extra property");
+  assert.equal(admitted.success, true);
   assert.deepEqual(
     admitted.success && admitted.data,
-    { detail: "no route" },
-    "the extra property was not stripped",
+    { detail: "no route", extra: true },
+    "an extra property was stripped before Rust could refuse it",
   );
 
-  // Nested objects are closed, so the leak is exactly one level deep.
-  const nested = z.object(toolRawShape(schemaFor("speak"), "speak"));
-  assert.equal(nested.safeParse({ text: "hold", extra: 1 }).success, true);
-  const declare = z.object(toolRawShape(schemaFor("bind"), "bind"));
-  const deep = declare.safeParse({ subject: { ref: "draft", value: "x", extra: true } });
-  assert.equal(deep.success, false, "a nested object admitted an extra property");
+  // A nested object keeps its own, so the emitter's depth does not matter.
+  const declare = toolInputSchema(schemaFor("bind"), "bind");
+  const deep = declare.safeParse({
+    subject: { ref: "draft", value: "x", extra: true },
+  });
+  assert.equal(deep.success, true);
+  assert.deepEqual(deep.success && (deep.data as { subject: unknown }).subject, {
+    ref: "draft",
+    value: "x",
+    extra: true,
+  });
 });
 
-test("the emitted grammar refuses a missing or mistyped required property", () => {
-  const gap = z.object(toolRawShape(schemaFor("record_gap"), "record_gap"));
-  assert.equal(gap.safeParse({}).success, false);
-  assert.equal(gap.safeParse({ detail: 5 }).success, false);
-  // A deep emitted shape gives a compliant model many more required leaves to
-  // miss.
-  const subject = z.object(toolRawShape(schemaFor("declare_subject"), "declare_subject"));
-  assert.equal(subject.safeParse({ handle: "smith" }).success, false);
+test("the registered schema admits a missing or mistyped required property", () => {
+  const gap = toolInputSchema(schemaFor("record_gap"), "record_gap");
+  const absent = gap.safeParse({});
+  assert.equal(absent.success, true);
+  assert.deepEqual(absent.success && absent.data, {});
+
+  // A mistyped value is the one thing a property's catch cannot carry through:
+  // it reaches Rust as an absent field, which the decoder reports the way it
+  // reports any other missing field, rather than as a call the SDK refused.
+  const mistyped = gap.safeParse({ detail: 5 });
+  assert.equal(mistyped.success, true);
+  assert.equal(
+    mistyped.success && (mistyped.data as { detail?: unknown }).detail,
+    undefined,
+  );
+
+  const subject = toolInputSchema(schemaFor("declare_subject"), "declare_subject");
+  assert.equal(
+    subject.safeParse({ handle: "smith" }).success,
+    true,
+    "a partly filled call was refused here instead of in Rust",
+  );
 });
 
-test("the SDK answers a refused argument itself and never reaches the handler", async () => {
+test("the SDK dispatches a call Rust would refuse and never answers it itself", async () => {
   // The middle link, against the real in-process MCP server the sidecar
   // registers. No credential, no network, no `query()`.
   let mcp: { Client: new (info: { name: string; version: string }) => never };
@@ -68,15 +82,17 @@ test("the SDK answers a refused argument itself and never reaches the handler", 
     memory = await import("@modelcontextprotocol/sdk/inMemory.js");
   } catch {
     // The MCP client is the SDK's own transitive dependency, not this
-    // package's. If a future install stops hoisting it, the two assertions
-    // either side of this test still stand on their own.
+    // package's. If a future install stops hoisting it, the assertions either
+    // side of this test still stand on their own.
     return;
   }
   const seen: unknown[] = [];
   const handle = tool(
     "record_gap",
     "Record a gap.",
-    toolRawShape(schemaFor("record_gap"), "record_gap"),
+    toolInputSchema(schemaFor("record_gap"), "record_gap") as unknown as Parameters<
+      typeof tool
+    >[2],
     async (args: unknown) => {
       seen.push(args);
       return { content: [{ type: "text" as const, text: "gap recorded" }] };
@@ -90,6 +106,7 @@ test("the SDK answers a refused argument itself and never reaches the handler", 
   await instance.connect(serverSide);
   const client = new mcp.Client({ name: "ghostlight-soul-probe", version: "0" }) as unknown as {
     connect(t: unknown): Promise<void>;
+    listTools(): Promise<{ tools: { inputSchema: Record<string, unknown> }[] }>;
     callTool(request: { name: string; arguments: unknown }): Promise<{
       isError?: boolean;
       content: { text: string }[];
@@ -98,32 +115,35 @@ test("the SDK answers a refused argument itself and never reaches the handler", 
   };
   await client.connect(clientSide);
   try {
-    const stripped = await client.callTool({
+    // The model still sees the emitted parameters. Looseness is what the
+    // server judges arguments by, not what it advertises.
+    const advertised = (await client.listTools()).tools[0]!.inputSchema;
+    assert.equal(advertised.type, "object");
+    assert.deepEqual(Object.keys(advertised.properties as object), ["detail"]);
+    assert.deepEqual(advertised.required, ["detail"]);
+
+    // An extra key reaches the handler with the key present.
+    const extra = await client.callTool({
       name: "record_gap",
       arguments: { detail: "no route", extra: true },
     });
-    assert.notEqual(stripped.isError, true, "an extra property was refused after all");
-    assert.deepEqual(
-      seen,
-      [{ detail: "no route" }],
-      "the handler saw arguments other than the stripped ones",
-    );
+    assert.notEqual(extra.isError, true, "an extra property was refused");
+    assert.deepEqual(seen.at(-1), { detail: "no route", extra: true });
 
-    for (const refused of [{ detail: 5 }, {}]) {
-      const answer = await client.callTool({ name: "record_gap", arguments: refused });
-      assert.equal(answer.isError, true, `${JSON.stringify(refused)} reached the handler`);
-      assert.match(answer.content[0]!.text, /Input validation error/);
-    }
-    assert.equal(seen.length, 1, "a refused argument still reached the handler");
+    // A missing required property reaches the handler too.
+    const missing = await client.callTool({ name: "record_gap", arguments: {} });
+    assert.notEqual(missing.isError, true, "a missing property was refused");
+    assert.deepEqual(seen.at(-1), {});
+
+    assert.equal(seen.length, 2, "a call was answered without reaching the handler");
   } finally {
     await client.close();
   }
 });
 
 test("a registered tool_use block with no dispatch is a protocol violation", () => {
-  // What the sidecar then sees: the assistant message still carries a
-  // `tool_use` block for a registered name, but `session.ask` was never
-  // reached, so there is no dispatch to pair with it.
+  // No argument reaches this any more. What still does is a call never offered
+  // to the handler, or an assistant stream and a dispatch log that disagree.
   const registered = new Set(["record_gap"]);
   assert.throws(
     () =>
