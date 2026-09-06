@@ -1817,7 +1817,9 @@ mod tests {
             "world/controllers.rs",
             "runtime.rs",
         ] {
-            let text = std::fs::read_to_string(root.join(file)).expect("the source reads");
+            let text = std::fs::read_to_string(root.join(file))
+                .expect("the source reads")
+                .replace("\r\n", "\n");
             // Only the production half; a test may name what production must
             // not.
             let production = text
