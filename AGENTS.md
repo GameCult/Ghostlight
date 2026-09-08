@@ -69,6 +69,21 @@ npm run state:prepare-compaction
 & 'C:\Users\Meta\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' '.\tools\ghostlight_state.py' compact-evidence --replacement '.\distilled.jsonl'
 ```
 
+## Build And Deploy Target
+
+Ghostlight Dungeon ships to Linux on Yggdrasil. Yggdrasil is its build, test,
+and production body: Idunn freezes an exact commit, runs the locked native
+Linux tests, builds the daemon and web projection in pinned Linux containers,
+and seals the release. Owning runbook:
+`gamecult-ops/runbooks/ghostlight-dungeon-yggdrasil.md`.
+
+You are almost certainly reading this on a Windows workstation. That is where
+the shell is, not where the artifact runs. A Windows compile of a commit is not
+evidence about the Linux release — toolchain, linker, filesystem semantics and
+path handling all differ — and it is not the build the deploy path will use.
+Build for the target, or let the deploy path's own builder do it, and say which
+one you used.
+
 ## Session Bootstrap And Re-entry Protocol
 
 On fresh session load, do this before wandering off into implementation:
