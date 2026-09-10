@@ -4185,11 +4185,13 @@ impl SelectedDecision {
             .commitments
             .iter()
             .map(|commitment| {
+                // Time, named as time: a bare `due` of 1000 was read as a sum of
+                // money on the road, and 20160 as "fourteen days" only by luck.
                 json!({
                     "kind": commitment.kind,
                     "counterparty": commitment.counterparty.map_or(Value::Null, |id| self.subject_label(id)),
-                    "due": commitment.due,
-                    "period": commitment.period,
+                    "due_in_minutes": commitment.due.0.saturating_sub(self.snapshot.now.0),
+                    "period_minutes": commitment.period,
                     "past_due": commitment.past_due,
                 })
             })
@@ -4214,7 +4216,8 @@ impl SelectedDecision {
                         json!({
                             "from": "own promise past due",
                             "kind": promise.map(|commitment| commitment.kind),
-                            "due": promise.map(|commitment| commitment.due),
+                            "overdue_by_minutes": promise
+                                .map(|commitment| self.snapshot.now.0.saturating_sub(commitment.due.0)),
                         })
                     }
                     super::patch::PressureSource::Dependency(target) => match target {
@@ -7240,7 +7243,7 @@ mod tests {
             "\"quantity\": 12",
             "\"kind\": \"obligation\"",
             "Old Hesk the gatekeeper",
-            "\"due\": 120",
+            "\"due_in_minutes\": 60",
             "own promise past due",
             "\"magnitude\": 3",
         ] {
