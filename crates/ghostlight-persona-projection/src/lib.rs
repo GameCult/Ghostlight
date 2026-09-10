@@ -5,7 +5,7 @@ pub const MEMBRANE_SCHEMA: &str = "ghostlight.persona_projection_membrane.v1";
 pub const COGNITION_CONTROLLER_SCHEMA: &str = "ghostlight.decision_controller.v1";
 pub const PERSONA_TURN_RECEIPT_SCHEMA: &str = "ghostlight.persona_turn_receipt.v3";
 pub const RECORD_GAP_TOOL_NAME: &str = "record_gap";
-pub const RECORD_GAP_TOOL_CONTRACT: &str = "record_gap(kind: ambiguity | missing_reference | missing_affordance | missing_primitive | unresolved, source_start_byte: integer, source_end_byte: integer, detail: string)";
+pub const RECORD_GAP_TOOL_CONTRACT: &str = "record_gap(kind: ambiguity | missing_reference | missing_affordance | missing_primitive | unresolved, source_quote: string, detail: string)";
 
 /// Selects how a decision owner thinks without making any claim about what
 /// kind of subject it is or which scope it controls.
@@ -110,7 +110,7 @@ pub fn build_interpreter_prompt(input: &InterpreterPrompt<'_>) -> String {
         None => "The harness supplies the current legal typed proposal tools immediately before each step. Use only those current contracts; never reuse a contract remembered from an earlier step.".into(),
     };
     format!(
-        "<!-- membrane:{MEMBRANE_SCHEMA}:interpreter -->\nYou are a private Interpreter. Translate a natural Persona turn into zero or more typed candidate proposals supported by the prose and permissioned context. The owning runtime validates and commits proposals; you never claim that a proposed consequence already happened. Do not invent knowledge, capability, custody, perception, identifiers, or state references.\n\nInterpretation is total: this turn cannot fail because some prose has no available translation. The harness has already preserved the Persona turn verbatim as noncanonical source prose. Capture every translation you can justify, citing its exact UTF-8 byte span in that source. Spoken words become a typed speech proposal; wondering, deciding, attempting, and narration are not automatically speech. If a meaningful passage cannot be represented safely, call `{gap_tool}` instead of guessing. A report containing only source prose, or source prose plus gaps, is valid. If the step budget ends, the harness completes the report and records the unresolved source instead of failing.\n\nThe always-available gap tool is:\n{gap_contract}\nUse `ambiguity` when several translations remain live, `missing_reference` when the prose lacks an exact world reference, `missing_affordance` when the subject lacks a permitted way to attempt it, `missing_primitive` when the ontology has no suitable proposal vocabulary, and `unresolved` only when no narrower account fits.\n\nIf a section headed `Interrupted:` follows the Persona turn, the world moved after that prose was written and before it could take effect. The prose is not re-written and not re-authored; translate it again against what that section reports. You may capture a shorter or different span of the same prose, a different permitted action the prose supports, or call `{gap_tool}` with `unresolved` when the intent the prose carried has been overtaken. The reported change is not something this person said, did, or caused.\n\n{proposal_contract}\n\nDomain guidance and exact permissions:\n{guidance}\n\nIdentity:\n{identity}\n\nPermissioned typed context:\n{context}\n\nLived stream:\n{stream}\n\nPersona turn (already preserved verbatim as source evidence):\n{output}",
+        "<!-- membrane:{MEMBRANE_SCHEMA}:interpreter -->\nYou are a private Interpreter. Translate a natural Persona turn into zero or more typed candidate proposals supported by the prose and permissioned context. The owning runtime validates and commits proposals; you never claim that a proposed consequence already happened. Do not invent knowledge, capability, custody, perception, identifiers, or state references.\n\nInterpretation is total: this turn cannot fail because some prose has no available translation. The harness has already preserved the Persona turn verbatim as noncanonical source prose. Capture every translation you can justify, quoting the exact words of that source verbatim in `source_quote`; the harness locates the quote in the preserved prose and binds the capture to it, so a quote that is not in the prose word for word is recorded as a gap. Spoken words become a typed speech proposal; wondering, deciding, attempting, and narration are not automatically speech. If a meaningful passage cannot be represented safely, call `{gap_tool}` instead of guessing. A report containing only source prose, or source prose plus gaps, is valid. If the step budget ends, the harness completes the report and records the unresolved source instead of failing.\n\nThe always-available gap tool is:\n{gap_contract}\nUse `ambiguity` when several translations remain live, `missing_reference` when the prose lacks an exact world reference, `missing_affordance` when the subject lacks a permitted way to attempt it, `missing_primitive` when the ontology has no suitable proposal vocabulary, and `unresolved` only when no narrower account fits.\n\nIf a section headed `Interrupted:` follows the Persona turn, the world moved after that prose was written and before it could take effect. The prose is not re-written and not re-authored; translate it again against what that section reports. You may capture a shorter or different span of the same prose, a different permitted action the prose supports, or call `{gap_tool}` with `unresolved` when the intent the prose carried has been overtaken. The reported change is not something this person said, did, or caused.\n\n{proposal_contract}\n\nDomain guidance and exact permissions:\n{guidance}\n\nIdentity:\n{identity}\n\nPermissioned typed context:\n{context}\n\nLived stream:\n{stream}\n\nPersona turn (already preserved verbatim as source evidence):\n{output}",
         identity = input.identity,
         guidance = input.domain_guidance,
         context = input.typed_context,
@@ -360,6 +360,20 @@ impl SourceSpan {
         })
     }
 
+    /// The first exact occurrence of `quote` in `source`. The model quotes
+    /// words; the harness counts bytes. A model that counts bytes itself cut
+    /// three of eight utterances mid-word on the first Claude road run.
+    pub fn locate(source: &str, quote: &str) -> Option<Self> {
+        if quote.is_empty() {
+            return None;
+        }
+        source.find(quote).map(|start_byte| Self {
+            start_byte,
+            end_byte: start_byte + quote.len(),
+            verbatim: quote.to_owned(),
+        })
+    }
+
     pub fn whole(source: &str) -> Self {
         Self {
             start_byte: 0,
@@ -417,8 +431,8 @@ pub enum TranslationGapKind {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecordGapToolCall {
     pub kind: TranslationGapKind,
-    pub source_start_byte: usize,
-    pub source_end_byte: usize,
+    /// The passage, quoted verbatim from the source prose.
+    pub source_quote: String,
     pub detail: String,
 }
 
@@ -516,19 +530,14 @@ impl<T> InterpretationAccumulator<T> {
         }
     }
 
-    pub fn capture_proposal(
-        &mut self,
-        proposal: T,
-        source_start_byte: usize,
-        source_end_byte: usize,
-    ) -> CaptureToolFeedback {
-        let Some(source) = SourceSpan::exact(
-            self.source.source_prose(),
-            source_start_byte,
-            source_end_byte,
-        ) else {
+    /// Binds a typed proposal to the source words it translates. The quote must
+    /// occur verbatim in the preserved prose; otherwise the proposal is not
+    /// captured and the whole source stays unresolved.
+    pub fn capture_proposal(&mut self, proposal: T, source_quote: &str) -> CaptureToolFeedback {
+        let Some(source) = SourceSpan::locate(self.source.source_prose(), source_quote) else {
             let detail = format!(
-                "typed proposal could not be bound to source range {source_start_byte}..{source_end_byte}; its meaning remains untranslated"
+                "typed proposal quoted words that are not in the source prose (quote_digest={}); its meaning remains untranslated",
+                sha256(source_quote)
             );
             self.record_whole_source_gap(TranslationGapKind::Unresolved, detail.clone());
             return CaptureToolFeedback::RecordedAsGap { detail };
@@ -539,14 +548,11 @@ impl<T> InterpretationAccumulator<T> {
     }
 
     pub fn record_gap(&mut self, call: RecordGapToolCall) -> CaptureToolFeedback {
-        let Some(source) = SourceSpan::exact(
-            self.source.source_prose(),
-            call.source_start_byte,
-            call.source_end_byte,
-        ) else {
+        let Some(source) = SourceSpan::locate(self.source.source_prose(), &call.source_quote)
+        else {
             let detail = format!(
-                "{} [requested source range {}..{} was not exact, so the harness bound this gap to the complete source prose]",
-                call.detail, call.source_start_byte, call.source_end_byte
+                "{} [the quoted passage is not in the source prose, so the harness bound this gap to the complete source prose]",
+                call.detail
             );
             self.record_whole_source_gap(call.kind, detail.clone());
             return CaptureToolFeedback::RecordedAsGap { detail };
@@ -846,24 +852,20 @@ mod tests {
         let source = "I say, \"Mara, the bridge is unsafe.\" Then I try the rusted western gate.";
         let mut interpretation = InterpretationAccumulator::new(turn(source));
         let warning = "Mara, the bridge is unsafe.";
-        let warning_start = source.find(warning).unwrap();
         assert_eq!(
             interpretation.capture_proposal(
                 TestProposal::Speak {
                     recipient_id: "actor:mara",
                     utterance: "Mara, the bridge is unsafe.",
                 },
-                warning_start,
-                warning_start + warning.len(),
+                warning,
             ),
             CaptureToolFeedback::Accepted
         );
-        let gate_start = source.find("try the rusted western gate").unwrap();
         assert_eq!(
             interpretation.record_gap(RecordGapToolCall {
                 kind: TranslationGapKind::MissingReference,
-                source_start_byte: gate_start,
-                source_end_byte: gate_start + "try the rusted western gate".len(),
+                source_quote: "try the rusted western gate".into(),
                 detail: "No exact gate id is visible in the permissioned context.".into(),
             }),
             CaptureToolFeedback::Accepted
@@ -886,13 +888,12 @@ mod tests {
     }
 
     #[test]
-    fn invalid_gap_offsets_become_exact_gaps_instead_of_losing_meaning() {
+    fn a_gap_quote_outside_the_prose_becomes_an_exact_gap_instead_of_losing_meaning() {
         let speech = "I appeal to whoever can hear me.";
         let mut interpretation = InterpretationAccumulator::<TestProposal>::new(turn(speech));
         let feedback = interpretation.record_gap(RecordGapToolCall {
             kind: TranslationGapKind::MissingAffordance,
-            source_start_byte: 900,
-            source_end_byte: 940,
+            source_quote: "I appeal to the magistrate.".into(),
             detail: "No appeal channel is available.".into(),
         });
 
@@ -919,8 +920,7 @@ mod tests {
                     recipient_id: "actor:mara",
                     utterance: "warning",
                 },
-                700,
-                740,
+                "warning",
             ),
             CaptureToolFeedback::RecordedAsGap { .. }
         ));
@@ -979,16 +979,13 @@ mod tests {
     fn infrastructure_interruption_leaves_the_turn_pending() {
         let source = "I say, \"Wait here.\"";
         let mut interpretation = InterpretationAccumulator::new(turn(source));
-        let utterance = "Wait here.";
-        let start = source.find(utterance).unwrap();
         assert_eq!(
             interpretation.capture_proposal(
                 TestProposal::Speak {
                     recipient_id: "actor:mara",
                     utterance: "Wait here.",
                 },
-                start,
-                start + utterance.len(),
+                "Wait here.",
             ),
             CaptureToolFeedback::Accepted
         );

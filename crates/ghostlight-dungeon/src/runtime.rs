@@ -3334,8 +3334,7 @@ mod tests {
     struct InterruptingCoverPort {
         mailbox: WorldMailbox,
         source: String,
-        speech_start: usize,
-        speech_end: usize,
+        speech: String,
         speaker: SubjectId,
         interpreter_calls: AtomicUsize,
     }
@@ -3371,11 +3370,8 @@ mod tests {
                             InferenceEvent::ToolCall {
                                 call_id: format!("call_speak_{round}"),
                                 name: "speak".into(),
-                                arguments: json!({
-                                    "source_start_byte": self.speech_start,
-                                    "source_end_byte": self.speech_end,
-                                })
-                                .to_string(),
+                                arguments: json!({ "source_quote": self.speech })
+                                    .to_string(),
                             },
                             InferenceEvent::ToolCall {
                                 call_id: format!("call_finish_{round}"),
@@ -3428,13 +3424,11 @@ mod tests {
 
         let source = "I say, \"Hold the line at the gate.\"";
         let speech = "Hold the line at the gate.";
-        let start = source.find(speech).unwrap();
 
         let port = Arc::new(InterruptingCoverPort {
             mailbox: fixture.state.world.clone(),
             source: source.into(),
-            speech_start: start,
-            speech_end: start + speech.len(),
+            speech: speech.into(),
             speaker: operational_agent,
             interpreter_calls: AtomicUsize::new(0),
         });

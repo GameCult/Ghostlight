@@ -4594,23 +4594,29 @@ impl InterpreterFold {
 /// One interpreter tool call folded into `fold`, returning exactly the string
 /// the model is owed for it.
 pub(super) fn interpreter_tool_result(
-    source: &PersonaTurn,
     fold: &mut InterpreterFold,
     name: &str,
     arguments: &str,
 ) -> String {
     match name {
         INTERPRETER_SPEAK_TOOL => match serde_json::from_str::<InterpreterSpeakCall>(arguments) {
+            // The quoted words must be canonical utterance text before they
+            // are captured: a quote the kernel would refuse as speech is a
+            // translation gap here, not an infrastructure fault at invocation.
+            Ok(call) if !fold.captured_speech && !super::patch::is_canonical_text(&call.source_quote) => {
+                let feedback = fold.accumulator.record_gap(RecordGapToolCall {
+                    kind: TranslationGapKind::Unresolved,
+                    source_quote: call.source_quote,
+                    detail: "The quoted speech is not canonical utterance text (it is empty, padded, or spans lines), so it was not captured.".into(),
+                });
+                format!("{feedback:?}")
+            }
             Ok(call) if !fold.captured_speech => {
-                let derived_text = source
-                    .source_prose()
-                    .get(call.source_start_byte..call.source_end_byte)
-                    .unwrap_or_default()
-                    .to_owned();
                 let feedback = fold.accumulator.capture_proposal(
-                    SpeakProposal { text: derived_text },
-                    call.source_start_byte,
-                    call.source_end_byte,
+                    SpeakProposal {
+                        text: call.source_quote.clone(),
+                    },
+                    &call.source_quote,
                 );
                 fold.captured_speech = feedback == CaptureToolFeedback::Accepted;
                 format!("{feedback:?}")
@@ -4618,8 +4624,7 @@ pub(super) fn interpreter_tool_result(
             Ok(call) => {
                 let feedback = fold.accumulator.record_gap(RecordGapToolCall {
                     kind: TranslationGapKind::Ambiguity,
-                    source_start_byte: call.source_start_byte,
-                    source_end_byte: call.source_end_byte,
+                    source_quote: call.source_quote,
                     detail: "More than one speech proposal was offered; this runner permits one decision invocation per opportunity.".into(),
                 });
                 format!("{feedback:?}")
@@ -4678,7 +4683,7 @@ impl InterpreterOracle {
                     name, arguments, ..
                 } = event
                 {
-                    let _ = interpreter_tool_result(source, &mut fold, name, arguments);
+                    let _ = interpreter_tool_result(&mut fold, name, arguments);
                 }
             }
         }
@@ -4696,12 +4701,7 @@ impl ToolResultOracle for InterpreterOracle {
     }
 
     fn answer(&mut self, name: &str, arguments: &str) -> Result<String, ControllerError> {
-        Ok(interpreter_tool_result(
-            &self.source,
-            &mut self.fold,
-            name,
-            arguments,
-        ))
+        Ok(interpreter_tool_result(&mut self.fold, name, arguments))
     }
 }
 
@@ -4744,7 +4744,7 @@ fn evaluate_interpreter_loop(
                         name: name.clone(),
                         arguments: arguments.clone(),
                     });
-                    let result = interpreter_tool_result(source, &mut fold, name, arguments);
+                    let result = interpreter_tool_result(&mut fold, name, arguments);
                     conversation.push(CodexInputItem::ToolResult {
                         call_id: call_id.clone(),
                         output: result,
@@ -5368,8 +5368,8 @@ fn evaluate_operational_loop(
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct InterpreterSpeakCall {
-    source_start_byte: usize,
-    source_end_byte: usize,
+    /// The spoken words, quoted verbatim from the Persona prose.
+    source_quote: String,
 }
 
 #[derive(Deserialize)]
@@ -5546,17 +5546,13 @@ fn interpreter_tools() -> Vec<CodexToolDefinition> {
     vec![
         tool_schema::tool(
             INTERPRETER_SPEAK_TOOL,
-            "Capture one exact spoken utterance by byte span in the preserved Persona prose; the harness derives the utterance verbatim.",
-            tool_schema::object(vec![
-                (
-                    "source_start_byte".into(),
-                    tool_schema::bounded_integer(0, u64::from(u32::MAX)),
+            "Capture one exact spoken utterance from the preserved Persona prose. Quote the spoken words verbatim, without the surrounding quotation marks; the harness locates the quote in the prose and records a gap instead if it is not there word for word.",
+            tool_schema::object(vec![(
+                "source_quote".into(),
+                tool_schema::canonical_string(
+                    "the spoken words exactly as they appear in the Persona prose",
                 ),
-                (
-                    "source_end_byte".into(),
-                    tool_schema::bounded_integer(1, u64::from(u32::MAX)),
-                ),
-            ]),
+            )]),
         ),
         tool_schema::tool(
             INTERPRETER_RECORD_GAP_TOOL,
@@ -5573,12 +5569,10 @@ fn interpreter_tools() -> Vec<CodexToolDefinition> {
                     ]),
                 ),
                 (
-                    "source_start_byte".into(),
-                    tool_schema::bounded_integer(0, u64::from(u32::MAX)),
-                ),
-                (
-                    "source_end_byte".into(),
-                    tool_schema::bounded_integer(1, u64::from(u32::MAX)),
+                    "source_quote".into(),
+                    tool_schema::canonical_string(
+                        "the passage exactly as it appears in the Persona prose",
+                    ),
                 ),
                 (
                     "detail".into(),
@@ -6021,8 +6015,7 @@ mod tests {
                 name: INTERPRETER_RECORD_GAP_TOOL.into(),
                 arguments: json!({
                     "kind":"unresolved",
-                    "source_start_byte":0,
-                    "source_end_byte":1,
+                    "source_quote":"I",
                     "detail":"The intended action is unclear."
                 })
                 .to_string(),
@@ -6555,18 +6548,15 @@ mod tests {
             .find(|tool| tool.name == INTERPRETER_SPEAK_TOOL)
             .unwrap();
         let schema: Value = serde_json::from_str(&interpreter_speak.parameters_json).unwrap();
-        assert!(
-            !schema["properties"]
-                .as_object()
-                .unwrap()
-                .contains_key("text")
-        );
+        let properties = schema["properties"].as_object().unwrap();
+        assert!(properties.contains_key("source_quote"));
+        assert!(!properties.contains_key("text"));
         assert!(
             serde_json::from_str::<InterpreterSpeakCall>(
-                r#"{"source_start_byte":0,"source_end_byte":4,"text":"invented"}"#
+                r#"{"source_quote":"the","text":"invented"}"#
             )
             .is_err(),
-            "Interpreter speech cannot carry text independent of its source span"
+            "Interpreter speech cannot carry text independent of its source quote"
         );
     }
 
@@ -6898,6 +6888,49 @@ mod tests {
             .collect()
     }
 
+    /// A quote the kernel would refuse as speech is a translation gap at
+    /// capture, never an infrastructure fault at invocation: on the second SDK
+    /// road run a mis-spanned utterance failed the canonical-text rule inside
+    /// `speak_invocation` and quarantined the whole cell.
+    #[test]
+    fn a_non_canonical_or_absent_quote_is_a_gap_not_a_quarantine() {
+        let opportunity = fixture_opportunity(ControllerMode::NarrativePersona);
+        let source = "I say, \"The rain has teeth tonight.\"  Then I wait.";
+        let turn = fixture_persona_turn(&opportunity, source);
+        for quote in ["", " teeth tonight.", "The rain has no teeth."] {
+            let mut fold = InterpreterFold::new(turn.clone());
+            let answer = interpreter_tool_result(
+                &mut fold,
+                INTERPRETER_SPEAK_TOOL,
+                &json!({ "source_quote": quote }).to_string(),
+            );
+            // A padded quote sits in the prose, so its gap binds to that exact
+            // span and the feedback is `Accepted`; an absent or empty one
+            // binds to the whole source. Neither is a captured proposal.
+            assert!(!fold.captured_speech, "{quote:?} was captured: {answer}");
+            let report = fold
+                .accumulator
+                .finalize(InterpretationFinalization::InterpreterFinished);
+            assert!(report.proposals().is_empty());
+            assert_eq!(report.gaps().len(), 1, "{quote:?}");
+            assert!(report.spans_are_exact());
+        }
+        // And the words as spoken are captured whole, bound to where they sit.
+        let mut fold = InterpreterFold::new(turn.clone());
+        let answer = interpreter_tool_result(
+            &mut fold,
+            INTERPRETER_SPEAK_TOOL,
+            &json!({ "source_quote": "The rain has teeth tonight." }).to_string(),
+        );
+        assert_eq!(answer, "Accepted");
+        let report = fold
+            .accumulator
+            .finalize(InterpretationFinalization::InterpreterFinished);
+        let captured = &report.proposals()[0];
+        assert_eq!(captured.source().verbatim(), "The rain has teeth tonight.");
+        assert_eq!(captured.source().start_byte(), source.find("The rain").unwrap());
+    }
+
     /// Spec test 1, interpreter lane. The string the oracle hands the model is
     /// the string the evaluator recomputes for the same call, in order.
     #[test]
@@ -6906,12 +6939,7 @@ mod tests {
         let source = "I say, \"The rain has teeth tonight.\"";
         let turn = fixture_persona_turn(&opportunity, source);
         let speech = "The rain has teeth tonight.";
-        let start = source.find(speech).unwrap();
-        let span = json!({
-            "source_start_byte": start,
-            "source_end_byte": start + speech.len(),
-        })
-        .to_string();
+        let span = json!({ "source_quote": speech }).to_string();
         let calls: Vec<(&str, &str, &str)> = vec![
             ("call-0", INTERPRETER_SPEAK_TOOL, span.as_str()),
             // A second speak, so `captured_speech` is exercised.
@@ -7214,20 +7242,10 @@ mod tests {
         let source = "I say, \"The rain has teeth tonight.\"";
         let turn = fixture_persona_turn(&opportunity, source);
         let speech = "The rain has teeth tonight.";
-        let start = source.find(speech).unwrap();
-        let span = json!({
-            "source_start_byte": start,
-            "source_end_byte": start + speech.len(),
-        })
-        .to_string();
-        // A span past the end of the prose: `get(..)` yields nothing and the
-        // capture is of the empty string, which is a real answer and not a
-        // decode failure.
-        let past_end = json!({
-            "source_start_byte": source.len() + 1,
-            "source_end_byte": source.len() + 9,
-        })
-        .to_string();
+        let span = json!({ "source_quote": speech }).to_string();
+        // A quote the prose does not contain: the capture is refused as a gap,
+        // which is a real answer and not a decode failure.
+        let past_end = json!({ "source_quote": "The rain has no teeth." }).to_string();
         let oversized = oversized_arguments();
         let calls: Vec<(&str, &str, &str)> = vec![
             ("call-0", INTERPRETER_SPEAK_TOOL, span.as_str()),
@@ -7238,11 +7256,7 @@ mod tests {
             ("call-3", INTERPRETER_RECORD_GAP_TOOL, "not json at all"),
             ("call-4", INTERPRETER_RECORD_GAP_TOOL, oversized.as_str()),
             ("call-5", "speek", "{}"),
-            (
-                "call-6",
-                INTERPRETER_SPEAK_TOOL,
-                "{\"source_start_byte\":0}",
-            ),
+            ("call-6", INTERPRETER_SPEAK_TOOL, "{\"source_quote\":7}"),
         ];
         let mut oracle = InterpreterOracle::new(&turn, &[]);
         assert_eq!(oracle.remaining_rounds() as usize, TOOL_STEP_BUDGET);
@@ -7678,20 +7692,13 @@ mod tests {
                         InferenceEvent::ToolCall {
                             call_id: "call_bad_span".into(),
                             name: INTERPRETER_SPEAK_TOOL.into(),
-                            arguments: json!({
-                                "source_start_byte":source.len() + 10,
-                                "source_end_byte":source.len() + 20
-                            })
-                            .to_string(),
+                            arguments: json!({ "source_quote": "words the prose never says" })
+                                .to_string(),
                         },
                         InferenceEvent::ToolCall {
                             call_id: "call_speak".into(),
                             name: INTERPRETER_SPEAK_TOOL.into(),
-                            arguments: json!({
-                                "source_start_byte":start,
-                                "source_end_byte":start + speech.len()
-                            })
-                            .to_string(),
+                            arguments: json!({ "source_quote": speech }).to_string(),
                         },
                         InferenceEvent::ToolCall {
                             call_id: "call_finish".into(),
@@ -7846,8 +7853,7 @@ mod tests {
                             name: INTERPRETER_RECORD_GAP_TOOL.into(),
                             arguments: json!({
                                 "kind":"unresolved",
-                                "source_start_byte":0,
-                                "source_end_byte":source.len(),
+                                "source_quote":source,
                                 "detail":"The prose expresses no supported world action."
                             })
                             .to_string(),
@@ -8075,20 +8081,13 @@ mod tests {
                     InferenceEvent::ToolCall {
                         call_id: "bad-span".into(),
                         name: INTERPRETER_SPEAK_TOOL.into(),
-                        arguments: json!({
-                            "source_start_byte": source.len() + 1,
-                            "source_end_byte": source.len() + 2
-                        })
-                        .to_string(),
+                        arguments: json!({ "source_quote": "words the prose never says" })
+                            .to_string(),
                     },
                     InferenceEvent::ToolCall {
                         call_id: "exact-span".into(),
                         name: INTERPRETER_SPEAK_TOOL.into(),
-                        arguments: json!({
-                            "source_start_byte": start,
-                            "source_end_byte": start + speech.len()
-                        })
-                        .to_string(),
+                        arguments: json!({ "source_quote": speech }).to_string(),
                     },
                     InferenceEvent::ToolCall {
                         call_id: "finish".into(),
@@ -8433,13 +8432,9 @@ mod tests {
                 }
                 InferenceEvent::Text(_) | InferenceEvent::ToolCall { .. } => None,
             })
-            .find(|call| {
-                call.source_start_byte == narrative_span.start_byte
-                    && call.source_end_byte == narrative_span.end_byte
-            })
+            .find(|call| call.source_quote == narrative_speech)
             .unwrap();
-        assert!(interpreter_speak.source_start_byte == narrative_span.start_byte);
-        assert!(interpreter_speak.source_end_byte == narrative_span.end_byte);
+        assert!(interpreter_speak.source_quote == narrative_speech);
 
         snapshot = mailbox.snapshot().await.unwrap();
         let log = mailbox.operator_log().await.unwrap();
@@ -11829,19 +11824,13 @@ mod tests {
         speech: &str,
         receipt: &str,
     ) -> Result<InferenceOutput, InferenceFault> {
-        let start = source
-            .find(speech)
-            .expect("the fixture prose quotes itself");
+        assert!(source.contains(speech), "the fixture prose quotes itself");
         output(
             vec![
                 InferenceEvent::ToolCall {
                     call_id: format!("call_speak_{receipt}"),
                     name: INTERPRETER_SPEAK_TOOL.into(),
-                    arguments: json!({
-                        "source_start_byte": start,
-                        "source_end_byte": start + speech.len(),
-                    })
-                    .to_string(),
+                    arguments: json!({ "source_quote": speech }).to_string(),
                 },
                 InferenceEvent::ToolCall {
                     call_id: format!("call_finish_{receipt}"),

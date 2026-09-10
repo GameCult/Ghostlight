@@ -627,6 +627,15 @@ shared by the evaluator and the oracle from the calls after it. The harness
 takes the connector binding only when `GHOSTLIGHT_CONTROLLER_CONNECTOR` is
 set, so an all-`claude` run needs no connector.
 
+From run 2: the Interpreter's `speak` and `record_gap` cite the source by
+quoting it (`source_quote`), and the harness locates the quote and derives
+the span; the model no longer counts bytes, which cut three of eight
+utterances mid-word. The same invariant holds (only words in the preserved
+prose become speech; a quote not in the prose is a gap), and a quote that is
+not canonical utterance text is a gap at capture rather than a quarantine at
+invocation. `RecordGapToolCall` in `ghostlight-persona-projection` changed
+shape; Epiphany pins that crate by revision and is unaffected until it moves.
+
 ## Subtraction budget
 
 Prefer deletion, collapse, or reuse before adding surfaces. The replacement
