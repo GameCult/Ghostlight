@@ -2477,6 +2477,9 @@ mod tests {
         /// instead of, or alongside, the connector.
         sdk: Option<SdkBinding>,
         models: ControllerModels,
+        /// Where the whole membrane is written, request by request, when the
+        /// smoke is asked to show it.
+        trace: Option<PathBuf>,
     }
 
     async fn fixture() -> Fixture {
@@ -2516,8 +2519,13 @@ mod tests {
                 operational_agent: "gpt-5.6-terra".into(),
                 elaborator: "gpt-5.6-terra".into(),
             },
+            trace: None,
         });
         let inference = open_inference(live.connector, live.sdk, &live.models).unwrap();
+        let inference: Arc<dyn crate::world::InferencePort> = match live.trace {
+            Some(path) => Arc::new(crate::world::TracingInferencePort::new(inference, path)),
+            None => inference,
+        };
         let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
         let controllers =
             ControllerRunner::open(world.clone(), inference, work, live.models).unwrap();
@@ -3634,6 +3642,7 @@ mod tests {
                 operational_agent: env("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL"),
                 elaborator: env("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL"),
             },
+            trace: std::env::var_os("GHOSTLIGHT_SMOKE_TRACE").map(PathBuf::from),
         };
         let ticks: u32 = env("GHOSTLIGHT_SMOKE_TICKS").parse().unwrap();
         let log_path = PathBuf::from(env("GHOSTLIGHT_SMOKE_LOG"));

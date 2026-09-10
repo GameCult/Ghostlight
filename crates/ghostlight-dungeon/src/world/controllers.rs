@@ -268,6 +268,106 @@ pub(crate) trait InferencePort: Send + Sync {
     }
 }
 
+/// Test-only. Wraps any `InferencePort` and appends every prepared request and
+/// its output to one file, so a road run can show the whole membrane: what the
+/// Projector, the Persona, and the Interpreter were each given and what each
+/// returned. Production never constructs it; prose reaches durable state only
+/// as receipt-bound evidence, and the logs redact it by design.
+#[cfg(test)]
+pub(crate) struct TracingInferencePort {
+    inner: Arc<dyn InferencePort>,
+    path: PathBuf,
+}
+
+#[cfg(test)]
+impl TracingInferencePort {
+    pub(crate) fn new(inner: Arc<dyn InferencePort>, path: PathBuf) -> Self {
+        Self { inner, path }
+    }
+
+    fn render_request(prepared: &PreparedInference) -> String {
+        let request = &prepared.invocation.request;
+        let mut out = format!(
+            "\n==== {:?} model={} request={}\n",
+            prepared.purpose, request.model, request.request_id
+        );
+        if !request.instructions.is_empty() {
+            out.push_str(&format!("-- instructions --\n{}\n", request.instructions));
+        }
+        out.push_str("-- input --\n");
+        for item in &request.input {
+            match item {
+                CodexInputItem::UserText { text } => out.push_str(&format!("[user]\n{text}\n")),
+                CodexInputItem::AssistantText { text } => {
+                    out.push_str(&format!("[assistant]\n{text}\n"));
+                }
+                CodexInputItem::ToolCall {
+                    name, arguments, ..
+                } => out.push_str(&format!("[tool call {name}]\n{arguments}\n")),
+                CodexInputItem::ToolResult { output, .. } => {
+                    out.push_str(&format!("[tool result]\n{output}\n"));
+                }
+            }
+        }
+        if !request.tools.is_empty() {
+            out.push_str("-- tools --\n");
+            for tool in &request.tools {
+                out.push_str(&format!(
+                    "{}: {}\n{}\n",
+                    tool.name, tool.description, tool.parameters_json
+                ));
+            }
+        }
+        out
+    }
+
+    fn render_output(result: &Result<InferenceOutput, InferenceFault>) -> String {
+        let mut out = String::from("-- output --\n");
+        match result {
+            Ok(output) => {
+                for event in &output.events {
+                    match event {
+                        InferenceEvent::Text(text) => out.push_str(&format!("[text]\n{text}\n")),
+                        InferenceEvent::ToolCall {
+                            name, arguments, ..
+                        } => out.push_str(&format!("[tool call {name}]\n{arguments}\n")),
+                    }
+                }
+            }
+            Err(fault) => out.push_str(&format!("[fault]\n{}\n", fault.detail)),
+        }
+        out
+    }
+}
+
+#[cfg(test)]
+#[async_trait]
+impl InferencePort for TracingInferencePort {
+    fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+        self.inner.prepare(request)
+    }
+
+    async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
+        let rendered = Self::render_request(&request);
+        let result = self.inner.infer(request).await;
+        let mut text = rendered;
+        text.push_str(&Self::render_output(&result));
+        if let Ok(mut file) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.path)
+        {
+            use std::io::Write as _;
+            let _ = file.write_all(text.as_bytes());
+        }
+        result
+    }
+
+    fn lend_tool_results(&self, prepared: &PreparedInference, oracle: Box<dyn ToolResultOracle>) {
+        self.inner.lend_tool_results(prepared, oracle);
+    }
+}
+
 /// Builds a `PreparedInference` outside the real CodexConnector wiring. Exists
 /// so a test port defined outside this module (`runtime`'s own spec tests, for
 /// the tick driver's concurrency and quarantine behaviour) has one legal way to

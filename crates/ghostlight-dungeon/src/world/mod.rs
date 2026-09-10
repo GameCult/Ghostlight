@@ -66,8 +66,8 @@ pub(crate) use vault::VaultEvidenceSource;
 pub(crate) use controllers::{
     ControllerWork, ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError,
     ControllerWorkWrite, InferenceEvent, InferenceFault, InferenceOutput, InferencePort,
-    InferencePurpose, InferenceRequest, PreparedInference, fixture_inference_events,
-    fixture_inference_output, fixture_prepared_inference,
+    InferencePurpose, InferenceRequest, PreparedInference, TracingInferencePort,
+    fixture_inference_events, fixture_inference_output, fixture_prepared_inference,
 };
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch, Site};
 
