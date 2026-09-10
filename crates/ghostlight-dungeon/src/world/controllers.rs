@@ -3928,6 +3928,13 @@ struct SelectedDecision {
 }
 
 impl SelectedDecision {
+    /// What a Persona may know about itself: its own state, by label and never
+    /// by id. Another subject is named only where this subject's own
+    /// components bind them to it (a creditor, an employer, a forum, a
+    /// dependency); a person knows whom they owe. Ids, digests, revisions, and
+    /// every other subject's state stay out, which the leak tests pin. Before
+    /// this renderer carried the life the seed authored, a seeded person was
+    /// projected from a name, a clock, and permission to speak, and said so.
     fn projector_context(&self) -> Result<String, ControllerError> {
         serde_json::to_string_pretty(&json!({
             "world": {
@@ -3936,11 +3943,206 @@ impl SelectedDecision {
             "subject": {
                 "label": self.subject.label,
                 "kind": self.subject.kind,
+                "place": self.place_label(self.subject.position),
             },
             "now": self.snapshot.now,
             "permission": catalog_permissions(&self.granted),
+            "routes": self.projector_routes(),
+            "holdings": self.projector_holdings(),
+            "dependencies": self.projector_dependencies(),
+            "authority": self.projector_authority(),
+            "offices_held": self.projector_offices(&self.subject.offices_held),
+            "offices_granted": self.projector_offices(&self.subject.offices_granted),
+            "redress": self.projector_redress(),
+            "commitments": self.projector_commitments(),
+            "pressures": self.projector_pressures(),
         }))
         .map_err(|error| ControllerError::Serialization(error.to_string()))
+    }
+
+    fn place_label(&self, place: Option<EntityId>) -> Value {
+        place
+            .and_then(|id| self.snapshot.places.iter().find(|candidate| candidate.id == id))
+            .map_or(Value::Null, |place| Value::String(place.label.clone()))
+    }
+
+    fn resource_label(&self, resource: EntityId) -> Value {
+        self.snapshot
+            .resources
+            .iter()
+            .find(|candidate| candidate.id == resource)
+            .map_or(Value::Null, |resource| Value::String(resource.label.clone()))
+    }
+
+    fn subject_label(&self, subject: SubjectId) -> Value {
+        self.snapshot
+            .subjects
+            .iter()
+            .find(|candidate| candidate.id == subject)
+            .map_or(Value::Null, |subject| Value::String(subject.label.clone()))
+    }
+
+    fn route_label(&self, route: EdgeId) -> Value {
+        self.snapshot
+            .routes
+            .iter()
+            .find(|candidate| candidate.id == route)
+            .map_or(Value::Null, |route| Value::String(route.label.clone()))
+    }
+
+    fn projector_routes(&self) -> Vec<Value> {
+        self.subject
+            .components
+            .routes
+            .keys()
+            .filter_map(|edge_id| self.snapshot.routes.iter().find(|route| route.id == *edge_id))
+            .map(|route| {
+                json!({
+                    "label": route.label,
+                    "from": self.place_label(Some(route.from)),
+                    "to": self.place_label(Some(route.to)),
+                    "access": route.access,
+                    "cost": route.cost,
+                    "open": route.open,
+                })
+            })
+            .collect()
+    }
+
+    fn projector_holdings(&self) -> Vec<Value> {
+        self.subject
+            .components
+            .holdings
+            .iter()
+            .map(|(resource, quantity)| {
+                json!({"label": self.resource_label(*resource), "quantity": quantity})
+            })
+            .collect()
+    }
+
+    fn projector_dependencies(&self) -> Vec<Value> {
+        self.subject
+            .components
+            .dependencies
+            .iter()
+            .map(|target| match target {
+                DependencyTarget::Resource(id) => {
+                    json!({"kind": "resource", "label": self.resource_label(*id)})
+                }
+                DependencyTarget::Route(id) => json!({"kind": "route", "label": self.route_label(*id)}),
+                DependencyTarget::Subject(id) => {
+                    json!({"kind": "subject", "label": self.subject_label(*id)})
+                }
+            })
+            .collect()
+    }
+
+    /// Kind and the shape of the ground, never the ground's name: a jurisdiction
+    /// may cover places and subjects this subject has never heard of.
+    fn projector_authority(&self) -> Vec<Value> {
+        self.subject
+            .components
+            .authority
+            .iter()
+            .map(Self::projector_grant)
+            .collect()
+    }
+
+    fn projector_grant(grant: &AuthorityGrant) -> Value {
+        let over = match grant.over {
+            super::patch::AuthorityTarget::Subject(_) => "a subject",
+            super::patch::AuthorityTarget::PlaceSubtree(_) => "a place and everything in it",
+        };
+        json!({"kind": grant.kind, "over": over})
+    }
+
+    fn projector_offices(&self, offices: &[OfficeSnapshot]) -> Vec<Value> {
+        offices
+            .iter()
+            .map(|office| {
+                json!({
+                    "institution": self.subject_label(office.institution),
+                    "office": office.office,
+                    "held": office.incumbent.is_some(),
+                    "authority": office.authority.iter().map(Self::projector_grant).collect::<Vec<_>>(),
+                })
+            })
+            .collect()
+    }
+
+    fn projector_redress(&self) -> Vec<Value> {
+        self.subject
+            .redress
+            .iter()
+            .map(|forum| json!({"grievance": forum.grievance, "forum": self.subject_label(forum.forum)}))
+            .collect()
+    }
+
+    /// Own promises. The counterparty is named because the promise is this
+    /// subject's own; the key is not, because it is a command id.
+    fn projector_commitments(&self) -> Vec<Value> {
+        self.subject
+            .commitments
+            .iter()
+            .map(|commitment| {
+                json!({
+                    "kind": commitment.kind,
+                    "counterparty": commitment.counterparty.map_or(Value::Null, |id| self.subject_label(id)),
+                    "due": commitment.due,
+                    "period": commitment.period,
+                    "past_due": commitment.past_due,
+                })
+            })
+            .collect()
+    }
+
+    /// Pressure on self, by what presses: an own promise past due, a
+    /// dependency that is unavailable, or another party, named only if this
+    /// subject already owes them something.
+    fn projector_pressures(&self) -> Vec<Value> {
+        self.subject
+            .pressures
+            .iter()
+            .map(|pressure| {
+                let source = match pressure.source {
+                    super::patch::PressureSource::Commitment { key, .. } => {
+                        let promise = self
+                            .subject
+                            .commitments
+                            .iter()
+                            .find(|commitment| commitment.key == key);
+                        json!({
+                            "from": "own promise past due",
+                            "kind": promise.map(|commitment| commitment.kind),
+                            "due": promise.map(|commitment| commitment.due),
+                        })
+                    }
+                    super::patch::PressureSource::Dependency(target) => match target {
+                        DependencyTarget::Resource(id) => {
+                            json!({"from": "unavailable dependency", "label": self.resource_label(id)})
+                        }
+                        DependencyTarget::Route(id) => {
+                            json!({"from": "unavailable dependency", "label": self.route_label(id)})
+                        }
+                        DependencyTarget::Subject(id) => {
+                            json!({"from": "unavailable dependency", "label": self.subject_label(id)})
+                        }
+                    },
+                    super::patch::PressureSource::Subject(id) => {
+                        let bound = self
+                            .subject
+                            .commitments
+                            .iter()
+                            .any(|commitment| commitment.counterparty == Some(id));
+                        json!({
+                            "from": "another party",
+                            "label": if bound { self.subject_label(id) } else { Value::Null },
+                        })
+                    }
+                };
+                json!({"source": source, "magnitude": pressure.magnitude})
+            })
+            .collect()
     }
 
     fn typed_view(&self) -> Result<String, ControllerError> {
@@ -6778,6 +6980,194 @@ mod tests {
     /// The digest-bound components a fixture subject carries. A literal rather
     /// than a constructor on `ScopeComponents`: the kernel derives these from
     /// state and owes no test builder.
+    /// The Projector carries the life the seed authored, by label: the acting
+    /// subject's own place, routes, holdings, promises with their
+    /// counterparties, and pressure on self. It carries no id, key, digest, or
+    /// revision, and nothing of a bystander's state.
+    #[test]
+    fn a_seeded_person_sees_its_own_life_and_no_ids() {
+        use crate::world::patch::{CommitmentKey, CommitmentKind, PressureMagnitude, PressureSource};
+        use crate::world::{
+            AccessKind, CommitmentSnapshot, Cost, EdgeId, EntityId, FictionalMinutes,
+            PlaceSnapshot, PressureSnapshot, Quantity, ResourceSnapshot, RouteSnapshot,
+        };
+
+        let actor_id = SubjectId::issue();
+        let creditor_id = SubjectId::issue();
+        let bystander_id = SubjectId::issue();
+        let actor_controller = ControllerId::issue();
+        let speak_affordance = AffordanceId::issue();
+        let mut place_ids = [EntityId::issue(), EntityId::issue()];
+        place_ids.sort();
+        let [cistern, gate_road] = place_ids;
+        let water = EntityId::issue();
+        let steps = serde_json::from_value::<EdgeId>(Value::String(
+            "33333333-3333-4333-8333-333333333333".into(),
+        ))
+        .unwrap();
+        let key = CommitmentKey {
+            command: CommandId::new(),
+            index: 0,
+        };
+        let subject = |id, label: &str, position, components, commitments, pressures| SubjectSnapshot {
+            id,
+            label: label.into(),
+            kind: SubjectKind::Person,
+            controller_id: Some(actor_controller),
+            controller_mode: Some(ControllerMode::NarrativePersona),
+            human_controller: None,
+            affordances: BTreeSet::from([speak_affordance]),
+            position,
+            components,
+            offices_held: Vec::new(),
+            offices_granted: Vec::new(),
+            redress: Vec::new(),
+            knowledge: Vec::new(),
+            commitments,
+            pressures,
+            qualified: true,
+        };
+        let actor = subject(
+            actor_id,
+            "Tamsin Oru",
+            Some(cistern),
+            ScopeComponents {
+                routes: BTreeMap::from([(steps, fixture_route(cistern, gate_road))]),
+                holdings: BTreeMap::from([(water, Quantity(12))]),
+                ..fixture_components()
+            },
+            vec![CommitmentSnapshot {
+                key,
+                kind: CommitmentKind::Obligation,
+                counterparty: Some(creditor_id),
+                due: FictionalMinutes(120),
+                period: None,
+                past_due: false,
+            }],
+            vec![PressureSnapshot {
+                source: PressureSource::Commitment {
+                    subject: actor_id,
+                    key,
+                },
+                magnitude: PressureMagnitude(3),
+            }],
+        );
+        let creditor = subject(
+            creditor_id,
+            "Old Hesk the gatekeeper",
+            Some(gate_road),
+            fixture_components(),
+            Vec::new(),
+            Vec::new(),
+        );
+        let bystander = subject(
+            bystander_id,
+            "The Yard Bystander",
+            Some(gate_road),
+            ScopeComponents {
+                holdings: BTreeMap::from([(water, Quantity(99))]),
+                ..fixture_components()
+            },
+            Vec::new(),
+            Vec::new(),
+        );
+        let opportunity = DecisionOpportunity {
+            world_id: WorldId::issue(),
+            revision: 7,
+            scope_digest: ScopeDigest::fixture("sha256:projector-must-not-see-this-digest"),
+            scope: DecisionScope {
+                subject_id: actor_id,
+            },
+            controller_id: actor_controller,
+            controller_mode: ControllerMode::NarrativePersona,
+            affordance_ids: vec![speak_affordance],
+        };
+        let snapshot = WorldSnapshot {
+            world_id: opportunity.world_id,
+            revision: opportunity.revision,
+            phase: WorldPhase::Active,
+            owner: PrincipalId::new("projector-fixture-owner"),
+            title: "Low Sere".into(),
+            draft_approvals: BTreeSet::new(),
+            required_approvers: BTreeSet::new(),
+            subjects: vec![actor.clone(), creditor, bystander],
+            affordances: vec![speak_snapshot(speak_affordance)],
+            places: vec![
+                PlaceSnapshot {
+                    id: cistern,
+                    label: "The Sere Cistern".into(),
+                    container: None,
+                },
+                PlaceSnapshot {
+                    id: gate_road,
+                    label: "The Gate Road".into(),
+                    container: None,
+                },
+            ],
+            resources: vec![ResourceSnapshot {
+                id: water,
+                label: "cistern water".into(),
+            }],
+            routes: vec![RouteSnapshot {
+                id: steps,
+                label: "the cistern steps".into(),
+                from: cistern,
+                to: gate_road,
+                access: AccessKind::Public,
+                cost: Cost(2),
+                open: true,
+            }],
+            opportunities: vec![opportunity.clone()],
+            state_digest: "sha256:projector-must-not-see-this-digest".into(),
+            last_commit_digest: Some("sha256:projector-must-not-see-the-commit".into()),
+            now: FictionalMinutes(60),
+            boundaries: Vec::new(),
+            scale_deficit: Vec::new(),
+        };
+        let selected = SelectedDecision {
+            snapshot,
+            subject: actor,
+            opportunity,
+            granted: vec![speak_snapshot(speak_affordance)],
+        };
+        let context = selected.projector_context().unwrap();
+
+        for expected in [
+            "\"place\": \"The Sere Cistern\"",
+            "the cistern steps",
+            "The Gate Road",
+            "cistern water",
+            "\"quantity\": 12",
+            "\"kind\": \"obligation\"",
+            "Old Hesk the gatekeeper",
+            "\"due\": 120",
+            "own promise past due",
+            "\"magnitude\": 3",
+        ] {
+            assert!(
+                context.contains(expected),
+                "the Projector was not shown {expected}\n{context}"
+            );
+        }
+        for forbidden in [
+            encoded_id(&actor_id).unwrap(),
+            encoded_id(&creditor_id).unwrap(),
+            encoded_id(&bystander_id).unwrap(),
+            encoded_id(&cistern).unwrap(),
+            encoded_id(&water).unwrap(),
+            encoded_id(&key.command).unwrap(),
+            "The Yard Bystander".into(),
+            "99".into(),
+            "revision".into(),
+            "projector-must-not-see".into(),
+        ] {
+            assert!(
+                !context.contains(&forbidden),
+                "Projector surface leaked `{forbidden}`\n{context}"
+            );
+        }
+    }
+
     fn fixture_components() -> ScopeComponents {
         ScopeComponents {
             position: None,
