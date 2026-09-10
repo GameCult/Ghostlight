@@ -142,7 +142,7 @@ reaches the provider and gets nothing back is a failed run.
 
 ## Claude SDK route
 
-Not yet run. `world/sdk_inference.rs`'s `SdkInferencePort` gives the same
+Run; see "SDK runs, 2026-09-10" below. `world/sdk_inference.rs`'s `SdkInferencePort` gives the same
 ignored smoke a second transport: a lane whose configured model is
 `claude`-prefixed (matching `GHOSTLIGHT_SDK_MODEL_PREFIX`, default `claude`)
 routes to a Node sidecar instead of the CodexConnector, so the road can run
@@ -205,6 +205,7 @@ set.
 |---|---|---|---|
 | 1 | both sessions refused: subjects with no grant, twelve commitments due at or before the clock | 3 committed, 2 cells each, Persona spoke | harness failed on the empty seed; the transport itself worked end to end |
 | 2 | one session, one round, 89 s: six qualified persons, deficit 6 to 0 | 456 s, 395 s, 326 s; 8 singleton cells each; revision 3 to 24 | passed; tick 3 quarantined one cell |
+| 3 | one session, one round, 109 s: six persons and an institution, deficit 6 to 0 | two ticks, 230 s and 138 s; 9 singleton cells each; revision 3 to 15 | passed; no quarantine; speech cited by quote arrives whole |
 
 Rules run 1 imposed are in the implementation plan under step 11 (descriptions
 carried through the sidecar, `due` described and the clock printed, the grant
@@ -213,8 +214,10 @@ conversation). Run 2's two findings: three of eight speech captures were cut
 mid-word ("just t", "a?\" I") because the Interpreter cited byte spans the
 model counted wrong, and the tick-3 quarantine was a mis-spanned utterance
 failing the canonical-text rule at invocation, which is a translation gap
-wearing an infrastructure fault's coat. Ticks are slow because eight singleton
-cells run in sequence at roughly 50 s per cell on this lane.
+wearing an infrastructure fault's coat. Run 3, after speech and gaps moved to
+`source_quote`, shows every utterance whole and no quarantine. Ticks are slow
+because singleton cells run in sequence at roughly 15 to 50 s per cell on this
+lane.
 
 ## Interrupted cell
 

@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-09-06
+Updated: 2026-09-10
 
 This is the compact re-entry packet. It carries current authority and the next
 gate. Git owns chronology, the system map owns teardown detail, and evidence
@@ -220,7 +220,11 @@ transports: the CodexConnector and, per `claude`-prefixed lane model, the
 Node sidecar on the Claude Agent SDK. The Rust decoder is the one validator
 on both; the sidecar hands arguments through unvalidated. The sidecar and
 its receipt shape are a named stopgap, deleted whole when a Messages-API port
-has budget.
+has budget. The SDK transport is proven on the road: seeded runs on
+`claude-sonnet-5` committed ticks end to end (`notes/local-live-smoke.md`,
+"SDK runs, 2026-09-10"). A kernel refusal continues the authoring
+conversation (`Refusal` rows, `controller_work.v12`); the Interpreter cites
+prose by quote (`source_quote`), and a quote not in the prose is a gap.
 
 Deferred by design: `PolityInCausalRange`, `IndividuationRequired`, and
 Verification 13 wait for relations and population slices. Stale: the
@@ -231,7 +235,9 @@ unplaced; retire it or place its subjects.
 
 ### Constraints
 
-- No Codex subscription and no API budget. The Codex connector is stopped;
+- The operator's Claude subscription, inherited by the SDK sidecar from the
+  ambient Claude Code login, is the only live provider. Codex remains lapsed:
+  no Codex subscription and no API budget; the Codex connector is stopped;
   the smoke substrate at `F:\Projects\Ghostlight-smoke` stays.
 - CodexConnector is a deliberately isolated Codex fork so that Epiphany
   stops compiling Codex; nothing goes into it. Its `main` at `6519289` is
@@ -250,7 +256,8 @@ unplaced; retire it or place its subjects.
 2. The outbound half of the consumer contract: the response batch with a
    non-loopback CultMesh lease.
 3. The deployment gate below.
-4. Integration of the elaborator swarm's ideas (item 2 below).
+4. Integration of the elaborator swarm's ideas (see "World fixtures and
+   the elaborator swarm" below).
 
 ### Decisions the operator owns
 

@@ -367,17 +367,21 @@ current_status:
     local live smoke and the seeded road run (Kalsa Public, Low Sere; twelve
     runs, every road failure now a rule in the tree), step 8 seed producer,
     step 9 interruption, step 10 witness, step 11 Claude SDK inference port
-    with its follow-ups (one validator on both transports, Rust's decoder).
+    with its follow-ups, and the first SDK-backed seeded road runs on
+    claude-sonnet-5 (runbook "SDK runs, 2026-09-10"; plan "Road follow-ups,
+    2026-09-10"; controller_work.v12).
     Chronology, SHAs, and per-pass facts live in git history, the evidence
     ledger and its archive, and the docs; do not rebuild them here or in
-    the handoff. Next, in the operator's order: (a) install the Claude
-    Code CLI and log in per notes/local-live-smoke.md "Claude SDK route",
-    then the first SDK-backed road run (the belief-changing record owed);
+    the handoff. Next, in the operator's order: (a) the remaining road
+    item: a longer SDK run that shows the first live interrupted cell and
+    its log line (runbook "Interrupted cell");
     (b) the outbound consumer response batch with a non-loopback CultMesh
     lease; (c) the deployment gate (world-v3, Idunn/Odin as recorded in the
     handoff); (d) decision on Eve world.run_tick authority and the Eve
     owner's fourth command-result state for an overtaken turn. Constraints:
-    no Codex subscription and no API budget; CodexConnector stays isolated
+    the operator's Claude subscription, inherited by the sidecar from the
+    ambient login, is the only live provider; no Codex subscription and no
+    API budget; CodexConnector stays isolated
     (its main is at 6519289, the line Ghostlight runs); Ghostlight never
     holds a credential. The elaborator swarm is drained and handed off
     (C:\Users\Meta\.claude\worlds\README.md); its 98 ideas sit on slot/*
