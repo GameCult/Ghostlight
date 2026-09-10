@@ -3841,9 +3841,10 @@ mod tests {
             final_snapshot.revision > snapshot.revision,
             "the clock alone must move the revision"
         );
-        // A road run that reached the provider and got nothing back is a
-        // failed run, not a quiet one: the smoke exists to prove inference
-        // happened, so an empty seed or a silent Persona fails it.
+        // A road run that reached the provider and landed no seed is a failed
+        // run, not a quiet one: the smoke exists to prove inference happened.
+        // Silence is not failure. A person given a place, a debt, and a clock
+        // and nothing else correctly says nothing, and the trace shows why.
         assert!(
             seed_sessions == 0 || seed_patches >= 1,
             "no seed session committed a patch; read the seed round outcomes in the log"

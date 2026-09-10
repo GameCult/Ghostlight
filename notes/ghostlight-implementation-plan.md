@@ -636,6 +636,47 @@ not canonical utterance text is a gap at capture rather than a quarantine at
 invocation. `RecordGapToolCall` in `ghostlight-persona-projection` changed
 shape; Epiphany pins that crate by revision and is unaffected until it moves.
 
+From runs 4 to 6 (the membrane traced end to end): the Projector context now
+carries the acting subject's own life by label (place, routes, holdings,
+dependencies, authority shape, offices, redress, promises with counterparty,
+pressure on self; due as minutes from now), never an id; the Projector and
+Persona prompts render only what the context establishes and treat the word
+budget as a ceiling; the smoke's `GHOSTLIGHT_SMOKE_TRACE` writes every
+request and output. Silence is a legitimate outcome, not a harness failure.
+
+### Proposed step 12: the seed authors meaning
+
+Not adopted; mapped 2026-09-11 from run 5's trace, awaiting the operator's
+decision on two points below. Objective: a seeded person speaks from authored
+meaning rather than the model's default voice, which is the hard boundary
+"character intelligence is modeled state, not a default model capability".
+
+Current mechanism: the ontology doc names `PersonaMaterial` (values, voice,
+memories, reads) as a component and lists `set(subject, material)` in its
+operation table, and none of it exists in the kernel; `Commitment` is kind,
+counterparty, due, period, checks, with no statement of what is promised.
+The seed can only author identical people with contentless debts.
+
+Cut: (1) `create_commitment` gains a required `statement: Statement`; the
+catalog count stays 29. (2) `set_persona_material(subject, material)`, a
+whole-value set carrying `values: Vec<Statement>`, `voice: Statement`,
+`memories: Vec<Statement>`, `reads: Vec<(SubjectId, Statement)>`; the count
+becomes 30 and one tool follows from the catalog. Material is not in
+`ScopeComponents` (no precondition reads it), so it cannot interrupt a bound
+turn. The Projector gains memories and reads by label and the statement
+beside each promise; the Persona identity block becomes label, voice, values;
+the Operational typed view gains the same by id. The seed brief asks for a
+voice, values, memories, and a read of each counterparty per person.
+Forbidden: any `persona_state.v0` document inside `WorldState` (the portable
+standard is a boundary projection, a later seam); any prompt-side invention.
+Schema bumps: `world_state.consumer.v3`, `world_commit.consumer.v3`. Also
+owed from run 6: the Projector says "no one before me" for two people in one
+house, because the context carries own place and not who else stands there;
+co-presence by label is the same reach the kernel already derives for speech
+and belongs in the same cut. Decisions the operator owns: the small typed
+material record above versus the full portable standard (recommend small),
+and whether a commitment statement is required (recommend required).
+
 ## Subtraction budget
 
 Prefer deletion, collapse, or reuse before adding surfaces. The replacement

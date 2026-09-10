@@ -372,9 +372,11 @@ current_status:
     2026-09-10"; controller_work.v12).
     Chronology, SHAs, and per-pass facts live in git history, the evidence
     ledger and its archive, and the docs; do not rebuild them here or in
-    the handoff. Next, in the operator's order: (a) the remaining road
-    item: a longer SDK run that shows the first live interrupted cell and
-    its log line (runbook "Interrupted cell");
+    the handoff. Next, in the operator's order: (a) decide and build plan
+    step 12, the seed authoring meaning (PersonaMaterial, commitment
+    statements, co-presence; mapped in the plan, not adopted), then the
+    longer SDK run that shows the first live interrupted cell and its log
+    line (runbook "Interrupted cell");
     (b) the outbound consumer response batch with a non-loopback CultMesh
     lease; (c) the deployment gate (world-v3, Idunn/Odin as recorded in the
     handoff); (d) decision on Eve world.run_tick authority and the Eve

@@ -248,11 +248,11 @@ unplaced; retire it or place its subjects.
 
 ### In order
 
-1. The operator installs the Claude Code CLI and logs in per the "Claude
-   SDK route" in `notes/local-live-smoke.md`. Then the first SDK-backed road
-   run, which is the belief-changing record still owed, and the first live
-   interrupted cell (the runbook's "Interrupted cell" section names what the
-   log must show).
+1. Decide and build plan step 12, the seed authoring meaning (`PersonaMaterial`,
+   commitment statements, co-presence), mapped in the plan and not adopted.
+   Until it lands every seeded person is silent by design. After it, a longer
+   SDK run that shows the first live interrupted cell, with the log line the
+   runbook's "Interrupted cell" section names.
 2. The outbound half of the consumer contract: the response batch with a
    non-loopback CultMesh lease.
 3. The deployment gate below.

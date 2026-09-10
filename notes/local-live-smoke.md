@@ -137,8 +137,10 @@ the kernel, and each became a rule the tree now carries:
 - The first landed seed put all six people in the commons; the brief states
   that a subject must stand at the row's root or inside it to count.
 
-The harness fails when no seed patch lands or nobody speaks, so a run that
-reaches the provider and gets nothing back is a failed run.
+The harness fails when no seed patch lands, so a run that reaches the
+provider and authors nothing is a failed run. Silence is not failure: a
+person given a place, a debt, and a clock and nothing else says nothing, and
+since run 6 the prompts render that honestly instead of borrowing a voice.
 
 ## Claude SDK route
 
@@ -206,6 +208,9 @@ set.
 | 1 | both sessions refused: subjects with no grant, twelve commitments due at or before the clock | 3 committed, 2 cells each, Persona spoke | harness failed on the empty seed; the transport itself worked end to end |
 | 2 | one session, one round, 89 s: six qualified persons, deficit 6 to 0 | 456 s, 395 s, 326 s; 8 singleton cells each; revision 3 to 24 | passed; tick 3 quarantined one cell |
 | 3 | one session, one round, 109 s: six persons and an institution, deficit 6 to 0 | two ticks, 230 s and 138 s; 9 singleton cells each; revision 3 to 15 | passed; no quarantine; speech cited by quote arrives whole |
+| 4 | one round, 87 s | two ticks, 219 s and 235 s; 8 cells | passed; Projector now carries the subject's own life; five people say "Fourteen days", the due on their obligation |
+| 5 | one round | two ticks, 316 s and 251 s; 9 cells; whole membrane traced (`GHOSTLIGHT_SMOKE_TRACE`) | passed; first exchange: Sera Venn "Maro first, then the rest.", Maro Seln "First for what, Sera?"; every voice was the model's |
+| 6 | one round, 90 s | two ticks, 299 s and 235 s; 9 cells; flat prompts | passed; eighteen cells, nobody spoke; the honest baseline of an unauthored person |
 
 Rules run 1 imposed are in the implementation plan under step 11 (descriptions
 carried through the sidecar, `due` described and the clock printed, the grant
@@ -218,6 +223,21 @@ wearing an infrastructure fault's coat. Run 3, after speech and gaps moved to
 `source_quote`, shows every utterance whole and no quarantine. Ticks are slow
 because singleton cells run in sequence at roughly 15 to 50 s per cell on this
 lane.
+
+Runs 4 to 6 read the membrane itself. Set `GHOSTLIGHT_SMOKE_TRACE` to a file
+and every request is appended with its purpose, model, instructions, input
+turns, tool catalog, and output, so a cell can be read end to end: Projector
+in and out, Persona in and out, Interpreter in and out. Run 5's trace showed
+the machine working as designed (the Interpreter captured only quoted speech
+and recorded honest gaps for posture, private priority, and provisional
+belief) and two faults of context, not of prose: a `Commitment` carries no
+statement of what is promised, so `due: 1000` was read as a thousand owed;
+and the ontology's `PersonaMaterial` (values, voice, memories, reads) is
+named in the doc and built nowhere, so every person spoke in the model's one
+voice. Run 6, after the prompts were flattened to render only what the
+context carries, is silent, which is correct. Run 6's trace also shows the
+Projector saying "no one before me" for two people in the same house: the
+context carries the subject's own place and not who else stands in it.
 
 ## Interrupted cell
 
