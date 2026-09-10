@@ -610,6 +610,23 @@ pass-through; the decoder reports it as missing. The result-subtype mapping
 (`error_max_turns` is an output; every error subtype a named fault) is
 tested in the sidecar without a credential.
 
+Road follow-ups, 2026-09-10, from the first two SDK-backed seeded runs
+(`notes/local-live-smoke.md`, "Claude SDK route"): the sidecar's schema
+conversion now carries every field `description` through to the advertised
+tool schema (it dropped all of them, so the `claude` lane saw bare types);
+`due` describes itself as a clock reading and both authoring prompts print
+the clock, because the model wrote twelve commitments due at or before a
+clock it was never shown; `declare_subject` states the grant rule at the
+point of use; `apply_tool_call` logs each raw tool call at debug so a refused
+patch is diagnosed from what the model sent. A kernel refusal now continues
+the same conversation instead of opening a fresh draft: `Refusal { after_round,
+mismatches }` rows on both authoring checkpoints (`controller_work.v12`;
+prior rows refused, not migrated), the refusal rendered as the next user turn
+after the rounds that earned it, and the draft rebuilt by one `DraftFold`
+shared by the evaluator and the oracle from the calls after it. The harness
+takes the connector binding only when `GHOSTLIGHT_CONTROLLER_CONNECTOR` is
+set, so an all-`claude` run needs no connector.
+
 ## Subtraction budget
 
 Prefer deletion, collapse, or reuse before adding surfaces. The replacement

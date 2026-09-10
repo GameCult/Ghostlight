@@ -2470,9 +2470,9 @@ mod tests {
     /// A real CodexConnector behind the fixture, read from the environment
     /// the production runtime reads. Only the ignored live smoke uses it.
     struct LiveController {
-        endpoint: SocketAddr,
-        credential: PathBuf,
-        runtime_id: String,
+        /// Absent when every lane routes to the sidecar; `open_inference`
+        /// refuses a model neither transport can carry.
+        connector: Option<ConnectorBinding>,
         /// Present only when the smoke is run against the Claude SDK sidecar
         /// instead of, or alongside, the connector.
         sdk: Option<SdkBinding>,
@@ -2503,9 +2503,11 @@ mod tests {
         let controller_key = directory.path().join("controller.key");
         std::fs::write(&controller_key, "runtime-test-controller-key").unwrap();
         let live = live.unwrap_or_else(|| LiveController {
-            endpoint: "127.0.0.1:9".parse().unwrap(),
-            credential: controller_key.clone(),
-            runtime_id: "ghostlight-runtime-test".into(),
+            connector: Some(ConnectorBinding {
+                endpoint: "127.0.0.1:9".parse().unwrap(),
+                key_path: controller_key.clone(),
+                caller_runtime_id: "ghostlight-runtime-test".into(),
+            }),
             sdk: None,
             models: ControllerModels {
                 projector: "gpt-5.6-luna".into(),
@@ -2515,16 +2517,7 @@ mod tests {
                 elaborator: "gpt-5.6-terra".into(),
             },
         });
-        let inference = open_inference(
-            Some(ConnectorBinding {
-                endpoint: live.endpoint,
-                key_path: live.credential.clone(),
-                caller_runtime_id: live.runtime_id.clone(),
-            }),
-            live.sdk,
-            &live.models,
-        )
-        .unwrap();
+        let inference = open_inference(live.connector, live.sdk, &live.models).unwrap();
         let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
         let controllers =
             ControllerRunner::open(world.clone(), inference, work, live.models).unwrap();
@@ -3625,9 +3618,13 @@ mod tests {
         let env = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("{name} is required"));
         let runtime_id = env("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID");
         let live = LiveController {
-            endpoint: env("GHOSTLIGHT_CONTROLLER_CONNECTOR").parse().unwrap(),
-            credential: PathBuf::from(env("GHOSTLIGHT_CONTROLLER_CREDENTIAL")),
-            runtime_id: runtime_id.clone(),
+            connector: std::env::var("GHOSTLIGHT_CONTROLLER_CONNECTOR")
+                .ok()
+                .map(|endpoint| ConnectorBinding {
+                    endpoint: endpoint.parse().unwrap(),
+                    key_path: PathBuf::from(env("GHOSTLIGHT_CONTROLLER_CREDENTIAL")),
+                    caller_runtime_id: runtime_id.clone(),
+                }),
             sdk: std::env::var_os("GHOSTLIGHT_SDK_SIDECAR")
                 .map(PathBuf::from)
                 .map(|sidecar_entry| SdkBinding {

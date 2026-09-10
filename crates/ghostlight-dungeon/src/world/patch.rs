@@ -1162,7 +1162,7 @@ pub(crate) enum PatchAnswer {
     Deficit(JurisdictionKey),
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct WorldPatch {
     pub(crate) declarations: Vec<Declaration>,
@@ -5429,7 +5429,7 @@ pub(crate) const SUBMIT_PATCH_TOOL: &str = "submit";
 pub(crate) const PATCH_TOOLS: &[PatchTool] = &[
     PatchTool {
         name: "declare_subject",
-        description: "Declare a new subject: a person, an institution, or a population.",
+        description: "Declare a new subject: a person, an institution, or a population. Every subject needs at least one affordance grant, by the bracketed id of a standing affordance or the handle of one declared in this patch; a subject with none cannot act and is refused.",
         fields: &[
             field("handle", PatchFieldKind::Handle),
             field("label", PatchFieldKind::Label),
@@ -5977,7 +5977,10 @@ fn field_schema(kind: PatchFieldKind) -> Value {
         PatchFieldKind::Quantity => tool_schema::bounded_integer(1, u64::MAX),
         PatchFieldKind::Cost => tool_schema::bounded_integer(1, u64::from(MAX_ROUTE_COST)),
         PatchFieldKind::Magnitude => tool_schema::bounded_integer(1, u64::from(u32::MAX)),
-        PatchFieldKind::Minutes => tool_schema::bounded_integer(0, u64::MAX),
+        PatchFieldKind::Minutes => tool_schema::described(
+            tool_schema::bounded_integer(0, u64::MAX),
+            "a reading of the world clock in fictional minutes; the prompt states the current reading, and a due must be later than it",
+        ),
         PatchFieldKind::OptionalPeriod => {
             tool_schema::nullable(tool_schema::bounded_integer(1, u64::from(MAX_ROUTE_COST)))
         }

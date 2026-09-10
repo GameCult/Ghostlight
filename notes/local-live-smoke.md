@@ -194,10 +194,27 @@ vault plus either a running CodexConnector or a built Claude SDK sidecar
 with an ambient Claude Code login; see `GHOSTLIGHT_SMOKE_*` and
 `GHOSTLIGHT_SDK_*` environment."
 
-This route has not been run. This machine has neither the Claude Code CLI on
-PATH nor a stored credential, so nothing beyond the scripted-link unit tests
-in `world/sdk_inference.rs` and the checked-in schema/frame fixtures has
-exercised it.
+### SDK runs, 2026-09-10
+
+Every lane on `claude-sonnet-5`, Kalsa `Public`, Low Sere, target six, two
+seed sessions, three ticks. The operator installed the CLI and logged in
+interactively; the sidecar inherited the login. No connector variables were
+set.
+
+| Run | Seed | Ticks | Result |
+|---|---|---|---|
+| 1 | both sessions refused: subjects with no grant, twelve commitments due at or before the clock | 3 committed, 2 cells each, Persona spoke | harness failed on the empty seed; the transport itself worked end to end |
+| 2 | one session, one round, 89 s: six qualified persons, deficit 6 to 0 | 456 s, 395 s, 326 s; 8 singleton cells each; revision 3 to 24 | passed; tick 3 quarantined one cell |
+
+Rules run 1 imposed are in the implementation plan under step 11 (descriptions
+carried through the sidecar, `due` described and the clock printed, the grant
+rule on the subject tool, raw tool calls logged, refusal continues the
+conversation). Run 2's two findings: three of eight speech captures were cut
+mid-word ("just t", "a?\" I") because the Interpreter cited byte spans the
+model counted wrong, and the tick-3 quarantine was a mis-spanned utterance
+failing the canonical-text rule at invocation, which is a translation gap
+wearing an infrastructure fault's coat. Ticks are slow because eight singleton
+cells run in sequence at roughly 50 s per cell on this lane.
 
 ## Interrupted cell
 

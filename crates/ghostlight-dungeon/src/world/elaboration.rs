@@ -68,9 +68,9 @@ pub(super) struct ElaboratorSession {
 /// The stages one authoring session moves through. The draft is **not** a
 /// field: it is re-derived from `completed` by `evaluate_elaboration_loop`,
 /// exactly as an operational capture is, so a resumed session cannot submit a
-/// draft the conversation does not produce. `last_mismatches` is stored,
-/// because it is the one input that cannot be re-derived from `completed` — it
-/// came from the kernel, not the model.
+/// draft the conversation does not produce. `refusals` is stored, because it
+/// is the one input that cannot be re-derived from `completed` — it came from
+/// the kernel, not the model.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "stage", rename_all = "snake_case")]
 pub(super) enum ElaborationCheckpoint {
@@ -78,7 +78,7 @@ pub(super) enum ElaborationCheckpoint {
         command_id: CommandId,
         session: ElaboratorSession,
         agent_prompt: String,
-        last_mismatches: Vec<Mismatch>,
+        refusals: Vec<Refusal>,
         completed: Vec<InferenceOutput>,
         invocation: PreparedInference,
     },
@@ -86,7 +86,7 @@ pub(super) enum ElaborationCheckpoint {
         command_id: CommandId,
         session: ElaboratorSession,
         agent_prompt: String,
-        last_mismatches: Vec<Mismatch>,
+        refusals: Vec<Refusal>,
         completed: Vec<InferenceOutput>,
     },
     /// The round budget ran out, or the model finished without a submit. The
@@ -95,9 +95,23 @@ pub(super) enum ElaborationCheckpoint {
         command_id: CommandId,
         session: ElaboratorSession,
         agent_prompt: String,
+        refusals: Vec<Refusal>,
         completed: Vec<InferenceOutput>,
         gaps: Vec<ControllerNeed>,
     },
+}
+
+/// A kernel refusal inside one authoring session. The rounds before it
+/// authored a draft the kernel would not take; the rounds after it repair that
+/// draft in the same conversation, with the model's own calls still in view,
+/// so a mismatch site names something the model can see. `after_round` is the
+/// number of completed rounds when the refusal arrived: the fold restarts the
+/// draft there, and the refusal is the user turn that follows that round.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct Refusal {
+    pub(super) after_round: usize,
+    pub(super) mismatches: Vec<Mismatch>,
 }
 
 impl ElaborationCheckpoint {
@@ -122,7 +136,7 @@ impl ElaborationCheckpoint {
             Self::ElaboratorInFlight {
                 command_id,
                 agent_prompt,
-                last_mismatches,
+                refusals,
                 completed,
                 invocation,
                 ..
@@ -131,7 +145,7 @@ impl ElaborationCheckpoint {
                     && canonical_model(&invocation.invocation.request.model)
                     && match evaluate_elaboration_loop(
                         agent_prompt,
-                        last_mismatches,
+                        refusals,
                         completed,
                         ELABORATION_ROUND_BUDGET,
                     ) {
@@ -156,22 +170,28 @@ impl ElaborationCheckpoint {
             }
             Self::ReadyToSubmit {
                 agent_prompt,
-                last_mismatches,
+                refusals,
                 completed,
                 ..
             } => derive_elaboration_capture(
                 agent_prompt,
-                last_mismatches,
+                refusals,
                 completed,
                 ELABORATION_ROUND_BUDGET,
             )
             .is_ok_and(|capture| capture.submitted),
             Self::NoPatch {
                 agent_prompt,
+                refusals,
                 completed,
                 ..
-            } => derive_elaboration_capture(agent_prompt, &[], completed, ELABORATION_ROUND_BUDGET)
-                .is_ok_and(|capture| !capture.submitted),
+            } => derive_elaboration_capture(
+                agent_prompt,
+                refusals,
+                completed,
+                ELABORATION_ROUND_BUDGET,
+            )
+            .is_ok_and(|capture| !capture.submitted),
         }
     }
 }
@@ -189,28 +209,57 @@ pub(super) fn valid_elaboration_progression(
         (
             ElaborationCheckpoint::ElaboratorInFlight {
                 completed: existing,
+                refusals: existing_refusals,
                 ..
             },
             ElaborationCheckpoint::ElaboratorInFlight {
-                completed: next, ..
+                completed: next,
+                refusals: next_refusals,
+                ..
             }
             | ElaborationCheckpoint::ReadyToSubmit {
-                completed: next, ..
+                completed: next,
+                refusals: next_refusals,
+                ..
             }
             | ElaborationCheckpoint::NoPatch {
-                completed: next, ..
+                completed: next,
+                refusals: next_refusals,
+                ..
             },
-        ) => next.len() >= existing.len() && next.starts_with(existing),
-        // A rejection reopens the same command id for repair. A rejected
-        // command mutates nothing, so the round evidence starts over.
+        ) => next.starts_with(existing) && next_refusals.starts_with(existing_refusals),
+        // A rejection reopens the same command id for repair in the same
+        // conversation: the rounds stay, and one more refusal follows them.
         (
-            ElaborationCheckpoint::ReadyToSubmit { .. },
-            ElaborationCheckpoint::ElaboratorInFlight {
-                last_mismatches, ..
+            ElaborationCheckpoint::ReadyToSubmit {
+                completed: existing,
+                refusals: existing_refusals,
+                ..
             },
-        ) => !last_mismatches.is_empty(),
+            ElaborationCheckpoint::ElaboratorInFlight {
+                completed: next,
+                refusals: next_refusals,
+                ..
+            },
+        ) => refusal_reopens(existing, existing_refusals, next, next_refusals),
         _ => false,
     }
+}
+
+/// The one shape a reopening takes: the same rounds, and exactly one new
+/// refusal placed after the last of them.
+fn refusal_reopens(
+    existing: &[InferenceOutput],
+    existing_refusals: &[Refusal],
+    next: &[InferenceOutput],
+    next_refusals: &[Refusal],
+) -> bool {
+    next == existing
+        && next_refusals.len() == existing_refusals.len() + 1
+        && next_refusals.starts_with(existing_refusals)
+        && next_refusals
+            .last()
+            .is_some_and(|refusal| refusal.after_round == existing.len())
 }
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
@@ -362,24 +411,24 @@ impl ElaborationRunner {
             }
         };
 
-        let (agent_prompt, mut last_mismatches, mut completed) = match existing {
+        let (agent_prompt, mut refusals, mut completed) = match existing {
             Some(ElaborationCheckpoint::NoPatch { .. }) => return Ok(ElaborationOutcome::NoPatch),
             Some(
                 ElaborationCheckpoint::ElaboratorInFlight {
                     agent_prompt,
-                    last_mismatches,
+                    refusals,
                     completed,
                     ..
                 }
                 | ElaborationCheckpoint::ReadyToSubmit {
                     agent_prompt,
-                    last_mismatches,
+                    refusals,
                     completed,
                     ..
                 },
-            ) => (agent_prompt, last_mismatches, completed),
+            ) => (agent_prompt, refusals, completed),
             None => (
-                build_prompt(&snapshot, &session, &receipts, &[]),
+                build_prompt(&snapshot, &session, &receipts),
                 Vec::new(),
                 Vec::new(),
             ),
@@ -388,7 +437,7 @@ impl ElaborationRunner {
         loop {
             match evaluate_elaboration_loop(
                 &agent_prompt,
-                &last_mismatches,
+                &refusals,
                 &completed,
                 ELABORATION_ROUND_BUDGET,
             )? {
@@ -409,14 +458,14 @@ impl ElaborationRunner {
                         command_id,
                         session: session.clone(),
                         agent_prompt: agent_prompt.clone(),
-                        last_mismatches: last_mismatches.clone(),
+                        refusals: refusals.clone(),
                         completed: completed.clone(),
                         invocation: invocation.clone(),
                     })
                     .await?;
                     self.inference.lend_tool_results(
                         &invocation,
-                        Box::new(ElaborationOracle::new(&completed, ELABORATION_ROUND_BUDGET)),
+                        Box::new(ElaborationOracle::new(&completed, &refusals, ELABORATION_ROUND_BUDGET)),
                     );
                     let output =
                         self.inference
@@ -434,6 +483,7 @@ impl ElaborationRunner {
                             command_id,
                             session,
                             agent_prompt,
+                            refusals,
                             completed,
                             gaps: capture.gaps,
                         })
@@ -444,7 +494,7 @@ impl ElaborationRunner {
                         command_id,
                         session: session.clone(),
                         agent_prompt: agent_prompt.clone(),
-                        last_mismatches: last_mismatches.clone(),
+                        refusals: refusals.clone(),
                         completed: completed.clone(),
                     })
                     .await?;
@@ -476,10 +526,11 @@ impl ElaborationRunner {
                             // A rejected command mutates nothing, so reusing the
                             // id is correct and the idempotency probe never sees
                             // a conflicting commit.
-                            last_mismatches = mismatches;
-                            let repaired =
-                                build_prompt(&snapshot, &session, &receipts, &last_mismatches);
-                            self.persist_repair(command_id, &session, &repaired, &last_mismatches)
+                            refusals.push(Refusal {
+                                after_round: completed.len(),
+                                mismatches,
+                            });
+                            self.persist_repair(command_id, &session, &agent_prompt, &refusals, &completed)
                                 .await?;
                             Ok(ElaborationOutcome::Rejected)
                         }
@@ -507,28 +558,30 @@ impl ElaborationRunner {
     }
 
     /// The rejection the next round must repair, persisted against the same
-    /// command id and the same session.
+    /// command id, the same session, and the same conversation: the refusal is
+    /// the next user turn after the rounds that earned it.
     async fn persist_repair(
         &self,
         command_id: CommandId,
         session: &ElaboratorSession,
         agent_prompt: &str,
-        last_mismatches: &[Mismatch],
+        refusals: &[Refusal],
+        completed: &[InferenceOutput],
     ) -> Result<(), ControllerError> {
         let conversation = match evaluate_elaboration_loop(
             agent_prompt,
-            last_mismatches,
-            &[],
+            refusals,
+            completed,
             ELABORATION_ROUND_BUDGET,
         )? {
             ElaborationLoopEvaluation::Continue { conversation } => conversation,
             ElaborationLoopEvaluation::Complete { .. } => {
                 return Err(ControllerError::Serialization(
-                    "a repair round completed before any evidence".into(),
+                    "a refused session finalized instead of reopening".into(),
                 ));
             }
         };
-        let request = elaboration_request(command_id, 0, &self.model, conversation)?;
+        let request = elaboration_request(command_id, completed.len(), &self.model, conversation)?;
         let invocation =
             self.inference
                 .prepare(request)
@@ -540,8 +593,8 @@ impl ElaborationRunner {
             command_id,
             session: session.clone(),
             agent_prompt: agent_prompt.to_owned(),
-            last_mismatches: last_mismatches.to_vec(),
-            completed: Vec::new(),
+            refusals: refusals.to_vec(),
+            completed: completed.to_vec(),
             invocation,
         })
         .await
@@ -735,7 +788,6 @@ fn build_prompt(
     snapshot: &WorldSnapshot,
     session: &ElaboratorSession,
     receipts: &[EvidenceReceipt],
-    last_mismatches: &[Mismatch],
 ) -> String {
     let mut prompt = String::new();
     prompt.push_str("You are elaborating one jurisdiction of a world.\n\n");
@@ -745,10 +797,12 @@ fn build_prompt(
         render_jurisdiction(snapshot, session.jurisdiction)
     ));
     prompt.push_str(&format!(
-        "Answer: {}\n\n",
+        "Answer: {}\n",
         render_answer(snapshot, &session.answer)
     ));
-    prompt_body(&mut prompt, receipts, last_mismatches);
+    prompt.push_str(&render_clock(snapshot));
+    prompt.push('\n');
+    prompt_body(&mut prompt, receipts);
     prompt
 }
 
@@ -756,7 +810,7 @@ fn build_prompt(
 /// phase-specific: what may be cited, what must be repaired, and which tools
 /// exist. One owner, so the two lanes cannot drift on what a citation rule says
 /// or on which tools are offered.
-fn prompt_body(prompt: &mut String, receipts: &[EvidenceReceipt], last_mismatches: &[Mismatch]) {
+fn prompt_body(prompt: &mut String, receipts: &[EvidenceReceipt]) {
     if receipts.is_empty() {
         prompt.push_str(
             "No evidence receipts were retrieved. You may declare structure and operate on it; you cannot admit quantity without a receipt.\n\n",
@@ -773,14 +827,31 @@ fn prompt_body(prompt: &mut String, receipts: &[EvidenceReceipt], last_mismatche
         }
         prompt.push('\n');
     }
-    if !last_mismatches.is_empty() {
-        prompt.push_str("Your previous patch was refused. Repair every site:\n");
-        for mismatch in last_mismatches {
-            prompt.push_str(&format!("- {}\n", render_mismatch(mismatch)));
-        }
-        prompt.push('\n');
-    }
     prompt.push_str(&format!("Tools: {}\n", patch_tool_signatures()));
+}
+
+/// The user turn a refusal becomes. The model's earlier calls stay in the
+/// conversation above it, so every site below names something it can see; the
+/// draft they built is discarded, and the calls after this turn are the patch.
+fn render_refusal(mismatches: &[Mismatch]) -> String {
+    let mut text = String::from(
+        "The world refused the patch you submitted; every site below failed a structural check. \
+         The draft is discarded. Author the complete patch again with tool calls, repairing every site, then submit again:\n",
+    );
+    for mismatch in mismatches {
+        text.push_str(&format!("- {}\n", render_mismatch(mismatch)));
+    }
+    text
+}
+
+/// The clock reading every `due` is measured against. On the first SDK road
+/// run the model wrote twelve commitments due at or before a clock it was
+/// never shown, and the kernel refused all twelve.
+fn render_clock(snapshot: &WorldSnapshot) -> String {
+    format!(
+        "Clock: the world reads {} fictional minutes. A commitment's due is a clock reading and must be later than that.\n",
+        snapshot.now.0
+    )
 }
 
 fn render_jurisdiction(snapshot: &WorldSnapshot, jurisdiction: JurisdictionKey) -> String {
@@ -830,25 +901,16 @@ fn render_mismatch(mismatch: &Mismatch) -> String {
 /// round trip.
 pub(super) fn evaluate_elaboration_loop(
     prompt: &str,
-    last_mismatches: &[Mismatch],
+    refusals: &[Refusal],
     completed: &[InferenceOutput],
     budget: usize,
 ) -> Result<ElaborationLoopEvaluation, ControllerError> {
-    // The repair set is prompt material, folded in by `build_prompt`; it is
-    // named here so a checkpoint that carries one cannot be re-derived without
-    // it.
-    let _ = last_mismatches;
+    check_refusals(refusals, completed.len())?;
     let mut conversation = vec![CodexInputItem::UserText {
         text: prompt.to_owned(),
     }];
-    let mut draft = WorldPatch {
-        declarations: Vec::new(),
-        operations: Vec::new(),
-        evidence: Vec::new(),
-    };
-    let mut gaps: Vec<ControllerNeed> = Vec::new();
+    let mut fold = DraftFold::default();
     let mut receipts = Vec::new();
-    let mut submitted = false;
 
     for (round, output) in completed.iter().enumerate() {
         if output.receipt_digest.is_empty() || output.receipt_digest.trim() != output.receipt_digest
@@ -878,8 +940,7 @@ pub(super) fn evaluate_elaboration_loop(
                         name: name.clone(),
                         arguments: arguments.clone(),
                     });
-                    let result =
-                        apply_tool_call(name, arguments, &mut draft, &mut gaps, &mut submitted);
+                    let result = fold.apply(name, arguments);
                     conversation.push(CodexInputItem::ToolResult {
                         call_id: call_id.clone(),
                         output: result,
@@ -888,35 +949,51 @@ pub(super) fn evaluate_elaboration_loop(
             }
         }
 
-        let is_complete = submitted || !called_tool || round + 1 == budget;
+        // A refusal after this round reopens the session instead of ending
+        // it: the kernel's mismatch set is the next user turn, and the draft
+        // starts again from the calls that follow it.
+        if let Some(refusal) = refusal_after(refusals, round + 1) {
+            if !fold.submitted {
+                return Err(ControllerError::Serialization(
+                    "a refusal follows a round that submitted nothing".into(),
+                ));
+            }
+            conversation.push(CodexInputItem::UserText {
+                text: render_refusal(&refusal.mismatches),
+            });
+            fold = DraftFold::default();
+            continue;
+        }
+
+        let is_complete = fold.submitted || !called_tool || round + 1 == budget;
         if is_complete {
             if round + 1 != completed.len() {
                 return Err(ControllerError::Serialization(
                     "elaboration evidence continued after total finalization".into(),
                 ));
             }
-            if !submitted && called_tool && round + 1 == budget {
+            if !fold.submitted && called_tool && round + 1 == budget {
                 // What was authored is still a patch; the resolver decides it,
                 // not the round counter. An empty draft has nothing to submit.
-                if draft.declarations.is_empty() && draft.operations.is_empty() {
-                    gaps.push(ControllerNeed {
+                if fold.draft.declarations.is_empty() && fold.draft.operations.is_empty() {
+                    fold.gaps.push(ControllerNeed {
                         detail: "The elaboration round budget ended before a submit.".into(),
                     });
                 } else {
-                    submitted = true;
-                    gaps.push(ControllerNeed {
+                    fold.submitted = true;
+                    fold.gaps.push(ControllerNeed {
                         detail: "The round budget ended before a submit; the draft as authored was submitted.".into(),
                     });
                 }
             }
-            draft.evidence.sort();
-            draft.evidence.dedup();
+            fold.draft.evidence.sort();
+            fold.draft.evidence.dedup();
             return Ok(ElaborationLoopEvaluation::Complete {
                 capture: ElaborationCapture {
-                    draft,
-                    gaps,
+                    draft: fold.draft,
+                    gaps: fold.gaps,
                     inference_receipts: receipts,
-                    submitted,
+                    submitted: fold.submitted,
                 },
             });
         }
@@ -930,46 +1007,83 @@ pub(super) fn evaluate_elaboration_loop(
     Ok(ElaborationLoopEvaluation::Continue { conversation })
 }
 
+/// Refusals are placed by the runner, never by the model, so a malformed
+/// placement is a corrupt checkpoint rather than a gap: each must follow at
+/// least one completed round, none may sit past the rounds that exist, and they
+/// must be strictly ordered.
+fn check_refusals(refusals: &[Refusal], rounds: usize) -> Result<(), ControllerError> {
+    let mut last = 0usize;
+    for refusal in refusals {
+        if refusal.after_round == 0
+            || refusal.after_round > rounds
+            || refusal.after_round <= last
+            || refusal.mismatches.is_empty()
+        {
+            return Err(ControllerError::Serialization(
+                "a refusal is placed outside the rounds it follows".into(),
+            ));
+        }
+        last = refusal.after_round;
+    }
+    Ok(())
+}
+
+fn refusal_after(refusals: &[Refusal], rounds: usize) -> Option<&Refusal> {
+    refusals
+        .iter()
+        .find(|refusal| refusal.after_round == rounds)
+}
+
+/// The draft as the calls build it. One owner for the evaluator and the oracle,
+/// so a refusal restarts both folds at the same place.
+#[derive(Default)]
+struct DraftFold {
+    draft: WorldPatch,
+    gaps: Vec<ControllerNeed>,
+    submitted: bool,
+}
+
+impl DraftFold {
+    fn apply(&mut self, name: &str, arguments: &str) -> String {
+        apply_tool_call(
+            name,
+            arguments,
+            &mut self.draft,
+            &mut self.gaps,
+            &mut self.submitted,
+        )
+    }
+}
+
 /// The authoring lanes' replay-then-answer oracle. The budget is an argument
 /// because elaboration and seed share one `InferencePurpose` and differ only in
 /// how many rounds they may spend, which is why the cap rides here and not on
 /// the purpose.
 pub(super) struct ElaborationOracle {
-    draft: WorldPatch,
-    gaps: Vec<ControllerNeed>,
-    submitted: bool,
+    fold: DraftFold,
     remaining: u32,
 }
 
 impl ElaborationOracle {
-    pub(super) fn new(completed: &[InferenceOutput], budget: usize) -> Self {
-        let mut oracle = Self {
-            draft: WorldPatch {
-                declarations: Vec::new(),
-                operations: Vec::new(),
-                evidence: Vec::new(),
-            },
-            gaps: Vec::new(),
-            submitted: false,
-            remaining: budget.saturating_sub(completed.len()) as u32,
-        };
-        for output in completed {
+    pub(super) fn new(completed: &[InferenceOutput], refusals: &[Refusal], budget: usize) -> Self {
+        let mut fold = DraftFold::default();
+        for (round, output) in completed.iter().enumerate() {
             for event in &output.events {
                 if let InferenceEvent::ToolCall {
                     name, arguments, ..
                 } = event
                 {
-                    let _ = apply_tool_call(
-                        name,
-                        arguments,
-                        &mut oracle.draft,
-                        &mut oracle.gaps,
-                        &mut oracle.submitted,
-                    );
+                    let _ = fold.apply(name, arguments);
                 }
             }
+            if refusal_after(refusals, round + 1).is_some() {
+                fold = DraftFold::default();
+            }
         }
-        oracle
+        Self {
+            fold,
+            remaining: budget.saturating_sub(completed.len()) as u32,
+        }
     }
 }
 
@@ -979,13 +1093,7 @@ impl ToolResultOracle for ElaborationOracle {
     }
 
     fn answer(&mut self, name: &str, arguments: &str) -> Result<String, ControllerError> {
-        Ok(apply_tool_call(
-            name,
-            arguments,
-            &mut self.draft,
-            &mut self.gaps,
-            &mut self.submitted,
-        ))
+        Ok(self.fold.apply(name, arguments))
     }
 }
 
@@ -1004,6 +1112,10 @@ fn apply_tool_call(
         ));
         return "unavailable tool recorded as a gap".into();
     };
+    // The one place both transports' raw arguments pass through; a refused
+    // patch is diagnosed from what the model actually sent, not from the
+    // mismatch set alone.
+    tracing::debug!(tool = name, arguments, "patch tool call captured");
     let Ok(Value::Object(fields)) = serde_json::from_str::<Value>(arguments) else {
         gaps.push(tool_decode_need(
             name,
@@ -1089,11 +1201,11 @@ fn filter_evidence(mut draft: WorldPatch, allowed: &BTreeSet<EvidenceRef>) -> Wo
 
 pub(super) fn derive_elaboration_capture(
     prompt: &str,
-    last_mismatches: &[Mismatch],
+    refusals: &[Refusal],
     completed: &[InferenceOutput],
     budget: usize,
 ) -> Result<ElaborationCapture, ControllerError> {
-    match evaluate_elaboration_loop(prompt, last_mismatches, completed, budget)? {
+    match evaluate_elaboration_loop(prompt, refusals, completed, budget)? {
         ElaborationLoopEvaluation::Complete { capture } => Ok(capture),
         ElaborationLoopEvaluation::Continue { .. } => Err(ControllerError::Serialization(
             "elaboration evidence did not finalize".into(),
@@ -1207,7 +1319,7 @@ pub(super) enum SeedCheckpoint {
         command_id: CommandId,
         session: SeedSession,
         agent_prompt: String,
-        last_mismatches: Vec<Mismatch>,
+        refusals: Vec<Refusal>,
         completed: Vec<InferenceOutput>,
         invocation: PreparedInference,
     },
@@ -1215,7 +1327,7 @@ pub(super) enum SeedCheckpoint {
         command_id: CommandId,
         session: SeedSession,
         agent_prompt: String,
-        last_mismatches: Vec<Mismatch>,
+        refusals: Vec<Refusal>,
         completed: Vec<InferenceOutput>,
     },
     /// The round budget ran out, or the model finished without a submit. The
@@ -1224,6 +1336,7 @@ pub(super) enum SeedCheckpoint {
         command_id: CommandId,
         session: SeedSession,
         agent_prompt: String,
+        refusals: Vec<Refusal>,
         completed: Vec<InferenceOutput>,
         gaps: Vec<ControllerNeed>,
     },
@@ -1251,9 +1364,9 @@ impl SeedCheckpoint {
             self,
             Self::SeedInFlight {
                 completed,
-                last_mismatches,
+                refusals,
                 ..
-            } if completed.is_empty() && last_mismatches.is_empty()
+            } if completed.is_empty() && refusals.is_empty()
         )
     }
 
@@ -1262,7 +1375,7 @@ impl SeedCheckpoint {
             Self::SeedInFlight {
                 command_id,
                 agent_prompt,
-                last_mismatches,
+                refusals,
                 completed,
                 invocation,
                 ..
@@ -1271,7 +1384,7 @@ impl SeedCheckpoint {
                     && canonical_model(&invocation.invocation.request.model)
                     && match evaluate_elaboration_loop(
                         agent_prompt,
-                        last_mismatches,
+                        refusals,
                         completed,
                         SEED_ROUND_BUDGET,
                     ) {
@@ -1294,21 +1407,17 @@ impl SeedCheckpoint {
             }
             Self::ReadyToSubmit {
                 agent_prompt,
-                last_mismatches,
+                refusals,
                 completed,
                 ..
-            } => derive_elaboration_capture(
-                agent_prompt,
-                last_mismatches,
-                completed,
-                SEED_ROUND_BUDGET,
-            )
-            .is_ok_and(|capture| capture.submitted),
+            } => derive_elaboration_capture(agent_prompt, refusals, completed, SEED_ROUND_BUDGET)
+                .is_ok_and(|capture| capture.submitted),
             Self::NoPatch {
                 agent_prompt,
+                refusals,
                 completed,
                 ..
-            } => derive_elaboration_capture(agent_prompt, &[], completed, SEED_ROUND_BUDGET)
+            } => derive_elaboration_capture(agent_prompt, refusals, completed, SEED_ROUND_BUDGET)
                 .is_ok_and(|capture| !capture.submitted),
         }
     }
@@ -1324,26 +1433,39 @@ pub(super) fn valid_seed_progression(existing: &SeedCheckpoint, next: &SeedCheck
         (
             SeedCheckpoint::SeedInFlight {
                 completed: existing,
+                refusals: existing_refusals,
                 ..
             },
             SeedCheckpoint::SeedInFlight {
-                completed: next, ..
+                completed: next,
+                refusals: next_refusals,
+                ..
             }
             | SeedCheckpoint::ReadyToSubmit {
-                completed: next, ..
+                completed: next,
+                refusals: next_refusals,
+                ..
             }
             | SeedCheckpoint::NoPatch {
-                completed: next, ..
+                completed: next,
+                refusals: next_refusals,
+                ..
             },
-        ) => next.len() >= existing.len() && next.starts_with(existing),
-        // A rejection reopens the same command id for repair. A rejected
-        // command mutates nothing, so the round evidence starts over.
+        ) => next.starts_with(existing) && next_refusals.starts_with(existing_refusals),
+        // A rejection reopens the same command id for repair in the same
+        // conversation: the rounds stay, and one more refusal follows them.
         (
-            SeedCheckpoint::ReadyToSubmit { .. },
-            SeedCheckpoint::SeedInFlight {
-                last_mismatches, ..
+            SeedCheckpoint::ReadyToSubmit {
+                completed: existing,
+                refusals: existing_refusals,
+                ..
             },
-        ) => !last_mismatches.is_empty(),
+            SeedCheckpoint::SeedInFlight {
+                completed: next,
+                refusals: next_refusals,
+                ..
+            },
+        ) => refusal_reopens(existing, existing_refusals, next, next_refusals),
         _ => false,
     }
 }
@@ -1457,24 +1579,24 @@ impl SeedRunner {
             }
         };
 
-        let (agent_prompt, mut last_mismatches, mut completed) = match existing {
+        let (agent_prompt, mut refusals, mut completed) = match existing {
             Some(SeedCheckpoint::NoPatch { .. }) => return Ok(SeedOutcome::NoPatch),
             Some(
                 SeedCheckpoint::SeedInFlight {
                     agent_prompt,
-                    last_mismatches,
+                    refusals,
                     completed,
                     ..
                 }
                 | SeedCheckpoint::ReadyToSubmit {
                     agent_prompt,
-                    last_mismatches,
+                    refusals,
                     completed,
                     ..
                 },
-            ) => (agent_prompt, last_mismatches, completed),
+            ) => (agent_prompt, refusals, completed),
             None => (
-                build_seed_prompt(&snapshot, &session, self.brief.as_deref(), &receipts, &[]),
+                build_seed_prompt(&snapshot, &session, self.brief.as_deref(), &receipts),
                 Vec::new(),
                 Vec::new(),
             ),
@@ -1483,7 +1605,7 @@ impl SeedRunner {
         loop {
             match evaluate_elaboration_loop(
                 &agent_prompt,
-                &last_mismatches,
+                &refusals,
                 &completed,
                 SEED_ROUND_BUDGET,
             )? {
@@ -1500,14 +1622,14 @@ impl SeedRunner {
                         command_id,
                         session: session.clone(),
                         agent_prompt: agent_prompt.clone(),
-                        last_mismatches: last_mismatches.clone(),
+                        refusals: refusals.clone(),
                         completed: completed.clone(),
                         invocation: invocation.clone(),
                     })
                     .await?;
                     self.inference.lend_tool_results(
                         &invocation,
-                        Box::new(ElaborationOracle::new(&completed, SEED_ROUND_BUDGET)),
+                        Box::new(ElaborationOracle::new(&completed, &refusals, SEED_ROUND_BUDGET)),
                     );
                     let output = self.inference.infer(invocation).await.map_err(|source| {
                         ControllerError::Inference {
@@ -1533,6 +1655,7 @@ impl SeedRunner {
                             command_id,
                             session,
                             agent_prompt,
+                            refusals,
                             completed,
                             gaps: capture.gaps,
                         })
@@ -1543,7 +1666,7 @@ impl SeedRunner {
                         command_id,
                         session: session.clone(),
                         agent_prompt: agent_prompt.clone(),
-                        last_mismatches: last_mismatches.clone(),
+                        refusals: refusals.clone(),
                         completed: completed.clone(),
                     })
                     .await?;
@@ -1575,15 +1698,11 @@ impl SeedRunner {
                                 mismatches = ?mismatches,
                                 "seed patch rejected; a repair prompt is persisted for the next step"
                             );
-                            last_mismatches = mismatches;
-                            let repaired = build_seed_prompt(
-                                &snapshot,
-                                &session,
-                                self.brief.as_deref(),
-                                &receipts,
-                                &last_mismatches,
-                            );
-                            self.persist_repair(command_id, &session, &repaired, &last_mismatches)
+                            refusals.push(Refusal {
+                                after_round: completed.len(),
+                                mismatches,
+                            });
+                            self.persist_repair(command_id, &session, &agent_prompt, &refusals, &completed)
                                 .await?;
                             Ok(SeedOutcome::Rejected)
                         }
@@ -1632,19 +1751,19 @@ impl SeedRunner {
         command_id: CommandId,
         session: &SeedSession,
         agent_prompt: &str,
-        last_mismatches: &[Mismatch],
+        refusals: &[Refusal],
+        completed: &[InferenceOutput],
     ) -> Result<(), ControllerError> {
         let conversation =
-            match evaluate_elaboration_loop(agent_prompt, last_mismatches, &[], SEED_ROUND_BUDGET)?
-            {
+            match evaluate_elaboration_loop(agent_prompt, refusals, completed, SEED_ROUND_BUDGET)? {
                 ElaborationLoopEvaluation::Continue { conversation } => conversation,
                 ElaborationLoopEvaluation::Complete { .. } => {
                     return Err(ControllerError::Serialization(
-                        "a repair round completed before any evidence".into(),
+                        "a refused session finalized instead of reopening".into(),
                     ));
                 }
             };
-        let request = seed_request(command_id, 0, &self.model, conversation)?;
+        let request = seed_request(command_id, completed.len(), &self.model, conversation)?;
         let invocation =
             self.inference
                 .prepare(request)
@@ -1656,8 +1775,8 @@ impl SeedRunner {
             command_id,
             session: session.clone(),
             agent_prompt: agent_prompt.to_owned(),
-            last_mismatches: last_mismatches.to_vec(),
-            completed: Vec::new(),
+            refusals: refusals.to_vec(),
+            completed: completed.to_vec(),
             invocation,
         })
         .await
@@ -1745,7 +1864,6 @@ fn build_seed_prompt(
     session: &SeedSession,
     brief: Option<&str>,
     receipts: &[EvidenceReceipt],
-    last_mismatches: &[Mismatch],
 ) -> String {
     let mut prompt = String::new();
     prompt.push_str("You are seeding a world before it opens. Nothing here is running yet.\n\n");
@@ -1776,12 +1894,13 @@ fn build_seed_prompt(
     if let Some(brief) = brief.map(str::trim).filter(|value| !value.is_empty()) {
         prompt.push_str(&format!("{brief}\n"));
     }
+    prompt.push_str(&render_clock(snapshot));
     prompt.push_str(
         "\nA subject qualifies only when it has a controller, at least one affordance grant, and holds a goal commitment. Declare people, institutions, and populations who want something; give each a controller, grants, a position, and a goal. Give them the rest of a life: routines and obligations that recur, counterparties, channels they speak on and who controls them, authority and the offices that lend it, holdings and the dependencies those holdings serve, routes between the places they move through. A subject with no counterparty who can command or litigate its goal leaves a boundary for the elaborator; that is allowed and expected, not an error.\nYou may not declare a human-controlled subject: only the world's first person is human, and that was genesis.\n\n",
     );
     prompt.push_str(&render_world_structure(snapshot));
     prompt.push('\n');
-    prompt_body(&mut prompt, receipts, last_mismatches);
+    prompt_body(&mut prompt, receipts);
     prompt
 }
 
@@ -1988,7 +2107,7 @@ mod tests {
         ];
         let round_zero = output(calls.clone());
 
-        let mut oracle = ElaborationOracle::new(&[], SEED_ROUND_BUDGET);
+        let mut oracle = ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET);
         assert_eq!(oracle.remaining_rounds() as usize, SEED_ROUND_BUDGET);
         let answers: Vec<String> = calls
             .iter()
@@ -2020,7 +2139,7 @@ mod tests {
                 serde_json::json!({"detail": "after"}),
             ),
         ];
-        let mut seeded = ElaborationOracle::new(&[round_zero.clone()], SEED_ROUND_BUDGET);
+        let mut seeded = ElaborationOracle::new(&[round_zero.clone()], &[], SEED_ROUND_BUDGET);
         assert_eq!(
             seeded.remaining_rounds() as usize,
             SEED_ROUND_BUDGET - 1,
@@ -2038,7 +2157,7 @@ mod tests {
                 "gap recorded".to_string(),
             ]
         );
-        let mut replayed = ElaborationOracle::new(&[], SEED_ROUND_BUDGET);
+        let mut replayed = ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET);
         let straight: Vec<String> = calls
             .iter()
             .chain(terminal.iter())
@@ -2086,11 +2205,11 @@ mod tests {
     fn soul_the_two_authoring_lanes_carry_different_budgets_on_the_oracle() {
         assert_ne!(ELABORATION_ROUND_BUDGET, SEED_ROUND_BUDGET);
         assert_eq!(
-            ElaborationOracle::new(&[], ELABORATION_ROUND_BUDGET).remaining_rounds() as usize,
+            ElaborationOracle::new(&[], &[], ELABORATION_ROUND_BUDGET).remaining_rounds() as usize,
             ELABORATION_ROUND_BUDGET
         );
         assert_eq!(
-            ElaborationOracle::new(&[], SEED_ROUND_BUDGET).remaining_rounds() as usize,
+            ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET).remaining_rounds() as usize,
             SEED_ROUND_BUDGET
         );
         // A spent budget reports zero rather than wrapping. Zero is outside the
@@ -2105,7 +2224,7 @@ mod tests {
             })
             .collect();
         assert_eq!(
-            ElaborationOracle::new(&spent, ELABORATION_ROUND_BUDGET).remaining_rounds(),
+            ElaborationOracle::new(&spent, &[], ELABORATION_ROUND_BUDGET).remaining_rounds(),
             0
         );
     }
@@ -2151,6 +2270,101 @@ mod tests {
         assert_eq!(capture.draft.declarations.len(), 1);
         assert_eq!(capture.gaps.len(), 3);
         assert!(capture.gaps[2].detail.contains("submitted twice"));
+    }
+
+    /// A refusal keeps the conversation and restarts the draft: the rounds
+    /// before it stay in view as the model's own calls, the refusal is the next
+    /// user turn, and only the calls after it are the patch. The oracle folds
+    /// to the same place, so the sidecar's answers and the evaluator's capture
+    /// cannot disagree across the boundary.
+    #[test]
+    fn a_refusal_restarts_the_draft_inside_the_same_conversation() {
+        let first = output(vec![
+            ("declare_place", place("north")),
+            (SUBMIT_PATCH_TOOL, serde_json::json!({})),
+        ]);
+        let refusals = vec![Refusal {
+            after_round: 1,
+            mismatches: vec![Mismatch::NoCanonicalChange],
+        }];
+
+        // Reopened: the refusal is the last turn and nothing has finalized.
+        let ElaborationLoopEvaluation::Continue { conversation } = evaluate_elaboration_loop(
+            "prompt",
+            &refusals,
+            std::slice::from_ref(&first),
+            ELABORATION_ROUND_BUDGET,
+        )
+        .unwrap() else {
+            panic!("a refused round finalized instead of reopening");
+        };
+        let CodexInputItem::UserText { text } = conversation.last().unwrap() else {
+            panic!("the refusal is not the next user turn");
+        };
+        assert!(text.contains("The world refused the patch you submitted"));
+        assert!(text.contains(&render_mismatch(&Mismatch::NoCanonicalChange)));
+        assert!(
+            matches!(&conversation[1], CodexInputItem::ToolCall { name, .. } if name == "declare_place"),
+            "the refused round's calls left the conversation"
+        );
+        assert_eq!(
+            ElaborationOracle::new(&[first.clone()], &refusals, ELABORATION_ROUND_BUDGET)
+                .fold
+                .draft,
+            WorldPatch::default(),
+            "the oracle kept the refused draft"
+        );
+
+        // Repaired: the capture is exactly the calls after the refusal.
+        let second = output(vec![
+            ("declare_place", place("south")),
+            (SUBMIT_PATCH_TOOL, serde_json::json!({})),
+        ]);
+        let capture = derive_elaboration_capture(
+            "prompt",
+            &refusals,
+            &[first, second],
+            ELABORATION_ROUND_BUDGET,
+        )
+        .unwrap();
+        assert!(capture.submitted);
+        assert_eq!(capture.draft.declarations.len(), 1);
+        assert_eq!(capture.inference_receipts.len(), 2, "both rounds are receipts");
+    }
+
+    /// The runner places refusals, so a misplaced one is a corrupt checkpoint:
+    /// before any round, past the rounds that exist, out of order, empty, or
+    /// after a round that never submitted.
+    #[test]
+    fn a_misplaced_refusal_is_refused_as_evidence() {
+        let submitted = output(vec![
+            ("declare_place", place("north")),
+            (SUBMIT_PATCH_TOOL, serde_json::json!({})),
+        ]);
+        let unsubmitted = output(vec![("declare_place", place("north"))]);
+        let refusal = |after_round: usize| Refusal {
+            after_round,
+            mismatches: vec![Mismatch::NoCanonicalChange],
+        };
+        let evaluate = |refusals: &[Refusal], completed: &[InferenceOutput]| {
+            evaluate_elaboration_loop("prompt", refusals, completed, ELABORATION_ROUND_BUDGET)
+                .is_err()
+        };
+        assert!(evaluate(&[refusal(0)], std::slice::from_ref(&submitted)));
+        assert!(evaluate(&[refusal(2)], std::slice::from_ref(&submitted)));
+        assert!(evaluate(
+            &[refusal(2), refusal(1)],
+            &[submitted.clone(), submitted.clone()]
+        ));
+        assert!(evaluate(
+            &[Refusal {
+                after_round: 1,
+                mismatches: Vec::new(),
+            }],
+            std::slice::from_ref(&submitted)
+        ));
+        assert!(evaluate(&[refusal(1)], std::slice::from_ref(&unsubmitted)));
+        assert!(!evaluate(&[refusal(1)], std::slice::from_ref(&submitted)));
     }
 
     /// Soul, pass 10. `session_command_id` was rewritten onto

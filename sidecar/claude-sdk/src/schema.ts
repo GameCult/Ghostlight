@@ -34,7 +34,19 @@ function keep(schema: z.ZodTypeAny): z.ZodTypeAny {
   return schema.catch(undefined as never);
 }
 
+/**
+ * The text the emitter put beside a field is the model's only account of what
+ * the field means; the first SDK road run lost every description here and the
+ * model filled `due` blind.
+ */
 function convert(node: unknown, at: string): z.ZodTypeAny {
+  const converted = convertShape(node, at);
+  return isObject(node) && typeof node.description === "string"
+    ? converted.describe(node.description)
+    : converted;
+}
+
+function convertShape(node: unknown, at: string): z.ZodTypeAny {
   if (!isObject(node)) {
     throw new Error(`${at}: schema node is not an object`);
   }

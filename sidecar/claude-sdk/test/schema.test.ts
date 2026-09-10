@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { z } from "zod";
 import { toolInputSchema } from "../src/schema.ts";
 
 const emitted: { name: string; parameters_json: string }[] = JSON.parse(
@@ -22,6 +23,26 @@ test("every emitted tool schema converts", () => {
     ).sort();
     assert.deepEqual(Object.keys(schema.shape).sort(), declared, entry.name);
   }
+});
+
+test("a property's description reaches the advertised schema", () => {
+  const schema = toolInputSchema(
+    JSON.stringify({
+      type: "object",
+      additionalProperties: false,
+      required: ["due", "kind"],
+      properties: {
+        due: { type: "integer", minimum: 0, maximum: 9, description: "a clock reading" },
+        kind: { type: "string", enum: ["a"], description: "which shape" },
+      },
+    }),
+    "described",
+  );
+  const advertised = z.toJSONSchema(schema, { io: "input" }) as {
+    properties: Record<string, { description?: string }>;
+  };
+  assert.equal(advertised.properties.due?.description, "a clock reading");
+  assert.equal(advertised.properties.kind?.description, "which shape");
 });
 
 test("a converted schema carries every property's own type", () => {

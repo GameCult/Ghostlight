@@ -995,7 +995,7 @@ mod tests {
         let prepared = seed_prepared(&port, prompt);
         port.lend_tool_results(
             &prepared,
-            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+            Box::new(ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET)),
         );
         let output = port.infer(prepared).await.expect("the seed query returns");
 
@@ -1036,7 +1036,7 @@ mod tests {
         let prepared = seed_prepared(&port, "Author the shortfall.");
         port.lend_tool_results(
             &prepared,
-            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+            Box::new(ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET)),
         );
         let fault = port
             .infer(prepared)
@@ -1137,7 +1137,7 @@ mod tests {
             let prepared = seed_prepared(&port, "Author the shortfall.");
             port.lend_tool_results(
                 &prepared,
-                Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+                Box::new(ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET)),
             );
             let fault = port
                 .infer(prepared)
@@ -1168,7 +1168,7 @@ mod tests {
         let prepared = seed_prepared(&port, "Author the shortfall.");
         port.lend_tool_results(
             &prepared,
-            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+            Box::new(ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET)),
         );
         let output = port
             .infer(prepared)
@@ -1510,7 +1510,7 @@ mod tests {
         let prepared = prose_prepared(&port, "Say something true.");
         port.lend_tool_results(
             &prepared,
-            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+            Box::new(ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET)),
         );
         let fault = port
             .infer(prepared)
@@ -1528,7 +1528,7 @@ mod tests {
             .expect("the stale invocation builds");
         port.lend_tool_results(
             &stale,
-            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+            Box::new(ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET)),
         );
         assert!(port.infer(stale.clone()).await.is_err());
         assert!(
@@ -1540,7 +1540,7 @@ mod tests {
         let other = SdkInferencePort::new(ScriptedLink::new(Vec::new()), "ghostlight-other");
         other.lend_tool_results(
             &stale,
-            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+            Box::new(ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET)),
         );
         let fault = other
             .infer(stale)
@@ -1562,7 +1562,7 @@ mod tests {
         let prepared = seed_prepared(&port, "Author the shortfall.");
         port.lend_tool_results(
             &prepared,
-            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+            Box::new(ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET)),
         );
         port.infer(prepared).await.expect("the empty query returns");
         assert!(port.oracles.lock().unwrap().is_empty());
@@ -1656,7 +1656,7 @@ mod tests {
         let prepared = seed_prepared(&port, "Author the shortfall.");
         port.lend_tool_results(
             &prepared,
-            Box::new(ElaborationOracle::new(&[], SEED_ROUND_BUDGET)),
+            Box::new(ElaborationOracle::new(&[], &[], SEED_ROUND_BUDGET)),
         );
         let fault = port
             .infer(prepared)

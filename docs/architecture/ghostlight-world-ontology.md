@@ -186,8 +186,12 @@ tool surface is `PATCH_TOOLS`: one tool per non-genesis `Declaration` and
 `world/tool_schema.rs` from one schema spelling per type.
 `world/elaboration.rs` owns the repair loop: a session keyed by a
 deterministic command id (sha256 over world, jurisdiction, answer digest)
-submits a draft, persists the resolver's complete mismatch set under that id,
-and re-prompts with it, bounded by `ELABORATION_ROUND_BUDGET` and the
+submits a draft, persists the resolver's complete mismatch set under that id
+as a `Refusal` placed after the rounds that earned it, and continues the same
+conversation: the refusal is the next user turn, the model's own calls stay in
+view above it so every mismatch site names something it can see, and the draft
+is rebuilt from the calls after the refusal. Both authoring lanes share this
+fold, bounded by `ELABORATION_ROUND_BUDGET` and the
 `MAX_DRAFT_*` size caps. Evidence a model cites must come from the round's
 `EvidenceSource` receipts (`filter_evidence`); with `NullEvidenceSource` no
 canonical fact and no `Admit` can land from the elaborator lane.
@@ -282,7 +286,7 @@ knowledge row, and never another subject's snapshot. The re-lowering's
 provider request is a distinct round (`interpreter_round`) with its own
 content-addressed request id, so it cannot collide with the first lowering's
 request. State schema is `ghostlight.world_state.consumer.v2`, commit schema
-`ghostlight.world_commit.consumer.v2`, controller work `controller_work.v11`,
+`ghostlight.world_commit.consumer.v2`, controller work `controller_work.v12`,
 Persona turn receipt `ghostlight.persona_turn_receipt.v3`; earlier stores and
 earlier rows are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).

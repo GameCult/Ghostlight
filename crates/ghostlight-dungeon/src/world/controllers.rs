@@ -72,8 +72,8 @@ pub(super) const CELL_TOOL_STEP_BUDGET: usize = 2;
 /// carried by tool identity, never by a model-written argument.
 const HANDLE_SEPARATOR: &str = "__";
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v11";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v11";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v12";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v12";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -704,9 +704,9 @@ impl ControllerWork {
             }
             Self::Elaboration(ElaborationCheckpoint::ElaboratorInFlight {
                 completed,
-                last_mismatches,
+                refusals,
                 ..
-            }) => completed.is_empty() && last_mismatches.is_empty(),
+            }) => completed.is_empty() && refusals.is_empty(),
             Self::Seed(checkpoint) => checkpoint.is_initial(),
             _ => false,
         }
@@ -8741,32 +8741,41 @@ mod tests {
 
         // The kernel's complete set is what the checkpoint carries, under the
         // same command id, and it is not empty.
-        let (command_id, mismatches, resumed_prompt) = {
+        // The refusal keeps the round that earned it and follows it as the
+        // next user turn, so the sites it names are calls the model can see.
+        let (command_id, mismatches, resumed_input) = {
             let stored = store.work.lock().unwrap();
             assert_eq!(stored.len(), 1, "one session, one row");
             let ControllerWork::Elaboration(ElaborationCheckpoint::ElaboratorInFlight {
                 command_id,
-                last_mismatches,
-                agent_prompt,
+                refusals,
                 completed,
+                invocation,
                 ..
             }) = stored.values().next().unwrap().clone()
             else {
                 panic!("the rejection did not reopen the session for repair");
             };
-            assert!(!last_mismatches.is_empty(), "the repair set is empty");
-            assert!(completed.is_empty(), "a rejected round kept its evidence");
-            (command_id, last_mismatches, agent_prompt)
+            assert_eq!(completed.len(), 1, "the refused round was not kept");
+            assert_eq!(refusals.len(), 1, "one refusal reopens the session");
+            assert_eq!(refusals[0].after_round, 1);
+            assert!(!refusals[0].mismatches.is_empty(), "the repair set is empty");
+            (
+                command_id,
+                refusals[0].mismatches.clone(),
+                serde_json::to_string(&invocation.invocation.request.input).unwrap(),
+            )
         };
         assert!(
-            resumed_prompt.contains("Your previous patch was refused"),
-            "{resumed_prompt}"
+            resumed_input.contains("The world refused the patch you submitted"),
+            "{resumed_input}"
         );
         for mismatch in &mismatches {
-            let rendered = serde_json::to_string(mismatch).unwrap();
+            let rendered = serde_json::to_string(&serde_json::to_string(mismatch).unwrap()).unwrap();
+            let rendered = rendered.trim_matches('"');
             assert!(
-                resumed_prompt.contains(&rendered),
-                "the round-two prompt dropped {rendered}"
+                resumed_input.contains(rendered),
+                "the round-two conversation dropped {rendered}"
             );
         }
 
@@ -8801,11 +8810,12 @@ mod tests {
         );
 
         // The wire agrees with the checkpoint: the second invocation carried
-        // the repaired prompt.
+        // the refused round and the refusal turn after it.
         let seen = script.seen.lock().unwrap();
         assert_eq!(seen.len(), 2, "two rounds, two invocations");
         let second_wire = serde_json::to_string(&seen[1]).unwrap();
-        assert!(second_wire.contains("previous patch was refused"));
+        assert!(second_wire.contains("The world refused the patch you submitted"));
+        assert!(second_wire.contains("The Roadside Shed"), "the refused round left the wire");
 
         drop(second);
         drop(mailbox);
@@ -10458,26 +10468,32 @@ mod tests {
         assert_eq!(first.step().await.unwrap(), SeedOutcome::Rejected);
         drop(first);
 
-        let (command_id, prompt) = {
+        let (command_id, prompt, input) = {
             let stored = store.work.lock().unwrap();
             assert_eq!(stored.len(), 1, "one session, one row");
             let ControllerWork::Seed(SeedCheckpoint::SeedInFlight {
                 command_id,
-                last_mismatches,
+                refusals,
                 agent_prompt,
                 completed,
+                invocation,
                 ..
             }) = stored.values().next().unwrap().clone()
             else {
                 panic!("the rejection did not reopen the session for repair");
             };
-            assert!(!last_mismatches.is_empty(), "the repair set is empty");
-            assert!(completed.is_empty(), "a rejected round kept its evidence");
-            (command_id, agent_prompt)
+            assert_eq!(refusals.len(), 1, "one refusal reopens the session");
+            assert!(!refusals[0].mismatches.is_empty(), "the repair set is empty");
+            assert_eq!(completed.len(), 1, "the refused round was not kept");
+            (
+                command_id,
+                agent_prompt,
+                serde_json::to_string(&invocation.invocation.request.input).unwrap(),
+            )
         };
         assert!(
-            prompt.contains("Your previous patch was refused"),
-            "{prompt}"
+            input.contains("The world refused the patch you submitted"),
+            "{input}"
         );
         assert!(prompt.contains("You are seeding a world before it opens"));
         assert!(prompt.contains("holds a goal commitment"));
@@ -11408,28 +11424,28 @@ mod tests {
             command_id,
             session,
             agent_prompt,
-            last_mismatches,
+            refusals,
             completed,
             invocation,
         } = repair.clone()
         else {
             panic!("a rejection must reopen the session in flight");
         };
-        assert!(!last_mismatches.is_empty());
-        assert!(completed.is_empty());
+        assert_eq!(refusals.len(), 1);
+        assert_eq!(completed.len(), 1);
 
         let ready = SeedCheckpoint::ReadyToSubmit {
             command_id,
             session: session.clone(),
             agent_prompt: agent_prompt.clone(),
-            last_mismatches: last_mismatches.clone(),
+            refusals: refusals.clone(),
             completed: completed.clone(),
         };
         let unrepaired = SeedCheckpoint::SeedInFlight {
             command_id,
             session: session.clone(),
             agent_prompt: agent_prompt.clone(),
-            last_mismatches: Vec::new(),
+            refusals: Vec::new(),
             completed: completed.clone(),
             invocation: invocation.clone(),
         };
@@ -11437,6 +11453,7 @@ mod tests {
             command_id,
             session: session.clone(),
             agent_prompt: agent_prompt.clone(),
+            refusals: refusals.clone(),
             completed: completed.clone(),
             gaps: Vec::new(),
         };
@@ -11448,7 +11465,7 @@ mod tests {
                 moved
             },
             agent_prompt,
-            last_mismatches,
+            refusals,
             completed,
             invocation,
         };

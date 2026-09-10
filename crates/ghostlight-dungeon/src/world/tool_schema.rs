@@ -47,6 +47,15 @@ pub(super) fn bounded_integer(min: u64, max: u64) -> Value {
     json!({"type": "integer", "minimum": min, "maximum": max})
 }
 
+/// The same schema with the text the model reads beside it. Meaning that lives
+/// only in a prompt paragraph is lost by the time the model fills the field.
+pub(super) fn described(mut schema: Value, description: &str) -> Value {
+    if let Value::Object(fields) = &mut schema {
+        fields.insert("description".into(), Value::String(description.into()));
+    }
+    schema
+}
+
 pub(super) fn name_enum(values: &[&str]) -> Value {
     json!({"type": "string", "enum": values})
 }
