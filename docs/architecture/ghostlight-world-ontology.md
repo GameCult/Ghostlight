@@ -303,7 +303,7 @@ knowledge row, and never another subject's snapshot. The re-lowering's
 provider request is a distinct round (`interpreter_round`) with its own
 content-addressed request id, so it cannot collide with the first lowering's
 request. State schema is `ghostlight.world_state.consumer.v4`, commit schema
-`ghostlight.world_commit.consumer.v4`, controller work `controller_work.v14`,
+`ghostlight.world_commit.consumer.v4`, controller work `controller_work.v15`,
 Persona turn receipt `ghostlight.persona_turn_receipt.v3`; earlier stores and
 earlier rows are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
@@ -785,9 +785,10 @@ that are structural rather than promissory:
   closed operation set. Genre lives in the catalog, not in the kernel.
 - **Persona prose is free.** A `NarrativePersona` may say, attempt, or feel
   anything; the Interpreter lowers what the vocabulary can carry (spoken
-  words by `speak`, a visible act by `display`, each quoted verbatim as the
-  audible or visible clause alone) and records exact gaps for the rest,
-  which is where what the person hoped, meant, or felt stays.
+  words by `speak`, visible acts by `display`, each cited one verbatim span
+  at a time and joined in prose order into one utterance and one display,
+  so narration splitting a sentence costs nothing) and records exact gaps
+  for the rest, which is where what the person hoped, meant, or felt stays.
   Unrepresentable meaning is preserved as evidence, never rejected or
   invented.
 - **Structure is sparse; liveness is authored.** A world activates with enough

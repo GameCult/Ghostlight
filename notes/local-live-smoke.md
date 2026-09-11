@@ -251,10 +251,13 @@ and lands as a seen row on the room. Sera set the spindle down where Maro and
 Behn could see it, and Maro's re-lowered turn read it as seen and her "Not
 finished yet." as said. The ten gaps are what the cut leaves private on
 purpose ("There's nothing to tell them until the spindle's finished telling
-me."). Two observations for a later cut, not rules: the quote discipline
-admits fragments ("I don't", "Nod"), because any verbatim substring locates;
-and a turn with three visible acts keeps one, because the fold allows one
-display per invocation, so the second and third become ambiguity gaps.
+me."). Run 11 showed the one fault the runs 10 and 11 shared: "So," was
+captured whole and the rest of the sentence dropped, and a turn with four
+visible acts kept one, because the fold allowed one span per kind and made
+the rest ambiguity gaps. The Interpreter was citing correctly; the fold was
+discarding. The fold now takes every span cited for a kind, in prose order,
+as one utterance and one display, and only an overlapping span is an
+ambiguity (`controller_work.v15`; run 12 below).
 
 Runs 7 and 8 are plan step 12 on the road. Run 7 authored the best seed so
 far and lost it to a field with no description and a tool result that said

@@ -1253,14 +1253,14 @@ fn controller_narrative_result(run: NarrativeRun) -> ControllerHttpResult {
                     "personaSourceDigest":turn.source_digest(),
                     "personaReceiptDigest":turn.receipt_digest(),
                     "interpretation":{
-                        "speech":capture.speech.as_ref().map(|source| json!({
+                        "speech":capture.speech.iter().map(|source| json!({
                             "startByte":source.start_byte,
                             "endByte":source.end_byte,
-                        })),
-                        "display":capture.display.as_ref().map(|source| json!({
+                        })).collect::<Vec<_>>(),
+                        "display":capture.display.iter().map(|source| json!({
                             "startByte":source.start_byte,
                             "endByte":source.end_byte,
-                        })),
+                        })).collect::<Vec<_>>(),
                         "gaps":capture.gaps.iter().map(|gap| json!({
                             "kind":gap.kind,
                             "startByte":gap.source.start_byte,

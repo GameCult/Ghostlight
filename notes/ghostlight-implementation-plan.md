@@ -716,7 +716,11 @@ neither words nor act; the journal's event-shape rule counts both lowerings;
 Seen, Known}` and the Projector's knowledge rows carry `how` and `by`.
 Schemas `world_state.consumer.v4`, `world_commit.consumer.v4`,
 `controller_work.v14`. Run 10 proves it on the road (runbook row 10) and
-produced the first live interrupted cell. The map that led here follows.
+produced the first live interrupted cell. Follow-up landed the same day: a
+turn's utterance and display are each every span cited for them, joined in
+prose order, so "So," I say, "does it open" is one statement and four
+visible acts are one display; only an overlapping span is an ambiguity
+(`controller_work.v15`, proven by run 12). The map that led here follows.
 
 Ordered 2026-09-11 after run 9. Objective: a person can act without words and
 be seen doing it. Run 9's gap column holds "I nod toward the path down", "I

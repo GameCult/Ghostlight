@@ -35,7 +35,7 @@ use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBac
 use ghostlight_persona_projection::{
     CaptureToolFeedback, GroupedAgentPrompt, InterpretationAccumulator, InterpretationFinalization,
     InterpretationReport, InterpreterPrompt, LabeledView, OperationalAgentPrompt, PersonaPrompt,
-    PersonaTurn, PersonaTurnBinding, ProjectorPrompt, RecordGapToolCall, TranslationGapKind,
+    PersonaTurn, PersonaTurnBinding, ProjectorPrompt, RecordGapToolCall, SourceSpan, TranslationGapKind,
     build_grouped_agent_prompt, build_interpreter_prompt, build_operational_agent_prompt,
     build_persona_prompt, build_projector_prompt, sha256,
 };
@@ -72,8 +72,8 @@ pub(super) const CELL_TOOL_STEP_BUDGET: usize = 2;
 /// carried by tool identity, never by a model-written argument.
 const HANDLE_SEPARATOR: &str = "__";
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v14";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v14";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v15";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v15";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -1162,10 +1162,12 @@ fn cell_constituents_are_valid(constituents: &[ConstituentWork]) -> bool {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct NarrativeCapture {
-    /// The spoken words, bound to where they sit in the prose.
-    pub(crate) speech: Option<SourceRange>,
-    /// The visible act, bound the same way. Either, both, or neither.
-    pub(crate) display: Option<SourceRange>,
+    /// The spoken words as the verbatim spans that carry them, in prose
+    /// order. An utterance split by narration ("So," I say, "does it open")
+    /// is several spans and one statement.
+    pub(crate) speech: Vec<SourceRange>,
+    /// The visible acts, bound the same way, in prose order; one display.
+    pub(crate) display: Vec<SourceRange>,
     pub(crate) gaps: Vec<TranslationGapSummary>,
     pub(crate) finalization: InterpretationFinalization,
     pub(crate) inference_receipts: Vec<String>,
@@ -1174,7 +1176,34 @@ pub(crate) struct NarrativeCapture {
 impl NarrativeCapture {
     /// Whether the turn addressed the room at all: spoke, displayed, or both.
     pub(crate) fn addresses(&self) -> bool {
-        self.speech.is_some() || self.display.is_some()
+        !self.speech.is_empty() || !self.display.is_empty()
+    }
+
+    /// The statement one kind's spans make: each span read verbatim from the
+    /// prose, joined by one space, in prose order. `None` when no span.
+    fn joined(&self, prose: &str, spans: &[SourceRange]) -> Result<Option<String>, ControllerError> {
+        if spans.is_empty() {
+            return Ok(None);
+        }
+        spans
+            .iter()
+            .map(|span| {
+                prose.get(span.start_byte..span.end_byte).ok_or_else(|| {
+                    ControllerError::Serialization("Persona proposal span is not exact".into())
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .map(|words| Some(words.join(" ")))
+    }
+
+    /// The utterance the spans make, if any.
+    pub(crate) fn utterance(&self, prose: &str) -> Result<Option<String>, ControllerError> {
+        self.joined(prose, &self.speech)
+    }
+
+    /// The visible act the spans make, if any.
+    pub(crate) fn visible_act(&self, prose: &str) -> Result<Option<String>, ControllerError> {
+        self.joined(prose, &self.display)
     }
 }
 
@@ -4809,18 +4838,8 @@ fn narrative_invocation(
             "Persona work has no exact proposal span".into(),
         ));
     }
-    let quoted = |span: Option<SourceRange>| {
-        span.map(|span| {
-            turn.source_prose()
-                .get(span.start_byte..span.end_byte)
-                .map(str::to_owned)
-                .ok_or_else(|| {
-                    ControllerError::Serialization("Persona proposal span is not exact".into())
-                })
-        })
-        .transpose()
-    };
-    speak_invocation(granted, quoted(capture.speech)?, quoted(capture.display)?)
+    let prose = turn.source_prose();
+    speak_invocation(granted, capture.utterance(prose)?, capture.visible_act(prose)?)
 }
 
 fn operational_invocation(
@@ -4848,19 +4867,24 @@ fn narrative_capture(
     report: &InterpretationReport<NarrativeProposal>,
     inference_receipts: Vec<String>,
 ) -> NarrativeCapture {
-    let range = |want: fn(&NarrativeProposal) -> bool| {
-        report
+    // Prose order, not call order: the words are the person's, in the order
+    // the person wrote them, whatever order the Interpreter cited them in.
+    let ranges = |want: fn(&NarrativeProposal) -> bool| {
+        let mut ranges: Vec<SourceRange> = report
             .proposals()
             .iter()
-            .find(|proposal| want(proposal.proposal()))
+            .filter(|proposal| want(proposal.proposal()))
             .map(|proposal| SourceRange {
                 start_byte: proposal.source().start_byte(),
                 end_byte: proposal.source().end_byte(),
             })
+            .collect();
+        ranges.sort_by_key(|range| (range.start_byte, range.end_byte));
+        ranges
     };
     NarrativeCapture {
-        speech: range(|proposal| matches!(proposal, NarrativeProposal::Speak { .. })),
-        display: range(|proposal| matches!(proposal, NarrativeProposal::Display { .. })),
+        speech: ranges(|proposal| matches!(proposal, NarrativeProposal::Speak { .. })),
+        display: ranges(|proposal| matches!(proposal, NarrativeProposal::Display { .. })),
         gaps: report
             .gaps()
             .iter()
@@ -4940,12 +4964,14 @@ fn overtaken(
             ));
         }
     };
-    // The gap points at the span the interpretation captured, the spoken
-    // words first, or at the whole prose when it captured none.
+    // The gap points at the first span the interpretation captured, the
+    // spoken words first, or at the whole prose when it captured none.
     let capture = derive_narrative_capture(turn, interpreter_prompt, completed)?;
     let source = capture
         .speech
-        .or(capture.display)
+        .first()
+        .or(capture.display.first())
+        .cloned()
         .unwrap_or(SourceRange {
             start_byte: 0,
             end_byte: turn.source_prose().len(),
@@ -5031,33 +5057,39 @@ enum InterpreterLoopEvaluation {
 /// terminality check and never by a result string.
 pub(super) struct InterpreterFold {
     accumulator: InterpretationAccumulator<NarrativeProposal>,
-    /// One utterance and one visible act per turn: this runner permits one
-    /// decision invocation per opportunity, and an invocation carries one of
-    /// each.
-    captured_speech: bool,
-    captured_display: bool,
+    /// The preserved prose, for locating a quote before it is captured.
+    prose: String,
+    /// The spans captured so far, per kind. One utterance and one visible act
+    /// per turn, each made of every span cited for it; a span that overlaps
+    /// one already captured for the same kind is the one real ambiguity.
+    speech: Vec<SourceRange>,
+    display: Vec<SourceRange>,
     finished: bool,
 }
 
 impl InterpreterFold {
     pub(super) fn new(source: PersonaTurn) -> Self {
         Self {
+            prose: source.source_prose().to_owned(),
             accumulator: InterpretationAccumulator::new(source),
-            captured_speech: false,
-            captured_display: false,
+            speech: Vec::new(),
+            display: Vec::new(),
             finished: false,
         }
     }
 }
 
-/// One quoted address, spoken or shown, folded into `fold`. The quoted words
-/// must be canonical text before they are captured: a quote the kernel would
-/// refuse is a translation gap here, not an infrastructure fault at
-/// invocation. A second capture of the same kind is an ambiguity gap.
+/// One quoted span of an address, spoken or shown, folded into `fold`. The
+/// quoted words must be canonical text before they are captured: a quote the
+/// kernel would refuse is a translation gap here, not an infrastructure fault
+/// at invocation. Every span cited for a kind joins that kind's one statement
+/// in prose order, so an utterance split by narration is cited span by span;
+/// a span overlapping one already captured for the same kind is an ambiguity
+/// gap, because the same words cannot be said twice in one turn.
 fn capture_address(fold: &mut InterpreterFold, name: &str, source_quote: String) -> String {
     let (captured, proposal, what) = if name == INTERPRETER_SPEAK_TOOL {
         (
-            &mut fold.captured_speech,
+            &mut fold.speech,
             NarrativeProposal::Speak {
                 text: source_quote.clone(),
             },
@@ -5065,28 +5097,41 @@ fn capture_address(fold: &mut InterpreterFold, name: &str, source_quote: String)
         )
     } else {
         (
-            &mut fold.captured_display,
+            &mut fold.display,
             NarrativeProposal::Display {
                 text: source_quote.clone(),
             },
             "display",
         )
     };
-    let feedback = if *captured {
-        fold.accumulator.record_gap(RecordGapToolCall {
-            kind: TranslationGapKind::Ambiguity,
-            source_quote,
-            detail: format!("More than one {what} proposal was offered; this runner permits one decision invocation per opportunity."),
-        })
-    } else if !super::patch::is_canonical_text(&source_quote) {
+    let located = SourceSpan::locate(&fold.prose, &source_quote).map(|span| SourceRange {
+        start_byte: span.start_byte(),
+        end_byte: span.end_byte(),
+    });
+    let overlaps = located.as_ref().is_some_and(|span| {
+        captured
+            .iter()
+            .any(|held| span.start_byte < held.end_byte && held.start_byte < span.end_byte)
+    });
+    let feedback = if !super::patch::is_canonical_text(&source_quote) {
         fold.accumulator.record_gap(RecordGapToolCall {
             kind: TranslationGapKind::Unresolved,
             source_quote,
             detail: format!("The quoted {what} is not canonical text (it is empty, padded, or spans lines), so it was not captured."),
         })
+    } else if overlaps {
+        fold.accumulator.record_gap(RecordGapToolCall {
+            kind: TranslationGapKind::Ambiguity,
+            source_quote,
+            detail: format!("The quoted {what} overlaps words already captured as {what} this turn, so it was not captured twice."),
+        })
     } else {
         let feedback = fold.accumulator.capture_proposal(proposal, &source_quote);
-        *captured = feedback == CaptureToolFeedback::Accepted;
+        if feedback == CaptureToolFeedback::Accepted {
+            if let Some(span) = located {
+                captured.push(span);
+            }
+        }
         feedback
     };
     format!("{feedback:?}")
@@ -6022,7 +6067,7 @@ fn interpreter_tools() -> Vec<CodexToolDefinition> {
     vec![
         tool_schema::tool(
             INTERPRETER_SPEAK_TOOL,
-            "Capture one exact spoken utterance from the preserved Persona prose. Quote the spoken words verbatim, without the surrounding quotation marks; the harness locates the quote in the prose and records a gap instead if it is not there word for word.",
+            "Capture the spoken words from the preserved Persona prose, one contiguous span per call. Quote the words verbatim, without the surrounding quotation marks; when narration splits an utterance, call once per span and the spans join in prose order into the one thing said. The harness locates each quote in the prose and records a gap instead if it is not there word for word.",
             tool_schema::object(vec![(
                 "source_quote".into(),
                 tool_schema::canonical_string(
@@ -6032,7 +6077,7 @@ fn interpreter_tools() -> Vec<CodexToolDefinition> {
         ),
         tool_schema::tool(
             INTERPRETER_DISPLAY_TOOL,
-            "Capture one exact visible act from the preserved Persona prose: a gesture, a posture, a look, a movement, a silence held, anything another person in the same place could see. Quote the visible clause alone, verbatim; what the person hoped, meant, or felt while doing it is not visible and is not part of the quote. The harness locates the quote in the prose and records a gap instead if it is not there word for word.",
+            "Capture the visible acts from the preserved Persona prose, one contiguous span per call: a gesture, a posture, a look, a movement, a silence held, anything another person in the same place could see. Quote each visible clause alone, verbatim; the spans join in prose order into the one thing seen. What the person hoped, meant, or felt while doing it is not visible and is not part of any quote. The harness locates each quote in the prose and records a gap instead if it is not there word for word.",
             tool_schema::object(vec![(
                 "source_quote".into(),
                 tool_schema::canonical_string(
@@ -7617,60 +7662,65 @@ mod tests {
     /// capture, never an infrastructure fault at invocation: on the second SDK
     /// road run a mis-spanned utterance failed the canonical-text rule inside
 
-    /// The display tool is `speak`'s twin: a padded quote is a gap and not a
-    /// capture, a second display is an ambiguity gap, and speech plus display
-    /// in one turn is one capture of each, bound to its own span and lowered
-    /// into one invocation carrying both.
+    /// The display tool is `speak`'s twin, and both take a turn's address as
+    /// spans: an utterance split by narration is cited span by span and joins
+    /// in prose order; several visible acts join into one display; a span
+    /// overlapping one already captured is the one ambiguity; a padded quote
+    /// is a gap and not a capture; and the whole lowers into one invocation
+    /// carrying one utterance and one display.
     #[test]
-    fn a_display_is_captured_beside_speech_and_at_most_once() {
+    fn a_turns_address_is_its_spans_in_prose_order() {
         let opportunity = fixture_opportunity(ControllerMode::NarrativePersona);
-        let source = "I fold my arms. \"The rain has teeth tonight,\" I say, and I don't look up.";
+        let source = "I fold my arms. \"So,\" I say, \"does the grate open from a wheel?\" I don't look up.";
         let turn = fixture_persona_turn(&opportunity, source);
         let quote = |words: &str| json!({ "source_quote": words }).to_string();
 
         let mut fold = InterpreterFold::new(turn.clone());
-        assert_eq!(
-            interpreter_tool_result(&mut fold, INTERPRETER_DISPLAY_TOOL, &quote("I fold my arms.")),
-            "Accepted"
-        );
-        assert_eq!(
-            interpreter_tool_result(
-                &mut fold,
-                INTERPRETER_SPEAK_TOOL,
-                &quote("The rain has teeth tonight,")
-            ),
-            "Accepted"
-        );
-        interpreter_tool_result(&mut fold, INTERPRETER_DISPLAY_TOOL, &quote("I don't look up."));
-        assert!(fold.captured_display && fold.captured_speech);
+        // Cited out of prose order on purpose.
+        for (tool, words) in [
+            (INTERPRETER_DISPLAY_TOOL, "I don't look up."),
+            (INTERPRETER_SPEAK_TOOL, "does the grate open from a wheel?"),
+            (INTERPRETER_SPEAK_TOOL, "So,"),
+            (INTERPRETER_DISPLAY_TOOL, "I fold my arms."),
+        ] {
+            assert_eq!(interpreter_tool_result(&mut fold, tool, &quote(words)), "Accepted");
+        }
+        // The same words again, and a span inside words already captured.
+        interpreter_tool_result(&mut fold, INTERPRETER_SPEAK_TOOL, &quote("So,"));
+        interpreter_tool_result(&mut fold, INTERPRETER_DISPLAY_TOOL, &quote("fold my arms"));
+        assert_eq!(fold.speech.len(), 2);
+        assert_eq!(fold.display.len(), 2);
         let report = fold
             .accumulator
             .finalize(InterpretationFinalization::InterpreterFinished);
-        assert_eq!(report.proposals().len(), 2);
-        assert_eq!(report.gaps().len(), 1);
-        assert_eq!(report.gaps()[0].kind(), TranslationGapKind::Ambiguity);
+        assert_eq!(report.proposals().len(), 4);
+        assert_eq!(report.gaps().len(), 2);
+        assert!(report.gaps().iter().all(|gap| gap.kind() == TranslationGapKind::Ambiguity));
         assert!(report.spans_are_exact());
 
         let capture = narrative_capture(&report, Vec::new());
-        let words = |range: Option<SourceRange>| {
-            range.map(|range| &source[range.start_byte..range.end_byte])
-        };
-        assert_eq!(words(capture.speech), Some("The rain has teeth tonight,"));
-        assert_eq!(words(capture.display), Some("I fold my arms."));
+        assert_eq!(
+            capture.utterance(source).unwrap().as_deref(),
+            Some("So, does the grate open from a wheel?")
+        );
+        assert_eq!(
+            capture.visible_act(source).unwrap().as_deref(),
+            Some("I fold my arms. I don't look up.")
+        );
         let granted = [speak_snapshot(opportunity.affordance_ids[0])];
         let invocation = speak_invocation(
             &granted,
-            words(capture.speech).map(str::to_owned),
-            words(capture.display).map(str::to_owned),
+            capture.utterance(source).unwrap(),
+            capture.visible_act(source).unwrap(),
         )
         .unwrap();
         assert_eq!(
             invocation.speech.as_ref().map(Statement::as_str),
-            Some("The rain has teeth tonight,")
+            Some("So, does the grate open from a wheel?")
         );
         assert_eq!(
             invocation.display.as_ref().map(Statement::as_str),
-            Some("I fold my arms.")
+            Some("I fold my arms. I don't look up.")
         );
         // A silent turn lowers to the same entry with no utterance.
         let silent = speak_invocation(&granted, None, Some("I fold my arms.".into())).unwrap();
@@ -7679,7 +7729,7 @@ mod tests {
         // A padded display quote is a gap bound to its span, not a capture.
         let mut fold = InterpreterFold::new(turn.clone());
         interpreter_tool_result(&mut fold, INTERPRETER_DISPLAY_TOOL, &quote(" I fold my arms."));
-        assert!(!fold.captured_display);
+        assert!(fold.display.is_empty());
         let report = fold
             .accumulator
             .finalize(InterpretationFinalization::InterpreterFinished);
@@ -7703,7 +7753,7 @@ mod tests {
             // A padded quote sits in the prose, so its gap binds to that exact
             // span and the feedback is `Accepted`; an absent or empty one
             // binds to the whole source. Neither is a captured proposal.
-            assert!(!fold.captured_speech, "{quote:?} was captured: {answer}");
+            assert!(fold.speech.is_empty(), "{quote:?} was captured: {answer}");
             let report = fold
                 .accumulator
                 .finalize(InterpretationFinalization::InterpreterFinished);
@@ -7738,7 +7788,8 @@ mod tests {
         let span = json!({ "source_quote": speech }).to_string();
         let calls: Vec<(&str, &str, &str)> = vec![
             ("call-0", INTERPRETER_SPEAK_TOOL, span.as_str()),
-            // A second speak, so `captured_speech` is exercised.
+            // The same words a second time: an overlap, so the fold's
+            // ambiguity path is exercised.
             ("call-1", INTERPRETER_SPEAK_TOOL, span.as_str()),
             ("call-2", INTERPRETER_RECORD_GAP_TOOL, "not json at all"),
             ("call-3", "speek", "{}"),
@@ -8045,8 +8096,8 @@ mod tests {
         let oversized = oversized_arguments();
         let calls: Vec<(&str, &str, &str)> = vec![
             ("call-0", INTERPRETER_SPEAK_TOOL, span.as_str()),
-            // The duplicate: `captured_speech` is already set, so this one is a
-            // gap under a different string.
+            // The duplicate: the same span is already captured, so this one
+            // is an overlap gap under a different string.
             ("call-1", INTERPRETER_SPEAK_TOOL, span.as_str()),
             ("call-2", INTERPRETER_SPEAK_TOOL, past_end.as_str()),
             ("call-3", INTERPRETER_RECORD_GAP_TOOL, "not json at all"),
@@ -8525,10 +8576,10 @@ mod tests {
         };
         assert_eq!(
             decision.capture.speech,
-            Some(SourceRange {
+            vec![SourceRange {
                 start_byte: start,
                 end_byte: start + speech.len(),
-            })
+            }]
         );
         assert_eq!(decision.capture.gaps.len(), 1);
         assert_eq!(decision.turn.source_prose(), source);
@@ -8914,10 +8965,10 @@ mod tests {
         assert_eq!(decision.turn.source_prose(), source);
         assert_eq!(
             decision.capture.speech,
-            Some(SourceRange {
+            vec![SourceRange {
                 start_byte: start,
                 end_byte: start + speech.len(),
-            })
+            }]
         );
         assert_eq!(decision.capture.gaps.len(), 1);
         assert!(matches!(
@@ -9205,7 +9256,7 @@ mod tests {
         assert!(!persona_prose.trim().is_empty());
         assert!(persona_prose.len() <= 65_536);
         assert!(!narrative_decision.capture().inference_receipts.is_empty());
-        let narrative_span = narrative_decision.capture().speech.unwrap();
+        let narrative_span = narrative_decision.capture().speech[0].clone();
         let narrative_speech = persona_prose
             .get(narrative_span.start_byte..narrative_span.end_byte)
             .unwrap()
