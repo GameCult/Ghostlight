@@ -381,7 +381,7 @@ current_status:
     actor's intent private; run 10 passed with 18 displays and the first
     live interrupted cell; the interrupted cell is exercised live and
     logged per cell, run 11, commit 81a1f53). State and commit schemas are
-    consumer.v4; controller work rows are controller_work.v14. Next, in the
+    consumer.v4; controller work rows are controller_work.v15. Next, in the
     operator's order:
     (b) the outbound consumer response batch with a non-loopback CultMesh
     lease; (c) the deployment gate (world-v3, Idunn/Odin as recorded in the

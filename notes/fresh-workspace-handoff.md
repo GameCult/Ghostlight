@@ -223,7 +223,7 @@ its receipt shape are a named stopgap, deleted whole when a Messages-API port
 has budget. The SDK transport is proven on the road: seeded runs on
 `claude-sonnet-5` committed ticks end to end (`notes/local-live-smoke.md`,
 "SDK runs, 2026-09-10"). A kernel refusal continues the authoring
-conversation (`Refusal` rows, `controller_work.v14`); the Interpreter cites
+conversation (`Refusal` rows, `controller_work.v15`); the Interpreter cites
 prose by quote (`source_quote`), and a quote not in the prose is a gap. Plan
 step 12 is landed: `PersonaMaterial` is the thirteenth component, a promise
 carries its statement, the Projector sees who else stands in the room, and
