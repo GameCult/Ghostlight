@@ -546,11 +546,10 @@ pub(super) fn lower_query(
             CodexInputItem::ToolResult { output, .. } => {
                 transcript.push(format!("tool result: {output}"))
             }
-            CodexInputItem::UserText { .. } => {
-                return Err(InferenceFault::integrity_violation(
-                    "an SDK request carries one user text item and no other",
-                ));
-            }
+            // A later user turn is a kernel refusal reopening the session; the
+            // transcript is already a textual replay of the conversation, so
+            // it rides there like every other turn.
+            CodexInputItem::UserText { text } => transcript.push(format!("user: {text}")),
         }
     }
     Ok(SidecarFrame::Query {
@@ -1012,7 +1011,7 @@ mod tests {
             answers,
             vec![
                 "gap recorded".to_string(),
-                "arguments recorded as a gap".to_string(),
+                "arguments are not a JSON object; recorded as a gap, nothing captured".to_string(),
                 "patch submitted".to_string(),
             ]
         );
@@ -1688,16 +1687,24 @@ mod tests {
             .expect_err("an unmapped effort lowered");
         assert!(fault.integrity_was_violated(), "{fault:?}");
 
-        // The first item must be user text, and it must be the only one.
+        // The first item must be user text.
         for input in [
             vec![CodexInputItem::AssistantText { text: "no".into() }],
             Vec::new(),
-            vec![user("go"), user("again")],
         ] {
             let fault = lower_query(1, &build(input, None), 1)
                 .expect_err("a request that opens wrong lowered");
             assert!(fault.integrity_was_violated(), "{fault:?}");
         }
+        // A later user turn is a refusal reopening the session; it rides in
+        // the transcript like every other turn.
+        let SidecarFrame::Query { transcript, .. } =
+            lower_query(1, &build(vec![user("go"), user("again")], None), 1)
+                .expect("a reopened session lowers")
+        else {
+            panic!("not a query")
+        };
+        assert_eq!(transcript, vec!["user: again".to_string()]);
 
         // A prior round renders exactly as the sidecar's fixed header expects.
         let frame = lower_query(

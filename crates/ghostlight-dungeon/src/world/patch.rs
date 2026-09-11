@@ -6175,9 +6175,12 @@ fn composite_schema(shape: CompositeShape) -> Value {
     match shape {
         // `human` is absent, not present-and-rejected: `UnadmittedController`
         // refuses it outside genesis, so exposing it would be a door slammed.
-        CompositeShape::NewController => tool_schema::variant(
-            "type",
-            vec![("narrative_persona", vec![]), ("operational_agent", vec![])],
+        CompositeShape::NewController => tool_schema::described(
+            tool_schema::variant(
+                "type",
+                vec![("narrative_persona", vec![]), ("operational_agent", vec![])],
+            ),
+            "who decides for this subject, as an object with a `type` field: narrative_persona for a person who acts through prose, operational_agent for an institution or organ that acts through typed tools; an empty object is refused and the subject is not declared",
         ),
         CompositeShape::AccessKind => tool_schema::variant(
             "access",

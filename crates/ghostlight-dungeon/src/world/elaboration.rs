@@ -1110,7 +1110,7 @@ fn apply_tool_call(
             arguments,
             "tool is not in the patch catalog",
         ));
-        return "unavailable tool recorded as a gap".into();
+        return format!("`{name}` is not a tool of this patch; recorded as a gap, nothing captured");
     };
     // The one place both transports' raw arguments pass through; a refused
     // patch is diagnosed from what the model actually sent, not from the
@@ -1122,7 +1122,7 @@ fn apply_tool_call(
             arguments,
             "arguments are not a JSON object",
         ));
-        return "arguments recorded as a gap".into();
+        return "arguments are not a JSON object; recorded as a gap, nothing captured".into();
     };
     match entry.shape {
         PatchToolShape::Session if name == SUBMIT_PATCH_TOOL => {
@@ -1144,7 +1144,7 @@ fn apply_tool_call(
             }
             None => {
                 gaps.push(tool_decode_need(name, arguments, "no detail was given"));
-                "arguments recorded as a gap".into()
+                "no detail was given; recorded as a gap, nothing captured".into()
             }
         },
         PatchToolShape::Declare { variant, fixed } => {
@@ -1163,9 +1163,12 @@ fn apply_tool_call(
                     draft.declarations.push(declaration);
                     "declaration captured".into()
                 }
+                // The reason goes back to the model: a bare "recorded as a
+                // gap" taught it nothing, and on the road it re-sent an empty
+                // controller six times and submitted.
                 Err(error) => {
                     gaps.push(tool_decode_need(name, arguments, &error.to_string()));
-                    "arguments recorded as a gap".into()
+                    format!("arguments did not decode ({error}); recorded as a gap, nothing captured")
                 }
             }
         }
@@ -1180,9 +1183,12 @@ fn apply_tool_call(
                     draft.operations.push(operation);
                     "operation captured".into()
                 }
+                // The reason goes back to the model: a bare "recorded as a
+                // gap" taught it nothing, and on the road it re-sent an empty
+                // controller six times and submitted.
                 Err(error) => {
                     gaps.push(tool_decode_need(name, arguments, &error.to_string()));
-                    "arguments recorded as a gap".into()
+                    format!("arguments did not decode ({error}); recorded as a gap, nothing captured")
                 }
             }
         }
