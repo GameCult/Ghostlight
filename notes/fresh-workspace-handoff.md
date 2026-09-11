@@ -252,11 +252,10 @@ unplaced; retire it or place its subjects.
 
 ### In order
 
-1. The world title and brief as authored world facts (`world_create.v3`): the
-   smoke still titles its world "Cover Tick Fixture", the guidance slot is
-   empty on every lane, and run 8 put the fixture's name into a vow. Then a
-   longer SDK run that shows the first live interrupted cell, with the log
-   line the runbook's "Interrupted cell" section names.
+1. A longer SDK run that shows the first live interrupted cell, with the
+   log line the runbook's "Interrupted cell" section names. The world brief
+   (`world_create.v3`, plan step 13) is landed, so the run's people have a
+   world named and described to them.
 2. The outbound half of the consumer contract: the response batch with a
    non-loopback CultMesh lease.
 3. The deployment gate below.

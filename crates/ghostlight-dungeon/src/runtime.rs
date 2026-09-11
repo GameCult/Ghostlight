@@ -143,6 +143,10 @@ struct ProductionAdmission {
 #[serde(deny_unknown_fields)]
 struct CreatePayload {
     title: String,
+    /// The world's premise in the owner's words, projected to every lane as
+    /// guidance. Required, may be empty; a payload that omits it is refused,
+    /// which is what `world_create.v3` means.
+    brief: String,
     subject_label: String,
     #[serde(default)]
     narrative_persona_label: Option<String>,
@@ -151,7 +155,7 @@ struct CreatePayload {
     /// World-wide target of goal-bearing subjects per kind. Required, and may
     /// be empty: a world with no target is a deliberate choice, not a default
     /// that arrives because nobody said anything. A payload that omits it is
-    /// refused, which is what `world_create.v2` means.
+    /// refused, which is what `world_create.v3` means.
     targets: BTreeMap<SubjectKind, u32>,
     /// The jurisdiction roots, declared by genesis beside the commons because
     /// `resolve_patch` only resolves roots the same patch declares. A duplicate
@@ -1435,6 +1439,7 @@ async fn execute_world(
                 CreateWorldIntent {
                     id: command_id,
                     title: payload.title,
+                    brief: payload.brief,
                     human_subject_label: payload.subject_label,
                     narrative_persona_label: payload.narrative_persona_label,
                     operational_agent_label: payload.operational_agent_label,
@@ -2827,10 +2832,11 @@ mod tests {
             &fixture.cookie,
             invocation(
                 "world.create",
-                "ghostlight.world_create.v2",
+                "ghostlight.world_create.v3",
                 0,
                 json!({
                     "title":"Cutover World",
+                    "brief":"",
                     "subject_label":"Operator",
                     "targets":{},
                     "jurisdictions":[]
@@ -2907,10 +2913,11 @@ mod tests {
         let id = uuid::Uuid::new_v4().to_string();
         let command = invocation(
             "world.create",
-            "ghostlight.world_create.v2",
+            "ghostlight.world_create.v3",
             0,
             json!({
                 "title":"Retry World",
+                "brief":"",
                 "subject_label":"Operator",
                 "targets":{},
                 "jurisdictions":[]
@@ -3049,6 +3056,27 @@ mod tests {
         jurisdictions: Vec<CreateJurisdictionIntent>,
         activate: bool,
     ) {
+        titled_two_cell_world(
+            state,
+            cookie,
+            "Cover Tick Fixture",
+            "",
+            targets,
+            jurisdictions,
+            activate,
+        )
+        .await;
+    }
+
+    async fn titled_two_cell_world(
+        state: &AppState,
+        cookie: &str,
+        title: &str,
+        brief: &str,
+        targets: BTreeMap<SubjectKind, u32>,
+        jurisdictions: Vec<CreateJurisdictionIntent>,
+        activate: bool,
+    ) {
         let principal = state
             .sessions
             .lock()
@@ -3061,7 +3089,8 @@ mod tests {
             .create(
                 CreateWorldIntent {
                     id: CommandId::new(),
-                    title: "Cover Tick Fixture".into(),
+                    title: title.into(),
+                    brief: brief.into(),
                     human_subject_label: "Operator".into(),
                     narrative_persona_label: Some("Persona".into()),
                     operational_agent_label: Some("Operational Agent".into()),
@@ -3656,20 +3685,24 @@ mod tests {
         let seed_sessions: usize = env("GHOSTLIGHT_SMOKE_SEED_SESSIONS").parse().unwrap();
         let seed_target: u32 = env("GHOSTLIGHT_SMOKE_SEED_TARGET").parse().unwrap();
         let vault_scope = std::env::var("GHOSTLIGHT_SMOKE_VAULT_SCOPE").unwrap_or_default();
-        let brief = std::env::var("GHOSTLIGHT_SMOKE_SEED_BRIEF").ok();
+        let brief = std::env::var("GHOSTLIGHT_SMOKE_SEED_BRIEF").unwrap_or_default();
+        let root_label = env("GHOSTLIGHT_SMOKE_SEED_ROOT_LABEL");
+        let title = std::env::var("GHOSTLIGHT_SMOKE_WORLD_TITLE").unwrap_or_else(|_| root_label.clone());
         // Read here rather than only inside `seed_once`, so a misconfigured run
         // fails at the top instead of after the first paid session.
         let _ = env(SEED_VAULT_ROOT_ENVIRONMENT);
 
         let fixture = fixture_with(Some(live)).await;
         let state = &fixture.state;
-        two_cell_world(
+        titled_two_cell_world(
             state,
             &fixture.cookie,
+            &title,
+            &brief,
             BTreeMap::from([(SubjectKind::Person, seed_target)]),
             vec![CreateJurisdictionIntent {
                 handle: "seed_root".into(),
-                label: env("GHOSTLIGHT_SMOKE_SEED_ROOT_LABEL"),
+                label: root_label,
                 permille: 1000,
             }],
             false,
@@ -3703,9 +3736,10 @@ mod tests {
                 state,
                 &principal,
                 &before,
+                // The brief is the world's now; the session adds nothing.
                 SeedPayload {
                     vault_scope: vault_scope.clone(),
-                    brief: brief.clone(),
+                    brief: None,
                 },
             )
             .await;
@@ -3857,21 +3891,21 @@ mod tests {
 
     // ---- The seed command ------------------------------------------------
 
-    /// Spec test 1. `world_create.v1` is not kept alive beside v2: an
+    /// Spec test 1. `world_create.v2` is not kept alive beside v3: an
     /// invocation announcing it dies at validation before any handler runs, and
-    /// a payload that announces v2 but omits the scale target is a payload
-    /// error rather than a defaulted empty intent. Neither creates a world.
+    /// a payload that announces v3 but omits the brief or the scale target is a
+    /// payload error rather than a defaulted intent. Neither creates a world.
     #[tokio::test]
-    async fn a_v1_create_payload_is_refused() {
+    async fn a_stale_create_payload_is_refused() {
         let fixture = fixture().await;
         let stale = post(
             &fixture.state,
             &fixture.cookie,
             invocation(
                 "world.create",
-                "ghostlight.world_create.v1",
+                "ghostlight.world_create.v2",
                 0,
-                json!({"title":"Stale World","subject_label":"Operator"}),
+                json!({"title":"Stale World","subject_label":"Operator","targets":{},"jurisdictions":[]}),
                 &uuid::Uuid::new_v4().to_string(),
             ),
         )
@@ -3884,9 +3918,9 @@ mod tests {
             &fixture.cookie,
             invocation(
                 "world.create",
-                "ghostlight.world_create.v2",
+                "ghostlight.world_create.v3",
                 0,
-                json!({"title":"Half World","subject_label":"Operator"}),
+                json!({"title":"Half World","subject_label":"Operator","targets":{},"jurisdictions":[]}),
                 &uuid::Uuid::new_v4().to_string(),
             ),
         )

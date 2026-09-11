@@ -657,7 +657,14 @@ by label, each promise's statement, and `present`, the labels of the subjects
 standing in the same place; the Persona's "Who you are" is the label, the
 voice, and the values; the typed view carries material and statements by id.
 Material is not in `ScopeComponents`, pinned by a test that sets it and
-watches the scope digest stay. The map that led here follows. Objective: a seeded person speaks from authored
+watches the scope digest stay. The map that led here follows. Objective:
+(Step 13, the world brief, landed the same day: `world_create.v3` carries a
+required `brief`, trimmed at ingress, stored on `WorldState`, projected as
+the guidance of every lane and printed in both authoring prompts; the two
+narrative stages that rebuild prompts on resume carry it as `guidance`,
+`controller_work.v13`. The smoke titles its world by the seed root label
+unless `GHOSTLIGHT_SMOKE_WORLD_TITLE` says otherwise, and the seed brief
+becomes the world's brief rather than a per-session sentence.) a seeded person speaks from authored
 meaning rather than the model's default voice, which is the hard boundary
 "character intelligence is modeled state, not a default model capability".
 

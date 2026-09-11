@@ -792,6 +792,7 @@ fn build_prompt(
     let mut prompt = String::new();
     prompt.push_str("You are elaborating one jurisdiction of a world.\n\n");
     prompt.push_str(&format!("World: {}\n", snapshot.title));
+    prompt.push_str(&render_brief(snapshot));
     prompt.push_str(&format!(
         "Jurisdiction: {}\n",
         render_jurisdiction(snapshot, session.jurisdiction)
@@ -842,6 +843,16 @@ fn render_refusal(mismatches: &[Mismatch]) -> String {
         text.push_str(&format!("- {}\n", render_mismatch(mismatch)));
     }
     text
+}
+
+/// The world's own premise, when it has one. The seed session's optional
+/// sentence rides beside it; the two are not the same thing.
+fn render_brief(snapshot: &WorldSnapshot) -> String {
+    if snapshot.brief.is_empty() {
+        String::new()
+    } else {
+        format!("Brief: {}\n", snapshot.brief)
+    }
 }
 
 /// The clock reading every `due` is measured against. On the first SDK road
@@ -1874,6 +1885,7 @@ fn build_seed_prompt(
     let mut prompt = String::new();
     prompt.push_str("You are seeding a world before it opens. Nothing here is running yet.\n\n");
     prompt.push_str(&format!("World: {}\n", snapshot.title));
+    prompt.push_str(&render_brief(snapshot));
     prompt.push_str(&format!(
         "Jurisdiction: {}\n",
         render_jurisdiction(snapshot, session.jurisdiction)
@@ -1902,7 +1914,7 @@ fn build_seed_prompt(
     }
     prompt.push_str(&render_clock(snapshot));
     prompt.push_str(
-        "\nA subject qualifies only when it has a controller, at least one affordance grant, and holds a goal commitment. Declare people, institutions, and populations who want something; give each a controller, grants, a position, and a goal. Give them the rest of a life: routines and obligations that recur, counterparties, channels they speak on and who controls them, authority and the offices that lend it, holdings and the dependencies those holdings serve, routes between the places they move through. A subject with no counterparty who can command or litigate its goal leaves a boundary for the elaborator; that is allowed and expected, not an error.\nEvery promise states what is promised, in the promisor's own words. Every person carries material (set_persona_material): a voice, two or three values, a few memories, and a read of each counterparty, all distinct from every other person's; without it the person has no inner life to speak from.\nYou may not declare a human-controlled subject: only the world's first person is human, and that was genesis.\n\n",
+        "\nA subject qualifies only when it has a controller, at least one affordance grant, and holds a goal commitment. Declare people, institutions, and populations who want something; give each a controller, grants, a position, and a goal. Give them the rest of a life: routines and obligations that recur, counterparties, channels they speak on and who controls them, authority and the offices that lend it, holdings and the dependencies those holdings serve, routes between the places they move through. A goal that nobody can hold the subject to is allowed and expected; the world's elaborator answers that gap later, so do not write it into a promise.\nEvery promise states what is promised, in the promisor's own words. Every person carries material (set_persona_material): a voice, two or three values, a few memories, and a read of each counterparty, all distinct from every other person's; without it the person has no inner life to speak from.\nYou may not declare a human-controlled subject: only the world's first person is human, and that was genesis.\n\n",
     );
     prompt.push_str(&render_world_structure(snapshot));
     prompt.push('\n');

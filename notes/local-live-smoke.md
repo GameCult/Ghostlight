@@ -66,7 +66,9 @@ cargo test -p ghostlight-dungeon --bin ghostlight-dungeon live_smoke_seeds_then_
 
 `GHOSTLIGHT_SEED_VAULT_ROOT` is required; the runner refuses to seed with it
 unset. `GHOSTLIGHT_SMOKE_VAULT_SCOPE` and `GHOSTLIGHT_SMOKE_SEED_BRIEF` are
-optional. The scope is a directory under the root; Kalsa's spoiler split is
+optional; the brief is the world's brief, set at creation and projected to
+every lane as guidance, and the world is titled by the seed root label unless
+`GHOSTLIGHT_SMOKE_WORLD_TITLE` names it. The scope is a directory under the root; Kalsa's spoiler split is
 that scope, so a world that must not see `Spoilers` is seeded from `Public`.
 The root label must name a place the Vault knows; Low Sere has a Public note. The caller runtime id must equal the one the
 connector config admits.

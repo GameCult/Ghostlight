@@ -46,10 +46,11 @@ pub(crate) struct EveRouteHint {
     pub(crate) transport: Option<String>,
 }
 
-/// The `world_create.v2` payload, in one place, so the button that captures it
+/// The `world_create.v3` payload, in one place, so the button that captures it
 /// and the descriptor that advertises it cannot drift.
-const CREATE_BINDINGS: [&str; 6] = [
+const CREATE_BINDINGS: [&str; 7] = [
     "title",
+    "brief",
     "subject_label",
     "narrative_persona_label",
     "operational_agent_label",
@@ -310,7 +311,7 @@ pub(crate) fn authenticated_surface(
             ]);
             commands.push(command_descriptor(
                 "world.create",
-                "ghostlight.world_create.v2",
+                "ghostlight.world_create.v3",
                 &CREATE_BINDINGS,
                 "WorldMailbox",
             ));
@@ -612,7 +613,7 @@ pub(crate) fn operation_schema(operation: &str) -> Option<&'static str> {
         "heimdall.auth.begin" => "heimdall.auth_begin_command.v1",
         "heimdall.auth.complete" => "heimdall.auth_complete_command.v1",
         "app.auth.logout" => "ghostlight.app_logout.v2",
-        "world.create" => "ghostlight.world_create.v2",
+        "world.create" => "ghostlight.world_create.v3",
         "world.approve" => "ghostlight.world_approve.v0",
         "world.activate" => "ghostlight.world_activate.v0",
         "world.advance_time" => "ghostlight.world_advance_time.v0",

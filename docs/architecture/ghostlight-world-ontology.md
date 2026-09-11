@@ -242,10 +242,13 @@ travels over two wire schema constants, `CONSUMER_PATCH_SCHEMA` and
 is refused, not migrated.
 
 `WorldScaleIntent` now arrives at creation, not as a later admission:
-`world_create.v2` declares targets and jurisdiction roots top-level in the
-genesis patch beside `commons`; a v1-announcing invocation is refused before
-any handler runs, and the intent is write-once, set once at genesis and
-resolved nowhere else. `qualifies` is phase-free — a controller, a non-empty
+`world_create.v3` declares the title, the brief, targets, and jurisdiction
+roots top-level in the genesis patch beside `commons`; an invocation
+announcing an earlier schema is refused before any handler runs, and the
+intent is write-once, set once at genesis and resolved nowhere else. The
+brief is the world's authored premise, trimmed at ingress and never
+mutated; every lane reads it as its guidance, and a world with an empty
+brief gives its lanes none. `qualifies` is phase-free — a controller, a non-empty
 grant set, and a held `Goal`, checked the same way in Draft and Active — and
 the Draft-answer refusal lives only in `require_answer`, which refuses every
 Draft answer regardless of what `qualifies` says; so a Draft world's deficit
@@ -287,7 +290,7 @@ knowledge row, and never another subject's snapshot. The re-lowering's
 provider request is a distinct round (`interpreter_round`) with its own
 content-addressed request id, so it cannot collide with the first lowering's
 request. State schema is `ghostlight.world_state.consumer.v3`, commit schema
-`ghostlight.world_commit.consumer.v3`, controller work `controller_work.v12`,
+`ghostlight.world_commit.consumer.v3`, controller work `controller_work.v13`,
 Persona turn receipt `ghostlight.persona_turn_receipt.v3`; earlier stores and
 earlier rows are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).

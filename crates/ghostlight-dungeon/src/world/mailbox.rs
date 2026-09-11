@@ -181,6 +181,7 @@ impl WorldMailbox {
                 id: input.id,
                 owner: principal_id.clone(),
                 title: input.title,
+                brief: input.brief,
                 patch: WorldPatch {
                     declarations,
                     operations: Vec::new(),
@@ -935,6 +936,7 @@ mod tests {
             id,
             owner: PrincipalId::new("owner"),
             title: title.into(),
+            brief: String::new(),
             patch: WorldPatch {
                 declarations: vec![
                     Declaration::Entity(EntityDeclaration {
@@ -1355,6 +1357,7 @@ mod tests {
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Soul Stamping".into(),
+                    brief: String::new(),
                     patch: WorldPatch {
                         declarations: vec![
                             room("witness"),

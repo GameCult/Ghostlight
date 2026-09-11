@@ -72,8 +72,8 @@ pub(super) const CELL_TOOL_STEP_BUDGET: usize = 2;
 /// carried by tool identity, never by a model-written argument.
 const HANDLE_SEPARATOR: &str = "__";
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v12";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v12";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v13";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v13";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -673,6 +673,9 @@ enum NarrativeCheckpoint {
         command_id: CommandId,
         identity: String,
         typed_view: String,
+        /// The world's brief, carried so a resumed stage rebuilds the same
+        /// prompt from the row alone.
+        guidance: String,
         /// The acting subject's own components at turn time, frozen for the
         /// life of the row exactly as `opportunity` is. Not a cache of the
         /// digest: it is the only copy of a value the digest hashes and
@@ -691,6 +694,7 @@ enum NarrativeCheckpoint {
         command_id: CommandId,
         identity: String,
         typed_view: String,
+        guidance: String,
         components: ScopeComponents,
         interpreter_model: String,
         opportunity: DecisionOpportunity,
@@ -859,6 +863,7 @@ impl NarrativeCheckpoint {
                 command_id,
                 identity,
                 typed_view,
+                guidance: _,
                 components: _,
                 persona_model,
                 interpreter_model,
@@ -886,6 +891,7 @@ impl NarrativeCheckpoint {
                 command_id,
                 identity,
                 typed_view,
+                guidance,
                 components: _,
                 interpreter_model,
                 opportunity,
@@ -902,7 +908,7 @@ impl NarrativeCheckpoint {
                 let prompt = build_persona_prompt(&PersonaPrompt {
                     identity,
                     lived_stream: &lived_stream,
-                    domain_guidance: "",
+                    domain_guidance: guidance,
                     word_budget: PERSONA_WORD_BUDGET,
                 });
                 base_checkpoint_is_valid(
@@ -1847,6 +1853,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id,
                 identity,
                 typed_view,
+                guidance,
                 components,
                 persona_model,
                 interpreter_model,
@@ -1858,6 +1865,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id: next_command_id,
                 identity: next_identity,
                 typed_view: next_typed_view,
+                guidance: next_guidance,
                 components: next_components,
                 interpreter_model: next_interpreter_model,
                 opportunity: next_opportunity,
@@ -1869,6 +1877,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
             command_id == next_command_id
                 && identity == next_identity
                 && typed_view == next_typed_view
+                && guidance == next_guidance
                 && components == next_components
                 && interpreter_model == next_interpreter_model
                 && opportunity == next_opportunity
@@ -1882,6 +1891,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 command_id,
                 identity,
                 typed_view,
+                guidance,
                 components,
                 interpreter_model,
                 opportunity,
@@ -1913,7 +1923,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 lived_stream: &lived_stream,
                 persona_output: turn.source_prose(),
                 output_schema: None,
-                domain_guidance: "",
+                domain_guidance: guidance,
             });
             command_id == next_command_id
                 && components == next_components
@@ -2720,17 +2730,19 @@ impl ControllerRunner {
         let typed_view = selected.typed_view()?;
         let projector_context = selected.projector_context()?;
         let visible_stimulus = selected.visible_stimulus()?;
+        let guidance = selected.snapshot.brief.clone();
         let projector_prompt = build_projector_prompt(&ProjectorPrompt {
             identity: &identity,
             typed_context: &projector_context,
             visible_stimulus: &visible_stimulus,
-            domain_guidance: "",
+            domain_guidance: &guidance,
             word_budget: PERSONA_WORD_BUDGET,
         });
         let checkpoint = NarrativeCheckpoint::Projector {
             command_id,
             identity,
             typed_view,
+            guidance,
             components: selected.subject.components.clone(),
             persona_model: self.models.persona.clone(),
             interpreter_model: self.models.interpreter.clone(),
@@ -2811,7 +2823,7 @@ impl ControllerRunner {
             typed_view: &typed_view,
             available_tools: &catalog_signatures("", &selected.granted),
             decision_pressure: "Choose whether this decision owner should speak now.",
-            domain_guidance: "",
+            domain_guidance: &selected.snapshot.brief,
             step_budget: TOOL_STEP_BUDGET,
         });
         let initial_conversation =
@@ -3115,7 +3127,9 @@ impl ControllerRunner {
         let agent_prompt = build_grouped_agent_prompt(&GroupedAgentPrompt {
             views: &labeled,
             decision_pressure: "Choose whether each decision owner should act now.",
-            domain_guidance: "",
+            domain_guidance: selected
+                .first()
+                .map_or("", |first| first.snapshot.brief.as_str()),
             step_budget: CELL_TOOL_STEP_BUDGET,
         });
         let initial_conversation = match evaluate_grouped_loop(&agent_prompt, &constituents, &[])? {
@@ -3432,6 +3446,7 @@ impl ControllerRunner {
             command_id,
             identity,
             typed_view,
+            guidance,
             components,
             persona_model,
             interpreter_model,
@@ -3464,13 +3479,14 @@ impl ControllerRunner {
         let persona_prompt = build_persona_prompt(&PersonaPrompt {
             identity: &identity,
             lived_stream: &lived_stream,
-            domain_guidance: "",
+            domain_guidance: &guidance,
             word_budget: PERSONA_WORD_BUDGET,
         });
         let next = NarrativeCheckpoint::Persona {
             command_id,
             identity,
             typed_view,
+            guidance,
             components,
             interpreter_model,
             opportunity,
@@ -3504,6 +3520,7 @@ impl ControllerRunner {
             command_id,
             identity,
             typed_view,
+            guidance,
             components,
             interpreter_model,
             opportunity,
@@ -3549,7 +3566,7 @@ impl ControllerRunner {
             lived_stream: &lived_stream,
             persona_output: turn.source_prose(),
             output_schema: None,
-            domain_guidance: "",
+            domain_guidance: &guidance,
         });
         let initial_conversation = match evaluate_interpreter_loop(&turn, &interpreter_prompt, &[])?
         {
@@ -6521,6 +6538,7 @@ mod tests {
             phase: WorldPhase::Active,
             owner: PrincipalId::new("projector-fixture-owner"),
             title: "The Rain Gate".into(),
+            brief: String::new(),
             draft_approvals: BTreeSet::new(),
             required_approvers: BTreeSet::new(),
             subjects: vec![actor.clone(), speaker],
@@ -6771,6 +6789,7 @@ mod tests {
             affordances: vec![speak_snapshot(opportunity.affordance_ids[0])],
             owner: PrincipalId::new("scope-fixture-owner"),
             title: "Kharad".into(),
+            brief: String::new(),
             draft_approvals: BTreeSet::new(),
             required_approvers: BTreeSet::new(),
             subjects: vec![actor.clone(), other],
@@ -7264,6 +7283,7 @@ mod tests {
             phase: WorldPhase::Active,
             owner: PrincipalId::new("projector-fixture-owner"),
             title: "Low Sere".into(),
+            brief: String::new(),
             draft_approvals: BTreeSet::new(),
             required_approvers: BTreeSet::new(),
             subjects: vec![actor.clone(), creditor, bystander],
@@ -8180,6 +8200,7 @@ mod tests {
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Controller Fixture".into(),
+                    brief: String::new(),
                     patch: WorldPatch {
                         declarations: vec![
                             Declaration::Entity(EntityDeclaration {
@@ -8774,6 +8795,7 @@ mod tests {
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Midnight Roll Call".into(),
+                    brief: String::new(),
                     patch: WorldPatch {
                         declarations: vec![
                             Declaration::Subject(SubjectDeclaration {
@@ -9175,6 +9197,7 @@ mod tests {
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Elaboration Fixture".into(),
+                    brief: String::new(),
                     patch: WorldPatch {
                         declarations: vec![
                             Declaration::Entity(EntityDeclaration {
@@ -9464,6 +9487,7 @@ mod tests {
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Cover Fixture".into(),
+                    brief: String::new(),
                     patch: WorldPatch {
                         declarations,
                         operations: Vec::new(),
@@ -10010,6 +10034,7 @@ mod tests {
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Apart Fixture".into(),
+                    brief: String::new(),
                     patch: WorldPatch {
                         declarations,
                         operations: Vec::new(),
@@ -10454,6 +10479,7 @@ mod tests {
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Seed Fixture".into(),
+                    brief: String::new(),
                     patch: WorldPatch {
                         declarations: vec![
                             Declaration::Entity(EntityDeclaration {
@@ -11204,6 +11230,7 @@ mod tests {
                 CreateWorldIntent {
                     id: CommandId::new(),
                     title: "The Whole Road".into(),
+                    brief: String::new(),
                     human_subject_label: "The Owner".into(),
                     narrative_persona_label: None,
                     operational_agent_label: None,
@@ -11364,6 +11391,7 @@ mod tests {
             id: CommandId::new(),
             owner: owner.clone(),
             title: "Two Roots".into(),
+            brief: String::new(),
             patch: WorldPatch {
                 declarations: std::iter::once(Declaration::Entity(EntityDeclaration {
                     handle: DraftHandle::new("commons"),
@@ -12789,6 +12817,7 @@ mod tests {
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Witness Fixture".into(),
+                    brief: String::new(),
                     patch: WorldPatch {
                         declarations,
                         // Genesis is Draft phase, exempt from the post-genesis
@@ -13287,6 +13316,7 @@ mod tests {
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Interruption Fixture".into(),
+                    brief: String::new(),
                     patch: WorldPatch {
                         declarations: vec![
                             place("commons", "The Commons", None),

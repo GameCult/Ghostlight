@@ -307,6 +307,9 @@ struct CreateWorld {
     id: CommandId,
     owner: PrincipalId,
     title: String,
+    /// The world's authored premise, in the owner's words. Every lane reads it
+    /// as its guidance; nothing derives it and nothing writes it later.
+    brief: String,
     patch: WorldPatch,
     /// Authored once, here, and never mutated: `CommandBody::AdmitPatch` carries
     /// no intent, so write-once is the command shape rather than a check.
@@ -319,6 +322,9 @@ struct CreateWorld {
 pub(crate) struct CreateWorldIntent {
     pub(crate) id: CommandId,
     pub(crate) title: String,
+    /// The premise, verbatim from the owner. May be empty: a world with no
+    /// brief is a deliberate choice, and its lanes then get no guidance.
+    pub(crate) brief: String,
     pub(crate) human_subject_label: String,
     pub(crate) narrative_persona_label: Option<String>,
     pub(crate) operational_agent_label: Option<String>,
@@ -705,6 +711,9 @@ struct WorldState {
     phase: WorldPhase,
     owner: PrincipalId,
     title: String,
+    /// Authored at creation and never mutated; the one prose the world says
+    /// about itself, projected as guidance to every lane.
+    brief: String,
     draft_approvals: BTreeSet<PrincipalId>,
     subjects: BTreeMap<SubjectId, SubjectState>,
     entities: BTreeMap<EntityId, EntityRecord>,
@@ -779,6 +788,7 @@ enum WorldEffect {
     WorldCreated {
         owner: PrincipalId,
         title: String,
+        brief: String,
         resolved: ResolvedPatch,
     },
     PatchAdmitted {
@@ -1008,6 +1018,7 @@ pub(crate) struct WorldSnapshot {
     pub(crate) phase: WorldPhase,
     pub(crate) owner: PrincipalId,
     pub(crate) title: String,
+    pub(crate) brief: String,
     pub(crate) draft_approvals: BTreeSet<PrincipalId>,
     pub(crate) required_approvers: BTreeSet<PrincipalId>,
     pub(crate) subjects: Vec<SubjectSnapshot>,
@@ -1205,6 +1216,7 @@ struct PreparedCreation {
     world_id: WorldId,
     owner: PrincipalId,
     title: String,
+    brief: String,
     resolved: ResolvedPatch,
 }
 
@@ -1220,6 +1232,7 @@ fn prepare_creation(
         return Err(KernelError::AuthenticationMismatch);
     }
     let title = normalize_title(&input.title)?;
+    let brief = input.brief.trim().to_owned();
     // The world's own identity is not world structure, and it feeds every
     // derived ID, so it is minted before resolution rather than by it.
     let world_id = WorldId::issue();
@@ -1234,6 +1247,7 @@ fn prepare_creation(
         world_id,
         owner: input.owner.clone(),
         title,
+        brief,
         resolved,
         command: input,
     })
@@ -1248,6 +1262,7 @@ impl WorldKernel {
         let effect = WorldEffect::WorldCreated {
             owner: prepared.owner,
             title: prepared.title,
+            brief: prepared.brief,
             resolved: prepared.resolved,
         };
         let mut state = WorldState::genesis(world_id, &prepared.command, &effect)?;
@@ -1657,6 +1672,7 @@ impl WorldState {
             phase: WorldPhase::Draft,
             owner,
             title,
+            brief: String::new(),
             draft_approvals: BTreeSet::new(),
             subjects: BTreeMap::new(),
             entities: BTreeMap::new(),
@@ -1693,6 +1709,7 @@ impl WorldState {
         let WorldEffect::WorldCreated {
             owner,
             title,
+            brief,
             resolved,
         } = effect
         else {
@@ -1711,6 +1728,7 @@ impl WorldState {
         // every other command. Deterministic allocation is what lets one
         // equality replace a field-by-field binding zip.
         let mut state = Self::empty(world_id, owner.clone(), title.clone());
+        state.brief = brief.clone();
         let expected = patch::resolve_patch(
             &state,
             command.id,
@@ -3565,6 +3583,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
         phase: state.phase,
         owner: state.owner.clone(),
         title: state.title.clone(),
+        brief: state.brief.clone(),
         draft_approvals: state.draft_approvals.clone(),
         required_approvers: required_approvers(state),
         subjects,
@@ -4864,6 +4883,7 @@ mod tests {
             id,
             owner: owner(),
             title: title.into(),
+            brief: String::new(),
             patch: WorldPatch {
                 operations: Vec::new(),
                 evidence: Vec::new(),
@@ -11719,6 +11739,25 @@ mod witness_tests {
             seen(Confidence::Believed),
             "a holder the patch did not touch was overwritten"
         );
+    }
+
+    /// The brief is the world's authored premise: trimmed at ingress, carried
+    /// on the state and its snapshot, and identical after replay.
+    #[test]
+    fn the_world_brief_is_authored_once_trimmed_and_replayed() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let mut creation = creation(CommandId::new(), "Low Sere");
+        creation.brief = "  A dry basin town that owes its water to the gate above it.  ".into();
+        let (kernel, _) = WorldKernel::create(&path, creation, &auth_principal(owner())).unwrap();
+        let created = kernel.snapshot().unwrap();
+        assert_eq!(
+            created.brief,
+            "A dry basin town that owes its water to the gate above it."
+        );
+        drop(kernel);
+        let reopened = WorldKernel::open(&path, created.world_id).unwrap();
+        assert_eq!(reopened.snapshot().unwrap(), created);
     }
 
     /// Persona material is set whole, refused when any text is non-canonical
