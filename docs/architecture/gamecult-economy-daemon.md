@@ -247,6 +247,67 @@ what grain, which is subscription configuration, not a second model.
   cut; the commented-out `Ingredients` and `Blueprint` fields are not
   restored, because provenance lives on the lot.
 
+## Engine and shell
+
+Njörðr is two things, and the split is load-bearing. The **engine** is a
+pure, deterministic step function over a state document, a stream of typed
+events, and a clock: it owns the lot and shipment ledgers, the recipe and
+property derivation, the quote function, carrier policy execution, and
+replay, and it performs no I/O, reads no environment, and holds no port. The
+**shell** is the daemon: CultMesh discovery, the Eve composition graph, the
+Ghostlight consumer port, the game host command port, the CultCache store,
+and lifecycle. The shell feeds the engine events and persists what it
+returns. Nothing in the engine knows whether a shell exists.
+
+Two consequences:
+
+- Every input reaches the engine as an **exogenous event** of one typed
+  shape, whatever its origin: a Ghostlight outbound batch lowered by the
+  shell, a game host's lot command, a Delvehold policy document, or an
+  authored script. The engine cannot tell where an event came from, and that
+  is the invariant that makes the single-player mode below the same machine
+  rather than a second one.
+- Carriers do not decide inside the engine; they execute **carrier policies**
+  that are data: routes, thresholds, capacities, preferences over price gaps.
+  Online, a Ghostlight carrier subject amends its policy through a consumer
+  command, and its name, route, and grudge stay Ghostlight's. Offline, the
+  seeded policies run unchanged. The engine owns no trader in either mode;
+  it owns the executor of authored policy.
+
+## Modes
+
+**Online.** The shell runs as a daemon beside Ghostlight and the game hosts.
+Ghostlight's outbound batch is lowered to exogenous events; prices and
+seizures return through consumer patches; both games' hosts submit lot
+commands with receipts. This is the multiplayer body.
+
+**Seeded single-player, Aetheria.** The full machine runs once to make a
+world: Ghostlight and Njörðr together seed the initial state, and a separate
+branching-narrative pass, not yet begun, authors what the story needs to
+happen. The handover artifact is exactly two documents plus the engine:
+
+1. the engine's state document at the seed revision, as CultCache; and
+2. an **exogenous event script**: authored demand rows, shocks, route
+   changes, and carrier policy amendments keyed to simulation time, produced
+   by the seeding run and the narrative pass.
+
+The client then runs the engine locally with a deterministic clock and a
+seeded `CultMath.Random`, replays the script as time passes, and applies
+the player's own lot commands into the same stream. "Precalculated narrative
+price movements" are therefore precalculated **events**, never precalculated
+prices. A script that pinned prices would make the player's choices inert
+against the story; a script of shocks and demand keeps every price a pure
+function of committed state, so the player who floods a market during a
+scripted shortage moves the outcome, and the story's pressure still lands.
+Save and load are engine checkpoints; a checkpoint plus the script replays
+to the same state.
+
+The engine must therefore be embeddable in the Aetheria client. Rust with a
+C ABI as a Unity native plugin is the default under Odin-class doctrine; a
+second implementation of the engine in C# is refused, because two
+implementations of a deterministic step function are two truths the moment
+one is patched.
+
 ## Why a daemon
 
 An organ earns a process only when independent lifecycle, privilege,
@@ -263,18 +324,23 @@ hosts and Ghostlight can agree a lot moved.
 CultCache `.cc` state, one store per world; CultNet typed documents for
 commands, receipts, and projections; CultMesh for discovery and the Eve
 composition graph (price boards, reserve gauges, provenance views, TUI
-tables). Rust, matching Odin-class doctrine, with the market maker and the
-property-derivation functions as pure, testable crates and the daemon as a
-thin lifecycle shell. Clocks, transports, the Ghostlight port, and the game
-host port are traits so a partial pipeline smoke can price a market from a
-fixture ledger without the whole daemon.
+tables). Rust, matching Odin-class doctrine: the engine as pure crates (the
+ledgers, the market maker, property derivation, carrier policy execution,
+replay) with no I/O and a C ABI for embedding, and the daemon as a thin
+lifecycle shell around them. Clocks, transports, the Ghostlight port, and the
+game host port are traits on the shell so a partial pipeline smoke can price
+a market from a fixture ledger without the whole daemon, and the engine can
+be driven from a script with no shell at all.
 
 ## Verification
 
 Unit: lot conservation under every command; provenance acyclic; a recipe
 refuses a material that fails its role; output properties are a pure
 function of input properties and process; the quote function is
-deterministic and its loss is bounded; a stale quote is refused.
+deterministic and its loss is bounded; a stale quote is refused; the same
+state, script, and seed replay to the same state on two machines; an event
+lowered from a Ghostlight batch and the same event read from a script
+produce identical state.
 
 Pipeline: a fixture world with copper, aluminium, and gold conductors, one
 spreader recipe with an optional vapour-chamber role, two markets on one
@@ -305,8 +371,12 @@ Still the operator's:
 2. The market maker: logarithmic scoring rule versus constant-function curve.
    Recommend the scoring rule for its bounded loss and single liquidity
    parameter per market.
-3. Who decides a shipment sails: a Ghostlight subject (a carrier institution
-   with an operational agent, reading Njörðr's prices as facts) or an
-   authored flow policy inside Njörðr. Recommend the Ghostlight subject, so a
-   pirate's victim has a name, a route, and a grudge, and the daemon keeps
-   owning no trader.
+3. Resolved by the engine split: a shipment sails because a carrier policy
+   fires, and the policy is data. Online, a Ghostlight carrier subject owns
+   and amends its policy, so a pirate's victim has a name, a route, and a
+   grudge; offline, the seeded policies run. What remains the operator's is
+   the policy vocabulary's first cut: which thresholds and preferences the
+   seeding run may author.
+4. The Unity embedding path: Rust engine as a native plugin over a C ABI
+   (recommended) versus any alternative that would put a second engine
+   implementation in C#.
