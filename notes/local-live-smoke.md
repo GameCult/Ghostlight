@@ -217,6 +217,7 @@ set.
 | 8 | one round, 97 s: six people, each with a voice, values, memories, reads, and a promise in words | two ticks, 191 s and 261 s; 8 cells; 43 speak captures to 9 gaps | passed; seven distinct lines about the grate, the roll, and the crew |
 | 9 | one round, 94 s; world titled Low Sere with its brief on every lane | two ticks, 218 s and 209 s; 8 cells; 20 speak captures to 24 gaps | passed; no fixture name anywhere in the trace; promises and speech in the world's own terms (the grate, the ration boards, the kiln on stored ash) |
 | 10 | one round, 95 s | two ticks, 220 s and 166 s; 8 cells; revision 3 to 15; 29 speak, 18 display, 10 gaps | passed; the first displays ("I set the spindle down where both of them can see the face of it", "I look to Yeshe, not unkind."); every gap is private reasoning; the first live interrupted cell (below) |
+| 11 | one round, 100 s | two ticks, 241 s and 221 s; 8 cells; revision 3 to 16; 27 speak, 24 display, 14 gaps | passed; three interrupted cells, each printed as its own line with the subject and both digests; the operator feed shows displays beside speech ("So, [seen: I shift the spindle from one hand to the other, then back]") |
 
 Rules run 1 imposed are in the implementation plan under step 11 (descriptions
 carried through the sidecar, `due` described and the clock printed, the grant
@@ -275,16 +276,22 @@ boards, with no favorites".
 
 ## Interrupted cell
 
-First exercised live in run 10, twice, on the trace: Maro Seln's turn was
-bound, Sera Venn then spoke and set the spindle down in the same room, and
-the runner re-lowered Maro's prose once through the Interpreter with the
-section "What was said or done before this person since" carrying both her
-line as said and her act as seen. The Interpreter kept the four spoken
-segments and recorded one ambiguity gap on the demand that her answer had
-already partly met. The world took the act once. The harness still emits
-no per-cell log line: the tick line carries the cover summary only, so the
-subject and the two scope digests (bound, re-lowered) are read from the trace
-and from the `ghostlight.persona_turn_receipt.v3` row's `interrupted_from`,
-not from `GHOSTLIGHT_SMOKE_LOG`. That line is the remaining half of this
-section and is owed by the cover driver's per-tick summary, not by a second
-logger.
+Exercised live in runs 10 and 11. A subject whose room changed mid-turn gets
+one re-lowering, not a lost turn: in run 10 Maro Seln's turn was bound, Sera
+Venn then spoke and set the spindle down in the same room, and the runner
+re-lowered Maro's prose once with the section "What was said or done before
+this person since" carrying her line as said and her act as seen. Run 11
+printed the line this section asked for, once per re-lowered cell, after the
+tick line:
+
+```text
+  interrupted cell subject=Sera Venn bound=sha256:8ac0… renewed=sha256:2c71…
+```
+
+The pair of digests is read from the committed turn's own receipt
+(`NarrativeDecision::re_lowering`, the `interrupted_from` binding and the one
+that replaced it), the cover driver carries it on the tick summary
+(`CoverSummary.interrupted`) and logs it per cell, and the harness prints it
+from the summary. Three cells re-lowered in run 11, three lines printed,
+three `Interrupted:` sections in the trace, and each act appears once in the
+operator feed.

@@ -103,7 +103,7 @@ is the witness. What is true of the tree now:
 - The Idunn provider side is complete: the runtime validates Expected and
   activation, publishes signed Warming until the write lease arrives, and
   exposes managed route presence. Production has not cut over.
-- Plan steps 6 and 8 through 11 are landed with their follow-ups: the ten
+- Plan steps 6 and 8 through 14 are landed with their follow-ups: the ten
   ontology passes, the seed producer, interruption, witness, and the Claude
   SDK inference port. `notes/ghostlight-implementation-plan.md` carries each
   step's landed state; the ontology doc carries the mechanism.
@@ -233,6 +233,10 @@ quoted by the Interpreter as the visible clause alone and lands as
 `Seen { by }` knowledge on the co-located; the actor's intent stays
 private. Knowledge sources are `Witnessed`, `Told`, `Seen`, `Evidenced`.
 Run 10 passed (18 displays) and produced the first live interrupted cell.
+Each interrupted cell is now logged per cell: the harness prints
+`interrupted cell subject=<label> bound=<digest> renewed=<digest>` after
+each tick line from `CoverSummary.interrupted` (commit `81a1f53`); run 11
+printed three, matching three re-lowerings in the trace.
 State and commit schemas are `.consumer.v4`.
 
 Deferred by design: `PolityInCausalRange`, `IndividuationRequired`, and
@@ -257,14 +261,10 @@ unplaced; retire it or place its subjects.
 
 ### In order
 
-1. The per-cell interrupted log line. Run 10 proved the live interruption,
-   but the harness still emits no per-cell line carrying the subject and
-   both scope digests; add it from the cover driver's per-tick summary. The
-   runbook's "Interrupted cell" section names the line.
-2. The outbound half of the consumer contract: the response batch with a
+1. The outbound half of the consumer contract: the response batch with a
    non-loopback CultMesh lease.
-3. The deployment gate below.
-4. Integration of the elaborator swarm's ideas (see "World fixtures and
+2. The deployment gate below.
+3. Integration of the elaborator swarm's ideas (see "World fixtures and
    the elaborator swarm" below).
 
 ### Decisions the operator owns
