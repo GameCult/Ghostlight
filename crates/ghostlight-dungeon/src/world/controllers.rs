@@ -2716,7 +2716,7 @@ impl ControllerRunner {
             ControllerWorkLookup::Missing => {}
         }
         let selected = self.select(opportunity).await?;
-        let identity = selected.subject.label.clone();
+        let identity = selected.persona_identity();
         let typed_view = selected.typed_view()?;
         let projector_context = selected.projector_context()?;
         let visible_stimulus = selected.visible_stimulus()?;
@@ -4047,6 +4047,8 @@ impl SelectedDecision {
             },
             "now": self.snapshot.now,
             "permission": catalog_permissions(&self.granted),
+            "present": self.present_labels(),
+            "material": self.projector_material(),
             "routes": self.projector_routes(),
             "holdings": self.projector_holdings(),
             "dependencies": self.projector_dependencies(),
@@ -4058,6 +4060,57 @@ impl SelectedDecision {
             "pressures": self.projector_pressures(),
         }))
         .map_err(|error| ControllerError::Serialization(error.to_string()))
+    }
+
+    /// Who else stands in this subject's own place, by label. The same reach
+    /// a speech audience is derived from, so a person sees the people in the
+    /// room it speaks into. Position elsewhere stays out: that is another
+    /// subject's state.
+    fn present_labels(&self) -> Vec<Value> {
+        let Some(here) = self.subject.position else {
+            return Vec::new();
+        };
+        self.snapshot
+            .subjects
+            .iter()
+            .filter(|other| other.id != self.subject.id && other.position == Some(here))
+            .map(|other| Value::String(other.label.clone()))
+            .collect()
+    }
+
+    /// The subject's own lived meaning, with reads resolved to labels: a read
+    /// is this subject's own component, so the party it names is bound to it.
+    fn projector_material(&self) -> Value {
+        match &self.subject.material {
+            None => Value::Null,
+            Some(material) => json!({
+                "values": material.values.iter().map(Statement::as_str).collect::<Vec<_>>(),
+                "voice": material.voice.as_str(),
+                "memories": material.memories.iter().map(Statement::as_str).collect::<Vec<_>>(),
+                "reads": material
+                    .reads
+                    .iter()
+                    .map(|(other, read)| json!({"of": self.subject_label(*other), "read": read.as_str()}))
+                    .collect::<Vec<_>>(),
+            }),
+        }
+    }
+
+    /// "Who you are", for the Persona: the label, then the voice and values
+    /// the seed authored, as prose. With no material it is the label alone,
+    /// and the prompt says to invent nothing beyond it.
+    fn persona_identity(&self) -> String {
+        let mut identity = self.subject.label.clone();
+        if let Some(material) = &self.subject.material {
+            identity.push_str(&format!("\nHow you speak: {}", material.voice.as_str()));
+            if !material.values.is_empty() {
+                identity.push_str("\nWhat you hold to:");
+                for value in &material.values {
+                    identity.push_str(&format!("\n- {}", value.as_str()));
+                }
+            }
+        }
+        identity
     }
 
     fn place_label(&self, place: Option<EntityId>) -> Value {
@@ -4189,6 +4242,7 @@ impl SelectedDecision {
                 // money on the road, and 20160 as "fourteen days" only by luck.
                 json!({
                     "kind": commitment.kind,
+                    "promise": commitment.statement.as_str(),
                     "counterparty": commitment.counterparty.map_or(Value::Null, |id| self.subject_label(id)),
                     "due_in_minutes": commitment.due.0.saturating_sub(self.snapshot.now.0),
                     "period_minutes": commitment.period,
@@ -4274,6 +4328,7 @@ impl SelectedDecision {
             "now": self.snapshot.now,
             "commitments": self.typed_commitments(),
             "pressures": self.typed_pressures(),
+            "material": self.subject.material,
         }))
         .map_err(|error| ControllerError::Serialization(error.to_string()))
     }
@@ -4288,6 +4343,7 @@ impl SelectedDecision {
                 json!({
                     "key": commitment.key,
                     "kind": commitment.kind,
+                    "statement": commitment.statement.as_str(),
                     "counterparty": commitment.counterparty,
                     "due": commitment.due,
                     "period": commitment.period,
@@ -6431,6 +6487,7 @@ mod tests {
             commitments: Vec::new(),
             pressures: Vec::new(),
             qualified: false,
+            material: None,
         };
         let speaker = SubjectSnapshot {
             id: speaker_id,
@@ -6456,6 +6513,7 @@ mod tests {
             commitments: Vec::new(),
             pressures: Vec::new(),
             qualified: false,
+            material: None,
         };
         let snapshot = WorldSnapshot {
             world_id: opportunity.world_id,
@@ -6668,6 +6726,7 @@ mod tests {
             commitments: Vec::new(),
             pressures: Vec::new(),
             qualified: false,
+            material: None,
         };
         let other = SubjectSnapshot {
             id: other_id,
@@ -6689,6 +6748,7 @@ mod tests {
             commitments: Vec::new(),
             pressures: Vec::new(),
             qualified: false,
+            material: None,
         };
         let named_place = |id, label: &str| PlaceSnapshot {
             id,
@@ -7129,6 +7189,7 @@ mod tests {
             commitments,
             pressures,
             qualified: true,
+            material: None,
         };
         let actor = subject(
             actor_id,
@@ -7145,6 +7206,7 @@ mod tests {
                 counterparty: Some(creditor_id),
                 due: FictionalMinutes(120),
                 period: None,
+                statement: Statement::new("Water for the gate road, carried by hand.").unwrap(),
                 past_due: false,
             }],
             vec![PressureSnapshot {
@@ -7155,10 +7217,21 @@ mod tests {
                 magnitude: PressureMagnitude(3),
             }],
         );
+        let mut actor = actor;
+        actor.material = Some(crate::world::PersonaMaterial {
+            values: vec![Statement::new("A debt paid late is paid twice.").unwrap()],
+            voice: Statement::new("Short sentences, never a wasted one.").unwrap(),
+            memories: vec![Statement::new("The gate froze the winter the ferry sank.").unwrap()],
+            reads: BTreeMap::from([(
+                creditor_id,
+                Statement::new("Counts every jar twice.").unwrap(),
+            )]),
+        });
+        // The creditor stands in the same place; the bystander does not.
         let creditor = subject(
             creditor_id,
             "Old Hesk the gatekeeper",
-            Some(gate_road),
+            Some(cistern),
             fixture_components(),
             Vec::new(),
             Vec::new(),
@@ -7243,15 +7316,26 @@ mod tests {
             "\"quantity\": 12",
             "\"kind\": \"obligation\"",
             "Old Hesk the gatekeeper",
+            "\"promise\": \"Water for the gate road, carried by hand.\"",
             "\"due_in_minutes\": 60",
             "own promise past due",
             "\"magnitude\": 3",
+            "\"voice\": \"Short sentences, never a wasted one.\"",
+            "A debt paid late is paid twice.",
+            "The gate froze the winter the ferry sank.",
+            "\"read\": \"Counts every jar twice.\"",
         ] {
             assert!(
                 context.contains(expected),
                 "the Projector was not shown {expected}\n{context}"
             );
         }
+        let present = serde_json::from_str::<Value>(&context).unwrap()["present"].clone();
+        assert_eq!(present, json!(["Old Hesk the gatekeeper"]), "{context}");
+        let identity = selected.persona_identity();
+        assert!(identity.starts_with("Tamsin Oru\nHow you speak: Short sentences"));
+        assert!(identity.contains("- A debt paid late is paid twice."));
+        assert!(!identity.contains("Counts every jar twice."), "reads are not identity");
         for forbidden in [
             encoded_id(&actor_id).unwrap(),
             encoded_id(&creditor_id).unwrap(),
@@ -10498,6 +10582,7 @@ mod tests {
                     "due": 600,
                     "period": null,
                     "checks": [],
+                    "statement": "Keep the cistern gate turning through the dry season.",
                 }),
             ));
             // Everyone after the first owes the first something. That is what
@@ -10515,6 +10600,7 @@ mod tests {
                         "due": 900,
                         "period": null,
                         "checks": [],
+                        "statement": "Two jars of cistern water, carried up before the gate closes.",
                     }),
                 ));
             }
@@ -11437,6 +11523,7 @@ mod tests {
                             "due": 600,
                             "period": null,
                             "checks": [],
+                            "statement": "Keep the cistern gate turning through the dry season.",
                         }),
                     ),
                     ("submit", json!({})),
@@ -11526,6 +11613,7 @@ mod tests {
                         due: crate::world::FictionalMinutes(600),
                         period: None,
                         checks: Vec::new(),
+                        statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
                     }],
                     evidence: Vec::new(),
                 },
@@ -12011,6 +12099,7 @@ mod tests {
                     "due": 600,
                     "period": null,
                     "checks": [],
+                    "statement": "Keep the cistern gate turning through the dry season.",
                 }),
             ));
         }
@@ -12186,6 +12275,7 @@ mod tests {
                                             due: crate::world::FictionalMinutes(600),
                                             period: None,
                                             checks: Vec::new(),
+                                            statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
                                         },
                                     ],
                                     evidence: Vec::new(),
@@ -13452,6 +13542,7 @@ mod tests {
                 due: crate::world::FictionalMinutes(900),
                 period: None,
                 checks: Vec::new(),
+                statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
             }]),
         )
         .await;

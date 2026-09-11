@@ -154,7 +154,8 @@ owns `derive_motion`, pure over state and tick: routines re-arm by exactly one
 `period`, past-due obligations and goals write `Pressure` on their subject by
 the `step` table, and an unavailable dependency does the same. A
 `Commitment` is `(kind: Routine | Obligation | Goal, counterparty, due,
-period, checks)`, created and discharged by two operations; `Pressure` is a
+period, checks, statement)`, created and discharged by two operations, the
+statement being what is promised in the promisor's words; `Pressure` is a
 magnitude per source and target with `set_pressure` as its one writer, zero
 spelled by key removal, and three operations (`advance`, `reduce`,
 `resolve`). `order_opportunities` is total: pressure, then time since last
@@ -285,13 +286,21 @@ is the typed component diff against the fresh components plus the
 knowledge row, and never another subject's snapshot. The re-lowering's
 provider request is a distinct round (`interpreter_round`) with its own
 content-addressed request id, so it cannot collide with the first lowering's
-request. State schema is `ghostlight.world_state.consumer.v2`, commit schema
-`ghostlight.world_commit.consumer.v2`, controller work `controller_work.v12`,
+request. State schema is `ghostlight.world_state.consumer.v3`, commit schema
+`ghostlight.world_commit.consumer.v3`, controller work `controller_work.v12`,
 Persona turn receipt `ghostlight.persona_turn_receipt.v3`; earlier stores and
 earlier rows are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
-Step 6 of the plan is complete. The next seam is the seeded live run against a
-real Vault and a real connector, then the outbound consumer response.
+Step 6 of the plan is complete; the seeded live run is the runbook's business.
+Plan step 12 landed the thirteenth row: `PersonaMaterial` (`values`, `voice`,
+`memories`, `reads` keyed by subject) in its own `persona_material` partition,
+set whole by `SetPersonaMaterial` with `NoncanonicalText` for any padded text
+or doubled read and `NoOperationEffect` for identical material; it is read by
+projection and by no precondition, so it enters `state_digest` and no
+`ScopePreimage`. A `Commitment` carries `statement`, what is promised in the
+promisor's words, required at authoring and derived as "a promise made
+through <kind>" when an affordance effect creates one. State and commit
+schemas are `.consumer.v3`. The next seam is the outbound consumer response.
 
 Rules the road imposed, carried in the tree: the provider request identity is
 content-addressed over command, purpose, round, instructions, and input, so a
@@ -403,7 +412,7 @@ which noun a component is; it cares what it constrains.
 | `Redress` | grievance kind → forum, standing | where conflict goes when it cannot be fought |
 | `Knowledge` | subject → fact: confidence, source | what a subject may act on at all |
 | `Channel` | channel: reach set, controller (latency arrives with the clock, pass 7) | how facts travel; who can be silenced |
-| `Commitment` | subject → counterparty: kind (`Routine`, `Obligation`, `Goal`), due, period | obligation with a clock; autonomous motion |
+| `Commitment` | subject → counterparty: kind (`Routine`, `Obligation`, `Goal`), due, period, statement | obligation with a clock; autonomous motion |
 | `Pressure` | source → target: magnitude | the causal boundary trigger |
 | `PersonaMaterial` | subject: values, voice, memories, reads | lived meaning; never authority |
 
@@ -437,9 +446,9 @@ Redress          open_forum(kind, forum, standing), close_forum
 Knowledge        acquire(subject, fact, source, confidence), communicate(speaker, fact,
                  channel), witness(fact, place, confidence), forget
 Channel          set_reach, set_controller
-Commitment       create(subject, counterparty, kind, due, period, checks), discharge
+Commitment       create(subject, counterparty, kind, due, period, checks, statement), discharge
 Pressure         advance, reduce, resolve
-PersonaMaterial  set(subject, material)
+PersonaMaterial  set(subject, values, voice, memories, reads)
 Retirement       retire(referent, reason)
 Time             advance(minutes)
 ```
@@ -499,7 +508,7 @@ counts do not appear here and may not be added.
 The kernel owns component operations. A **world** owns its affordance catalog.
 This is the generality lever: a setting with spellcraft, insurance claims,
 oath-rhythms, or memetic sovereignty authors affordances from the same
-twenty-nine operations, and the kernel never learns a genre.
+thirty operations, and the kernel never learns a genre.
 
 ```text
 Affordance

@@ -555,6 +555,7 @@ mod tests {
                     due: FictionalMinutes(600),
                     period: None,
                     checks: Vec::new(),
+                    statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
                 },
                 // A second unlitigable promise, this one held by an ordinary
                 // Ghostlight subject: the foreign boundary a consumer may not
@@ -566,6 +567,7 @@ mod tests {
                     due: FictionalMinutes(600),
                     period: None,
                     checks: Vec::new(),
+                    statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
                 },
             ],
             evidence: vec![EvidenceRef::new(MIRROR_EVIDENCE)],
@@ -2228,7 +2230,7 @@ mod tests {
         assert!(super::super::journal::verify_state_shape(&previous).is_err());
         assert_eq!(
             super::super::STATE_SCHEMA,
-            "ghostlight.world_state.consumer.v2"
+            "ghostlight.world_state.consumer.v3"
         );
     }
 

@@ -179,8 +179,8 @@ enters a log, a receipt, or the journal.
 
 The consumer capability's tag is part of the commit digest and the
 externally controlled assignment is part of the state shape, so both bump the
-schema: state schema `ghostlight.world_state.consumer.v2` (state-schema
-generation `world-v3`), commit schema `ghostlight.world_commit.consumer.v2`.
+schema: state schema `ghostlight.world_state.consumer.v3` (state-schema
+generation `world-v3`), commit schema `ghostlight.world_commit.consumer.v3`.
 A store written under an earlier schema is refused, not migrated.
 
 ## Not in this pass

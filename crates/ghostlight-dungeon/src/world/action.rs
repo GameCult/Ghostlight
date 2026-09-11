@@ -866,6 +866,11 @@ fn lower(
                 due: now.checked_add(*horizon).ok_or_else(malformed)?,
                 period: *period,
                 checks: Vec::new(),
+                // The world named the action; that name is what was promised.
+                // A proposer cannot supply the text, so it cannot promise more
+                // than the affordance carries.
+                statement: patch::Statement::new(format!("a promise made through {}", entry.kind.0))
+                    .ok_or_else(malformed)?,
             },
             ComponentOpKind::AdvancePressure { by } => patch::ComponentOp::AdvancePressure {
                 source: patch::PressureSourceRef::Subject(patch::Ref::Existing(actor)),

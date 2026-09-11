@@ -644,10 +644,20 @@ Persona prompts render only what the context establishes and treat the word
 budget as a ceiling; the smoke's `GHOSTLIGHT_SMOKE_TRACE` writes every
 request and output. Silence is a legitimate outcome, not a harness failure.
 
-### Proposed step 12: the seed authors meaning
+### 12. The seed authors meaning — landed
 
-Not adopted; mapped 2026-09-11 from run 5's trace, awaiting the operator's
-decision on two points below. Objective: a seeded person speaks from authored
+Landed 2026-09-11 as mapped, with both recommendations taken: the small typed
+material record, and a required commitment statement. `PersonaMaterial` is
+`world/patch.rs`'s thirteenth-row component (`values`, `voice`, `memories`,
+`reads` keyed by subject), set whole by `set_persona_material` (thirty
+operations, thirty-nine tools); a commitment carries `statement`; state and
+commit schemas are `.consumer.v3`; an affordance-made promise's statement is
+"a promise made through <kind>". The Projector context carries the material
+by label, each promise's statement, and `present`, the labels of the subjects
+standing in the same place; the Persona's "Who you are" is the label, the
+voice, and the values; the typed view carries material and statements by id.
+Material is not in `ScopeComponents`, pinned by a test that sets it and
+watches the scope digest stay. The map that led here follows. Objective: a seeded person speaks from authored
 meaning rather than the model's default voice, which is the hard boundary
 "character intelligence is modeled state, not a default model capability".
 

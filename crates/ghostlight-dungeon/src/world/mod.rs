@@ -41,6 +41,7 @@ pub(crate) use mailbox::{
 pub(crate) use patch::{
     AccessKind, Affordance, AffordanceKindName, Audience, AuthoredSource, AuthorityGrant,
     AuthorityKindName, AuthorityTarget, BoundPrecondition, Bounds, ChannelRecord, Commitment,
+    PersonaMaterial,
     CommitmentKey, CommitmentKind, ComponentOpKind, Confidence, Cost, Declaration,
     DependencyTarget, DraftHandle, EffectSlot, EntityDeclaration, EntityKind, EvidenceRef,
     FactRecord, FactStanding, Forum, GrievanceKindName, JurisdictionKey, Knowledge,
@@ -80,8 +81,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v2";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v2";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v3";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v3";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -743,6 +744,9 @@ struct WorldState {
     redress: BTreeMap<GrievanceKindName, Forum>,
     /// What each subject has promised. Never empty for a present key.
     commitments: BTreeMap<SubjectId, BTreeMap<CommitmentKey, Commitment>>,
+    /// Lived meaning per subject. Read by projection and by nothing that
+    /// decides, so it enters `state_digest` and no `ScopePreimage`.
+    persona_material: BTreeMap<SubjectId, PersonaMaterial>,
     /// Pressure *on* each subject, keyed target-major then source. Never empty
     /// for a present key; no stored zero magnitude.
     pressures: BTreeMap<SubjectId, BTreeMap<PressureSource, PressureMagnitude>>,
@@ -892,6 +896,8 @@ pub(crate) struct SubjectSnapshot {
     /// subject's state, and the actor already sees the commitment that produced
     /// it.
     pub(crate) pressures: Vec<PressureSnapshot>,
+    /// What the subject carries as lived meaning, if anything was authored.
+    pub(crate) material: Option<PersonaMaterial>,
     /// A projection of `qualifies`, not a stored flag and not a second count:
     /// whether this subject already reduces its jurisdiction's scale deficit.
     /// The seed brief needs to say which subjects count; recomputing the
@@ -906,6 +912,7 @@ pub(crate) struct CommitmentSnapshot {
     pub(crate) counterparty: Option<SubjectId>,
     pub(crate) due: FictionalMinutes,
     pub(crate) period: Option<TickMinutes>,
+    pub(crate) statement: Statement,
     /// Derived in `snapshot` so a controller does not recompute it against a
     /// clock it must be handed anyway.
     pub(crate) past_due: bool,
@@ -1664,6 +1671,7 @@ impl WorldState {
             selection: BTreeMap::new(),
             redress: BTreeMap::new(),
             commitments: BTreeMap::new(),
+            persona_material: BTreeMap::new(),
             pressures: BTreeMap::new(),
             last_opportunity_at: BTreeMap::new(),
             now: FictionalMinutes::default(),
@@ -2593,6 +2601,22 @@ fn apply_operation(
                 );
             }
         }
+        ResolvedOp::SetPersonaMaterial { subject, material } => {
+            if !state.subjects.contains_key(subject)
+                || material
+                    .reads
+                    .keys()
+                    .any(|other| !state.subjects.contains_key(other))
+            {
+                return Err(unknown());
+            }
+            if state.persona_material.get(subject) == Some(material) {
+                return Err(KernelError::Invariant(
+                    "persona material changes nothing".into(),
+                ));
+            }
+            state.persona_material.insert(*subject, material.clone());
+        }
         ResolvedOp::SetReach { channel, reach } => {
             let current = state
                 .channels
@@ -3480,10 +3504,12 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                         counterparty: commitment.counterparty,
                         due: commitment.due,
                         period: commitment.period,
+                        statement: commitment.statement.clone(),
                         past_due: commitment.due <= state.now,
                     })
                     .collect(),
                 components,
+                material: state.persona_material.get(subject_id).cloned(),
                 pressures: state
                     .pressures
                     .get(subject_id)
@@ -4434,6 +4460,13 @@ fn operation_ground(
         // recipients here would be a second statement of the same rule,
         // computed from state this function does not read.
         ResolvedOp::Witness { place, .. } => (Vec::new(), places(vec![*place]), Vec::new()),
+        ResolvedOp::SetPersonaMaterial { subject, material } => (
+            std::iter::once(*subject)
+                .chain(material.reads.keys().copied())
+                .collect(),
+            Vec::new(),
+            Vec::new(),
+        ),
         ResolvedOp::SetReach { channel, reach } => {
             let mut subjects = Vec::new();
             let mut named = Vec::new();
@@ -11688,6 +11721,119 @@ mod witness_tests {
         );
     }
 
+    /// Persona material is set whole, refused when any text is non-canonical
+    /// or a read names a subject twice, refused when identical to what the
+    /// subject holds, and outside the scope digest: setting it moves no
+    /// opportunity's binding.
+    #[test]
+    fn soul_persona_material_is_set_whole_and_outside_the_scope_digest() {
+        use crate::world::patch::PersonaReadRef;
+
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "Material");
+        let text = |value: &str| Statement::new(value).unwrap();
+        let material = |voice: Statement, reads: Vec<PersonaReadRef>| ComponentOp::SetPersonaMaterial {
+            subject: Ref::Existing(world.villager),
+            values: vec![text("Water is owed upward.")],
+            voice,
+            memories: vec![text("The gate froze the winter the ferry sank.")],
+            reads,
+        };
+        let read = |subject: SubjectId| PersonaReadRef {
+            subject: Ref::Existing(subject),
+            statement: text("Counts every jar twice."),
+        };
+        let digest_of = |snapshot: &WorldSnapshot| {
+            snapshot
+                .opportunities
+                .iter()
+                .find(|opportunity| opportunity.scope.subject_id == world.villager)
+                .map(|opportunity| opportunity.scope_digest.clone())
+        };
+        let before = digest_of(&active);
+
+        // Padded text is refused at resolve, as is a subject read twice.
+        let padded: Statement = serde_json::from_value(serde_json::json!(" padded ")).unwrap();
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![material(padded, vec![read(world.neighbour)])]),
+            ),
+            vec![Mismatch::NoncanonicalText { operation: 0 }]
+        );
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![material(
+                    text("Dry and exact."),
+                    vec![read(world.neighbour), read(world.neighbour)],
+                )]),
+            ),
+            vec![Mismatch::NoncanonicalText { operation: 0 }]
+        );
+        // A read of a subject the world does not hold is refused.
+        assert!(
+            !reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![material(
+                    text("Dry and exact."),
+                    vec![read(SubjectId::issue())],
+                )]),
+            )
+            .is_empty()
+        );
+
+        let receipt = submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![material(text("Dry and exact."), vec![read(world.neighbour)])]),
+        );
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)), "{receipt:?}");
+        let held = kernel.snapshot().unwrap();
+        let villager = held
+            .subjects
+            .iter()
+            .find(|subject| subject.id == world.villager)
+            .unwrap();
+        let carried = villager.material.as_ref().expect("material was set");
+        assert_eq!(carried.voice.as_str(), "Dry and exact.");
+        assert_eq!(
+            carried.reads.get(&world.neighbour).map(Statement::as_str),
+            Some("Counts every jar twice.")
+        );
+        assert_eq!(digest_of(&held), before, "material moved a scope digest");
+
+        // Identical material changes nothing; different material replaces all.
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &held,
+                operations(vec![material(text("Dry and exact."), vec![read(world.neighbour)])]),
+            ),
+            vec![Mismatch::NoOperationEffect { operation: 0 }]
+        );
+        let held = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &held,
+            operations(vec![material(text("Slow and courteous."), Vec::new())]),
+        );
+        let replaced = kernel.snapshot().unwrap();
+        let carried = replaced
+            .subjects
+            .iter()
+            .find(|subject| subject.id == world.villager)
+            .unwrap()
+            .material
+            .clone()
+            .unwrap();
+        assert_eq!(carried.voice.as_str(), "Slow and courteous.");
+        assert!(carried.reads.is_empty(), "a whole-value set kept an old read");
+    }
+
     /// What a witness hands the narrative lane's interruption renderer. The
     /// renderer takes a subject's own `ScopeComponents` and its own knowledge
     /// rows and nothing else, so both of its inputs are pinned here rather than
@@ -11934,6 +12080,7 @@ mod clock_tests {
                             checks: vec![PreconditionRef::Present {
                                 at: Ref::Draft(DraftHandle::new("yard")),
                             }],
+                            statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
                         },
                         ComponentOp::CreateCommitment {
                             subject: subject("farmer"),
@@ -11942,6 +12089,7 @@ mod clock_tests {
                             due: FictionalMinutes(LATE_DUE),
                             period: None,
                             checks: Vec::new(),
+                            statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
                         },
                         ComponentOp::CreateCommitment {
                             subject: subject("reeve"),
@@ -11950,6 +12098,7 @@ mod clock_tests {
                             due: FictionalMinutes(LATE_DUE),
                             period: None,
                             checks: Vec::new(),
+                            statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
                         },
                         ComponentOp::Bind {
                             subject: subject("reeve"),
@@ -13027,6 +13176,7 @@ mod clock_tests {
                 due: FictionalMinutes(500),
                 period: None,
                 checks: Vec::new(),
+                statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
             }]),
         );
         let goal = *kernel.state.commitments[&counted]
@@ -13101,6 +13251,7 @@ mod clock_tests {
             due: FictionalMinutes(500),
             period: None,
             checks: Vec::new(),
+            statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
         };
         let subject_ids: Vec<SubjectId> =
             active.subjects.iter().map(|subject| subject.id).collect();
@@ -13232,6 +13383,7 @@ mod clock_tests {
             due: FictionalMinutes(due),
             period: None,
             checks: Vec::new(),
+            statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
         };
 
         // One of the two goals is born past due.
@@ -13274,6 +13426,7 @@ mod clock_tests {
                 due: FictionalMinutes(due),
                 period,
                 checks,
+                statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
             }
         };
 
@@ -13508,6 +13661,7 @@ mod clock_tests {
                 due: FictionalMinutes(500),
                 period: Some(minutes(60)),
                 checks: Vec::new(),
+                statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
             }]),
         );
         let before = digests(&kernel);
@@ -13820,6 +13974,7 @@ mod clock_tests {
             due: FictionalMinutes(500),
             period: None,
             checks: Vec::new(),
+            statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
         }]);
         // The Active resolver is handed no intent, so the resolved patch cannot
         // carry one.
@@ -13922,6 +14077,7 @@ mod clock_tests {
                     checks: vec![PreconditionRef::Present {
                         at: Ref::Existing(clockwork.yard),
                     }],
+                    statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
                 }]),
             ),
             vec![Mismatch::ChecksOnNonRoutine { operation: 0 }]

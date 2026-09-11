@@ -2371,6 +2371,7 @@ mod custody_tests {
                             due: FictionalMinutes(10),
                             period: Some(TickMinutes::new(10).unwrap()),
                             checks: Vec::new(),
+                            statement: crate::world::Statement::new("What was promised, as the promisor would say it.").unwrap(),
                         },
                         ComponentOp::CreateCommitment {
                             subject: Ref::Existing(subject),
@@ -2379,6 +2380,7 @@ mod custody_tests {
                             due: FictionalMinutes(20),
                             period: None,
                             checks: Vec::new(),
+                            statement: crate::world::Statement::new("What was promised, as the promisor would say it.").unwrap(),
                         },
                     ]),
                 ),

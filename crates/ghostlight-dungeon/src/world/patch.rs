@@ -350,6 +350,29 @@ pub(crate) struct ChannelRecord {
     pub(crate) controller: Option<SubjectId>,
 }
 
+/// Lived meaning a subject carries: values, a voice, memories, and reads of
+/// other subjects. It constrains no precondition, so it is outside every scope
+/// digest and cannot interrupt a bound turn; it enriches projection and never
+/// substitutes for authority, custody, topology, or knowledge. Set whole, so a
+/// subject holds one value at one revision.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct PersonaMaterial {
+    pub(crate) values: Vec<Statement>,
+    pub(crate) voice: Statement,
+    pub(crate) memories: Vec<Statement>,
+    /// One read per subject, in canonical order.
+    pub(crate) reads: BTreeMap<SubjectId, Statement>,
+}
+
+/// The proposal-time twin of a read: the subject by reference.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct PersonaReadRef {
+    pub(crate) subject: Ref<SubjectId>,
+    pub(crate) statement: Statement,
+}
+
 /// A small closed ordinal. Ordered ascending by declaration order, so derived
 /// `Ord` *is* the semantics and `Knows { at_least }` is one `>=`. Three levels:
 /// two cannot express "I heard it but I doubt it", which is the state deception
@@ -469,6 +492,9 @@ pub(crate) struct Commitment {
     /// What must hold for a `Routine` to auto-fulfil. Role-free canonical
     /// checks. Empty for `Obligation` and `Goal`.
     pub(crate) checks: Vec<BoundPrecondition>,
+    /// What is promised, as the promisor would state it. Without it a promise
+    /// is a clock and a name, and on the road both parties invented the rest.
+    pub(crate) statement: Statement,
 }
 
 /// Nonzero by construction; saturating in both directions. A separate newtype
@@ -1112,6 +1138,15 @@ pub(crate) enum ComponentOp {
         channel: Ref<EntityId>,
         controller: Option<Ref<SubjectId>>,
     },
+    /// Sets, whole, what a subject carries as lived meaning. Identical material
+    /// is `NoOperationEffect`; any non-canonical text is `NoncanonicalText`.
+    SetPersonaMaterial {
+        subject: Ref<SubjectId>,
+        values: Vec<Statement>,
+        voice: Statement,
+        memories: Vec<Statement>,
+        reads: Vec<PersonaReadRef>,
+    },
     /// Two identical creations are two commitments, not `NoOperationEffect`:
     /// the key is command-derived so they cannot collide, and two promises of
     /// the same thing to the same counterparty are two promises. This is where
@@ -1124,6 +1159,7 @@ pub(crate) enum ComponentOp {
         due: FictionalMinutes,
         period: Option<TickMinutes>,
         checks: Vec<PreconditionRef>,
+        statement: Statement,
     },
     /// Removes the commitment and every pressure row sourced by it. Fulfilment,
     /// default, and release are one write: the kernel never learns who invoked
@@ -1455,6 +1491,11 @@ pub(crate) enum Mismatch {
     EmptyStatement {
         handle: DraftHandle,
     },
+    /// A commitment statement or a piece of persona material that is empty,
+    /// padded, or spans lines.
+    NoncanonicalText {
+        operation: usize,
+    },
     /// `AcquireKnowledge { source: Evidenced }` over a `Claimed` fact.
     EvidencedKnowledgeOfClaim {
         operation: usize,
@@ -1752,6 +1793,10 @@ pub(crate) enum ResolvedOp {
     SetController {
         channel: EntityId,
         controller: Option<SubjectId>,
+    },
+    SetPersonaMaterial {
+        subject: SubjectId,
+        material: PersonaMaterial,
     },
     /// Kernel-only: no [`ComponentOp`] twin, because no proposer may author one.
     /// Synthesized by `action::exercise` for a speech-carrying invocation and by
@@ -3385,7 +3430,13 @@ pub(super) fn resolve_patch(
                 due,
                 period,
                 checks,
+                statement,
             } => {
+                if !is_canonical_text(statement.as_str()) {
+                    mismatches.push(Mismatch::NoncanonicalText {
+                        operation: position,
+                    });
+                }
                 let subject_key = resolve_subject(
                     site.clone(),
                     subject,
@@ -4351,6 +4402,67 @@ pub(super) fn resolve_patch(
                     }
                 }
             }
+            ComponentOp::SetPersonaMaterial {
+                subject,
+                values,
+                voice,
+                memories,
+                reads,
+            } => {
+                let site = Site::Operation(position);
+                let subject_key =
+                    resolve_subject(site.clone(), subject, &index, &state.subjects, &mut mismatches);
+                let mut read_keys = Vec::with_capacity(reads.len());
+                for read in reads {
+                    read_keys.push(resolve_subject(
+                        site.clone(),
+                        &read.subject,
+                        &index,
+                        &state.subjects,
+                        &mut mismatches,
+                    ));
+                }
+                let texts = values
+                    .iter()
+                    .chain(memories.iter())
+                    .chain(std::iter::once(voice))
+                    .chain(reads.iter().map(|read| &read.statement));
+                let mut read_subjects: BTreeSet<&Ref<SubjectId>> = BTreeSet::new();
+                let duplicate_read = reads.iter().any(|read| !read_subjects.insert(&read.subject));
+                if texts.clone().any(|text| !is_canonical_text(text.as_str())) || duplicate_read {
+                    mismatches.push(Mismatch::NoncanonicalText {
+                        operation: position,
+                    });
+                }
+                let (Some(Key::Existing(subject_id)), true) =
+                    (subject_key, read_keys.iter().all(Option::is_some))
+                else {
+                    continue;
+                };
+                // Identical material on an existing subject changes nothing. A
+                // draft read can never equal a held one, so it is skipped here.
+                let held: Option<BTreeMap<SubjectId, Statement>> = read_keys
+                    .iter()
+                    .zip(reads)
+                    .map(|(key, read)| match key {
+                        Some(Key::Existing(id)) => Some((*id, read.statement.clone())),
+                        _ => None,
+                    })
+                    .collect();
+                if let Some(held) = held
+                    && state.persona_material.get(&subject_id)
+                        == Some(&PersonaMaterial {
+                            values: values.clone(),
+                            voice: voice.clone(),
+                            memories: memories.clone(),
+                            reads: held,
+                        })
+                {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                }
+            }
             ComponentOp::SetReach { channel, reach } => {
                 let channel_key = resolve_entity(
                     Site::Operation(position),
@@ -4906,6 +5018,7 @@ pub(super) fn resolve_patch(
                 due,
                 period,
                 checks,
+                statement,
             } => ResolvedOp::CreateCommitment {
                 subject: subject_id_of(&key_of(subject)),
                 key: CommitmentKey {
@@ -4920,6 +5033,7 @@ pub(super) fn resolve_patch(
                     due: *due,
                     period: *period,
                     checks: checks.iter().map(precondition_of).collect(),
+                    statement: statement.clone(),
                 },
             },
             ComponentOp::DischargeCommitment { subject, key } => ResolvedOp::DischargeCommitment {
@@ -5088,6 +5202,24 @@ pub(super) fn resolve_patch(
             ComponentOp::SetReach { channel, reach } => ResolvedOp::SetReach {
                 channel: entity_id_of(&key_of(channel)),
                 reach: reach_of(reach),
+            },
+            ComponentOp::SetPersonaMaterial {
+                subject,
+                values,
+                voice,
+                memories,
+                reads,
+            } => ResolvedOp::SetPersonaMaterial {
+                subject: subject_id_of(&key_of(subject)),
+                material: PersonaMaterial {
+                    values: values.clone(),
+                    voice: voice.clone(),
+                    memories: memories.clone(),
+                    reads: reads
+                        .iter()
+                        .map(|read| (subject_id_of(&key_of(&read.subject)), read.statement.clone()))
+                        .collect(),
+                },
             },
             ComponentOp::SetController {
                 channel,
@@ -5376,6 +5508,7 @@ pub(crate) enum PatchFieldKind {
     Evidence,
     Flag,
     Text(&'static str),
+    TextList(&'static str),
     Name(&'static str),
     NameSet(&'static str),
     Choice(&'static [&'static str]),
@@ -5388,6 +5521,7 @@ pub(crate) enum PatchFieldKind {
 /// in two places rather than shipping a schema with no decoder.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum CompositeShape {
+    PersonaRead,
     NewController,
     AccessKind,
     DependencyRef,
@@ -5821,6 +5955,32 @@ pub(crate) const PATCH_TOOLS: &[PatchTool] = &[
         },
     },
     PatchTool {
+        name: "set_persona_material",
+        description: "Set, whole, what a subject carries as lived meaning: the values it holds, the voice it speaks in, the memories it keeps, and how it reads each subject it is bound to. This is what the subject's Persona is projected from; a subject with none has no rendered inner life. Setting replaces everything the subject held.",
+        fields: &[
+            field("subject", PatchFieldKind::Reference("subject")),
+            field(
+                "values",
+                PatchFieldKind::TextList("one value the subject holds, as a sentence"),
+            ),
+            field(
+                "voice",
+                PatchFieldKind::Text("how this subject speaks, in one sentence"),
+            ),
+            field(
+                "memories",
+                PatchFieldKind::TextList("one thing this subject remembers, as a sentence"),
+            ),
+            field(
+                "reads",
+                PatchFieldKind::CompositeList(CompositeShape::PersonaRead),
+            ),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "set_persona_material",
+        },
+    },
+    PatchTool {
         name: "set_controller",
         description: "Set, or clear, the subject that may speak on a channel from outside its reach.",
         fields: &[
@@ -5833,7 +5993,7 @@ pub(crate) const PATCH_TOOLS: &[PatchTool] = &[
     },
     PatchTool {
         name: "create_commitment",
-        description: "Author a promise. Exactly one of the three shapes: kind routine carries a period and no counterparty; kind obligation names a counterparty and carries no period; kind goal names no counterparty and carries no period. A period on an obligation or goal, or a routine without one, is refused.",
+        description: "Author a promise. Exactly one of the three shapes: kind routine carries a period and no counterparty; kind obligation names a counterparty and carries no period; kind goal names no counterparty and carries no period. A period on an obligation or goal, or a routine without one, is refused. The statement says what is promised; both parties will read it.",
         fields: &[
             field("subject", PatchFieldKind::Reference("subject")),
             field("counterparty", PatchFieldKind::OptionalReference("subject")),
@@ -5843,6 +6003,10 @@ pub(crate) const PATCH_TOOLS: &[PatchTool] = &[
             field(
                 "checks",
                 PatchFieldKind::CompositeList(CompositeShape::PreconditionRef),
+            ),
+            field(
+                "statement",
+                PatchFieldKind::Text("what is promised, as the promisor would say it in one sentence"),
             ),
         ],
         shape: PatchToolShape::Operate {
@@ -5991,6 +6155,9 @@ fn field_schema(kind: PatchFieldKind) -> Value {
         PatchFieldKind::Text(description) | PatchFieldKind::Name(description) => {
             tool_schema::canonical_string(description)
         }
+        PatchFieldKind::TextList(description) => {
+            tool_schema::list(tool_schema::canonical_string(description))
+        }
         PatchFieldKind::NameSet(description) => {
             tool_schema::list(tool_schema::canonical_string(description))
         }
@@ -6112,6 +6279,15 @@ fn composite_schema(shape: CompositeShape) -> Value {
             ),
         ]),
         CompositeShape::PreconditionRef => precondition_ref_schema(),
+        CompositeShape::PersonaRead => tool_schema::object(vec![
+            ("subject".to_owned(), tool_schema::reference("subject")),
+            (
+                "statement".to_owned(),
+                tool_schema::canonical_string(
+                    "how this subject reads that one, in one sentence",
+                ),
+            ),
+        ]),
         CompositeShape::RoleSpec => tool_schema::object(vec![
             (
                 "role".to_owned(),
@@ -6424,6 +6600,7 @@ pub(super) fn field_example(kind: PatchFieldKind) -> Value {
         PatchFieldKind::Flag => json!(false),
         PatchFieldKind::Text(_) | PatchFieldKind::Name(_) => json!("example_name"),
         PatchFieldKind::NameSet(_) => json!(["example_name"]),
+        PatchFieldKind::TextList(_) => json!(["An example sentence."]),
         PatchFieldKind::Choice(values) => json!(values[0]),
         PatchFieldKind::Composite(shape) => composite_example(shape),
         PatchFieldKind::CompositeList(shape) => json!([composite_example(shape)]),
@@ -6620,7 +6797,7 @@ mod catalog_tests {
 
         // Seven declaration shapes over six `Declaration` variants — `Entity`
         // splits by kind, because a `kind` field would be a door slammed for
-        // half its values — plus twenty-nine operations and two session tools.
+        // half its values — plus thirty operations and two session tools.
         // `assert_exhaustive` below breaks the build when a variant is added;
         // these counts are where the addition is restated.
         let declarations = PATCH_TOOLS
@@ -6631,7 +6808,7 @@ mod catalog_tests {
             .iter()
             .filter(|entry| matches!(entry.shape, PatchToolShape::Operate { .. }))
             .count();
-        assert_eq!((declarations, operations, PATCH_TOOLS.len()), (7, 29, 38));
+        assert_eq!((declarations, operations, PATCH_TOOLS.len()), (7, 30, 39));
 
         // Every declaration variant the vocabulary owns is reachable, and the
         // two payload-carrying entity kinds are not exposed as an `Entity`
@@ -6719,6 +6896,7 @@ mod catalog_tests {
                 ComponentOp::Forget { .. } => "forget",
                 ComponentOp::SetReach { .. } => "set_reach",
                 ComponentOp::SetController { .. } => "set_controller",
+                ComponentOp::SetPersonaMaterial { .. } => "set_persona_material",
                 ComponentOp::CreateCommitment { .. } => "create_commitment",
                 ComponentOp::DischargeCommitment { .. } => "discharge_commitment",
                 ComponentOp::AdvancePressure { .. } => "advance_pressure",
@@ -6775,7 +6953,7 @@ mod catalog_tests {
             .count();
         assert_eq!(
             (declare_tools, operate_tools, PATCH_TOOLS.len()),
-            (7, 29, 38)
+            (7, 30, 39)
         );
 
         let declarations = every_declaration();
