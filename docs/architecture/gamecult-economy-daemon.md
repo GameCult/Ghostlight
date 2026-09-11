@@ -1,7 +1,7 @@
-# The GameCult economy daemon
+# Njörðr, the GameCult economy daemon
 
-Status: specification, 2026-09-11. Nothing is built. The daemon's repository
-name is the operator's to choose; this document calls it "the daemon".
+Status: specification, 2026-09-11. Nothing is built. The daemon is Njörðr;
+no repository exists yet.
 
 ## Objective
 
@@ -38,7 +38,7 @@ mirrors.
 
 ## The model
 
-Five nouns. Everything else is derived.
+Six nouns. Everything else is derived.
 
 **Dimension.** A named property axis with a unit tag, authored per world:
 `thermal_conductivity (W/m·K)`, `density (kg/m³)`, `tensile_strength`,
@@ -88,6 +88,17 @@ ingredient's quality: a thruster's output reads its conductor's
 computes for display from the vector, never inputs. A scalar quality on the
 instance is what the breach left; it does not come back.
 
+**Shipment.** A lot in motion: one or more lots, a carrier subject, a route,
+a departure revision, and an arrival derived from the route's cost and the
+carrier's speed. While a shipment is in transit its lots are held by the
+shipment, not by the sender or the receiver, so a seized cargo is a custody
+change on the shipment and nothing else has to be repaired. A shipment is
+how economic activity becomes concrete: a price gap across a route is not
+closed by an arithmetic transfer but by a carrier deciding to move a lot,
+and that carrier, its cargo, and its position along the route are world
+facts a player can meet. The daemon owns the shipment ledger; it owns no
+carrier's decision to sail.
+
 Two consequences of the model that the games asked for:
 
 - An exceptional item is a product of a well-managed supply chain by
@@ -112,10 +123,10 @@ nearest markets holding the class, and a liquidity parameter. Use the
 standard mechanism rather than a bespoke one: a per-market, per-class
 automated market maker (a logarithmic scoring rule or constant-function
 curve, chosen at build for its bounded loss) quoting against the reserve,
-with tatonnement between markets carried by trade, not by the daemon: a
+with tatonnement between markets carried by shipments, not by the daemon: a
 price gap across a route is an opportunity for a Ghostlight subject or a
-player to move a lot, and the move is what closes the gap. The daemon owns no
-trader.
+player to move a lot, the move is a shipment, and its arrival is what closes
+the gap. The daemon owns no trader and never moves a lot on its own.
 
 **Demand** enters three ways and is typed the same way: a Delvehold Hold's
 ratified policy (mandates, reserves, rationing) as a demand profile on its
@@ -160,11 +171,57 @@ player who floods a market with aluminium spreaders lowers their price and
 raises copper's relative standing; a workshop that buys every lot of a scarce
 conductor raises its price in every market a route reaches.
 
+## Two consumer profiles
+
+The model is one; the granularity at which a game consumes it is not.
+
+**Delvehold, the boundary profile.** All player agency occurs inside the
+Greathold, which is a strict boundary. The outside world's economy reaches
+players as arrivals, prices, and news at the boundary subject, batched per
+tick; a shipment outside the Greathold is abstract until it arrives, and no
+player can meet it on the road. The integration note
+(`delvehold-forced-ontology-integration.md`) already describes this shape,
+and Njörðr serves it with one market mirror per Hold and the tick batch.
+
+**Aetheria, the interspersed profile.** Player actors are spread through the
+whole world and get to meddle with all of it. Nothing economic may stay
+abstract where a player is: a shipment on a route a player is flying is a
+ship with a hold full of lots, and piracy is the canonical case. This needs
+three things the boundary profile does not:
+
+- Materialization. The Aetheria host asks Njörðr for the shipments whose
+  derived position lies inside a zone a player occupies, and instantiates
+  each as an entity whose cargo is the shipment's lots by id. The entity is
+  a rendering of the shipment, bound to its id and revision; it is not a
+  second truth about where the cargo is. When no player is present the
+  shipment progresses abstractly by route cost and time, and the two
+  descriptions must agree at the boundary: a materialized ship's position is
+  the derived one at the moment of materialization, and its arrival is
+  whichever comes first, the derived arrival or the host's committed docking.
+- Interception. A seizure is a command from the host carrying the shipment
+  id, the revision it was materialized against, the seizing holder, and the
+  combat receipt as evidence. Njörðr moves the lots from the shipment to the
+  seizer, marks the shipment lost, and refuses the command if the shipment's
+  revision moved (it arrived, or was already taken) exactly as a stale quote
+  is refused. The same command shape serves a legitimate boarding, a
+  customs seizure, a salvage, and a wreck.
+- Cadence. The interspersed profile emits and consumes events per zone as
+  they happen, not per world tick. A seizure reaches Ghostlight at once as a
+  custody change on the carrier's owner, a witnessed event over the route's
+  places, and a pressure on whoever was owed the cargo; the destination
+  market's next quote reflects the lot that will not arrive. Consequence is
+  expressed as price, as news, and as a promise now in default, and all
+  three are derived from the one committed seizure.
+
+Both profiles use the one lot ledger, the one shipment ledger, and the one
+quote function. The difference is which events a host subscribes to and at
+what grain, which is subscription configuration, not a second model.
+
 ## Authority map
 
-- Owner: the daemon owns dimensions, materials, lots, recipes, products,
-  markets, demand rows, and prices for every world it serves. One process,
-  one CultCache store per world, one revision counter per world.
+- Owner: Njörðr owns dimensions, materials, lots, recipes, products,
+  shipments, markets, demand rows, and prices for every world it serves. One
+  process, one CultCache store per world, one revision counter per world.
 - Inputs: authored catalogs (dimensions, materials, recipes, facilities) per
   world; lot and trade commands from game hosts; the Ghostlight outbound
   batch; policy demand documents from Delvehold's civic organs.
@@ -174,7 +231,9 @@ conductor raises its price in every market a route reaches.
 - Derived state: every price, every product property vector, every rarity
   projection, every "quality". None is stored as truth; all are recomputed
   from lots, recipes, demand, and routes at a revision.
-- Forbidden writers: a game host writes no price; Ghostlight writes no lot;
+- Forbidden writers: a game host writes no price and moves no lot except by
+  a command with a receipt; a materialized entity is never the position of
+  record; Ghostlight writes no lot;
   the daemon writes no Ghostlight component except through a consumer patch
   the kernel validates; no client, projection, cache, or Eve surface commits
   anything; no material carries a scalar quality; no recipe names a material
@@ -219,7 +278,10 @@ deterministic and its loss is bounded; a stale quote is refused.
 Pipeline: a fixture world with copper, aluminium, and gold conductors, one
 spreader recipe with an optional vapour-chamber role, two markets on one
 route; flooding one market moves both prices in the direction the route cost
-predicts; closing the route decouples them.
+predicts; closing the route decouples them. A shipment between the two
+markets, seized mid-route against its revision, lands its lots on the seizer,
+is refused a second time, and leaves the destination's next quote higher
+than it would have been on arrival.
 
 End to end: a Ghostlight world with a market mirror; a witnessed route
 closure in Ghostlight arrives as a shock and moves a price; the price arrives
@@ -227,16 +289,23 @@ in Ghostlight as a fact witnessed at the market; a person's buy intent exits,
 is executed, and returns as custody with a receipt; replay of the daemon's
 journal reproduces every quote.
 
-## Decisions the operator owns
+## Decisions
 
-1. The daemon's name and repository.
-2. Whether Delvehold's civic economy (recipes, facilities, orders, policy)
-   migrates into the daemon or stays Delvehold-owned with the daemon as its
-   market and price authority only. The model above works either way; the
-   authority map assumes the daemon owns lots and recipes for both games.
-3. The market maker: logarithmic scoring rule versus constant-function curve.
+Taken 2026-09-11: the daemon is Njörðr; properties are dimensions, never a
+scalar quality, because one axis cannot express a trade-off within a recipe;
+process roles are dimensions like materials.
+
+Still the operator's:
+
+1. Whether Delvehold's civic economy (recipes, facilities, orders, policy)
+   migrates into Njörðr or stays Delvehold-owned with Njörðr as its market
+   and price authority only. The model works either way; the authority map
+   assumes Njörðr owns lots and recipes for both games.
+2. The market maker: logarithmic scoring rule versus constant-function curve.
    Recommend the scoring rule for its bounded loss and single liquidity
    parameter per market.
-4. Whether process roles (facility, tool, operator) are dimensions like
-   materials (recommended) or a separate quality scalar (the thing the breach
-   took, and not worth restoring).
+3. Who decides a shipment sails: a Ghostlight subject (a carrier institution
+   with an operational agent, reading Njörðr's prices as facts) or an
+   authored flow policy inside Njörðr. Recommend the Ghostlight subject, so a
+   pirate's victim has a name, a route, and a grudge, and the daemon keeps
+   owning no trader.
