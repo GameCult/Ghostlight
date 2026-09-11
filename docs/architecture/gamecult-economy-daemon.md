@@ -177,12 +177,17 @@ conductor raises its price in every market a route reaches.
 The model is one; the granularity at which a game consumes it is not.
 
 **Delvehold, the boundary profile.** All player agency occurs inside the
-Greathold, which is a strict boundary. The outside world's economy reaches
-players as arrivals, prices, and news at the boundary subject, batched per
-tick; a shipment outside the Greathold is abstract until it arrives, and no
-player can meet it on the road. The integration note
-(`delvehold-forced-ontology-integration.md`) already describes this shape,
-and Njörðr serves it with one market mirror per Hold and the tick batch.
+Greathold, which is a strict boundary. Njörðr owns the interior economy as
+much as the exterior: a Hold's workshops, facilities, inventories, and
+orders are its lots, recipes, and markets, and a Hold's ratified policy
+reaches it as demand rows and carrier policies. What the boundary bounds is
+Ghostlight's reach, not Njörðr's: the outside world reaches players as
+arrivals, prices, and news at the boundary subject, batched per tick; a
+shipment outside the Greathold is abstract until it arrives, and no player
+can meet it on the road. The integration note
+(`delvehold-forced-ontology-integration.md`) describes the Ghostlight side
+of this shape; its "Delvehold owns its own quantitative economy" sentence is
+superseded by this document.
 
 **Aetheria, the interspersed profile.** Player actors are spread through the
 whole world and get to meddle with all of it. Nothing economic may stay
@@ -360,23 +365,22 @@ journal reproduces every quote.
 
 Taken 2026-09-11: the daemon is Njörðr; properties are dimensions, never a
 scalar quality, because one axis cannot express a trade-off within a recipe;
-process roles are dimensions like materials.
+process roles are dimensions like materials; Njörðr owns the economy whole,
+Delvehold's interior included, so Greathold recipes, facilities, capacity,
+inventories, orders, and prices are Njörðr lots, recipes, markets, and
+quotes, and Delvehold's civic organs author policy as demand rows and
+carrier policies rather than running a second ledger; the Unity embedding is
+the Rust engine as a native plugin over a C ABI.
 
 Still the operator's:
 
-1. Whether Delvehold's civic economy (recipes, facilities, orders, policy)
-   migrates into Njörðr or stays Delvehold-owned with Njörðr as its market
-   and price authority only. The model works either way; the authority map
-   assumes Njörðr owns lots and recipes for both games.
-2. The market maker: logarithmic scoring rule versus constant-function curve.
+1. The market maker: logarithmic scoring rule versus constant-function curve.
    Recommend the scoring rule for its bounded loss and single liquidity
    parameter per market.
-3. Resolved by the engine split: a shipment sails because a carrier policy
+2. Resolved by the engine split: a shipment sails because a carrier policy
    fires, and the policy is data. Online, a Ghostlight carrier subject owns
    and amends its policy, so a pirate's victim has a name, a route, and a
    grudge; offline, the seeded policies run. What remains the operator's is
    the policy vocabulary's first cut: which thresholds and preferences the
    seeding run may author.
-4. The Unity embedding path: Rust engine as a native plugin over a C ABI
-   (recommended) versus any alternative that would put a second engine
-   implementation in C#.
+3. The policy vocabulary's first cut, as above.
