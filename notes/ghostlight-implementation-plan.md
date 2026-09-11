@@ -694,6 +694,146 @@ and belongs in the same cut. Decisions the operator owns: the small typed
 material record above versus the full portable standard (recommend small),
 and whether a commitment statement is required (recommend required).
 
+### 14. Nonverbal display by quote — mapped
+
+Ordered 2026-09-11 after run 9. Objective: a person can act without words and
+be seen doing it. Run 9's gap column holds "I nod toward the path down", "I
+set down whatever's in my hands", "I settle on the warm step", and "I let the
+quiet sit a breath longer"; each was seen by everyone in the room and the
+world lost it. The false binary is intent versus posture. Intent is a psychic
+side channel; posture mechanics force every reader to decode a body. What is
+public is neither: it is the display, a visible act at the grain a witness
+perceives it, separable from what the actor meant by it. Speech already has
+this shape in the kernel: a claim placed before an audience, landed in each
+listener's knowledge as `Told { by }`, with the words kept verbatim. A display
+is the same act with a different sense: `Seen { by }`, and an audience fixed
+by physics rather than by the entry.
+
+Current mechanism: the narrative lane speaks and does nothing else.
+`speak_invocation` (`controllers.rs`) finds the granted entry of kind `speak`
+and invokes it with `speech: Some(statement)`; `exercise` (`action.rs`)
+lowers speech kernel-side into `AssertClaim { fact, statement, by: actor }`
+and `Communicate { speaker, fact, to }`, the fact id from the one speech
+`derive_id` site with `SPEECH_INDEX = "0"`; `Communicate`'s apply arm fans out
+over the entry's audience less the speaker less holders and lands
+`Told { by, via }` at `Believed`. `DecisionEvent.speech: Option<EntityId>`
+stamps `spoken_at` on every knowledge row at snapshot; `overheard_since`
+turns rows newer than a bound turn into the Interpreter's "What was said to
+this person since" block; `projector_knowledge` renders each row with a
+speaker label for `Told` and none for `Witnessed`/`Evidenced`. The
+Interpreter owns two tools, `speak(source_quote)` and `record_gap`; a visible
+act is a `missing_affordance` gap, and the fold allows one speech capture.
+Interpretation of a display already has a home on the receiving side:
+`PersonaMaterial.reads` (Torvin reading Iska's face) is the receiver's own
+private reading, rendered only to the receiver. What has no home is the
+display itself on the sender's side.
+
+Authority map:
+
+- Owner: the kernel's `exercise` lowering in `action.rs`. It alone turns an
+  invocation's `display: Option<Statement>` into
+  `AssertClaim { fact, statement, by: actor }` plus
+  `ResolvedOp::Display { actor, fact }`, the fact id from the same
+  `derive_id` site with a second discriminator (`DISPLAY_INDEX = "1"`; the
+  index exists for exactly this, no new allocation site).
+- Inputs: the actor, its position, the quoted visible sentence. Nothing
+  else. Not the entry's audience: a display cannot go down a horn.
+- Outputs: one `Claimed { by: actor }` fact whose statement is the actor's
+  own visible sentence, and a `Seen { by: actor }` knowledge row at
+  `Believed` on every subject standing in the actor's place, less the actor,
+  less anyone who already holds the fact (`unheld`, the never-overwrite rule).
+  Fan-out is `audience(state, actor, &Audience::Colocated)`, the derivation
+  speech already uses; `can_broadcast` over the same audience refuses a
+  placeless actor as it refuses a placeless speaker. A display into an empty
+  room is a legal no-op, as speaking alone is.
+- Derived state: each recipient's `knows` moves, so its scope digest moves,
+  so a display interrupts whoever was mid-thought in the room through the
+  interruption mechanism of step 9 unchanged. `spoken_at` becomes
+  `minted_at`, stamped from `DecisionEvent.speech` or `.display`, and is the
+  sole gate on an overheard row. `Overheard` carries how the row arrived:
+  said by, shown by, or known; the Interpreter's interruption block renders
+  "X said" and "X, seen doing" and the existing "came to know" line. The
+  Projector's knowledge rows render `Seen { by }` with the actor's label and a
+  seen marker; the reader's Persona does the social reading itself, in its
+  own values, and any reading it commits is a `PersonaRead`, already landed.
+- Forbidden writers: no `intent`, `meaning`, `mood`, or `reading` field on
+  the operation, the fact, the knowledge row, or the event; the kernel never
+  mints a reading for a receiver. The Interpreter never rewrites the display
+  into third person or into what it meant; the statement is a verbatim quote
+  of the visible clause and a quote not in the prose is a gap. The Projector
+  never paraphrases a display. No confidence on the operation: a displayer
+  cannot choose how much a viewer believes its body. No display over a
+  channel audience, ever; no `Display` in `PATCH_TOOLS`, so no seed or
+  elaborator may make a person gesture from outside that person (kernel-only
+  lowering, the same standing as `AssertClaim`; the catalog stays thirty
+  operations and the pin stays `(7, 30, 39)`).
+- Shared paths: the SDK lane and the connector lane share the one
+  Interpreter fold; replay re-derives the display fact from the command's
+  invocation and must land the same rows; a resumed narrative row rebuilds
+  the same interruption block from the persisted `Overheard`.
+- Deletion line: `InterpreterFold.captured_speech: bool` and
+  `SpeakProposal { text }` are cut for one address proposal carrying
+  `speech: Option<String>` and `display: Option<String>`, at most one of each
+  per turn, and `NarrativeCapture.proposal: Option<SourceRange>` becomes the
+  ranges of both. `ActionMismatch::SpeechRequired` narrows to "a
+  speech-carrying entry invoked with neither speech nor display"; a silent
+  turn that only displays invokes the `speak` entry with `speech: None`.
+  `carries_speech` keeps its name and its meaning: what it gates is the
+  utterance and its audience; a display accompanies any invocation because a
+  body is visible whatever it is doing.
+
+Interpreter contract: a third tool, `display(source_quote)`, beside `speak`.
+The prompt gains one rule and no list: a visible act another person in the
+same place could see (a gesture, a posture, a look, a movement, a silence
+held) is a display, quoted as the visible clause alone; what the person
+hoped, meant, or felt while doing it is not visible and is not quotable as a
+display. A non-canonical quote is a gap; a second display is an `ambiguity`
+gap, the same rule as a second speech.
+
+Cut line: the `missing_affordance` gaps for gestures in run 9 are the
+measured outcome. Run 10 tallies the gap kinds again; the four gesture gaps
+must be displays and the private-reasoning gaps ("I don't say the other
+thing") must remain gaps, because they are intent and this cut gives intent
+no public home on purpose. Memory formation from a turn's private half is a
+different cut and is not in this one.
+
+Subtraction budget: net additive by one `ResolvedOp` arm, one
+`KnowledgeSource` arm, one invocation field, one event field, one Interpreter
+tool, and one `Overheard` manner; cut against it are `captured_speech`,
+`SpeakProposal`, and the four `missing_affordance` gap shapes per run. The
+smaller surface, routing gestures through `speak`, was rejected: it would
+land a visible act as `Told`, a telling that did not happen, and render it to
+the room as words. Schema bumps: `world_state.consumer.v4` (the knowledge
+source arm and `minted_at`), `world_commit.consumer.v4` (`display` on the
+invocation and the event), `controller_work.v14` (`Overheard` manner and the
+capture ranges); the consumer API doc and the ontology's speech paragraph,
+operation count sentence (line 459 still says twenty-nine; it is thirty and
+stays thirty), and Interpreter paragraph follow.
+
+Build budget: crate `ghostlight-dungeon` and `ghostlight-persona-projection`
+tests on the Windows workstation as the proving host, sidecar schema
+fixtures regenerated if the Interpreter tool set changes the sidecar's
+fixture; the Linux release is Idunn's build and is not touched by this cut.
+
+Verification: kernel tests that a display lands `Seen { by }` on the
+co-located only, never on the actor, never on a subject elsewhere or on a
+channel audience, never over a holder, is refused for a placeless actor, is a
+no-op in an empty room, and replays to equal state; an interruption test that
+a display after a neighbour's turn bound yields a "seen doing" overheard row
+and the "knows changed" line; fold tests that a non-canonical display quote
+is a gap, a second display is an ambiguity gap, and speech plus display in
+one turn is one invocation carrying both; a Projector test that a seen row
+renders with the actor's label and never as speech.
+
+Decisions the operator owns: kernel-only lowering versus a patch-authorable
+`display` operation (recommend kernel-only; a person's body is not
+authorable from outside the person, and the count stays thirty); the display
+statement kept in the actor's own words versus an Interpreter rewrite
+(recommend the actor's words; by-quote discipline, and the receiver reads
+first person as a stage direction); a silent turn invoking the `speak` entry
+versus a fourth narrative tool for a wordless turn (recommend `speak` with
+no utterance; one carrier, one command per turn).
+
 ## Subtraction budget
 
 Prefer deletion, collapse, or reuse before adding surfaces. The replacement

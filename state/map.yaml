@@ -375,7 +375,12 @@ current_status:
     the handoff, and plan step 12 (PersonaMaterial, commitment
     statements, co-presence; run 8 is the first run whose people speak in
     their own voices) and step 13 (the world brief, world_create.v3,
-    guidance on every lane). Next, in the operator's order: (a) the longer
+    guidance on every lane). Next, in the operator's order: (0) nonverbal
+    display by quote, mapped as plan step 14 and not built: a visible act
+    lands as `Seen { by }` knowledge on the co-located, kernel-lowered from
+    the invocation beside speech, quoted by the Interpreter as the visible
+    clause alone; the actor's intent stays private. Ordered 2026-09-11
+    ahead of (a); the build waits on the three decisions step 14 names. (a) the longer
     SDK run that shows the first live interrupted cell and its log line
     (runbook "Interrupted cell");
     (b) the outbound consumer response batch with a non-loopback CultMesh

@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-09-10
+Updated: 2026-09-11
 
 This is the compact re-entry packet. It carries current authority and the next
 gate. Git owns chronology, the system map owns teardown detail, and evidence
@@ -252,14 +252,20 @@ unplaced; retire it or place its subjects.
 
 ### In order
 
-1. A longer SDK run that shows the first live interrupted cell, with the
+1. Nonverbal display by quote, mapped as plan step 14 and not built
+   (ordered 2026-09-11 ahead of the interrupted-cell run). A visible act
+   lands as `Seen { by }` knowledge on the co-located, kernel-lowered beside
+   speech, quoted by the Interpreter as the visible clause alone; the
+   actor's intent stays private. The build waits on the three decisions
+   step 14 names.
+2. A longer SDK run that shows the first live interrupted cell, with the
    log line the runbook's "Interrupted cell" section names. The world brief
    (`world_create.v3`, plan step 13) is landed, so the run's people have a
    world named and described to them.
-2. The outbound half of the consumer contract: the response batch with a
+3. The outbound half of the consumer contract: the response batch with a
    non-loopback CultMesh lease.
-3. The deployment gate below.
-4. Integration of the elaborator swarm's ideas (see "World fixtures and
+4. The deployment gate below.
+5. Integration of the elaborator swarm's ideas (see "World fixtures and
    the elaborator swarm" below).
 
 ### Decisions the operator owns
