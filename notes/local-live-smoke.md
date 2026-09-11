@@ -215,6 +215,7 @@ set.
 | 6 | one round, 90 s | two ticks, 299 s and 235 s; 9 cells; flat prompts | passed; eighteen cells, nobody spoke; the honest baseline of an unauthored person |
 | 7 | refused: six distinct people with memories, reads, and worded promises, every `declare_subject` carrying `"controller": {}` | 2 ticks on genesis alone | harness failed on the empty seed; the repair continuation faulted on the SDK lane (one user turn) |
 | 8 | one round, 97 s: six people, each with a voice, values, memories, reads, and a promise in words | two ticks, 191 s and 261 s; 8 cells; 43 speak captures to 9 gaps | passed; seven distinct lines about the grate, the roll, and the crew |
+| 9 | one round, 94 s; world titled Low Sere with its brief on every lane | two ticks, 218 s and 209 s; 8 cells; 20 speak captures to 24 gaps | passed; no fixture name anywhere in the trace; promises and speech in the world's own terms (the grate, the ration boards, the kiln on stored ash) |
 
 Rules run 1 imposed are in the implementation plan under step 11 (descriptions
 carried through the sidecar, `due` described and the clock printed, the grant
@@ -255,9 +256,11 @@ goes below. Speech captures went from one per tick to twenty-one, and gaps
 from most of the prose to nine. One promise in run 8 read "I promise Maro
 Seln I will mend the tick fixture by the appointed hour, though Maro Seln
 holds no authority to command my compliance and no forum will hear a suit":
-the world is still titled "Cover Tick Fixture" and the brief's boundary
-language leaked into a vow. The world-title and brief cut is no longer
-cosmetic.
+the world was still titled "Cover Tick Fixture" and the brief's boundary
+language leaked into a vow. Run 9, after `world_create.v3` gave the world
+its title and brief, has no fixture name in its trace and its promises read
+"I want every one of the forty-one hearths accounted for on the ration
+boards, with no favorites".
 
 ## Interrupted cell
 
