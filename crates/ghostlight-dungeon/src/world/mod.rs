@@ -81,8 +81,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v3";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v3";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v4";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v4";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -554,6 +554,10 @@ pub(crate) struct DecisionInvocation {
     /// Command input, and the only place an utterance's text enters the kernel.
     /// The committed home of those bytes is `facts[fact].statement`.
     pub(crate) speech: Option<Statement>,
+    /// A visible act in the actor's own words, and the only place it enters
+    /// the kernel. It accompanies any invocation: a body is visible whatever
+    /// it is doing. Its audience is the actor's place, never the entry's.
+    pub(crate) display: Option<Statement>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -695,6 +699,8 @@ pub(crate) struct DecisionEvent {
     /// event is the world's record and every reader reads it, so it carries the
     /// fact id and the statement lives in `facts` alone.
     pub(crate) speech: Option<EntityId>,
+    /// The claim this act displayed, if it carried a visible act. Same rule.
+    pub(crate) display: Option<EntityId>,
     /// Index into the entry's `outcome_bands`. Re-derived and compared at apply
     /// and at replay, never trusted.
     pub(crate) band: usize,
@@ -895,7 +901,7 @@ pub(crate) struct SubjectSnapshot {
     pub(crate) redress: Vec<ForumSnapshot>,
     /// Every fact this subject holds, with the statement resolved. The sole
     /// perception surface: a subject perceives a speech act if and only if it
-    /// holds `Knowledge` of that act's fact. Ordered by `spoken_at` then `fact`.
+    /// holds `Knowledge` of that act's fact. Ordered by `minted_at` then `fact`.
     pub(crate) knowledge: Vec<KnowledgeSnapshot>,
     /// Digest-bound, lowered from the one `scope_components` call `snapshot`
     /// already makes, so view and digest cannot drift. Carries `past_due`,
@@ -948,9 +954,9 @@ pub(crate) struct KnowledgeSnapshot {
     /// was never told sees the statement with no speaker, which is correct: it
     /// knows the thing, not the telling.
     pub(crate) source: KnowledgeSource,
-    /// The revision of the speech act that minted this claim, when some
-    /// committed event asserted it.
-    pub(crate) spoken_at: Option<u64>,
+    /// The revision of the act that minted this claim, spoken or displayed,
+    /// when some committed event asserted it.
+    pub(crate) minted_at: Option<u64>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1050,6 +1056,7 @@ pub(crate) struct OperatorEvent {
     pub(crate) speaker: SubjectId,
     pub(crate) speaker_label: String,
     pub(crate) speech: Option<Statement>,
+    pub(crate) display: Option<Statement>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -2583,6 +2590,34 @@ fn apply_operation(
                 );
             }
         }
+        ResolvedOp::Display { actor, fact } => {
+            if !state.subjects.contains_key(actor) || !state.facts.contains_key(fact) {
+                return Err(KernelError::Invariant(
+                    "a display names no live actor or fact".into(),
+                ));
+            }
+            // The room is the audience, re-derived here: the same derivation
+            // co-located speech uses, so a body and a voice cannot disagree
+            // about who is in the room. A placeless actor is refused as a
+            // placeless speaker is; an empty room is a legal no-op, as
+            // speaking alone is. `Believed` is fixed by the kernel: a
+            // displayer cannot choose how much a viewer believes its body.
+            let room = Audience::Colocated;
+            if !can_broadcast(state, *actor, &room) {
+                return Err(KernelError::Invariant(
+                    "an actor displays from no place".into(),
+                ));
+            }
+            for viewer in fan_out(state, *actor, *fact, &room) {
+                state.knowledge.entry(viewer).or_default().insert(
+                    *fact,
+                    Knowledge {
+                        confidence: Confidence::Believed,
+                        source: KnowledgeSource::Seen { by: *actor },
+                    },
+                );
+            }
+        }
         ResolvedOp::Witness {
             fact,
             place,
@@ -3248,6 +3283,10 @@ fn operator_log(state: &WorldState) -> Result<Vec<OperatorEvent>, KernelError> {
                     .speech
                     .and_then(|fact| state.facts.get(&fact))
                     .map(|record| record.statement.clone()),
+                display: event
+                    .display
+                    .and_then(|fact| state.facts.get(&fact))
+                    .map(|record| record.statement.clone()),
             })
         })
         .collect()
@@ -3411,10 +3450,16 @@ fn agency_graph(state: &WorldState) -> AgencyGraph {
 fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
     // One pass over the causal record so each subject's own knowledge map can be
     // stamped with the revision that minted each claim it holds.
-    let spoken_at: BTreeMap<EntityId, u64> = state
+    let minted_at: BTreeMap<EntityId, u64> = state
         .events
         .iter()
-        .filter_map(|event| event.speech.map(|fact| (fact, event.revision)))
+        .flat_map(|event| {
+            event
+                .speech
+                .into_iter()
+                .chain(event.display)
+                .map(move |fact| (fact, event.revision))
+        })
         .collect();
     let subjects = state
         .subjects
@@ -3495,11 +3540,11 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                         },
                         confidence: held.confidence,
                         source: held.source,
-                        spoken_at: spoken_at.get(fact).copied(),
+                        minted_at: minted_at.get(fact).copied(),
                     })
                 })
                 .collect::<Result<Vec<_>, KernelError>>()?;
-            knowledge.sort_by_key(|entry| (entry.spoken_at, entry.fact));
+            knowledge.sort_by_key(|entry| (entry.minted_at, entry.fact));
             Ok(SubjectSnapshot {
                 id: *subject_id,
                 label: subject.label.clone(),
@@ -4471,7 +4516,9 @@ fn operation_ground(
         ResolvedOp::AcquireKnowledge { subject, .. } | ResolvedOp::Forget { subject, .. } => {
             (vec![*subject], Vec::new(), Vec::new())
         }
-        ResolvedOp::Communicate { speaker, .. } => (vec![*speaker], Vec::new(), Vec::new()),
+        ResolvedOp::Communicate { speaker, .. } | ResolvedOp::Display { actor: speaker, .. } => {
+            (vec![*speaker], Vec::new(), Vec::new())
+        }
         // The place is the whole ground. Confining by it is not weaker than
         // confining by the recipients: `covers_place` is transitive, so every
         // subject the fan-out selects stands under the place, and a place
@@ -6187,6 +6234,7 @@ mod tests {
             bindings: Vec::new(),
             proposed: Vec::new(),
             speech: Some(Statement::new(text).unwrap()),
+            display: None,
         }
     }
 
@@ -6600,6 +6648,7 @@ mod tests {
             bindings: Vec::new(),
             proposed: Vec::new(),
             speech: Some(Statement::new("No grant").unwrap()),
+            display: None,
         };
         assert!(matches!(
             kernel.submit(
@@ -6633,6 +6682,7 @@ mod tests {
                             bindings: Vec::new(),
                             proposed: Vec::new(),
                             speech: Some(Statement::new("Forged").unwrap()),
+                            display: None,
                         },
                         opportunity: tampered,
                     },
@@ -7344,6 +7394,7 @@ mod tests {
                             bindings: Vec::new(),
                             proposed: Vec::new(),
                             speech: Some(Statement::new("Not my grant.").unwrap()),
+                            display: None,
                         },
                     },
                 ),
@@ -7409,6 +7460,7 @@ mod tests {
                             bindings: Vec::new(),
                             proposed: Vec::new(),
                             speech: Some(Statement::new("The council convenes.").unwrap()),
+                            display: None,
                         },
                     },
                 ),
@@ -7503,6 +7555,7 @@ mod tests {
                             bindings: Vec::new(),
                             proposed: Vec::new(),
                             speech: Some(Statement::new("Still here.").unwrap()),
+                            display: None,
                         },
                     },
                 ),
@@ -7607,6 +7660,7 @@ mod tests {
                                 magnitude: Magnitude::Quantity(Quantity(3)),
                             }],
                             speech: None,
+                            display: None,
                         },
                     },
                 ),
@@ -8616,6 +8670,7 @@ mod custody_tests {
                             bindings: Vec::new(),
                             proposed: Vec::new(),
                             speech: Some(Statement::new("The tithe is short.").unwrap()),
+                            display: None,
                         },
                     },
                 ),
@@ -8903,6 +8958,7 @@ mod custody_tests {
                 bindings: Vec::new(),
                 proposed: Vec::new(),
                 speech: Some(Statement::new("Counted before the tithe arrived.").unwrap()),
+                display: None,
             },
         };
 
@@ -8944,6 +9000,7 @@ mod custody_tests {
 mod knowledge_tests {
     use super::patch::{RefName, Site};
     use super::tests::{
+        affordance_named,
         FLOOD_EVIDENCE, FLOOD_STATEMENT, Speech, auth_principal, command, creation, operations,
         opportunity_for, owner, reject_owner, speech_world, spoken, submit_owner,
     };
@@ -8990,6 +9047,7 @@ mod knowledge_tests {
             bindings,
             proposed: Vec::new(),
             speech: Some(Statement::new(text).unwrap()),
+            display: None,
         }
     }
 
@@ -9370,6 +9428,214 @@ mod knowledge_tests {
         );
     }
 
+
+    fn show(
+        affordance: AffordanceId,
+        bindings: Vec<RoleBinding>,
+        speech: Option<&str>,
+        display: &str,
+    ) -> DecisionInvocation {
+        DecisionInvocation {
+            affordance,
+            bindings,
+            proposed: Vec::new(),
+            speech: speech.map(|text| Statement::new(text).unwrap()),
+            display: Some(Statement::new(display).unwrap()),
+        }
+    }
+
+    /// A visible act is the room's to see and nobody else's: everyone standing
+    /// in the actor's place holds it as `Seen { by }`; the actor, the yard
+    /// below, and the placeless hold nothing. The entry's own audience is not
+    /// consulted: a proclamation down the horn carries its words to the yard
+    /// and still folds its arms only before the hall.
+    #[test]
+    fn a_display_is_seen_by_the_room_and_by_no_one_else() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "Display");
+        utter(
+            &mut kernel,
+            &active,
+            speech.speaker,
+            show(
+                speech.proclaim,
+                vec![binding("channel", Target::Entity(speech.horn))],
+                Some("The horn carries."),
+                "I fold my arms.",
+            ),
+        )
+        .expect("the proclamation with a display commits");
+
+        let event = kernel.state.events.last().expect("the committed event");
+        let said = event.speech.expect("the utterance names its claim");
+        let seen = event.display.expect("the display names its claim");
+        assert_ne!(said, seen);
+        assert_eq!(kernel.state.facts[&seen].statement.as_str(), "I fold my arms.");
+        assert_eq!(
+            kernel.state.facts[&seen].standing,
+            FactStanding::Claimed { by: speech.speaker }
+        );
+        assert!(knows(&kernel, speech.bystander, said).is_some());
+        assert_eq!(
+            knows(&kernel, speech.listener, seen),
+            Some(Knowledge {
+                confidence: Confidence::Believed,
+                source: KnowledgeSource::Seen { by: speech.speaker },
+            })
+        );
+        for blind in [speech.bystander, speech.stranger, speech.speaker] {
+            assert_eq!(knows(&kernel, blind, seen), None);
+        }
+        // One act minted both claims, so the listener's snapshot stamps both
+        // rows with the one revision, and the operator's feed carries both.
+        let snapshot = kernel.snapshot().unwrap();
+        let listener = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == speech.listener)
+            .unwrap();
+        let stamps: BTreeSet<Option<u64>> = listener
+            .knowledge
+            .iter()
+            .filter(|row| row.fact == said || row.fact == seen)
+            .map(|row| row.minted_at)
+            .collect();
+        assert_eq!(stamps, BTreeSet::from([Some(event.revision)]));
+        let log = kernel.operator_log().unwrap();
+        assert_eq!(log.last().unwrap().speech.as_ref().unwrap().as_str(), "The horn carries.");
+        assert_eq!(log.last().unwrap().display.as_ref().unwrap().as_str(), "I fold my arms.");
+    }
+
+    /// A silent turn: the kernel `speak` entry invoked with no utterance and a
+    /// display is an address, not `SpeechRequired`. The act lands, no speech
+    /// claim is minted, and alone in the yard the same act commits its claim
+    /// and lands nothing, as speaking alone does.
+    #[test]
+    fn a_silent_display_addresses_the_room_through_the_speak_entry() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "Silent");
+        let speak = affordance_named(&active, "speak");
+        utter(
+            &mut kernel,
+            &active,
+            speech.speaker,
+            show(speak, Vec::new(), None, "I nod toward the stair."),
+        )
+        .expect("a silent act commits");
+        let event = kernel.state.events.last().unwrap();
+        assert!(event.speech.is_none());
+        let seen = event.display.expect("the display names its claim");
+        assert_eq!(
+            knows(&kernel, speech.listener, seen).map(|held| held.source),
+            Some(KnowledgeSource::Seen { by: speech.speaker })
+        );
+        assert_eq!(claimed(&kernel), 1);
+
+        let active = kernel.snapshot().unwrap();
+        let knowledge_before = kernel.state.knowledge.clone();
+        utter(
+            &mut kernel,
+            &active,
+            speech.bystander,
+            show(speak, Vec::new(), None, "I sit on the step."),
+        )
+        .expect("a display into an empty room commits");
+        assert_eq!(kernel.state.knowledge, knowledge_before);
+        assert_eq!(kernel.state.events.len(), 2);
+        assert_eq!(claimed(&kernel), 2);
+    }
+
+    /// The refusals, each at its own layer: a padded act is `EmptyDisplay` at
+    /// the check; a speech-carrying entry given neither words nor act is
+    /// `SpeechRequired`; the placeless stranger has no room to be seen in and
+    /// fails the entry's own `NoAudience`. None of them mints anything.
+    #[test]
+    fn a_display_is_refused_when_empty_placeless_or_when_nothing_is_addressed() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "Refused");
+        let speak = affordance_named(&active, "speak");
+        let mut padded = show(speak, Vec::new(), None, "placeholder");
+        padded.display = Some(serde_json::from_str::<Statement>("\"   \"").unwrap());
+        assert_eq!(
+            rejected(utter(&mut kernel, &active, speech.speaker, padded)),
+            vec![ActionMismatch::EmptyDisplay]
+        );
+        let mute = DecisionInvocation {
+            affordance: speech.whisper,
+            bindings: vec![binding("target", Target::Subject(speech.listener))],
+            proposed: Vec::new(),
+            speech: None,
+            display: None,
+        };
+        assert_eq!(
+            rejected(utter(&mut kernel, &active, speech.speaker, mute)),
+            vec![ActionMismatch::SpeechRequired]
+        );
+        assert_eq!(
+            rejected(utter(
+                &mut kernel,
+                &active,
+                speech.stranger,
+                show(speak, Vec::new(), None, "I shrug."),
+            )),
+            vec![ActionMismatch::NoAudience { precondition: 0 }]
+        );
+        assert!(kernel.state.events.is_empty());
+        assert_eq!(claimed(&kernel), 0);
+    }
+
+    /// The claims a display minted, its `Seen` rows, and its event replay from
+    /// the journal exactly, through the same path as speech.
+    #[test]
+    fn restart_replay_after_a_display_is_exact() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (speech, world_id, expected) = {
+            let mut kernel = WorldKernel::create(
+                &path,
+                creation(CommandId::new(), "ReplayDisplay"),
+                &auth_principal(owner()),
+            )
+            .expect("a created world")
+            .0;
+            let (speech, active) = speech_world(&mut kernel);
+            let speak = affordance_named(&active, "speak");
+            utter(
+                &mut kernel,
+                &active,
+                speech.speaker,
+                show(speak, Vec::new(), Some("One."), "I raise one finger."),
+            )
+            .expect("the act commits");
+            let active = kernel.snapshot().unwrap();
+            utter(
+                &mut kernel,
+                &active,
+                speech.listener,
+                show(speak, Vec::new(), None, "I look away."),
+            )
+            .expect("the silent act commits");
+            (speech, kernel.state.world_id, kernel.state.clone())
+        };
+        let reopened = WorldKernel::open(&path, world_id).expect("the store replays");
+        assert_eq!(reopened.state, expected);
+        assert!(reopened.state.knowledge[&speech.listener]
+            .values()
+            .any(|held| held.source == KnowledgeSource::Seen { by: speech.speaker }));
+        assert!(reopened.state.knowledge[&speech.speaker]
+            .values()
+            .any(|held| held.source == KnowledgeSource::Seen { by: speech.listener }));
+    }
+
+    fn claimed(kernel: &WorldKernel) -> usize {
+        kernel
+            .state
+            .facts
+            .values()
+            .filter(|record| matches!(record.standing, FactStanding::Claimed { .. }))
+            .count()
+    }
+
     /// The horn belongs to the temple: its controller may speak on it whether
     /// or not it stands inside its reach, and removing the controller flips the
     /// same invocation to exactly one named failure.
@@ -9464,6 +9730,7 @@ mod knowledge_tests {
                 magnitude: Magnitude::None,
             }],
             speech: None,
+            display: None,
         };
         assert_eq!(
             rejected(utter(&mut kernel, &active, speech.listener, recant())),
@@ -9967,6 +10234,7 @@ mod soul_knowledge_tests {
             bindings,
             proposed: Vec::new(),
             speech: Some(Statement::new(text).unwrap()),
+            display: None,
         }
     }
 
@@ -10142,6 +10410,7 @@ mod soul_knowledge_tests {
                     bindings: vec![binding("fact", Target::Entity(speech.flood))],
                     proposed: Vec::new(),
                     speech: None,
+                    display: None,
                 },
                 vec![
                     ActionMismatch::SlotNotProposed { slot: 0 },
@@ -10570,6 +10839,7 @@ mod soul_knowledge_tests {
                 speaker: speech.bystander,
                 speaker_label: "The Yard Bystander".into(),
                 speech: Some(Statement::new(text).unwrap()),
+                display: None,
             }]
         );
         // And no subject snapshot carries it.
@@ -11255,6 +11525,7 @@ mod witness_tests {
                             bindings: Vec::new(),
                             proposed: Vec::new(),
                             speech: Some(Statement::new("The sky moved.").unwrap()),
+                            display: None,
                         },
                         opportunity: opportunity.clone(),
                     },
@@ -11296,7 +11567,7 @@ mod witness_tests {
             .expect("the learner's snapshot carries the fact");
         assert_eq!(held.source, KnowledgeSource::Witnessed);
         assert!(
-            held.spoken_at.is_none(),
+            held.minted_at.is_none(),
             "a witnessed row named a speech act"
         );
     }
@@ -11344,6 +11615,7 @@ mod witness_tests {
                                 magnitude: Magnitude::None,
                             }],
                             speech: None,
+                            display: None,
                         },
                         opportunity: opportunity.clone(),
                     },
@@ -11878,7 +12150,7 @@ mod witness_tests {
     /// rows and nothing else, so both of its inputs are pinned here rather than
     /// in the lane that owns the prose: exactly one component moved, `knows`,
     /// which is the anonymous line and names no author; and the row the witness
-    /// wrote carries no `spoken_at`, which is the sole gate on an `Overheard`
+    /// wrote carries no `minted_at`, which is the sole gate on an `Overheard`
     /// row, so no attributable line can be built from it.
     #[test]
     fn soul_a_witness_moves_only_knows_and_writes_no_spoken_row() {
@@ -11915,7 +12187,7 @@ mod witness_tests {
             held.knowledge
                 .iter()
                 .filter(|row| row.fact == world.asteroid)
-                .all(|row| row.spoken_at.is_none() && row.source == KnowledgeSource::Witnessed),
+                .all(|row| row.minted_at.is_none() && row.source == KnowledgeSource::Witnessed),
             "a witnessed row carried a speech act"
         );
     }
@@ -12244,6 +12516,7 @@ mod clock_tests {
                             magnitude: Magnitude::None,
                         }],
                         speech: None,
+                        display: None,
                     },
                 },
             ),
@@ -12519,6 +12792,7 @@ mod clock_tests {
                         magnitude: Magnitude::None,
                     }],
                     speech: None,
+                    display: None,
                 },
             },
             operations(vec![ComponentOp::CloseRoute {
@@ -13646,6 +13920,7 @@ mod clock_tests {
                                 magnitude: Magnitude::None,
                             }],
                             speech: None,
+                            display: None,
                         },
                     },
                 ),
@@ -14807,6 +15082,7 @@ mod clock_tests {
                     bindings: Vec::new(),
                     proposed: Vec::new(),
                     speech: None,
+                    display: None,
                 },
             },
         )

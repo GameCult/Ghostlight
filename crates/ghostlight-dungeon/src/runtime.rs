@@ -1239,7 +1239,11 @@ fn controller_narrative_result(run: NarrativeRun) -> ControllerHttpResult {
                     "personaSourceDigest":turn.source_digest(),
                     "personaReceiptDigest":turn.receipt_digest(),
                     "interpretation":{
-                        "proposal":capture.proposal.as_ref().map(|source| json!({
+                        "speech":capture.speech.as_ref().map(|source| json!({
+                            "startByte":source.start_byte,
+                            "endByte":source.end_byte,
+                        })),
+                        "display":capture.display.as_ref().map(|source| json!({
                             "startByte":source.start_byte,
                             "endByte":source.end_byte,
                         })),
@@ -1505,6 +1509,7 @@ async fn execute_world(
                     speech: Some(Statement::new(payload.text).ok_or_else(|| {
                         RuntimeCommandError::Payload("spoken text is not canonical".into())
                     })?),
+                    display: None,
                 },
             }
         }
@@ -3356,6 +3361,7 @@ mod tests {
                 bindings: Vec::new(),
                 proposed: Vec::new(),
                 speech: Some(Statement::new(text.to_string()).unwrap()),
+                display: None,
             },
         )
         .await

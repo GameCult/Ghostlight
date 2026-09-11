@@ -70,6 +70,7 @@ pub(crate) enum ActionMismatch {
     SpeechRequired,
     SpeechNotCarried,
     EmptySpeech,
+    EmptyDisplay,
     /// The acting subject's effective authority covers no such target under
     /// this kind. A target that walked out of the jurisdiction while the
     /// proposal was in flight arrives here, not as a rebind: what the actor is
@@ -210,6 +211,33 @@ pub(super) fn exercise(
         }
         _ => None,
     };
+    // The display lowering: the same standing as speech, from the same
+    // allocation site under the second discriminator. It needs no entry
+    // field and reads no audience precondition: a body is visible to the room
+    // whatever the entry addresses, so `proclaim` down a horn still shrugs at
+    // whoever stands beside the speaker.
+    let display = invocation.display.as_ref().map(|statement| {
+        let fact = EntityId(patch::derive_id(
+            patch::ENTITY_NAMESPACE,
+            state.world_id,
+            command_id,
+            &patch::DraftHandle::new(SPEECH_HANDLE),
+            Some(DISPLAY_INDEX),
+        ));
+        let at = usize::from(speech.is_some()) * 2;
+        effects.splice(
+            at..at,
+            [
+                patch::ResolvedOp::AssertClaim {
+                    fact,
+                    statement: statement.clone(),
+                    by: actor,
+                },
+                patch::ResolvedOp::Display { actor, fact },
+            ],
+        );
+        fact
+    });
 
     let revision = state
         .revision
@@ -222,6 +250,7 @@ pub(super) fn exercise(
         controller_id: current.controller_id,
         affordance: granted.id,
         speech,
+        display,
         band,
         effects,
     })
@@ -233,9 +262,13 @@ pub(super) fn exercise(
 const SPEECH_HANDLE: &str = "ghostlight.speech";
 
 /// The speech index, passed as `derive_id`'s discriminator. It is `0` for every
-/// invocation because one invocation carries one utterance; it exists so a later
-/// multi-utterance turn needs no second allocation idiom.
+/// invocation because one invocation carries one utterance; it exists so a
+/// second minted claim needs no second allocation idiom.
 const SPEECH_INDEX: &str = "0";
+
+/// The display index: the second claim one invocation may mint, under the
+/// same handle and allocation site as speech.
+const DISPLAY_INDEX: &str = "1";
 
 /// The audience a speech-carrying entry names. The declaration validator already
 /// refused an entry with none (`SpeechWithoutAudience`) or two
@@ -719,12 +752,23 @@ fn check_proposals(
     // deserialization rather than through the constructor is re-checked here
     // rather than trusted.
     match (&invocation.speech, entry.carries_speech) {
-        (None, true) => rejections.push(ActionMismatch::SpeechRequired),
+        // A speech-carrying entry addresses someone; a silent turn that only
+        // displays still addresses the room, so it is not `SpeechRequired`.
+        (None, true) if invocation.display.is_none() => {
+            rejections.push(ActionMismatch::SpeechRequired);
+        }
         (Some(_), false) => rejections.push(ActionMismatch::SpeechNotCarried),
         (Some(speech), true) if !patch::is_canonical_text(speech.as_str()) => {
             rejections.push(ActionMismatch::EmptySpeech);
         }
         _ => {}
+    }
+    if invocation
+        .display
+        .as_ref()
+        .is_some_and(|display| !patch::is_canonical_text(display.as_str()))
+    {
+        rejections.push(ActionMismatch::EmptyDisplay);
     }
 }
 
@@ -1057,6 +1101,7 @@ mod tests {
                     magnitude: Magnitude::Quantity(Quantity(qty)),
                 }],
                 speech: None,
+                display: None,
             }
         }
 
@@ -1356,6 +1401,7 @@ mod tests {
             bindings: Vec::new(),
             proposed: Vec::new(),
             speech: None,
+            display: None,
         };
         assert_eq!(
             bench.rejections(&silent_speak),
@@ -1492,6 +1538,7 @@ mod tests {
                 },
             ],
             speech: None,
+            display: None,
         };
         let mut seen: BTreeSet<usize> = BTreeSet::new();
 
@@ -1693,6 +1740,7 @@ mod tests {
                             bindings: Vec::new(),
                             proposed: Vec::new(),
                             speech: Some(Statement::new("I open the door.").unwrap()),
+                            display: None,
                         },
                     },
                 ),
@@ -1749,6 +1797,7 @@ mod tests {
                 bindings,
                 proposed,
                 speech,
+                display: None,
             }
         }
 
@@ -2691,6 +2740,7 @@ mod tests {
                 magnitude: Magnitude::None,
             }],
             speech: None,
+            display: None,
         };
         let lowered = lower(
             &entry,

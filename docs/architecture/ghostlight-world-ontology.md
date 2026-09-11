@@ -102,8 +102,8 @@ target, otherwise `ActionMismatch::DelegationNotMonotone`.
 
 A `Fact` is an entity with a `Statement` and a `FactStanding`: `Canonical`
 with evidence, or `Claimed { by }`. `Knowledge` is subject-keyed per fact with
-a `Confidence` and a `KnowledgeSource { Witnessed, Told { by, via }, Evidenced }`;
-a telling never overwrites a holder. `Witnessed` is minted by an authored
+a `Confidence` and a `KnowledgeSource { Witnessed, Told { by, via }, Seen { by },
+Evidenced }`; a telling or a showing never overwrites a holder. `Witnessed` is minted by an authored
 patch's `AcquireKnowledge` and, with no author at all, by `Witness` (below). A
 `Channel` is an entity with a
 `Reach { Subjects, Place }` and a controller. Speech is an affordance whose
@@ -116,7 +116,20 @@ from outside it (`can_broadcast`) but receives nothing unless inside it.
 Preconditions `Knows`, `CanBroadcast`, and `CanReach` gate at `exercise` with
 `ActionMismatch::{FactUnknown, NoAudience, CannotReach}`. The statement lives
 in `facts[fact].statement`; the copy inside the committed `AssertClaim` is
-the replay witness and nothing reads it. `WorldSnapshot` carries no event
+the replay witness and nothing reads it. A visible act is speech's twin with
+a different sense: an invocation may carry a `display`, the actor's own
+visible sentence, beside or instead of its utterance, and the kernel lowers
+it the same way, an `AssertClaim` and a `Display { actor, fact }` whose
+recipients are re-derived at apply as everyone standing in the actor's place
+(`Audience::Colocated`, the derivation co-located speech uses), landing
+`Seen { by }` at `Believed`. The entry's audience is not consulted: a body is
+visible to the room whatever the voice addresses, and a display cannot go
+down a channel. A speech-carrying entry invoked with a display alone is an
+address, not `SpeechRequired`. `Display` is lowered by the kernel only and is
+in no patch tool: no seed or elaborator moves a person's body from outside
+the person, and no field on the operation, the fact, or the knowledge row
+carries what the actor meant by it; the reading is the perceiver's own.
+`WorldSnapshot` carries no event
 log; the story feed is `operator_log`, an owner-only projection that the
 controller lane cannot name because `ControllerRunner` holds a
 `ControllerPort`, not the mailbox. `WorldMailbox::create` declares the genesis
@@ -289,8 +302,8 @@ is the typed component diff against the fresh components plus the
 knowledge row, and never another subject's snapshot. The re-lowering's
 provider request is a distinct round (`interpreter_round`) with its own
 content-addressed request id, so it cannot collide with the first lowering's
-request. State schema is `ghostlight.world_state.consumer.v3`, commit schema
-`ghostlight.world_commit.consumer.v3`, controller work `controller_work.v13`,
+request. State schema is `ghostlight.world_state.consumer.v4`, commit schema
+`ghostlight.world_commit.consumer.v4`, controller work `controller_work.v14`,
 Persona turn receipt `ghostlight.persona_turn_receipt.v3`; earlier stores and
 earlier rows are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
@@ -456,7 +469,7 @@ Retirement       retire(referent, reason)
 Time             advance(minutes)
 ```
 
-Twenty-nine operations. Adding one is a design change to this document and a
+Thirty operations. Adding one is a design change to this document and a
 code change to the reducer; it is never a runtime patch.
 
 ## Patch construction
@@ -771,9 +784,12 @@ that are structural rather than promissory:
 - **Affordances are data.** A world declares its own action vocabulary over the
   closed operation set. Genre lives in the catalog, not in the kernel.
 - **Persona prose is free.** A `NarrativePersona` may say, attempt, or feel
-  anything; the Interpreter lowers what the vocabulary can carry and records
-  exact gaps for the rest. Unrepresentable meaning is preserved as evidence,
-  never rejected or invented.
+  anything; the Interpreter lowers what the vocabulary can carry (spoken
+  words by `speak`, a visible act by `display`, each quoted verbatim as the
+  audible or visible clause alone) and records exact gaps for the rest,
+  which is where what the person hoped, meant, or felt stays.
+  Unrepresentable meaning is preserved as evidence, never rejected or
+  invented.
 - **Structure is sparse; liveness is authored.** A world activates with enough
   components for its current horizon, and grows toward the scale it was given.
   Ordinary life is a recurring `Commitment`; a rite is a `Channel` with a

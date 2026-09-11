@@ -399,6 +399,11 @@ pub(crate) enum KnowledgeSource {
         by: SubjectId,
         via: Option<EntityId>,
     },
+    /// A visible act of `by`, perceived in the same place. Written only by
+    /// `ResolvedOp::Display`, which the kernel alone lowers.
+    Seen {
+        by: SubjectId,
+    },
     Evidenced,
 }
 
@@ -1773,6 +1778,17 @@ pub(crate) enum ResolvedOp {
         fact: EntityId,
         to: Audience,
     },
+    /// A visible act: the actor's own sentence, seen by everyone standing in
+    /// the actor's place. Lowered only by the kernel's speech path beside
+    /// `AssertClaim`, never by a patch, so no seed or elaborator can move a
+    /// person's body from outside the person. There is no audience field: a
+    /// display cannot go down a channel, and the room is re-derived from live
+    /// `positions` at apply, so a forged effect cannot assert a landing the
+    /// world does not have.
+    Display {
+        actor: SubjectId,
+        fact: EntityId,
+    },
     /// Stores the place, never the recipients. `apply_operation` re-derives the
     /// subtree from live `positions`, so a forged effect cannot assert a
     /// landing the world does not have. There is no speaker field, so this
@@ -2109,6 +2125,9 @@ enum KnowledgeSourceKey {
     Told {
         by: Key<SubjectId>,
         via: Option<Key<EntityId>>,
+    },
+    Seen {
+        by: Key<SubjectId>,
     },
     Evidenced,
 }
@@ -3217,6 +3236,9 @@ pub(super) fn resolve_patch(
                             KnowledgeSource::Told { by, via } => KnowledgeSourceKey::Told {
                                 by: Key::Existing(by),
                                 via: via.map(Key::Existing),
+                            },
+                            KnowledgeSource::Seen { by } => KnowledgeSourceKey::Seen {
+                                by: Key::Existing(by),
                             },
                         },
                     },

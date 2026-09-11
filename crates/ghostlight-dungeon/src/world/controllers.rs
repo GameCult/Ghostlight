@@ -72,13 +72,14 @@ pub(super) const CELL_TOOL_STEP_BUDGET: usize = 2;
 /// carried by tool identity, never by a model-written argument.
 const HANDLE_SEPARATOR: &str = "__";
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v13";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v13";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v14";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v14";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
 /// is a projection of a catalog entry.
 const INTERPRETER_SPEAK_TOOL: &str = "speak";
+const INTERPRETER_DISPLAY_TOOL: &str = "display";
 
 /// The kind name the narrative lane looks for among its granted entries. The
 /// kernel carries the name and branches on it nowhere; matching on it here is a
@@ -972,7 +973,7 @@ impl NarrativeCheckpoint {
                     && opportunity.controller_mode == ControllerMode::NarrativePersona
                     && granted_matches_opportunity(granted, opportunity)
                     && derive_narrative_capture(turn, interpreter_prompt, completed)
-                        .is_ok_and(|capture| capture.proposal.is_some())
+                        .is_ok_and(|capture| capture.addresses())
             }
             Self::NoProposal {
                 turn,
@@ -986,7 +987,7 @@ impl NarrativeCheckpoint {
                     && interruption_matches_turn(interruption, turn)
                     && opportunity.controller_mode == ControllerMode::NarrativePersona
                     && derive_narrative_capture(turn, interpreter_prompt, completed)
-                        .is_ok_and(|capture| capture.proposal.is_none())
+                        .is_ok_and(|capture| !capture.addresses())
             }
         }
     }
@@ -1161,25 +1162,46 @@ fn cell_constituents_are_valid(constituents: &[ConstituentWork]) -> bool {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct NarrativeCapture {
-    pub(crate) proposal: Option<SourceRange>,
+    /// The spoken words, bound to where they sit in the prose.
+    pub(crate) speech: Option<SourceRange>,
+    /// The visible act, bound the same way. Either, both, or neither.
+    pub(crate) display: Option<SourceRange>,
     pub(crate) gaps: Vec<TranslationGapSummary>,
     pub(crate) finalization: InterpretationFinalization,
     pub(crate) inference_receipts: Vec<String>,
 }
 
-/// One thing said to this subject after its turn was formed. Speech is the only
-/// interruption a subject may perceive as having an author, and only through a
-/// `Told { by }` row for a fact `fan_out` actually gave it. The label is
-/// resolved here because the snapshot that resolves it is gone by the time the
-/// row is re-read, and it is resolved by `speaker_label` and nothing else.
+impl NarrativeCapture {
+    /// Whether the turn addressed the room at all: spoke, displayed, or both.
+    pub(crate) fn addresses(&self) -> bool {
+        self.speech.is_some() || self.display.is_some()
+    }
+}
+
+/// One thing said or shown to this subject after its turn was formed. Speech
+/// and display are the only interruptions a subject may perceive as having an
+/// author, and only through a `Told { by }` or `Seen { by }` row for a fact
+/// `fan_out` actually gave it. The label is resolved here because the snapshot
+/// that resolves it is gone by the time the row is re-read, and it is resolved
+/// by `perceived_from` and nothing else.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Overheard {
-    /// `None` for a fact this subject holds without having been told it. It
-    /// knows the thing, not the telling.
-    pub(crate) speaker: Option<String>,
+    pub(crate) from: Perceived,
     pub(crate) statement: Statement,
     pub(crate) confidence: Confidence,
+}
+
+/// How a subject came by one row of its own knowledge, as it perceives it:
+/// told by a labelled speaker, seen done by a labelled actor, or simply held.
+/// `Known` is a fact this subject holds without a telling or a showing; it
+/// knows the thing, not the act.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
+pub(crate) enum Perceived {
+    Said { by: String },
+    Seen { by: String },
+    Known,
 }
 
 /// What the runner showed the Interpreter when it re-lowered, and the
@@ -1191,7 +1213,7 @@ pub(crate) struct Interruption {
     /// The subject's own components at re-lowering. The "after"; the
     /// checkpoint's `components` is the "before".
     pub(crate) components: ScopeComponents,
-    /// Rows whose `spoken_at` is later than the turn's bound revision, in the
+    /// Rows whose `minted_at` is later than the turn's bound revision, in the
     /// snapshot's order.
     pub(crate) overheard: Vec<Overheard>,
     /// The first lowering's evidence. Nothing is discarded merely because the
@@ -2306,15 +2328,12 @@ impl From<ControllerWorkStoreError> for ControllerOpenError {
     }
 }
 
+/// What the narrative lane captures from one Persona turn: the spoken words,
+/// the visible act, each at most once, each in the person's own words.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub(crate) struct SpeakProposal {
-    text: String,
-}
-
-impl SpeakProposal {
-    pub(crate) fn text(&self) -> &str {
-        &self.text
-    }
+pub(crate) enum NarrativeProposal {
+    Speak { text: String },
+    Display { text: String },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -3643,7 +3662,7 @@ impl ControllerRunner {
             completed.push(output);
             match evaluate_interpreter_loop(&turn, &interpreter_prompt, &completed) {
                 Ok(InterpreterLoopEvaluation::Complete { capture }) => {
-                    let next = if capture.proposal.is_some() {
+                    let next = if capture.addresses() {
                         NarrativeCheckpoint::ReadyToSubmit {
                             command_id,
                             turn,
@@ -4518,18 +4537,25 @@ impl SelectedDecision {
     }
 
     /// The acting subject's own knowledge, and nothing else. A subject perceives
-    /// a speech act if and only if it holds `Knowledge` of that act's fact, so
-    /// this is a renderer over one kernel-derived field rather than a walk that
-    /// decides reach a second time. Confidence reaches the Projector as prose
-    /// uncertainty, which makes the prompt's instruction a description of the
-    /// surface instead of its enforcement.
+    /// a speech act or a visible act if and only if it holds `Knowledge` of that
+    /// act's fact, so this is a renderer over one kernel-derived field rather
+    /// than a walk that decides reach a second time. Confidence reaches the
+    /// Projector as prose uncertainty, which makes the prompt's instruction a
+    /// description of the surface instead of its enforcement. A seen row is the
+    /// actor's own sentence; the reading of it is this subject's to make.
     fn projector_knowledge(&self) -> Vec<Value> {
         self.subject
             .knowledge
             .iter()
             .map(|entry| {
+                let (how, by) = match self.perceived_from(entry) {
+                    Perceived::Said { by } => ("said", Value::String(by)),
+                    Perceived::Seen { by } => ("seen_doing", Value::String(by)),
+                    Perceived::Known => ("known", Value::Null),
+                };
                 json!({
-                    "speaker": self.speaker_label(entry).map_or(Value::Null, Value::String),
+                    "how": how,
+                    "by": by,
                     "certainty": entry.confidence,
                     "text": entry.statement.as_str(),
                 })
@@ -4537,33 +4563,37 @@ impl SelectedDecision {
             .collect()
     }
 
-    /// Attribution comes from the listener's own knowledge, never from an event
-    /// scope: a subject that holds a fact it was never told sees the statement
-    /// with no speaker, because it knows the thing and not the telling. A label
-    /// is resolved only for a subject that spoke to this one.
-    fn speaker_label(&self, entry: &KnowledgeSnapshot) -> Option<String> {
-        match entry.source {
-            KnowledgeSource::Told { by, .. } => self
-                .snapshot
+    /// Attribution comes from the perceiver's own knowledge, never from an
+    /// event scope: a subject that holds a fact it was never told or shown sees
+    /// the statement with no author, because it knows the thing and not the
+    /// act. A label is resolved only for a subject that spoke to, or was seen
+    /// by, this one.
+    fn perceived_from(&self, entry: &KnowledgeSnapshot) -> Perceived {
+        let label = |id: SubjectId| {
+            self.snapshot
                 .subjects
                 .iter()
-                .find(|subject| subject.id == by)
-                .map(|subject| subject.label.clone()),
-            KnowledgeSource::Witnessed | KnowledgeSource::Evidenced => None,
+                .find(|subject| subject.id == id)
+                .map(|subject| subject.label.clone())
+        };
+        match entry.source {
+            KnowledgeSource::Told { by, .. } => label(by).map_or(Perceived::Known, |by| Perceived::Said { by }),
+            KnowledgeSource::Seen { by } => label(by).map_or(Perceived::Known, |by| Perceived::Seen { by }),
+            KnowledgeSource::Witnessed | KnowledgeSource::Evidenced => Perceived::Known,
         }
     }
 
-    /// Everything said to *this* subject since the turn's bound revision. Read
-    /// from `self.subject` and never from `self.snapshot.subjects`: a delta
-    /// rendered from the snapshot's subject list would leak a neighbour's state
-    /// and no type would stop it.
+    /// Everything said or shown to *this* subject since the turn's bound
+    /// revision. Read from `self.subject` and never from
+    /// `self.snapshot.subjects`: a delta rendered from the snapshot's subject
+    /// list would leak a neighbour's state and no type would stop it.
     fn overheard_since(&self, revision: u64) -> Vec<Overheard> {
         self.subject
             .knowledge
             .iter()
-            .filter(|row| row.spoken_at.is_some_and(|at| at > revision))
+            .filter(|row| row.minted_at.is_some_and(|at| at > revision))
             .map(|row| Overheard {
-                speaker: self.speaker_label(row),
+                from: self.perceived_from(row),
                 statement: row.statement.clone(),
                 confidence: row.confidence,
             })
@@ -4586,7 +4616,7 @@ impl SelectedDecision {
                     },
                     "confidence": entry.confidence,
                     "source": entry.source,
-                    "spoken_at": entry.spoken_at,
+                    "minted_at": entry.minted_at,
                 })
             })
             .collect()
@@ -4683,14 +4713,18 @@ fn interruption_section(
         section.push_str("- something in this person's reach changed that it cannot name\n");
     }
     if !interruption.overheard.is_empty() {
-        section.push_str("\nWhat was said to this person since:\n");
+        section.push_str("\nWhat was said or done before this person since:\n");
         for row in &interruption.overheard {
             let confidence = confidence_name(row.confidence);
             let statement = row.statement.as_str();
-            match &row.speaker {
-                Some(speaker) => section
-                    .push_str(&format!("- {speaker} said: \"{statement}\" ({confidence})\n")),
-                None => section.push_str(&format!(
+            match &row.from {
+                Perceived::Said { by } => {
+                    section.push_str(&format!("- {by} said: \"{statement}\" ({confidence})\n"));
+                }
+                Perceived::Seen { by } => section.push_str(&format!(
+                    "- {by}, seen doing: \"{statement}\" ({confidence})\n"
+                )),
+                Perceived::Known => section.push_str(&format!(
                     "- this person came to know, without being told: \"{statement}\" ({confidence})\n"
                 )),
             }
@@ -4708,24 +4742,30 @@ fn confidence_name(confidence: Confidence) -> String {
         .unwrap_or_default()
 }
 
-/// The narrative lane speaks and does nothing else, so it finds its entry by
-/// kind name among the entries the kernel granted this opportunity.
+/// The narrative lane addresses the room and does nothing else, so it finds
+/// its entry by kind name among the entries the kernel granted this
+/// opportunity. A turn that only displays invokes the same entry with no
+/// utterance: a silent act before the room is still an address.
 fn speak_invocation(
     granted: &[AffordanceSnapshot],
-    text: String,
+    speech: Option<String>,
+    display: Option<String>,
 ) -> Result<DecisionInvocation, ControllerError> {
     let entry = granted
         .iter()
         .find(|entry| entry.entry.kind.0 == SPEAK_KIND)
         .ok_or(ControllerError::SpeakUnavailable)?;
-    let speech = Statement::new(text).ok_or_else(|| {
-        ControllerError::Serialization("Persona proposal is not canonical utterance text".into())
-    })?;
+    let canonical = |text: String, what: &str| {
+        Statement::new(text).ok_or_else(|| {
+            ControllerError::Serialization(format!("Persona {what} is not canonical text"))
+        })
+    };
     Ok(DecisionInvocation {
         affordance: entry.id,
         bindings: Vec::new(),
         proposed: Vec::new(),
-        speech: Some(speech),
+        speech: speech.map(|text| canonical(text, "utterance")).transpose()?,
+        display: display.map(|text| canonical(text, "display")).transpose()?,
     })
 }
 
@@ -4744,17 +4784,24 @@ fn narrative_invocation(
             "Persona work is not ready to submit".into(),
         ));
     };
-    let span = derive_narrative_capture(turn, interpreter_prompt, completed)?
-        .proposal
-        .ok_or_else(|| {
-            ControllerError::Serialization("Persona work has no exact proposal span".into())
-        })?;
-    let text = turn
-        .source_prose()
-        .get(span.start_byte..span.end_byte)
-        .ok_or_else(|| ControllerError::Serialization("Persona proposal span is not exact".into()))?
-        .to_owned();
-    speak_invocation(granted, text)
+    let capture = derive_narrative_capture(turn, interpreter_prompt, completed)?;
+    if !capture.addresses() {
+        return Err(ControllerError::Serialization(
+            "Persona work has no exact proposal span".into(),
+        ));
+    }
+    let quoted = |span: Option<SourceRange>| {
+        span.map(|span| {
+            turn.source_prose()
+                .get(span.start_byte..span.end_byte)
+                .map(str::to_owned)
+                .ok_or_else(|| {
+                    ControllerError::Serialization("Persona proposal span is not exact".into())
+                })
+        })
+        .transpose()
+    };
+    speak_invocation(granted, quoted(capture.speech)?, quoted(capture.display)?)
 }
 
 fn operational_invocation(
@@ -4779,14 +4826,22 @@ fn operational_invocation(
 }
 
 fn narrative_capture(
-    report: &InterpretationReport<SpeakProposal>,
+    report: &InterpretationReport<NarrativeProposal>,
     inference_receipts: Vec<String>,
 ) -> NarrativeCapture {
+    let range = |want: fn(&NarrativeProposal) -> bool| {
+        report
+            .proposals()
+            .iter()
+            .find(|proposal| want(proposal.proposal()))
+            .map(|proposal| SourceRange {
+                start_byte: proposal.source().start_byte(),
+                end_byte: proposal.source().end_byte(),
+            })
+    };
     NarrativeCapture {
-        proposal: report.proposals().first().map(|proposal| SourceRange {
-            start_byte: proposal.source().start_byte(),
-            end_byte: proposal.source().end_byte(),
-        }),
+        speech: range(|proposal| matches!(proposal, NarrativeProposal::Speak { .. })),
+        display: range(|proposal| matches!(proposal, NarrativeProposal::Display { .. })),
         gaps: report
             .gaps()
             .iter()
@@ -4866,10 +4921,12 @@ fn overtaken(
             ));
         }
     };
-    // The gap points at the proposal span the interpretation captured, or at
-    // the whole prose when it captured none.
-    let source = derive_narrative_capture(turn, interpreter_prompt, completed)?
-        .proposal
+    // The gap points at the span the interpretation captured, the spoken
+    // words first, or at the whole prose when it captured none.
+    let capture = derive_narrative_capture(turn, interpreter_prompt, completed)?;
+    let source = capture
+        .speech
+        .or(capture.display)
         .unwrap_or(SourceRange {
             start_byte: 0,
             end_byte: turn.source_prose().len(),
@@ -4954,8 +5011,12 @@ enum InterpreterLoopEvaluation {
 /// that sets it is the same call that names it; it is read by the evaluator's
 /// terminality check and never by a result string.
 pub(super) struct InterpreterFold {
-    accumulator: InterpretationAccumulator<SpeakProposal>,
+    accumulator: InterpretationAccumulator<NarrativeProposal>,
+    /// One utterance and one visible act per turn: this runner permits one
+    /// decision invocation per opportunity, and an invocation carries one of
+    /// each.
     captured_speech: bool,
+    captured_display: bool,
     finished: bool,
 }
 
@@ -4964,9 +5025,52 @@ impl InterpreterFold {
         Self {
             accumulator: InterpretationAccumulator::new(source),
             captured_speech: false,
+            captured_display: false,
             finished: false,
         }
     }
+}
+
+/// One quoted address, spoken or shown, folded into `fold`. The quoted words
+/// must be canonical text before they are captured: a quote the kernel would
+/// refuse is a translation gap here, not an infrastructure fault at
+/// invocation. A second capture of the same kind is an ambiguity gap.
+fn capture_address(fold: &mut InterpreterFold, name: &str, source_quote: String) -> String {
+    let (captured, proposal, what) = if name == INTERPRETER_SPEAK_TOOL {
+        (
+            &mut fold.captured_speech,
+            NarrativeProposal::Speak {
+                text: source_quote.clone(),
+            },
+            "speech",
+        )
+    } else {
+        (
+            &mut fold.captured_display,
+            NarrativeProposal::Display {
+                text: source_quote.clone(),
+            },
+            "display",
+        )
+    };
+    let feedback = if *captured {
+        fold.accumulator.record_gap(RecordGapToolCall {
+            kind: TranslationGapKind::Ambiguity,
+            source_quote,
+            detail: format!("More than one {what} proposal was offered; this runner permits one decision invocation per opportunity."),
+        })
+    } else if !super::patch::is_canonical_text(&source_quote) {
+        fold.accumulator.record_gap(RecordGapToolCall {
+            kind: TranslationGapKind::Unresolved,
+            source_quote,
+            detail: format!("The quoted {what} is not canonical text (it is empty, padded, or spans lines), so it was not captured."),
+        })
+    } else {
+        let feedback = fold.accumulator.capture_proposal(proposal, &source_quote);
+        *captured = feedback == CaptureToolFeedback::Accepted;
+        feedback
+    };
+    format!("{feedback:?}")
 }
 
 /// One interpreter tool call folded into `fold`, returning exactly the string
@@ -4977,42 +5081,16 @@ pub(super) fn interpreter_tool_result(
     arguments: &str,
 ) -> String {
     match name {
-        INTERPRETER_SPEAK_TOOL => match serde_json::from_str::<InterpreterSpeakCall>(arguments) {
-            // The quoted words must be canonical utterance text before they
-            // are captured: a quote the kernel would refuse as speech is a
-            // translation gap here, not an infrastructure fault at invocation.
-            Ok(call) if !fold.captured_speech && !super::patch::is_canonical_text(&call.source_quote) => {
-                let feedback = fold.accumulator.record_gap(RecordGapToolCall {
-                    kind: TranslationGapKind::Unresolved,
-                    source_quote: call.source_quote,
-                    detail: "The quoted speech is not canonical utterance text (it is empty, padded, or spans lines), so it was not captured.".into(),
-                });
-                format!("{feedback:?}")
+        INTERPRETER_SPEAK_TOOL | INTERPRETER_DISPLAY_TOOL => {
+            match serde_json::from_str::<InterpreterSpeakCall>(arguments) {
+                Ok(call) => capture_address(fold, name, call.source_quote),
+                Err(error) => format!(
+                    "{:?}",
+                    fold.accumulator
+                        .record_tool_decode_failure(name, arguments, &error.to_string())
+                ),
             }
-            Ok(call) if !fold.captured_speech => {
-                let feedback = fold.accumulator.capture_proposal(
-                    SpeakProposal {
-                        text: call.source_quote.clone(),
-                    },
-                    &call.source_quote,
-                );
-                fold.captured_speech = feedback == CaptureToolFeedback::Accepted;
-                format!("{feedback:?}")
-            }
-            Ok(call) => {
-                let feedback = fold.accumulator.record_gap(RecordGapToolCall {
-                    kind: TranslationGapKind::Ambiguity,
-                    source_quote: call.source_quote,
-                    detail: "More than one speech proposal was offered; this runner permits one decision invocation per opportunity.".into(),
-                });
-                format!("{feedback:?}")
-            }
-            Err(error) => format!(
-                "{:?}",
-                fold.accumulator
-                    .record_tool_decode_failure(name, arguments, &error.to_string())
-            ),
-        },
+        }
         INTERPRETER_RECORD_GAP_TOOL => match serde_json::from_str::<RecordGapToolCall>(arguments) {
             Ok(call) => format!("{:?}", fold.accumulator.record_gap(call)),
             Err(error) => format!(
@@ -5743,10 +5821,11 @@ fn evaluate_operational_loop(
     Ok(OperationalLoopEvaluation::Continue { conversation })
 }
 
+/// The one argument shape of `speak` and `display`: the words, quoted verbatim
+/// from the Persona prose.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct InterpreterSpeakCall {
-    /// The spoken words, quoted verbatim from the Persona prose.
     source_quote: String,
 }
 
@@ -5929,6 +6008,16 @@ fn interpreter_tools() -> Vec<CodexToolDefinition> {
                 "source_quote".into(),
                 tool_schema::canonical_string(
                     "the spoken words exactly as they appear in the Persona prose",
+                ),
+            )]),
+        ),
+        tool_schema::tool(
+            INTERPRETER_DISPLAY_TOOL,
+            "Capture one exact visible act from the preserved Persona prose: a gesture, a posture, a look, a movement, a silence held, anything another person in the same place could see. Quote the visible clause alone, verbatim; what the person hoped, meant, or felt while doing it is not visible and is not part of the quote. The harness locates the quote in the prose and records a gap instead if it is not there word for word.",
+            tool_schema::object(vec![(
+                "source_quote".into(),
+                tool_schema::canonical_string(
+                    "the visible act exactly as it appears in the Persona prose",
                 ),
             )]),
         ),
@@ -6181,6 +6270,7 @@ fn decode_catalog_call(
         bindings,
         proposed,
         speech,
+        display: None,
     })
 }
 
@@ -6490,17 +6580,29 @@ mod tests {
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
             redress: Vec::new(),
-            knowledge: vec![KnowledgeSnapshot {
-                fact: heard,
-                statement: Statement::new("The lower hinge is flooding.").unwrap(),
-                standing: FactStandingView::Claimed { by: speaker_id },
-                confidence: Confidence::Believed,
-                source: KnowledgeSource::Told {
-                    by: speaker_id,
-                    via: None,
+            knowledge: vec![
+                KnowledgeSnapshot {
+                    fact: heard,
+                    statement: Statement::new("The lower hinge is flooding.").unwrap(),
+                    standing: FactStandingView::Claimed { by: speaker_id },
+                    confidence: Confidence::Believed,
+                    source: KnowledgeSource::Told {
+                        by: speaker_id,
+                        via: None,
+                    },
+                    minted_at: Some(40),
                 },
-                spoken_at: Some(40),
-            }],
+                // Mara also saw Iris do something. The row is Iris's own
+                // sentence, marked as seen and never as said.
+                KnowledgeSnapshot {
+                    fact: EntityId::issue(),
+                    statement: Statement::new("I set the ledger face down.").unwrap(),
+                    standing: FactStandingView::Claimed { by: speaker_id },
+                    confidence: Confidence::Believed,
+                    source: KnowledgeSource::Seen { by: speaker_id },
+                    minted_at: Some(41),
+                },
+            ],
             commitments: Vec::new(),
             pressures: Vec::new(),
             qualified: false,
@@ -6525,7 +6627,7 @@ mod tests {
                 standing: FactStandingView::Canonical,
                 confidence: Confidence::Certain,
                 source: KnowledgeSource::Witnessed,
-                spoken_at: None,
+                minted_at: None,
             }],
             commitments: Vec::new(),
             pressures: Vec::new(),
@@ -6585,6 +6687,12 @@ mod tests {
         assert!(projector_surface.contains("Iris in the tollhouse"));
         assert!(projector_surface.contains("The lower hinge is flooding."));
         assert!(!projector_surface.contains("The tollhouse ledger is short."));
+        let rows: Vec<Value> = serde_json::from_str(&stimulus).unwrap();
+        assert_eq!(rows[0]["how"], "said");
+        assert_eq!(rows[0]["by"], "Iris in the tollhouse");
+        assert_eq!(rows[1]["how"], "seen_doing");
+        assert_eq!(rows[1]["by"], "Iris in the tollhouse");
+        assert_eq!(rows[1]["text"], "I set the ledger face down.");
 
         let operational_surface = selected.typed_view().unwrap();
         assert!(operational_surface.contains("state_digest"));
@@ -6634,6 +6742,7 @@ mod tests {
                             }],
                             proposed: Vec::new(),
                             speech: Some(Statement::new(utterance).unwrap()),
+                            display: None,
                         },
                     },
                 ),
@@ -7488,6 +7597,77 @@ mod tests {
     /// A quote the kernel would refuse as speech is a translation gap at
     /// capture, never an infrastructure fault at invocation: on the second SDK
     /// road run a mis-spanned utterance failed the canonical-text rule inside
+
+    /// The display tool is `speak`'s twin: a padded quote is a gap and not a
+    /// capture, a second display is an ambiguity gap, and speech plus display
+    /// in one turn is one capture of each, bound to its own span and lowered
+    /// into one invocation carrying both.
+    #[test]
+    fn a_display_is_captured_beside_speech_and_at_most_once() {
+        let opportunity = fixture_opportunity(ControllerMode::NarrativePersona);
+        let source = "I fold my arms. \"The rain has teeth tonight,\" I say, and I don't look up.";
+        let turn = fixture_persona_turn(&opportunity, source);
+        let quote = |words: &str| json!({ "source_quote": words }).to_string();
+
+        let mut fold = InterpreterFold::new(turn.clone());
+        assert_eq!(
+            interpreter_tool_result(&mut fold, INTERPRETER_DISPLAY_TOOL, &quote("I fold my arms.")),
+            "Accepted"
+        );
+        assert_eq!(
+            interpreter_tool_result(
+                &mut fold,
+                INTERPRETER_SPEAK_TOOL,
+                &quote("The rain has teeth tonight,")
+            ),
+            "Accepted"
+        );
+        interpreter_tool_result(&mut fold, INTERPRETER_DISPLAY_TOOL, &quote("I don't look up."));
+        assert!(fold.captured_display && fold.captured_speech);
+        let report = fold
+            .accumulator
+            .finalize(InterpretationFinalization::InterpreterFinished);
+        assert_eq!(report.proposals().len(), 2);
+        assert_eq!(report.gaps().len(), 1);
+        assert_eq!(report.gaps()[0].kind(), TranslationGapKind::Ambiguity);
+        assert!(report.spans_are_exact());
+
+        let capture = narrative_capture(&report, Vec::new());
+        let words = |range: Option<SourceRange>| {
+            range.map(|range| &source[range.start_byte..range.end_byte])
+        };
+        assert_eq!(words(capture.speech), Some("The rain has teeth tonight,"));
+        assert_eq!(words(capture.display), Some("I fold my arms."));
+        let granted = [speak_snapshot(opportunity.affordance_ids[0])];
+        let invocation = speak_invocation(
+            &granted,
+            words(capture.speech).map(str::to_owned),
+            words(capture.display).map(str::to_owned),
+        )
+        .unwrap();
+        assert_eq!(
+            invocation.speech.as_ref().map(Statement::as_str),
+            Some("The rain has teeth tonight,")
+        );
+        assert_eq!(
+            invocation.display.as_ref().map(Statement::as_str),
+            Some("I fold my arms.")
+        );
+        // A silent turn lowers to the same entry with no utterance.
+        let silent = speak_invocation(&granted, None, Some("I fold my arms.".into())).unwrap();
+        assert!(silent.speech.is_none() && silent.display.is_some());
+
+        // A padded display quote is a gap bound to its span, not a capture.
+        let mut fold = InterpreterFold::new(turn.clone());
+        interpreter_tool_result(&mut fold, INTERPRETER_DISPLAY_TOOL, &quote(" I fold my arms."));
+        assert!(!fold.captured_display);
+        let report = fold
+            .accumulator
+            .finalize(InterpretationFinalization::InterpreterFinished);
+        assert!(report.proposals().is_empty());
+        assert_eq!(report.gaps().len(), 1);
+    }
+
     /// `speak_invocation` and quarantined the whole cell.
     #[test]
     fn a_non_canonical_or_absent_quote_is_a_gap_not_a_quarantine() {
@@ -8325,7 +8505,7 @@ mod tests {
             panic!("turn remained pending")
         };
         assert_eq!(
-            decision.capture.proposal,
+            decision.capture.speech,
             Some(SourceRange {
                 start_byte: start,
                 end_byte: start + speech.len(),
@@ -8482,7 +8662,7 @@ mod tests {
         else {
             panic!("narrative decline remained pending")
         };
-        assert!(decision.capture.proposal.is_none());
+        assert!(!decision.capture.addresses());
         assert_eq!(decision.capture.gaps.len(), 1);
         let applied = match decision.submission {
             SubmissionDisposition::NoProposal(SubmitReceipt::Applied(receipt)) => receipt,
@@ -8714,7 +8894,7 @@ mod tests {
         assert!(replay_port.seen.load(Ordering::SeqCst));
         assert_eq!(decision.turn.source_prose(), source);
         assert_eq!(
-            decision.capture.proposal,
+            decision.capture.speech,
             Some(SourceRange {
                 start_byte: start,
                 end_byte: start + speech.len(),
@@ -8916,6 +9096,7 @@ mod tests {
                             bindings: Vec::new(),
                             proposed: Vec::new(),
                             speech: Some(Statement::new(seed).unwrap()),
+                            display: None,
                         },
                     },
                 },
@@ -9005,7 +9186,7 @@ mod tests {
         assert!(!persona_prose.trim().is_empty());
         assert!(persona_prose.len() <= 65_536);
         assert!(!narrative_decision.capture().inference_receipts.is_empty());
-        let narrative_span = narrative_decision.capture().proposal.unwrap();
+        let narrative_span = narrative_decision.capture().speech.unwrap();
         let narrative_speech = persona_prose
             .get(narrative_span.start_byte..narrative_span.end_byte)
             .unwrap()
@@ -12232,6 +12413,10 @@ mod tests {
         /// A co-located neighbour speaks. `fan_out` gives the fact to the actor,
         /// so its `knows` grows and its digest moves.
         Speech { speaker: SubjectId, text: String },
+        /// A co-located neighbour does something visible and says nothing.
+        /// The same fan-out, a `Seen { by }` row, and an overheard row that
+        /// names the actor as seen and never as heard.
+        Display { actor: SubjectId, text: String },
         /// An owner patch creates a commitment on the actor. Its `commitments`
         /// move and nothing names a mover anywhere in the components.
         Commitment { subject: SubjectId },
@@ -12241,7 +12426,7 @@ mod tests {
         /// from under it, a commitment that names a counterparty.
         Ops(Vec<crate::world::patch::ComponentOp>),
         /// An owner patch witnessing a pre-declared fact over `place`. Unlike a
-        /// neighbour's speech, this names no speaker and writes no `spoken_at`
+        /// neighbour's speech, this names no speaker and writes no `minted_at`
         /// row: `KnowledgeSource::Witnessed` is not `Told`, so
         /// `overheard_since` finds nothing and the section renders only the
         /// anonymous `knows` line.
@@ -12275,10 +12460,41 @@ mod tests {
                             bindings: Vec::new(),
                             proposed: Vec::new(),
                             speech: Some(Statement::new(text.clone()).unwrap()),
+                            display: None,
                         },
                     )
                     .await
                     .expect("the mid-turn speech committed");
+            }
+            MidTurnCommit::Display { actor, text } => {
+                let opportunity = snapshot
+                    .opportunities
+                    .iter()
+                    .find(|entry| entry.scope.subject_id == *actor)
+                    .expect("the actor has a live opportunity")
+                    .clone();
+                let entry = snapshot
+                    .affordances
+                    .iter()
+                    .find(|entry| {
+                        entry.entry.kind.0 == SPEAK_KIND
+                            && opportunity.affordance_ids.contains(&entry.id)
+                    })
+                    .expect("the actor was granted speech");
+                mailbox
+                    .submit_controller(
+                        CommandId::new(),
+                        &opportunity,
+                        DecisionInvocation {
+                            affordance: entry.id,
+                            bindings: Vec::new(),
+                            proposed: Vec::new(),
+                            speech: None,
+                            display: Some(Statement::new(text.clone()).unwrap()),
+                        },
+                    )
+                    .await
+                    .expect("the mid-turn display committed");
             }
             MidTurnCommit::Commitment { subject } => {
                 let owner = PrincipalId::new("owner");
@@ -12541,6 +12757,65 @@ mod tests {
         (subject, opportunity)
     }
 
+    /// A co-located neighbour does something visible, silently, between the
+    /// turn and its submit. The re-lowering's section reports it as seen, by
+    /// the actor's label, and never as something said.
+    #[tokio::test]
+    async fn a_neighbours_display_between_the_turn_and_submit_is_reported_as_seen() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let (actor, opportunity) = narrative_opportunity(&mailbox).await;
+        let neighbour = mailbox
+            .snapshot()
+            .await
+            .unwrap()
+            .subjects
+            .iter()
+            .find(|subject| subject.id != actor)
+            .expect("a neighbour")
+            .id;
+        let source = "I say, \"The western brace is giving way.\"";
+        let turn = interrupted_turn(
+            &mailbox,
+            source,
+            "The western brace is giving way.",
+            2,
+            vec![(
+                2,
+                MidTurnCommit::Display {
+                    actor: neighbour,
+                    text: "I set the ledger face down.".into(),
+                },
+            )],
+        );
+        let run = turn
+            .runner
+            .run_narrative(CommandId::new(), &opportunity)
+            .await
+            .unwrap();
+        assert!(matches!(run, NarrativeRun::Completed(_)));
+        let seen = turn.seen.lock().unwrap();
+        assert_eq!(seen.len(), 4);
+        let section = interruption_section_of(&seen[3]).expect("the re-lowered prompt has no section");
+        for expected in [
+            "- what this person knows changed",
+            "What was said or done before this person since:",
+            "Subject 1, seen doing:",
+            "I set the ledger face down.",
+        ] {
+            assert!(
+                section.contains(expected),
+                "the interruption section dropped `{expected}`: {section}"
+            );
+        }
+        assert!(!section.contains("said:"), "a display was reported as speech: {section}");
+        drop(seen);
+        task.abort();
+    }
+
     /// Tests 1 and 4. A co-located speaker commits after the Persona turn is
     /// recorded and before the subject's submit. The prose is lowered exactly
     /// once more, the section names the speaker and the statement, the renewed
@@ -12636,7 +12911,7 @@ mod tests {
             .expect("the re-lowered prompt has no section");
         for expected in [
             "- what this person knows changed",
-            "What was said to this person since:",
+            "What was said or done before this person since:",
             "Subject 1 said:",
             "The tollhouse ledger is short.",
         ] {
@@ -12645,8 +12920,8 @@ mod tests {
                 "the interruption section dropped `{expected}`: {section}"
             );
         }
-        // No fact id, no revision, no digest, and no `spoken_at`.
-        for leaked in ["spoken_at", "sha256:", "revision", "scope_digest"] {
+        // No fact id, no revision, no digest, and no `minted_at`.
+        for leaked in ["minted_at", "sha256:", "revision", "scope_digest"] {
             assert!(
                 !section.contains(leaked),
                 "the interruption section leaked `{leaked}`"
@@ -12660,7 +12935,7 @@ mod tests {
 
     /// Tests 2 and 3. A patch landing mid-turn moves a component that names no
     /// actor anywhere. The section carries the anonymous line for the moved
-    /// field and no `What was said to this person since:` block at all.
+    /// field and no `What was said or done before this person since:` block at all.
     #[tokio::test]
     async fn a_change_with_no_author_is_re_lowered_with_no_overheard_block() {
         let (_directory, mailbox, task) = active_cell_mailbox(vec![
@@ -12694,7 +12969,7 @@ mod tests {
             .expect("the re-lowered prompt has no section");
         assert!(section.contains("- what this person owes changed"));
         assert!(
-            !section.contains("What was said to this person since:"),
+            !section.contains("What was said or done before this person since:"),
             "an anonymous change produced an overheard block: {section}"
         );
         for leaked in ["Subject 1", " said:", "came to know"] {
@@ -12874,7 +13149,7 @@ mod tests {
     /// every other un-authored cause, over the same anonymous `knows` line as
     /// `every_un_authored_cause_is_re_lowered_with_no_actor_and_no_value`'s own
     /// `AcquireKnowledge`-shaped causes. Unlike a neighbour's speech, the row a
-    /// witness writes carries no `spoken_at` (`KnowledgeSource::Witnessed` is
+    /// witness writes carries no `minted_at` (`KnowledgeSource::Witnessed` is
     /// not `Told`), so `overheard_since` finds nothing this turn's binding
     /// postdates, and the section must carry no `Overheard` block at all — not
     /// even an empty one.
@@ -12920,7 +13195,7 @@ mod tests {
             "the witness cause did not report the anonymous knows line: {section}"
         );
         assert!(
-            !section.contains("What was said to this person since:"),
+            !section.contains("What was said or done before this person since:"),
             "a witness produced an overheard block: {section}"
         );
         for leaked in [
@@ -12928,7 +13203,7 @@ mod tests {
             "Subject 1",
             " said:",
             "came to know",
-            "spoken_at",
+            "minted_at",
         ] {
             assert!(
                 !section.contains(leaked),
@@ -13152,7 +13427,7 @@ mod tests {
         let section = interruption_section_of(&second_interpreter)
             .expect("the re-lowered prompt has no section");
         assert!(section.contains("- what this person owes changed"));
-        assert!(!section.contains("What was said to this person since:"));
+        assert!(!section.contains("What was said or done before this person since:"));
         for leaked in [
             "The vault seal is broken.",
             "Subject 1",
@@ -13519,7 +13794,7 @@ mod tests {
                 "{name} did not report `{expected_line}`: {section}"
             );
             assert!(
-                !section.contains("What was said to this person since:"),
+                !section.contains("What was said or done before this person since:"),
                 "{name} produced an overheard block: {section}"
             );
             // Nothing that could name a mover, a value, or a thing: the section

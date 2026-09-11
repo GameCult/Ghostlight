@@ -1803,6 +1803,7 @@ mod tests {
                     bindings: Vec::new(),
                     proposed: Vec::new(),
                     speech: Some(Statement::new("The hold is counted.").unwrap()),
+                    display: None,
                 },
             },
         )
@@ -2123,6 +2124,7 @@ mod tests {
                         bindings: Vec::new(),
                         proposed: Vec::new(),
                         speech: Some(Statement::new("The hold is counted.").unwrap()),
+                        display: None,
                     },
                 },
             ),
@@ -2230,7 +2232,7 @@ mod tests {
         assert!(super::super::journal::verify_state_shape(&previous).is_err());
         assert_eq!(
             super::super::STATE_SCHEMA,
-            "ghostlight.world_state.consumer.v3"
+            "ghostlight.world_state.consumer.v4"
         );
     }
 

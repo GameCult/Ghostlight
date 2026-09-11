@@ -636,6 +636,7 @@ pub(super) fn verify_state_shape(state: &WorldState) -> Result<(), JournalError>
                 state.subjects.contains_key(&by)
                     && via.is_none_or(|channel| state.channels.contains_key(&channel))
             }
+            super::KnowledgeSource::Seen { by } => state.subjects.contains_key(&by),
             super::KnowledgeSource::Witnessed | super::KnowledgeSource::Evidenced => true,
         };
         if !state.subjects.contains_key(subject_id)
@@ -889,17 +890,21 @@ pub(super) fn verify_state_shape(state: &WorldState) -> Result<(), JournalError>
             .affordance_catalog
             .get(&event.affordance)
             .ok_or_else(|| JournalError::Corrupt("event uses an unknown affordance".into()))?;
-        // A speech event names the claim it minted, and that claim is asserted
-        // by the acting subject and by no other event.
-        let speech_is_canonical = event.speech.is_none_or(|fact| {
-            claimed.insert(fact)
-                && state.facts.get(&fact).is_some_and(|record| {
-                    record.standing
-                        == super::FactStanding::Claimed {
-                            by: event.scope.subject_id,
-                        }
-                })
-        });
+        // A speech or display event names the claim it minted, and that claim
+        // is asserted by the acting subject and by no other event.
+        let mut minted_is_canonical = |fact: Option<super::EntityId>| {
+            fact.is_none_or(|fact| {
+                claimed.insert(fact)
+                    && state.facts.get(&fact).is_some_and(|record| {
+                        record.standing
+                            == super::FactStanding::Claimed {
+                                by: event.scope.subject_id,
+                            }
+                    })
+            })
+        };
+        let speech_is_canonical = minted_is_canonical(event.speech);
+        let display_is_canonical = minted_is_canonical(event.display);
         if !event_ids.insert(event.id)
             || event.revision == 0
             || event.revision > state.revision
@@ -912,13 +917,19 @@ pub(super) fn verify_state_shape(state: &WorldState) -> Result<(), JournalError>
                 .get(&event.scope)
                 .is_some_and(|granted| granted.contains(&event.affordance))
             || event.band >= entry.outcome_bands.len()
-            || event.speech.is_some() != entry.carries_speech
+            // Speech rides only a speech-carrying entry; such an entry always
+            // addresses someone, by words or by a visible act; a display may
+            // accompany any entry.
+            || (event.speech.is_some() && !entry.carries_speech)
+            || (entry.carries_speech && event.speech.is_none() && event.display.is_none())
             // One lowered operation per band effect, plus the two the speech
-            // lowering prepends.
+            // lowering prepends and the two the display lowering adds.
             || entry.outcome_bands[event.band].effects.len()
                 + if event.speech.is_some() { 2 } else { 0 }
+                + if event.display.is_some() { 2 } else { 0 }
                 != event.effects.len()
             || !speech_is_canonical
+            || !display_is_canonical
         {
             return Err(JournalError::Corrupt(
                 "decision event is noncanonical or violates controller scope".into(),
@@ -1426,6 +1437,7 @@ mod tests {
                                     magnitude: Magnitude::Quantity(Quantity(2)),
                                 }],
                                 speech: None,
+                                display: None,
                             },
                         },
                     ),
@@ -1706,6 +1718,7 @@ mod tests {
                         magnitude: Magnitude::Quantity(Quantity(3)),
                     }],
                     speech: None,
+                    display: None,
                 },
             },
         );
@@ -2091,6 +2104,7 @@ mod custody_tests {
                         magnitude: Magnitude::Quantity(Quantity(2)),
                     }],
                     speech: None,
+                    display: None,
                 },
             },
         );

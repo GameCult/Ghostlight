@@ -1407,6 +1407,7 @@ mod tests {
             bindings: Vec::new(),
             proposed: Vec::new(),
             speech: Some(crate::world::Statement::new(text).unwrap()),
+            display: None,
         };
         mailbox
             .submit_controller(
@@ -1474,6 +1475,7 @@ mod tests {
                     bindings: Vec::new(),
                     proposed: Vec::new(),
                     speech: Some(crate::world::Statement::new("Let me in.").unwrap()),
+                    display: None,
                 },
             )
             .await;
