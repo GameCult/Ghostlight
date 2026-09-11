@@ -370,17 +370,21 @@ Delvehold's interior included, so Greathold recipes, facilities, capacity,
 inventories, orders, and prices are Njörðr lots, recipes, markets, and
 quotes, and Delvehold's civic organs author policy as demand rows and
 carrier policies rather than running a second ledger; the Unity embedding is
-the Rust engine as a native plugin over a C ABI.
+the Rust engine as a native plugin over a C ABI; the market maker is the
+logarithmic market scoring rule, one liquidity parameter per market and
+class, chosen for its bounded loss.
+
+Delvehold has no existing economy surface to cut against: its world host
+names a commons market id and nothing else. The shape is therefore
+constrained only by the invariants above and by the verification fixtures
+below, which is why those fixtures are written before the engine is.
 
 Still the operator's:
 
-1. The market maker: logarithmic scoring rule versus constant-function curve.
-   Recommend the scoring rule for its bounded loss and single liquidity
-   parameter per market.
-2. Resolved by the engine split: a shipment sails because a carrier policy
+1. Resolved by the engine split: a shipment sails because a carrier policy
    fires, and the policy is data. Online, a Ghostlight carrier subject owns
    and amends its policy, so a pirate's victim has a name, a route, and a
    grudge; offline, the seeded policies run. What remains the operator's is
    the policy vocabulary's first cut: which thresholds and preferences the
    seeding run may author.
-3. The policy vocabulary's first cut, as above.
+2. The policy vocabulary's first cut, as above.
