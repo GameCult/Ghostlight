@@ -135,6 +135,54 @@ Two consequences of the model that the games asked for:
   role requirement plus the market's price. The daemon never ranks materials;
   the dimensions and the prices do.
 
+## Discovery, the tech tree, and retooling
+
+A recipe exists in the catalog from seeding; a holder runs only the recipes
+it **knows**, and knowing is a per-subject row that changes through
+discovery. Discovery is a producer policy whose output is a recipe-known row
+rather than a lot: a facility with research dimensions consumes lots and
+time and unlocks the next process along a **discovery DAG** the world
+authors. The tech tree is that DAG plus the per-holder knowledge state;
+there is no separate tech-tree mechanism. Online, a discovery is also a
+fact witnessed in Ghostlight, so a process can be sold, leaked, or stolen
+like any other knowledge. A discovered process that improves a material is
+just a recipe producing a variant whose properties clear a role the old
+material could not (a structural ceramic), and every recipe with that role
+gains a substitute the moment someone can make it.
+
+A **facility** is a lot like any other, with process dimensions. A recipe
+requires a facility meeting its process requirements, and **retooling** is
+a recipe that consumes the old facility, lots, and time and produces the new
+one. A producer policy compares margins with the retool included, so a
+design that is better but too different does not reach market because
+nobody's margin clears the rebuild, and it reaches market the day a player
+or a pressured subject eats that cost. Nothing is authored to say so.
+
+## Generating the catalog
+
+The catalog will not materialize and will not be hand-authored at the scale
+two worlds need. The plan:
+
+1. Hand-author the physics: the world's dimensions, its materials with their
+   property tables, and its product classes with the roles they need. Tens,
+   then hundreds. Human-owned and lore-grounded.
+2. Generate recipes, processes, and discovery edges with a seed lane, not a
+   script: Ghostlight's elaboration lane already authors typed structure
+   through tools with validation, gap recording, and refusal continuation
+   against a stated shortfall. The same lane, pointed at Njörðr's catalog
+   with recipe, process, and discovery-edge tools, is given the shortfall
+   "every product class producible from seeded sources through recipes
+   known at seed" and proposes until the engine's closure check clears.
+3. Validate by running, not reading: replay the seeded world for a fixed
+   span with no players and refuse a catalog where a class has no producer,
+   a source feeds nothing, a quote runs away, or a discovery unlocks a
+   recipe nothing can fill. The seeding run's output is the catalog plus
+   the replay that proves it closes.
+4. Ground in lore per repository doctrine: Aetheria's recipes come from what
+   AetheriaLore says its factions and species make, Delvehold's from the
+   Greathold canon, and a gap the generator finds is pushed back into the
+   lore vault as an elaboration, the way Ghostlight already does for scenes.
+
 ## Markets and prices
 
 A **market** is a place-bound institution with a liquidity reserve per
@@ -278,7 +326,8 @@ what grain, which is subscription configuration, not a second model.
 
 ## Authority map
 
-- Owner: Njörðr owns dimensions, materials, lots, recipes, products,
+- Owner: Njörðr owns dimensions, materials, sources, lots, recipes,
+  facilities, per-holder recipe knowledge, the discovery DAG, products,
   shipments, markets, demand rows, and prices for every world it serves. One
   process, one CultCache store per world, one revision counter per world.
 - Inputs: authored catalogs (dimensions, materials, recipes, facilities) per
