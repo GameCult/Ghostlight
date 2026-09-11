@@ -39,7 +39,7 @@ mirrors.
 
 ## The model
 
-Six nouns. Everything else is derived.
+Seven nouns. Everything else is derived.
 
 **Dimension.** A named property axis with a unit tag, authored per world:
 `thermal_conductivity (W/m·K)`, `density (kg/m³)`, `tensile_strength`,
@@ -98,6 +98,21 @@ ingredient's quality: a thruster's output reads its conductor's
 `precision`. Rarity tiers, star ratings, and "quality" are projections a game
 computes for display from the vector, never inputs. A scalar quality on the
 instance is what the breach left; it does not come back.
+
+**Source.** Where a lot begins: a deposit at a place, of one material, with
+a remaining quantity and a yield rate. Extraction moves quantity from the
+source's remaining into a new lot, so a deposit is inside the same
+conservation and depletion is a ledger row reaching zero, never a script. An
+extraction policy is a producer policy with no input roles: a facility at a
+source, the class it yields, and a margin. In Aetheria a worked source is
+materialized like a shipment, by place instead of by route: the host asks
+what sources are being worked in a zone and by whom, instantiates the
+miners, drones, and the field bound to the source id and revision, and the
+player may mine the same deposit against the concern working it, seize its
+unsold lots, or sell into the same market. For Ghostlight-owned holders an
+extraction arrives as an admit with Njörðr's receipt as evidence, the one
+way Ghostlight's ledger gains quantity, and a depleted deposit is a witnessed
+event over the place.
 
 **Shipment.** A lot in motion: one or more lots, a carrier subject, a route,
 a departure revision, and an arrival derived from the route's cost and the
