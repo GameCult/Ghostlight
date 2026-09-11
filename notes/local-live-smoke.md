@@ -211,6 +211,8 @@ set.
 | 4 | one round, 87 s | two ticks, 219 s and 235 s; 8 cells | passed; Projector now carries the subject's own life; five people say "Fourteen days", the due on their obligation |
 | 5 | one round | two ticks, 316 s and 251 s; 9 cells; whole membrane traced (`GHOSTLIGHT_SMOKE_TRACE`) | passed; first exchange: Sera Venn "Maro first, then the rest.", Maro Seln "First for what, Sera?"; every voice was the model's |
 | 6 | one round, 90 s | two ticks, 299 s and 235 s; 9 cells; flat prompts | passed; eighteen cells, nobody spoke; the honest baseline of an unauthored person |
+| 7 | refused: six distinct people with memories, reads, and worded promises, every `declare_subject` carrying `"controller": {}` | 2 ticks on genesis alone | harness failed on the empty seed; the repair continuation faulted on the SDK lane (one user turn) |
+| 8 | one round, 97 s: six people, each with a voice, values, memories, reads, and a promise in words | two ticks, 191 s and 261 s; 8 cells; 43 speak captures to 9 gaps | passed; seven distinct lines about the grate, the roll, and the crew |
 
 Rules run 1 imposed are in the implementation plan under step 11 (descriptions
 carried through the sidecar, `due` described and the clock printed, the grant
@@ -238,6 +240,22 @@ voice. Run 6, after the prompts were flattened to render only what the
 context carries, is silent, which is correct. Run 6's trace also shows the
 Projector saying "no one before me" for two people in the same house: the
 context carries the subject's own place and not who else stands in it.
+
+Runs 7 and 8 are plan step 12 on the road. Run 7 authored the best seed so
+far and lost it to a field with no description and a tool result that said
+only "recorded as a gap"; the controller variant now describes its shapes,
+a decode failure's reason goes back to the model, and the SDK lowering
+carries a later user turn (the refusal) in its transcript. Run 8 is the
+first run whose people are people: Maro "Sera. Where's the crew.", Sera "Not
+yet, Bren. I haven't given Maro the condition of the intake, and until I do,
+I won't say send them down.", Iva keeping the roll of names before anyone
+goes below. Speech captures went from one per tick to twenty-one, and gaps
+from most of the prose to nine. One promise in run 8 read "I promise Maro
+Seln I will mend the tick fixture by the appointed hour, though Maro Seln
+holds no authority to command my compliance and no forum will hear a suit":
+the world is still titled "Cover Tick Fixture" and the brief's boundary
+language leaked into a vow. The world-title and brief cut is no longer
+cosmetic.
 
 ## Interrupted cell
 

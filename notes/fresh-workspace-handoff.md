@@ -224,7 +224,11 @@ has budget. The SDK transport is proven on the road: seeded runs on
 `claude-sonnet-5` committed ticks end to end (`notes/local-live-smoke.md`,
 "SDK runs, 2026-09-10"). A kernel refusal continues the authoring
 conversation (`Refusal` rows, `controller_work.v12`); the Interpreter cites
-prose by quote (`source_quote`), and a quote not in the prose is a gap.
+prose by quote (`source_quote`), and a quote not in the prose is a gap. Plan
+step 12 is landed: `PersonaMaterial` is the thirteenth component, a promise
+carries its statement, the Projector sees who else stands in the room, and
+on the road (run 8) six seeded people speak in six voices about a debt with
+words in it. Schemas are `.consumer.v3`.
 
 Deferred by design: `PolityInCausalRange`, `IndividuationRequired`, and
 Verification 13 wait for relations and population slices. Stale: the
@@ -248,11 +252,11 @@ unplaced; retire it or place its subjects.
 
 ### In order
 
-1. Decide and build plan step 12, the seed authoring meaning (`PersonaMaterial`,
-   commitment statements, co-presence), mapped in the plan and not adopted.
-   Until it lands every seeded person is silent by design. After it, a longer
-   SDK run that shows the first live interrupted cell, with the log line the
-   runbook's "Interrupted cell" section names.
+1. The world title and brief as authored world facts (`world_create.v3`): the
+   smoke still titles its world "Cover Tick Fixture", the guidance slot is
+   empty on every lane, and run 8 put the fixture's name into a vow. Then a
+   longer SDK run that shows the first live interrupted cell, with the log
+   line the runbook's "Interrupted cell" section names.
 2. The outbound half of the consumer contract: the response batch with a
    non-loopback CultMesh lease.
 3. The deployment gate below.
