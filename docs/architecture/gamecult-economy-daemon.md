@@ -129,11 +129,39 @@ price gap across a route is an opportunity for a Ghostlight subject or a
 player to move a lot, the move is a shipment, and its arrival is what closes
 the gap. The daemon owns no trader and never moves a lot on its own.
 
-**Demand** enters three ways and is typed the same way: a Delvehold Hold's
-ratified policy (mandates, reserves, rationing) as a demand profile on its
-markets; a Ghostlight population's needs as pressure and dependency deltas
-through the outbound batch; a player's or a workshop's standing orders. All
-three are demand rows on a market at a revision. None is privileged.
+**Demand** is a rate, not a wish. A demand row on a market is a consumption
+rate per class per unit of simulation time plus a reserve target, and
+consumption is a real lot sink, so a market that is oversupplied has its
+reserve drawn down at the rate its people use the class and its price finds
+a floor there rather than at zero. Rows enter three ways and are typed the
+same way: a Delvehold Hold's ratified policy (mandates, reserves, rationing);
+a Ghostlight population's needs as pressure and dependency deltas through
+the outbound batch; a player's or a workshop's standing orders. None is
+privileged. **Intermediate demand is derived, never authored**: a producer
+policy (below) that would run a recipe at current quotes contributes its
+input needs as demand rows on the markets it buys from, so a crash in a
+product's price stops its producers, withdraws their demand for inputs,
+lowers the inputs' quotes, and cheapens everything else made from them. That
+propagation through the recipe graph, in both directions, is how a player
+who floods one class moves the prices of classes they never touched.
+
+**Admission** is a market policy over provenance. Every lot's provenance is
+permanent and a seizure is in it forever, so a market may refuse, accept, or
+discount a lot by what its provenance contains and how deep it looks. A
+legitimate market refuses a seizure at any depth; a black market accepts it
+at a discount; a lax market looks one level deep, so a re-smelted seized
+ingot passes there and nowhere stricter. A black market is therefore an
+ordinary market with a permissive admission policy at its own place, and a
+diverted shipment is still in play: its lots re-enter supply wherever they
+are admitted, and the shortage they caused at their destination is answered
+by whoever the destination's quote draws.
+
+**Cornering** is possible and expensive by construction. Buying a reserve out
+walks the quote up the scoring rule's curve, and the maker's loss is bounded,
+so a market cannot be bankrupted by a corner. What answers a corner is
+supply: price gaps pull shipments, and producers make more. A market that no
+carrier's routes reach and no producer serves is a shortage nobody answers,
+which is why seeding carries the rule below.
 
 **Quotes.** A proposed trade is quoted against a named revision and honoured
 only against that revision; a stale quote is refused, never repriced
@@ -272,12 +300,22 @@ Two consequences:
   authored script. The engine cannot tell where an event came from, and that
   is the invariant that makes the single-player mode below the same machine
   rather than a second one.
-- Carriers do not decide inside the engine; they execute **carrier policies**
-  that are data: routes, thresholds, capacities, preferences over price gaps.
-  Online, a Ghostlight carrier subject amends its policy through a consumer
-  command, and its name, route, and grudge stay Ghostlight's. Offline, the
-  seeded policies run unchanged. The engine owns no trader in either mode;
-  it owns the executor of authored policy.
+- Nobody decides inside the engine. Carriers execute **carrier policies**
+  and producers execute **producer policies**, and both are data. A carrier
+  policy is a home market, a set of known routes, a capacity, the classes it
+  carries, a minimum margin after route cost, and a risk term per route that
+  rises with seizures on it and decays with time; each step the carrier
+  sails the best known route above its margin. A producer policy is a
+  facility, the recipes it can run, and a margin; each step it runs the
+  recipe whose output quote clears its input quotes plus margin, and its
+  planned inputs are the derived demand above. Online, a Ghostlight subject
+  amends its own policy through a consumer command, and its name, route,
+  and grudge stay Ghostlight's. Offline, the seeded policies run unchanged.
+  The engine owns no trader and no maker in either mode; it owns the
+  executor of authored policy. Seeding rule: every market is on at least one
+  carrier's route set or is marked unserved, and unserved is a fact
+  Ghostlight receives, because a shortage nobody can answer is a story, not a
+  bug.
 
 ## Modes
 
@@ -353,7 +391,13 @@ route; flooding one market moves both prices in the direction the route cost
 predicts; closing the route decouples them. A shipment between the two
 markets, seized mid-route against its revision, lands its lots on the seizer,
 is refused a second time, and leaves the destination's next quote higher
-than it would have been on arrival.
+than it would have been on arrival; the seized lots are refused by the strict
+market and admitted by the black market at a discount, and the destination's
+shortage resolves through the carrier whose margin the gap now clears. A
+producer flooding the spreader class walks its quote down the curve to the
+consumption floor, withdraws the producer's conductor demand, and lowers the
+conductor quote at the market it bought from; buying the gold reserve out
+walks its quote up, and the far market's shipment answers it.
 
 End to end: a Ghostlight world with a market mirror; a witnessed route
 closure in Ghostlight arrives as a shock and moves a price; the price arrives
@@ -381,10 +425,14 @@ below, which is why those fixtures are written before the engine is.
 
 Still the operator's:
 
-1. Resolved by the engine split: a shipment sails because a carrier policy
+1. Resolved by the engine split, and widened to producers: a shipment sails because a carrier policy
    fires, and the policy is data. Online, a Ghostlight carrier subject owns
    and amends its policy, so a pirate's victim has a name, a route, and a
    grudge; offline, the seeded policies run. What remains the operator's is
    the policy vocabulary's first cut: which thresholds and preferences the
    seeding run may author.
-2. The policy vocabulary's first cut, as above.
+2. The policy vocabulary's first cut: recommend the route-bounded,
+   gap-seeking carrier and the margin-driven producer described under
+   "Engine and shell", with the risk term decaying in time and the margin
+   per subject rather than global, so a desperate carrier sails what a
+   cautious one refuses.
