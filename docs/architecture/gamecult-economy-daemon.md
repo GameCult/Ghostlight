@@ -44,9 +44,15 @@ Six nouns. Everything else is derived.
 **Dimension.** A named property axis with a unit tag, authored per world:
 `thermal_conductivity (W/m·K)`, `density (kg/m³)`, `tensile_strength`,
 `corrosion_resistance`, and in other worlds `aether_conductance`,
-`mana_capacity`, `hex_resistance`. The daemon is genre-neutral because a
-dimension is data. A world declares its dimensions once; nothing in the
-daemon names one.
+`mana_capacity`, `hex_resistance`. Some dimensions are **operating
+conditions** rather than properties: `temperature`, `pressure`, `aether
+density`. A property value is either a scalar or a curve over one condition
+dimension, so a vapour chamber's `heat_transfer_capacity` is a curve over
+`temperature` that falls to nothing outside its working band, while a copper
+block's is a flat line. Curves are the same piecewise shape Aetheria's
+shared model already uses for heat performance. The daemon is genre-neutral
+because a dimension is data. A world declares its dimensions once; nothing
+in the daemon names one.
 
 **Material.** A class of stuff with a property vector over the world's
 dimensions and a base extraction or synthesis source. Copper, aluminium, gold
@@ -68,17 +74,21 @@ consumed. This is the legacy "remembers every ingredient," made durable and
 queryable rather than carried on the instance.
 
 **Recipe.** A transformation stated as roles, not ingredients. Each role names
-a functional requirement over dimensions (`conductor: thermal_conductivity ≥
-200`, `spreader: thermal_conductivity ≥ 100 and density ≤ 3000`), a quantity,
-and how the output's properties read the material filling the role. A
-recipe also names a **process** role: the facility, tool, and practice that
-run it, which carry their own dimensions (`precision`, `throughput`,
-`contamination`) and are filled by the workshop's actual station and
-operator. Substitution is therefore not a special case: any material meeting
-the role's requirement fills it, and the trade-off is visible in the output's
-derived properties and in the price paid. A heat spreader with a vapour
-chamber and one without are two recipes for one product class, or one recipe
-with an optional role, and the market prices the difference.
+a functional requirement over dimensions, a quantity, and how the output's
+properties read the lot filling the role. A role is filled by any lot, raw
+or produced: `spreader: heat_transfer_capacity ≥ 100 over the recipe's
+temperature envelope, density ≤ 3000` is filled by a block of copper, by a
+produced vapour-chamber part, or by whatever the world's physics offers,
+and the recipe never names which. A requirement over a curve-valued property
+states the envelope it must hold across, so a vapour chamber that fails hot
+fills a cool recipe and not a hot one. A recipe also names a **process**
+role: the facility, tool, and practice that run it, which carry their own
+dimensions (`precision`, `throughput`, `contamination`) and are filled by
+the workshop's actual station and operator. Substitution is therefore not a
+special case and needs no optional roles or alternate recipes: any lot
+meeting the role's requirement fills it, the output's derived properties
+carry the difference (a thruster's cooling curve is its spreader's capacity
+curve through the recipe's output function), and the market prices it.
 
 **Product.** A produced lot with a property vector, a product class, and its
 provenance. There is no scalar quality on the product. Game stats read the
@@ -385,9 +395,11 @@ state, script, and seed replay to the same state on two machines; an event
 lowered from a Ghostlight batch and the same event read from a script
 produce identical state.
 
-Pipeline: a fixture world with copper, aluminium, and gold conductors, one
-spreader recipe with an optional vapour-chamber role, two markets on one
-route; flooding one market moves both prices in the direction the route cost
+Pipeline: a fixture world with copper, aluminium, and gold conductors, a
+vapour-chamber part recipe whose capacity is a curve over temperature, one
+thruster recipe with a spreader role fillable by the copper block or the
+part, two markets on one route; the hot variant of the thruster recipe
+refuses the vapour chamber and the cool one accepts it; flooding one market moves both prices in the direction the route cost
 predicts; closing the route decouples them. A shipment between the two
 markets, seized mid-route against its revision, lands its lots on the seizer,
 is refused a second time, and leaves the destination's next quote higher
