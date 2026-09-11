@@ -10,12 +10,12 @@ use crate::{
     },
     mesh::{self, MeshPublisher, MeshRuntimeIdentity},
     world::{
-        AffordanceId, CONSUMER_BODY_LIMIT, CellRun, CommandBody, CommandId, ConnectorBinding,
+        AffordanceId, CONSUMER_BODY_LIMIT, Cell, CellRun, CommandBody, CommandId, ConnectorBinding,
         ConsumerPort, ConsumerRegistry, ControllerError, ControllerModels, ControllerPendingReason,
         ControllerRunner, ControllerWorkCustody, Cover, CoverBudget, CreateJurisdictionIntent,
         CreateWorldIntent, DEFAULT_SDK_MODEL_PREFIX, DecisionInvocation, DecisionOpportunity,
         KernelError, MailboxError, NarrativeRun, OperationalRun, PrincipalCommandIntent,
-        PrincipalId, SdkBinding, SeedOutcome, SeedPort, Statement, SubjectKind,
+        PrincipalId, SdkBinding, SeedOutcome, SeedPort, Statement, SubjectId, SubjectKind,
         SubmissionDisposition, SubmitReceipt, TickMinutes, VaultEvidenceSource, WorldMailbox,
         WorldPhase, WorldSnapshot, derive_cover, open_controller_work, open_inference,
     },
@@ -97,13 +97,26 @@ struct AppState {
 
 /// What one tick's cover looked like, for the operator surfaces. A projection
 /// of a derived value, never an input to the next tick.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 struct CoverSummary {
     tick: u64,
     cells: usize,
     singletons: usize,
     groups: usize,
     oversubscribed: bool,
+    /// The cells whose turn the world moved under and which re-lowered once
+    /// and committed, in completion order. Filled after the cells run.
+    interrupted: Vec<InterruptedCell>,
+}
+
+/// One re-lowered cell, as the operator's tick line reports it: the subject
+/// and both scope digests, the one the turn was bound to and the one it was
+/// re-lowered against.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct InterruptedCell {
+    subject: SubjectId,
+    bound_scope_digest: String,
+    renewed_scope_digest: String,
 }
 
 /// The read-only projection of the budget and the last tick, for Eve.
@@ -112,7 +125,7 @@ async fn cover_panel(state: &AppState) -> eve::CoverPanel {
         cells: state.cover_budget.cells,
         constituent_cap: state.cover_budget.constituent_cap,
         urgency_slots: state.cover_budget.urgency_slots,
-        last: state.cover.lock().await.map(|summary| eve::CoverPanelTick {
+        last: state.cover.lock().await.as_ref().map(|summary| eve::CoverPanelTick {
             tick: summary.tick,
             cells: summary.cells,
             singletons: summary.singletons,
@@ -130,6 +143,7 @@ impl CoverSummary {
             singletons: cover.singletons(),
             groups: cover.groups(),
             oversubscribed: cover.oversubscribed,
+            interrupted: Vec::new(),
         }
     }
 }
@@ -1956,13 +1970,13 @@ async fn run_cover_tick(state: &AppState) {
             // finishes on its own binding — quarantine stops the *next* cell
             // to reach either check, not one already mid-turn.
             if quarantined.load(Ordering::SeqCst) {
-                return;
+                return None;
             }
             let Ok(_permit) = permits.acquire().await else {
-                return;
+                return None;
             };
             if quarantined.load(Ordering::SeqCst) {
-                return;
+                return None;
             }
             match runner.run_cell(&cell).await {
                 // A tick that reports nothing is a tick nobody can debug. One
@@ -2017,6 +2031,29 @@ async fn run_cover_tick(state: &AppState) {
                         "a detail operational cell is pending"
                     );
                 }
+                // A turn the world moved under, re-lowered once and committed:
+                // the operator's line carries the subject and both digests,
+                // read from the receipt the decision carries, and the tick
+                // summary keeps the same record for the harness.
+                Ok(CellRun::Narrative(NarrativeRun::Completed(decision)))
+                    if decision.re_lowering().is_some() =>
+                {
+                    let Cell::Singleton { member, .. } = &cell else {
+                        return None;
+                    };
+                    let re_lowering = decision.re_lowering().expect("checked by the guard");
+                    tracing::info!(
+                        subject = ?member.subject,
+                        bound_scope_digest = re_lowering.bound_scope_digest.as_str(),
+                        renewed_scope_digest = re_lowering.renewed_scope_digest.as_str(),
+                        "a detail narrative cell was re-lowered once and committed"
+                    );
+                    return Some(InterruptedCell {
+                        subject: member.subject,
+                        bound_scope_digest: re_lowering.bound_scope_digest,
+                        renewed_scope_digest: re_lowering.renewed_scope_digest,
+                    });
+                }
                 // The operator's only window onto what a cell decided is this
                 // line; the world journal keeps effects, not the run.
                 Ok(CellRun::Narrative(run)) => {
@@ -2039,9 +2076,18 @@ async fn run_cover_tick(state: &AppState) {
                     }
                 }
             }
+            None
         });
     }
-    while running.join_next().await.is_some() {}
+    let mut interrupted = Vec::new();
+    while let Some(finished) = running.join_next().await {
+        if let Ok(Some(cell)) = finished {
+            interrupted.push(cell);
+        }
+    }
+    if let Some(summary) = state.cover.lock().await.as_mut() {
+        summary.interrupted = interrupted;
+    }
 }
 
 async fn revision_events(State(state): State<AppState>) -> impl IntoResponse {
@@ -3841,7 +3887,7 @@ mod tests {
                 |id, minutes| state.world.submit_clock(id, minutes),
             )
             .await;
-            let cover = *state.cover.lock().await;
+            let cover = state.cover.lock().await.clone();
             let elaboration = runner.elaborator().sweep().await;
             let after = state.world.snapshot().await.unwrap();
             line(format!(
@@ -3854,17 +3900,34 @@ mod tests {
                 after.scale_deficit.len(),
                 after.subjects.len()
             ));
+            // Runbook "Interrupted cell": one line per re-lowered cell, with
+            // the subject and both scope digests.
+            for cell in cover.iter().flat_map(|cover| cover.interrupted.iter()) {
+                let label = after
+                    .subjects
+                    .iter()
+                    .find(|subject| subject.id == cell.subject)
+                    .map(|subject| subject.label.as_str())
+                    .unwrap_or("<unknown subject>");
+                line(format!(
+                    "  interrupted cell subject={label} bound={} renewed={}",
+                    cell.bound_scope_digest, cell.renewed_scope_digest
+                ));
+            }
             let events = state.world.operator_log().await.unwrap();
             for event in events.iter().skip(logged_events) {
                 line(format!(
                     "  r{} {}: {}",
                     event.revision,
                     event.speaker_label,
-                    event
-                        .speech
-                        .as_ref()
-                        .map(Statement::as_str)
-                        .unwrap_or("<no speech>")
+                    match (&event.speech, &event.display) {
+                        (Some(speech), Some(display)) => {
+                            format!("{} [seen: {}]", speech.as_str(), display.as_str())
+                        }
+                        (Some(speech), None) => speech.as_str().to_owned(),
+                        (None, Some(display)) => format!("[seen: {}]", display.as_str()),
+                        (None, None) => "<no speech>".to_owned(),
+                    }
                 ));
             }
             logged_events = events.len();

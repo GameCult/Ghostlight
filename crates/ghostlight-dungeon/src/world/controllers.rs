@@ -2350,6 +2350,13 @@ pub(crate) enum SubmissionDisposition {
     PreviouslyConfirmed(CommitReceipt),
 }
 
+/// A committed turn's one re-lowering, as the operator reads it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ReLowering {
+    pub(crate) bound_scope_digest: String,
+    pub(crate) renewed_scope_digest: String,
+}
+
 #[derive(Debug)]
 pub(crate) struct NarrativeDecision {
     turn: PersonaTurn,
@@ -2368,6 +2375,18 @@ impl NarrativeDecision {
 
     pub(crate) fn submission(&self) -> &SubmissionDisposition {
         &self.submission
+    }
+
+    /// The two scope digests of a turn the world moved under: the one the
+    /// prose was bound to and the one it was re-lowered against. `None` for a
+    /// turn lowered once. Read from the binding the receipt carries, so the
+    /// operator's line and the persisted row cannot disagree.
+    pub(crate) fn re_lowering(&self) -> Option<ReLowering> {
+        let renewed = self.turn.binding();
+        renewed.interrupted_from.as_deref().map(|bound| ReLowering {
+            bound_scope_digest: bound.scope_digest.clone(),
+            renewed_scope_digest: renewed.scope_digest.clone(),
+        })
     }
 
     pub(crate) fn into_parts(self) -> (PersonaTurn, NarrativeCapture, SubmissionDisposition) {
@@ -12888,6 +12907,14 @@ mod tests {
         assert_ne!(renewed.scope_digest, prior.scope_digest);
         assert!(prior.interrupted_from.is_none());
         assert!(decision.persona_turn().receipt_is_valid());
+        // The operator's record of the re-lowering is the receipt's own pair.
+        assert_eq!(
+            decision.re_lowering(),
+            Some(ReLowering {
+                bound_scope_digest: prior.scope_digest.clone(),
+                renewed_scope_digest: renewed.scope_digest.clone(),
+            })
+        );
 
         // The commit is bound to the fresh digest the row holds, and the world
         // took the act exactly once.
