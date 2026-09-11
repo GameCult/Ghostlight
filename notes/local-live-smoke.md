@@ -216,6 +216,7 @@ set.
 | 7 | refused: six distinct people with memories, reads, and worded promises, every `declare_subject` carrying `"controller": {}` | 2 ticks on genesis alone | harness failed on the empty seed; the repair continuation faulted on the SDK lane (one user turn) |
 | 8 | one round, 97 s: six people, each with a voice, values, memories, reads, and a promise in words | two ticks, 191 s and 261 s; 8 cells; 43 speak captures to 9 gaps | passed; seven distinct lines about the grate, the roll, and the crew |
 | 9 | one round, 94 s; world titled Low Sere with its brief on every lane | two ticks, 218 s and 209 s; 8 cells; 20 speak captures to 24 gaps | passed; no fixture name anywhere in the trace; promises and speech in the world's own terms (the grate, the ration boards, the kiln on stored ash) |
+| 10 | one round, 95 s | two ticks, 220 s and 166 s; 8 cells; revision 3 to 15; 29 speak, 18 display, 10 gaps | passed; the first displays ("I set the spindle down where both of them can see the face of it", "I look to Yeshe, not unkind."); every gap is private reasoning; the first live interrupted cell (below) |
 
 Rules run 1 imposed are in the implementation plan under step 11 (descriptions
 carried through the sidecar, `due` described and the clock printed, the grant
@@ -244,6 +245,16 @@ context carries, is silent, which is correct. Run 6's trace also shows the
 Projector saying "no one before me" for two people in the same house: the
 context carries the subject's own place and not who else stands in it.
 
+Run 10 is plan step 14 on the road: a visible act is captured by `display`
+and lands as a seen row on the room. Sera set the spindle down where Maro and
+Behn could see it, and Maro's re-lowered turn read it as seen and her "Not
+finished yet." as said. The ten gaps are what the cut leaves private on
+purpose ("There's nothing to tell them until the spindle's finished telling
+me."). Two observations for a later cut, not rules: the quote discipline
+admits fragments ("I don't", "Nod"), because any verbatim substring locates;
+and a turn with three visible acts keeps one, because the fold allows one
+display per invocation, so the second and third become ambiguity gaps.
+
 Runs 7 and 8 are plan step 12 on the road. Run 7 authored the best seed so
 far and lost it to a field with no description and a tool result that said
 only "recorded as a gap"; the controller variant now describes its shapes,
@@ -264,13 +275,16 @@ boards, with no favorites".
 
 ## Interrupted cell
 
-Not yet run. The next road run must show a subject whose room changed mid-turn
-getting one re-lowering, not a lost turn: its scope digest moves between the
-Persona's prose and the commit, the runner re-lowers the same prose once
-through the Interpreter against the fresh opportunity, and the resulting
-`ghostlight.persona_turn_receipt.v3` row carries `interrupted_from` pointing
-at the binding it replaced. The log line for that cell must carry the subject
-and both scope digests — the one the turn was bound to and the one it was
-re-lowered against — and the operator log must show the act once, not once
-per lowering. This has not been exercised against a live provider; the eight
-tests landed for step 9 all run against fixture ports.
+First exercised live in run 10, twice, on the trace: Maro Seln's turn was
+bound, Sera Venn then spoke and set the spindle down in the same room, and
+the runner re-lowered Maro's prose once through the Interpreter with the
+section "What was said or done before this person since" carrying both her
+line as said and her act as seen. The Interpreter kept the four spoken
+segments and recorded one ambiguity gap on the demand that her answer had
+already partly met. The world took the act once. The harness still emits
+no per-cell log line: the tick line carries the cover summary only, so the
+subject and the two scope digests (bound, re-lowered) are read from the trace
+and from the `ghostlight.persona_turn_receipt.v3` row's `interrupted_from`,
+not from `GHOSTLIGHT_SMOKE_LOG`. That line is the remaining half of this
+section and is owed by the cover driver's per-tick summary, not by a second
+logger.

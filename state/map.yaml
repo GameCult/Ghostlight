@@ -369,20 +369,22 @@ current_status:
     step 9 interruption, step 10 witness, step 11 Claude SDK inference port
     with its follow-ups, and the first SDK-backed seeded road runs on
     claude-sonnet-5 (runbook "SDK runs, 2026-09-10"; plan "Road follow-ups,
-    2026-09-10"; controller_work.v12).
+    2026-09-10").
     Chronology, SHAs, and per-pass facts live in git history, the evidence
     ledger and its archive, and the docs; do not rebuild them here or in
     the handoff, and plan step 12 (PersonaMaterial, commitment
     statements, co-presence; run 8 is the first run whose people speak in
-    their own voices) and step 13 (the world brief, world_create.v3,
-    guidance on every lane). Next, in the operator's order: (0) nonverbal
-    display by quote, mapped as plan step 14 and not built: a visible act
-    lands as `Seen { by }` knowledge on the co-located, kernel-lowered from
-    the invocation beside speech, quoted by the Interpreter as the visible
-    clause alone; the actor's intent stays private. Ordered 2026-09-11
-    ahead of (a); the build waits on the three decisions step 14 names. (a) the longer
-    SDK run that shows the first live interrupted cell and its log line
-    (runbook "Interrupted cell");
+    their own voices), step 13 (the world brief, world_create.v3,
+    guidance on every lane), and step 14 (nonverbal display by quote,
+    commit 0582321: a visible act lands as `Seen { by }` knowledge on the
+    co-located, quoted by the Interpreter as the visible clause alone, the
+    actor's intent private; run 10 passed with 18 displays and the first
+    live interrupted cell). State and commit schemas are consumer.v4;
+    controller work rows are controller_work.v14. Next, in the operator's
+    order: (a) the remaining half of the interrupted-cell item: the harness
+    emits no per-cell log line carrying the subject and both scope digests;
+    add it from the cover driver's per-tick summary (runbook "Interrupted
+    cell" names the line; the interruption itself is proven by run 10);
     (b) the outbound consumer response batch with a non-loopback CultMesh
     lease; (c) the deployment gate (world-v3, Idunn/Odin as recorded in the
     handoff); (d) decision on Eve world.run_tick authority and the Eve

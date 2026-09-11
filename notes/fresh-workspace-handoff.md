@@ -203,7 +203,7 @@ are teardown evidence.
 
 ### The kernel now
 
-Twelve decision-constraining component kinds over a pinned operation catalog
+Thirteen decision-constraining component kinds over a pinned operation catalog
 under one `WorldPatch`, one reducer, one CAS commit, one decode bound for both
 authoring lanes, and three confined `SystemCapability` arms: `Clock`,
 `Elaborator { jurisdiction }`, `Consumer { consumer }`. Proposals bind to a
@@ -223,12 +223,17 @@ its receipt shape are a named stopgap, deleted whole when a Messages-API port
 has budget. The SDK transport is proven on the road: seeded runs on
 `claude-sonnet-5` committed ticks end to end (`notes/local-live-smoke.md`,
 "SDK runs, 2026-09-10"). A kernel refusal continues the authoring
-conversation (`Refusal` rows, `controller_work.v12`); the Interpreter cites
+conversation (`Refusal` rows, `controller_work.v14`); the Interpreter cites
 prose by quote (`source_quote`), and a quote not in the prose is a gap. Plan
 step 12 is landed: `PersonaMaterial` is the thirteenth component, a promise
 carries its statement, the Projector sees who else stands in the room, and
 on the road (run 8) six seeded people speak in six voices about a debt with
-words in it. Schemas are `.consumer.v3`.
+words in it. Plan step 14 is landed (commit `0582321`): a visible act is
+quoted by the Interpreter as the visible clause alone and lands as
+`Seen { by }` knowledge on the co-located; the actor's intent stays
+private. Knowledge sources are `Witnessed`, `Told`, `Seen`, `Evidenced`.
+Run 10 passed (18 displays) and produced the first live interrupted cell.
+State and commit schemas are `.consumer.v4`.
 
 Deferred by design: `PolityInCausalRange`, `IndividuationRequired`, and
 Verification 13 wait for relations and population slices. Stale: the
@@ -252,20 +257,14 @@ unplaced; retire it or place its subjects.
 
 ### In order
 
-1. Nonverbal display by quote, mapped as plan step 14 and not built
-   (ordered 2026-09-11 ahead of the interrupted-cell run). A visible act
-   lands as `Seen { by }` knowledge on the co-located, kernel-lowered beside
-   speech, quoted by the Interpreter as the visible clause alone; the
-   actor's intent stays private. The build waits on the three decisions
-   step 14 names.
-2. A longer SDK run that shows the first live interrupted cell, with the
-   log line the runbook's "Interrupted cell" section names. The world brief
-   (`world_create.v3`, plan step 13) is landed, so the run's people have a
-   world named and described to them.
-3. The outbound half of the consumer contract: the response batch with a
+1. The per-cell interrupted log line. Run 10 proved the live interruption,
+   but the harness still emits no per-cell line carrying the subject and
+   both scope digests; add it from the cover driver's per-tick summary. The
+   runbook's "Interrupted cell" section names the line.
+2. The outbound half of the consumer contract: the response batch with a
    non-loopback CultMesh lease.
-4. The deployment gate below.
-5. Integration of the elaborator swarm's ideas (see "World fixtures and
+3. The deployment gate below.
+4. Integration of the elaborator swarm's ideas (see "World fixtures and
    the elaborator swarm" below).
 
 ### Decisions the operator owns

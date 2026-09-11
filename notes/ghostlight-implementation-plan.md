@@ -700,7 +700,23 @@ says otherwise, and the seed brief becomes the world's brief rather than a
 per-session sentence. Run 9 is the proof: no fixture name in any vow, and
 promises made against the deadline the brief set.
 
-### 14. Nonverbal display by quote — mapped
+### 14. Nonverbal display by quote — landed
+
+Landed 2026-09-11 as mapped, with all three recommendations taken:
+kernel-only lowering (no patch tool, thirty operations, pin unchanged), the
+display kept in the actor's own words, and a silent turn invoking the
+`speak` entry with no utterance. `DecisionInvocation.display` and
+`DecisionEvent.display`; `ResolvedOp::Display { actor, fact }` landing
+`KnowledgeSource::Seen { by }` over `Audience::Colocated` through the same
+`fan_out`; `ActionMismatch::EmptyDisplay`; `SpeechRequired` only when
+neither words nor act; the journal's event-shape rule counts both lowerings;
+`minted_at` replaces `spoken_at`. The Interpreter's `display` tool beside
+`speak`, one of each per turn, `NarrativeProposal::{Speak, Display}`,
+`NarrativeCapture { speech, display }`; `Overheard.from: Perceived::{Said,
+Seen, Known}` and the Projector's knowledge rows carry `how` and `by`.
+Schemas `world_state.consumer.v4`, `world_commit.consumer.v4`,
+`controller_work.v14`. Run 10 proves it on the road (runbook row 10) and
+produced the first live interrupted cell. The map that led here follows.
 
 Ordered 2026-09-11 after run 9. Objective: a person can act without words and
 be seen doing it. Run 9's gap column holds "I nod toward the path down", "I

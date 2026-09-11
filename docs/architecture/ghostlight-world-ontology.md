@@ -413,7 +413,7 @@ kinds; what is external is its `ControllerAssignment`
 
 ## Components
 
-Twelve, each earning its place by constraining a decision. Some attach to one
+Thirteen, each earning its place by constraining a decision. Some attach to one
 referent; some are edge-shaped and attach to a pair. The reducer does not care
 which noun a component is; it cares what it constrains.
 
