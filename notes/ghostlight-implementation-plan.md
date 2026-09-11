@@ -658,13 +658,7 @@ standing in the same place; the Persona's "Who you are" is the label, the
 voice, and the values; the typed view carries material and statements by id.
 Material is not in `ScopeComponents`, pinned by a test that sets it and
 watches the scope digest stay. The map that led here follows. Objective:
-(Step 13, the world brief, landed the same day: `world_create.v3` carries a
-required `brief`, trimmed at ingress, stored on `WorldState`, projected as
-the guidance of every lane and printed in both authoring prompts; the two
-narrative stages that rebuild prompts on resume carry it as `guidance`,
-`controller_work.v13`. The smoke titles its world by the seed root label
-unless `GHOSTLIGHT_SMOKE_WORLD_TITLE` says otherwise, and the seed brief
-becomes the world's brief rather than a per-session sentence.) a seeded person speaks from authored
+a seeded person speaks from authored
 meaning rather than the model's default voice, which is the hard boundary
 "character intelligence is modeled state, not a default model capability".
 
@@ -693,6 +687,18 @@ co-presence by label is the same reach the kernel already derives for speech
 and belongs in the same cut. Decisions the operator owns: the small typed
 material record above versus the full portable standard (recommend small),
 and whether a commitment statement is required (recommend required).
+
+### 13. The world brief — landed
+
+Landed 2026-09-11. Objective: the people of a world know what world they are
+in. `world_create.v3` carries a required `brief`, trimmed at ingress and
+stored on `WorldState`; it is projected as the guidance of every lane and
+printed in both authoring prompts, and the two narrative stages that rebuild
+prompts on resume carry it as `guidance` (`controller_work.v13`). The smoke
+titles its world by the seed root label unless `GHOSTLIGHT_SMOKE_WORLD_TITLE`
+says otherwise, and the seed brief becomes the world's brief rather than a
+per-session sentence. Run 9 is the proof: no fixture name in any vow, and
+promises made against the deadline the brief set.
 
 ### 14. Nonverbal display by quote — mapped
 
