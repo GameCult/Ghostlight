@@ -386,7 +386,10 @@ current_status:
     commit 855727f, run 12). Next, in the
     operator's order:
     (b) the outbound consumer response batch with a non-loopback CultMesh
-    lease; (c) the deployment gate (world-v3, Idunn/Odin as recorded in the
+    lease, shaped as the economy daemon's signal surface (custody, pressure
+    and dependency, route, event deltas; spec docs/architecture/
+    gamecult-economy-daemon.md, written 2026-09-11, four operator decisions
+    open); (c) the deployment gate (world-v3, Idunn/Odin as recorded in the
     handoff); (d) decision on Eve world.run_tick authority and the Eve
     owner's fourth command-result state for an overtaken turn. Constraints:
     the operator's Claude subscription, inherited by the sidecar from the
