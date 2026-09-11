@@ -1,7 +1,8 @@
 # Njörðr, the GameCult economy daemon
 
-Status: specification, 2026-09-11. Nothing is built. The daemon is Njörðr;
-no repository exists yet.
+Status: specification, 2026-09-11. Nothing is built. The daemon is Njörðr,
+repository `GameCult/Njordr` (ASCII spelling for the repo; the name keeps its
+letters in prose); no repository exists yet.
 
 ## Objective
 
