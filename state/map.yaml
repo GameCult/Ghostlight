@@ -396,8 +396,10 @@ current_status:
     ambient login, is the only live provider; no Codex subscription and no
     API budget; CodexConnector stays isolated
     (its main is at 6519289, the line Ghostlight runs); Ghostlight never
-    holds a credential. The elaborator swarm is drained and handed off
-    (C:\Users\Meta\.claude\worlds\README.md); its 98 ideas sit on slot/*
-    branches, unmerged; integration into the vaults is owed and deferred.
+    holds a credential. The elaborator swarm is drained; its review record
+    and idea ledgers are in experiments/elaboration/ (start at its README),
+    and the vault additions are in local bundles named there. Integration
+    into the vaults is still wanted and deferred until the operator has time
+    to review; it is an editorial pass, never a scripted merge.
     Gating rules are in the handoff's re-entry warnings.
   gestalt_population: Gestalt Personas own shared population baselines; persistent member deltas own named individuality; WorldKernel materialization and approval-gated fission preserve lineage and identity. Materialisation/folding changes only representation and the exact member delta, advances resolution epoch, and retires the old cover; it has no Gestalt-wide effect authority. Selected actionable member exceptions are mandatory Projector perspective owners, so aggregation cannot silently erase their decision. Presence projection is limited to nearby active leaves and exact-location dormant members, includes reciprocal player relationship evidence, and may propose an earned cast without committing it. Simulation cells are derived covers only.

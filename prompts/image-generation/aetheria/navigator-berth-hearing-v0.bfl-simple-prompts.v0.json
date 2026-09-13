@@ -1,0 +1,76 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "navigator-berth-hearing-v0.bfl-simple-v0",
+  "fixture_id": "navigator-berth-hearing-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Humane retro-industrial science-fiction storybook illustration, precise ink linework under translucent gouache color, teal pool light against rust-orange work lamps, readable silhouettes and interfaces, tactile worn materials, cinematic composition, no text.",
+  "prompts": [
+    {
+      "id": "01_room_establishing",
+      "prompt": "Long station hearing room split between turquoise dolphin pool and grated dry gallery by a low pressure wall; broad route board bridges both sides; tactile rail, sealed evidence drawer, clerk console, one dolphin and three humans."
+    },
+    {
+      "id": "02_docket_routine",
+      "prompt": "Dryside clerk slides a violet-sealed witness slate through a stainless evidence drawer while a slate-gray bottlenose dolphin circles the parallel pool and a carrier captain watches a berth countdown."
+    },
+    {
+      "id": "03_channel_test",
+      "prompt": "Slate-gray bottlenose dolphin presses a low pool paddle; synchronized white route light, raised rail pins, sound bands, and three pressure ripples cross a worn wet-dry hearing chamber."
+    },
+    {
+      "id": "04_carrier_summary",
+      "prompt": "Silver-haired carrier captain in creased cobalt work coat gives a compressed route account across a low pool wall while a scarred bottlenose clerk watches from turquoise water."
+    },
+    {
+      "id": "05_apprentice_mirror",
+      "prompt": "Young curly-haired apprentice with yellow sash places both palms on a raised tactile rail, matching long and short pins to pressure waves crossing a dolphin's flank in the parallel pool."
+    },
+    {
+      "id": "06_evidence_drawer",
+      "prompt": "Close stainless evidence drawer through a pool wall: violet-sealed slate and three glowing custody marks, scarred dolphin eye at wet inspection window, clerk's ink-stained fingers on dry side."
+    },
+    {
+      "id": "07_trace_replay",
+      "prompt": "Six white ship lines bend around a silver debris cloud on a route board while raised rail pins and turquoise pressure ridges carry the same trace past dolphin clerk and three dryside participants."
+    },
+    {
+      "id": "08_pressure_failure",
+      "prompt": "Pivotal channel failure: route light bends and tactile pin rises while water stays flat around a startled bottlenose dolphin; one underwater emitter glows red; three human hands freeze mid-action."
+    },
+    {
+      "id": "09_clock_pause",
+      "prompt": "Scarred slate-gray bottlenose dolphin strikes a rubber pause paddle; amber berth clock freezes; clerk watches carrier captain; apprentice keeps both palms on raised rail; failed emitter remains red."
+    },
+    {
+      "id": "10_manual_translation",
+      "prompt": "Dryside clerk works timing blocks, apprentice follows tactile pins, dolphin aligns broadside to rebuilt pool ripples, carrier captain stands beneath a one-minute amber countdown."
+    },
+    {
+      "id": "11_embodied_inference",
+      "prompt": "Close pool view of scarred bottlenose dolphin broadside across surviving pressure ridges, reading water over jaw, flank, fin, and scar while an amber bracket marks a missing route interval overhead."
+    },
+    {
+      "id": "12_carrier_account",
+      "prompt": "Carrier captain places duplicate slate on tactile rail and points to three timestamps; apprentice fingers stop at second mark; dolphin compares slate, rail, and route board across pool wall."
+    },
+    {
+      "id": "13_disposition_threshold",
+      "prompt": "Symmetrical wet-dry hearing chamber at decision point: dolphin faces three low paddles; clerk at console, carrier and apprentice at rail; route board shows six ships and one failed channel gap."
+    },
+    {
+      "id": "14_admit_aftermath",
+      "prompt": "White admit paddle glows beside dolphin clerk; food cases and clinic-filter canisters roll toward opening berth door; carrier exhales while apprentice keeps one hand on final tactile notation."
+    },
+    {
+      "id": "15_reject_aftermath",
+      "prompt": "Amber-red reject paddle glows; carrier hull moves from berth toward standby beyond window; cargo waits behind pressure door; sealed evidence and failed trace remain inside hearing chamber."
+    },
+    {
+      "id": "16_adjourn_aftermath",
+      "prompt": "Late-shift translation in wet-dry hearing room: clerk builds timing blocks, apprentice stays at tactile rail, dolphin receives replacement pool waves, carrier waits between rail and exit."
+    }
+  ]
+}

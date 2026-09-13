@@ -1,0 +1,68 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-stormshield-handoff-v0.bfl-simple-v0",
+  "fixture_id": "stormshield-handoff-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, strong readable silhouettes, storm-muted blue-gray stone and cloth, warm amber lamplight, restrained magical ambiguity, abstract unlettered record marks.",
+  "prompts": [
+    {
+      "id": "01_station_establishing",
+      "prompt": "Squat thick-walled stone watch station above a dark southern gulf; covered stair rising through diagonal rain; three bright runoff channels crossing exposed paving; deep shutter slats reveal a warm workroom with low rail, scored table, two floor mats, and heavy timber supports."
+    },
+    {
+      "id": "02_handoff_room",
+      "prompt": "Compact stone station interior: rain behind roadward shutters, low visitor rail, scored table with clay markers and bronze bells, two woven mats beside one wooden grip rail, recovery curtain and steaming cup; two broad-built shamans kneel in overlap while an observer records and a tender waits."
+    },
+    {
+      "id": "03_target_record",
+      "prompt": "Overhead evidence table under amber lamp: scored shapes for covered stair, drainage fork, square station, and arched gate; separate clay markers, untouched wooden transfer peg, two corrected wax slates, knotted wind cords, colored tiles, stylus, bronze handbells."
+    },
+    {
+      "id": "04_preparation_choice",
+      "prompt": "Incoming broad-built shaman poised among four work choices inside a stone storm station: compare an exhausted shaman's account at the clay-marker table, grip the shared trance rail, inspect snapping wind cords at rain shutters, or protect a steaming recovery cup beside the tender's curtain."
+    },
+    {
+      "id": "05_routine_fold",
+      "prompt": "Ordinary watch handoff: compact observer reads a wax slate, exhausted gray-haired shaman corrects one line from a woven mat, incoming braided-haired shaman reaches for the shared rail, lidded cup waits behind a curtain, rain stripes shutters, transfer peg rests at the table edge."
+    },
+    {
+      "id": "06_runner_arrival",
+      "prompt": "Soaked lean road runner strikes the visitor rail from a cold covered stair and raises a rain-slick wax slate; runoff flashes beyond shutter slats; two kneeling shamans turn from side-by-side mats; compact observer pivots from an unplaced transfer peg."
+    },
+    {
+      "id": "07_road_report_choice",
+      "prompt": "Boundary decision in a storm station: wet runner and slate behind a low rail, observer between rail latch and bronze warning bell, incoming shaman beside shared grip rail, exhausted outgoing shaman holding the second mat; four physical levers form a clear circuit."
+    },
+    {
+      "id": "08_disputed_accounts",
+      "prompt": "Triangular workroom staging: two broad-built shamans side by side at a wooden rail, compact observer over two different wax slates and separated road and drainage markers, soaked runner behind visitor rail, untouched transfer peg under amber lamp, rain hammering shutters."
+    },
+    {
+      "id": "09_disagreement_choice",
+      "prompt": "Close view across paired trance mats to evidence table: incoming shaman's square hands between grip rail and unused peg, exhausted shaman straining beside her, observer waiting with stylus, runner behind rail, stocky tender at recovery curtain with blanket and cup."
+    },
+    {
+      "id": "10_final_threshold",
+      "prompt": "Whole storm station at commitment: visitor rail and wet runner, scored evidence table and bronze bells, two adjacent mats and shared rail, recovery curtain with blankets and broth, branch-state transfer peg and clay markers, flashing runoff through shutters, five workers each at a distinct station."
+    },
+    {
+      "id": "11_honest_scope_end",
+      "prompt": "Bounded handoff aftermath: drainage marker a hand's width from road marker, transfer peg beside the road piece, incoming shaman holding the rail, observer copying unresolved pressure, exhausted shaman moving toward tender and hot cup while rain threatens the approach."
+    },
+    {
+      "id": "12_continuity_end",
+      "prompt": "Extended overlap aftermath: both shamans still on adjacent woven mats gripping one rail, observer writing exhaustion debt, tender waiting with broth and blanket, runner holding a dry-wrapped copied slate at visitor rail, cold rain beyond warm stone room."
+    },
+    {
+      "id": "13_recovery_end",
+      "prompt": "Care transfers work: incoming shaman alone at the grip rail, stocky silver-haired tender supporting collapsed gray-haired shaman behind curtain toward bench and cup, observer keeps two accounts open beside full-target peg, runner waits by warning bell."
+    },
+    {
+      "id": "14_warning_end",
+      "prompt": "Public warning aftermath: incoming shaman pulls broad bronze bell, compact observer aligns wet road slate with two different shaman accounts, soaked runner turns toward covered stair, outgoing shaman remains in unresolved overlap, colored tile glows in warm lamplight against cold rain."
+    }
+  ]
+}

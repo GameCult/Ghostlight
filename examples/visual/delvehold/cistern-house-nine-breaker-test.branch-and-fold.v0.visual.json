@@ -1,0 +1,959 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "cistern-house-nine-breaker-test-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/cistern-house-nine-breaker-test.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/cistern-house-nine-breaker-test.branch-and-fold.v0.training.json",
+  "scene_id": "cistern-house-nine-breaker-test.morning-handover",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Cistern House Nine breaker-test fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for the public pump-house routine, each embodied test action, the undocumented mana reroute, the seal dispute, and four state-gated aftermath families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the establishing view, worker introduction, every branch action that changes an object or public record, the pivotal blue-reroute reveal, landing-queue arrival, final threshold, and each ending family. The first appearance of the blue loop stands alone.",
+    "prompting_rule": "Each base image prompt is a complete visible frame with room geometry, camera distance, practical light, bodies, reachable controls, and current object state. Character refs are assembled only for people visible in that frame. State modifiers add visible deltas tied to Ink variables or branch labels.",
+    "global_style_cue": "Style: richly textured illustrated fantasy-industrial storybook frame, carved stone and worn brass rendered with precise ink lines and restrained watercolor, warm amber lamp light against cold blue mana glow, readable silhouettes, humane facial acting, practical machinery, cinematic composition sized for interactive-fiction replay.",
+    "prompt_assembly_rule": "Assemble every image prompt from global_style_cue plus the scene base_image_prompt, then append visual refs only for visible named characters or groups and any triggered state_image_modifiers or global_branch_image_modifiers. Camera-specific scene-set input is required for final multi-angle renders. Continuity notes stay in tooling and are never appended as prompt prose.",
+    "scene_set_guidance": {
+      "current_mode": "text_layout_only_blockout_required",
+      "scope_reason": "The fixture revisits one two-level pump house from wide, close, landing-facing, stair-facing, and engine-facing angles. Sightlines, valve reach, the public rail, and branch-created wedge states affect choices.",
+      "future_scene_set_need": "Required before replay-ready illustration: build a durable plan view or simple 3D blockout for Cistern House Nine using the fixed zones, cameras, routes, occluders, staging slots, and object-state anchors declared below. Generated frames are paint passes, not geometry authority."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "cistern_house_nine_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view from the public street landing into a compact underground municipal pump house carved from dark gray stone. A dry rectangular rune gallery occupies the upper level; a waist-high brass safety rail borders a rectangular floor opening where a grated iron stair descends to a wet intake chamber filled with warm mist and black water. Three squat cylindrical brass-and-iron pump engines stand in a row on the lower service floor, each with a vertical glass pressure float, a wheel valve, a dark slate panel, and a red-shouldered iron isolation wedge. A locked arched conduit enters through the gallery wall. An overhead chain hoist hangs beside the stair opening. Amber oil-glass lamps illuminate wet stone while faint blue mana lines sleep inside the conduit. A black public level slate and a tall terrace gauge stand beside a yellow boundary line on the landing.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The public landing and gallery are upper level; the service floor and wet intake are lower level. The brass rail prevents a direct step between them except at the grated stair.",
+          "The three pumps remain ordered Engine One, Engine Two, Engine Three from landing-left to stair-right in all camera-specific scene-set views."
+        ]
+      },
+      {
+        "visual_scene_id": "cistern_house_nine_handover",
+        "ink_anchor": "morning_people",
+        "base_image_prompt": "Medium-wide view along the upper rune gallery toward the brass rail and three pumps below. Orsa Rill holds the iron wedge assigned to central Engine Two; Master Hessa Cairn stands at a waist-high brass inspection plate with a heavy carved civic seal on a belt chain; journeyworker Brin Olt leans safely over the rail to read the three glass pressure floats; landing clerk Dema Sorn writes yesterday's water levels on a wall-mounted black slate beyond the yellow public boundary. Warm mist rises through the grated stair, amber lamps brighten tool-worn brass, and the engines wait silent beneath them.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "at Engine Two's upper service position, both hands around the wedge handle",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "square beside the unstamped inspection plate",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "leaning from the gallery side of the brass rail toward the floats",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "outside the yellow line, chalking the public slate",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This frame introduces every named participant before shared branch folds depend on them."
+        ]
+      },
+      {
+        "visual_scene_id": "cistern_prime_visible_isolation",
+        "ink_anchor": "pre_test_choice.prime_visible_isolation",
+        "base_image_prompt": "Close-medium view of central Engine Two from the upper service position. A young dwarf apprentice drives a rectangular iron isolation wedge into the horizontal conduit throat until its red-painted shoulder aligns with a red bar painted on the riveted pump casing. A stocky journeyworker points at the clean seam while calling the state aloud. Beyond the brass rail, a clerk records the call on a black public slate. The dark null-rune slate and empty vertical pressure float remain visible beside the wedge.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "braced low, seating the wedge with both hands",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "pointing to the aligned paint seam",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "visible beyond the rail with chalk raised",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_prime_public_record",
+        "ink_anchor": "pre_test_choice.prime_public_record",
+        "base_image_prompt": "Medium view from the street landing toward the pump-house rail. A young dwarf apprentice gestures to the yellow boundary line while a middle-aged dwarf clerk carries a large black level slate beside the rail. A stern workshop Master stands by the brass inspection plate, one eyebrow raised, her heavy seal still hanging from its chain. Household water marks and three empty lines for today's pump callouts are visible as chalk shapes on the slate; the three engines and their pressure floats appear beyond the rail below.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "inside the workshop boundary, asking with one open hand",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "carrying the public slate to the yellow line",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "beside the inspection plate, dryly assessing the request",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_prime_null_precision",
+        "ink_anchor": "pre_test_choice.prime_null_precision",
+        "base_image_prompt": "Object-focused close shot of a dark slate on a stone work ledge. A dwarf apprentice's chalked fingers draw a crisp geometric null rune from right to left, ending in a hooked closing stroke. A journeyworker's broad hand waits with a rag to erase it for another attempt. In soft background focus, the tall terrace water gauge beside the public landing ticks toward its red lower band while amber pump-house lamps reflect in the glass.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "only face, forearms, and chalked hands visible over the practice slate",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "one broad hand waiting with an oily rag",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_prime_intake_awareness",
+        "ink_anchor": "pre_test_choice.prime_intake_awareness",
+        "base_image_prompt": "High-angle view down through a grated iron stair into a lower wet intake chamber. A young dwarf apprentice kneels at the upper edge with both hands on the grate, listening. Warm white mist curls around three vertical pump rods descending into black underground seawater. A brass chain hoist hangs clear of the rods. Engine Three's outlet pipe enters the stone wall at the right and visibly trembles at one joint; the dry rune gallery and safety rail frame the upper edge of the image.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "kneeling at the grated stair, head angled toward Engine Three's pipe",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide procedural tableau across Cistern House Nine. Three red isolation-wedge shoulders are visible in a row on silent pump casings. Master Hessa rests two fingers beside an unstamped brass inspection plate. Orsa stands at Engine Two's dark null slate. Brin watches the glass pressure floats from behind the safety rail. Dema and several early householders remain beyond the yellow public line near the level slate. The upper gallery is dry stone and amber light; warm mist rises through the grated stair from the black-water chamber below.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "at Engine Two's null slate, preparing to cast",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "beside the unstamped inspection plate",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "watching the floats from the gallery rail",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "at the public slate beyond the yellow line",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "a few early householders with copper cans near the landing wall",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "isolation_integrity >= 3",
+            "modifier_prompt": "Engine Two's red wedge shoulder and the painted casing bar form one precise unbroken line."
+          },
+          {
+            "trigger": "witness_level >= 2",
+            "modifier_prompt": "Dema's large public slate stands close to the rail, showing yesterday's gauge marks and today's blank callout rows in one view."
+          },
+          {
+            "trigger": "district_flow <= 0",
+            "modifier_prompt": "The public terrace gauge rests in its red lower band and one householder tests an empty copper can."
+          },
+          {
+            "trigger": "network_pressure >= 2",
+            "modifier_prompt": "Engine Three's outlet pipe joint shivers and a small ring travels across a cup of water on the gallery ledge."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cistern_null_reroute_reveal",
+        "ink_anchor": "null_test",
+        "base_image_prompt": "Pivotal close frame on Engine Two. A dwarf apprentice completes a pale blue geometric null rune from right to left across a dark slate. The pump side goes black, but a hair-thin blue mana line ignites on the feed side of the fully seated iron isolation wedge, curls visibly around the physical break, and reaches toward Engine Three. Engine Two's glass float stays empty while Engine Three's float rises. In the background, the tall public terrace gauge drops one red mark. Cold blue mana light cuts across warm brass and the apprentice's startled face.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "hand completing the closing hook, face turned toward the blue loop",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The blue line forms on the feed side and visibly routes toward Engine Three; it never passes through the iron wedge."
+        ]
+      },
+      {
+        "visual_scene_id": "cistern_repeat_termination",
+        "ink_anchor": "first_anomaly_choice.test_repeatable_refusal",
+        "base_image_prompt": "Medium close view of central Engine Two during a second live null test. Orsa draws the same right-to-left closing rune with controlled posture. The red isolation wedge remains fully seated. The thin blue feed-side loop reforms more slowly around the outside of the iron break toward Engine Three. Brin has straightened behind the brass rail, both hands visible and away from controls, watching the repeated shape. Two separate chalk timing marks sit on the ledge below the dark slate.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "steady at the null slate during a controlled repeat",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "upright behind the rail, watching the repeated loop",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_make_anomaly_public",
+        "ink_anchor": "first_anomaly_choice.make_anomaly_public",
+        "base_image_prompt": "Medium view centered on the black public slate at the yellow landing line. Orsa rapidly copies a curved blue-reroute diagram in white chalk: wall feed, rectangular iron wedge, loop around the break, arrow toward Engine Three. Dema holds the slate steady and turns it toward waiting householders. Hessa stands inside the brass rail near the unstamped inspection plate, rigid with professional concern. The fading real blue line remains visible across the pumps behind them, letting the copied shape and source appear in one frame.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "copying the reroute with fast chalk strokes",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "holding and turning the slate toward the landing",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "inside the rail by the bare inspection plate",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "householders leaning just enough to read from beyond the yellow line",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_restore_service_early",
+        "ink_anchor": "first_anomaly_choice.restore_service_early",
+        "base_image_prompt": "Close action frame at Engine Two. Orsa pulls the heavy rectangular isolation wedge from its conduit throat with both hands; the gap fills with familiar blue mana channels and the central pump's glass pressure float rises. The wall-side blue reroute disappears. Behind her, Master Hessa looks from the recovering public terrace gauge to the bare brass inspection plate and then to the wedge in Orsa's hands. Brin watches the vanished line with open frustration.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "leaning backward with the removed wedge",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "triangulating gauge, bare plate, and removed wedge",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "watching the now-dark feed-side stone",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_test_distant_pressure",
+        "ink_anchor": "first_anomaly_choice.test_distant_pressure",
+        "base_image_prompt": "Dynamic medium shot along the brass safety rail. Orsa leans from the dry gallery and drags down Engine Three's long wheel-valve lever with both hands, boots braced on the stone curb. Her palms press the vibrating metal. Brin stands close enough to guard her balance while looking toward the locked arched wall conduit. Ripples cross a shallow maintenance cup at three separate pipe knocks; the wet intake chamber is visible through the grated stair below.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "braced at the rail, both hands on the long valve handle",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "guarding Orsa's balance and watching the wall conduit",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_landing_pressure",
+        "ink_anchor": "pressure_fold",
+        "base_image_prompt": "Wide view from inside the rune gallery toward the street landing. The landing is now filled with dwarf householders holding empty hammered-copper cans and a bakery porter beside a wooden trough on iron wheels. Everyone stays behind the painted yellow line. Dema's black public slate faces them. Master Hessa stands between the crowd and the pumps with her heavy civic seal unhooked in one hand. Orsa, Brin, the unstamped brass plate, three pressure floats, Engine Two's wedge, the wall conduit, and the red-banded terrace gauge are all visible in a clear chain across the frame.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "near Engine Two, looking between Hessa and the gauges",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "holding the unhooked civic seal at the inspection plate",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "at the rail beside the pressure floats",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "beside the outward-facing public slate",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "orderly behind the yellow line with cans and bakery trough",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "anomaly_evidence >= 3",
+            "modifier_prompt": "Dema's slate shows two matching chalk loop diagrams with distinct timing marks."
+          },
+          {
+            "trigger": "district_flow <= 0",
+            "modifier_prompt": "The terrace gauge is deep in its red band and a child tilts an empty copper can toward one eye."
+          },
+          {
+            "trigger": "district_flow >= 3",
+            "modifier_prompt": "The terrace gauge has climbed just above red while the bare inspection plate catches an accusing amber reflection."
+          },
+          {
+            "trigger": "network_pressure >= 4",
+            "modifier_prompt": "All three outlet pipes visibly tremble in sequence toward the locked wall conduit."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cistern_isolate_two_run_one",
+        "ink_anchor": "seal_choice.isolate_two_run_one",
+        "base_image_prompt": "Medium-wide engine-facing view of a bounded service proposal. Central Engine Two remains dark with its red isolation wedge seated flush. Brin moves to open leftmost Engine One under Master Hessa's direct view. Dema wipes a narrow space on the public slate for a partial-flow seal. Orsa points from the visible Engine Two boundary to Engine One's separate valve. Hessa holds her civic seal above the brass inspection plate, deciding whether the physical arrangement deserves her mark.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "pointing between isolated Engine Two and serviceable Engine One",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "seal poised above the inspection plate",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "moving to Engine One's valve",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "clearing a partial-flow row on the public slate",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_preserve_public_evidence",
+        "ink_anchor": "seal_choice.preserve_public_evidence",
+        "base_image_prompt": "Object-transfer frame at the yellow public boundary. Orsa and Dema each hold one edge of the large black slate carrying chalked gauge times, an unsealed inspection mark, and the copied blue-loop diagram. Master Hessa stands on the workshop side with the brass plate visibly bare and her seal lowered at her side. Behind them, the terrace gauge falls into red and the orderly line of copper water cans presses visually closer while remaining beyond the boundary.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "releasing one edge of the evidence slate",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "taking custody with both hands",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "beside the bare plate with seal lowered",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "waiting behind the boundary with empty vessels",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_force_seal_accountability",
+        "ink_anchor": "seal_choice.force_seal_accountability",
+        "base_image_prompt": "Tense close-medium view of the brass inspection plate. Orsa lays Engine Two's heavy rectangular iron wedge across the plate, physically blocking the sealing surface. Hessa faces her across the waist-high stand, civic seal in one hand and a controlled severe expression. Brin watches from the engine rail. Dema writes their exchange on the public slate beyond the yellow line. The dark Engine Two conduit throat and falling red-banded terrace gauge remain visible on opposite sides of the frame.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "hands just released from the wedge laid across the plate",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "facing Orsa with the seal held low and still",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "watching from beside the engine rail",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "recording the exchange on the public slate",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_prioritize_immediate_water",
+        "ink_anchor": "seal_choice.prioritize_immediate_water",
+        "base_image_prompt": "Dynamic wide action view across the three pumps. Orsa hangs from a long red emergency lever with both hands. Linked iron cams lift above all three conduit throats and the rectangular wedges visibly loosen. Three pump rods drive into the misty black-water chamber below, outlet pipes jump, and blue mana floods the carved channels. The terrace gauge rises. Engine Three's glass pressure float climbs one mark higher than its lever setting. Hessa grips Orsa's sleeve beside the bare inspection plate while the landing crowd reacts behind the yellow line.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "weight suspended from the red emergency lever",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "catching Orsa's sleeve while tracking Engine Three's float",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "relief and alarm spreading through the line of copper cans",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cistern_final_threshold",
+        "ink_anchor": "final_state",
+        "base_image_prompt": "Wide final-threshold tableau that keeps the whole civic mechanism visible. Three pump engines occupy the lower service floor under the brass rail; the central Engine Two wedge, dark null slate, all pressure floats, locked wall conduit, bare or sealed inspection plate, Dema's outward-facing black slate, red-banded terrace gauge, grated stair, and the landing queue are each readable. Orsa stands between Engine Two and the yellow public boundary. Hessa holds the civic seal. Brin listens toward the wall feed. Dema stands with the public record. Warm amber lamps and cold blue mana traces divide the room into human decisions and uncertain machine behavior.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "between Engine Two and the public boundary",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "holding the seal beside the inspection plate",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "one palm on the wall conduit, listening",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "beside the public slate facing the landing",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "behind the yellow line with cans and trough",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "isolation_integrity >= 3",
+            "modifier_prompt": "Engine Two's red wedge sits perfectly flush while Engine One alone shows moving blue mana and a rising pressure float."
+          },
+          {
+            "trigger": "isolation_integrity <= 1",
+            "modifier_prompt": "All three wedge shoulders sit partly lifted under the emergency cam linkage while blue mana occupies every feed channel."
+          },
+          {
+            "trigger": "district_flow >= 3",
+            "modifier_prompt": "The terrace gauge rises above red and the bakery trough receives a visible stream."
+          },
+          {
+            "trigger": "district_flow <= 0",
+            "modifier_prompt": "The terrace gauge stays deep red and every vessel on the landing remains visibly empty."
+          },
+          {
+            "trigger": "witness_level >= 4",
+            "modifier_prompt": "Dema's slate carries two loop diagrams, exact gauge times, callout marks, and a large blank where the seal should be."
+          },
+          {
+            "trigger": "network_pressure >= 4",
+            "modifier_prompt": "A chain of small blue pulses travels from the three outlet pipes into the locked arched wall conduit after every visible hand has gone still."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cistern_ending_bounded_service",
+        "ink_anchor": "ending_bounded_service|ending_bounded_service_cost",
+        "base_image_prompt": "Aftermath view along the pump row. Leftmost Engine One moves water with a bright pressure float. Central Engine Two remains the visual focus with an iron wedge at its conduit and a dark null slate. Rightmost Engine Three stands under watch. Hessa presses her civic seal to a narrow partial-flow row on the brass plate while Orsa adds a small apprentice mark beneath it. Brin stands at the wall-feed watch position. On the landing, a bakery trough and copper cans wait for whatever flow the state permits.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "marking the apprentice line beneath Hessa's seal",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "stamping the partial-flow row",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "at the wall-feed watch position",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "waiting around the bakery trough and copper cans",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == bounded_service_success",
+            "modifier_prompt": "Engine One runs alone, Engine Two's red wedge is perfectly flush, half a bakery trough fills, and the narrow partial-flow seal mark is crisp."
+          },
+          {
+            "trigger": "ending_label == bounded_service_cost",
+            "modifier_prompt": "Engine Two's wedge sits visibly crooked, all pressure floats remain low, Hessa stamps only a shutdown line, and empty vessels dominate the landing."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cistern_ending_public_hearing",
+        "ink_anchor": "ending_public_hearing|ending_public_hearing_cost",
+        "base_image_prompt": "District-moot aftermath in a broad stone landing room uphill from the pump house. Orsa and Dema carry the large black slate between them. Dwarf householders, bakers in flour-marked aprons, laundry workers with rolled sleeves, and lift mechanics with tool belts gather in an open semicircle on one level floor. Several workshop Masters arrive carrying distinct heavy civic seals. Copper water cans line one wall beneath a district pipe gauge. The chalk record and the material shortage occupy the open center, with low benches and standing participants forming an equal ring around them.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "holding one side of the slate before the open moot",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "holding the other side and facing the gathered seals",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "reformed as an open district semicircle with work clothes and empty vessels",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == public_hearing_success",
+            "modifier_prompt": "The slate shows falling water levels, two matching reroute loops, an unsealed plate mark, and exact times while multiple workshop seals arrive from the edges of the semicircle."
+          },
+          {
+            "trigger": "ending_label == public_hearing_cost",
+            "modifier_prompt": "The slate shows strong dry-tap records but only one incomplete reroute curve; attention gathers around empty copper cans and the low district gauge."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cistern_ending_network_trace",
+        "ink_anchor": "ending_network_trace|ending_network_trace_cost",
+        "base_image_prompt": "Quiet investigation aftermath inside Cistern House Nine. Brin ties a shallow copper listening cup against the locked arched wall conduit with cloth straps. Orsa sits on the stone floor beside him, marking time and direction on a narrow chalk board. Hessa prepares several folded notices beside her civic seal. Dema holds a separate public copy near the yellow line. The pumps occupy the dim background, and tiny blue reflections or complete stillness in the copper cup express the gated result.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "seated at the wall with chalk board on knees",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "brin_olt",
+            "default_stance": "securing the listening cup to the conduit",
+            "visual_ref": "visual_character_refs.characters.brin_olt"
+          },
+          {
+            "agent_id": "hessa_cairn",
+            "default_stance": "preparing sealed route notices at the inspection stand",
+            "visual_ref": "visual_character_refs.characters.hessa_cairn"
+          },
+          {
+            "agent_id": "dema_sorn",
+            "default_stance": "holding the separate public record near the boundary",
+            "visual_ref": "visual_character_refs.characters.dema_sorn"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == network_trace_success",
+            "modifier_prompt": "Three faint blue timing pulses reflect across the copper listening cup, Orsa's board carries matching direction marks, and three sealed notices wait for different routes."
+          },
+          {
+            "trigger": "ending_label == network_trace_cost",
+            "modifier_prompt": "The listening cup and conduit remain completely still while Orsa records a long empty time row and Hessa files an unresolved local fault."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cistern_ending_ration",
+        "ink_anchor": "ending_rationed_trust|ending_rationed_distrust",
+        "base_image_prompt": "Upper-terrace water-ration aftermath on a stepped stone street. Orsa carries a hammered-copper water can among compact dwarf households. A wheeled bakery trough, laundry buckets, public pipe spout, posted workshop record, and high wall gauge make the infrastructure cost visible. Neighbours distribute vessels in a practical line under warm cavern lamps; the amount of water and the relation between workshop seal and public record change with ending state.",
+        "visible_characters": [
+          {
+            "agent_id": "orsa_rill",
+            "default_stance": "carrying a copper can uphill among neighbours",
+            "visual_ref": "visual_character_refs.characters.orsa_rill"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "distributing cans and bakery water along the stepped street",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == rationed_trust",
+            "modifier_prompt": "The bakery trough is half full, a thin public spout runs, and Hessa's seal record is posted beside Dema's matching level slate."
+          },
+          {
+            "trigger": "ending_label == rationed_distrust",
+            "modifier_prompt": "The public spout is dry, copper cans are empty, the wall gauge remains red, and the posted record has a conspicuous blank where a clear service seal should be."
+          }
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "high_visible_isolation",
+        "trigger": "isolation_integrity >= 3",
+        "apply_to_visual_scene_ids": [
+          "cistern_routine_fold",
+          "cistern_landing_pressure",
+          "cistern_final_threshold",
+          "cistern_ending_bounded_service"
+        ],
+        "modifier_prompt": "Central Engine Two has a flush red isolation-wedge shoulder, a clean seam, and a dark pump-side null slate."
+      },
+      {
+        "modifier_id": "broken_visible_isolation",
+        "trigger": "isolation_integrity <= 1",
+        "apply_to_visual_scene_ids": [
+          "cistern_landing_pressure",
+          "cistern_final_threshold",
+          "cistern_ending_bounded_service"
+        ],
+        "modifier_prompt": "The emergency cam linkage holds all three wedge shoulders partly lifted while blue mana occupies each conduit throat."
+      },
+      {
+        "modifier_id": "public_evidence_chain",
+        "trigger": "witness_level >= 3 && anomaly_evidence >= 2",
+        "apply_to_visual_scene_ids": [
+          "cistern_landing_pressure",
+          "cistern_final_threshold",
+          "cistern_ending_public_hearing"
+        ],
+        "modifier_prompt": "The black public slate clearly combines gauge times, spoken callout marks, seal state, and at least one complete reroute-loop diagram."
+      },
+      {
+        "modifier_id": "test_repeatable_refusal_visual",
+        "trigger": "branch_label == test_repeatable_refusal",
+        "apply_to_visual_scene_ids": [
+          "cistern_landing_pressure",
+          "cistern_final_threshold"
+        ],
+        "modifier_prompt": "Two matching loop diagrams and two timing strokes show that the feed-side reroute repeated under a seated wedge."
+      },
+      {
+        "modifier_id": "make_anomaly_public_visual",
+        "trigger": "branch_label == make_anomaly_public",
+        "apply_to_visual_scene_ids": [
+          "cistern_landing_pressure",
+          "cistern_final_threshold"
+        ],
+        "modifier_prompt": "Dema's outward-facing slate carries Orsa's copied blue-loop geometry where the landing crowd can read it."
+      },
+      {
+        "modifier_id": "restore_service_early_visual",
+        "trigger": "branch_label == restore_service_early",
+        "apply_to_visual_scene_ids": [
+          "cistern_landing_pressure",
+          "cistern_final_threshold"
+        ],
+        "modifier_prompt": "Engine Two's wedge is removed, its pressure float is high, the terrace gauge recovers, and the brass inspection plate remains bare."
+      },
+      {
+        "modifier_id": "test_distant_pressure_visual",
+        "trigger": "branch_label == test_distant_pressure",
+        "apply_to_visual_scene_ids": [
+          "cistern_landing_pressure",
+          "cistern_final_threshold",
+          "cistern_ending_network_trace"
+        ],
+        "modifier_prompt": "Engine Three's long valve is shut and chalk arrows at the wall conduit mark three knocks arriving from beyond the pump house."
+      },
+      {
+        "modifier_id": "isolate_two_run_one_visual",
+        "trigger": "branch_label == isolate_two_run_one",
+        "apply_to_visual_scene_ids": [
+          "cistern_final_threshold",
+          "cistern_ending_bounded_service",
+          "cistern_ending_ration"
+        ],
+        "modifier_prompt": "Engine One runs with one raised float, Engine Two stays dark behind a flush wedge, and a narrow partial-flow seal appears on the inspection record."
+      },
+      {
+        "modifier_id": "preserve_public_evidence_visual",
+        "trigger": "branch_label == preserve_public_evidence",
+        "apply_to_visual_scene_ids": [
+          "cistern_final_threshold",
+          "cistern_ending_public_hearing"
+        ],
+        "modifier_prompt": "Dema visibly owns the large evidence slate while Hessa's brass inspection plate stays unstamped."
+      },
+      {
+        "modifier_id": "force_seal_accountability_visual",
+        "trigger": "branch_label == force_seal_accountability",
+        "apply_to_visual_scene_ids": [
+          "cistern_final_threshold",
+          "cistern_ending_bounded_service"
+        ],
+        "modifier_prompt": "The iron wedge lies across the brass inspection plate as a physical bar, and Hessa's seal is held visibly apart from it."
+      },
+      {
+        "modifier_id": "prioritize_immediate_water_visual",
+        "trigger": "branch_label == prioritize_immediate_water",
+        "apply_to_visual_scene_ids": [
+          "cistern_final_threshold",
+          "cistern_ending_ration"
+        ],
+        "modifier_prompt": "All three pumps run under lifted emergency cams; the terrace gauge rises while Engine Three's float sits one mark above its lever setting."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "cistern_house_nine.scene_set.required",
+      "geometry_authority_level": "text_layout_only_not_replay_ready",
+      "room_model": "Two-level compact pump house: a rectangular upper rune gallery connects west to the public street landing; its south edge is cut by a rail-bounded stair opening to the lower wet intake chamber and service floor; three pumps run west-to-east below the gallery rail; the locked municipal conduit enters the north wall and feeds the pump row.",
+      "fixed_zones": [
+        {
+          "zone_id": "public_street_landing",
+          "visible_form": "west entrance with yellow boundary line, black public slate, terrace gauge, and room for an orderly vessel queue",
+          "used_for": "public witness, clerk custody, arriving district pressure, ration staging"
+        },
+        {
+          "zone_id": "upper_rune_gallery",
+          "visible_form": "dry rectangular stone gallery with amber lamps, inspection stand, null-practice ledge, tool hooks, brass rail along its south edge, three long valve extensions rising to gallery-side reach, and one red emergency lever fixed to the rail post aligned with Engine Two",
+          "used_for": "apprentice casting, seal authority, worker movement, safe oversight"
+        },
+        {
+          "zone_id": "grated_stair_and_hoist",
+          "visible_form": "railed rectangular floor opening with grated iron stair descending south and an overhead chain hoist aligned beside the opening",
+          "used_for": "wet-chamber inspection and vertical equipment access"
+        },
+        {
+          "zone_id": "wet_intake_chamber",
+          "visible_form": "lower stone chamber with black warm seawater, mist, three vertical pump rods, drain channels, and lower service floor",
+          "used_for": "water source, pump motion, mist atmosphere, lower-level depth"
+        },
+        {
+          "zone_id": "pump_row",
+          "visible_form": "three squat brass-and-iron engines ordered west-to-east, each with pressure float, wheel valve, null slate, outlet pipe, and wedge throat",
+          "used_for": "all isolation, service, reroute, and emergency states"
+        },
+        {
+          "zone_id": "municipal_conduit_arch",
+          "visible_form": "locked riveted arch entering the north gallery wall with blue mana channels branching downward to the pump row",
+          "used_for": "off-site feed, blue reroute origin, listening-cup investigation"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "landing_to_room_wide",
+          "supports_visual_scene_ids": [
+            "cistern_house_nine_establishing",
+            "cistern_house_nine_handover",
+            "cistern_routine_fold",
+            "cistern_landing_pressure",
+            "cistern_final_threshold"
+          ]
+        },
+        {
+          "camera_id": "engine_two_close",
+          "supports_visual_scene_ids": [
+            "cistern_prime_visible_isolation",
+            "cistern_null_reroute_reveal",
+            "cistern_repeat_termination",
+            "cistern_restore_service_early"
+          ]
+        },
+        {
+          "camera_id": "public_slate_medium",
+          "supports_visual_scene_ids": [
+            "cistern_prime_public_record",
+            "cistern_make_anomaly_public",
+            "cistern_preserve_public_evidence",
+            "cistern_force_seal_accountability"
+          ]
+        },
+        {
+          "camera_id": "stair_high_angle",
+          "supports_visual_scene_ids": [
+            "cistern_prime_intake_awareness"
+          ]
+        },
+        {
+          "camera_id": "valve_rail_medium",
+          "supports_visual_scene_ids": [
+            "cistern_test_distant_pressure",
+            "cistern_isolate_two_run_one",
+            "cistern_prioritize_immediate_water",
+            "cistern_ending_bounded_service"
+          ]
+        },
+        {
+          "camera_id": "district_moot_wide",
+          "supports_visual_scene_ids": [
+            "cistern_ending_public_hearing"
+          ]
+        },
+        {
+          "camera_id": "conduit_listening_medium",
+          "supports_visual_scene_ids": [
+            "cistern_ending_network_trace"
+          ]
+        },
+        {
+          "camera_id": "upper_terrace_ration_wide",
+          "supports_visual_scene_ids": [
+            "cistern_ending_ration"
+          ]
+        }
+      ],
+      "routes": [
+        {
+          "route_id": "public_to_gallery_boundary",
+          "path": "street landing -> yellow line -> public side of brass rail",
+          "access": "Dema and district public stop at the yellow line during the test"
+        },
+        {
+          "route_id": "gallery_to_service_floor",
+          "path": "upper rune gallery -> grated stair -> lower service floor",
+          "access": "workshop staff only during handover"
+        },
+        {
+          "route_id": "engine_row_worker_path",
+          "path": "inspection stand -> Engine One -> Engine Two -> Engine Three along the gallery rail",
+          "access": "Orsa, Hessa, and Brin"
+        }
+      ],
+      "staging_slots": [
+        {
+          "slot_id": "engine_two_upper_service",
+          "position": "upper gallery at the central rail bay directly above Engine Two's wedge throat and null slate",
+          "supports": "Orsa's wedge seating, live-null casting, and removed-wedge actions"
+        },
+        {
+          "slot_id": "master_inspection_stand",
+          "position": "upper gallery between Engine Two and the yellow public boundary",
+          "supports": "Hessa's seal custody and sightlines to every pressure float, the terrace gauge, and Dema's slate"
+        },
+        {
+          "slot_id": "engine_three_valve_reach",
+          "position": "gallery side of the east rail bay where Engine Three's extended valve handle rises within two-handed dwarf reach",
+          "supports": "Orsa's distant-pressure test with Brin guarding from the adjacent rail position"
+        },
+        {
+          "slot_id": "emergency_lever_post",
+          "position": "red lever on the central gallery rail post, clear of the grated stair and reachable from Engine Two's service position",
+          "supports": "Orsa's full-pump emergency override and Hessa's sleeve-grab from the inspection stand"
+        },
+        {
+          "slot_id": "public_slate_boundary",
+          "position": "landing side of the yellow line with the slate face visible from both the queue and Master inspection stand",
+          "supports": "Dema's independent record custody and public sightline"
+        }
+      ],
+      "occluders": [
+        {
+          "occluder_id": "upper_gallery_slab",
+          "effect": "blocks public view of the lower wet intake except through the grated stair opening"
+        },
+        {
+          "occluder_id": "pump_casings",
+          "effect": "block cross-row views at lower service-floor height while pressure floats remain visible above the casings"
+        }
+      ],
+      "object_state_anchors": [
+        {
+          "object_id": "engine_two_isolation_wedge",
+          "states": [
+            "seated_flush",
+            "seated_uncertain",
+            "removed",
+            "cam_lifted",
+            "laid_across_inspection_plate"
+          ]
+        },
+        {
+          "object_id": "inspection_plate",
+          "states": [
+            "bare",
+            "shutdown_sealed",
+            "partial_flow_sealed",
+            "blocked_by_wedge"
+          ]
+        },
+        {
+          "object_id": "public_slate",
+          "states": [
+            "yesterday_levels_only",
+            "callouts_added",
+            "single_loop_copied",
+            "repeatable_evidence_chain"
+          ]
+        },
+        {
+          "object_id": "terrace_gauge",
+          "states": [
+            "above_red",
+            "red_band",
+            "recovering"
+          ]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "orsa_rill": "Orsa Rill: young adult dwarf apprentice, compact broad-hipped build, warm brown skin, round face with a small scar through the left eyebrow, dark copper hair in one thick practical braid wrapped in gray cord, short sleeveless indigo work coat over a cream shirt, leather apron, heavy ankle boots, chalk and blue mana stains on square fingertips, alert posture that becomes deliberately still when challenged.",
+      "hessa_cairn": "Master Hessa Cairn: middle-aged dwarf woman, very short and square-shouldered, deep brown skin, iron-gray hair cropped close around a single long temple braid, severe rectangular face, dark green wool workshop coat with brass toggles, heavy civic seal carved with a stepped-water mark on a belt chain, still hands and economical expressions.",
+      "brin_olt": "Brin Olt: adult dwarf journeyworker, stocky muscular build, ruddy tan skin, broad nose, auburn beard divided into two short forks bound with brass rings, rolled slate-blue sleeves, oil-dark leather apron, thick gloves tucked at belt, cautious rail-side stance and practical protective reach.",
+      "dema_sorn": "Dema Sorn: middle-aged dwarf landing clerk, narrow sturdy build, pale olive skin, black hair threaded with gray and tied under a rust-red headscarf, charcoal vest over a striped brown shirt, large chalk holster, black level slate carried against one hip, observant posture oriented toward both gauges and public witnesses."
+    },
+    "groups": {
+      "cistern_house_nine_landing_queue": "Cistern House Nine landing queue: dwarves of varied ages and skin tones in patched terrace work clothes, flour-marked bakery aprons, rolled laundry sleeves, and lift-maintenance leathers; they carry hammered-copper cans, wooden yokes, ceramic jugs, and one low bakery trough on iron wheels; orderly positions behind a painted yellow line, faces tracking gauges, seals, and flowing water, with patient spacing and practical resource-sharing gestures."
+    }
+  },
+  "review_notes": [
+    "The text layout fixes room levels, pump order, routes, public boundary, occluders, camera slots, and branch-state anchors.",
+    "A durable plan view or simple 3D blockout is required before the fixture can claim replay-ready multi-angle illustration.",
+    "Generated images are deferred; the companion BFL manifest contains prompt-only collateral.",
+    "Visual artifacts are website and illustrated-replay collateral, not simulation state or core social-model training signal."
+  ]
+}

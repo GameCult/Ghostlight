@@ -278,25 +278,23 @@ unplaced; retire it or place its subjects.
 
 ### World fixtures and the elaborator swarm
 
-First-generation world fixtures are banked and pushed, one per world, each
-with Ink, training sidecar, visual plan, lore grounding, and BFL manifest,
+First-generation world fixtures, one per world, each with Ink, training
+sidecar, visual plan, lore grounding, BFL manifest and a RUN note, are
 reviewer-accepted except visual replay, which waits on a scene-set blockout:
-Delvehold `cistern-house-nine-breaker-test` on `codex/world-delvehold`;
-Aetheria `navigator-berth-hearing-v0` on `codex/world-aetheria`; Zyphos
-`eclipse-nursery-handover` on `codex/world-zyphos`; Kalsa
-`stormshield-handoff-v0` on `codex/world-kalsa`; lore on each vault's
-`codex/ghostlight-worlds` branch.
+Delvehold `cistern-house-nine-breaker-test`, Aetheria
+`navigator-berth-hearing-v0`, Zyphos `eclipse-nursery-handover`, Kalsa
+`stormshield-handoff-v0`. They live under `examples/ink/<world>/`,
+`examples/lore-grounding/<world>/`, `examples/visual/<world>/` and
+`prompts/image-generation/<world>/`.
 
-The elaborator swarm is drained and handed off; a Ghostlight kernel session
-does not own it. The successor handoff is
-`C:\Users\Meta\.claude\worlds\README.md` (98 finished passes). Owed and
-deliberately deferred: integration of the `slot/<world>/<title>/<stamp>`
-branches into the lore vaults on `codex/ghostlight-worlds` and into
-`codex/world-<world>`; the idea index is the four ledger directories
-`experiments/elaboration/<world>/ledger/` on those world branches. Clones:
-`F:\Projects\Ghostlight-worlds\<world>` and
-`F:\Projects\<Lore>-worktrees\ghostlight-worlds` (full clones despite the
-name). The retired first-generation loop under
+The elaborator swarm is drained and a Ghostlight kernel session does not own
+it. Its review record and the per-pass idea ledgers are in
+`experiments/elaboration/`; start at that README, which carries the approved,
+demoted and pending decisions. The proposed vault additions are in local
+bundles named there, not on GitHub branches. Integrating ideas into the lore
+vaults is still wanted and deliberately deferred until the operator has time to
+review them; it is an editorial pass, one idea at a time, never a scripted
+merge. The retired first-generation loop under
 `C:\Users\Meta\.claude\worlds\retired` must not be launched. Image rendering
 is deferred: workers emit imagegen-ready prompts only, and
 `scripts/generate_bfl_images.py` has no working default key path.
