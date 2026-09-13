@@ -53,15 +53,22 @@ inside another project.
 - Architecture rationale: `F:\Projects\Ghostlight\notes\architecture-rationale.md`
 - State CLI: `F:\Projects\Ghostlight\tools\ghostlight_state.py`
 - CultCache state seam: `F:\Projects\Ghostlight\tools\ghostlight_state_store.py`
-- CultCache-Py submodule: `F:\Projects\Ghostlight\vendor\cultcache-py`
+- CultCache-Py dependency: pinned `cultcache-py==0.2.0` from PyPI, declared in
+  `F:\Projects\Ghostlight\tools\requirements.txt`
 - CultCache state store: `F:\Projects\Ghostlight\state\ghostlight-state.cultcache.jsonl`
 - Pre-compaction helper: `F:\Projects\Ghostlight\tools\ghostlight_prepare_compaction.py`
 
 ## Useful Commands
 
-Use the bundled Python runtime if `python` is not on PATH:
+Use the bundled Python runtime if `python` is not on PATH. `npm run state:status`
+and `npm run state:prepare-compaction` install the pinned `cultcache-py`
+dependency automatically (a `pre*` npm hook runs `state:bootstrap` first, an
+idempotent `pip install -r tools/requirements.txt`). A direct
+`ghostlight_state.py` invocation does not go through npm, so run
+`state:bootstrap` once per session before the first direct call:
 
 ```powershell
+npm run state:bootstrap
 npm run state:status
 npm run state:prepare-compaction
 & 'C:\Users\Meta\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' '.\tools\ghostlight_state.py' add-evidence --type research --status ok --note '...'
@@ -94,6 +101,8 @@ On fresh session load, do this before wandering off into implementation:
    - `notes/ghostlight-current-system-map.md`
    - `notes/ghostlight-implementation-plan.md`
 2. run:
+   - `npm run state:bootstrap` (installs the pinned `cultcache-py` dependency;
+     idempotent, safe to rerun)
    - `npm run state:status`
 3. restate the current next action from the persisted state before starting
    edits

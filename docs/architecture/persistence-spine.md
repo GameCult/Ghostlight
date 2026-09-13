@@ -3,14 +3,19 @@
 Ghostlight's machine-managed state is moving behind a small CultCache-style
 persistence layer instead of letting every tool paw raw files directly.
 
-The Python port lives in `vendor/cultcache-py`, backed by the standalone
-GameCult repository `cultcache-py`.
+The Python port is `cultcache-py`, published by CultLib to PyPI and pinned in
+`tools/requirements.txt`. It used to be vendored as the `vendor/cultcache-py`
+git submodule against the now-retired standalone `GameCult/cultcache-py`
+repository; PyPI distribution replaced that fork.
 
 ## Current Store
 
 - Cache store: `state/ghostlight-state.cultcache.jsonl`
 - Ghostlight seam: `tools/ghostlight_state_store.py`
-- Library submodule: `vendor/cultcache-py`
+- Library dependency: pinned `cultcache-py==0.2.0`, declared in
+  `tools/requirements.txt` and installed by `npm run state:bootstrap`
+  (an idempotent `pip install -r tools/requirements.txt`, wired as a `pre*`
+  hook ahead of `state:status` and `state:prepare-compaction`)
 - Readable exports: `state/branches.json`, `state/evidence.jsonl`
 
 The JSONL store is deliberate bootstrap plumbing. The package also exposes a

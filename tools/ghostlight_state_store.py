@@ -2,23 +2,27 @@ from __future__ import annotations
 
 import hashlib
 import json
-import sys
 from pathlib import Path
 from typing import Any
+
+try:
+    from cultcache_py import CultCache, JsonLinesBackingStore, define_document_type
+except ModuleNotFoundError as error:
+    if error.name != "cultcache_py":
+        raise
+    raise SystemExit(
+        "Ghostlight state tooling needs cultcache-py. Install it with "
+        "`npm run state:bootstrap`, or with this interpreter directly: "
+        "`python -m pip install -r tools/requirements.txt`."
+    ) from error
 
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE_DIR = ROOT / "state"
-VENDOR_SRC = ROOT / "vendor" / "cultcache-py" / "src"
 CACHE_PATH = STATE_DIR / "ghostlight-state.cultcache.jsonl"
 BRANCHES_PATH = STATE_DIR / "branches.json"
 EVIDENCE_PATH = STATE_DIR / "evidence.jsonl"
 ARCHIVE_PATH = STATE_DIR / "evidence.archive.jsonl"
-
-if str(VENDOR_SRC) not in sys.path:
-    sys.path.insert(0, str(VENDOR_SRC))
-
-from cultcache_py import CultCache, JsonLinesBackingStore, define_document_type
 
 
 BRANCHES_DOC = define_document_type(
