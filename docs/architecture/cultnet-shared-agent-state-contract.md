@@ -42,7 +42,7 @@ Current expected document envelope:
 
 The current TypeScript client library is:
 
-- repo: `GameCult/cultnet-ts`
+- package: `cultnet-ts`, in `GameCult/CultLib` under `packages/cultnet-ts`
 
 Its job is not merely to make pipes pretty. It owns:
 
