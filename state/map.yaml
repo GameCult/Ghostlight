@@ -394,9 +394,13 @@ current_status:
     owner's fourth command-result state for an overtaken turn. Constraints:
     the operator's Claude subscription, inherited by the sidecar from the
     ambient login, is the only live provider; no Codex subscription and no
-    API budget; CodexConnector stays isolated
-    (its main is at 6519289, the line Ghostlight runs); Ghostlight never
-    holds a credential. The elaborator swarm is drained; its review record
+    API budget. Model backends (Claude SDK sidecar, CodexConnector,
+    OpenAI-compatible APIs) share one standardized CultNet connector API,
+    the same one Epiphany uses. Ghostlight consumes the contract through the
+    `codex-connector` crate pinned in Cargo.toml. CodexConnector itself
+    stays isolated (its main is at 6519289), and is not a live provider
+    here. A generic OpenAI-compatible connector is required before third
+    parties use the deployment. Ghostlight never holds a credential. The elaborator swarm is drained; its review record
     and idea ledgers are in experiments/elaboration/ (start at its README),
     and the vault additions are in local bundles named there. Integration
     into the vaults is still wanted and deferred until the operator has time
