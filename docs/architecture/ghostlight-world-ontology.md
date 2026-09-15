@@ -133,8 +133,9 @@ carries what the actor meant by it; the reading is the perceiver's own.
 log; the story feed is `operator_log`, an owner-only projection that the
 controller lane cannot name because `ControllerRunner` holds a
 `ControllerPort`, not the mailbox. `WorldMailbox::create` declares the genesis
-place `commons` and stands genesis subjects there. Session Zero cuts the
-human's genesis declaration there (`ghostlight-session-zero.md`, cut line).
+place `commons` and stands genesis subjects there. Genesis declaration of
+consumer subjects is cut ("Elaboration lenses and focus"); a consumer declares
+its own subjects by owner patch.
 
 `Witness` is one speakerless event over a place subtree: a beacon, a bell, a
 blast. It names a fact, a place, and a confidence, and no speaker at all.
@@ -358,7 +359,7 @@ and fixed titled quotas. They were compensators for an ontology with nowhere
 to put depth. The eight titles themselves (Patina, Charter, Ledger, Hearth,
 Tangle, Veil, Ember, Numen) were lenses, not tribunals. `6bb6869` deleted them
 together with their verifier and no operator decision covered them; they
-return as weighted lenses under `ghostlight-session-zero.md`.
+return as lenses ("Elaboration lenses and focus").
 
 Character action had a matching defect: an attempt was an event, and a separate
 wave-level outcome resolver asked a model whether it worked. Resources,
@@ -659,13 +660,12 @@ There is no seed type, registry, publication handoff, or compiler install path.
 
 An elaborator is one `OperationalAgent` loop. Two separate things shape a
 session. Its jurisdiction is authority: the place subtree it may write in,
-carried as `SystemCapability::Elaborator { jurisdiction }`. Its title is a
-lens: one of the eight titles (Patina, Charter, Ledger, Hearth, Tangle, Veil,
-Ember, Numen), which decides what kind of structure the session reaches for.
-A title never enters the caller identity, never narrows or widens admission,
-and never fills a quota. Target: a swarm draws a title per session by the
-world's title weights (`ghostlight-session-zero.md`). Shipped: the sweep runs
-one sequential untitled session per jurisdiction. The tool catalog is
+carried as `SystemCapability::Elaborator { jurisdiction }`. Its lens decides
+what kind of structure the session reaches for. A lens never enters the caller
+identity, never narrows or widens admission, and never fills a quota. Target:
+sessions draw a lens by the world's lens weights (below, "Elaboration lenses
+and focus"). Shipped: the sweep runs one sequential unlensed session per
+jurisdiction. The tool catalog is
 generated from this document's operation set and declaration kinds, plus
 `record_gap` and `submit`. It cannot contain an operation the reducer does not
 own, because it is derived from the reducer's vocabulary.
@@ -710,6 +710,53 @@ touching overlapping components conflict on scope digest and one repairs.
 A translation gap never mints a boundary. Gaps are non-fictional inference
 evidence that may inform a later human decision to extend this vocabulary, and
 that extension is a code change, not a world patch.
+
+### Elaboration lenses and focus (target)
+
+Adopted 2026-09-15, not implemented. These are library capabilities, neutral
+to every consumer. A consumer supplies the policy: Ghostlight Dungeon's
+Session Zero (`ghostlight-session-zero.md`) is one consumer of them, and no
+consumer's concept enters this vocabulary.
+
+- **Lenses.** A world carries a lens set and weights, supplied by its creator
+  and changeable by the owner. A lens is a label, brief text, and an ordered
+  emphasis over the operation catalog. Every lens receives the whole derived
+  catalog. A session draws one lens from a sampler seeded by world id and
+  session ordinal and records it on its checkpoint and receipt as evaluation
+  evidence. The same patch under two lenses has the same admission result. A
+  zero weight never draws; an all-zero weight set is refused.
+- **Focus.** A world carries a set of focus subjects written by its owner.
+  Distance is the least route cost, in travel minutes, from a focus subject's
+  position to a place over open routes that subject may traverse, computed by
+  the same route walk as `reachable`, factored to return a cost map. A place
+  without routes takes its nearest routed container's distance. With no focus,
+  every place is far.
+- **Detail profile.** Supplied at creation: distance bands, each naming a
+  density per place for each subject kind, plus a lookahead in minutes that
+  measures the nearest band from where a focus could be after that much
+  travel. It replaces `WorldScaleIntent` jurisdiction permille; per-kind
+  targets survive inside it.
+- **Demand.** Derived in `snapshot`, never stored: open boundaries and
+  per-place deficits against the band target, ordered by distance, then by the
+  kernel's boundary order. A session's confinement ground is the place subtree
+  of the demand it answers. A focus moving changes demand without a commit.
+  `IndividuationRequired` derives for a population whose place enters the
+  nearest band.
+- **Sessions.** Up to the configured concurrency run at once, in Draft once a
+  focus exists and in Active, each answering the head of demand. Each world
+  binds one evidence source, which every session and the seed lane read.
+
+Cut when these land: authored jurisdiction roots as confinement units,
+permille distribution, the `Uncovered` deficit row, the sequential
+per-jurisdiction sweep, `NullEvidenceSource` on the Active elaborator lane,
+"Draft answers nothing" for the elaborator lane, and genesis declaration of any
+consumer subject.
+
+Verification: the lens-invariant admission test; sampler determinism and
+weight-following frequencies; zero-weight refusal; demand absent from
+`WorldState` and reordered by a focus move alone; out-of-ground refusal; Active
+patches citing only the bound evidence source; activation with nonzero
+deficits.
 
 ## Scale: many subjects, few inferences
 
@@ -831,7 +878,7 @@ Deleted before replacement behavior is added, with no compatibility path:
   `CivicSystem` manifest (the typed subgraph), `PopulationLineage`
   (individuation), `Lifecycle` and `WorldTime` (kernel-owned);
 - the titled semantic verifier and titled quotas (the eight titles return as
-  lenses; see `ghostlight-session-zero.md`), elaboration demand and deficit,
+  lenses; see "Elaboration lenses and focus"), elaboration demand and deficit,
   complexity rounds,
   strategic waves, fission completion counts, `detail_debt` rotation, and every
   `*Qualification` and `*Verification` type;

@@ -863,12 +863,24 @@ no utterance; one carrier, one command per turn).
 
 ### 15. Session Zero — adopted, not started
 
-Adopted 2026-09-15. The design, authority map, cut line, verification, and
-pass order live in `docs/architecture/ghostlight-session-zero.md`; this entry
-only tracks state. A player chooses a Vault, describes the experience, and sets
-weights for the eight titled elaborators; a swarm draws titles by those
-weights and elaborates by travel distance from the player, before and after
-activation. Pass 5 of that doc closes the playtest gate.
+Adopted 2026-09-15. Two owners, one ordering. Library capabilities,
+consumer-neutral, are specified in `docs/architecture/ghostlight-world-ontology.md`
+under "Elaboration lenses and focus (target)". Ghostlight Dungeon's Session
+Zero consumes them and is specified in
+`docs/architecture/ghostlight-session-zero.md`. This entry only tracks state.
+
+Open decisions first: whether the world kernel is extracted from
+`crates/ghostlight-dungeon` into a library crate before the library passes
+(recommended), and whether the eight titles ship as a library stock lens set
+(recommended).
+
+Library passes: (L1) lenses, weights, sampler, and concurrent sessions over
+today's demand; (L2) per-world evidence binding on every elaborator session;
+(L3) focus, detail profile, distance-weighted demand, and the permille, root,
+and genesis-subject cuts; (L4) individuation in the nearest band. Dungeon
+passes: (D1) Vault registry and world creation with lens weights and detail
+profile; (D2) the Session Zero Eve surface; (D3) travel affordance and
+per-affordance player controls, which closes the playtest gate.
 
 ## Subtraction budget
 

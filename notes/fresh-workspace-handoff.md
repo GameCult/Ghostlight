@@ -271,12 +271,19 @@ unplaced; retire it or place its subjects.
 
 ### Playtest gate
 
-Passes when a human, on a local daemon with the SDK sidecar, runs Session
-Zero end to end (`docs/architecture/ghostlight-session-zero.md`): chooses a
-Vault, describes the experience, sets title weights, sketches, chooses a start,
-activates, and plays by speaking, gesturing, and travelling while detail grows
-toward them. It proves one player; hosted play and multi-player membership are
-not in this gate. Plan step 15 tracks the five passes; pass 5 closes the gate.
+Passes when a human, on a local daemon with the SDK sidecar, runs Dungeon's
+Session Zero end to end (`docs/architecture/ghostlight-session-zero.md`):
+chooses a Vault, describes the experience, sets title weights, sketches,
+chooses a start, activates, and plays by speaking, gesturing, and travelling
+while detail grows toward them. It proves one player; hosted play and
+multi-player membership are not in this gate. Plan step 15 tracks library
+passes L1–L4 and Dungeon passes D1–D3; D3 closes the gate.
+
+Dungeon is a consumer of the Ghostlight library. Session Zero is Dungeon
+authority; the library capabilities it needs are consumer-neutral and live in
+the ontology doc's "Elaboration lenses and focus (target)". The world kernel
+still sits in `crates/ghostlight-dungeon`; whether to extract it first is an
+open operator decision.
 
 Also owed on the way, found 2026-09-15 by reading source:
 
