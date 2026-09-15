@@ -350,9 +350,14 @@ could not repair it. Three structural causes, all in the vocabulary:
 Depth had the same defect. Texture lived in free strings — `posture`,
 `resource_kind`, `capability_id`, `persistent_features`, `description` — that
 nothing could reason over, so a world with many actors still felt thin. The
-answer reached for was five model tribunals (`ElaboratorTitle` and the
-`WorldComplexity*Qualification`/`*Verification` set): compensators for an
-ontology with nowhere to put depth.
+answer reached for was model tribunals: the
+`WorldComplexity*Qualification`/`*Verification` set, a titled semantic
+verifier that judged whether each proposal satisfied its titled assignment,
+and fixed titled quotas. They were compensators for an ontology with nowhere
+to put depth. The eight titles themselves (Patina, Charter, Ledger, Hearth,
+Tangle, Veil, Ember, Numen) were lenses, not tribunals. `6bb6869` deleted them
+together with their verifier and no operator decision covered them; they
+return as weighted lenses under `ghostlight-session-zero.md`.
 
 Character action had a matching defect: an attempt was an event, and a separate
 wave-level outcome resolver asked a model whether it worked. Resources,
@@ -651,14 +656,22 @@ There is no seed type, registry, publication handoff, or compiler install path.
 
 ### Elaborators
 
-Eight elaborators are eight instances of one `OperationalAgent` loop, each
-assigned one jurisdiction — a place subtree or realm. Their tool catalog is
+An elaborator is one `OperationalAgent` loop. Two separate things shape a
+session. Its jurisdiction is authority: the place subtree it may write in,
+carried as `SystemCapability::Elaborator { jurisdiction }`. Its title is a
+lens: one of the eight titles (Patina, Charter, Ledger, Hearth, Tangle, Veil,
+Ember, Numen), which decides what kind of structure the session reaches for.
+A title never enters the caller identity, never narrows or widens admission,
+and never fills a quota. Target: a swarm draws a title per session by the
+world's title weights (`ghostlight-session-zero.md`). Shipped: the sweep runs
+one sequential untitled session per jurisdiction. The tool catalog is
 generated from this document's operation set and declaration kinds, plus
 `record_gap` and `submit`. It cannot contain an operation the reducer does not
 own, because it is derived from the reducer's vocabulary.
 
 ```text
 loop:
+  draw a title by the world's weights (target)
   take the oldest open boundary or seed request in my jurisdiction;
     if none, take my jurisdiction's scale deficit
   retrieve evidence from the Vault for its referents; keep exact receipts
@@ -816,7 +829,9 @@ Deleted before replacement behavior is added, with no compatibility path:
   `Pressure`), `Posture` (derivable), `Memory` (Persona material),
   `CivicSystem` manifest (the typed subgraph), `PopulationLineage`
   (individuation), `Lifecycle` and `WorldTime` (kernel-owned);
-- `ElaboratorTitle`, elaboration demand and deficit, complexity rounds,
+- the titled semantic verifier and titled quotas (the eight titles return as
+  lenses; see `ghostlight-session-zero.md`), elaboration demand and deficit,
+  complexity rounds,
   strategic waves, fission completion counts, `detail_debt` rotation, and every
   `*Qualification` and `*Verification` type;
 - `CampaignRegistry`, `WorldSeed`, and `publish_session_zero` as a distinct
@@ -830,7 +845,8 @@ Deleted before replacement behavior is added, with no compatibility path:
   under 1 patch primitive, replacing both the mutation enum and the separate
   outcome-effect sum;
 - 5 qualification and verification types plus 1 outcome resolver → 0;
-- elaborator titles, semantic qualification, and round budgets → 4 derived
+- titled quotas and the titled verifier, semantic qualification, and round
+  budgets → 4 derived
   boundaries, 1 seed request, and 1 structurally counted scale deficit;
 - 2 seed admission paths → 1;
 - N model-facing tool schemas hand-written per stage → 1 derived catalog.

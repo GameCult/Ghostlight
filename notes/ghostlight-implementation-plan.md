@@ -860,6 +860,15 @@ first person as a stage direction); a silent turn invoking the `speak` entry
 versus a fourth narrative tool for a wordless turn (recommend `speak` with
 no utterance; one carrier, one command per turn).
 
+### 15. Session Zero — adopted, not started
+
+Adopted 2026-09-15. The design, authority map, cut line, verification, and
+pass order live in `docs/architecture/ghostlight-session-zero.md`; this entry
+only tracks state. A player chooses a Vault, describes the experience, and sets
+weights for the eight titled elaborators; a swarm draws titles by those
+weights and elaborates by travel distance from the player, before and after
+activation. Pass 5 of that doc closes the playtest gate.
+
 ## Subtraction budget
 
 Prefer deletion, collapse, or reuse before adding surfaces. The replacement

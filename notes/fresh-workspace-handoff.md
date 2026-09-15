@@ -270,26 +270,28 @@ unplaced; retire it or place its subjects.
 
 ### Playtest gate
 
-Passes when a human, on a local daemon with the SDK sidecar, creates and
-seeds a world, activates it, and plays a scene: the human's subject shares a
-place with seeded people, speaks and gestures through the Eve surface, and
-reads what others said and did, attributed, in the story feed. It proves one
-player; hosted play and multi-player membership are not in this gate.
+Passes when a human, on a local daemon with the SDK sidecar, runs Session
+Zero end to end (`docs/architecture/ghostlight-session-zero.md`): chooses a
+Vault, describes the experience, sets title weights, sketches, chooses a start,
+activates, and plays by speaking, gesturing, and travelling while detail grows
+toward them. It proves one player; hosted play and multi-player membership are
+not in this gate. Plan step 15 tracks the five passes; pass 5 closes the gate.
 
-Walls, as found on 2026-09-15 by reading source:
+Also owed on the way, found 2026-09-15 by reading source:
 
-- Genesis places the human subject in The Commons (`world/mailbox.rs`),
-  and seeded jurisdictions stand beside it, not inside it. Unless the seed
-  moves people there, the human speaks into an empty room (`NoAudience`).
-  Confirm on a live run before cutting.
-- `world.speak` is the only human action (`runtime.rs`); the human has no
-  display and no other catalog affordance.
+- `world.speak` is the only human action (`runtime.rs`).
 - The Eve story card renders bare speech text only (`eve.rs`): no speaker,
   no displays, no place or co-presence.
+- Active elaboration runs with `NullEvidenceSource` (`controllers.rs`), so no
+  Vault reaches it.
 - Ticks run cells in sequence at 15–50 s each; a reply takes minutes.
 
 `runtime.rs` still registers `session_zero.begin`; check whether it is a
 refused name or a surviving authority while in that file.
+
+The eight titled elaborators return as weighted lenses. Their 2026-09 removal
+had no operator decision; the correction record in `state/evidence.jsonl`
+carries the history.
 
 ### Decisions the operator owns
 

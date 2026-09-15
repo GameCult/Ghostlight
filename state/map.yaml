@@ -250,6 +250,7 @@ coverage_targets:
 
 current_artifacts:
   canonical_docs:
+    - docs/architecture/ghostlight-session-zero.md
     - docs/architecture/delvehold-forced-ontology-integration.md
     - notes/documentation-inventory.md
     - docs/architecture/corpus-coverage-ledger.md
@@ -384,10 +385,11 @@ current_status:
     utterance and display are every span cited for them in prose order,
     commit 855727f, run 12). Next, in the
     operator's order (2026-09-15):
-    (a) the playtest gate: a human can play a scene on a local daemon.
-    Definition and walls are in the handoff's "Playtest gate"; the first
-    wall is that genesis places the human alone in The Commons, beside
-    rather than inside the seeded jurisdictions. (b) the outbound consumer
+    (a) the playtest gate through Session Zero (plan step 15,
+    docs/architecture/ghostlight-session-zero.md): Vault choice, experience
+    description, weights for the eight titled elaborators as lenses, sketch,
+    start choice, and a distance-weighted elaborator swarm before and after
+    activation; pass 1 is titles and the weighted swarm. (b) the outbound consumer
     response batch with a non-loopback CultMesh lease, shaped as Njordr's
     signal surface (custody, pressure and dependency, route, event deltas;
     spec owned by GameCult/Njordr `docs/architecture/njordr.md`, Ghostlight's
