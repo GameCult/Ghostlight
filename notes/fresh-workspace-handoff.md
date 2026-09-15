@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-09-11
+Updated: 2026-09-15
 
 This is the compact re-entry packet. It carries current authority and the next
 gate. Git owns chronology, the system map owns teardown detail, and evidence
@@ -261,11 +261,35 @@ unplaced; retire it or place its subjects.
 
 ### In order
 
-1. The outbound half of the consumer contract: the response batch with a
+1. The playtest gate below (operator order, 2026-09-15).
+2. The outbound half of the consumer contract: the response batch with a
    non-loopback CultMesh lease.
-2. The deployment gate below.
-3. Integration of the elaborator swarm's ideas (see "World fixtures and
+3. The deployment gate below.
+4. Integration of the elaborator swarm's ideas (see "World fixtures and
    the elaborator swarm" below).
+
+### Playtest gate
+
+Passes when a human, on a local daemon with the SDK sidecar, creates and
+seeds a world, activates it, and plays a scene: the human's subject shares a
+place with seeded people, speaks and gestures through the Eve surface, and
+reads what others said and did, attributed, in the story feed. It proves one
+player; hosted play and multi-player membership are not in this gate.
+
+Walls, as found on 2026-09-15 by reading source:
+
+- Genesis places the human subject in The Commons (`world/mailbox.rs`),
+  and seeded jurisdictions stand beside it, not inside it. Unless the seed
+  moves people there, the human speaks into an empty room (`NoAudience`).
+  Confirm on a live run before cutting.
+- `world.speak` is the only human action (`runtime.rs`); the human has no
+  display and no other catalog affordance.
+- The Eve story card renders bare speech text only (`eve.rs`): no speaker,
+  no displays, no place or co-presence.
+- Ticks run cells in sequence at 15–50 s each; a reply takes minutes.
+
+`runtime.rs` still registers `session_zero.begin`; check whether it is a
+refused name or a surviving authority while in that file.
 
 ### Decisions the operator owns
 
