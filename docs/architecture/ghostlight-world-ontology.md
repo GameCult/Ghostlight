@@ -133,7 +133,8 @@ carries what the actor meant by it; the reading is the perceiver's own.
 log; the story feed is `operator_log`, an owner-only projection that the
 controller lane cannot name because `ControllerRunner` holds a
 `ControllerPort`, not the mailbox. `WorldMailbox::create` declares the genesis
-place `commons` and stands genesis subjects there.
+place `commons` and stands genesis subjects there. Session Zero cuts the
+human's genesis declaration there (`ghostlight-session-zero.md`, cut line).
 
 `Witness` is one speakerless event over a place subtree: a beacon, a bell, a
 blast. It names a fact, a place, and a confidence, and no speaker at all.
@@ -701,7 +702,7 @@ structural, and the reducer alone admits. One elaborator may fill semantic
 fields — names, labels, Persona material — inside a typed patch; it is not a
 Persona, receives no prose membrane, and holds no authority.
 
-Eight loops do not serialize on one another. A boundary binds to its own scope
+Concurrent elaborator sessions do not serialize on one another. A boundary binds to its own scope
 digest, so a patch answering it commits at any revision where that digest is
 unchanged; only the mailbox serializes the physical commit. Two elaborators
 touching overlapping components conflict on scope digest and one repairs.

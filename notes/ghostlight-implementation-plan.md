@@ -253,8 +253,9 @@ make character action a deterministic precondition-effect transition, four
 derived `CausalBoundary` kinds (a draft `SeedRequest` is representable, not
 inhabited: Draft answers nothing), scope-digest binding
 for proposals, and one `AdmitPatch` command shared by seed admission and
-boundary elaboration. Eight elaborators are one `OperationalAgent` loop whose
-tool catalog is a projection of the operation set. The document carries its own
+boundary elaboration. An elaborator is one `OperationalAgent` loop whose tool
+catalog is a projection of the operation set, lensed by a title drawn from the
+world's weights (step 15). The document carries its own
 cut line, subtraction budget, build budget, and eighteen-proof verification
 contract.
 

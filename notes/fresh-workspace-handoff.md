@@ -35,7 +35,8 @@ Active phases. It alone derives authority, applies the typed
 ontology reducer, and commits an atomic CultCache revision. World creation,
 autonomous turns, player commands, elaboration, consumer patches, time
 advance, and administrative changes all enter through the same
-`CommandEnvelope` path; there is no Session Zero.
+`CommandEnvelope` path; Session Zero (plan step 15) runs inside that same
+kernel and has no separate owner.
 
 The replacement owner is sealed. Its runtime boundary remains create/open,
 immutable snapshot, submit, and typed receipts. Mutable aggregate state,
