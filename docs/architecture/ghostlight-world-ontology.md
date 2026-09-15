@@ -134,7 +134,7 @@ log; the story feed is `operator_log`, an owner-only projection that the
 controller lane cannot name because `ControllerRunner` holds a
 `ControllerPort`, not the mailbox. `WorldMailbox::create` declares the genesis
 place `commons` and stands genesis subjects there. Genesis declaration of
-consumer subjects is cut ("Elaboration lenses and focus"); a consumer declares
+consumer subjects is cut ("Elaboration lenses and detail rules"); a consumer declares
 its own subjects by owner patch.
 
 `Witness` is one speakerless event over a place subtree: a beacon, a bell, a
@@ -359,7 +359,8 @@ and fixed titled quotas. They were compensators for an ontology with nowhere
 to put depth. The eight titles themselves (Patina, Charter, Ledger, Hearth,
 Tangle, Veil, Ember, Numen) were lenses, not tribunals. `6bb6869` deleted them
 together with their verifier and no operator decision covered them; they
-return as lenses ("Elaboration lenses and focus").
+return as the library's stock lens set ("Elaboration lenses and
+detail rules").
 
 Character action had a matching defect: an attempt was an event, and a separate
 wave-level outcome resolver asked a model whether it worked. Resources,
@@ -664,7 +665,7 @@ carried as `SystemCapability::Elaborator { jurisdiction }`. Its lens decides
 what kind of structure the session reaches for. A lens never enters the caller
 identity, never narrows or widens admission, and never fills a quota. Target:
 sessions draw a lens by the world's lens weights (below, "Elaboration lenses
-and focus"). Shipped: the sweep runs one sequential unlensed session per
+and detail rules"). Shipped: the sweep runs one sequential unlensed session per
 jurisdiction. The tool catalog is
 generated from this document's operation set and declaration kinds, plus
 `record_gap` and `submit`. It cannot contain an operation the reducer does not
@@ -711,7 +712,7 @@ A translation gap never mints a boundary. Gaps are non-fictional inference
 evidence that may inform a later human decision to extend this vocabulary, and
 that extension is a code change, not a world patch.
 
-### Elaboration lenses and focus (target)
+### Elaboration lenses and detail rules (target)
 
 Adopted 2026-09-15, not implemented. These are library capabilities, neutral
 to every consumer. A consumer supplies the policy: Ghostlight Dungeon's
@@ -725,26 +726,53 @@ consumer's concept enters this vocabulary.
   session ordinal and records it on its checkpoint and receipt as evaluation
   evidence. The same patch under two lenses has the same admission result. A
   zero weight never draws; an all-zero weight set is refused.
-- **Focus.** A world carries a set of focus subjects written by its owner.
-  Distance is the least route cost, in travel minutes, from a focus subject's
-  position to a place over open routes that subject may traverse, computed by
-  the same route walk as `reachable`, factored to return a cost map. A place
-  without routes takes its nearest routed container's distance. With no focus,
-  every place is far.
-- **Detail profile.** Supplied at creation: distance bands, each naming a
-  density per place for each subject kind, plus a lookahead in minutes that
-  measures the nearest band from where a focus could be after that much
-  travel. It replaces `WorldScaleIntent` jurisdiction permille; per-kind
-  targets survive inside it.
+- **Stock lens set.** The library ships eight lenses any consumer may use or
+  replace:
+
+  | Lens | Reaches for | Leads with |
+  |---|---|---|
+  | Patina | ordinary objects, customs, nicknames, local jokes | persona material, ordinary affordances |
+  | Charter | government, law, offices, selection, succession, redress | authority, selection, redress |
+  | Ledger | resources, labor, trade, infrastructure, scarcity, class pressure | custody, dependency, route cost |
+  | Hearth | kinship, daily life, care, obligation, belonging | commitments, reads |
+  | Tangle | factions, alliances, rivalries, leverage | relations, pressure, authority |
+  | Veil | secrets, rumors, misinformation, taboos, unevenly held knowledge | knowledge scope, channels |
+  | Ember | disputes, hazards, instability, escalation, urgent pressure | pressure, near-due commitments |
+  | Numen | religion, magic, ritual, awe, cosmology, the genuinely strange | facts, affordances, material |
+
+- **Detail rules.** A world carries one detail rule: a function from place to
+  detail level. A detail level names a target density per place for each
+  subject kind, and the rule carries its own level table. The rule is typed
+  world data, written by the world's creator and changed by its owner through
+  one command, never consumer code: the deficit it produces is an admission
+  input, and replay re-runs `reduce`, so a consumer function that changed
+  after admission would make committed history fail replay. Each commit is
+  checked against the rule in force at its revision. The library evaluates a
+  closed, versioned set of forms:
+  - `Uniform { level }`: every place at one level.
+  - `ByDistance { anchors, bands, floor, lookahead }`: anchors are canonical
+    subjects. Distance is the least route cost, in travel minutes, from any
+    anchor's position to a place over open routes that anchor may traverse,
+    reduced by `lookahead`. It uses the same route walk as `reachable`,
+    factored to return a cost map. A place without routes takes its nearest
+    routed container's distance. Bands map distance to a level; beyond the last
+    band, and for every place when no anchor is placed, the level is `floor`.
+
+  A consumer whose rule no form expresses asks for a new form, and the library
+  adds it without consumer names. Combinators wait for a consumer that needs
+  one. `WorldScaleIntent` per-kind world targets remain the ceiling the rule
+  distributes; jurisdiction permille is replaced by the rule.
 - **Demand.** Derived in `snapshot`, never stored: open boundaries and
-  per-place deficits against the band target, ordered by distance, then by the
-  kernel's boundary order. A session's confinement ground is the place subtree
-  of the demand it answers. A focus moving changes demand without a commit.
-  `IndividuationRequired` derives for a population whose place enters the
-  nearest band.
-- **Sessions.** Up to the configured concurrency run at once, in Draft once a
-  focus exists and in Active, each answering the head of demand. Each world
-  binds one evidence source, which every session and the seed lane read.
+  per-place deficits against each place's level, capped by the remaining world
+  target, ordered by level (most detailed first), then by the form's own key
+  (distance for `ByDistance`), then by the kernel's boundary order. A session's
+  confinement ground is the place subtree of the demand it answers. Under a
+  rule that reads positions, a subject moving changes demand without a commit.
+  `IndividuationRequired` derives for a population whose place's level asks
+  for persons.
+- **Sessions.** Up to the configured concurrency run at once, in Draft and in
+  Active, each answering the head of demand. Each world binds one evidence
+  source, which every session and the seed lane read.
 
 Cut when these land: authored jurisdiction roots as confinement units,
 permille distribution, the `Uncovered` deficit row, the sequential
@@ -753,8 +781,10 @@ per-jurisdiction sweep, `NullEvidenceSource` on the Active elaborator lane,
 consumer subject.
 
 Verification: the lens-invariant admission test; sampler determinism and
-weight-following frequencies; zero-weight refusal; demand absent from
-`WorldState` and reordered by a focus move alone; out-of-ground refusal; Active
+weight-following frequencies; zero-weight refusal; `Uniform` assigning every
+place one level; demand absent from `WorldState` and reordered by an anchor's
+move alone under `ByDistance`; the world target capping a rule's deficits;
+replay of a history spanning a rule change; out-of-ground refusal; Active
 patches citing only the bound evidence source; activation with nonzero
 deficits.
 
@@ -878,7 +908,7 @@ Deleted before replacement behavior is added, with no compatibility path:
   `CivicSystem` manifest (the typed subgraph), `PopulationLineage`
   (individuation), `Lifecycle` and `WorldTime` (kernel-owned);
 - the titled semantic verifier and titled quotas (the eight titles return as
-  lenses; see "Elaboration lenses and focus"), elaboration demand and deficit,
+  the stock lens set; see "Elaboration lenses and detail rules"), elaboration demand and deficit,
   complexity rounds,
   strategic waves, fission completion counts, `detail_debt` rotation, and every
   `*Qualification` and `*Verification` type;

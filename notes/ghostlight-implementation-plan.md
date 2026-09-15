@@ -865,19 +865,21 @@ no utterance; one carrier, one command per turn).
 
 Adopted 2026-09-15. Two owners, one ordering. Library capabilities,
 consumer-neutral, are specified in `docs/architecture/ghostlight-world-ontology.md`
-under "Elaboration lenses and focus (target)". Ghostlight Dungeon's Session
-Zero consumes them and is specified in
+under "Elaboration lenses and detail rules (target)". Ghostlight Dungeon's
+Session Zero consumes them and is specified in
 `docs/architecture/ghostlight-session-zero.md`. This entry only tracks state.
 
-Open decisions first: whether the world kernel is extracted from
-`crates/ghostlight-dungeon` into a library crate before the library passes
-(recommended), and whether the eight titles ship as a library stock lens set
-(recommended).
+Operator decisions, 2026-09-15: the world kernel is extracted from
+`crates/ghostlight-dungeon` into a library crate before any library pass, and
+the eight titles ship as the library's stock lens set.
 
-Library passes: (L1) lenses, weights, sampler, and concurrent sessions over
-today's demand; (L2) per-world evidence binding on every elaborator session;
-(L3) focus, detail profile, distance-weighted demand, and the permille, root,
-and genesis-subject cuts; (L4) individuation in the nearest band. Dungeon
+Library passes: (L0) extract the kernel into a library crate with a real
+public boundary; (L1) the stock lens set, weights, sampler, and concurrent
+sessions over today's demand; (L2) per-world evidence binding on every
+elaborator session; (L3) typed detail rules (`Uniform`, `ByDistance`),
+rule-driven demand under the world-target ceiling, and the permille, root,
+and genesis-subject cuts; (L4) individuation where a place's level asks for
+persons. Dungeon
 passes: (D1) Vault registry and world creation with lens weights and detail
 profile; (D2) the Session Zero Eve surface; (D3) travel affordance and
 per-affordance player controls, which closes the playtest gate.
