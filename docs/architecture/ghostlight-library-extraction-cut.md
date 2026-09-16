@@ -123,6 +123,64 @@ Follow-ups outside this migration, from the fix batch:
 - `require_command_options` searches a fixed 18-line window, so a block
   that grows past it stops being checked silently.
 
+Cut 1 fix batch landed at Ghostlight `7c1d1e9..2865ea7`: `a8d3377` external
+rejection tests (Q1-9), `fac90e6` single-minter check by name (F2),
+`7cbb9e3` Eve removed from library text (F4), `2865ea7` public surface
+262 → 258 (F3). Hands' correction to F3 is confirmed by Soul: Dungeon calls
+`bound_scope_digest` and `fresh_scope_digest`, and `ScopeDigest`, `WorkLane`
+and `ScopeComponents` are held public by `KernelError::ScopeChanged`,
+`ControllerWorkCustody::Uncertain::lane` and `NarrativeCheckpoint` variant
+fields; closing them means reshaping public enums, which F3 does not
+license. `fac90e6`'s commit message describes a replaced brace-counting
+scanner; the landed code and its doc comment are correct.
+
+Soul held: the rejection tests are a true external crate with no `#[path]`
+or `include!`, driving `ControllerPort::submit_controller` through the
+mailbox into `reduce` with no pre-validation; every commit moves `revision`
+and `state_digest`, so the unchanged-state assertions are sound; the
+positive test goes red when issued opportunities are refused; counts,
+the 14 distinct warnings, and both manifests are unchanged.
+
+Soul found:
+- **S1 (medium, fixing):** both forged digests differ in length from a real
+  `sha256:` + 64 hex, so comparing only lengths at
+  `crates/ghostlight/src/lib.rs:4203` leaves all seven tests green. The
+  realistic forgery is a stale same-length digest from an earlier revision.
+- **S4 (medium, open, Q1-10):** the minter scanner at
+  `crates/ghostlight-dungeon/src/app_session.rs:523-668` misses a `pub type`
+  alias, a multi-line alias, a `} // tests` closing brace, non-rustfmt
+  indentation, and `::new` taken as a function value.
+- **S7 (low, fixing):** `controllers.rs:122 provider_model` closes to
+  `pub(crate)` with no error and no warning change.
+- **S8 (cosmetic, fixing):** `mailbox.rs:580` names `AppSessionOwner` and
+  `controllers.rs:2606` names AppSession.
+- **S2 (low, recorded):** neutering the world_id check at `lib.rs:4193`
+  leaves the suite green because `ScopePreimage` includes `world_id`, so the
+  scope lookup refuses first. Redundant by construction; not isolable from
+  outside the crate.
+- **S3 (low, recorded):** the decline path (`lib.rs:1603`) is `pub(crate)`
+  and unreachable from an integration test.
+- **S5 (low, recorded, pre-existing):** `runtime.rs:3584`'s credential-name
+  test splits on one literal `#[cfg(test)]` marker and is evadable the same
+  way the minter test was.
+- **S6 (medium, recorded):** stable rustc does not enforce `compile_fail`
+  error codes; `E0603` changed to `E0999` still passes. All ten doc-tests
+  prove "does not compile", not privacy, and the three `#[cfg(test)]`
+  items (`SubjectId::issue`, `ScopeDigest::fixture`, the `fixture_*` fns)
+  prove non-existence. Enforcing codes needs a snapshot tool such as
+  trybuild; recorded, not added.
+
+Open: **Q1-10 how the single minter is enforced.** Every text scanner in
+this migration has lost to a short evasion: the minter scanner twice, and
+the gamecult-ops wiring test (C2-F6). "Exactly one production call site" is
+semantic. A: replace the scanner with Clippy's `disallowed-methods` for
+`ghostlight::VerifiedPrincipalEvidence::new` and one
+`#[allow(clippy::disallowed_methods)]` at the real minter; Clippy resolves
+aliases, globs and function paths regardless of formatting, and roughly 100
+lines of scanner are deleted. Cost: a Clippy step in the recipe. B: patch
+the five evasions into the scanner and keep it as a tripwire with stated
+limits. **Recommended: A.**
+
 **Q1-9 what sealing means (ruled, operator, 2026-09-16): option A.** The
 invariant is unforgeable admission, not unconstructible types. External
 code may hold a syntactically valid ID, digest, or opportunity; the kernel
