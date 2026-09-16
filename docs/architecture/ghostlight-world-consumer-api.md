@@ -179,9 +179,11 @@ enters a log, a receipt, or the journal.
 
 The consumer capability's tag is part of the commit digest and the
 externally controlled assignment is part of the state shape, so both bump the
-schema: state schema `ghostlight.world_state.consumer.v4` (state-schema
-generation `world-v3`), commit schema `ghostlight.world_commit.consumer.v4`.
-A store written under an earlier schema is refused, not migrated.
+schema. World lens weights later entered the state and `SetLensWeights`
+the commit, so the live schemas are state `ghostlight.world_state.consumer.v5`
+(state-schema generation `world-v3`) and commit
+`ghostlight.world_commit.consumer.v5`. A store written under an earlier schema
+is refused, not migrated.
 
 ## Not in this pass
 

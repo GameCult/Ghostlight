@@ -257,8 +257,9 @@ travels over two wire schema constants, `CONSUMER_PATCH_SCHEMA` and
 is refused, not migrated.
 
 `WorldScaleIntent` now arrives at creation, not as a later admission:
-`world_create.v3` declares the title, the brief, targets, and jurisdiction
-roots top-level in the genesis patch beside `commons`; an invocation
+`world_create.v4` declares the title, the brief, targets, jurisdiction
+roots top-level in the genesis patch beside `commons`, and the world's lens
+weights, which the library requires and never defaults; an invocation
 announcing an earlier schema is refused before any handler runs, and the
 intent is write-once, set once at genesis and resolved nowhere else. The
 brief is the world's authored premise, trimmed at ingress and never
@@ -304,8 +305,8 @@ is the typed component diff against the fresh components plus the
 knowledge row, and never another subject's snapshot. The re-lowering's
 provider request is a distinct round (`interpreter_round`) with its own
 content-addressed request id, so it cannot collide with the first lowering's
-request. State schema is `ghostlight.world_state.consumer.v4`, commit schema
-`ghostlight.world_commit.consumer.v4`, controller work `controller_work.v15`,
+request. State schema is `ghostlight.world_state.consumer.v5`, commit schema
+`ghostlight.world_commit.consumer.v5`, controller work `controller_work.v15`,
 Persona turn receipt `ghostlight.persona_turn_receipt.v3`; earlier stores and
 earlier rows are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
