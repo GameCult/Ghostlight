@@ -54,7 +54,7 @@ hard_boundaries:
   - Seal world authority before widening ontology. Only WorldKernel may hold mutable aggregate state, issue canonical IDs, invoke the reducer, or write the journal. The public seam is create/open, immutable snapshot, CommandEnvelope submission, and typed receipt. Empty reductions do not commit; translation gaps remain non-fictional inference/evaluation evidence outside WorldState.
   - Every autonomous authority scope has exactly one decision controller. NarrativePersona preserves the Projector-Persona-Interpreter prose membrane; OperationalAgent may use a permissioned typed view and tools for operator-shaped cognition. Interpretation is total: representable material becomes typed proposals and unrepresented material becomes exact translation gaps. Neither mode changes authority, falls through to the other for a gap or infrastructure fault, or exercises the same opportunity twice.
   - Sparse causal sufficiency, not actor count, defines a valid world horizon. Counts, cover ratios, interestingness, political diversity, and prose quality are evaluation evidence and cannot admit ontology, reject a structurally valid mutation, or declare the world complete. Liveness is a separate authored claim: the seed's WorldScaleIntent (design target 2,400 subjects / 240 cells / 10% cover) is a scale deficit the elaborators pursue, and cover budget is the deliberate choke; validity never waits on it and it never gates admission.
-  - Ghostlight Dungeon is a consumer of the Ghostlight library, which serves all GameCult narrative simulation. Dungeon concepts (Session Zero, Vault choice, players, sliders, starting locations) are Dungeon authority and never shape the library; the library offers consumer-neutral capabilities and each consumer supplies its own policy. Source does not yet match: the world kernel lives in `crates/ghostlight-dungeon`; extracting it into a library crate is ordered as the first pass of plan step 15.
+  - Ghostlight Dungeon is a consumer of the Ghostlight library, which serves all GameCult narrative simulation. Dungeon concepts (Session Zero, Vault choice, players, sliders, starting locations) are Dungeon authority and never shape the library; the library offers consumer-neutral capabilities and each consumer supplies its own policy. The world kernel lives in the `ghostlight` library crate; `ghostlight-dungeon` consumes it across a public boundary (L0, commits `108b691` and `f859d2c`). That boundary is name-based: public ID types derive Deserialize, so external code can hold a syntactically valid ID; the kernel rejects any it did not issue.
   - Prompt text is projection, not truth storage.
   - A consumer-supplied ontology or fixed seed may never bypass WorldKernel validation, closed mutation authority, or atomic CultCache commit.
   - Delvehold retains quantitative economy authority. Ghostlight string resource handles and strategic resource effects must not impersonate quantities, prices, recipes, production capacity, inventories, orders, contracts, or conservation semantics.
@@ -386,8 +386,9 @@ current_status:
     utterance and display are every span cited for them in prose order,
     commit 855727f, run 12). Next, in the
     operator's order (2026-09-15):
-    (a) the playtest gate (plan step 15): first extract the world kernel
-    from crates/ghostlight-dungeon into a library crate (L0), then library
+    (a) the playtest gate (plan step 15): L0 landed (the kernel is the
+    `ghostlight` library crate; Soul's F1/F2/F3 fixes and operator question
+    Q1-9 are open in the cut map), then library
     capabilities (the stock lens set of eight titles with weights, typed
     detail rules as a function from place to detail level, per-world evidence
     binding, elaborators in Draft; ontology doc "Elaboration lenses and detail

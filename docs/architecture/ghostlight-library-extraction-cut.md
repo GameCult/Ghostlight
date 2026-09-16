@@ -3,7 +3,54 @@
 Status: cut map. Ends are owned by `ghostlight-library-extraction.md`; this
 document owns the means. Written 2026-09-15 against `d83534c` on
 `codex/ghostlight-dungeon-mvp`; first version committed at `02bbf62`;
-refreshed 2026-09-16 with the operator's rulings. Nothing landed.
+refreshed 2026-09-16 with the operator's rulings.
+
+Cut 1 landed at Ghostlight `108b691..f859d2c`. `108b691` is 13 renames with
+zero content change; `f859d2c` builds. Verified by Soul's own runs, not the
+Hands report: library 419 passed + 1 ignored with test names identical to the
+base `world::` set; 10 compile_fail doc-tests pass, also under
+`--all-features`; Dungeon 50 + 1 ignored, all 49 base names present and the
++2 exactly the two new soul tests; no `[features]`, `cfg(feature`, or
+`cfg(any(test` in the library; no schema string, `_NAMESPACE`, `derive_id`,
+serde attribute, or `Preimage` changed; the rewritten tests fail under
+mutation of what they pin. Windows only; the Linux release remains Idunn's.
+
+Soul found six defects. Triage:
+- **F1 seal is name-based (high, open):** every `pub` ID derives
+  `Deserialize` (`crates/ghostlight/src/lib.rs:186-200`), as do `ScopeDigest`
+  (`:532`) and `DecisionOpportunity` (`:559`), so an external crate mints IDs,
+  reproduces `ScopeDigest::fixture`, and forges a `DecisionOpportunity` into
+  `derive_cover` from JSON. The reducer still rejects forged opportunities
+  (`lib.rs:4192-4201`), so kernel integrity holds and the invariant's wording
+  does not. Dungeon's own Eve payloads deserialize these types, so removing
+  the derives is not available. Operator question Q1-9 below.
+- **F2 single-minter test is bypassable (medium, fix):** the count at
+  `crates/ghostlight-dungeon/src/app_session.rs:530-555` greps a literal and
+  misses `<VerifiedPrincipalEvidence>::new(`, an alias, a renamed test module,
+  or a subdirectory.
+- **F3 surface wider than bought (low, fix):** 71 `pub` identifiers are
+  unreferenced by Dungeon; `ScopeDigest`, `WorkLane`, and `ScopeComponents`
+  compile as `pub(crate)` and were opened only to quiet `private_interfaces`.
+- **F4 "Eve" named in library error strings (low, fix):**
+  `crates/ghostlight/src/controllers.rs:1494,2576,2582,2584`. Pre-existing;
+  invariant 3 is still unmet.
+- **F5 two Hands claims false as stated (cosmetic, recorded):** `Cargo.lock`
+  did gain a `ghostlight` package entry (no new external package), and
+  `fixture_[a-z]` has 8 benign hits in Dungeon.
+- **F6 recipe schema drift (pre-existing, recorded):**
+  `deployment/idunn/recipe.toml` declares `world_state.foundation.v0` and
+  `controller_work.v3` against code at `consumer.v4` and
+  `controller_work.v15`. Outside L0; it changes no behavior here.
+
+Open: **Q1-9 what sealing means.** A: restate invariant 1 as unforgeable
+*admission* — external code may hold a syntactically valid ID or opportunity,
+and the kernel must reject any it did not issue — and prove it with rejection
+tests from an external crate plus the existing compile_fail set. B: make the
+types unconstructible from outside, which means Dungeon stops deserializing
+`DecisionOpportunity` in its Eve payloads and receives an opaque token
+instead, a design change L0 excludes. **Recommended: A**, because the kernel
+already enforces it and B moves work into L0 that the target puts out of
+scope. Whichever is chosen, F2 and F3 are fixed in the same Hands batch.
 
 Rulings (operator, 2026-09-15):
 - **Q1-1 crate name:** "crate name is `ghostlight`."

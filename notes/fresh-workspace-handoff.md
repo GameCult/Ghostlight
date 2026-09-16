@@ -281,9 +281,12 @@ passes L0–L4 and Dungeon passes D1–D3; D3 closes the gate.
 
 Dungeon is a consumer of the Ghostlight library. Session Zero is Dungeon
 authority; the library capabilities it needs are consumer-neutral and live in
-the ontology doc's "Elaboration lenses and detail rules (target)". The world
-kernel still sits in `crates/ghostlight-dungeon`; L0, extracting it into a
-library crate, is the next cut.
+the ontology doc's "Elaboration lenses and detail rules (target)". The world kernel is
+the `ghostlight` library crate and Dungeon consumes it across a public
+boundary; L0 landed at `108b691` and `f859d2c`. Soul's open items (F1 the
+name-based seal, F2 the bypassable minter count, F3 the over-wide surface)
+and operator question Q1-9 are in
+`docs/architecture/ghostlight-library-extraction-cut.md`.
 
 Also owed on the way, found 2026-09-15 by reading source:
 
