@@ -2270,7 +2270,8 @@ pub(super) fn kernel_speak_grant() -> BTreeSet<Ref<AffordanceId>> {
 
 /// Zero roles, zero slots, one empty band, one utterance, and one audience: a
 /// voice fills the room it is standing in. Zero roles is load-bearing — the
-/// Interpreter lane submits no bindings and Eve's speak payload carries only
+/// Interpreter lane submits no bindings and a consumer's speak payload carries
+/// only
 /// text. The precondition is not vacuous: an unplaced subject has no
 /// co-location audience and fails with `NoAudience`.
 pub(super) fn kernel_speak_entry() -> Affordance {

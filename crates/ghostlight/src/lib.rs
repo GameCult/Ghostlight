@@ -1100,7 +1100,8 @@ pub struct WorldSnapshot {
     pub resources: Vec<ResourceSnapshot>,
     pub routes: Vec<RouteSnapshot>,
     /// Already ordered by pressure, then attention debt, then id: one owner, so
-    /// Eve, the mesh projection, and any future driver read the same order and
+    /// an operator interface, the mesh projection, and any future driver read
+    /// the same order and
     /// none computes its own.
     pub opportunities: Vec<DecisionOpportunity>,
     /// Everyone in a world shares the clock, and no controller can read a `due`
@@ -1671,7 +1672,8 @@ fn require_system_capability(caller: &CallerId, body: &CommandBody) -> Result<()
     }
 }
 
-/// The owner may tick from Eve; the tick task may tick with no session. Nothing
+/// The owner may tick from an interface; the tick task may tick with no
+/// session. Nothing
 /// else may tick.
 fn require_clock_caller(state: &WorldState, caller: &CallerId) -> Result<(), KernelError> {
     if caller == &CallerId::System(SystemCapability::Clock) {
@@ -12939,7 +12941,7 @@ mod clock_tests {
             assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
         }
 
-        // The owner may tick from Eve.
+        // The owner may tick from an interface.
         submit_owner(
             &mut kernel,
             &active,

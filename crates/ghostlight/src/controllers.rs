@@ -1491,7 +1491,7 @@ fn persona_request_shape_is_valid(request: &PreparedInference) -> bool {
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
 pub enum ControllerWorkStoreError {
-    #[error("Eve command ID already belongs to the other controller mode")]
+    #[error("command ID already belongs to the other controller mode")]
     CommandModeConflict,
     #[error("{detail}")]
     Fault { detail: String },
@@ -2573,15 +2573,15 @@ pub enum ControllerError {
     NoOpportunity { expected: ControllerMode },
     #[error("subject has more than one current decision opportunity")]
     AmbiguousOpportunity,
-    #[error("Eve opportunity does not match this exact controller command")]
+    #[error("opportunity does not match this exact controller command")]
     OpportunityMismatch,
     #[error("controller opportunity has no Speak affordance")]
     SpeakUnavailable,
     #[error("controller opportunity grants no affordance")]
     NoGrantedAffordance,
-    #[error("Eve command ID does not match persisted controller work")]
+    #[error("command ID does not match persisted controller work")]
     CommandMismatch,
-    #[error("no persisted controller work exists for this Eve command")]
+    #[error("no persisted controller work exists for this command")]
     MissingControllerWork,
     #[error("{purpose:?} inference failed: {source}")]
     Inference {
