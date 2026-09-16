@@ -861,7 +861,7 @@ first person as a stage direction); a silent turn invoking the `speak` entry
 versus a fourth narrative tool for a wordless turn (recommend `speak` with
 no utterance; one carrier, one command per turn).
 
-### 15. Session Zero — adopted, not started
+### 15. Session Zero — L0 landed; L1 next
 
 Adopted 2026-09-15. Two owners, one ordering. Library capabilities,
 consumer-neutral, are specified in `docs/architecture/ghostlight-world-ontology.md`
@@ -881,8 +881,8 @@ elaborator session; (L3) typed detail rules (`Uniform`, `ByDistance`),
 rule-driven demand under the world-target ceiling, and the permille, root,
 and genesis-subject cuts; (L4) individuation where a place's level asks for
 persons. Dungeon
-passes: (D1) Vault registry and world creation with lens weights and detail
-profile; (D2) the Session Zero Eve surface; (D3) travel affordance and
+passes: (D1) Vault registry and world creation with lens weights and a detail
+rule; (D2) the Session Zero Eve surface; (D3) travel affordance and
 per-affordance player controls, which closes the playtest gate.
 
 ## Subtraction budget

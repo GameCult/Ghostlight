@@ -100,7 +100,7 @@ is the witness. What is true of the tree now:
   sessions, the world journal, and controller custody.
 - The Persona interpretation contract is structurally total and live in the
   single `ControllerRunner` in
-  `crates/ghostlight-dungeon/src/world/controllers.rs`.
+  `crates/ghostlight/src/controllers.rs`.
 - The Idunn provider side is complete: the runtime validates Expected and
   activation, publishes signed Warming until the write lease arrives, and
   exposes managed route presence. Production has not cut over.

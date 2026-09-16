@@ -15,8 +15,9 @@ evidence only.
 
 ## Landed replacement source owner
 
-`crates/ghostlight-dungeon/src/world/` contains the sealed
-`ghostlight.world_state.foundation.v0` owner. Commits `6bb6869` and `13d5136`
+`crates/ghostlight/` (library crate `ghostlight`) contains the world kernel;
+`ghostlight-dungeon` consumes it across a boundary sealed by admission
+(ruling Q1-9, L0 `108b691..ab95d78`). Commits `6bb6869` and `13d5136`
 make that mailbox/kernel path the crate and executable runtime identity, remove
 the legacy Session Zero/kernel/scheduler/verifier source body, and place app
 sessions, world journal, and controller custody behind one CultCache
@@ -25,7 +26,8 @@ source cutover is not deployment evidence.
 
 ### Replacement authority map
 
-- **Owner:** the private `world::WorldKernel` directly contains one canonical
+- **Owner:** `ghostlight::WorldKernel`, private to the library and reached
+  only through `WorldMailbox`, directly contains one canonical
   `WorldState` and one `WorldJournal`. Its reducer is the sole semantic
   transition owner. It admits world creation, Draft title changes and
   approvals, Draft-to-Active activation, and one `ExerciseDecision` action
