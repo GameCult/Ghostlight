@@ -11089,7 +11089,8 @@ mod tests {
 
     /// Probe 1's collision, in its positive form: one open boundary under a
     /// pool with room for two runs exactly one session, one inference and one
-    /// row, and commits.
+    /// row, and commits. While it infers, the pool still has a permit free: no
+    /// second session holds one.
     #[tokio::test]
     async fn one_answer_is_one_session_per_sweep() {
         let (_directory, mailbox, task, _commons, roads) = dead_end_world(
@@ -11099,14 +11100,18 @@ mod tests {
             0,
         )
         .await;
-        let port = Arc::new(SweepPort::new(shed_on_the_named_road(vec![(
+        let permits = pool(2);
+        let mut port = SweepPort::new(shed_on_the_named_road(vec![(
             "The Unwalked Road",
             roads[0],
-        )])));
+        )]));
+        port.pool = Some(permits.clone());
+        let port = Arc::new(port);
         let store = fresh_store();
         let runner = sweep_runner(&mailbox, port.clone(), store.clone());
-        runner.sweep(pool(2)).await.unwrap();
+        runner.sweep(permits).await.unwrap();
         assert_eq!(port.calls(), 1);
+        assert_eq!(*port.free_while_inferring.lock().unwrap(), vec![1]);
         assert_eq!(elaboration_commands(store.custody_probe().await.unwrap()), 1);
         assert!(mailbox.snapshot().await.unwrap().boundaries.is_empty());
         drop(runner);
@@ -11459,6 +11464,80 @@ mod tests {
         }
         assert!(wire_of(&port.seen.lock().unwrap()[1]).contains(REFUSAL_TURN));
         assert!(mailbox.snapshot().await.unwrap().boundaries.is_empty());
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// The listing holds only `ElaboratorInFlight` rows, so a boundary session
+    /// that stopped between `ReadyToSubmit` and its submit is found by its id
+    /// alone, and Cut 3's adoption rule decides it. A refused boundary session
+    /// is advanced through the real store to the `ReadyToSubmit` row the runner
+    /// writes before a submit; the clock ticks; the next sweep submits that
+    /// row under its id without a new inference, and the boundary is answered.
+    #[tokio::test]
+    async fn a_boundary_row_ready_to_submit_is_submitted_after_a_tick() {
+        let (directory, mailbox, task, _commons, roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let store = Arc::new(
+            CultCacheControllerWorkStore::open(directory.path().join("controller-work.cc")).unwrap(),
+        );
+        let refusing = Arc::new(SweepPort::new(|call, _| refused_round(call)));
+        let runner = sweep_runner(&mailbox, refusing.clone(), store.clone());
+        runner.sweep(pool(1)).await.unwrap();
+        drop(runner);
+        let ControllerWork::Elaboration(ElaborationCheckpoint::ElaboratorInFlight {
+            command_id,
+            session,
+            agent_prompt,
+            refusals,
+            mut completed,
+            ..
+        }) = store.journal.lock().unwrap().work.values().next().unwrap().clone()
+        else {
+            panic!("the refusal did not reopen the session");
+        };
+        completed.push(
+            shed_round(
+                json!({"ref": "existing", "value": serde_json::to_value(roads[0]).unwrap()}),
+                "The Shed on The Unwalked Road",
+                "ready-to-submit",
+            )
+            .unwrap(),
+        );
+        let ready = ElaborationCheckpoint::ReadyToSubmit {
+            command_id,
+            session: session.clone(),
+            agent_prompt,
+            refusals,
+            completed,
+        };
+        assert_eq!(
+            store.persist(&ControllerWork::Elaboration(ready)).await.unwrap(),
+            ControllerWorkWrite::Applied
+        );
+        mailbox
+            .submit_clock(CommandId::new(), TickMinutes::new(60).unwrap())
+            .await
+            .unwrap();
+        assert_ne!(
+            mailbox.snapshot().await.unwrap().last_commit_digest,
+            Some(session.ancestry.clone())
+        );
+
+        let idle = Arc::new(SweepPort::new(|call, _| idle_round(call)));
+        let runner = sweep_runner(&mailbox, idle.clone(), store.clone());
+        runner.sweep(pool(1)).await.unwrap();
+        assert_eq!(idle.calls(), 0, "the ready row ran a new inference");
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert!(snapshot.boundaries.is_empty(), "the ready row was not submitted");
+        assert!(place_labelled(&snapshot, "The Shed on The Unwalked Road").is_some());
+        assert_eq!(store.journal.lock().unwrap().work.len(), 1);
         drop(runner);
         drop(mailbox);
         task.await.unwrap();
