@@ -963,12 +963,39 @@ not repo artifacts.
     `world_create.v4` carries them; Dungeon's surface defaults them by its
     own `uniform_lens_weights()`; a `v3` invocation is denied.
   - P2.7 Weights enter `state_digest` and no scope digest.
-- **Landed:**
-- **Verdicts:**
+- **Landed:** `d06fd7e` (code), `10be98c` (docs).
+- **Verdicts:** Soul pass 1; Hands' mutations against `10be98c`, Soul's own
+  against the same tree.
 
 | Promise | Verdict | Evidence | Mutations |
 |---|---|---|---|
-| | | | |
+| P2.1 | HOLDS | Genesis and replay tests; Soul's replay probe across two weight commits | MH.2; Soul MS.2 |
+| P2.2 | HOLDS | Refused at genesis, the command, the Dungeon payload and the stored state row; a zero weight among real ones is admitted. The stored-row check is a redundant third layer (c2.s1.f3) | M2.3, M2.4, MH.4; Soul MS.4 (one shared `draws()` owner), MS.5 |
+| P2.3 | HOLDS | Non-owner principal, approver, elaborator, clock and consumer refused in-crate and from an external crate; one `state.owner` source read by both `require_owner` and the effect arm; `CommandEnvelope` and `WorldKernel` private; only `submit_principal` accepts a body, with the caller derived from verified evidence. The forged all-zero row test catches through the digest, not the draw rule (c2.s1.f4) | M2.1, M2.2; Soul MS.1 |
+| P2.4 | HOLDS | An Active `AdmitPatch` resolves with `lens_weights: None` and leaves weights unchanged | none isolates it; asserted by test |
+| P2.5 | HOLDS | `consumer.v4` stores refused, rerun by Soul; no migration read path | M2.5 |
+| P2.6 | HOLDS in the library and the create payload; UNPROVEN on the browser path | Payload refusals, uniform Dungeon default pinned, harness passes weights explicitly. The browser form's bindings never reach the payload fields (L1.f11) | M2.6, MH.3; Soul MS.3 |
+| P2.7 | HOLDS | `ScopePreimage` carries no weights; three scope digests identical across two weight commits. No session draws yet, so "a session keeps its lens" is untested here and owned by Cut 3 | MH.1 |
+
+- **Soul findings, pass 1:**
+  - **c2.s1.f1 (introduced, medium, fix):** `SetLensWeights` with weights
+    equal to the current ones commits: revision advances and the digest
+    moves. Nothing canonical changed, so this breaks the kernel invariant that
+    a no-effect command leaves revision, digests and journal unchanged. The
+    clock tick is not a precedent, because it moves fictional time. Fix: the
+    command returns `NoEffect` when the weights equal the current weights.
+  - **c2.s1.f2 (pre-existing, info):** replay, the commit count, and
+    `verify_state_shape` all refuse a stored all-zero state; see c2.s1.f3.
+  - **c2.s1.f3 (introduced, low, recorded):** the `verify_state_shape` lens
+    clause is not load-bearing. With it removed, replay ("head state does not
+    equal replayed history") and the commit-count check still refuse the
+    row. It is a third layer, as the spec intends.
+  - **c2.s1.f4 (introduced, low, fix):** the all-zero forgery in
+    `a_forged_lens_weights_row_fails_replay` (`journal.rs:1411-1421`) is
+    refused by the resulting-state-digest mismatch, so the test still
+    passes with `draws()` weakened. Fix: build the forgery so its digests are
+    consistent and only the draw rule can refuse it, then mutate `draws()` to
+    prove it.
 
 ## Cut 3. The lens and its text on the session, in the store, and the adoption rule
 
@@ -1460,7 +1487,7 @@ not repo artifacts.
 |---|---|---|---|---|
 | 0 | — | — | scratch captures only | scratch captures only, no repo change |
 | 1 | 0 | `lens.rs` ~150 + tests ~130; `lib.rs` 2 lines + test helper ~6 | 0 deps; 0 targets | `lens.rs` +372 (217 code, 155 tests; the tool tables are one name per line under rustfmt); `lib.rs` +7; `elaboration.rs` 1 line changed; 0 deps; 0 targets |
-| 2 | ~6 (doc lines replaced, the v2 denial case) | library: state field, command, effect, two reducer arms, resolve param, mismatch variant, snapshot field, replay check ~90; 19 literal sites × 1 line; tests ~220; Dungeon: payload field, policy fn, Eve control and binding, three schema strings, harness ~40; tests ~60; docs ~8 | 0 deps; `consumer.v4` → `v5`; `world_create.v3` → `v4` | |
+| 2 | ~6 (doc lines replaced, the v2 denial case) | library: state field, command, effect, two reducer arms, resolve param, mismatch variant, snapshot field, replay check ~90; 19 literal sites × 1 line; tests ~220; Dungeon: payload field, policy fn, Eve control and binding, three schema strings, harness ~40; tests ~60; docs ~8 | 0 deps; `consumer.v4` → `v5`; `world_create.v3` → `v4` | 12 files, +825 / −40: production ~130 across `lib.rs`, `patch.rs`, `journal.rs`, `mailbox.rs`, `action.rs`, `runtime.rs`, `eve.rs` plus 20 construction sites; tests ~650 (refusal matrix, direct `apply_effect` half, forged rows, state rows, replay). 0 deps; the two schema bumps as estimated |
 | 3 | ~4 (the constant as integrity reference, the whole-session supersession equality) | session fields, draw and text in `select_answer`, adoption rule, request param ~60; tests ~200; docs ~3 | `controller_work.v15` → `v16` | |
 | 4 | ~35 (sequential sweep, `Inactive`, doc lines) | `sweep` + `demand_entries` with rediscovery ~110; trait method + three store impls ~45; second pool and its config ~25; tests ~360; docs ~14 | public `sweep` signature gains a `Semaphore`; `ControllerWorkStore` gains one required method; one new env variable | |
 | 5 | ~14 | ~25 | 0 | |
@@ -1475,6 +1502,23 @@ retires one liability: a sweep whose only protection against a second
 session on one answer was that nobody wrote one.
 
 ## Findings not assigned to a cut
+
+- **L1.f11 (pre-existing, medium, operator):** the browser create form is not
+  wired end to end for any binding. `eve-browser-lowering` captures textarea
+  drafts as strings under `payload.bindings` (`index.ts:2034`, `2059-2076`).
+  Nothing in the repo lifts `bindings` to top-level fields or parses
+  `json`-typed values, and `execute_world` deserializes `invocation.payload`
+  straight into `CreatePayload` (`crates/ghostlight-dungeon/src/runtime.rs:1446`).
+  Only tests and the smoke harness exercise `world.create`, and Cut 2's
+  eighth binding inherits the same gap. It bears directly on the playtest
+  gate (Dungeon pass D2).
+- **L1.f12 (pre-existing shape widened by Cut 2, design, operator):** Draft
+  approvals are bound to nothing. `draft_approvals` (`lib.rs:806`) is only
+  inserted (`lib.rs:4827`) and read (`lib.rs:1594`, `4837`), never cleared.
+  Soul's probe: a member approves, the owner commits `SetLensWeights`, then
+  a Draft `AdmitPatch`, and activation still succeeds on the original
+  approval. An approval therefore covers any flavor or structure change
+  made after it. No spec decided this.
 
 - **L1.f1 (pre-existing, medium, operator-triaged, not blocking L1):** a
   sweep error whose `requires_quarantine()` is true reaches
