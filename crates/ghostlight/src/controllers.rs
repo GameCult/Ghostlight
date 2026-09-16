@@ -11254,6 +11254,111 @@ mod tests {
         task.await.unwrap();
     }
 
+    /// Work no declared root covers is claimed under `Uncovered`, the one
+    /// jurisdiction the sweep adds to those the deficit names. The world
+    /// declares no root, so no deficit row names any jurisdiction, and holds
+    /// one open boundary: a debtor with no position owes a creditor who can
+    /// neither command nor sue it. The sweep claims that missing structure
+    /// under `Uncovered`, runs its session, and records it.
+    #[tokio::test]
+    async fn the_sweep_claims_work_no_root_covers() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let subject = |handle: &str, label: &str, position: Option<Ref<EntityId>>| {
+            Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new(handle),
+                label: label.into(),
+                kind: SubjectKind::Person,
+                controller: NewController::NarrativePersona,
+                affordances: kernel_speak_grant(),
+                position,
+            })
+        };
+        let creation = mailbox
+            .create_fixture(
+                CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Uncovered Fixture".into(),
+                    brief: String::new(),
+                    patch: WorldPatch {
+                        declarations: vec![
+                            Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("commons"),
+                                label: "The Commons".into(),
+                                kind: EntityKind::Place,
+                                container: None,
+                            }),
+                            subject("debtor", "The Debtor", None),
+                            subject(
+                                "creditor",
+                                "The Creditor",
+                                Some(Ref::Draft(DraftHandle::new("commons"))),
+                            ),
+                        ],
+                        operations: vec![crate::patch::ComponentOp::CreateCommitment {
+                            subject: Ref::Draft(DraftHandle::new("debtor")),
+                            counterparty: Some(Ref::Draft(DraftHandle::new("creditor"))),
+                            kind: CommitmentKind::Obligation,
+                            due: crate::FictionalMinutes(600),
+                            period: None,
+                            checks: Vec::new(),
+                            statement: Statement::new("Repay the creditor by the harvest.").unwrap(),
+                        }],
+                        evidence: Vec::new(),
+                    },
+                    scale_intent: WorldScaleIntentRef::default(),
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: creation.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        assert!(
+            snapshot.scale_deficit.is_empty(),
+            "a deficit row names a jurisdiction: {:?}",
+            snapshot.scale_deficit
+        );
+        let [missing @ CausalBoundary::MissingStructure { .. }] = snapshot.boundaries.as_slice() else {
+            panic!("the fixture's only boundary is not the debtor's missing structure: {:?}", snapshot.boundaries);
+        };
+
+        let port = Arc::new(SweepPort::new(|call, _| idle_round(call)));
+        let store = fresh_store();
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        runner.sweep(pool(1)).await.unwrap();
+        assert_eq!(port.calls(), 1, "the uncovered boundary ran no session");
+        let stored = store.work.lock().unwrap();
+        assert_eq!(stored.len(), 1);
+        let session = recorded_session(stored.values().next().unwrap());
+        assert_eq!(session.jurisdiction, JurisdictionKey::Uncovered);
+        assert_eq!(session.answer, crate::PatchAnswer::Boundary(missing.clone()));
+        drop(stored);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
     /// A retryable fault ends only its own session: the sibling commits, and
     /// the sweep ends `Ok`.
     #[tokio::test]
