@@ -588,6 +588,14 @@ not repo artifacts.
   - `Get-ChildItem target -Recurse | Measure-Object Length -Sum`: record the
     repo target size before Cut 1 (L0 recorded 7.5 GiB; not re-measured
     here).
+- **Captured:** at `ff766e8` (source identical to `817c9f4`) by Hands, stored
+  in the session scratchpad under `cut0\`, not as repo artifacts: session id
+  `56dbcdb2-9337-ac07-f322-37376b58cbcb`; catalog digest
+  `sha256:285e9fa3…c5e8b`; the mismatch JSON; target size 14,484,808,937
+  bytes; the distinct warning messages from a forced rebuild. Census by
+  `-- --list`: library 420 (1 ignored), doc 10, external_admission 8, Dungeon
+  51 on Windows (1 ignored; 55 on Linux), build_provenance 1,
+  persona-projection 13.
 
 ## Cut 1. The lens module
 
@@ -709,12 +717,37 @@ not repo artifacts.
     shaped like real ones (case, whitespace, near-miss).
   - P1.5 The library's dependency tree gains nothing; no `rand`; no
     `uniform()` or default weights in the library.
-- **Landed:**
-- **Verdicts:**
+- **Landed:** `835ea4d`.
+- **Verdicts:** Soul pass 1, all mutations against `835ea4d`.
 
 | Promise | Verdict | Evidence | Mutations |
 |---|---|---|---|
-| | | | |
+| P1.1 | HOLDS | Eight variants in the target's order; snake_case pinned; `PATINA`, `Patina`, `0` refused | M1.4; Soul MS3 (reorder fails the serialize test) |
+| P1.2 | HOLDS | Lead test green; catalog digest recomputed at `835ea4d` equals the Cut 0 capture; `patch.rs`, `schemas.json`, `Cargo.toml`, `Cargo.lock` diff 0 | M1.5 |
+| P1.3 | HOLDS | Draw depends only on `{world_id, command_id}` and weights; `BTreeMap` order is stable; `u128` total; all-`u32::MAX` and single-max weights draw; `Default` and eight zeros refuse | M1.1, M1.2, M1.3 (caught by a divide-by-zero panic, see c1.s1.f2); Soul MS1 reversed walk, MS2 digest slice 16..32 both fail; MS4 walking `iter()` passes because it is the same order |
+| P1.4 | HOLDS | Case, whitespace, near-miss, `tribunal`, numeric names refused; negative, float, over-width and non-integer weights refused in JSON and msgpack; `rmp_serde` round-trip byte-equal. Duplicate keys are last-wins (c1.s1.f1) | Soul probes |
+| P1.5 | HOLDS | `rand` 0 in manifest and `cargo tree -e normal`; `fn uniform` 0; `lens` 0 in Dungeon source; no Dungeon vocabulary in `lens.rs`; distinct warnings identical to base; `draw` and `draws` unreachable from an external crate (E0603, E0624) | MS5, MS6, external-reach probes |
+
+- **Soul findings, pass 1:**
+  - **c1.s1.f1 (introduced, low, recorded):** `LensWeights` is `serde(transparent)`
+    over `BTreeMap`, so `{"patina":1,"patina":5}` deserializes to `Patina = 5`
+    in JSON and msgpack. Cut 2's admission judges the parsed value and cannot
+    see a doubled key. Same behaviour as every `BTreeMap` field in the crate.
+  - **c1.s1.f2 (introduced, low, fix in Cut 3):** the all-zero guard
+    (`lens.rs:164`, over the map's values) and the divisor (`lens.rs:201-205`,
+    a sum over `Lens::ALL`) are different computations. They agree today, but
+    changing the guard alone panics at `:205`. Guard the divisor directly, as
+    `select_band` does (`action.rs:802`). Cut 3 wires the draw and owns this.
+  - **c1.s1.f3 (introduced, info, recorded):** the `cfg_attr(not(test),
+    expect(dead_code))` markers produce an *unfulfilled lint expectation*
+    warning, not a compile error, when their items gain a caller; the
+    workspace has no `deny(warnings)`. Cut 3 must remove them, and its Soul
+    pass must catch a leftover by the distinct-warning comparison. This
+    corrects Hands' claim that the compiler would refuse.
+  - **c1.s1.f4 (info):** external code can hold an all-zero `LensWeights`
+    through `new`, `Default` and `Deserialize`, and cannot reach the draw,
+    since the `lens` module and `draws` are private. No crash path exists at
+    Cut 1, consistent with L0's Q1-9.
 
 ## Cut 2. Lens weights as world data, the owner command, and `world_create.v4`
 
@@ -1425,8 +1458,8 @@ not repo artifacts.
 
 | Cut | Removed (estimate) | Added (estimate) | Deps / formats / targets | Actual |
 |---|---|---|---|---|
-| 0 | — | — | scratch captures only | |
-| 1 | 0 | `lens.rs` ~150 + tests ~130; `lib.rs` 2 lines + test helper ~6 | 0 deps; 0 targets | |
+| 0 | — | — | scratch captures only | scratch captures only, no repo change |
+| 1 | 0 | `lens.rs` ~150 + tests ~130; `lib.rs` 2 lines + test helper ~6 | 0 deps; 0 targets | `lens.rs` +372 (217 code, 155 tests; the tool tables are one name per line under rustfmt); `lib.rs` +7; `elaboration.rs` 1 line changed; 0 deps; 0 targets |
 | 2 | ~6 (doc lines replaced, the v2 denial case) | library: state field, command, effect, two reducer arms, resolve param, mismatch variant, snapshot field, replay check ~90; 19 literal sites × 1 line; tests ~220; Dungeon: payload field, policy fn, Eve control and binding, three schema strings, harness ~40; tests ~60; docs ~8 | 0 deps; `consumer.v4` → `v5`; `world_create.v3` → `v4` | |
 | 3 | ~4 (the constant as integrity reference, the whole-session supersession equality) | session fields, draw and text in `select_answer`, adoption rule, request param ~60; tests ~200; docs ~3 | `controller_work.v15` → `v16` | |
 | 4 | ~35 (sequential sweep, `Inactive`, doc lines) | `sweep` + `demand_entries` with rediscovery ~110; trait method + three store impls ~45; second pool and its config ~25; tests ~360; docs ~14 | public `sweep` signature gains a `Semaphore`; `ControllerWorkStore` gains one required method; one new env variable | |
@@ -1436,7 +1469,7 @@ Net for L1: about +1,300 lines, of which about two thirds are tests, no new
 dependency, no new crate, no new binary, four schema strings replaced, one
 environment variable added, one required method on the store trait. The growth buys the capabilities the target
 names (lenses, world-owned weights and their owner command, a recorded
-replayable draw inside the session identity, concurrent sessions under a
+replayable draw recorded on the session, concurrent sessions under a
 ceiling that cannot starve simulation, an explicit weights payload) and
 retires one liability: a sweep whose only protection against a second
 session on one answer was that nobody wrote one.
