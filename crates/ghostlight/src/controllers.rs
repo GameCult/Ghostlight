@@ -11254,14 +11254,18 @@ mod tests {
         task.await.unwrap();
     }
 
-    /// Work no declared root covers is claimed under `Uncovered`, the one
-    /// jurisdiction the sweep adds to those the deficit names. The world
-    /// declares no root, so no deficit row names any jurisdiction, and holds
-    /// one open boundary: a debtor with no position owes a creditor who can
-    /// neither command nor sue it. The sweep claims that missing structure
-    /// under `Uncovered`, runs its session, and records it.
-    #[tokio::test]
-    async fn the_sweep_claims_work_no_root_covers() {
+    /// An Active world whose one open boundary no root can cover: a debtor with
+    /// no position owes a creditor in the commons who can neither command nor
+    /// sue it. `scale_intent` decides which roots, and so which deficit rows,
+    /// the world also declares.
+    async fn unpositioned_debtor_world(
+        scale_intent: WorldScaleIntentRef,
+    ) -> (
+        tempfile::TempDir,
+        WorldMailbox,
+        tokio::task::JoinHandle<()>,
+        WorldSnapshot,
+    ) {
         let directory = tempfile::tempdir().unwrap();
         let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
         let owner = PrincipalId::new("owner");
@@ -11310,7 +11314,7 @@ mod tests {
                         }],
                         evidence: Vec::new(),
                     },
-                    scale_intent: WorldScaleIntentRef::default(),
+                    scale_intent,
                 },
                 &authenticated,
             )
@@ -11334,6 +11338,18 @@ mod tests {
             snapshot = mailbox.snapshot().await.unwrap();
         }
         assert_eq!(snapshot.phase, WorldPhase::Active);
+        (directory, mailbox, task, snapshot)
+    }
+
+    /// Work no declared root covers is claimed under `Uncovered`, the one
+    /// jurisdiction the sweep adds to those the deficit names. The world
+    /// declares no root, so no deficit row names any jurisdiction. The sweep
+    /// claims the debtor's missing structure under `Uncovered`, runs its
+    /// session, and records it.
+    #[tokio::test]
+    async fn the_sweep_claims_work_no_root_covers() {
+        let (_directory, mailbox, task, snapshot) =
+            unpositioned_debtor_world(WorldScaleIntentRef::default()).await;
         assert!(
             snapshot.scale_deficit.is_empty(),
             "a deficit row names a jurisdiction: {:?}",
@@ -11384,6 +11400,51 @@ mod tests {
         let snapshot = mailbox.snapshot().await.unwrap();
         assert!(place_labelled(&snapshot, "The Shed on The Far Road").is_some());
         assert_eq!(snapshot.boundaries.len(), 1, "the faulted dead end was answered");
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// `Uncovered` is swept beside the jurisdictions the deficit names, not only
+    /// when none is named. The commons root is in deficit and the unpositioned
+    /// debtor's missing structure is outside it: one sweep runs the deficit's
+    /// session and a session under `Uncovered` for that boundary.
+    #[tokio::test]
+    async fn the_sweep_claims_uncovered_work_beside_a_root_in_deficit() {
+        let (_directory, mailbox, task, snapshot) = unpositioned_debtor_world(WorldScaleIntentRef {
+            targets: BTreeMap::from([(SubjectKind::Person, 3)]),
+            jurisdictions: BTreeMap::from([(DraftHandle::new("commons"), 1000)]),
+        })
+        .await;
+        assert!(
+            snapshot.scale_deficit.iter().any(|row| row.deficit > 0
+                && matches!(row.jurisdiction, JurisdictionKey::PlaceSubtree(_))),
+            "the commons root is not in deficit: {:?}",
+            snapshot.scale_deficit
+        );
+        let [missing @ CausalBoundary::MissingStructure { .. }] = snapshot.boundaries.as_slice() else {
+            panic!("the fixture's only boundary is not the debtor's missing structure: {:?}", snapshot.boundaries);
+        };
+
+        let port = Arc::new(SweepPort::new(|call, _| idle_round(call)));
+        let store = fresh_store();
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        runner.sweep(pool(1)).await.unwrap();
+        assert_eq!(port.calls(), 2, "the deficit and the uncovered boundary are two sessions");
+        let stored = store.work.lock().unwrap();
+        let sessions: Vec<ElaboratorSession> = stored.values().map(recorded_session).collect();
+        assert!(
+            sessions.iter().any(|session| session.jurisdiction == JurisdictionKey::Uncovered
+                && session.answer == crate::PatchAnswer::Boundary(missing.clone())),
+            "no session ran under Uncovered for the debtor's missing structure: {sessions:?}"
+        );
+        assert!(
+            sessions
+                .iter()
+                .any(|session| matches!(session.answer, crate::PatchAnswer::Deficit(_))),
+            "the root's deficit ran no session: {sessions:?}"
+        );
+        drop(stored);
         drop(runner);
         drop(mailbox);
         task.await.unwrap();
