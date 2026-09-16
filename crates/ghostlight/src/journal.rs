@@ -1360,8 +1360,12 @@ mod tests {
     }
 
     /// A stored weight change is not believed about who made it or what it
-    /// wrote. Each forgery re-seals its row, so the chain digest cannot answer
-    /// for the authority or draw check.
+    /// wrote. Each forgery re-seals the whole store around its rewrite: the
+    /// head state takes the effect's weights, its state digest is recomputed,
+    /// the commit's resulting state digest and its own digest follow, and the
+    /// head's last commit digest names the re-sealed commit. No digest can
+    /// answer for the check, which the drawing control proves: the same
+    /// re-sealing around a set that draws replays.
     #[test]
     fn a_forged_lens_weights_row_fails_replay() {
         use crate::tests::human_principal;
@@ -1369,56 +1373,87 @@ mod tests {
 
         let (_directory, kernel, _) = lens_history();
         let honest: Vec<WorldCommit> = kernel.journal.commits.values().cloned().collect();
-        let forge = |rewrite: &dyn Fn(&mut WorldCommit)| {
-            let mut forged_one = false;
-            let forged: Vec<WorldCommit> = honest
-                .iter()
-                .cloned()
-                .map(|mut commit| {
-                    if matches!(commit.effect, WorldEffect::LensWeightsReplaced { .. }) {
-                        rewrite(&mut commit);
-                        commit.digest = commit_digest(&commit).unwrap();
-                        forged_one = true;
-                    }
-                    commit
-                })
-                .collect();
-            assert!(forged_one, "no lens weights row was found to forge");
-            let error = recover(rows_of(&kernel.state, &forged), None)
-                .expect_err("a forged lens weights row replayed");
-            let JournalError::Corrupt(detail) = &error else {
+        let forge = |rewrite: &dyn Fn(&mut WorldCommit)| -> (WorldState, Vec<WorldCommit>) {
+            let mut head = kernel.state.clone();
+            let mut forged: Vec<WorldCommit> = honest.clone();
+            let lens_row = forged
+                .iter_mut()
+                .filter(|commit| matches!(commit.effect, WorldEffect::LensWeightsReplaced { .. }))
+                .collect::<Vec<_>>();
+            let [commit] = <[&mut WorldCommit; 1]>::try_from(lens_row)
+                .expect("the history holds exactly one lens weights row");
+            assert_eq!(
+                commit.resulting_revision, head.revision,
+                "the lens weights row is the head commit"
+            );
+            rewrite(commit);
+            let WorldEffect::LensWeightsReplaced { weights } = &commit.effect else {
+                unreachable!("a lens weights row stays one");
+            };
+            head.lens_weights = weights.clone();
+            head.state_digest = crate::state_digest(&head).unwrap();
+            commit.resulting_state_digest = head.state_digest.clone();
+            commit.digest = commit_digest(commit).unwrap();
+            head.last_commit_digest = Some(commit.digest.clone());
+
+            // Every seal agrees with what it seals.
+            assert_eq!(crate::state_digest(&head).unwrap(), head.state_digest);
+            assert_eq!(commit_digest(commit).unwrap(), commit.digest);
+            assert_eq!(commit.resulting_state_digest, head.state_digest);
+            assert_eq!(head.last_commit_digest.as_deref(), Some(commit.digest.as_str()));
+            (head, forged)
+        };
+        let set = |weights: LensWeights| {
+            move |commit: &mut WorldCommit| {
+                if let CommittedCommand::WorldCommand(command) = &mut commit.command {
+                    command.body = CommandBody::SetLensWeights {
+                        weights: weights.clone(),
+                    };
+                }
+                commit.effect = WorldEffect::LensWeightsReplaced {
+                    weights: weights.clone(),
+                };
+            }
+        };
+        let refused = |(head, forged): (WorldState, Vec<WorldCommit>)| -> String {
+            let error =
+                recover(rows_of(&head, &forged), None).expect_err("a forged lens weights row replayed");
+            let JournalError::Corrupt(detail) = error else {
                 panic!("unexpected refusal: {error:?}");
             };
-            assert!(
-                !detail.contains("commit chain is not contiguous"),
-                "the chain digest answered for the check: {detail}"
-            );
+            detail
         };
 
+        // The control: a re-sealed store around a different set that draws
+        // replays, so the re-sealing leaves nothing for a digest to catch.
+        let drawing = LensWeights::new(BTreeMap::from([(Lens::Veil, 2), (Lens::Ember, 1)]));
+        let (head, forged) = forge(&set(drawing.clone()));
+        let (_, replayed, _) =
+            recover(rows_of(&head, &forged), None).expect("a consistent re-sealed store replays");
+        assert_eq!(replayed.lens_weights, drawing);
+
         // A non-owner principal with a live approver role in this world.
-        forge(&|commit| {
+        let detail = refused(forge(&|commit| {
             if let CommittedCommand::WorldCommand(command) = &mut commit.command {
                 command.caller = CallerId::Principal(human_principal());
             }
-        });
+        }));
+        assert!(detail.contains("Unauthorized") || detail.contains("does not own"), "{detail}");
         // The clock capability.
-        forge(&|commit| {
+        let detail = refused(forge(&|commit| {
             if let CommittedCommand::WorldCommand(command) = &mut commit.command {
                 command.caller = CallerId::System(crate::SystemCapability::Clock);
             }
-        });
-        // Every lens named, all at zero, in both the command and its effect.
+        }));
+        assert!(detail.contains("Unauthorized") || detail.contains("does not own"), "{detail}");
+        // Every lens named, all at zero, in the command, its effect and the
+        // head: only the draw rule is left to refuse it.
         let never = LensWeights::new(Lens::ALL.into_iter().map(|lens| (lens, 0)).collect());
-        forge(&|commit| {
-            if let CommittedCommand::WorldCommand(command) = &mut commit.command {
-                command.body = CommandBody::SetLensWeights {
-                    weights: never.clone(),
-                };
-            }
-            commit.effect = WorldEffect::LensWeightsReplaced {
-                weights: never.clone(),
-            };
-        });
+        let detail = refused(forge(&set(never)));
+        assert!(
+            detail.contains("never draw") || detail.contains("LensWeightsNeverDraw"),
+            "something other than the draw rule refused the all-zero row: {detail}"
+        );
     }
 
     /// The third statement of the draw rule: a state row whose weights never
