@@ -9531,6 +9531,23 @@ mod tests {
         EntityId,
         Vec<EntityId>,
     ) {
+        dead_end_world_in(WorldPhase::Active, lens_weights, dead_ends, roots, persons).await
+    }
+
+    /// The same world, left in `phase`: Draft stops before approval.
+    async fn dead_end_world_in(
+        phase: WorldPhase,
+        lens_weights: LensWeights,
+        dead_ends: &[&str],
+        roots: Roots,
+        persons: u32,
+    ) -> (
+        tempfile::TempDir,
+        WorldMailbox,
+        tokio::task::JoinHandle<()>,
+        EntityId,
+        Vec<EntityId>,
+    ) {
         let directory = tempfile::tempdir().unwrap();
         let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
         let owner = PrincipalId::new("owner");
@@ -9626,7 +9643,12 @@ mod tests {
             .await
             .unwrap();
         let mut snapshot = mailbox.snapshot().await.unwrap();
-        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+        let lifecycle = if phase == WorldPhase::Active {
+            vec![CommandBody::ApproveDraft, CommandBody::ActivateWorld]
+        } else {
+            Vec::new()
+        };
+        for body in lifecycle {
             mailbox
                 .submit_fixture(
                     CommandEnvelope {
@@ -9642,7 +9664,7 @@ mod tests {
                 .unwrap();
             snapshot = mailbox.snapshot().await.unwrap();
         }
-        assert_eq!(snapshot.phase, WorldPhase::Active);
+        assert_eq!(snapshot.phase, phase);
         let place = |label: &str| {
             snapshot
                 .places
@@ -11190,6 +11212,43 @@ mod tests {
             );
         }
         drop(stored);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// A sweep spends nothing on a world that is not Active, and Draft is the
+    /// only other phase. A Draft world with an open dead end and a deficit: the
+    /// sweep reads no listing, so it draws nothing; it makes no inference,
+    /// writes no row, and leaves the pool whole.
+    #[tokio::test]
+    async fn a_draft_world_is_not_swept() {
+        let (_directory, mailbox, task, _commons, _roads) = dead_end_world_in(
+            WorldPhase::Draft,
+            crate::tests::stock_weights(),
+            &["The Unwalked Road"],
+            Roots::Commons,
+            3,
+        )
+        .await;
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert!(
+            snapshot.scale_deficit.iter().any(|row| row.deficit > 0),
+            "the Draft fixture has no deficit to refuse"
+        );
+        let permits = pool(1);
+        let mut port = SweepPort::new(|call, _| idle_round(call));
+        port.pool = Some(permits.clone());
+        let port = Arc::new(port);
+        let recording = fresh_store();
+        let store = ListingProbe::over(recording.clone());
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        runner.sweep(permits.clone()).await.unwrap();
+        assert_eq!(store.listings.load(Ordering::SeqCst), 0, "a Draft world's listing was read");
+        assert_eq!(port.calls(), 0, "a Draft world reached the provider");
+        assert!(recording.work.lock().unwrap().is_empty(), "a Draft world gained a row");
+        assert_eq!(permits.available_permits(), 1);
+        assert_eq!(mailbox.snapshot().await.unwrap().revision, snapshot.revision);
         drop(runner);
         drop(mailbox);
         task.await.unwrap();
