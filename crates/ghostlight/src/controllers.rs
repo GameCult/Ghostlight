@@ -11543,6 +11543,76 @@ mod tests {
         task.await.unwrap();
     }
 
+    /// The listing holds no `NoPatch` rows either, so a boundary session that
+    /// ended without a submit is found by its id alone, and Cut 3's adoption
+    /// rule decides it. The owner narrows the weights to a lens the finished
+    /// session did not draw, which moves the ancestry and would move a fresh
+    /// draw; the boundary itself is unchanged, so the claim set's fresh session
+    /// carries the finished row's id and differs from the row in ancestry and
+    /// lens. The rule reads what the session answers: the step ends `NoPatch`
+    /// with no inference, and the row is untouched.
+    #[tokio::test]
+    async fn a_finished_boundary_session_stays_finished_after_the_world_moves() {
+        let (directory, mailbox, task, commons, _roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let jurisdiction = JurisdictionKey::PlaceSubtree(commons);
+        let store = Arc::new(
+            CultCacheControllerWorkStore::open(directory.path().join("controller-work.cc")).unwrap(),
+        );
+        let port = Arc::new(SweepPort::new(|call, _| idle_round(call)));
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        assert_eq!(
+            runner.step_in(jurisdiction).await.unwrap(),
+            Some(crate::elaboration::ElaborationOutcome::NoPatch)
+        );
+        let (command_id, finished) = {
+            let journal = store.journal.lock().unwrap();
+            assert_eq!(journal.work.len(), 1);
+            let (id, work) = journal.work.iter().next().unwrap();
+            assert!(matches!(
+                work,
+                ControllerWork::Elaboration(ElaborationCheckpoint::NoPatch { .. })
+            ));
+            (*id, recorded_session(work))
+        };
+        let finished_bytes = row_payload(&store, command_id).unwrap();
+
+        let before = mailbox.snapshot().await.unwrap();
+        let other = if finished.lens == Lens::Numen {
+            Lens::Patina
+        } else {
+            Lens::Numen
+        };
+        mailbox
+            .submit_fixture(
+                owner_command(&before, CommandBody::SetLensWeights { weights: only(other) }),
+                &owner_caller(),
+            )
+            .await
+            .unwrap();
+        let after = mailbox.snapshot().await.unwrap();
+        assert_eq!(after.boundaries, before.boundaries, "the owner's change moved the boundary");
+        assert_ne!(after.last_commit_digest, Some(finished.ancestry.clone()));
+        assert_eq!(after.lens_weights, only(other));
+
+        assert_eq!(
+            runner.step_in(jurisdiction).await.unwrap(),
+            Some(crate::elaboration::ElaborationOutcome::NoPatch),
+            "the finished row was not recognised as this answer's row"
+        );
+        assert_eq!(port.calls(), 1, "the finished session ran again");
+        assert_eq!(store.journal.lock().unwrap().work.len(), 1);
+        assert_eq!(row_payload(&store, command_id).unwrap(), finished_bytes);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
     /// A deficit session the model keeps getting wrong. After its first
     /// refusal, five clock ticks each move the ancestry and are each followed by
     /// a sweep; every sweep resumes the same session for one more round. The
