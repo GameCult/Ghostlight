@@ -680,9 +680,10 @@ pub enum CommandBody {
     },
     /// Replaces the world's whole lens weight set. Owner only, in any phase,
     /// under genesis admission: a set that never draws is refused, and a zero
-    /// weight is admitted and never draws. Identical weights are still a
-    /// commit, because the owner's act is canonical. A session that already
-    /// drew keeps its recorded lens.
+    /// weight is admitted and never draws. A set equal to the current one
+    /// changes nothing canonical and is refused with `NoCanonicalChange`
+    /// after admission, so nothing commits. A session that already drew
+    /// keeps its recorded lens.
     SetLensWeights {
         weights: LensWeights,
     },
@@ -1680,6 +1681,14 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
             if !weights.draws() {
                 return Err(KernelError::PatchRejected(vec![
                     Mismatch::LensWeightsNeverDraw,
+                ]));
+            }
+            // Admission first, then effect: a caller who may not set weights,
+            // or a set that never draws, is refused as such even when it
+            // equals the current set. Only an admitted set can be a no-op.
+            if weights == &state.lens_weights {
+                return Err(KernelError::PatchRejected(vec![
+                    Mismatch::NoCanonicalChange,
                 ]));
             }
             Ok(WorldEffect::LensWeightsReplaced {
@@ -14647,17 +14656,60 @@ mod clock_tests {
         .expect("the owner's effect applies");
         assert_eq!(candidate.lens_weights, proposed);
 
-        // Identical weights from the owner are still a commit.
-        let current = kernel.snapshot().unwrap();
-        submit_owner(
+        // Identical weights from the owner change nothing canonical: refused
+        // as `NoCanonicalChange`, and nothing commits.
+        let result = submit_as(
             &mut kernel,
-            &current,
+            CallerId::Principal(owner()),
             CommandBody::SetLensWeights {
                 weights: active_weights.clone(),
             },
         );
-        assert_eq!(kernel.state.revision, current.revision + 1);
-        assert_eq!(kernel.state.lens_weights, active_weights);
+        let Err(KernelError::PatchRejected(mismatches)) = result else {
+            panic!("identical lens weights were admitted: {result:?}");
+        };
+        assert_eq!(mismatches, vec![Mismatch::NoCanonicalChange]);
+        assert_eq!(kernel.state, before);
+
+        // The order is admission, then effect. Identical weights from a
+        // non-owner are `Unauthorized`; and against a state whose own set
+        // never draws (no store holds one, so the state is built by hand), an
+        // identical all-zero set is `LensWeightsNeverDraw`, not a no-op.
+        let result = submit_as(
+            &mut kernel,
+            CallerId::Principal(human_principal()),
+            CommandBody::SetLensWeights {
+                weights: active_weights.clone(),
+            },
+        );
+        assert!(
+            matches!(result, Err(KernelError::Unauthorized)),
+            "a non-owner's identical set: {result:?}"
+        );
+        assert_eq!(kernel.state, before);
+        let mut never = kernel.state.clone();
+        never.lens_weights = every_lens_at_zero();
+        let current = kernel.snapshot().unwrap();
+        let identical_zero = command(
+            &current,
+            CommandId::new(),
+            CallerId::Principal(owner()),
+            CommandBody::SetLensWeights {
+                weights: every_lens_at_zero(),
+            },
+        );
+        let result = reduce(&never, &identical_zero);
+        let Err(KernelError::PatchRejected(mismatches)) = result else {
+            panic!("an identical set that never draws: {result:?}");
+        };
+        assert_eq!(mismatches, vec![Mismatch::LensWeightsNeverDraw]);
+
+        // Replay across that history is unchanged: the refused attempts wrote
+        // nothing, and the store reopens to the same head.
+        let (path, world_id) = (directory.path().join("world.cc"), kernel.state.world_id);
+        drop(kernel);
+        let reopened = WorldKernel::open(path, world_id).expect("the history reopens");
+        assert_eq!(reopened.state, before);
     }
 
     /// An owner commit that adds a commitment to the first person: a real

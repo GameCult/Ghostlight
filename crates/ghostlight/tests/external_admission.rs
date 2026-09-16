@@ -19,7 +19,7 @@
 use chrono::{Duration, Utc};
 use ghostlight::{
     CommandBody, CommandId, ControllerMode, ControllerPort, CreateWorldIntent, DecisionInvocation,
-    DecisionOpportunity, KernelError, Lens, LensWeights, MailboxError, PrincipalCommandIntent,
+    DecisionOpportunity, KernelError, Lens, LensWeights, MailboxError, Mismatch, PrincipalCommandIntent,
     Statement, SubjectId, SubmitReceipt, VerifiedPrincipalEvidence, WorldMailbox, WorldPhase,
     WorldSnapshot,
 };
@@ -552,6 +552,63 @@ async fn set_lens_weights_from_a_non_owner_is_refused_and_commits_nothing() {
     let after = world.snapshot().await;
     assert_eq!(after.revision, before.0 + 1);
     assert_eq!(after.lens_weights, real_weights());
+}
+
+/// The owner resubmitting the world's current weights changes nothing
+/// canonical, so the kernel refuses it as `NoCanonicalChange` and nothing
+/// commits. Admission runs first: the same identical set from a non-owner is
+/// `Unauthorized`. A different set from the owner then commits, so neither
+/// refusal is an inert harness.
+#[tokio::test]
+async fn identical_lens_weights_from_the_owner_commit_nothing() {
+    let world = World::active().await;
+    let current = world.snapshot().await.lens_weights;
+    let before = world.committed().await;
+    let intent = |snapshot: &WorldSnapshot, weights: LensWeights| PrincipalCommandIntent {
+        id: CommandId::new(),
+        world_id: snapshot.world_id,
+        expected_revision: snapshot.revision,
+        body: CommandBody::SetLensWeights { weights },
+    };
+    let snapshot = world.snapshot().await;
+
+    let result = world
+        .mailbox
+        .submit_principal(intent(&snapshot, current.clone()), &world.principal)
+        .await;
+    let Err(MailboxError::Kernel(KernelError::PatchRejected(mismatches))) = &result else {
+        panic!("the owner's identical lens weights were not refused as no change: {result:?}");
+    };
+    assert_eq!(mismatches, &vec![Mismatch::NoCanonicalChange]);
+    assert_eq!(world.committed().await, before);
+
+    let stranger =
+        VerifiedPrincipalEvidence::new("external-admission-stranger", Utc::now() + Duration::hours(1));
+    let result = world
+        .mailbox
+        .submit_principal(intent(&snapshot, current.clone()), &stranger)
+        .await;
+    assert!(
+        matches!(
+            result,
+            Err(MailboxError::Kernel(KernelError::Unauthorized))
+        ),
+        "a non-owner's identical lens weights were not refused as unauthorized: {result:?}"
+    );
+    assert_eq!(world.committed().await, before);
+
+    assert_ne!(current, real_weights());
+    let receipt = world
+        .mailbox
+        .submit_principal(intent(&snapshot, real_weights()), &world.principal)
+        .await
+        .expect("the owner replaces the lens weights with a different set");
+    assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+    let after = world.committed().await;
+    assert_eq!(after.0, before.0 + 1);
+    assert_ne!(after.1, before.1);
+    assert_ne!(after.2, before.2);
+    assert_eq!(world.snapshot().await.lens_weights, real_weights());
 }
 
 /// A lens name the library does not know cannot be decoded into a command
