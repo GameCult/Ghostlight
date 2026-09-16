@@ -80,6 +80,25 @@ neighbours, and `set -euo pipefail` with `trap` means a library-test
 failure does abort the deploy. The acceptance test exists at
 `crates/ghostlight/src/controllers.rs:8980` under `-p ghostlight --lib`.
 
+C2-F1, C2-F2 and C2-F3 are fixed at gamecult-ops `803f2c7` (wiring test
+only). A new `require_invocation` helper pins each of the four cargo steps
+as a whole contiguous docker invocation and returns its start line; three
+numeric comparisons assert the recipe order; the runbook became a checked
+file, tying all four acceptance sites together. All four of Soul's
+mutations now exit 1 where they previously exited 0, and every
+pre-existing assertion still passes. `require_order` was unusable here
+because its `last_line` resolves a substring and would have bound the
+library step to the acceptance invocation. Soul has not yet passed on this
+fix batch.
+
+Follow-ups outside this migration, from the fix batch:
+- `scripts/deploy-ghostlight-yggdrasil.sh:974`, the web container, is
+  pinned by substring and survives a `: ` prefix that neuters it.
+- The Codex Connector's four cargo steps are bare substring pins with no
+  invocation or order assertion: the connector-side C2-F1 and C2-F2.
+- `require_command_options` searches a fixed 18-line window, so a block
+  that grows past it stops being checked silently.
+
 Open: **Q1-9 what sealing means.** A: restate invariant 1 as unforgeable
 *admission* — external code may hold a syntactically valid ID or opportunity,
 and the kernel must reject any it did not issue — and prove it with rejection
