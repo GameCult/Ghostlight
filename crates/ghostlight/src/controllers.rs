@@ -9938,6 +9938,87 @@ mod tests {
         task.await.unwrap();
     }
 
+    /// Adoption reads the row only when the row answers this answer. A store
+    /// row found under this world's derived id, but whose session names another
+    /// world, or another jurisdiction of this world, is not adopted: the step is
+    /// `Superseded`, no inference runs, and the row is left as it was. The rows
+    /// are a real refused session with one identity field moved to another real
+    /// value.
+    #[tokio::test]
+    async fn a_row_for_the_same_answer_under_another_world_or_jurisdiction_is_not_adopted() {
+        let (_other_directory, other_mailbox, other_task, _, _) = elaboration_mailbox().await;
+        let other_world = other_mailbox.snapshot().await.unwrap().world_id;
+        drop(other_mailbox);
+        other_task.await.unwrap();
+
+        let (_directory, mailbox, task, commons, road) = elaboration_mailbox().await;
+        let jurisdiction = JurisdictionKey::PlaceSubtree(commons);
+        let store = fresh_store();
+        let script = shed_script(road);
+        let first = elaboration_runner(&mailbox, script.clone(), store.clone());
+        assert_eq!(
+            first.step(jurisdiction).await.unwrap(),
+            crate::elaboration::ElaborationOutcome::Rejected
+        );
+        drop(first);
+        let (command_id, row) = {
+            let stored = store.work.lock().unwrap();
+            let (id, work) = stored.iter().next().unwrap();
+            (*id, work.clone())
+        };
+        let moved = |change: &dyn Fn(&mut ElaboratorSession)| {
+            let ControllerWork::Elaboration(ElaborationCheckpoint::ElaboratorInFlight {
+                command_id,
+                mut session,
+                agent_prompt,
+                refusals,
+                completed,
+                invocation,
+            }) = row.clone()
+            else {
+                panic!("the refusal did not reopen the session");
+            };
+            change(&mut session);
+            ControllerWork::Elaboration(ElaborationCheckpoint::ElaboratorInFlight {
+                command_id,
+                session,
+                agent_prompt,
+                refusals,
+                completed,
+                invocation,
+            })
+        };
+        for (what, forged) in [
+            ("world", moved(&|session| session.world_id = other_world)),
+            (
+                "jurisdiction",
+                moved(&|session| session.jurisdiction = JurisdictionKey::PlaceSubtree(road)),
+            ),
+        ] {
+            store.work.lock().unwrap().insert(command_id, forged.clone());
+            let runner = elaboration_runner(&mailbox, script.clone(), store.clone());
+            assert_eq!(
+                runner.step(jurisdiction).await.unwrap(),
+                crate::elaboration::ElaborationOutcome::Superseded,
+                "a row under another {what} was adopted"
+            );
+            drop(runner);
+            assert_eq!(script.seen.lock().unwrap().len(), 1, "{what}: an inference ran");
+            assert_eq!(store.work.lock().unwrap().get(&command_id), Some(&forged));
+        }
+
+        // The row as the session wrote it is adopted and repaired.
+        store.work.lock().unwrap().insert(command_id, row);
+        let runner = elaboration_runner(&mailbox, script.clone(), store.clone());
+        assert_eq!(
+            runner.step(jurisdiction).await.unwrap(),
+            crate::elaboration::ElaborationOutcome::Committed
+        );
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
     /// A session records the lens it drew and keeps it. The world draws only
     /// Patina; round one is refused and persisted; the owner then moves every
     /// weight to Numen, which is also a commit, so the ancestry moves too; the
