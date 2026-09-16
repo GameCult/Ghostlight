@@ -1061,7 +1061,7 @@ pub struct AffordanceSnapshot {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ResourceSnapshot {
+pub(crate) struct ResourceSnapshot {
     pub(crate) id: EntityId,
     pub(crate) label: String,
 }
@@ -1074,7 +1074,7 @@ pub struct PlaceSnapshot {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RouteSnapshot {
+pub(crate) struct RouteSnapshot {
     pub(crate) id: EdgeId,
     pub(crate) label: String,
     pub(crate) from: EntityId,
@@ -1097,8 +1097,8 @@ pub struct WorldSnapshot {
     pub subjects: Vec<SubjectSnapshot>,
     pub affordances: Vec<AffordanceSnapshot>,
     pub places: Vec<PlaceSnapshot>,
-    pub resources: Vec<ResourceSnapshot>,
-    pub routes: Vec<RouteSnapshot>,
+    pub(crate) resources: Vec<ResourceSnapshot>,
+    pub(crate) routes: Vec<RouteSnapshot>,
     /// Already ordered by pressure, then attention debt, then id: one owner, so
     /// an operator interface, the mesh projection, and any future driver read
     /// the same order and
