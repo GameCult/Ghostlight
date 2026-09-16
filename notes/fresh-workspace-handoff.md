@@ -301,7 +301,7 @@ Also owed on the way, found 2026-09-15 by reading source:
 `runtime.rs` still registers `session_zero.begin`; check whether it is a
 refused name or a surviving authority while in that file.
 
-The eight titled elaborators return as weighted lenses. Their 2026-09 removal
+The eight titles ship as the library's stock lens set. Their 2026-09 removal
 had no operator decision; the correction record in `state/evidence.jsonl`
 carries the history.
 
