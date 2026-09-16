@@ -810,7 +810,7 @@ does not project branch-local or provisional fact statements—even when they ar
 discoverable later. Those facts remain canonical inputs to knowledge-gated play
 and operator inspection; the browser cannot reveal them before discovery.
 
-## Current acceptance body
+## Legacy acceptance body (pre-rebuild; Yggdrasil still serves it)
 
 Yggdrasil serves one native immutable Ghostlight release under
 `ghostlight-dungeon.service`. The fresh-workspace handoff and `state/map.yaml`

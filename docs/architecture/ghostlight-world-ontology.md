@@ -318,8 +318,7 @@ or doubled read and `NoOperationEffect` for identical material; it is read by
 projection and by no precondition, so it enters `state_digest` and no
 `ScopePreimage`. A `Commitment` carries `statement`, what is promised in the
 promisor's words, required at authoring and derived as "a promise made
-through <kind>" when an affordance effect creates one. State and commit
-schemas are `.consumer.v3`. The next seam is the outbound consumer response.
+through <kind>" when an affordance effect creates one.
 
 Rules the road imposed, carried in the tree: the provider request identity is
 content-addressed over command, purpose, round, instructions, and input, so a
