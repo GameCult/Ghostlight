@@ -255,7 +255,7 @@ derived `CausalBoundary` kinds (a draft `SeedRequest` is representable, not
 inhabited: Draft answers nothing), scope-digest binding
 for proposals, and one `AdmitPatch` command shared by seed admission and
 boundary elaboration. An elaborator is one `OperationalAgent` loop whose tool
-catalog is a projection of the operation set, lensed by a title drawn from the
+catalog is a projection of the operation set, shaped by a lens drawn from the
 world's weights (step 15). The document carries its own
 cut line, subtraction budget, build budget, and eighteen-proof verification
 contract.
@@ -862,7 +862,7 @@ first person as a stage direction); a silent turn invoking the `speak` entry
 versus a fourth narrative tool for a wordless turn (recommend `speak` with
 no utterance; one carrier, one command per turn).
 
-### 15. Session Zero — L0 landed; L1 next
+### 15. Session Zero — L0 and L1 landed; L2 next
 
 Adopted 2026-09-15. Two owners, one ordering. Library capabilities,
 consumer-neutral, are specified in `docs/architecture/ghostlight-world-ontology.md`
@@ -876,9 +876,11 @@ the eight titles ship as the library's stock lens set.
 
 Library passes: (L0, landed 2026-09-16 at `108b691..ab95d78`; see
 `docs/architecture/ghostlight-library-extraction-postmortem.md`) extract the
-kernel into a library crate with a real public boundary; (L1) the stock lens set, weights, sampler, and concurrent
-sessions over today's demand; (L2) per-world evidence binding on every
-elaborator session; (L3) typed detail rules (`Uniform`, `ByDistance`),
+kernel into a library crate with a real public boundary; (L1, landed
+2026-09-16 at `835ea4d..872ba35`; see
+`docs/architecture/ghostlight-stock-lenses-cut.md`) the stock lens set,
+weights, sampler, and concurrent sessions over today's demand; (L2)
+per-world evidence binding on every elaborator session; (L3) typed detail rules (`Uniform`, `ByDistance`),
 rule-driven demand under the world-target ceiling, and the permille, root,
 and genesis-subject cuts; (L4) individuation where a place's level asks for
 persons. Dungeon

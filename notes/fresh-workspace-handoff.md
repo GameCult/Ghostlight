@@ -224,7 +224,7 @@ its receipt shape are a named stopgap, deleted whole when a Messages-API port
 has budget. The SDK transport is proven on the road: seeded runs on
 `claude-sonnet-5` committed ticks end to end (`notes/local-live-smoke.md`,
 "SDK runs, 2026-09-10"). A kernel refusal continues the authoring
-conversation (`Refusal` rows, `controller_work.v15`); the Interpreter cites
+conversation (`Refusal` rows, `controller_work.v16`); the Interpreter cites
 prose by quote (`source_quote`), and a quote not in the prose is a gap. Plan
 step 12 is landed: `PersonaMaterial` is the thirteenth component, a promise
 carries its statement, the Projector sees who else stands in the room, and
@@ -238,7 +238,8 @@ Each interrupted cell is now logged per cell: the harness prints
 `interrupted cell subject=<label> bound=<digest> renewed=<digest>` after
 each tick line from `CoverSummary.interrupted` (commit `81a1f53`); run 11
 printed three, matching three re-lowerings in the trace.
-State and commit schemas are `.consumer.v4`.
+State and commit schemas are `.consumer.v5`; world creation is
+`world_create.v4`, which requires lens weights.
 
 Deferred by design: `PolityInCausalRange`, `IndividuationRequired`, and
 Verification 13 wait for relations and population slices. Stale: the
@@ -287,7 +288,13 @@ boundary sealed by admission: the kernel rejects any ID, digest or
 opportunity it did not issue. L0 is closed (`108b691..ab95d78`); its
 follow-ups are listed in
 `docs/architecture/ghostlight-library-extraction-postmortem.md`. L1, the
-stock lens set, is the next cut.
+stock lens set, is implemented (`835ea4d..872ba35`; cut map
+`docs/architecture/ghostlight-stock-lenses-cut.md`): lens weights are world
+data the owner replaces with `SetLensWeights`, each elaborator session records
+the lens it drew and that lens's instruction text, and elaboration sessions run
+concurrently under Dungeon's elaboration pool
+(`GHOSTLIGHT_ELABORATION_MAX_CONCURRENT`, default 2), apart from the simulation
+pool. L2, per-world evidence binding, is next.
 
 Also owed on the way, found 2026-09-15 by reading source:
 

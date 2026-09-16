@@ -382,15 +382,17 @@ current_status:
     actor's intent private; run 10 passed with 18 displays and the first
     live interrupted cell; the interrupted cell is exercised live and
     logged per cell, run 11, commit 81a1f53). State and commit schemas are
-    consumer.v4; controller work rows are controller_work.v15 (a turn's
+    consumer.v5; controller work rows are controller_work.v16 (a turn's
     utterance and display are every span cited for them in prose order,
-    commit 855727f, run 12). Next, in the
+    commit 855727f, run 12; an elaborator session carries its lens and
+    instruction text). Next, in the
     operator's order (2026-09-15):
     (a) the playtest gate (plan step 15): L0 is closed (the kernel is the
     `ghostlight` library crate; postmortem and follow-ups in
     docs/architecture/ghostlight-library-extraction-postmortem.md); L1, the
-    stock lens set, is next, then the remaining library
-    capabilities (typed
+    stock lens set, is implemented (835ea4d..872ba35; cut map
+    docs/architecture/ghostlight-stock-lenses-cut.md); the remaining library
+    capabilities are next (typed
     detail rules as a function from place to detail level, per-world evidence
     binding, elaborators in Draft; ontology doc "Elaboration lenses and detail
     rules"), then Dungeon's Session Zero consuming them
