@@ -520,37 +520,150 @@ fn unwrap_refresh(
 mod tests {
     use super::*;
 
+    /// Every `.rs` file under `src`, subdirectories included, with everything
+    /// a `#[cfg(test)]` attribute guards removed — whatever that item is, and
+    /// whatever a test module is called.
+    ///
+    /// The item's extent is read from the layout: an attribute at indent `N`
+    /// guards lines until the first later line at indent `N` that closes a
+    /// block, or, for an item with no body, until the first line at indent `N`
+    /// that ends in `;` or `,`. This is a claim about rustfmt's output, not
+    /// about Rust's grammar, and it is the reason the scan does not try to
+    /// balance braces: braces inside string and character literals are not
+    /// block structure, and a scanner that counts them reads the end of a test
+    /// module in the wrong place.
+    fn production_sources() -> Vec<(std::path::PathBuf, String)> {
+        fn indent(line: &str) -> usize {
+            line.len() - line.trim_start().len()
+        }
+
+        fn strip_cfg_test(text: &str) -> String {
+            let lines: Vec<&str> = text.lines().collect();
+            let mut kept: Vec<&str> = Vec::new();
+            let mut index = 0;
+            while index < lines.len() {
+                let line = lines[index];
+                if line.trim() != "#[cfg(test)]" {
+                    kept.push(line);
+                    index += 1;
+                    continue;
+                }
+                let guard = indent(line);
+                index += 1;
+                // A body opens on the attribute's own item; without one, the
+                // item ends at its first terminator.
+                let mut opened = lines
+                    .get(index)
+                    .is_some_and(|next| next.trim_end().ends_with('{'));
+                while index < lines.len() {
+                    let body = lines[index];
+                    index += 1;
+                    let trimmed = body.trim();
+                    if trimmed.is_empty() {
+                        continue;
+                    }
+                    if opened {
+                        if indent(body) == guard
+                            && (trimmed == "}" || trimmed == "};" || trimmed == "},")
+                        {
+                            break;
+                        }
+                    } else if indent(body) == guard
+                        && (trimmed.ends_with(';') || trimmed.ends_with(','))
+                    {
+                        break;
+                    } else if indent(body) == guard && trimmed.ends_with('{') {
+                        opened = true;
+                    }
+                }
+            }
+            kept.join("\n")
+        }
+
+        let mut sources = Vec::new();
+        let mut pending = vec![std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src")];
+        while let Some(directory) = pending.pop() {
+            for entry in std::fs::read_dir(&directory).expect("the source tree reads") {
+                let path = entry.expect("a readable entry").path();
+                if path.is_dir() {
+                    pending.push(path);
+                    continue;
+                }
+                if path.extension().and_then(|value| value.to_str()) != Some("rs") {
+                    continue;
+                }
+                let text = std::fs::read_to_string(&path)
+                    .expect("the source reads")
+                    .replace("\r\n", "\n");
+                sources.push((path, strip_cfg_test(&text)));
+            }
+        }
+        sources
+    }
+
+    /// True when the text immediately following the type's name calls its
+    /// `new`. Written as a scan rather than one literal so the qualified
+    /// `<Type>::new(` form and any whitespace the formatter may introduce
+    /// count the same as the plain path.
+    fn calls_new(tail: &str) -> bool {
+        let tail = tail.trim_start();
+        let tail = tail.strip_prefix('>').unwrap_or(tail).trim_start();
+        let Some(tail) = tail.strip_prefix("::") else {
+            return false;
+        };
+        let Some(tail) = tail.trim_start().strip_prefix("new") else {
+            return false;
+        };
+        tail.trim_start().starts_with('(')
+    }
+
     /// The library owns `VerifiedPrincipalEvidence` and gives it a public
     /// constructor, so the single-minter rule its private fields used to
-    /// enforce is this count: production mints one, in `account_for_cookie`,
-    /// from a live cookie this owner holds custody of. A second minter
-    /// anywhere in Dungeon's production source is a second authority over who
-    /// the kernel believes is speaking.
+    /// enforce is this one: production mints it in `account_for_cookie` and
+    /// nowhere else, from a live cookie this owner holds custody of. A second
+    /// minter anywhere in Dungeon's production source is a second authority
+    /// over who the kernel believes is speaking.
+    ///
+    /// The type is followed by name, so production may not give it a second
+    /// name: an `as` import or a type alias is refused outright rather than
+    /// counted, because a renamed minter is one this test cannot follow. What
+    /// it still cannot see is a call that never spells the type — a macro
+    /// expansion, or a generic instantiated elsewhere.
     #[test]
     fn soul_exactly_one_production_site_mints_verified_principal_evidence() {
-        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-        let mut total = 0;
-        for entry in std::fs::read_dir(&root).expect("the source tree reads") {
-            let path = entry.expect("a readable entry").path();
-            if path.extension().and_then(|value| value.to_str()) != Some("rs") {
-                continue;
+        // Assembled from halves so this test's own source is never a match,
+        // whatever the scan above decides about this module's extent.
+        let name = format!("VerifiedPrincipal{}", "Evidence");
+        let mut sites = Vec::new();
+        for (path, production) in production_sources() {
+            for (at, _) in production.match_indices(name.as_str()) {
+                let tail = &production[at + name.len()..];
+                assert!(
+                    !tail.trim_start().starts_with("as "),
+                    "{} renames {name} on import",
+                    path.display()
+                );
+                if calls_new(tail) {
+                    sites.push(path.clone());
+                }
             }
-            let text = std::fs::read_to_string(&path)
-                .expect("the source reads")
-                .replace("\r\n", "\n");
-            // Only the production half; a test may mint what production must
-            // not.
-            let production = text
-                .split_once("\n#[cfg(test)]\nmod tests {")
-                .map(|(before, _)| before.to_owned())
-                .unwrap_or(text);
-            total += production
-                .matches("VerifiedPrincipalEvidence::new(")
-                .count();
+            for line in production.lines() {
+                assert!(
+                    !(line.trim_start().starts_with("type ") && line.contains(name.as_str())),
+                    "{} aliases {name} to another name: {line}",
+                    path.display()
+                );
+            }
         }
         assert_eq!(
-            total, 1,
-            "production mints VerifiedPrincipalEvidence in exactly one place"
+            sites.len(),
+            1,
+            "production mints {name} in exactly one place: {sites:?}"
+        );
+        assert!(
+            sites[0].ends_with("app_session.rs"),
+            "the one minter is not this owner: {:?}",
+            sites[0]
         );
     }
 
