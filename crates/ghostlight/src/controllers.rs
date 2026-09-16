@@ -10351,6 +10351,86 @@ mod tests {
         );
     }
 
+    /// A session resumes with the text it stored, not the text its lens authors
+    /// now (ruling L1-Q7 (a)): a lens-text edit in code neither breaks nor alters
+    /// an in-flight session. A real refused row is rewritten as a later build
+    /// would find it, its stored text no longer the recorded lens's current text
+    /// and its invocation prepared under the stored text; the store is reopened
+    /// and a fresh runner resumes it. Every inference after the resume carries
+    /// the stored text, and the session commits under the same command id with
+    /// that text still recorded. This pins resume only; nothing here ties the
+    /// stored text to the recorded lens.
+    #[tokio::test]
+    async fn a_resumed_session_keeps_its_stored_text_when_the_lens_text_changes() {
+        const STORED: &str = "STORED TEXT an earlier build authored";
+        let (directory, mailbox, task, commons, road) = elaboration_mailbox().await;
+        let jurisdiction = JurisdictionKey::PlaceSubtree(commons);
+        let script = shed_script(road);
+        let recording = fresh_store();
+        let first = elaboration_runner(&mailbox, script.clone(), recording.clone());
+        assert_eq!(
+            first.step(jurisdiction).await.unwrap(),
+            crate::elaboration::ElaborationOutcome::Rejected
+        );
+        drop(first);
+        let refused = {
+            let stored = recording.work.lock().unwrap();
+            let ControllerWork::Elaboration(
+                checkpoint @ ElaborationCheckpoint::ElaboratorInFlight { .. },
+            ) = stored.values().next().unwrap().clone()
+            else {
+                panic!("the refusal did not reopen the session");
+            };
+            checkpoint
+        };
+        let lens = recorded_session(&ControllerWork::Elaboration(refused.clone())).lens;
+        assert_ne!(lens.instructions(), STORED);
+        let earlier = with_texts(&refused, STORED, STORED);
+        assert!(earlier.integrity_is_valid());
+        let command_id = earlier.command_id();
+
+        let store = Arc::new(
+            open_with_raw_row(
+                &directory,
+                "controller-work.cc",
+                &earlier,
+                CONTROLLER_WORK_ROW,
+                CONTROLLER_WORK_SCHEMA,
+            )
+            .expect("the earlier build's row opens"),
+        );
+        let resumed_from = script.seen.lock().unwrap().len();
+        let second = elaboration_runner(&mailbox, script.clone(), store.clone());
+        assert_eq!(
+            second.step(jurisdiction).await.unwrap(),
+            crate::elaboration::ElaborationOutcome::Committed
+        );
+        drop(second);
+        {
+            let seen = script.seen.lock().unwrap();
+            assert!(seen.len() > resumed_from, "the resume ran no inference");
+            for invocation in &seen[resumed_from..] {
+                assert_eq!(
+                    invocation.invocation.request.instructions, STORED,
+                    "the resume rebuilt the text from the lens"
+                );
+            }
+        }
+        {
+            let journal = store.journal.lock().unwrap();
+            assert_eq!(journal.work.len(), 1, "the resume opened a second row");
+            let work = journal.work.get(&command_id).expect("the same command id");
+            let session = recorded_session(work);
+            assert_eq!(session.lens, lens);
+            assert_eq!(session.instructions, STORED);
+        }
+        assert!(mailbox.snapshot().await.unwrap().boundaries.is_empty());
+
+        drop(store);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
     /// A real lensed in-flight payload under the previous row version is
     /// refused at open and not migrated; the same payload under the current
     /// version opens, so the refusal is the version's.
