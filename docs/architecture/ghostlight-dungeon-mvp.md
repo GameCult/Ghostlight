@@ -603,7 +603,10 @@ end to end and showed that a three-subject, one-room genesis yields thin
 prose; a seed producer is the gap that finding names. Step 8 landed that seed
 producer: `world.create` v2 carries the scale intent at genesis, `world.seed`
 runs one `SeedRunner` session per invocation against a `VaultEvidenceSource`,
-and the extended live smoke seeds a world before it ticks.
+and the extended live smoke seeds a world before it ticks. Creation's current
+payload is `world_create.v4`: title, brief, targets, jurisdiction roots and
+lens weights are required, and Dungeon's create surface offers uniform weights
+as its editable default.
 
 Focused tests must prove:
 
