@@ -2,11 +2,13 @@
 
 Ends are owned by `ghostlight-stock-lenses.md`; this document owns the means.
 Written 2026-09-16 against Ghostlight `817c9f4` on
-`codex/ghostlight-dungeon-mvp`; refreshed the same day with the operator's
-rulings on L1-Q4, L1-Q5 and L1-Q6. Every line number below is against
-`817c9f4` unless a cut says otherwise. Where a ruling superseded an earlier
-recommendation, the earlier text is kept under "History" inside the question
-and nowhere else, so there is one live design.
+`codex/ghostlight-dungeon-mvp`; first committed at `b846c68`; refreshed the
+same day with the operator's rulings on L1-Q4 (twice), L1-Q5, L1-Q6 and
+L1-Q7, and with the stranding probe. `b846c68` changed only this file, so
+every line number below is against `817c9f4` = `b846c68` source unless a cut
+says otherwise. Where a ruling superseded an earlier recommendation, the
+earlier text is kept under "History" inside the question and nowhere else,
+so there is one live design.
 
 ## How status is read
 
@@ -35,7 +37,8 @@ All probes ran in detached scratch worktrees at `817c9f4` (removed; repo
 clean) on the Windows workstation with a scratch `CARGO_TARGET_DIR` (removed).
 They prove mechanism on Windows only. Logs: session scratchpad
 `base-test-list.log`, `probe1.log`, `probe2.log`, `probe2b.log`,
-`probe2-dungeon.log`, `probeq7-base.log`, `probeq7-a.log`; not repo artifacts.
+`probe2-dungeon.log`, `probeq7-base.log`, `probeq7-a.log`, `probe-strand.log`;
+not repo artifacts.
 
 - **Base test census** (`-- --list`, which counts ignored tests): library
   `--lib` 420 (419 + 1 ignored,
@@ -125,6 +128,35 @@ They prove mechanism on Windows only. Logs: session scratchpad
   `PreparedInference::prepare` refuses empty instructions
   (`InferenceFault { RecoveryRequired, "invalid instructions" }`), so an
   empty stored text cannot be persisted.
+- **Probe 3, stranding: an unrelated commit and the next sweep.** Ran at
+  `b846c68` (same source as `817c9f4`), real `CultCacheControllerWorkStore`,
+  one scripted bad-shed round per step so each step ends `Rejected` and
+  persists an `ElaboratorInFlight` row with one refusal. The unrelated
+  commit is `submit_clock(60)`, which moves `last_commit_digest`. Then a
+  fresh runner calls `step` on the same jurisdiction.
+  - Deficit path (a world with `targets {person: 3}`, root `commons` at
+    1000 ‰, no boundary): `a=Rejected b=Rejected ancestry_moved=true
+    inferences=2 second_saw_refusal=false custody elaboration_commands: 2`.
+    `select_answer` (`elaboration.rs:669`) digests the ancestry into the
+    deficit's `answer_digest`, so the second step derives a different
+    command id, `lookup` is `Missing`, a fresh session starts with a fresh
+    prompt that never sees the first refusal, inference is repeated, and
+    the old row stays in the store: **stranded, one orphan row per
+    interrupted deficit session per commit.**
+  - Boundary path (`elaboration_mailbox()`, the dead-end road):
+    `a=Rejected b=Superseded ancestry_moved=true inferences=1
+    second_saw_refusal=false custody elaboration_commands: 1`. The boundary
+    digest excludes ancestry, so the id is the same and the row is found,
+    but `ElaboratorSession.ancestry` is a field of the session and
+    `checkpoint.session() != &session` at `elaboration.rs:404-405` returns
+    `Superseded`. No inference is repeated and no orphan accrues, but the
+    stored ancestry never returns, so every later sweep answers `Superseded`
+    for as long as the boundary survives: **the boundary's repair stalls
+    permanently after any commit**, including every clock tick. The comment
+    at `elaboration.rs:2564-2567` ("a boundary that survives a repair keeps
+    its id, which is what makes the resume idempotent") describes the id
+    and not the equality check that follows it. Finding L1.f10 and question
+    L1-Q9.
 - **Source-verified facts the design rests on** (read, not probed):
   `agent_prompt` is persisted and reused on resume, never rebuilt
   (`elaboration.rs:414-435`); `ELABORATION_INSTRUCTIONS` is a static feeding
@@ -168,18 +200,17 @@ They prove mechanism on Windows only. Logs: session scratchpad
 - **Asked:** 2026-09-16.
 - **Context:** nothing counts sessions. The kernel's one entropy recipe is a
   digest over a typed preimage plus modulo and a cumulative walk
-  (`action.rs:780-818`). Under L1-Q4 the lens enters the command id, so the
-  draw cannot be seeded by the command id (it would be circular); it is
-  seeded by the identity fields the command id is derived from.
+  (`action.rs:780-818`). The command id is the session's fixed identity
+  (`elaboration.rs:1271-1277`) and, under L1-Q4 as revised, does not contain
+  the lens, so seeding from it is not circular.
 - **Options:** A: seed from the session identity — `LensPreimage {
-  world_id, jurisdiction, answer_digest }` (the same fields
-  `session_command_id` hashes before the lens joins) digested with the
-  kernel's `sha256:` recipe, first sixteen hex as `u64`, modulo the weight
-  total, cumulative walk in `Lens` order; the draw is a pure function of
-  (world, answer identity, weights). B: a new session ordinal counted
-  somewhere; requires a counter owner and a write per session. C: the
-  snapshot revision at session start; not replayable across resume without
-  recording it, which is A with an extra field.
+  world_id, command_id }` digested with the kernel's `sha256:` recipe, first
+  sixteen hex as `u64`, modulo the weight total, cumulative walk in `Lens`
+  order; the draw is a pure function of (world, session identity, weights).
+  B: a new session ordinal counted somewhere; requires a counter owner and
+  a write per session. C: the snapshot revision at session start; not
+  replayable across resume without recording it, which is A with an extra
+  field.
 - **Recommendation: A**, because it introduces no counter, reuses the one
   recipe, and makes "the same session identity draws the same lens" true by
   construction. Replayability, not determinism of model output, is the
@@ -187,9 +218,13 @@ They prove mechanism on Windows only. Logs: session scratchpad
 - **Depends on it:** Cut 1 (`lens::draw`), Cut 3 (draw site).
 - **Ruling:** A. The operator: "I couldn't care less what seeds the lens draw
   as long as it's replayable - deterministic generation is out of reach
-  regardless." The seed is chosen on engineering grounds as A; the preimage
-  was amended from `{world_id, command_id}` to the identity fields when
-  L1-Q4 put the lens into the command id (same authority, same day).
+  regardless." The seed is chosen on engineering grounds as A. The preimage
+  was briefly `{world_id, jurisdiction, answer_digest}` while L1-Q4 had the
+  lens inside the command id; with the lens out of the id (L1-Q4 revised)
+  `{world_id, command_id}` is the simplest preimage — two fields, the second
+  already the session's key — and is the one Cut 1 specifies. Replayability
+  is unchanged: the same command id under the same weights draws the same
+  lens, and the row records the lens so a resume never redraws.
 - **Authority:** self-under-standing-go.
 - **Ruled:** 2026-09-16.
 
@@ -231,7 +266,8 @@ They prove mechanism on Windows only. Logs: session scratchpad
   defer to a later pass; weights are write-once in L1.
 - **Recommendation: A**, given the ruling; its L1 consumers are the library
   and external-admission tests, and Dungeon's route and button are D2.
-- **Depends on it:** Cut 2; L1-Q8 (resume after a weight change).
+- **Depends on it:** Cut 2; Cut 3's adoption rule (a resumed session keeps
+  the row's lens whatever the weights now say).
 - **Ruling:** A. The operator: "Changing weights after creation, sure, I
   don't see why not." A session that already drew keeps its recorded lens.
 - **Authority:** operator.
@@ -251,17 +287,23 @@ They prove mechanism on Windows only. Logs: session scratchpad
   sweep borrows Dungeon's single pool. B: a slot ordinal in the identity. C:
   A plus deficit slots. D: both — the lens in the identity and a per-sweep
   claim set — with the pool split.
-- **Ruling: D.** The operator: "Both, split the pool. Neither elaboration nor
-  simulation should starve the other. Elaboration pool is a ceiling, not a
-  budget like the Simulation pool." Read as:
-  - **Both.** The drawn lens enters the session's command identity:
-    `session_command_id` = `CommandId::derived(ELABORATION_NAMESPACE,
-    [scope, answer_digest, lens.name()])`. And the runner hands concurrently
-    running sessions distinct demand entries: `demand_entries(snapshot)`
-    enumerates every open boundary per jurisdiction plus one deficit per
-    jurisdiction with a nonzero row, draws each entry's lens, derives each
-    id, and dedups by id. That claim set is an in-memory value rebuilt each
-    sweep — scheduling state, never world state, never persisted.
+- **Ruling: D, revised the same day.** The operator: "Both, split the pool.
+  Neither elaboration nor simulation should starve the other. Elaboration
+  pool is a ceiling, not a budget like the Simulation pool." Then, accepting
+  the root agent's correction: the lens is recorded on the session and does
+  **not** enter the command identity, because the identity is the command's
+  idempotency key and must be a fixed property of the demand entry it
+  answers; keying it on a lens drawn from mutable weights strands rows when
+  weights change. Read as:
+  - **Distinct demand, recorded lens.** `session_command_id` is unchanged
+    (`elaboration.rs:1271-1277`: world, jurisdiction, answer digest). The
+    runner hands concurrently running sessions distinct demand entries:
+    `demand_entries(snapshot)` enumerates every open boundary per
+    jurisdiction plus one deficit per jurisdiction with a nonzero row,
+    derives each id, and dedups by id. That claim set is an in-memory value
+    rebuilt each sweep — scheduling state, never world state, never
+    persisted. Each entry's lens is drawn from its id (L1-Q1) and recorded
+    on its session (Cut 3).
   - **Split the pool.** Dungeon carries two `Semaphore`s: the existing
     `controller_permits` becomes the **simulation pool** (speak turns at
     `runtime.rs:1082`, cover cells at `:1975`), configured by
@@ -294,14 +336,14 @@ They prove mechanism on Windows only. Logs: session scratchpad
     `the_sweep_never_exceeds_its_ceiling` (pool 1 → max one in flight) and
     `distinct_entries_run_at_once_under_the_ceiling` (pool 2 → max two).
 - **Authority:** operator.
-- **Ruled:** 2026-09-16.
+- **Ruled:** 2026-09-16 (first ruling and revision).
 - **History (superseded):** this map first recommended A — identity
-  unchanged, `sweep(permits)` taking Dungeon's single pool — on the grounds
-  that distinct entries alone make probe 1's collision unreachable without
-  touching identity or its tests. The ruling puts the lens in the identity
-  as well and splits the pool; the deficit-parallelism limit noted under A
-  (one deficit session per jurisdiction per ancestry) still holds under D
-  and is stated in Cut 4.
+  unchanged, `sweep(permits)` taking Dungeon's single pool. The first ruling
+  put the lens into the command identity as well as splitting the pool; the
+  revision took the lens back out of the identity for the rationale above,
+  which also dissolved L1-Q8. The deficit-parallelism limit noted under A
+  (one deficit session per jurisdiction per ancestry) still holds and is
+  stated in Cut 4.
 
 ### L1-Q5 How the ordered emphasis is expressed without reordering `PATCH_TOOLS`
 
@@ -417,36 +459,94 @@ They prove mechanism on Windows only. Logs: session scratchpad
   needs. (b) grows code per edit; (c) is the present behaviour with a
   field; (d) is the fallback if the operator wants the instruction text
   provably equal to code, at the cost of weaker steering and no per-lens
-  cache prefix. Cut 3 is written for (a) with a one-line delta for (d).
+  cache prefix. Cut 3 is written for (a).
 - **Depends on it:** Cut 3.
+- **Ruling:** (a). Per-lens instructions, with the instruction text persisted
+  in the checkpoint and integrity comparing against the stored text.
+- **Authority:** operator.
+- **Ruled:** 2026-09-16.
 
 ### L1-Q8 How a session is resumed after a weight change moves its draw
 
-- **Asked:** 2026-09-16 (new, from L1-Q4's ruling meeting L1-Q3's).
-- **Context:** with the lens in the command id, a session's row is found by
-  `lookup(command_id)` (`controllers.rs:1645-1668`; the store has no listing
-  method). If the owner replaces the weights after a session drew and before
-  it resumes, the redraw for the same answer may yield a different lens, a
-  different id, and a `Missing` lookup: the old row would be stranded and a
-  second session would spend inference on the same answer, against L1-Q3's
-  "a session that already drew keeps its recorded lens".
-- **Options:** A: before drawing, `demand_entries` probes the eight
-  candidate ids for the answer (one per lens; in-memory `BTreeMap` lookups)
-  and, if exactly one holds an elaboration row that is not `NoPatch`,
-  adopts that row's session (its lens and text) instead of drawing; no
-  schema, no trait change, eight cheap lookups per entry. B: add
-  `ControllerWorkStore::elaboration_rows()` to the trait (every store,
-  including test stores, implements it) and select from the listing. C:
-  accept the stranding: the old row keeps its lens (the letter of L1-Q3)
-  and is never resumed.
-- **Recommendation: A**, because it honours L1-Q3 without a schema or trait
-  change and the store already answers `lookup` from memory.
-- **Depends on it:** Cut 3.
-- **Ruling:** A.
-- **Authority:** defaulted — an internal lookup strategy that changes no
-  persisted shape and guards a ruling already given; the operator may
-  reverse it.
+- **Asked:** 2026-09-16 (from L1-Q4's first ruling meeting L1-Q3's).
+- **Context:** with the lens in the command id, a weight change could move a
+  session's key and strand its row.
+- **Options (history):** A: probe the eight candidate ids per entry. B: a
+  store listing method. C: accept the stranding.
+- **Ruling:** dissolved by L1-Q4's revision. With the lens out of the id, a
+  weight change cannot move a session's key; the row is found by the same
+  id and Cut 3's adoption rule keeps the row's lens. The eight-candidate
+  probing is deleted from the cuts. The general stranding of keys by
+  *ancestry*, which the probe then found, is L1-Q9.
+- **Authority:** operator.
 - **Ruled:** 2026-09-16.
+
+### L1-Q9 How an in-flight session is rediscovered after the world moves
+
+- **Asked:** 2026-09-16, from the operator's challenge ("Surely an active
+  Elaborator session is recorded? Are you relying on some deterministic
+  code outputting the same id rather than just checking the state?") and
+  probe 3 above.
+- **Context:** yes: `step` recomputes the command id from world,
+  jurisdiction and answer digest and looks the store up by that id
+  (`elaboration.rs:383-412`); there is no listing query on
+  `ControllerWorkStore` (`controllers.rs:1541` region: `lookup`, `persist`,
+  `custody_probe`). Two consequences, both pre-existing (L1.f10): a deficit
+  session's key contains the ancestry (`:669`), so any commit strands its
+  row and the next sweep repeats the inference against a new row; a
+  boundary session's key survives, but `ancestry` is a session field and
+  the equality at `:404-405` reports `Superseded` forever. On the road,
+  where the clock commits every tick, no `Rejected` session of either kind
+  has ever been repaired on a later sweep.
+- **Is this required for L1?** Yes, for the boundary half: Cut 3's promise
+  P3.2 (a resumed session keeps its recorded lens and text across a weight
+  change, which is a commit) is unprovable at base behaviour, and Cut 4's
+  concurrency multiplies commits between sweeps. Cut 3 therefore carries
+  the equality fix (option C below) as part of its adoption rule. The
+  deficit half — rediscovery when the key itself moved — is not required
+  for L1's concurrency to be correct (each sweep's claim set is consistent
+  within itself, and a stranded deficit row costs a repeated inference and
+  an orphan row, not a wrong commit) and is this question's operator fork.
+- **Options:**
+  - A: **resume reads state.** Add `ControllerWorkStore::elaboration_in_flight(&self)
+    -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError>`
+    (rows in `ElaboratorInFlight` or `ReadyToSubmit`; not `NoPatch`).
+    `demand_entries` matches each entry to a row by (world, jurisdiction,
+    answer) ignoring ancestry, lens and text, adopts the row's session and
+    its command id, and otherwise builds a fresh session. The command id
+    stays the kernel's idempotency key and stops being the only way to
+    rediscover work. Cost: one trait method; `CultCacheControllerWorkStore`
+    answers it by scanning its in-memory `journal.work` map (`controllers.rs:1662-1667`
+    shape; O(rows), rows are tens), `RecordingWorkStore` (`:8339`) the same
+    over its map, and Dungeon's test stores (`runtime.rs:3194` family) return
+    an empty vector; no index, no schema, no new row. A stranded deficit row
+    is then resumed under its old id with its old ancestry: `require_answer`
+    re-checks the deficit at commit (`lib.rs:1706-1712`), so the old
+    ancestry is informational, and the repair prompt still names the refusal
+    the model saw.
+  - B: **exclude ancestry from the deficit key.** The deficit id becomes
+    `(world, jurisdiction, "deficit")`. Then a deficit session that
+    `Committed` leaves a `ReadyToSubmit` row under the one id every later
+    deficit session on that jurisdiction derives; the next session's initial
+    `ElaboratorInFlight` fails progression (`:1701-1705`) and the loop
+    never advances — the exact resubmit-forever the ancestry term was added
+    to prevent (`:667-668`). At the kernel, a second `AdmitPatch` under the
+    same id with a different body is `CommandIdConflict` (`lib.rs:1438-1447`),
+    and with the same body `AlreadyApplied`. B needs a different
+    disambiguator, which is a session counter in disguise; not viable alone.
+  - C: **equality only.** Compare identity fields (world, jurisdiction,
+    answer, answer digest) at `:404` and adopt the row's ancestry, lens and
+    text. Fixes the boundary stall; deficit rows stay stranded and orphans
+    accrue one per interrupted deficit session per commit.
+- **Recommendation: A**, with C inside Cut 3 now (it is A's adoption rule
+  applied to the one row `lookup` already returns) and A's listing method
+  as its own small cut after L1 or, if the operator prefers, inside Cut 4
+  where `demand_entries` is written. A is the root agent's leaning and the
+  probe supports it: the only way to find a moved key is to read the rows.
+  Orphan rows already in a store are a separate hygiene question (a
+  `NoPatch`-style terminal state for abandoned rows, or a scan at open) and
+  are not posed here.
+- **Depends on it:** Cut 3 (C); Cut 4 or a follow-up cut (A's method).
 
 ## Cut 0. Captures
 
@@ -464,9 +564,8 @@ They prove mechanism on Windows only. Logs: session scratchpad
     `session_command_id(&session("sha256:one")).unwrap().to_string()` for
     that test's session (`nil_for_test` world, `Uncovered`, deficit answer,
     ancestry `sha256:ancestry`). Record the UUID text. Cut 3 pins that the
-    new derivation (lens in the id) is not equal to it, the way
-    `soul_the_session_command_id_derivation_moved_under_the_refactor`
-    pins the pass-9 spelling.
+    derivation is byte-equal to it after the lens and text join the
+    session: identity is unchanged by L1.
   - `base-catalog.txt`: print `patch_tool_signatures()` and
     `sha256(serde_json::to_vec(&patch_tools()))` from a temporary test in
     `patch.rs`. Record both. Soul compares them after Cut 3 with the same
@@ -524,11 +623,10 @@ They prove mechanism on Windows only. Logs: session scratchpad
     at admission (Cut 2), as it is for `WorldScaleIntentRef`. An unknown
     lens name cannot be represented; serde refuses it at every
     deserialization boundary.
-  - `#[derive(Serialize)] struct LensPreimage<'a> { world_id: WorldId,
-    jurisdiction: JurisdictionKey, answer_digest: &'a str }` and
-    `pub(crate) fn draw(weights: &LensWeights, world_id: WorldId,
-    jurisdiction: JurisdictionKey, answer_digest: &BoundaryDigest) ->
-    Result<Lens, KernelError>`: `super::digest(&LensPreimage{..})`,
+  - `#[derive(Serialize)] struct LensPreimage { world_id: WorldId,
+    command_id: CommandId }` and `pub(crate) fn draw(weights: &LensWeights,
+    world_id: WorldId, command_id: CommandId) -> Result<Lens, KernelError>`:
+    `super::digest(&LensPreimage{..})`,
     `strip_prefix("sha256:")`, first 16 hex → `u64`, `u128` position modulo
     the total, cumulative walk over `Lens::ALL` skipping zero weights;
     `Err(KernelError::Invariant("lens weights never draw"))` when the total
@@ -554,9 +652,9 @@ They prove mechanism on Windows only. Logs: session scratchpad
   - tests (`cargo test -p ghostlight --lib lens::`):
     `every_lead_names_a_patch_tool` pins `leads_with()` ⊆ `PATCH_TOOLS`
     names for all eight, each list nonempty and duplicate-free;
-    `the_draw_is_a_function_of_world_and_answer` pins `draw` equal on
-    repeated calls and over 200 answer digests
-    `format!("sha256:{:064x}", i)` records the exact multiset of lenses
+    `the_draw_is_a_function_of_world_and_session` pins `draw` equal on
+    repeated calls and over 200 ids `CommandId::derived("l1-probe", &[&i])`
+    records the exact multiset of lenses
     drawn under `stock_weights()` as a literal (computed at the cut and
     pinned; the literal is the replay proof); `a_zero_weight_never_draws`
     pins that with `{patina:0, charter:3, ledger:1}` over the same 200
@@ -583,8 +681,8 @@ They prove mechanism on Windows only. Logs: session scratchpad
     safe scoped to `lens.rs`).
   - mutations: M1.1 `lens.rs` draw: `position < weight` → `position <=
     weight` (an off-by-one that lets a zero weight draw): `a_zero_weight_never_draws`
-    must fail. M1.2 `lens.rs` draw: replace `answer_digest` in the preimage
-    with a constant: `the_draw_is_a_function_of_world_and_answer`'s pinned
+    must fail. M1.2 `lens.rs` draw: replace `command_id` in the preimage
+    with a constant: `the_draw_is_a_function_of_world_and_session`'s pinned
     multiset must fail. M1.3 `lens.rs` `draws()`: `any(|w| *w > 0)` →
     `!is_empty()`: `all_zero_weights_are_an_error` (the all-eight-zero
     value) must fail.
@@ -595,9 +693,8 @@ They prove mechanism on Windows only. Logs: session scratchpad
     `patch_tool_signatures()`, tool descriptions and
     `sidecar/claude-sdk/test/schemas.json` are not edited in this cut (diff
     shows no change in `patch.rs` or the fixture).
-  - P1.3 `draw` is deterministic over (world, jurisdiction, answer digest,
-    weights), never returns a zero-weight lens, and errors on an all-zero
-    set.
+  - P1.3 `draw` is deterministic over (world, command id, weights), never
+    returns a zero-weight lens, and errors on an all-zero set.
   - P1.4 An unknown lens name is refused by deserialization with values
     shaped like real ones (case, whitespace, near-miss).
   - P1.5 The library's dependency tree gains nothing; no `rand`; no
@@ -830,76 +927,89 @@ They prove mechanism on Windows only. Logs: session scratchpad
 |---|---|---|---|
 | | | | |
 
-## Cut 3. The lens in the session identity, in the instructions, and in the store
+## Cut 3. The lens and its text on the session, in the store, and the adoption rule
 
 - **Repo/branch:** Ghostlight `codex/ghostlight-dungeon-mvp` from Cut 2's
-  commit. One commit. Depends on Cuts 1–2 and rulings L1-Q1, L1-Q4 (the
-  identity half), L1-Q5, L1-Q8, and L1-Q7 (written for (a); the (d) delta
-  is one paragraph below).
+  commit. One commit. Depends on Cuts 1–2 and rulings L1-Q1, L1-Q4
+  (revised: identity unchanged), L1-Q5, L1-Q7 (a), and carries L1-Q9's
+  option C (the adoption rule) because P3.2 is unprovable without it.
 - **First:** Cut 0's `base-session-id.txt` and `base-mismatches.json` in
-  hand; Cut 2 pushed and green.
+  hand; Cut 2 pushed and green; probe 3's boundary stall reproduced once as
+  a temporary test at Cut 2 (it must still say `Superseded`; that is the
+  before-state the adoption rule removes).
 - **Deletes first:** `elaboration.rs:52` `ELABORATION_INSTRUCTIONS` as a
   bare constant referenced by `elaboration_request` (it moves into
-  `lens::instructions()` under (a); under (d) it stays and this line is
-  void).
-- **Keeps and moves:** `session_command_id` (`elaboration.rs:1271-1277`)
-  keeps its name and namespace and gains the lens as a third part:
-  `&[&scope, session.answer_digest.text(), session.lens.name()]`.
+  `lens::instructions()`); `elaboration.rs:404-405`, the whole-session
+  equality `checkpoint.session() != &session` as the supersession test (it
+  is replaced by the identity comparison below).
+- **Keeps and moves:** `session_command_id` (`elaboration.rs:1271-1277`) is
+  untouched: the lens is not in the identity. `select_answer` keeps its
+  name and its two arms; it gains the draw and the text.
 - **Adds:**
   - `elaboration.rs:57-66`: `ElaboratorSession.lens: Lens` and
     `ElaboratorSession.instructions: String` after `ancestry`, docs: "Drawn
-    once when the session is first built, recorded here, and never
-    redrawn; a resumed session reads it back." and "The instruction text
-    this session was built with, persisted as `agent_prompt` is; integrity
-    binds the stored invocation to this text, not to the code constant."
-    `deny_unknown_fields` stays. Under (d) only `lens` is added.
-  - `elaboration.rs:642-677` `select_answer` becomes the entry builder used
-    by Cut 4's `demand_entries`: for an answer, build the identity fields,
-    then (L1-Q8 A) probe the eight candidate ids `session_command_id` would
-    yield for each lens against `self.work.lookup`; if exactly one is
-    `Confirmed(ControllerWork::Elaboration(cp))` or `CustodyUncertain(..)`
-    whose session is not `NoPatch` and whose identity fields equal, adopt
-    `cp.session().clone()`; otherwise `lens = lens::draw(&snapshot.lens_weights,
-    world_id, jurisdiction, &answer_digest)?` and `instructions =
-    lens.instructions()`. The lookup is async, so the builder is `async fn
-    session_for(&self, snapshot, jurisdiction, answer) -> Result<Option<ElaboratorSession>>`.
-  - `elaboration.rs:400-412` lookup in `step_session`: the existing
-    `checkpoint.session() != &session → Superseded` comparison stays as is
-    (full equality; the adopted session is the row's own, so it is equal).
+    once when the session is first built from its command id, recorded
+    here, and never redrawn; a resumed session reads it back." and "The
+    instruction text this session was built with, persisted as
+    `agent_prompt` is; integrity binds the stored invocation to this text,
+    not to the code constant." `deny_unknown_fields` stays.
+  - `elaboration.rs:642-677` `select_answer`: after building the identity
+    fields, `let command_id = session_command_id(..)?; let lens =
+    lens::draw(&snapshot.lens_weights, snapshot.world_id, command_id)?;
+    instructions: lens.instructions()` in both arms (the `KernelError` maps
+    to `ControllerError::Serialization` as `digest_of` does). `step` at
+    `:386` then reuses that id rather than deriving it twice.
+  - `elaboration.rs:400-412` lookup, **the adoption rule** (L1-Q9 C): `if
+    !checkpoint.session().same_answer(&session) { return Ok(Superseded) }
+    let session = checkpoint.session().clone();` where `same_answer`
+    compares `world_id`, `jurisdiction`, `answer` and `answer_digest` only.
+    `ancestry`, `lens` and `instructions` are the row's: ancestry because
+    the world moving is not the answer moving (probe 3), lens and text
+    because a resume never redraws (L1-Q3). Doc: "The row is the recorded
+    session. Identity decides whether it is this answer's row; everything
+    else about the session is read from it."
   - `elaboration.rs:1233-1254` `elaboration_request(command_id, round, model,
     instructions: &str, input)`; callers `:445`, `:584`, and `:153` pass
     `&session.instructions` (the `ElaboratorInFlight` arm of
-    `integrity_is_valid` destructures `session`). Under (d): no signature
-    change; `build_prompt` (`:787-808`) gains `render_lens(session.lens)`
-    after the `Answer:` line instead, and `instructions` is not a field.
+    `integrity_is_valid` destructures `session`).
   - `elaboration.rs:201-247` `valid_elaboration_progression`: unchanged; it
-    compares whole sessions, so a checkpoint that changes the lens or the
-    text is an illegal transition. Pin it.
+    compares whole sessions, so a checkpoint that changes the lens, the
+    text or the ancestry is an illegal transition. Pin it. (Progression
+    compares rows to rows; adoption compares a fresh derivation to a row.
+    The two rules differ on purpose and the docs on both say so.)
   - `controllers.rs:77-78`: `controller_work.v16` /
     `ghostlight.controller_work.v16`.
   - Tests (`elaboration.rs` tests unless said): the four `ElaboratorSession`
     literals at `:2399`, `:2428`, `:2550`, `:2574` gain `lens: Lens::Patina,
     instructions: Lens::Patina.instructions()`;
     `a_session_identity_is_derived_from_its_answer` (`:2549`) additionally
-    asserts `first.to_string() != "<base-session-id.txt>"` (the derivation
-    moved: the lens joined), pins the new UUID as a literal, and asserts
-    that changing only `lens` changes the id while changing only
-    `instructions` does not;
-    `soul_a_session_identity_separates_world_jurisdiction_and_answer`
-    (`:2569`) gains a lens clause and keeps its ancestry clause;
+    asserts `first.to_string() == "<base-session-id.txt>"` and that
+    changing `lens` or `instructions` leaves the id equal;
+    `soul_the_session_command_id_derivation_moved_under_the_refactor`
+    (`:2398`) is unchanged;
     `a_resumed_session_keeps_its_recorded_lens_when_the_weights_change`
     (controllers tests, beside `:9497`): world created with `{patina:1}`
     only; round one is refused and persisted; the owner submits
-    `SetLensWeights{{numen:1}}`; a fresh runner over the same store resumes
-    (L1-Q8 A finds the row under the Patina id) and commits under the same
-    command id with the checkpoint's `session.lens == Patina` and the
-    second invocation's `instructions` still naming Patina; then a new
-    boundary (a second dead-end route declared by the owner) starts a new
-    session whose lens is `Numen`;
+    `SetLensWeights{{numen:1}}` (a commit, so ancestry moves too); a fresh
+    runner over the same store resumes (same id; adoption keeps the row's
+    session) and commits under the same command id with the checkpoint's
+    `session.lens == Patina` and the second invocation's `instructions`
+    still naming Patina and its input carrying the first refusal; then a
+    new boundary (a second dead-end route declared by the owner) starts a
+    new session whose lens is `Numen`;
+    `a_boundary_session_resumes_after_an_unrelated_commit` (controllers
+    tests; probe 3's boundary half as a permanent test): `Rejected`, then
+    `submit_clock(60)`, then a fresh runner's step is `Committed` under the
+    same id and its input carries the refusal;
+    `a_deficit_session_is_rediscovered_by_its_answer_after_an_unrelated_commit`
+    (controllers tests; probe 3's deficit half) is written here but marked
+    `#[ignore = "L1-Q9"]` until that ruling lands: it asserts `Committed`
+    under the first id, one inference on resume, and one row;
     `a_checkpoint_that_changes_the_lens_or_its_text_is_an_illegal_transition`:
     from a persisted `ElaboratorInFlight`, a next checkpoint identical
     except `lens` is refused by the real store with the "illegal checkpoint
-    transition" error; likewise except `instructions`;
+    transition" error; likewise except `instructions`, likewise except
+    `ancestry`;
     `a_row_whose_text_and_invocation_disagree_is_refused_at_open`
     (controllers tests, the Q7 probe as a permanent test): a raw row whose
     stored `instructions` is `"STORED TEXT A"` and whose invocation was
@@ -911,9 +1021,9 @@ They prove mechanism on Windows only. Logs: session scratchpad
     tests): for each of the eight lenses, a world created with that lens at
     1 and every other at 0, the round-one bad shed patch of `:9497` yields
     `refusals[0].mismatches` JSON equal to `base-mismatches.json`, and the
-    repaired patch commits; the eight `agent_prompt`s are byte-equal (under
-    (a) the prompt carries no lens text) and the eight `instructions` differ
-    only in the lens clause; `the_catalog_takes_no_lens`: `patch_tools()`
+    repaired patch commits; the eight `agent_prompt`s are byte-equal (the
+    prompt carries no lens text) and the eight `instructions` differ only
+    in the lens clause; `the_catalog_takes_no_lens`: `patch_tools()`
     and `patch_tool_signatures()` are called with no argument (proof by
     signature; the test asserts the `Tools:` line of a lensed prompt equals
     `patch_tool_signatures()` byte-for-byte);
@@ -925,27 +1035,29 @@ They prove mechanism on Windows only. Logs: session scratchpad
   names `controller_work.v16` [Hands]; `notes/fresh-workspace-handoff.md:227`
   [steward].
 - **Authority map:**
-  - Owner: the entry builder owns the draw and the text; the checkpoint row
-    owns both for the life of the session.
-  - Inputs: `WorldSnapshot.lens_weights`, the answer identity, the store's
-    answer to the eight candidate lookups.
+  - Owner: `select_answer` owns the draw and the text for a new session;
+    the checkpoint row owns the whole session once it exists, and the
+    adoption rule reads it.
+  - Inputs: `WorldSnapshot.lens_weights`, the session's command id, the
+    store's `lookup`.
   - Outputs: `ElaboratorSession.{lens, instructions}` in every checkpoint
-    stage; the lens name inside the command id; the text on the wire as the
-    system prompt.
-  - Derived state: none; the text is authored once from `lens::instructions`
-    and thereafter is the row's.
-  - Forbidden writers: a resume path that redraws (structurally absent: the
-    only draw site runs only when no candidate row exists); a checkpoint
-    transition that changes the lens or the text (refused by session
-    equality); the code constant (no longer consulted by integrity for this
-    lane; the seed, narrative and operational lanes keep theirs — L1.f9).
-  - Shared paths: first run and resume share `step_session`'s `match
-    existing`; the real store and `RecordingWorkStore` share
+    stage; the text on the wire as the system prompt.
+  - Derived state: the fresh draw and text are derived and then discarded
+    whenever a row exists (`X is no longer an owner; the row's session is`).
+  - Forbidden writers: a resume path that redraws or re-authors the text
+    (structurally absent: after `lookup` returns a row, the fresh session
+    value is dropped); a checkpoint transition that changes the lens, the
+    text or the ancestry (refused by row-to-row session equality); the code
+    constant (no longer consulted by integrity for this lane; the seed,
+    narrative and operational lanes keep theirs — L1.f9); a supersession
+    test that reads ancestry (deleted).
+  - Shared paths: first run and resume share `step`'s `match existing`; the
+    real store and `RecordingWorkStore` share
     `valid_controller_work_progression`; the connector and the SDK sidecar
     both receive `request.instructions`.
-  - Deletion line: `ELABORATION_INSTRUCTIONS` as the integrity reference is
-    gone before the session field is read; `controller_work.v15` rows become
-    refused.
+  - Deletion line: `ELABORATION_INSTRUCTIONS` as the integrity reference
+    and the whole-session supersession equality are gone before the new
+    fields are read; `controller_work.v15` rows become refused.
 - **Verification:**
   - builds: as Cut 2.
   - tests: `cargo test -p ghostlight` = Cut 2 count + new;
@@ -955,31 +1067,38 @@ They prove mechanism on Windows only. Logs: session scratchpad
   - negative: `rg -n 'controller_work\.v15' crates` = 0 outside the new
     refusal test; `git diff Cut2..Cut3 -- crates/ghostlight/src/patch.rs
     sidecar` is empty; `rg -n 'ELABORATION_INSTRUCTIONS' crates/ghostlight/src`
-    = 1 (its definition in `lens.rs`) under (a); `rg -n 'lens'
+    = 1 (its definition in `lens.rs`); `rg -n 'lens'
     crates/ghostlight/src/controllers.rs` matches only tests and the two
-    constants' doc lines.
+    constants' doc lines; `rg -n 'session\(\) != &session'
+    crates/ghostlight/src/elaboration.rs` = 0.
   - captures compared: `patch_tool_signatures()` and the `patch_tools()`
     digest equal `base-catalog.txt` (same method).
-  - mutations: M3.1 `elaboration.rs` entry builder: skip the eight-candidate
-    probe and always draw: `a_resumed_session_keeps_its_recorded_lens_when_the_weights_change`
-    must fail (the resume misses the row). M3.2 `elaboration.rs`
-    `session_command_id`: drop the lens part: `a_session_identity_is_derived_from_its_answer`'s
-    lens clause and pinned UUID must fail. M3.3 `elaboration.rs` entry
-    builder: draw from `stock_weights()`-shaped uniform weights instead of
-    the snapshot: the eight-lens test (each world with one nonzero lens)
-    must fail. M3.4 `elaboration.rs:205` `existing.session() !=
-    next.session()` → compare identity fields only:
+  - mutations: M3.1 `elaboration.rs` adoption rule: restore whole-session
+    equality: `a_resumed_session_keeps_its_recorded_lens_when_the_weights_change`
+    and `a_boundary_session_resumes_after_an_unrelated_commit` must fail
+    (`Superseded`). M3.2 `elaboration.rs` adoption rule: keep the fresh
+    session instead of the row's: the same test must fail on the
+    checkpoint's lens or on the illegal transition. M3.3 `elaboration.rs`
+    `select_answer`: draw from `stock_weights()`-shaped uniform weights
+    instead of the snapshot: the eight-lens test (each world with one
+    nonzero lens) must fail. M3.4 `elaboration.rs:205` `existing.session()
+    != next.session()` → compare identity fields only:
     `a_checkpoint_that_changes_the_lens_or_its_text_is_an_illegal_transition`
     must fail. M3.5 `integrity_is_valid`: pass `Lens::Patina.instructions()`
     instead of `session.instructions`: `a_row_whose_text_and_invocation_disagree_is_refused_at_open`'s
-    second half (a non-current text opens) must fail.
+    second half (a non-current text opens) must fail. M3.6
+    `session_command_id`: append `session.lens.name()` as a part:
+    `a_session_identity_is_derived_from_its_answer`'s base-UUID pin must
+    fail.
 - **Promises:**
-  - P3.1 The lens is drawn once, when no candidate row exists, from the
-    snapshot's weights and the answer identity; the command id carries the
-    lens; the pre-L1 id for the fixed session is no longer produced.
-  - P3.2 A resumed session keeps its recorded lens and text across a weight
-    change, a fresh runner, and a store reopen; a checkpoint that changes
-    either is refused.
+  - P3.1 The lens is drawn once, when no row exists, from the snapshot's
+    weights and the session's command id; the command id derivation is
+    byte-identical to base (the captured UUID is reproduced).
+  - P3.2 A resumed session keeps its recorded lens, text and ancestry
+    across a weight change, an unrelated commit, a fresh runner, and a
+    store reopen; a row-to-row checkpoint that changes any of them is
+    refused; a boundary session is no longer reported `Superseded` by the
+    world merely moving.
   - P3.3 The same patch admits the same under every lens (pinned against
     the base mismatch set).
   - P3.4 The catalog is lens-independent by signature; the sidecar fixture
@@ -988,6 +1107,8 @@ They prove mechanism on Windows only. Logs: session scratchpad
   - P3.6 Integrity binds the stored invocation to the stored text; a row
     whose two disagree is refused, and a row whose text is not the current
     code's still opens (the (a) trade, stated).
+  - P3.7 Deficit rediscovery after an unrelated commit is not promised by
+    this cut (L1-Q9 A); the ignored test names the gap.
 - **Landed:**
 - **Verdicts:**
 
@@ -1020,14 +1141,17 @@ They prove mechanism on Windows only. Logs: session scratchpad
   ElaboratorSession, snapshot: &WorldSnapshot)` with the body from `:386`
   on; the phase check moves to `sweep`.
 - **Adds (library):**
-  - `elaboration.rs`: `async fn demand_entries(&self, snapshot) ->
+  - `elaboration.rs`: `fn demand_entries(snapshot) ->
     Result<Vec<ElaboratorSession>, ControllerError>`: for each jurisdiction
     of `scale_deficit` plus `Uncovered` (the list `:609-617` builds), every
     boundary `boundary_in` admits in snapshot order, then the deficit entry
-    when the row is nonzero, each through Cut 3's `session_for`; a boundary
-    under nested roots appears under each covering root, so the list is
-    deduped by command id keeping first occurrence. The claim set is this
-    `Vec`, alive for one sweep and never persisted.
+    when the row is nonzero, each through Cut 3's `select_answer` shape
+    (pure over the snapshot); a boundary under nested roots appears under
+    each covering root, so the list is deduped by command id keeping first
+    occurrence. The claim set is this `Vec`, alive for one sweep and never
+    persisted. Under L1-Q9 A this is where the in-flight listing is
+    consulted before drawing; until that ruling, `step_session`'s `lookup`
+    by id and the adoption rule are the only rediscovery.
   - `elaboration.rs`: `pub async fn sweep(&self, permits:
     Arc<tokio::sync::Semaphore>) -> Result<(), ControllerError>`: snapshot;
     return `Ok(())` unless Active; `demand_entries`; a `tokio::task::JoinSet`;
@@ -1080,16 +1204,17 @@ They prove mechanism on Windows only. Logs: session scratchpad
     one boundary, one `infer` completes. `the_tick_driver_never_exceeds_its_controller_permit_pool`
     (`:3269`) is unchanged and still passes on the simulation pool.
 - **What makes probe 1's path unreachable after this cut.** The loser died
-  because two sessions shared one command id. After Cut 3 the id includes
-  the lens, and after this cut every session alive in the process is one
-  entry of one sweep's claim set, deduped by id, started by `sweep` alone
-  (`step_session` is `pub(super)`; the seed lane has its own runner), and
-  sweeps do not overlap (`runtime.rs:1827-1839` awaits one before ticking
-  the next). Two sessions with one id would need two entries with one id in
-  one claim set, which the dedup forbids, or two overlapping sweeps, which
-  the driver forbids and the library does not guard (stated under
-  Forbidden writers). The `_ => false` arm stays as the store's refusal of
-  any such row.
+  at `persist` on the `_ => false` arm because two sessions shared one
+  command id and raced on one row. After this cut every session alive in
+  the process is one entry of one sweep's claim set, deduped by id, started
+  by `sweep` alone (`step_session` is `pub(super)`; the seed lane has its
+  own runner), and sweeps do not overlap (`runtime.rs:1827-1839` awaits one
+  before ticking the next). Two sessions with one id would need two entries
+  with one id in one claim set, which the dedup forbids, or two overlapping
+  sweeps, which the driver forbids and the library does not guard (stated
+  under Forbidden writers). The `_ => false` arm stays as the store's
+  refusal of any such row, and `one_answer_is_one_session_per_sweep` is
+  the positive form of the deleted probe.
 - **Per-file changes:** `elaboration.rs:603-632` replaced; `:375-386`
   split; `runtime.rs:68-96`, `:355`, `:1080-1081`, `:1817-1841`, `:1866-1872`,
   `:2602`; `docs/architecture/ghostlight-world-ontology.md:668` rewritten
@@ -1107,7 +1232,8 @@ They prove mechanism on Windows only. Logs: session scratchpad
     simulation `Semaphore` owns speak turns and cover cells; the mailbox
     owns commit order.
   - Inputs: one snapshot per sweep; the elaboration pool; the store's
-    candidate lookups (Cut 3).
+    `lookup` by id inside each `step_session` (Cut 3's adoption rule), and
+    under L1-Q9 A the in-flight listing.
   - Outputs: one `step_session` per distinct entry.
   - Derived state: the claim set (never stored).
   - Forbidden writers: any second `sweep` concurrent with the first (the
@@ -1182,11 +1308,13 @@ They prove mechanism on Windows only. Logs: session scratchpad
 - **Keeps and moves:** none.
 - **Adds:** `ghostlight-stock-lenses.md:3-8` status paragraph rewritten to
   the derived rule ("open until the cut map's cuts are closed"); its "Known
-  constraints" section rewritten as the live design (lens in the identity,
-  text on the session, `v16`, `consumer.v5`, `world_create.v4`,
-  `sweep(ceiling)`, two pools); the target's invariant 3 gains "the lens is
-  part of the session identity" and invariant 4 names `SetLensWeights` as
-  the second writer; invariant 5 names the two pools. The target's "Out of
+  constraints" section rewritten as the live design (identity unchanged,
+  lens and text on the session, `v16`, `consumer.v5`, `world_create.v4`,
+  `sweep(ceiling)`, two pools, the adoption rule); the target's invariant 3
+  gains "the lens is recorded on the session and is not part of its
+  identity", invariant 4 names `SetLensWeights` as the second writer,
+  invariant 5 names the two pools, and invariant 6 gains "the world moving
+  does not supersede a session; only its answer moving does". The target's "Out of
   scope" keeps D1–D3 but notes `world_create.v4` landed here by ruling
   L1-Q6. `notes/ghostlight-implementation-plan.md:878`: L1 marked landed
   with the commit range [Hands]. `notes/fresh-workspace-handoff.md`,
@@ -1212,7 +1340,7 @@ They prove mechanism on Windows only. Logs: session scratchpad
 | 0 | — | — | scratch captures only | |
 | 1 | 0 | `lens.rs` ~150 + tests ~130; `lib.rs` 2 lines + test helper ~6 | 0 deps; 0 targets | |
 | 2 | ~6 (doc lines replaced, the v2 denial case) | library: state field, command, effect, two reducer arms, resolve param, mismatch variant, snapshot field, replay check ~90; 19 literal sites × 1 line; tests ~220; Dungeon: payload field, policy fn, Eve control and binding, three schema strings, harness ~40; tests ~60; docs ~8 | 0 deps; `consumer.v4` → `v5`; `world_create.v3` → `v4` | |
-| 3 | ~2 (the constant as integrity reference) | session fields, entry builder with candidate probe, request param, identity part ~80; tests ~200; docs ~3 | `controller_work.v15` → `v16` | |
+| 3 | ~4 (the constant as integrity reference, the whole-session supersession equality) | session fields, draw and text in `select_answer`, adoption rule, request param ~60; tests ~220 (one ignored pending L1-Q9); docs ~3 | `controller_work.v15` → `v16` | |
 | 4 | ~35 (sequential sweep, `Inactive`, doc lines) | `sweep` + `demand_entries` ~80; second pool and its config ~25; tests ~230; docs ~12 | public `sweep` signature gains a `Semaphore`; one new env variable | |
 | 5 | ~14 | ~25 | 0 | |
 
@@ -1240,7 +1368,8 @@ session on one answer was that nobody wrote one.
   session's lens (Q7 (a) gives that up by design); a hand-forged row with
   `lens: Numen` and Patina's text passes integrity as long as its invocation
   agrees with its text. A `contains` check would be a text tripwire with the
-  limits L0 recorded; not added.
+  limits L0 recorded; not added. (The earlier note that the lens sits
+  inside the command id is history; it does not.)
 - **L1.f3 (pre-existing, low, recorded):** probe 1 showed two invocations
   under one command id carry one `provider_request_id`, so the connector's
   replay record for the first attempt would answer the second. Cut 3 and
@@ -1271,6 +1400,18 @@ session on one answer was that nobody wrote one.
   is the retryable fault it is today. Making simulation win at the
   connector needs connector-side priority or two caller ids, either of
   which is outside L1.
+- **L1.f10 (pre-existing, high, operator — L1-Q9):** an in-flight
+  elaboration session is rediscovered only by re-deriving its command id
+  and looking that id up; there is no listing query. Probe 3: after any
+  unrelated commit, a deficit session's key moves (ancestry is in its
+  digest, `elaboration.rs:669`), the next sweep starts a fresh session,
+  repeats the inference without the refusal it earned, and leaves the old
+  row as an orphan; a boundary session's key survives but its row is
+  reported `Superseded` forever because `ancestry` is in the session
+  equality (`:404-405`). On the road the clock commits every tick, so no
+  `Rejected` session of either kind has been repaired on a later sweep.
+  Cut 3 fixes the boundary half (adoption by identity); the deficit half
+  and the orphan rows are L1-Q9.
 - **L1.f9 (pre-existing, low, recorded):** under Q7 (a) only the elaboration
   lane binds integrity to stored text. `SEED_INSTRUCTIONS`
   (`elaboration.rs:1299`), `PERSONA_PROVIDER_INSTRUCTIONS` and the
