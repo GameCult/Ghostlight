@@ -119,7 +119,7 @@ pub struct InferenceRequest {
 impl InferenceRequest {
     /// The model this request names, read before it is prepared. Routing is the
     /// one decision that has to be made on an unprepared request.
-    pub fn provider_model(&self) -> &str {
+    pub(crate) fn provider_model(&self) -> &str {
         &self.provider.model
     }
 }
