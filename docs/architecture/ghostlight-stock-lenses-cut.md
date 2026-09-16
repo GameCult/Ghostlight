@@ -2,11 +2,13 @@
 
 Ends are owned by `ghostlight-stock-lenses.md`; this document owns the means.
 Written 2026-09-16 against Ghostlight `817c9f4` on
-`codex/ghostlight-dungeon-mvp`; first committed at `b846c68`; refreshed the
-same day with the operator's rulings on L1-Q4 (twice), L1-Q5, L1-Q6 and
-L1-Q7, and with the stranding probe. `b846c68` changed only this file, so
-every line number below is against `817c9f4` = `b846c68` source unless a cut
-says otherwise. Where a ruling superseded an earlier recommendation, the
+`codex/ghostlight-dungeon-mvp`; first committed at `b846c68`, refreshed at
+`d3b2c0e`; refreshed again the same day with the operator's rulings on
+L1-Q4 (twice), L1-Q5, L1-Q6, L1-Q7 and L1-Q9, and with the stranding probe.
+Those commits changed only this file, so every line number below is against
+`817c9f4` = `d3b2c0e` source unless a cut says otherwise. Every question now
+carries a ruling; Hands start at Cut 1 from `d3b2c0e` (after this refresh is
+committed, from that commit). Where a ruling superseded an earlier recommendation, the
 earlier text is kept under "History" inside the question and nowhere else,
 so there is one live design.
 
@@ -524,7 +526,8 @@ not repo artifacts.
     re-checks the deficit at commit (`lib.rs:1706-1712`), so the old
     ancestry is informational, and the repair prompt still names the refusal
     the model saw.
-  - B: **exclude ancestry from the deficit key.** The deficit id becomes
+  - B (history, superseded by the ruling): **exclude ancestry from the
+    deficit key.** The deficit id becomes
     `(world, jurisdiction, "deficit")`. Then a deficit session that
     `Committed` leaves a `ReadyToSubmit` row under the one id every later
     deficit session on that jurisdiction derives; the next session's initial
@@ -534,19 +537,26 @@ not repo artifacts.
     same id with a different body is `CommandIdConflict` (`lib.rs:1438-1447`),
     and with the same body `AlreadyApplied`. B needs a different
     disambiguator, which is a session counter in disguise; not viable alone.
-  - C: **equality only.** Compare identity fields (world, jurisdiction,
-    answer, answer digest) at `:404` and adopt the row's ancestry, lens and
-    text. Fixes the boundary stall; deficit rows stay stranded and orphans
+  - C (history as a competitor; live as A's boundary half): **equality
+    only.** Compare identity fields (world, jurisdiction, answer, answer
+    digest) at `:404` and adopt the row's ancestry, lens and text. Fixes
+    the boundary stall; alone, deficit rows stay stranded and orphans
     accrue one per interrupted deficit session per commit.
-- **Recommendation: A**, with C inside Cut 3 now (it is A's adoption rule
-  applied to the one row `lookup` already returns) and A's listing method
-  as its own small cut after L1 or, if the operator prefers, inside Cut 4
-  where `demand_entries` is written. A is the root agent's leaning and the
-  probe supports it: the only way to find a moved key is to read the rows.
-  Orphan rows already in a store are a separate hygiene question (a
-  `NoPatch`-style terminal state for abandoned rows, or a scan at open) and
-  are not posed here.
-- **Depends on it:** Cut 3 (C); Cut 4 or a follow-up cut (A's method).
+- **Recommendation: A**, with C inside Cut 3 (it is A's adoption rule
+  applied to the one row `lookup` already returns) and A's listing inside
+  Cut 4 where `demand_entries` is written. The probe supports it: the only
+  way to find a moved key is to read the rows. Orphan rows already in a
+  store are a separate hygiene question (a terminal state for abandoned
+  rows, or a scan at open) and are not posed here.
+- **Depends on it:** Cut 3 (the adoption rule, boundary half); Cut 4 (the
+  listing, deficit half).
+- **Ruling:** A. The operator: "A, of course". Resume reads state: the
+  in-flight listing rediscovers work by what it answers; the command id
+  stays the kernel's idempotency key and stops being the only way to
+  rediscover work. Cut 3's adoption rule is part of A's design, not a
+  competitor.
+- **Authority:** operator.
+- **Ruled:** 2026-09-16.
 
 ## Cut 0. Captures
 
@@ -1001,10 +1011,8 @@ not repo artifacts.
     tests; probe 3's boundary half as a permanent test): `Rejected`, then
     `submit_clock(60)`, then a fresh runner's step is `Committed` under the
     same id and its input carries the refusal;
-    `a_deficit_session_is_rediscovered_by_its_answer_after_an_unrelated_commit`
-    (controllers tests; probe 3's deficit half) is written here but marked
-    `#[ignore = "L1-Q9"]` until that ruling lands: it asserts `Committed`
-    under the first id, one inference on resume, and one row;
+    (probe 3's deficit half needs the listing and is Cut 4's
+    `a_stranded_deficit_session_is_adopted_with_its_refusal_intact`);
     `a_checkpoint_that_changes_the_lens_or_its_text_is_an_illegal_transition`:
     from a persisted `ElaboratorInFlight`, a next checkpoint identical
     except `lens` is refused by the real store with the "illegal checkpoint
@@ -1107,8 +1115,8 @@ not repo artifacts.
   - P3.6 Integrity binds the stored invocation to the stored text; a row
     whose two disagree is refused, and a row whose text is not the current
     code's still opens (the (a) trade, stated).
-  - P3.7 Deficit rediscovery after an unrelated commit is not promised by
-    this cut (L1-Q9 A); the ignored test names the gap.
+  - P3.7 Deficit rediscovery after an unrelated commit is Cut 4's promise
+    (P4.6), not this cut's; no test in this cut is ignored.
 - **Landed:**
 - **Verdicts:**
 
@@ -1149,9 +1157,35 @@ not repo artifacts.
     (pure over the snapshot); a boundary under nested roots appears under
     each covering root, so the list is deduped by command id keeping first
     occurrence. The claim set is this `Vec`, alive for one sweep and never
-    persisted. Under L1-Q9 A this is where the in-flight listing is
-    consulted before drawing; until that ruling, `step_session`'s `lookup`
-    by id and the adoption rule are the only rediscovery.
+    persisted. **Rediscovery (L1-Q9 A):** `sweep` calls
+    `self.work.elaboration_in_flight()` once per sweep, before drawing
+    anything, and `demand_entries` takes that list: for each demand entry,
+    if exactly one listed row has the same `world_id`, `jurisdiction` and
+    `answer` (ancestry, lens and text ignored), the entry *is* that row —
+    its session and its command id are adopted and no draw happens; if
+    none, a fresh session is built as above; if more than one (which the
+    dedup and one-sweep-at-a-time make impossible from this code, but a
+    store can hold anything), the oldest by `stored_at` is adopted and the
+    rest are logged at `warn` as orphans. A deficit entry adopted this way
+    keeps its old ancestry and old id; `require_answer` re-checks the
+    deficit at commit (`lib.rs:1706-1712`), so the ancestry is
+    informational, and the repair prompt still carries the refusal the
+    model saw. The command id stays the kernel's idempotency key and stops
+    being the only way to rediscover work; `step_session`'s `lookup` by id
+    and Cut 3's adoption rule remain the second line for the boundary path.
+  - `controllers.rs:1541` region: `ControllerWorkStore::elaboration_in_flight(&self)
+    -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError>`
+    as a required trait method (no default body: a store that cannot list
+    must say so at compile time). `CultCacheControllerWorkStore` answers it
+    from the in-memory `journal.work` map (`:1662-1667` shape): one pass
+    over the rows, filtering `ControllerWork::Elaboration` in
+    `ElaboratorInFlight` or `ReadyToSubmit` (not `NoPatch`), after
+    `verify_journal_custody` as `lookup` does. Cost O(rows) over a map of
+    tens to hundreds of entries, run once per sweep (every 300 s), never
+    per entry and never per step; no index, no schema, no new row.
+    `RecordingWorkStore` (`:8339`) implements it the same way over its
+    `work` map. Dungeon's test stores (`AlwaysFreshWorkStore` `runtime.rs:3194`
+    and its siblings) return `Ok(Vec::new())`, which is true of them.
   - `elaboration.rs`: `pub async fn sweep(&self, permits:
     Arc<tokio::sync::Semaphore>) -> Result<(), ControllerError>`: snapshot;
     return `Ok(())` unless Active; `demand_entries`; a `tokio::task::JoinSet`;
@@ -1195,7 +1229,34 @@ not repo artifacts.
     two-root world of `:11605` with a boundary inside the inner root runs
     one session for it; `a_deficit_entry_is_one_per_jurisdiction_per_ancestry`:
     a world with a deficit and no boundary runs one session per sweep and
-    a second sweep after the commit runs a new id.
+    a second sweep after a `Committed` session runs a new id (a finished
+    row is not in flight and is not adopted).
+  - Library, rediscovery (controllers tests, probe 3 as permanent tests
+    through `sweep` with a pool of 1):
+    `a_stranded_deficit_session_is_adopted_with_its_refusal_intact`: the
+    deficit world of probe 3; sweep one ends `Rejected` (one row, one
+    refusal); `submit_clock(60)`; sweep two ends `Committed` under the
+    first command id, the second invocation's input carries the first
+    refusal, `infer` was called exactly twice across both sweeps (once per
+    sweep: no repeated round), and `custody elaboration_commands == 1`;
+    `a_boundary_session_is_repaired_after_a_commit_and_a_tick`: the
+    boundary world; sweep one `Rejected`; the owner admits an unrelated
+    operations-only patch, then `submit_clock(60)`; sweep two `Committed`
+    under the same id with the refusal in its input, one row;
+    `the_store_gains_no_orphan_per_commit`: the deficit world; after
+    sweep-`Rejected`, five clock ticks each followed by a sweep whose
+    script keeps refusing (bad shed every round, budget permitting), the
+    store holds one elaboration row and `infer` was called once per sweep;
+    `a_row_for_another_answer_is_not_adopted`: rows shaped like real ones
+    that must **not** match — a real `ElaboratorInFlight` row for the same
+    deficit answer under a different jurisdiction (the two-root world of
+    `:11605`, deficit under root B, sweep for root A), a real row whose
+    `world_id` differs (a second world file's row copied into the first
+    store through the raw backing store, with a valid envelope and canonical
+    bytes), and a real `NoPatch` row for the same answer — the sweep builds a
+    fresh session for the entry in each case, and the foreign-world and
+    other-jurisdiction rows are left untouched (their bytes equal before
+    and after).
   - Dungeon (`runtime.rs` tests): `saturating_one_pool_never_delays_the_other`
     as specified under L1-Q4: hold all elaboration permits, run
     `run_cover_tick` on `active_two_cell_world` with a counting port, both
@@ -1220,9 +1281,10 @@ not repo artifacts.
   `:2602`; `docs/architecture/ghostlight-world-ontology.md:668` rewritten
   as the live rule: "Sessions run concurrently over distinct demand entries
   — every open boundary and one deficit per jurisdiction — each drawing its
-  lens by the world's weights, each carrying its lens in its identity, and
-  each holding one permit of the elaboration ceiling; the sweep is one at a
-  time." [Hands]; `ghostlight-world-ontology.md:773-775` "Sessions" bullet:
+  lens by the world's weights and recording it, each holding one permit of
+  the elaboration ceiling; a sweep first reads the store's in-flight
+  sessions and resumes any that answer a current demand entry; the sweep is
+  one at a time." [Hands]; `ghostlight-world-ontology.md:773-775` "Sessions" bullet:
   the "in Draft" clause stays target (L3) [Hands];
   `ghostlight-dungeon-mvp.md:473-479` names the two pools [Hands];
   `notes/fresh-workspace-handoff.md:284-290` [steward].
@@ -1232,14 +1294,17 @@ not repo artifacts.
     simulation `Semaphore` owns speak turns and cover cells; the mailbox
     owns commit order.
   - Inputs: one snapshot per sweep; the elaboration pool; the store's
-    `lookup` by id inside each `step_session` (Cut 3's adoption rule), and
-    under L1-Q9 A the in-flight listing.
+    in-flight listing once per sweep (L1-Q9 A) and its `lookup` by id
+    inside each `step_session` (Cut 3's adoption rule).
   - Outputs: one `step_session` per distinct entry.
   - Derived state: the claim set (never stored).
   - Forbidden writers: any second `sweep` concurrent with the first (the
     runtime loop awaits; the library does not guard it — stated); any
     caller starting `step_session` directly (`pub(super)`); any library-side
-    concurrency number; any lane acquiring the other lane's pool.
+    concurrency number; any lane acquiring the other lane's pool; a fresh
+    draw or a fresh id for an answer that has an in-flight row (the listing
+    is consulted before any draw); the command id as the sole rediscovery
+    path (deleted as such).
   - Shared paths: every session takes the same permit path and the same
     `step_session`; a test port and the production port see the same
     `PreparedInference`; both pools are read at open by the same shape of
@@ -1271,7 +1336,20 @@ not repo artifacts.
     `Retryable` fault must fail on the orphaned task's missing commit. M4.4
     `runtime.rs:1837`: pass `state.controller_permits` instead of
     `elaboration_permits`: `saturating_one_pool_never_delays_the_other`'s
-    second half must fail.
+    second half must fail. M4.5 `demand_entries`: skip the listing (always
+    build fresh): `a_stranded_deficit_session_is_adopted_with_its_refusal_intact`
+    must fail (`Committed` under a new id, three `infer` calls, two rows)
+    and `the_store_gains_no_orphan_per_commit` must fail (six rows). M4.6
+    `demand_entries`: match on `world_id` and `answer` only (drop
+    `jurisdiction`): `a_row_for_another_answer_is_not_adopted`'s
+    other-jurisdiction case must fail. M4.7 `demand_entries`: match on
+    `jurisdiction` and `answer` only (drop `world_id`): its foreign-world
+    case must fail. M4.8 `CultCacheControllerWorkStore::elaboration_in_flight`:
+    include `NoPatch` rows: its `NoPatch` case must fail. M4.9 `elaboration.rs`
+    adoption rule (Cut 3's `same_answer`) restored to whole-session
+    equality while the listing stays: `a_boundary_session_is_repaired_after_a_commit_and_a_tick`
+    must fail (`Superseded`), which proves the two halves are separately
+    necessary.
   - operator: one `GHOSTLIGHT_SMOKE_TRACE` road run (`runtime.rs:3738`,
     ignored) after this cut with `GHOSTLIGHT_ELABORATION_MAX_CONCURRENT=2`:
     the trace shows two elaboration sessions in one sweep when the seeded
@@ -1290,6 +1368,16 @@ not repo artifacts.
     stated defaults.
   - P4.5 A quarantine-class error still ends the sweep with `Err`, after
     every spawned session has finished.
+  - P4.6 A stranded deficit session is adopted by what it answers: it
+    resumes under its first command id with its refusal in the next
+    invocation and no repeated round.
+  - P4.7 A boundary session is repaired after an unrelated commit and a
+    clock tick, under its id, with its refusal in the next invocation.
+  - P4.8 The store gains no orphan elaboration row per commit; rows for
+    another jurisdiction, another world, or a finished (`NoPatch`) session
+    are never adopted and never touched.
+  - P4.9 `elaboration_in_flight` runs once per sweep and every
+    `ControllerWorkStore` implements it (no default body).
 - **Landed:**
 - **Verdicts:**
 
@@ -1340,13 +1428,13 @@ not repo artifacts.
 | 0 | — | — | scratch captures only | |
 | 1 | 0 | `lens.rs` ~150 + tests ~130; `lib.rs` 2 lines + test helper ~6 | 0 deps; 0 targets | |
 | 2 | ~6 (doc lines replaced, the v2 denial case) | library: state field, command, effect, two reducer arms, resolve param, mismatch variant, snapshot field, replay check ~90; 19 literal sites × 1 line; tests ~220; Dungeon: payload field, policy fn, Eve control and binding, three schema strings, harness ~40; tests ~60; docs ~8 | 0 deps; `consumer.v4` → `v5`; `world_create.v3` → `v4` | |
-| 3 | ~4 (the constant as integrity reference, the whole-session supersession equality) | session fields, draw and text in `select_answer`, adoption rule, request param ~60; tests ~220 (one ignored pending L1-Q9); docs ~3 | `controller_work.v15` → `v16` | |
-| 4 | ~35 (sequential sweep, `Inactive`, doc lines) | `sweep` + `demand_entries` ~80; second pool and its config ~25; tests ~230; docs ~12 | public `sweep` signature gains a `Semaphore`; one new env variable | |
+| 3 | ~4 (the constant as integrity reference, the whole-session supersession equality) | session fields, draw and text in `select_answer`, adoption rule, request param ~60; tests ~200; docs ~3 | `controller_work.v15` → `v16` | |
+| 4 | ~35 (sequential sweep, `Inactive`, doc lines) | `sweep` + `demand_entries` with rediscovery ~110; trait method + three store impls ~45; second pool and its config ~25; tests ~360; docs ~14 | public `sweep` signature gains a `Semaphore`; `ControllerWorkStore` gains one required method; one new env variable | |
 | 5 | ~14 | ~25 | 0 | |
 
-Net for L1: about +1,150 lines, of which about two thirds are tests, no new
+Net for L1: about +1,300 lines, of which about two thirds are tests, no new
 dependency, no new crate, no new binary, four schema strings replaced, one
-environment variable added. The growth buys the capabilities the target
+environment variable added, one required method on the store trait. The growth buys the capabilities the target
 names (lenses, world-owned weights and their owner command, a recorded
 replayable draw inside the session identity, concurrent sessions under a
 ceiling that cannot starve simulation, an explicit weights payload) and
@@ -1400,7 +1488,9 @@ session on one answer was that nobody wrote one.
   is the retryable fault it is today. Making simulation win at the
   connector needs connector-side priority or two caller ids, either of
   which is outside L1.
-- **L1.f10 (pre-existing, high, operator — L1-Q9):** an in-flight
+- **L1.f10 (pre-existing, high, fix — resolved by L1-Q9 A: the deficit
+  half in Cut 4's listing, the boundary half in Cut 3's adoption rule):**
+  an in-flight
   elaboration session is rediscovered only by re-deriving its command id
   and looking that id up; there is no listing query. Probe 3: after any
   unrelated commit, a deficit session's key moves (ancestry is in its
@@ -1410,8 +1500,10 @@ session on one answer was that nobody wrote one.
   reported `Superseded` forever because `ancestry` is in the session
   equality (`:404-405`). On the road the clock commits every tick, so no
   `Rejected` session of either kind has been repaired on a later sweep.
-  Cut 3 fixes the boundary half (adoption by identity); the deficit half
-  and the orphan rows are L1-Q9.
+  Cut 3 fixes the boundary half (adoption by identity); Cut 4 fixes the
+  deficit half (rediscovery by answer through `elaboration_in_flight`) and
+  stops new orphans. Orphan rows already on disk from before L1 are not
+  cleaned by either cut.
 - **L1.f9 (pre-existing, low, recorded):** under Q7 (a) only the elaboration
   lane binds integrity to stored text. `SEED_INSTRUCTIONS`
   (`elaboration.rs:1299`), `PERSONA_PROVIDER_INSTRUCTIONS` and the
