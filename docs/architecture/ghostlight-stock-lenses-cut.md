@@ -1534,12 +1534,96 @@ not repo artifacts.
     are never adopted and never touched.
   - P4.9 `elaboration_in_flight` runs once per sweep and every
     `ControllerWorkStore` implements it (no default body).
-- **Landed:**
-- **Verdicts:**
+- **Landed:** `8538fab` (store listing method), `6150bd7` (pool split; one
+  field-never-read warning that the next commit removes), `b3963f9`
+  (concurrent `sweep`, `demand_entries` with rediscovery, `step_session`; the
+  sequential loop, `step`, `Clean` and `Inactive` deleted), `bc31d11`
+  (`run_elaboration_sweep` extracted; no session starts after a quarantine
+  error), `3e35b3d` (ReadyToSubmit boundary test; permit recording). Before
+  the cut, Hands reproduced probe 1 at `d9b71c4`: one commit, one
+  illegal-transition death.
+- **Verdicts:** Soul pass 1 against `3e35b3d`.
 
 | Promise | Verdict | Evidence | Mutations |
 |---|---|---|---|
-| | | | |
+| P4.1 | HOLDS | One session per answer per sweep; distinct entries run at once; loops 30/30 | MD1, M4.2b kill; M4.2a equivalent (the answer dedup makes the id guard dead) |
+| P4.2 | HOLDS | Permit held while inferring; high water equals ceiling; no leak on retryable error or panic (Soul probes D, E) | M4.1 |
+| P4.3 | HOLDS for cover cells and the sweep; UNPROVEN for player speak turns (c4.s1.f2) | Two `Semaphore::new` at `runtime.rs:364-365`; speak `:1092` and cover `:2009` on simulation; sweep `:1855` on elaboration | M4.4, MC1, MC2 kill; Soul MC3 (speak on elaboration) survives |
+| P4.4 | HOLDS | Sequential loop gone; defaults 2 (minimum 1) and 4 read at `runtime.rs:1894`, `:1905` | none |
+| P4.5 | HOLDS on error paths; FALSIFIED on the panic path (c4.s1.f4) | Quarantine error returned after started sessions finish; none start after one. A panicking task unwinds the sweep, aborts its sibling, and ends the runtime driver | M4.3, M4.3b, MQ kill; Soul MS3 survives (c4.s1.f5) |
+| P4.6 | HOLDS | Stranded deficit adopted under its first id with its refusal and no repeated round; Soul probe C1 | M4.5 |
+| P4.7 | HOLDS with the substitute (SetLensWeights plus a clock tick for the operations-only patch) | Boundary repaired. The id-only resume path is pinned by the ReadyToSubmit test | M4.9 survives this test (c4.s1.f1) |
+| P4.8 | HOLDS as stated; see c4.s1.f8 for long-run growth | One row across five ticks; no adoption across jurisdiction, world, or a NoPatch row; foreign bytes unchanged | M4.5–M4.8 |
+| P4.9 | HOLDS | Listing read once per sweep; required method with no default | MP |
+
+- **Departure measured, now L1-Q10.** The listing returns only
+  `ElaboratorInFlight` rows, not `ReadyToSubmit`. Soul's probes:
+  - Including them (MR1): a committed session's row is adopted every later
+    sweep and resubmitted (`AlreadyApplied`), with no inference, and the
+    deficit is stuck forever.
+  - Excluding them, crash window with no commit (C1): the row is found by
+    id, submitted, and the deficit advances.
+  - Excluding them, crash window with a commit (C2): a new id and a fresh
+    session, one repeated round, and the authored row orphaned. The deficit
+    is not stalled.
+
+  Hands' stated cost is accurate.
+- **Soul findings, pass 1:**
+  - **c4.s1.f1 (introduced, medium, fix):** Cut 3's adoption rule now
+    depends on one test. M3.1 and M4.9 are the same text
+    (`elaboration.rs:425`), and over the full suite only
+    `a_boundary_row_ready_to_submit_is_submitted_after_a_tick` fails. The sweep
+    passes the listed row's own session to `step_session`, so `same_answer` is
+    trivially true on every adopted path, and Cut 3's two former killers no
+    longer reach the rule.
+  - **c4.s1.f2 (introduced, medium, fix):** player speak turns drawing from
+    `elaboration_permits` (`runtime.rs:1092`, MC3) survive all Dungeon tests.
+    Pool independence is unproven for the speak lane.
+  - **c4.s1.f3 (pre-existing gap, moved by this cut, low-medium, fix):**
+    deleting the `phase != Active` return in `sweep` (`elaboration.rs:645`,
+    MS5) survives all 458 tests. A Draft or Archived world would list, draw,
+    infer and be refused every 300 seconds.
+  - **c4.s1.f4 (pre-existing in effect, medium, fix, Authority
+    self-under-standing-go):** a panic inside one session task
+    resume-unwinds out of `sweep` (`elaboration.rs:695`) and aborts the sibling
+    mid-inference, leaving its row `ElaboratorInFlight`. It ends the driver
+    task spawned at `runtime.rs:410`, whose handle is dropped, so elaboration
+    stops silently until restart. No permit leaks, and the next healthy
+    sweep would adopt both rows. Fix: a task panic becomes an error returned
+    after started siblings finish, and the driver keeps running and logs it.
+    Whether that error quarantines stays with L1.f1; existing log-only
+    handling is kept.
+  - **c4.s1.f5 (introduced, low, recorded):** swapping the quarantine stop
+    flag and the permit release (MS3) is unobservable on the current-thread
+    test runtime; P4.5's ordering holds by code order only.
+  - **c4.s1.f6 (introduced, low, recorded):** adopting the newest orphan or
+    listing newest-first (MS1, MS4) survives; the spec calls multiple rows
+    per answer unreachable from this code.
+  - **c4.s1.f7 (pre-existing, moved, low-medium, fix):** the `Uncovered`
+    jurisdiction is never exercised through the sweep; dropping its push (MS2,
+    `elaboration.rs:733`) survives.
+  - **c4.s1.f8 (pre-existing, recorded as L1.f14):** stored rows are never
+    retired.
+  - Cut 3's pins after the rerouting: S3 is killed only by
+    `a_fresh_session_draws_its_lens_from_its_own_command_id`; S5 only by
+    `a_resumed_session_keeps_its_stored_text_when_the_lens_text_changes`.
+  - Counts: library 459 (458 + 1 ignored), doc 10, external_admission 12,
+    Dungeon 54 (53 + 1 ignored), build_provenance 1, persona-projection 13.
+    Forced-rebuild warnings identical to Cut 3.
+
+### L1-Q10 Whether the in-flight listing excludes rows ready to submit
+
+- **Asked:** 2026-09-16, from Hands' departure on Cut 4, measured by Soul.
+- **Context:** see "Departure measured" above.
+- **Options:** A, exclude `ReadyToSubmit` rows: no stall, and a crash between
+  persist and submit followed by a commit costs one repeated round and one
+  orphan row. B, include them: every committed deficit stalls permanently.
+  C, include them and retire a row when resubmission answers
+  `AlreadyApplied`: closes the crash window, but needs a row-retirement path
+  that does not exist yet (L1.f14).
+- **Recommendation:** A now, with the crash window and C recorded under
+  L1.f14, which owns row retirement.
+- **Depends on it:** nothing else in L1.
 
 ## Cut 5. Reconcile the target and the maps
 
@@ -1585,7 +1669,7 @@ not repo artifacts.
 | 1 | 0 | `lens.rs` ~150 + tests ~130; `lib.rs` 2 lines + test helper ~6 | 0 deps; 0 targets | `lens.rs` +372 (217 code, 155 tests; the tool tables are one name per line under rustfmt); `lib.rs` +7; `elaboration.rs` 1 line changed; 0 deps; 0 targets |
 | 2 | ~6 (doc lines replaced, the v2 denial case) | library: state field, command, effect, two reducer arms, resolve param, mismatch variant, snapshot field, replay check ~90; 19 literal sites × 1 line; tests ~220; Dungeon: payload field, policy fn, Eve control and binding, three schema strings, harness ~40; tests ~60; docs ~8 | 0 deps; `consumer.v4` → `v5`; `world_create.v3` → `v4` | 12 files, +825 / −40: production ~130 across `lib.rs`, `patch.rs`, `journal.rs`, `mailbox.rs`, `action.rs`, `runtime.rs`, `eve.rs` plus 20 construction sites; tests ~650 (refusal matrix, direct `apply_effect` half, forged rows, state rows, replay). 0 deps; the two schema bumps as estimated |
 | 3 | ~4 (the constant as integrity reference, the whole-session supersession equality) | session fields, draw and text in `select_answer`, adoption rule, request param ~60; tests ~200; docs ~3 | `controller_work.v15` → `v16` | 6 files, +1071 / −113: production about +100 / −60 (`elaboration.rs` session fields, `same_answer`, adoption, draw in `select_answer`, request parameter, id signature, the constant deleted; `lens.rs` the constant moved in, the divisor guard, `weighs_the_same_as`, markers removed; `lib.rs` one call; `controllers.rs` two constants); tests about +890 (real-store tests, fixture generalization, two added tests); docs 1 line. `controller_work.v15` → `v16` as estimated |
-| 4 | ~35 (sequential sweep, `Inactive`, doc lines) | `sweep` + `demand_entries` with rediscovery ~110; trait method + three store impls ~45; second pool and its config ~25; tests ~360; docs ~14 | public `sweep` signature gains a `Semaphore`; `ControllerWorkStore` gains one required method; one new env variable | |
+| 4 | ~35 (sequential sweep, `Inactive`, doc lines) | `sweep` + `demand_entries` with rediscovery ~110; trait method + three store impls ~45; second pool and its config ~25; tests ~360; docs ~14 | public `sweep` signature gains a `Semaphore`; `ControllerWorkStore` gains one required method; one new env variable | `elaboration.rs` production +220 / −82 (including the test-only `step_in`); `controllers.rs` production +56 / −2; `runtime.rs` production +41 / −18; tests about +1,430 / −194 (fixtures, gated ports, three real-store non-adoption cases); docs about +21. 0 deps; one env variable; one required trait method; one new public re-export (`ElaboratorSession`); `sweep` signature change |
 | 5 | ~14 | ~25 | 0 | |
 
 Net for L1: about +1,300 lines, of which about two thirds are tests, no new
@@ -1634,6 +1718,17 @@ session on one answer was that nobody wrote one.
   comparison at `:1650` can only be reached for same-ancestry rows and is
   effectively inert. L1-Q9 (A) fixes the elaborator lane only; the seed lane
   is outside L1.
+- **L1.f14 (pre-existing, medium, operator):** stored controller-work rows
+  are never retired. Soul's probe B: every committed elaborator session leaves
+  a permanent `ReadyToSubmit` row. Probe A: a session refused on its last
+  budgeted round fails with a quarantine-class
+  `Serialization("elaboration evidence exceeded its round budget")` instead of
+  ending `NoPatch`, leaving its row `ReadyToSubmit`. With a commit between
+  sweeps, a fresh row opens, so a model that never succeeds abandons one row
+  per six refused rounds, without bound. Without a commit, the same id is
+  resubmitted every sweep with no inference. Row count is bounded only by the
+  world's lifetime. L1-Q10's crash window and its option C (retire a row on
+  `AlreadyApplied`) belong here.
 
 - **L1.f1 (pre-existing, medium, operator-triaged, not blocking L1):** a
   sweep error whose `requires_quarantine()` is true reaches
