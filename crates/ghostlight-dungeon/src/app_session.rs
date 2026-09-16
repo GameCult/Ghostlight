@@ -4,6 +4,7 @@
 //! selection, commands, idempotency, exports, or fictional state.
 
 use crate::heimdall::{VerifiedSessionAdmission, VerifiedSessionRefresh};
+use ghostlight::VerifiedPrincipalEvidence;
 use aes_gcm::{Aes256Gcm, KeyInit, aead::Aead};
 use anyhow::{Context, bail};
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
@@ -49,45 +50,6 @@ pub(crate) struct RefreshCandidate {
     pub(crate) heimdall_session_id: String,
     pub(crate) access_revision: u64,
     pub(crate) refresh_claim: String,
-}
-
-/// Opaque proof that the session owner verified a live Heimdall principal.
-///
-/// The account hash is intentionally readable by world ingress, but this type
-/// can only be constructed while `AppSessionOwner` holds valid custody.
-///
-/// `valid_until` is minted from the session's own `access_expires_at`, not a
-/// fresh clock read at construction: the evidence's authority cannot outlive
-/// the session that vouched for it, and a `SeedPort` that holds this value for
-/// a whole multi-round session is bounded by this expiry, not only by the
-/// request's own lifetime.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct VerifiedPrincipalEvidence {
-    account_subject_hash: String,
-    valid_until: DateTime<Utc>,
-}
-
-impl VerifiedPrincipalEvidence {
-    pub(crate) fn account_subject_hash(&self) -> &str {
-        &self.account_subject_hash
-    }
-
-    pub(crate) fn valid_until(&self) -> DateTime<Utc> {
-        self.valid_until
-    }
-
-    /// Test-only. Production keeps exactly one minter — a live cookie resolved
-    /// by `account_for_cookie` — and this constructor is compiled out of it.
-    #[cfg(test)]
-    pub(crate) fn fixture(
-        account_subject_hash: impl Into<String>,
-        valid_until: DateTime<Utc>,
-    ) -> Self {
-        Self {
-            account_subject_hash: account_subject_hash.into(),
-            valid_until,
-        }
-    }
 }
 
 pub(crate) struct AppSessionOwner {
@@ -229,9 +191,11 @@ impl AppSessionOwner {
                 .verified_capabilities
                 .iter()
                 .any(|value| value == "app_access"))
-        .then(|| VerifiedPrincipalEvidence {
-            account_subject_hash: session.account_subject_hash.clone(),
-            valid_until: session.access_expires_at,
+        .then(|| {
+            VerifiedPrincipalEvidence::new(
+                session.account_subject_hash.clone(),
+                session.access_expires_at,
+            )
         }))
     }
 
@@ -555,6 +519,40 @@ fn unwrap_refresh(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The library owns `VerifiedPrincipalEvidence` and gives it a public
+    /// constructor, so the single-minter rule its private fields used to
+    /// enforce is this count: production mints one, in `account_for_cookie`,
+    /// from a live cookie this owner holds custody of. A second minter
+    /// anywhere in Dungeon's production source is a second authority over who
+    /// the kernel believes is speaking.
+    #[test]
+    fn soul_exactly_one_production_site_mints_verified_principal_evidence() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut total = 0;
+        for entry in std::fs::read_dir(&root).expect("the source tree reads") {
+            let path = entry.expect("a readable entry").path();
+            if path.extension().and_then(|value| value.to_str()) != Some("rs") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path)
+                .expect("the source reads")
+                .replace("\r\n", "\n");
+            // Only the production half; a test may mint what production must
+            // not.
+            let production = text
+                .split_once("\n#[cfg(test)]\nmod tests {")
+                .map(|(before, _)| before.to_owned())
+                .unwrap_or(text);
+            total += production
+                .matches("VerifiedPrincipalEvidence::new(")
+                .count();
+        }
+        assert_eq!(
+            total, 1,
+            "production mints VerifiedPrincipalEvidence in exactly one place"
+        );
+    }
 
     fn session(claim: &str) -> VerifiedSessionAdmission {
         VerifiedSessionAdmission::fixture(

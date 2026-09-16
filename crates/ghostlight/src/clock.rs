@@ -18,7 +18,7 @@ use std::collections::BTreeMap;
     Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
 #[serde(transparent)]
-pub(crate) struct FictionalMinutes(pub(crate) u64);
+pub struct FictionalMinutes(pub u64);
 
 impl FictionalMinutes {
     pub(crate) fn checked_add(self, span: TickMinutes) -> Option<Self> {
@@ -39,16 +39,16 @@ impl FictionalMinutes {
 /// due date in the world and makes the size of a commit a caller-chosen number.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(transparent)]
-pub(crate) struct TickMinutes(u32);
+pub struct TickMinutes(u32);
 
 impl TickMinutes {
-    pub(crate) fn new(minutes: u32) -> Option<Self> {
+    pub fn new(minutes: u32) -> Option<Self> {
         (1..=MAX_ROUTE_COST)
             .contains(&minutes)
             .then_some(Self(minutes))
     }
 
-    pub(crate) fn minutes(self) -> u32 {
+    pub fn minutes(self) -> u32 {
         self.0
     }
 }

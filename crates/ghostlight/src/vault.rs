@@ -33,7 +33,7 @@ const MAX_NOTE_BYTES: u64 = 512 * 1024;
 /// must be too. `Root` names no path at all; `Scope` carries only the
 /// vault-relative scope string the caller supplied.
 #[derive(Debug, Error)]
-pub(crate) enum VaultError {
+pub enum VaultError {
     #[error("vault root is not a readable directory")]
     Root,
     #[error("vault scope escapes its root: {0}")]
@@ -60,7 +60,7 @@ struct VaultNote {
     links: Vec<String>,
 }
 
-pub(crate) struct VaultEvidenceSource {
+pub struct VaultEvidenceSource {
     notes: Vec<VaultNote>,
     /// Many-to-one: filename stem, frontmatter title, and each alias all key
     /// the same note. Ambiguity is resolved by the shortest reference path, and
@@ -74,7 +74,7 @@ impl VaultEvidenceSource {
     /// so `..`, an absolute scope, and a symlink out are all refused here. A
     /// spoiler tier is a directory in every vault that has one, so it is
     /// expressed as a scope and there is no tier field anywhere in this file.
-    pub(crate) fn open(root: &Path, scope: &str) -> Result<Self, VaultError> {
+    pub fn open(root: &Path, scope: &str) -> Result<Self, VaultError> {
         let root = root.canonicalize().map_err(|_| VaultError::Root)?;
         if !root.is_dir() {
             return Err(VaultError::Root);

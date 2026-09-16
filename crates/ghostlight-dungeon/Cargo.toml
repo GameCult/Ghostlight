@@ -24,7 +24,7 @@ cultmesh-rs.workspace = true
 jsonwebtoken.workspace = true
 libc = "0.2"
 hmac.workspace = true
-ghostlight-persona-projection = { path = "../ghostlight-persona-projection" }
+ghostlight = { path = "../ghostlight" }
 rand.workspace = true
 reqwest.workspace = true
 rmp-serde.workspace = true

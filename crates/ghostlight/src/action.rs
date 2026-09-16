@@ -22,7 +22,7 @@ use std::collections::{BTreeMap, BTreeSet};
 /// like `Mismatch`, and like it never serialized: it states the affordance
 /// contract, which no commit records.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) enum ActionMismatch {
+pub enum ActionMismatch {
     UnboundRole {
         role: Role,
     },
@@ -1016,18 +1016,18 @@ fn lower(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::custody_tests::custody_kernel;
-    use crate::world::patch::{
+    use crate::custody_tests::custody_kernel;
+    use crate::patch::{
         AffordanceDeclaration, ComponentOp, DraftHandle, OutcomeBand, Ref as PatchRef, ResolvedOp,
         RoleSpec,
     };
-    use crate::world::tests::{
+    use crate::tests::{
         ADMIT_KIND, COMMAND_KIND, Civic, LEVY_KIND, OPENING_BALANCE, SEIZURE_GRIEVANCE, Topology,
         WARDEN_OFFICE, activate, affordance_named, auth_principal, authority_kind, civic_world,
         command, custody_world, grant_to, grievance, office, operations, opportunity_for,
         over_place, over_subject, player, reject_owner, submit_owner,
     };
-    use crate::world::{
+    use crate::{
         AffordanceKindName, AuthenticatedCaller, AuthoredSource, CallerId, CommandBody, Confidence,
         Declaration, EffectSlot, EntityKind, ProposedEffect, RoleBinding, Statement, SubmitReceipt,
         WorldEffect, WorldKernel, WorldPatch, WorldSnapshot, apply_effect,
@@ -1073,7 +1073,7 @@ mod tests {
         opportunity: &DecisionOpportunity,
         invocation: &DecisionInvocation,
     ) -> Result<DecisionEvent, KernelError> {
-        let granted = crate::world::require_granted(state, opportunity, invocation.affordance)?;
+        let granted = crate::require_granted(state, opportunity, invocation.affordance)?;
         exercise(state, command_id, opportunity, &granted, invocation)
     }
 
@@ -1753,7 +1753,7 @@ mod tests {
         // The two the speech lowering prepends, and nothing from a slot.
         assert_eq!(event.effects.len(), 2);
         assert_eq!(
-            crate::world::tests::spoken(&kernel.state, event),
+            crate::tests::spoken(&kernel.state, event),
             Some("I open the door.")
         );
         assert_eq!(kernel.state.holdings, holdings);
@@ -1923,7 +1923,7 @@ mod tests {
             self.refresh();
         }
 
-        fn refuse(&mut self, ops: Vec<ComponentOp>) -> Vec<crate::world::Mismatch> {
+        fn refuse(&mut self, ops: Vec<ComponentOp>) -> Vec<crate::Mismatch> {
             let before = self.kernel.snapshot().unwrap();
             reject_owner(&mut self.kernel, &before, operations(ops))
         }
@@ -2096,7 +2096,7 @@ mod tests {
                 },
             },
         );
-        assert!(rejected.contains(&crate::world::Mismatch::ReservedRole { handle }));
+        assert!(rejected.contains(&crate::Mismatch::ReservedRole { handle }));
     }
 
     /// The two rejection lanes stay distinguishable: an over-levy inside its
@@ -2113,7 +2113,7 @@ mod tests {
         };
         assert_eq!(
             rejected,
-            vec![crate::world::Mismatch::InsufficientCustody { operation: 0 }]
+            vec![crate::Mismatch::InsufficientCustody { operation: 0 }]
         );
     }
 
@@ -2165,12 +2165,12 @@ mod tests {
         };
         assert_eq!(
             rejected,
-            vec![crate::world::Mismatch::NoOperationEffect { operation: 0 }]
+            vec![crate::Mismatch::NoOperationEffect { operation: 0 }]
         );
         let hall = bench.civic.hall;
         assert_eq!(
             bench.refuse(vec![grant_to(outsider, LEVY_KIND, over_place(hall))]),
-            vec![crate::world::Mismatch::OverlappingJurisdiction { operation: 0 }]
+            vec![crate::Mismatch::OverlappingJurisdiction { operation: 0 }]
         );
     }
 
@@ -2206,9 +2206,9 @@ mod tests {
                 .state
                 .authority
                 .get(&treasury)
-                .is_some_and(|grants| grants.contains(&crate::world::AuthorityGrant {
+                .is_some_and(|grants| grants.contains(&crate::AuthorityGrant {
                     kind: authority_kind(LEVY_KIND),
-                    over: crate::world::AuthorityTarget::PlaceSubtree(hall),
+                    over: crate::AuthorityTarget::PlaceSubtree(hall),
                 })),
             "the revoked grant is gone from the ledger"
         );
@@ -2292,7 +2292,7 @@ mod tests {
             .expect("the committed event");
         assert_eq!(event.effects.len(), 2);
         assert_eq!(
-            crate::world::tests::spoken(&bench.kernel.state, event),
+            crate::tests::spoken(&bench.kernel.state, event),
             Some("The tithe was taken twice.")
         );
 
@@ -2323,18 +2323,18 @@ mod tests {
         assert!(
             bench
                 .refuse(vec![step.clone()])
-                .contains(&crate::world::Mismatch::RouteAccessRestricted { operation: 0 })
+                .contains(&crate::Mismatch::RouteAccessRestricted { operation: 0 })
         );
         let yard = bench.topology.yard;
         bench.admit(vec![grant_to(walker, ADMIT_KIND, over_place(yard))]);
         assert!(
             bench
                 .refuse(vec![step.clone()])
-                .contains(&crate::world::Mismatch::RouteAccessRestricted { operation: 0 })
+                .contains(&crate::Mismatch::RouteAccessRestricted { operation: 0 })
         );
 
         // Reachable reads the same rule from the other side.
-        let authority = crate::world::subject_authority(&bench.kernel.state, walker);
+        let authority = crate::subject_authority(&bench.kernel.state, walker);
         assert!(!reachable(
             &bench.kernel.state,
             walker,
@@ -2346,7 +2346,7 @@ mod tests {
         // A grant covering the destination, minted in the same patch as the
         // move, resolves through the candidate authority shadow.
         let hall = bench.civic.hall;
-        let authority = crate::world::subject_authority(&bench.kernel.state, walker);
+        let authority = crate::subject_authority(&bench.kernel.state, walker);
         assert!(!patch::route_admits(
             &bench.kernel.state,
             &authority,
@@ -2358,7 +2358,7 @@ mod tests {
             bench.kernel.state.positions[&walker].place,
             bench.civic.chamber
         );
-        let authority = crate::world::subject_authority(&bench.kernel.state, walker);
+        let authority = crate::subject_authority(&bench.kernel.state, walker);
         assert!(patch::route_admits(
             &bench.kernel.state,
             &authority,
@@ -2517,24 +2517,24 @@ mod tests {
         let mut forged = bench.kernel.state.clone();
         forged.positions.insert(
             walker,
-            crate::world::patch::Position {
+            crate::patch::Position {
                 place: bench.topology.yard,
             },
         );
         let mut refused = forged.clone();
-        let error = crate::world::apply_operations(&mut refused, std::slice::from_ref(&step), &[])
+        let error = crate::apply_operations(&mut refused, std::slice::from_ref(&step), &[])
             .unwrap_err();
         assert!(matches!(error, KernelError::Invariant(_)));
 
         let mut admitted = forged;
         admitted.authority.insert(
             walker,
-            BTreeSet::from([crate::world::AuthorityGrant {
-                kind: crate::world::tests::authority_kind(ADMIT_KIND),
-                over: crate::world::AuthorityTarget::PlaceSubtree(bench.civic.hall),
+            BTreeSet::from([crate::AuthorityGrant {
+                kind: crate::tests::authority_kind(ADMIT_KIND),
+                over: crate::AuthorityTarget::PlaceSubtree(bench.civic.hall),
             }]),
         );
-        crate::world::apply_operations(&mut admitted, std::slice::from_ref(&step), &[])
+        crate::apply_operations(&mut admitted, std::slice::from_ref(&step), &[])
             .expect("the named key opens the door at the component writer too");
         assert_eq!(admitted.positions[&walker].place, bench.civic.chamber);
     }
@@ -2558,7 +2558,7 @@ mod tests {
         let invocation = bench.levy(farmer, 1);
         bench.admit(vec![ComponentOp::RevokeAuthority {
             holder: PatchRef::Existing(treasury),
-            grant: crate::world::tests::grant_of(LEVY_KIND, over_place(hall)),
+            grant: crate::tests::grant_of(LEVY_KIND, over_place(hall)),
         }]);
         // The envelope carries the current revision, so only the stale scope
         // digest can refuse it.
@@ -2603,14 +2603,14 @@ mod tests {
         // The farmer stands under the hall the treasury already levies, so the
         // covering predicate says both grants would answer for the same
         // target, and admission refuses the narrower grant landing second.
-        assert!(crate::world::covers(
+        assert!(crate::covers(
             &bench.kernel.state,
-            crate::world::AuthorityTarget::PlaceSubtree(hall),
+            crate::AuthorityTarget::PlaceSubtree(hall),
             Target::Subject(farmer)
         ));
         assert_eq!(
             bench.refuse(vec![grant_to(treasury, LEVY_KIND, over_subject(farmer))]),
-            vec![crate::world::Mismatch::OverlappingJurisdiction { operation: 0 }]
+            vec![crate::Mismatch::OverlappingJurisdiction { operation: 0 }]
         );
 
         // The symmetric order: a direct grant over the farmer, minted first
@@ -2620,7 +2620,7 @@ mod tests {
         bench.admit(vec![grant_to(treasury, AUDIT_KIND, over_subject(farmer))]);
         assert_eq!(
             bench.refuse(vec![grant_to(treasury, AUDIT_KIND, over_place(hall))]),
-            vec![crate::world::Mismatch::OverlappingJurisdiction { operation: 0 }]
+            vec![crate::Mismatch::OverlappingJurisdiction { operation: 0 }]
         );
     }
 
@@ -2677,8 +2677,8 @@ mod tests {
                     invocation,
                 },
             );
-            let first = crate::world::reduce(&before, &envelope).expect("the act reduces");
-            let second = crate::world::reduce(&before, &envelope).expect("the act reduces again");
+            let first = crate::reduce(&before, &envelope).expect("the act reduces");
+            let second = crate::reduce(&before, &envelope).expect("the act reduces again");
             assert_eq!(first, second, "reduce is not a pure function of the state");
             let receipt = bench
                 .kernel

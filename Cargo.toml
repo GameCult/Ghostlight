@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "crates/ghostlight",
   "crates/ghostlight-dungeon",
   "crates/ghostlight-persona-projection",
 ]

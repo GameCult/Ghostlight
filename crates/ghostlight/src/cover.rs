@@ -37,7 +37,7 @@ const COVER_NAMESPACE: &str = "ghostlight.cover.v1";
     Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
 )]
 #[serde(transparent)]
-pub(crate) struct TickIndex(pub(crate) u64);
+pub struct TickIndex(pub u64);
 
 impl TickIndex {
     /// Floor division by the span one `AdvanceTime` carries. The driver submits
@@ -52,7 +52,7 @@ impl TickIndex {
 /// nowhere in world state: representation is a compute budget, not world truth.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "resolution", rename_all = "snake_case")]
-pub(crate) enum Resolution {
+pub enum Resolution {
     Detail,
     Coarse { constituents: usize },
 }
@@ -62,7 +62,7 @@ pub(crate) enum Resolution {
 /// member)`; no `uuid/v5`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub(crate) struct CellId(Uuid);
+pub struct CellId(Uuid);
 
 impl std::fmt::Display for CellId {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -113,15 +113,15 @@ pub(crate) fn cell_constituent_uuid(
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct Constituent {
-    pub(crate) subject: SubjectId,
+pub struct Constituent {
+    pub subject: SubjectId,
     pub(crate) opportunity: DecisionOpportunity,
 }
 
 /// One inference's worth of the world. A singleton keeps the detail path and its
 /// membrane; a group is one inference over N labeled, never-unioned views.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum Cell {
+pub enum Cell {
     Singleton {
         id: CellId,
         tick: TickIndex,
@@ -147,27 +147,27 @@ impl Cell {
 
 /// Derived, disposable, dropped at the end of a tick.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct Cover {
-    pub(crate) tick: TickIndex,
-    pub(crate) cells: Vec<Cell>,
+pub struct Cover {
+    pub tick: TickIndex,
+    pub cells: Vec<Cell>,
     /// True when the constituent cap could not hold every active subject inside
     /// the cell budget, so the cap yielded and every cell grew. "Every active
     /// subject is in the cover every tick" is an ontology invariant; the cap is
     /// a prompt-size preference. Rendered read-only: it is the honest signal
     /// that the world outgrew its prompt budget rather than a truncation nobody
     /// sees.
-    pub(crate) oversubscribed: bool,
+    pub oversubscribed: bool,
 }
 
 impl Cover {
-    pub(crate) fn singletons(&self) -> usize {
+    pub fn singletons(&self) -> usize {
         self.cells
             .iter()
             .filter(|cell| matches!(cell, Cell::Singleton { .. }))
             .count()
     }
 
-    pub(crate) fn groups(&self) -> usize {
+    pub fn groups(&self) -> usize {
         self.cells.len() - self.singletons()
     }
 }
@@ -175,19 +175,19 @@ impl Cover {
 /// How many inferences one tick may spend, and how large one prompt may get.
 /// Two budgets, deliberately not one: only the second bounds tokens.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct CoverBudget {
+pub struct CoverBudget {
     /// B: cells per tick.
-    pub(crate) cells: u16,
+    pub cells: u16,
     /// C: the per-cell constituent cap. At least two, or a group is a singleton
     /// with extra steps.
-    pub(crate) constituent_cap: u16,
+    pub constituent_cap: u16,
     /// U: singleton slots reserved for the head of the attention order. The
     /// rest of the singleton slots carry the rotation window.
-    pub(crate) urgency_slots: u16,
+    pub urgency_slots: u16,
 }
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub(crate) enum CoverBudgetError {
+pub enum CoverBudgetError {
     #[error("cover cell budget must be at least one")]
     NoCells,
     #[error("cover constituent cap must be at least two")]
@@ -195,7 +195,7 @@ pub(crate) enum CoverBudgetError {
 }
 
 impl CoverBudget {
-    pub(crate) fn validated(self) -> Result<Self, CoverBudgetError> {
+    pub fn validated(self) -> Result<Self, CoverBudgetError> {
         if self.cells < 1 {
             return Err(CoverBudgetError::NoCells);
         }
@@ -212,7 +212,7 @@ impl CoverBudget {
 /// graph, so a controller organ that could read adjacency fails to compile
 /// rather than failing a test.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub(crate) struct AgencyGraph {
+pub struct AgencyGraph {
     /// Ascending. Exactly the subjects with a non-Human controller assignment.
     pub(crate) subjects: Vec<SubjectId>,
     /// Undirected, canonicalised `(lo, hi)` with `lo < hi`.
@@ -260,7 +260,7 @@ impl AgencyGraph {
 /// attention debt, then id) and is never re-sorted and never filtered here: a
 /// Human opportunity is skipped because a human turn is not an inference, which
 /// is a fact about cognition rather than a scheduling preference.
-pub(crate) fn derive_cover(
+pub fn derive_cover(
     world: WorldId,
     now: FictionalMinutes,
     tick_minutes: u32,
@@ -545,7 +545,7 @@ fn components(rest: &[&DecisionOpportunity], graph: &AgencyGraph) -> Vec<Vec<Sub
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::{DecisionScope, ScopeDigest};
+    use crate::{DecisionScope, ScopeDigest};
 
     fn subject(index: u128) -> SubjectId {
         serde_json::from_value(serde_json::json!(Uuid::from_u128(index).to_string()))

@@ -26,7 +26,7 @@ use uuid::Uuid;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum EntityKind {
+pub enum EntityKind {
     Place,
     Resource,
     Fact,
@@ -36,7 +36,7 @@ pub(crate) enum EntityKind {
 /// Exactly the edge kinds that have a record shape.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum EdgeKind {
+pub enum EdgeKind {
     Route,
 }
 
@@ -209,7 +209,7 @@ pub(crate) struct Position {
 /// carries no components and can never be a role's target.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(tag = "namespace", content = "kind", rename_all = "snake_case")]
-pub(crate) enum RefKind {
+pub enum RefKind {
     Subject(Option<SubjectKind>),
     Entity(EntityKind),
     Edge(EdgeKind),
@@ -218,7 +218,7 @@ pub(crate) enum RefKind {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(transparent)]
-pub(crate) struct DraftHandle(String);
+pub struct DraftHandle(String);
 
 impl DraftHandle {
     pub(super) fn new(value: impl Into<String>) -> Self {
@@ -230,7 +230,7 @@ impl DraftHandle {
 /// There is no third form and no `From<String>`.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(tag = "ref", content = "value", rename_all = "snake_case")]
-pub(crate) enum Ref<Id> {
+pub enum Ref<Id> {
     Existing(Id),
     Draft(DraftHandle),
 }
@@ -238,7 +238,7 @@ pub(crate) enum Ref<Id> {
 /// A referent in any of the three referent namespaces, or in the catalog.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(tag = "namespace", content = "ref", rename_all = "snake_case")]
-pub(crate) enum RefName {
+pub enum RefName {
     Subject(Ref<SubjectId>),
     Entity(Ref<EntityId>),
     Edge(Ref<EdgeId>),
@@ -251,13 +251,13 @@ pub(crate) enum RefName {
 /// what keeps genre out of the reducer.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(transparent)]
-pub(crate) struct AffordanceKindName(pub(crate) String);
+pub struct AffordanceKindName(pub String);
 
 /// A named slot in one affordance, bound to a referent at invocation time.
 /// Canonical text, `[a-z][a-z0-9_]{0,31}` — it becomes a tool parameter name.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(transparent)]
-pub(crate) struct Role(pub(crate) String);
+pub struct Role(pub(crate) String);
 
 /// What a role must be bound to. `RefKind` is reused rather than mirrored: it
 /// already spells subject, entity kind, and edge kind, so the binding kind-check
@@ -275,15 +275,15 @@ pub(crate) struct RoleSpec {
 /// byte-identical statements are two facts.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(transparent)]
-pub(crate) struct Statement(String);
+pub struct Statement(String);
 
 impl Statement {
-    pub(crate) fn new(value: impl Into<String>) -> Option<Self> {
+    pub fn new(value: impl Into<String>) -> Option<Self> {
         let value = value.into();
         is_canonical_text(&value).then_some(Self(value))
     }
 
-    pub(crate) fn as_str(&self) -> &str {
+    pub fn as_str(&self) -> &str {
         &self.0
     }
 }
@@ -476,7 +476,7 @@ pub(crate) enum CommitmentKind {
 /// commitment by identity, so a structural key is the whole answer.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct CommitmentKey {
+pub struct CommitmentKey {
     pub(crate) command: CommandId,
     pub(crate) index: u32,
 }
@@ -651,7 +651,7 @@ pub(crate) struct WorldScaleIntentRef {
 /// visible while reducing no target.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(tag = "jurisdiction", content = "root", rename_all = "snake_case")]
-pub(crate) enum JurisdictionKey {
+pub enum JurisdictionKey {
     PlaceSubtree(EntityId),
     Uncovered,
 }
@@ -883,8 +883,8 @@ pub(crate) struct OutcomeBand {
 /// `affordance_grants` and nothing else, so an entry carries no audience.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct Affordance {
-    pub(crate) kind: AffordanceKindName,
+pub struct Affordance {
+    pub kind: AffordanceKindName,
     /// Ordered, so the generated tool's parameters are stable across builds.
     pub(crate) roles: Vec<RoleSpec>,
     pub(crate) preconditions: Vec<Precondition>,
@@ -912,7 +912,7 @@ pub(crate) struct AffordanceDeclaration {
 /// operations alike.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(tag = "site", content = "at", rename_all = "snake_case")]
-pub(crate) enum Site {
+pub enum Site {
     Declaration(DraftHandle),
     Operation(usize),
 }
@@ -1198,14 +1198,14 @@ pub(crate) enum ComponentOp {
 /// deficit is nonzero, and the commit must satisfy what it answered.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "answer", rename_all = "snake_case")]
-pub(crate) enum PatchAnswer {
+pub enum PatchAnswer {
     Boundary(super::CausalBoundary),
     Deficit(JurisdictionKey),
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct WorldPatch {
+pub struct WorldPatch {
     pub(crate) declarations: Vec<Declaration>,
     pub(crate) operations: Vec<ComponentOp>,
     pub(crate) evidence: Vec<EvidenceRef>,
@@ -1282,7 +1282,7 @@ pub(crate) fn check_patch_caps(patch: &WorldPatch) -> Result<(), PatchDecodeErro
 /// controller-owned telemetry under its own row type and its own schema.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(tag = "mismatch", rename_all = "snake_case")]
-pub(crate) enum Mismatch {
+pub enum Mismatch {
     EmptyHandle {
         position: usize,
     },
@@ -7292,11 +7292,11 @@ mod catalog_tests {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::tests::{
+    use crate::tests::{
         FIXTURE_ENTITIES, activate, admit_topology, auth_principal, command, creation, owner,
         player, reject_owner, speak_entry, submit_owner,
     };
-    use crate::world::{
+    use crate::{
         CallerId, CommandBody, CommandId, KernelError, SubmitReceipt, WorldKernel, WorldPhase,
     };
 

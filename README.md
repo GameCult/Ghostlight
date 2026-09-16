@@ -162,8 +162,12 @@ The shortest reliable re-entry path is:
 
 ## Repository Shape
 
-- `crates/ghostlight-dungeon/`: Rust daemon, kernels, compiler, persistence,
-  provider stages, Eve projection/command ingress, and acceptance harnesses;
+- `crates/ghostlight/`: the library crate — world kernel, ontology and reducer,
+  journal, mailbox, controllers, elaboration, cover, clock, consumer admission,
+  inference ports, and evidence sources;
+- `crates/ghostlight-dungeon/`: Rust daemon consuming that library — HTTP
+  routes, Eve projection/command ingress, Heimdall and app sessions, CultMesh
+  publication, Idunn health, and acceptance harnesses;
 - `crates/ghostlight-persona-projection/`: generalized projection membrane owned
   by Ghostlight and consumed by Epiphany;
 - `docs/architecture/`: durable contracts and authority maps;

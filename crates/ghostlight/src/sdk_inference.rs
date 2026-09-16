@@ -8,7 +8,7 @@
 
 use super::controllers::{
     InferenceEvent, InferenceFault, InferenceOutput, InferencePort, InferenceRequest,
-    PreparedInference, REQUEST_EXPIRY, RESPONSE_TIMEOUT, ToolResultOracle, prepare_invocation,
+    PreparedInference, REQUEST_EXPIRY, RESPONSE_TIMEOUT, ToolResultOracle,
     unix_ms,
 };
 use async_trait::async_trait;
@@ -352,14 +352,14 @@ const SDK_RECEIPT_SCHEMA: &str = "ghostlight.sdk_inference_receipt.v1";
 /// one. It holds even with no SDK port built, so a `claude-`prefixed lane on a
 /// connector-only deployment is refused at open instead of quietly reaching the
 /// wrong backend.
-pub(crate) const DEFAULT_SDK_MODEL_PREFIX: &str = "claude";
+pub const DEFAULT_SDK_MODEL_PREFIX: &str = "claude";
 
 /// Everything the SDK sidecar needs to open, gathered so `open_inference` takes
 /// a binding rather than reading the environment itself.
-pub(crate) struct SdkBinding {
-    pub(crate) sidecar_entry: PathBuf,
-    pub(crate) caller_runtime_id: String,
-    pub(crate) model_prefix: String,
+pub struct SdkBinding {
+    pub sidecar_entry: PathBuf,
+    pub caller_runtime_id: String,
+    pub model_prefix: String,
 }
 
 /// The Claude Agent SDK behind Ghostlight's inference seam, through a Node
@@ -666,7 +666,7 @@ fn assemble_output(
 #[async_trait]
 impl InferencePort for SdkInferencePort {
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-        prepare_invocation(
+        PreparedInference::prepare(
             &self.caller_runtime_id,
             unix_ms()?.saturating_add(REQUEST_EXPIRY.as_millis() as u64),
             request,
@@ -775,18 +775,18 @@ impl InferencePort for RoutedInferencePort {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::CommandId;
-    use crate::world::controllers::{
+    use crate::CommandId;
+    use crate::controllers::{
         ConnectorBinding, ControllerModels, ControllerOpenError, InferencePurpose,
         OperationalOracle, RequestShape, catalog_tools, open_inference, tool_request,
     };
-    use crate::world::elaboration::{
+    use crate::elaboration::{
         ElaborationLoopEvaluation, ElaborationOracle, SEED_ROUND_BUDGET, evaluate_elaboration_loop,
     };
-    use crate::world::patch::{
+    use crate::patch::{
         RECORD_GAP_PATCH_TOOL, SUBMIT_PATCH_TOOL, kernel_speak_entry, patch_tools,
     };
-    use crate::world::{AffordanceId, AffordanceSnapshot};
+    use crate::{AffordanceId, AffordanceSnapshot};
     use codex_connector::CodexToolDefinition;
     use std::collections::VecDeque;
 
@@ -1041,7 +1041,7 @@ mod tests {
             .infer(prepared)
             .await
             .expect_err("a closed pipe produced an output");
-        assert!(fault.recovery_required(), "{fault:?}");
+        assert!(fault.requires_recovery(), "{fault:?}");
         assert!(!fault.integrity_was_violated());
         assert_eq!(link.restarts(), 1);
     }
@@ -1229,13 +1229,13 @@ mod tests {
     async fn an_expired_invocation_is_recovery_required() {
         let link = ScriptedLink::new(Vec::new());
         let port = SdkInferencePort::new(link.clone(), TEST_RUNTIME);
-        let stale = prepare_invocation(TEST_RUNTIME, 1_000, prose_request("Say something true."))
+        let stale = PreparedInference::prepare(TEST_RUNTIME, 1_000, prose_request("Say something true."))
             .expect("the stale invocation builds");
         let fault = port
             .infer(stale)
             .await
             .expect_err("a stale invocation re-ran");
-        assert!(fault.recovery_required(), "{fault:?}");
+        assert!(fault.requires_recovery(), "{fault:?}");
         assert!(
             link.sent().is_empty(),
             "a stale invocation reached the pipe"
@@ -1282,7 +1282,7 @@ mod tests {
             .infer(prepared)
             .await
             .expect_err("a contradicted terminal produced an output");
-        assert!(fault.recovery_required(), "{fault:?}");
+        assert!(fault.requires_recovery(), "{fault:?}");
         assert_eq!(link.restarts(), 1);
         assert_eq!(
             link.sent()
@@ -1379,7 +1379,7 @@ mod tests {
         );
     }
 
-    /// Soul: the port's `prepare` is `prepare_invocation` and nothing else, so
+    /// Soul: the port's `prepare` is `PreparedInference::prepare` and nothing else, so
     /// everything but the expiry stamp is identical to what any other port
     /// would have written for the same request.
     #[test]
@@ -1387,7 +1387,7 @@ mod tests {
         let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
         let request = prose_request("Say something true.");
         let through_port = port.prepare(request.clone()).expect("the port prepares");
-        let through_owner = prepare_invocation(TEST_RUNTIME, 4_102_444_800_000, request.clone())
+        let through_owner = PreparedInference::prepare(TEST_RUNTIME, 4_102_444_800_000, request.clone())
             .expect("the owner prepares");
         assert_eq!(through_port.purpose, through_owner.purpose);
         assert_eq!(
@@ -1464,7 +1464,7 @@ mod tests {
         for reason in [RateLimited, Overloaded, ServerError, ApiTimeout] {
             let fault = reason.into_fault("detail".into());
             assert!(
-                !fault.recovery_required() && !fault.integrity_was_violated(),
+                !fault.requires_recovery() && !fault.integrity_was_violated(),
                 "{reason:?} was not retryable"
             );
         }
@@ -1480,7 +1480,7 @@ mod tests {
             Unknown,
         ] {
             assert!(
-                reason.into_fault("detail".into()).recovery_required(),
+                reason.into_fault("detail".into()).requires_recovery(),
                 "{reason:?} was not recovery-required"
             );
         }
@@ -1523,7 +1523,7 @@ mod tests {
     #[tokio::test]
     async fn soul_a_lend_refused_before_the_query_is_still_reclaimed() {
         let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
-        let stale = prepare_invocation(TEST_RUNTIME, 1_000, prose_request("Say something true."))
+        let stale = PreparedInference::prepare(TEST_RUNTIME, 1_000, prose_request("Say something true."))
             .expect("the stale invocation builds");
         port.lend_tool_results(
             &stale,
@@ -1771,7 +1771,7 @@ mod tests {
         );
         assert!(connector_only.route(TEST_MODEL).is_none());
         let prepared =
-            prepare_invocation(TEST_RUNTIME, 4_102_444_800_000, prose_request("Say it.")).unwrap();
+            PreparedInference::prepare(TEST_RUNTIME, 4_102_444_800_000, prose_request("Say it.")).unwrap();
         for fault in [
             connector_only
                 .prepare(prose_request("Say it."))
@@ -1821,11 +1821,7 @@ mod tests {
             format!("GHOSTLIGHT_SDK{}", "_CREDENTIAL"),
         ];
         let mut sources = Vec::new();
-        for file in [
-            "world/sdk_inference.rs",
-            "world/controllers.rs",
-            "runtime.rs",
-        ] {
+        for file in ["sdk_inference.rs", "controllers.rs"] {
             let text = std::fs::read_to_string(root.join(file))
                 .expect("the source reads")
                 .replace("\r\n", "\n");

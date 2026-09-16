@@ -3,10 +3,8 @@
 //! The mesh publishes the world owner's current surface. It never pulls or
 //! repairs world state and it has no command authority.
 
-use crate::{
-    eve,
-    world::{CONSUMER_PATCH_SCHEMA, CONSUMER_RECEIPT_SCHEMA, STATE_SCHEMA, WorldSnapshot},
-};
+use crate::eve;
+use ghostlight::{CONSUMER_PATCH_SCHEMA, CONSUMER_RECEIPT_SCHEMA, STATE_SCHEMA, WorldSnapshot};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use cultcache_rs::DatabaseEntry;

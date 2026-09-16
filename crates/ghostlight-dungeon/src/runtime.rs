@@ -1,7 +1,7 @@
 //! One-process runtime for the sealed world owner.
 
 use crate::{
-    app_session::{AppSessionOwner, VerifiedPrincipalEvidence},
+    app_session::AppSessionOwner,
     eve::{self, EveCommandInvocation},
     heimdall::{self, HeimdallClient},
     idunn_health::{
@@ -9,16 +9,16 @@ use crate::{
         TARGET as GHOSTLIGHT_TARGET,
     },
     mesh::{self, MeshPublisher, MeshRuntimeIdentity},
-    world::{
-        AffordanceId, CONSUMER_BODY_LIMIT, Cell, CellRun, CommandBody, CommandId, ConnectorBinding,
-        ConsumerPort, ConsumerRegistry, ControllerError, ControllerModels, ControllerPendingReason,
-        ControllerRunner, ControllerWorkCustody, Cover, CoverBudget, CreateJurisdictionIntent,
-        CreateWorldIntent, DEFAULT_SDK_MODEL_PREFIX, DecisionInvocation, DecisionOpportunity,
-        KernelError, MailboxError, NarrativeRun, OperationalRun, PrincipalCommandIntent,
-        PrincipalId, SdkBinding, SeedOutcome, SeedPort, Statement, SubjectId, SubjectKind,
-        SubmissionDisposition, SubmitReceipt, TickMinutes, VaultEvidenceSource, WorldMailbox,
-        WorldPhase, WorldSnapshot, derive_cover, open_controller_work, open_inference,
-    },
+};
+use ghostlight::{
+    AffordanceId, CONSUMER_BODY_LIMIT, Cell, CellRun, CommandBody, CommandId, ConnectorBinding,
+    ConsumerPort, ConsumerRegistry, ControllerError, ControllerModels, ControllerPendingReason,
+    ControllerRunner, ControllerWorkCustody, Cover, CoverBudget, CreateJurisdictionIntent,
+    CreateWorldIntent, DEFAULT_SDK_MODEL_PREFIX, DecisionInvocation, DecisionOpportunity,
+    KernelError, MailboxError, NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId,
+    SdkBinding, SeedOutcome, SeedPort, Statement, SubjectId, SubjectKind, SubmissionDisposition,
+    SubmitReceipt, TickMinutes, VaultEvidenceSource, VerifiedPrincipalEvidence, WorldMailbox,
+    WorldPhase, WorldSnapshot, derive_cover, open_controller_work, open_inference,
 };
 use anyhow::{Context, bail, ensure};
 use axum::{
@@ -501,7 +501,7 @@ fn api_router(state: AppState) -> Router {
 
 /// The consumer ingress's door. Loopback and content type are the two gates
 /// `/cultnet/snapshot` already established; everything past them belongs to
-/// `world::consumer`, which owns decode, bounds, authentication, and the one
+/// `ghostlight`'s `consumer`, which owns decode, bounds, authentication, and the one
 /// receipt. This handler holds no opinion about a patch.
 async fn cultnet_world_patch(
     ConnectInfo(peer): ConnectInfo<SocketAddr>,
@@ -515,8 +515,8 @@ async fn cultnet_world_patch(
     if headers.get(header::CONTENT_TYPE) != Some(&HeaderValue::from_static("application/msgpack")) {
         return StatusCode::UNSUPPORTED_MEDIA_TYPE.into_response();
     }
-    let receipt = crate::world::admit_document(&state.consumer, &state.consumers, &body).await;
-    match crate::world::encode_receipt(&receipt) {
+    let receipt = ghostlight::admit_document(&state.consumer, &state.consumers, &body).await;
+    match ghostlight::encode_receipt(&receipt) {
         Ok(bytes) => (
             StatusCode::OK,
             [(header::CONTENT_TYPE, "application/msgpack")],
@@ -532,7 +532,7 @@ async fn cultnet_world_patch(
 /// startup outright, so a mistyped credential cannot silently read as "no
 /// consumers configured".
 fn open_consumer_registry() -> anyhow::Result<ConsumerRegistry> {
-    let Ok(path) = std::env::var(crate::world::CONSUMER_CREDENTIALS_ENVIRONMENT) else {
+    let Ok(path) = std::env::var(ghostlight::CONSUMER_CREDENTIALS_ENVIRONMENT) else {
         return Ok(ConsumerRegistry::empty());
     };
     ConsumerRegistry::from_secret_file(&path)
@@ -1081,15 +1081,15 @@ async fn dispatch_controller(
     // There is no second concurrency owner.
     let permit = state.controller_permits.clone().acquire_owned().await;
     let result = match opportunity.controller_mode {
-        crate::world::ControllerMode::NarrativePersona => controller
+        ghostlight::ControllerMode::NarrativePersona => controller
             .run_narrative(command_id, &opportunity)
             .await
             .map(controller_narrative_result),
-        crate::world::ControllerMode::OperationalAgent => controller
+        ghostlight::ControllerMode::OperationalAgent => controller
             .run_operational(command_id, &opportunity)
             .await
             .map(controller_operational_result),
-        crate::world::ControllerMode::Human => unreachable!("human opportunity was not admitted"),
+        ghostlight::ControllerMode::Human => unreachable!("human opportunity was not admitted"),
     };
     drop(permit);
     let quarantine = match &result {
@@ -1198,7 +1198,7 @@ async fn admit_controller_command(
     )?;
     let payload: ControllerActPayload = serde_json::from_value(invocation.payload.clone())
         .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
-    if payload.opportunity.controller_mode == crate::world::ControllerMode::Human {
+    if payload.opportunity.controller_mode == ghostlight::ControllerMode::Human {
         return Err(RuntimeCommandError::Payload(
             "human decisions cannot enter through the controller runner".into(),
         ));
@@ -1322,7 +1322,7 @@ fn controller_operational_result(run: OperationalRun) -> ControllerHttpResult {
 }
 
 fn controller_pending_result(
-    mode: crate::world::ControllerMode,
+    mode: ghostlight::ControllerMode,
     reason: ControllerPendingReason,
     persona_prose: Option<&str>,
 ) -> ControllerHttpResult {
@@ -1618,7 +1618,7 @@ async fn current_world(state: &AppState) -> anyhow::Result<Option<WorldSnapshot>
 /// a snapshot field, so no controller lane can reach it.
 async fn current_operator_view(
     state: &AppState,
-) -> anyhow::Result<(Option<WorldSnapshot>, Vec<crate::world::OperatorEvent>)> {
+) -> anyhow::Result<(Option<WorldSnapshot>, Vec<ghostlight::OperatorEvent>)> {
     let snapshot = current_world(state).await?;
     let log = match state.world.operator_log().await {
         Ok(log) => log,
@@ -2489,8 +2489,8 @@ mod tests {
         assert!(prepare_admitted_state_layout(&hardlink_root).is_err());
     }
 
-    fn controller_commit() -> crate::world::CommitReceipt {
-        crate::world::CommitReceipt {
+    fn controller_commit() -> ghostlight::CommitReceipt {
+        ghostlight::CommitReceipt {
             command_id: CommandId::new(),
             resulting_revision: 9,
             resulting_state_digest: "sha256:declined-state".into(),
@@ -2578,8 +2578,8 @@ mod tests {
             trace: None,
         });
         let inference = open_inference(live.connector, live.sdk, &live.models).unwrap();
-        let inference: Arc<dyn crate::world::InferencePort> = match live.trace {
-            Some(path) => Arc::new(crate::world::TracingInferencePort::new(inference, path)),
+        let inference: Arc<dyn ghostlight::InferencePort> = match live.trace {
+            Some(path) => Arc::new(ghostlight::TracingInferencePort::new(inference, path)),
             None => inference,
         };
         let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
@@ -2670,7 +2670,7 @@ mod tests {
 
     /// The consumer door's two transport gates, the same two
     /// `/cultnet/snapshot` established. Everything past them belongs to
-    /// `world::consumer`, which is tested there.
+    /// `ghostlight`'s `consumer`, which is tested there.
     #[tokio::test]
     async fn a_non_loopback_peer_is_forbidden_and_a_wrong_content_type_is_unsupported() {
         let fixture = fixture().await;
@@ -3078,11 +3078,11 @@ mod tests {
         assert_eq!(submitted.minutes(), CLOCK_TICK_MINUTES);
     }
 
-    use crate::world::{
+    use ghostlight::{
         ControllerPort, ControllerWork, ControllerWorkLookup, ControllerWorkStore,
         ControllerWorkStoreError, ControllerWorkWrite, InferenceEvent, InferenceFault,
         InferenceOutput, InferencePort, InferencePurpose, InferenceRequest, PreparedInference,
-        SubjectId, fixture_inference_events, fixture_inference_output, fixture_prepared_inference,
+        SubjectId,
     };
     use std::sync::atomic::AtomicUsize;
 
@@ -3240,7 +3240,7 @@ mod tests {
     #[async_trait::async_trait]
     impl InferencePort for CountingInferencePort {
         fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            fixture_prepared_inference(request)
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
         }
 
         async fn infer(
@@ -3252,9 +3252,9 @@ mod tests {
             self.high_water.fetch_max(in_flight, Ordering::SeqCst);
             tokio::task::yield_now().await;
             self.in_flight.fetch_sub(1, Ordering::SeqCst);
-            Ok(fixture_inference_output(
-                "The cover tick fixture speaks.",
-                "counting-port",
+            Ok(InferenceOutput::new(
+                vec![InferenceEvent::Text("The cover tick fixture speaks.".into())],
+                "sha256:counting-port",
             ))
         }
     }
@@ -3307,7 +3307,7 @@ mod tests {
     #[async_trait::async_trait]
     impl InferencePort for QuarantiningInferencePort {
         fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            fixture_prepared_inference(request)
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
         }
 
         async fn infer(
@@ -3315,7 +3315,7 @@ mod tests {
             _request: PreparedInference,
         ) -> Result<InferenceOutput, InferenceFault> {
             self.calls.fetch_add(1, Ordering::SeqCst);
-            Err(InferenceFault::fixture_integrity_violation(
+            Err(InferenceFault::integrity_violation(
                 "the fixture port disputes every receipt",
             ))
         }
@@ -3379,7 +3379,7 @@ mod tests {
     /// Lands a real commit on the world's operational agent, through its own
     /// granted `speak` affordance and `WorldMailbox::submit_controller` — the
     /// same production port a controller's own decision uses, not a test-only
-    /// ingress. Mirrors `world::controllers`'s own `MidTurnCommit::Speech`,
+    /// ingress. Mirrors `ghostlight`'s `controllers`'s own `MidTurnCommit::Speech`,
     /// but from outside the `world` module, using only what this module's
     /// tests already have `pub(crate)` access to.
     async fn speak_through(mailbox: &WorldMailbox, speaker: SubjectId, text: &str) {
@@ -3431,7 +3431,7 @@ mod tests {
     #[async_trait::async_trait]
     impl InferencePort for InterruptingCoverPort {
         fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            fixture_prepared_inference(request)
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
         }
 
         async fn infer(
@@ -3439,13 +3439,14 @@ mod tests {
             request: PreparedInference,
         ) -> Result<InferenceOutput, InferenceFault> {
             match request.purpose {
-                InferencePurpose::Projector => Ok(fixture_inference_output(
-                    "The room holds its breath.",
-                    "projector",
+                InferencePurpose::Projector => Ok(InferenceOutput::new(
+                    vec![InferenceEvent::Text("The room holds its breath.".into())],
+                    "sha256:projector",
                 )),
-                InferencePurpose::Persona => {
-                    Ok(fixture_inference_output(self.source.clone(), "persona"))
-                }
+                InferencePurpose::Persona => Ok(InferenceOutput::new(
+                    vec![InferenceEvent::Text(self.source.clone())],
+                    "sha256:persona",
+                )),
                 InferencePurpose::Interpreter => {
                     let round = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
                     let text = if round == 0 {
@@ -3454,7 +3455,7 @@ mod tests {
                         "A second bell rings over the yard."
                     };
                     speak_through(&self.mailbox, self.speaker, text).await;
-                    Ok(fixture_inference_events(
+                    Ok(InferenceOutput::new(
                         vec![
                             InferenceEvent::ToolCall {
                                 call_id: format!("call_speak_{round}"),
@@ -3468,7 +3469,7 @@ mod tests {
                                 arguments: "{}".into(),
                             },
                         ],
-                        &format!("interpreter-{round}"),
+                        format!("sha256:interpreter-{round}"),
                     ))
                 }
                 // The operational agent's own cell shares this tick and this
@@ -3476,7 +3477,7 @@ mod tests {
                 // the one narrative turn it scripts.
                 InferencePurpose::OperationalAgent
                 | InferencePurpose::GroupedAgent
-                | InferencePurpose::Elaboration => Err(InferenceFault::fixture_recovery_required(
+                | InferencePurpose::Elaboration => Err(InferenceFault::recovery_required(
                     "fixture agent declines every purpose but the narrative one",
                 )),
             }
@@ -3488,7 +3489,7 @@ mod tests {
     /// `run_cover_tick`), exercised through the tick driver rather than
     /// `ControllerRunner::run_narrative` directly. The operational agent
     /// speaks once between the narrative cell's Persona turn and its first
-    /// submit — a re-lowering, per `world::controllers`'s own
+    /// submit — a re-lowering, per `ghostlight`'s `controllers`'s own
     /// `a_neighbours_speech_between_the_turn_and_submit_is_re_lowered_once`
     /// — and once more between the re-lowered submit and its own commit,
     /// spending the one re-lowering the turn is owed
@@ -3498,7 +3499,7 @@ mod tests {
     /// operational agent's two acts and nothing from the overtaken turn.
     #[tokio::test]
     async fn a_second_mid_turn_change_reaches_the_drivers_interrupted_arm() {
-        use crate::world::ControllerMode;
+        use ghostlight::ControllerMode;
 
         let fixture = fixture().await;
         active_two_cell_world(&fixture.state, &fixture.cookie).await;
@@ -3555,9 +3556,56 @@ mod tests {
         );
     }
 
+    /// The library half of this rule is `sdk_inference`'s own
+    /// `soul_no_credential_name_appears_in_the_ports_own_source`, which can
+    /// only read its own crate's source. This is the Dungeon half, on the same
+    /// needles: nothing in the daemon's production source may name a
+    /// credential path or token variable the SDK port refuses to read.
+    #[test]
+    fn soul_no_credential_name_appears_in_the_runtimes_own_source() {
+        let source = std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/runtime.rs"),
+        )
+        .expect("the source reads")
+        .replace("\r\n", "\n");
+        // Assembled from halves so this test's own source is not a match.
+        let needles: [String; 8] = [
+            format!(".{}", "credentials.json"),
+            format!("CLAUDE_CODE{}", "_OAUTH_TOKEN"),
+            format!(".{}", "claude.json"),
+            format!("apiKey{}", "Helper"),
+            format!("USER{}", "PROFILE"),
+            format!("home{}", "_dir"),
+            format!("GHOSTLIGHT_SDK{}", "_TOKEN"),
+            format!("GHOSTLIGHT_SDK{}", "_CREDENTIAL"),
+        ];
+        // Only the production half; a test may name what production must not.
+        let production = source
+            .split_once("\n#[cfg(test)]\nmod tests {")
+            .map(|(before, _)| before.to_owned())
+            .unwrap_or(source);
+        for needle in &needles {
+            assert!(
+                !production.contains(needle.as_str()),
+                "runtime.rs names {needle}"
+            );
+        }
+        // `ANTHROPIC_API_KEY` may be named in a comment, never anywhere that
+        // could read it.
+        let anthropic = format!("ANTHROPIC{}", "_");
+        for line in production.lines() {
+            if line.contains(anthropic.as_str()) {
+                assert!(
+                    line.trim_start().starts_with("///") || line.trim_start().starts_with("//"),
+                    "runtime.rs names an ANTHROPIC variable outside a comment: {line}"
+                );
+            }
+        }
+    }
+
     /// `drive_one_tick` never names `run_cover_tick`: `run_cover` is opaque to
-    /// it, so this test substitutes a fake that walks a real `Cover` (three
-    /// singleton cells, from three fabricated opportunities) and records each
+    /// it, so this test substitutes a fake that walks a real `Cover` — derived
+    /// through production ingress from a real active world — and records each
     /// cell's tick index, alongside a fake clock submitter that records its
     /// own call. Asserts the ordering invariant `drive_one_tick` exists to
     /// buy — every cell recorded before the clock — and that every recorded
@@ -3565,24 +3613,19 @@ mod tests {
     /// cover, matching `drive_cover_tick`'s own doc comment.
     #[tokio::test]
     async fn drive_one_tick_runs_every_cell_before_the_clock_and_all_share_one_tick() {
-        use crate::world::{
-            AgencyGraph, Cell, ControllerMode, FictionalMinutes, TickIndex,
-            fixture_controller_opportunities,
-        };
+        use ghostlight::{Cell, TickIndex};
 
-        let opportunities = fixture_controller_opportunities(&[
-            ControllerMode::NarrativePersona,
-            ControllerMode::OperationalAgent,
-            ControllerMode::OperationalAgent,
-        ]);
-        let world_id = opportunities[0].world_id;
-        let now = FictionalMinutes(u64::from(CLOCK_TICK_MINUTES) * 7);
+        let fixture = fixture().await;
+        active_two_cell_world(&fixture.state, &fixture.cookie).await;
+
+        let snapshot = fixture.state.world.snapshot().await.unwrap();
+        let graph = fixture.state.world.agency_graph().await.unwrap();
         let cover = derive_cover(
-            world_id,
-            now,
+            snapshot.world_id,
+            snapshot.now,
             CLOCK_TICK_MINUTES,
-            &opportunities,
-            &AgencyGraph::default(),
+            &snapshot.opportunities,
+            &graph,
             CoverBudget {
                 cells: 240,
                 constituent_cap: 24,
@@ -3591,8 +3634,8 @@ mod tests {
         );
         assert_eq!(
             cover.cells.len(),
-            3,
-            "three distinct subjects should derive three singleton cells"
+            2,
+            "a genesis world's two controller-bearing subjects derive two singleton cells"
         );
 
         #[derive(Debug, Clone, PartialEq, Eq)]
@@ -3634,7 +3677,7 @@ mod tests {
             [Event::Clock],
             "the clock must be the last thing recorded"
         );
-        assert_eq!(cell_events.len(), 3, "every cell must have run");
+        assert_eq!(cell_events.len(), 2, "every cell must have run");
         assert!(
             cell_events
                 .iter()
@@ -3655,7 +3698,7 @@ mod tests {
         static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
         let _guard = ENV_LOCK.lock().unwrap_or_else(|poison| poison.into_inner());
 
-        let previous = std::env::var(crate::world::CONSUMER_CREDENTIALS_ENVIRONMENT).ok();
+        let previous = std::env::var(ghostlight::CONSUMER_CREDENTIALS_ENVIRONMENT).ok();
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("consumers.cc");
         std::fs::write(&path, b"not a consumer credentials file").unwrap();
@@ -3663,7 +3706,7 @@ mod tests {
         // binary reads or writes this variable concurrently.
         unsafe {
             std::env::set_var(
-                crate::world::CONSUMER_CREDENTIALS_ENVIRONMENT,
+                ghostlight::CONSUMER_CREDENTIALS_ENVIRONMENT,
                 path.as_os_str(),
             );
         }
@@ -3672,9 +3715,9 @@ mod tests {
         unsafe {
             match &previous {
                 Some(value) => {
-                    std::env::set_var(crate::world::CONSUMER_CREDENTIALS_ENVIRONMENT, value)
+                    std::env::set_var(ghostlight::CONSUMER_CREDENTIALS_ENVIRONMENT, value)
                 }
-                None => std::env::remove_var(crate::world::CONSUMER_CREDENTIALS_ENVIRONMENT),
+                None => std::env::remove_var(ghostlight::CONSUMER_CREDENTIALS_ENVIRONMENT),
             }
         }
         assert!(
@@ -3774,12 +3817,12 @@ mod tests {
             draft.world_id,
             draft.revision,
             draft.scale_deficit.len(),
-            crate::world::select_row(&draft)
+            ghostlight::select_row(&draft)
         ));
         let mut seed_patches = 0usize;
         for round in 1..=seed_sessions {
             let before = state.world.snapshot().await.unwrap();
-            if crate::world::select_row(&before).is_none() {
+            if ghostlight::select_row(&before).is_none() {
                 line(format!("seed round {round} skipped: no shortfall left"));
                 break;
             }
@@ -4264,7 +4307,7 @@ mod tests {
             card["children"].as_array().unwrap().len(),
             draft.scale_deficit.len()
         );
-        let selected = crate::world::select_row(&draft).expect("a shortfall to answer");
+        let selected = ghostlight::select_row(&draft).expect("a shortfall to answer");
         assert_eq!(selected.target, 9);
         assert!(
             card["props"]["nextShortfall"]
@@ -4310,7 +4353,7 @@ mod tests {
             .expect("the fixture cookie names a live session");
         // Same account as the live evidence, but minted with an expiry that
         // has already passed.
-        let expired = VerifiedPrincipalEvidence::fixture(
+        let expired = VerifiedPrincipalEvidence::new(
             live.account_subject_hash().to_owned(),
             Utc::now() - chrono::Duration::seconds(1),
         );

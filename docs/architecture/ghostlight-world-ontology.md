@@ -937,8 +937,8 @@ invariants did not ask for.
 ## Build budget
 
 No new crate, binary, dependency, or service. Types and reduction inside
-`crates/ghostlight-dungeon/src/world/`, one new `patch` module, one new
-`affordance` module, focused `ghostlight-dungeon` tests. No workspace-wide or
+`crates/ghostlight/src/`, one new `patch` module, one new `affordance` module,
+focused `ghostlight` tests. No workspace-wide or
 release build is admitted for this stage.
 
 ## Verification contract

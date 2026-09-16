@@ -1,0 +1,25 @@
+[package]
+name = "ghostlight"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+chrono.workspace = true
+codex-connector.workspace = true
+cultcache-rs.workspace = true
+ghostlight-persona-projection = { path = "../ghostlight-persona-projection" }
+rmp-serde.workspace = true
+serde.workspace = true
+serde_bytes = "0.11"
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+tempfile = "3"

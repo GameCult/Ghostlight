@@ -1,9 +1,7 @@
 //! Eve/CultUI projection for the one live world owner.
 
-use crate::{
-    mesh::{COMMAND_BOUNDARY, COMMAND_RESULT_SCHEMA, PROVIDER_ID, SURFACE_ID},
-    world::{ControllerMode, JurisdictionKey, OperatorEvent, WorldPhase, WorldSnapshot},
-};
+use crate::mesh::{COMMAND_BOUNDARY, COMMAND_RESULT_SCHEMA, PROVIDER_ID, SURFACE_ID};
+use ghostlight::{ControllerMode, JurisdictionKey, OperatorEvent, WorldPhase, WorldSnapshot};
 use anyhow::{Context, bail};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -179,7 +177,7 @@ fn cover_card(panel: &CoverPanel) -> Value {
 /// `AppState`; the last outcome is already in the invocation's own
 /// `command_result` receipt, which is where a command's result belongs.
 fn seed_card(world: &WorldSnapshot) -> Value {
-    let next = crate::world::select_row(world).map_or_else(
+    let next = ghostlight::select_row(world).map_or_else(
         || "Nothing short.".to_owned(),
         |row| {
             format!(
@@ -332,10 +330,10 @@ pub(crate) fn authenticated_surface(
                 WorldPhase::Draft => {
                     if world
                         .required_approvers
-                        .contains(&crate::world::PrincipalId::new(account))
+                        .contains(&ghostlight::PrincipalId::new(account))
                         && !world
                             .draft_approvals
-                            .contains(&crate::world::PrincipalId::new(account))
+                            .contains(&ghostlight::PrincipalId::new(account))
                     {
                         children.push(command_button(
                             "world.approve",
@@ -351,7 +349,7 @@ pub(crate) fn authenticated_surface(
                             "WorldMailbox",
                         ));
                     }
-                    if world.owner == crate::world::PrincipalId::new(account) {
+                    if world.owner == ghostlight::PrincipalId::new(account) {
                         children.extend([
                             json!({
                                 "id":"world.seed.vault_scope",
@@ -383,7 +381,7 @@ pub(crate) fn authenticated_surface(
                             "SeedPort",
                         ));
                     }
-                    if world.owner == crate::world::PrincipalId::new(account)
+                    if world.owner == ghostlight::PrincipalId::new(account)
                         && world.draft_approvals == world.required_approvers
                     {
                         children.push(command_button(
@@ -402,7 +400,7 @@ pub(crate) fn authenticated_surface(
                     }
                 }
                 WorldPhase::Active => {
-                    if world.owner == crate::world::PrincipalId::new(account) {
+                    if world.owner == ghostlight::PrincipalId::new(account) {
                         children.extend([
                             json!({
                                 "id":"world.advance_time.minutes",
@@ -446,7 +444,7 @@ pub(crate) fn authenticated_surface(
                         "children":story
                     }));
 
-                    let principal = crate::world::PrincipalId::new(account);
+                    let principal = ghostlight::PrincipalId::new(account);
                     let opportunity = world.opportunities.iter().find_map(|opportunity| {
                         world.subjects.iter().find_map(|subject| {
                             // The catalog entry is found by kind name among the
@@ -491,7 +489,7 @@ pub(crate) fn authenticated_surface(
                         ));
                     }
 
-                    if world.owner == crate::world::PrincipalId::new(account) {
+                    if world.owner == ghostlight::PrincipalId::new(account) {
                         children.push(cover_card(cover));
                         let mut has_controller_command = false;
                         for (index, opportunity) in world

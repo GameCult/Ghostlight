@@ -14,8 +14,10 @@ use super::sdk_inference::{
     ChildProcessLink, DEFAULT_SDK_MODEL_PREFIX, RoutedInferencePort, SdkBinding, SdkInferencePort,
 };
 use super::tool_schema;
-use crate::world::{
-    AffordanceId, AffordanceSnapshot, AuthorityGrant, Bounds, Cell, CellId, CommandId,
+#[cfg(test)]
+use crate::AffordanceId;
+use crate::{
+    AffordanceSnapshot, AuthorityGrant, Bounds, Cell, CellId, CommandId,
     CommitReceipt, Confidence, Constituent, ControllerMode, ControllerPort, Cost,
     DecisionInvocation, DecisionOpportunity, DependencyTarget, EdgeId, ElaborationPort, EntityId,
     EntityKind, FactStandingView, KernelError, KnowledgeSnapshot, KnowledgeSource, Magnitude,
@@ -93,7 +95,7 @@ const PERSONA_PROVIDER_INSTRUCTIONS: &str =
     "Respond only in natural prose to the lived moment in the user message.";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) enum InferencePurpose {
+pub enum InferencePurpose {
     Projector,
     Persona,
     Interpreter,
@@ -109,7 +111,7 @@ pub(crate) enum InferencePurpose {
 /// One exact provider request. Keeping the native request visible at this seam
 /// makes the prose-only Persona boundary structurally inspectable.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct InferenceRequest {
+pub struct InferenceRequest {
     purpose: InferencePurpose,
     provider: CodexProviderRequest,
 }
@@ -117,7 +119,7 @@ pub(crate) struct InferenceRequest {
 impl InferenceRequest {
     /// The model this request names, read before it is prepared. Routing is the
     /// one decision that has to be made on an unprepared request.
-    pub(super) fn provider_model(&self) -> &str {
+    pub fn provider_model(&self) -> &str {
         &self.provider.model
     }
 }
@@ -126,13 +128,13 @@ impl InferenceRequest {
 /// Replaying this value may recover a completed connector response; rebuilding
 /// it under the same request ID would be a replay conflict.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct PreparedInference {
-    pub(crate) purpose: InferencePurpose,
+pub struct PreparedInference {
+    pub purpose: InferencePurpose,
     pub(super) invocation: CodexTransportInvocation,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) enum InferenceEvent {
+pub enum InferenceEvent {
     Text(String),
     ToolCall {
         call_id: String,
@@ -142,12 +144,21 @@ pub(crate) enum InferenceEvent {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct InferenceOutput {
+pub struct InferenceOutput {
     pub(super) events: Vec<InferenceEvent>,
     pub(super) receipt_digest: String,
 }
 
 impl InferenceOutput {
+    /// What a port returns from `infer`. The receipt digest is the provider's
+    /// own, carried verbatim; this constructor does not mint one.
+    pub fn new(events: Vec<InferenceEvent>, receipt_digest: impl Into<String>) -> Self {
+        Self {
+            events,
+            receipt_digest: receipt_digest.into(),
+        }
+    }
+
     pub(super) fn prose_only(
         self,
         purpose: InferencePurpose,
@@ -176,7 +187,7 @@ impl InferenceOutput {
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
 #[error("{detail}")]
-pub(crate) struct InferenceFault {
+pub struct InferenceFault {
     disposition: InferenceFaultDisposition,
     detail: String,
 }
@@ -196,44 +207,36 @@ impl InferenceFault {
         }
     }
 
-    pub(super) fn retryable(detail: impl Into<String>) -> Self {
+    /// Transport trouble the owning flow may retry.
+    pub fn retryable(detail: impl Into<String>) -> Self {
         Self {
             disposition: InferenceFaultDisposition::Retryable,
             detail: detail.into(),
         }
     }
 
-    pub(super) fn integrity_violation(detail: impl Into<String>) -> Self {
+    /// The one disposition that makes `ControllerError::requires_quarantine`
+    /// true for an `Inference` fault: the provider's answer cannot be trusted,
+    /// so the tick driver stops rather than commits.
+    pub fn integrity_violation(detail: impl Into<String>) -> Self {
         Self {
             disposition: InferenceFaultDisposition::IntegrityViolation,
             detail: detail.into(),
         }
     }
 
-    pub(super) fn recovery_required(&self) -> bool {
+    /// The non-quarantining failure: this purpose cannot complete, but a
+    /// sibling cell in the same tick is unaffected.
+    pub fn recovery_required(detail: impl Into<String>) -> Self {
+        Self::new(detail)
+    }
+
+    pub(super) fn requires_recovery(&self) -> bool {
         self.disposition == InferenceFaultDisposition::RecoveryRequired
     }
 
     pub(super) fn integrity_was_violated(&self) -> bool {
         self.disposition == InferenceFaultDisposition::IntegrityViolation
-    }
-
-    /// The one disposition that makes `ControllerError::requires_quarantine`
-    /// true for an `Inference` fault. A test port outside this module needs to
-    /// raise exactly this to exercise the tick driver's quarantine edge, and
-    /// this is that one legal way in.
-    #[cfg(test)]
-    pub(crate) fn fixture_integrity_violation(detail: impl Into<String>) -> Self {
-        Self::integrity_violation(detail)
-    }
-
-    /// The non-quarantining counterpart: a test port outside this module that
-    /// needs one purpose to fail without raising
-    /// `ControllerError::requires_quarantine` (so a sibling cell in the same
-    /// tick is unaffected) has no other legal way to build one.
-    #[cfg(test)]
-    pub(crate) fn fixture_recovery_required(detail: impl Into<String>) -> Self {
-        Self::new(detail)
     }
 }
 
@@ -245,7 +248,7 @@ impl InferenceFault {
 /// is the same fold, over the calls made so far, into fresh state. A port that
 /// computed its own answer would put a string in front of the model that no
 /// durable evidence records and no check can catch.
-pub(crate) trait ToolResultOracle: Send {
+pub trait ToolResultOracle: Send {
     /// The lane's remaining round budget, lowered to a transport's turn cap so
     /// one query cannot exceed what the evaluator would have allowed.
     fn remaining_rounds(&self) -> u32;
@@ -256,7 +259,7 @@ pub(crate) trait ToolResultOracle: Send {
 }
 
 #[async_trait]
-pub(crate) trait InferencePort: Send + Sync {
+pub trait InferencePort: Send + Sync {
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault>;
 
     async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault>;
@@ -269,20 +272,20 @@ pub(crate) trait InferencePort: Send + Sync {
     }
 }
 
-/// Test-only. Wraps any `InferencePort` and appends every prepared request and
-/// its output to one file, so a road run can show the whole membrane: what the
-/// Projector, the Persona, and the Interpreter were each given and what each
-/// returned. Production never constructs it; prose reaches durable state only
-/// as receipt-bound evidence, and the logs redact it by design.
-#[cfg(test)]
-pub(crate) struct TracingInferencePort {
+/// Wraps any `InferencePort` and appends every prepared request and its output
+/// to one file, so a road run can show the whole membrane: what the Projector,
+/// the Persona, and the Interpreter were each given and what each returned.
+///
+/// It decorates; it constructs nothing sealed. Whether a deployment ever builds
+/// one is the consumer's rule, not this crate's: prose reaches durable state
+/// only as receipt-bound evidence, and the logs redact it by design.
+pub struct TracingInferencePort {
     inner: Arc<dyn InferencePort>,
     path: PathBuf,
 }
 
-#[cfg(test)]
 impl TracingInferencePort {
-    pub(crate) fn new(inner: Arc<dyn InferencePort>, path: PathBuf) -> Self {
+    pub fn new(inner: Arc<dyn InferencePort>, path: PathBuf) -> Self {
         Self { inner, path }
     }
 
@@ -341,7 +344,6 @@ impl TracingInferencePort {
     }
 }
 
-#[cfg(test)]
 #[async_trait]
 impl InferencePort for TracingInferencePort {
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
@@ -369,65 +371,31 @@ impl InferencePort for TracingInferencePort {
     }
 }
 
-/// Builds a `PreparedInference` outside the real CodexConnector wiring. Exists
-/// so a test port defined outside this module (`runtime`'s own spec tests, for
-/// the tick driver's concurrency and quarantine behaviour) has one legal way to
-/// answer `InferencePort::prepare` without reaching into `PreparedInference`'s
-/// private fields or standing up a real connector.
-#[cfg(test)]
-pub(crate) fn fixture_prepared_inference(
-    request: InferenceRequest,
-) -> Result<PreparedInference, InferenceFault> {
-    prepare_invocation("ghostlight-controller-test", 4_102_444_800_000, request)
-}
-
-/// The one place a `PreparedInference` is built. Every port calls it, so a
-/// request prepared by one transport and a request prepared by another are the
-/// same value under the same digests, and every `integrity_is_valid` variant
-/// validates one identity scheme rather than two.
-pub(super) fn prepare_invocation(
-    caller_runtime_id: &str,
-    expires_at_unix_ms: u64,
-    request: InferenceRequest,
-) -> Result<PreparedInference, InferenceFault> {
-    let request_bytes =
-        serde_json::to_vec(&request).map_err(|error| InferenceFault::new(error.to_string()))?;
-    let purpose = request.purpose;
-    let invocation = CodexTransportInvocation::new(
-        caller_runtime_id,
-        expires_at_unix_ms,
-        Sha256::digest(request_bytes).into(),
-        request.provider,
-    )
-    .map_err(|error| InferenceFault::new(error.to_string()))?;
-    Ok(PreparedInference {
-        purpose,
-        invocation,
-    })
-}
-
-/// The `infer` half of the same seam: a canned prose output a test port can
-/// return without naming `InferenceOutput`'s or `InferenceEvent`'s private
-/// fields.
-#[cfg(test)]
-pub(crate) fn fixture_inference_output(text: impl Into<String>, receipt: &str) -> InferenceOutput {
-    InferenceOutput {
-        events: vec![InferenceEvent::Text(text.into())],
-        receipt_digest: format!("sha256:{receipt}"),
-    }
-}
-
-/// The same seam as `fixture_inference_output`, for a test port outside this
-/// module that needs to answer with something other than plain prose — an
-/// Interpreter's `speak`/`finish_interpretation` tool calls, in particular.
-#[cfg(test)]
-pub(crate) fn fixture_inference_events(
-    events: Vec<InferenceEvent>,
-    receipt: &str,
-) -> InferenceOutput {
-    InferenceOutput {
-        events,
-        receipt_digest: format!("sha256:{receipt}"),
+impl PreparedInference {
+    /// The one place a `PreparedInference` is built. Every port calls it,
+    /// including a port a consumer implements outside this crate, so a request
+    /// prepared by one transport and a request prepared by another are the same
+    /// value under the same digests, and every `integrity_is_valid` variant
+    /// validates one identity scheme rather than two.
+    pub fn prepare(
+        caller_runtime_id: &str,
+        expires_at_unix_ms: u64,
+        request: InferenceRequest,
+    ) -> Result<PreparedInference, InferenceFault> {
+        let request_bytes =
+            serde_json::to_vec(&request).map_err(|error| InferenceFault::new(error.to_string()))?;
+        let purpose = request.purpose;
+        let invocation = CodexTransportInvocation::new(
+            caller_runtime_id,
+            expires_at_unix_ms,
+            Sha256::digest(request_bytes).into(),
+            request.provider,
+        )
+        .map_err(|error| InferenceFault::new(error.to_string()))?;
+        Ok(PreparedInference {
+            purpose,
+            invocation,
+        })
     }
 }
 
@@ -559,7 +527,7 @@ impl CodexConnectorInferencePort {
 #[async_trait]
 impl InferencePort for CodexConnectorInferencePort {
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-        prepare_invocation(
+        PreparedInference::prepare(
             &self.caller_runtime_id,
             unix_ms()?.saturating_add(REQUEST_EXPIRY.as_millis() as u64),
             request,
@@ -589,7 +557,7 @@ pub(super) fn unix_ms() -> Result<u64, InferenceFault> {
 /// second copy of a digest-bound value is a value that can disagree.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct ConstituentWork {
+pub struct ConstituentWork {
     subject: SubjectId,
     opportunity: DecisionOpportunity,
     granted: Vec<AffordanceSnapshot>,
@@ -611,7 +579,7 @@ pub(super) struct ConstituentWork {
 /// the ledger already owns.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "stage", rename_all = "snake_case")]
-enum GroupedCheckpoint {
+pub enum GroupedCheckpoint {
     AgentInFlight {
         command_id: CommandId,
         cell: CellId,
@@ -637,7 +605,7 @@ enum GroupedCheckpoint {
 /// never separately persisted.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "mode", content = "checkpoint", rename_all = "snake_case")]
-pub(crate) enum ControllerWork {
+pub enum ControllerWork {
     Narrative(NarrativeCheckpoint),
     Operational(OperationalCheckpoint),
     /// One coarse cell's cognition. The only durable trace a cover leaves, and
@@ -659,7 +627,7 @@ pub(crate) enum ControllerWork {
 /// which says how a *subject* is controlled: the elaborator is not a subject
 /// and has no mode.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum WorkLane {
+pub enum WorkLane {
     Narrative,
     Operational,
     Grouped,
@@ -669,7 +637,7 @@ pub(crate) enum WorkLane {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "stage", rename_all = "snake_case")]
-enum NarrativeCheckpoint {
+pub enum NarrativeCheckpoint {
     Projector {
         command_id: CommandId,
         identity: String,
@@ -740,7 +708,7 @@ enum NarrativeCheckpoint {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "stage", rename_all = "snake_case")]
-enum OperationalCheckpoint {
+pub enum OperationalCheckpoint {
     AgentInFlight {
         command_id: CommandId,
         agent_prompt: String,
@@ -1161,16 +1129,16 @@ fn cell_constituents_are_valid(constituents: &[ConstituentWork]) -> bool {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct NarrativeCapture {
+pub struct NarrativeCapture {
     /// The spoken words as the verbatim spans that carry them, in prose
     /// order. An utterance split by narration ("So," I say, "does it open")
     /// is several spans and one statement.
-    pub(crate) speech: Vec<SourceRange>,
+    pub speech: Vec<SourceRange>,
     /// The visible acts, bound the same way, in prose order; one display.
-    pub(crate) display: Vec<SourceRange>,
-    pub(crate) gaps: Vec<TranslationGapSummary>,
-    pub(crate) finalization: InterpretationFinalization,
-    pub(crate) inference_receipts: Vec<String>,
+    pub display: Vec<SourceRange>,
+    pub gaps: Vec<TranslationGapSummary>,
+    pub finalization: InterpretationFinalization,
+    pub inference_receipts: Vec<String>,
 }
 
 impl NarrativeCapture {
@@ -1238,7 +1206,7 @@ pub(crate) enum Perceived {
 /// request byte for byte without a snapshot.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct Interruption {
+pub struct Interruption {
     /// The subject's own components at re-lowering. The "after"; the
     /// checkpoint's `components` is the "before".
     pub(crate) components: ScopeComponents,
@@ -1262,23 +1230,23 @@ fn interpreter_round(interruption: &Option<Interruption>, completed: &[Inference
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct SourceRange {
-    pub(crate) start_byte: usize,
-    pub(crate) end_byte: usize,
+pub struct SourceRange {
+    pub start_byte: usize,
+    pub end_byte: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct TranslationGapSummary {
-    pub(crate) kind: TranslationGapKind,
-    pub(crate) source: SourceRange,
-    pub(crate) detail: String,
+pub struct TranslationGapSummary {
+    pub kind: TranslationGapKind,
+    pub source: SourceRange,
+    pub detail: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct OperationalCapture {
-    pub(crate) proposal: Option<DecisionInvocation>,
-    pub(crate) needs: Vec<ControllerNeed>,
-    pub(crate) inference_receipts: Vec<String>,
+pub struct OperationalCapture {
+    pub proposal: Option<DecisionInvocation>,
+    pub needs: Vec<ControllerNeed>,
+    pub inference_receipts: Vec<String>,
 }
 
 /// One opportunity's selection against one snapshot.
@@ -1522,7 +1490,7 @@ fn persona_request_shape_is_valid(request: &PreparedInference) -> bool {
 }
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
-pub(crate) enum ControllerWorkStoreError {
+pub enum ControllerWorkStoreError {
     #[error("Eve command ID already belongs to the other controller mode")]
     CommandModeConflict,
     #[error("{detail}")]
@@ -1538,7 +1506,7 @@ impl ControllerWorkStoreError {
 }
 
 #[async_trait]
-pub(crate) trait ControllerWorkStore: Send + Sync {
+pub trait ControllerWorkStore: Send + Sync {
     async fn lookup(
         &self,
         command_id: CommandId,
@@ -1556,21 +1524,21 @@ pub(crate) trait ControllerWorkStore: Send + Sync {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum ControllerWorkLookup {
+pub enum ControllerWorkLookup {
     Missing,
     Confirmed(ControllerWork),
     CustodyUncertain(ControllerWork),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum ControllerWorkWrite {
+pub enum ControllerWorkWrite {
     Applied,
     AlreadyPresent,
     CustodyUncertain,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum ControllerWorkCustody {
+pub enum ControllerWorkCustody {
     Owned {
         narrative_commands: usize,
         operational_commands: usize,
@@ -1603,7 +1571,7 @@ struct CultCacheControllerWorkStore {
 
 /// The production controller-work owner, opened for the caller that names its
 /// path. The store type stays private; only the trait object leaves here.
-pub(crate) fn open_controller_work(
+pub fn open_controller_work(
     path: impl AsRef<Path>,
 ) -> Result<Arc<dyn ControllerWorkStore>, ControllerOpenError> {
     Ok(Arc::new(CultCacheControllerWorkStore::open(path)?))
@@ -2254,18 +2222,18 @@ fn store_key(command_id: CommandId) -> Result<String, ControllerWorkStoreError> 
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct ControllerModels {
-    pub(crate) projector: String,
-    pub(crate) persona: String,
-    pub(crate) interpreter: String,
-    pub(crate) operational_agent: String,
+pub struct ControllerModels {
+    pub projector: String,
+    pub persona: String,
+    pub interpreter: String,
+    pub operational_agent: String,
     /// The authoring lane's model. The existing config shape already gates
     /// cognition by model name, so the driver starts on this and no mode flag
     /// is added. The model name also selects the transport: a
     /// `GHOSTLIGHT_SDK_MODEL_PREFIX`-prefixed model reaches the SDK sidecar and
     /// anything else reaches the connector, which is why there is still no mode
     /// flag.
-    pub(crate) elaborator: String,
+    pub elaborator: String,
 }
 
 impl ControllerModels {
@@ -2288,7 +2256,7 @@ impl ControllerModels {
 }
 
 #[derive(Debug, Error)]
-pub(crate) enum ControllerOpenError {
+pub enum ControllerOpenError {
     #[error("controller model IDs must be exact nonempty identifiers without whitespace")]
     InvalidModels,
     #[error("CodexConnector controller transport could not open: {0}")]
@@ -2303,15 +2271,15 @@ pub(crate) enum ControllerOpenError {
 
 /// Everything the CodexConnector transport needs to open, gathered so
 /// `ControllerRunner::open` takes a port rather than building one.
-pub(crate) struct ConnectorBinding {
-    pub(crate) endpoint: SocketAddr,
-    pub(crate) key_path: PathBuf,
-    pub(crate) caller_runtime_id: String,
+pub struct ConnectorBinding {
+    pub endpoint: SocketAddr,
+    pub key_path: PathBuf,
+    pub caller_runtime_id: String,
 }
 
 /// Builds the one port every lane shares. A lane whose model no configured
 /// backend claims fails here, at open, rather than at its first tick.
-pub(crate) fn open_inference(
+pub fn open_inference(
     connector: Option<ConnectorBinding>,
     sdk: Option<SdkBinding>,
     models: &ControllerModels,
@@ -2366,12 +2334,12 @@ pub(crate) enum NarrativeProposal {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct ControllerNeed {
+pub struct ControllerNeed {
     pub(crate) detail: String,
 }
 
 #[derive(Debug)]
-pub(crate) enum SubmissionDisposition {
+pub enum SubmissionDisposition {
     NoProposal(SubmitReceipt),
     Completed(SubmitReceipt),
     /// Derived on demand from the WorldMailbox journal. Controller work never
@@ -2381,20 +2349,20 @@ pub(crate) enum SubmissionDisposition {
 
 /// A committed turn's one re-lowering, as the operator reads it.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct ReLowering {
-    pub(crate) bound_scope_digest: String,
-    pub(crate) renewed_scope_digest: String,
+pub struct ReLowering {
+    pub bound_scope_digest: String,
+    pub renewed_scope_digest: String,
 }
 
 #[derive(Debug)]
-pub(crate) struct NarrativeDecision {
+pub struct NarrativeDecision {
     turn: PersonaTurn,
     capture: NarrativeCapture,
     submission: SubmissionDisposition,
 }
 
 impl NarrativeDecision {
-    pub(crate) fn persona_turn(&self) -> &PersonaTurn {
+    pub fn persona_turn(&self) -> &PersonaTurn {
         &self.turn
     }
 
@@ -2410,7 +2378,7 @@ impl NarrativeDecision {
     /// prose was bound to and the one it was re-lowered against. `None` for a
     /// turn lowered once. Read from the binding the receipt carries, so the
     /// operator's line and the persisted row cannot disagree.
-    pub(crate) fn re_lowering(&self) -> Option<ReLowering> {
+    pub fn re_lowering(&self) -> Option<ReLowering> {
         let renewed = self.turn.binding();
         renewed.interrupted_from.as_deref().map(|bound| ReLowering {
             bound_scope_digest: bound.scope_digest.clone(),
@@ -2418,13 +2386,13 @@ impl NarrativeDecision {
         })
     }
 
-    pub(crate) fn into_parts(self) -> (PersonaTurn, NarrativeCapture, SubmissionDisposition) {
+    pub fn into_parts(self) -> (PersonaTurn, NarrativeCapture, SubmissionDisposition) {
         (self.turn, self.capture, self.submission)
     }
 }
 
 #[derive(Debug)]
-pub(crate) enum NarrativeRun {
+pub enum NarrativeRun {
     Completed(NarrativeDecision),
     Pending(NarrativePending),
     /// The turn was interrupted and could not be lowered again: its one
@@ -2435,7 +2403,7 @@ pub(crate) enum NarrativeRun {
 }
 
 #[derive(Debug)]
-pub(crate) struct NarrativeInterruption {
+pub struct NarrativeInterruption {
     turn: PersonaTurn,
     subject: SubjectId,
     bound_scope_digest: String,
@@ -2450,29 +2418,29 @@ pub(crate) struct NarrativeInterruption {
 }
 
 impl NarrativeInterruption {
-    pub(crate) fn persona_turn(&self) -> &PersonaTurn {
+    pub fn persona_turn(&self) -> &PersonaTurn {
         &self.turn
     }
 
-    pub(crate) fn subject(&self) -> SubjectId {
+    pub fn subject(&self) -> SubjectId {
         self.subject
     }
 
-    pub(crate) fn bound_scope_digest(&self) -> &str {
+    pub fn bound_scope_digest(&self) -> &str {
         &self.bound_scope_digest
     }
 
-    pub(crate) fn fresh_scope_digest(&self) -> Option<&str> {
+    pub fn fresh_scope_digest(&self) -> Option<&str> {
         self.fresh_scope_digest.as_ref().map(ScopeDigest::as_str)
     }
 
-    pub(crate) fn gap(&self) -> &TranslationGapSummary {
+    pub fn gap(&self) -> &TranslationGapSummary {
         &self.gap
     }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum ControllerPendingReason {
+pub enum ControllerPendingReason {
     /// The exact persisted connector invocation can be presented again. The
     /// connector decides whether this is an admitted completed replay.
     InferenceRetryable,
@@ -2494,7 +2462,7 @@ fn inference_pending_reason(error: &ControllerError) -> Option<ControllerPending
     tracing::info!(%error, "inference fault classified for pending");
     match error {
         ControllerError::Inference { source, .. } if source.integrity_was_violated() => None,
-        ControllerError::Inference { source, .. } if source.recovery_required() => {
+        ControllerError::Inference { source, .. } if source.requires_recovery() => {
             Some(ControllerPendingReason::InferenceRecoveryRequired)
         }
         ControllerError::Inference { .. } => Some(ControllerPendingReason::InferenceRetryable),
@@ -2506,27 +2474,27 @@ fn inference_pending_reason(error: &ControllerError) -> Option<ControllerPending
 }
 
 #[derive(Debug)]
-pub(crate) struct NarrativePending {
+pub struct NarrativePending {
     work: NarrativeCheckpoint,
     reason: ControllerPendingReason,
 }
 
 impl NarrativePending {
-    pub(crate) fn mode(&self) -> ControllerMode {
+    pub fn mode(&self) -> ControllerMode {
         ControllerMode::NarrativePersona
     }
 
-    pub(crate) fn reason(&self) -> ControllerPendingReason {
+    pub fn reason(&self) -> ControllerPendingReason {
         self.reason
     }
 
-    pub(crate) fn persona_prose(&self) -> Option<&str> {
+    pub fn persona_prose(&self) -> Option<&str> {
         self.work.persona_prose()
     }
 }
 
 #[derive(Debug)]
-pub(crate) struct OperationalDecision {
+pub struct OperationalDecision {
     capture: OperationalCapture,
     submission: SubmissionDisposition,
 }
@@ -2540,13 +2508,13 @@ impl OperationalDecision {
         &self.submission
     }
 
-    pub(crate) fn into_parts(self) -> (OperationalCapture, SubmissionDisposition) {
+    pub fn into_parts(self) -> (OperationalCapture, SubmissionDisposition) {
         (self.capture, self.submission)
     }
 }
 
 #[derive(Debug)]
-pub(crate) enum OperationalRun {
+pub enum OperationalRun {
     Completed(OperationalDecision),
     Pending(OperationalPending),
 }
@@ -2555,50 +2523,50 @@ pub(crate) enum OperationalRun {
 /// subject's controller mode names, and its outcome is that lane's own: the
 /// detail path is not wrapped, re-shaped, or summarised.
 #[derive(Debug)]
-pub(crate) enum CellRun {
+pub enum CellRun {
     Narrative(NarrativeRun),
     Operational(OperationalRun),
     Grouped(GroupedRun),
 }
 
 #[derive(Debug)]
-pub(crate) struct ConstituentSubmission {
+pub struct ConstituentSubmission {
     pub(crate) subject: SubjectId,
-    pub(crate) submission: SubmissionDisposition,
+    pub submission: SubmissionDisposition,
 }
 
 /// One coarse cell's outcome: one inference, N ordinary one-opportunity
 /// submissions, and whatever the decode could not attribute.
 #[derive(Debug)]
-pub(crate) struct GroupedRun {
-    pub(crate) cell: CellId,
-    pub(crate) resolution: Resolution,
-    pub(crate) submissions: Vec<ConstituentSubmission>,
-    pub(crate) needs: Vec<ControllerNeed>,
+pub struct GroupedRun {
+    pub cell: CellId,
+    pub resolution: Resolution,
+    pub submissions: Vec<ConstituentSubmission>,
+    pub needs: Vec<ControllerNeed>,
     /// Set when the run stopped before every constituent was submitted. The
     /// constituents already in `submissions` are committed; the rest resume from
     /// the persisted row against the kernel's idempotency ledger.
-    pub(crate) pending: Option<ControllerPendingReason>,
+    pub pending: Option<ControllerPendingReason>,
 }
 
 #[derive(Debug)]
-pub(crate) struct OperationalPending {
+pub struct OperationalPending {
     work: OperationalCheckpoint,
     reason: ControllerPendingReason,
 }
 
 impl OperationalPending {
-    pub(crate) fn mode(&self) -> ControllerMode {
+    pub fn mode(&self) -> ControllerMode {
         ControllerMode::OperationalAgent
     }
 
-    pub(crate) fn reason(&self) -> ControllerPendingReason {
+    pub fn reason(&self) -> ControllerPendingReason {
         self.reason
     }
 }
 
 #[derive(Debug, Error)]
-pub(crate) enum ControllerError {
+pub enum ControllerError {
     #[error("world snapshot failed: {0}")]
     Snapshot(MailboxError),
     #[error("subject has no exact {expected:?} opportunity")]
@@ -2638,7 +2606,7 @@ impl ControllerError {
     /// Quarantine only the cognition organ. WorldMailbox and AppSession remain
     /// authoritative and available; this error must never become a daemon-wide
     /// fatal signal.
-    pub(crate) fn requires_quarantine(&self) -> bool {
+    pub fn requires_quarantine(&self) -> bool {
         match self {
             Self::WorkPersistence(_) | Self::Serialization(_) => true,
             Self::Inference { source, .. } => source.integrity_was_violated(),
@@ -2668,7 +2636,7 @@ enum ControllerWorldSubmission {
     Pending(ControllerPendingReason),
 }
 
-pub(crate) struct ControllerRunner {
+pub struct ControllerRunner {
     mailbox: ControllerPort,
     /// The authoring lane's own narrowing of the same mailbox. It is opened
     /// here because this constructor is where a whole `WorldMailbox` is
@@ -2688,7 +2656,7 @@ impl ControllerRunner {
     /// narrows to a `ControllerPort` before the runner ever sees it, so nothing
     /// inside this module can reach past the five requests a controller lane
     /// makes.
-    pub(crate) fn open(
+    pub fn open(
         mailbox: WorldMailbox,
         inference: Arc<dyn InferencePort>,
         work: Arc<dyn ControllerWorkStore>,
@@ -2709,7 +2677,7 @@ impl ControllerRunner {
     /// The authoring lane, built from the same ports the decision lanes use.
     /// `NullEvidenceSource` is what production supplies until a retrieval organ
     /// lands; the bound that buys is stated where the source is defined.
-    pub(crate) fn elaborator(&self) -> ElaborationRunner {
+    pub fn elaborator(&self) -> ElaborationRunner {
         ElaborationRunner::new(
             self.elaboration.clone(),
             Arc::clone(&self.inference),
@@ -2725,7 +2693,7 @@ impl ControllerRunner {
     /// asked for the work, and the evidence source is supplied by that request
     /// too. `NullEvidenceSource` stays the elaborator's; there is no mode flag
     /// choosing between them.
-    pub(crate) fn seeder(
+    pub fn seeder(
         &self,
         port: SeedPort,
         evidence: Arc<dyn EvidenceSource>,
@@ -2741,11 +2709,11 @@ impl ControllerRunner {
         )
     }
 
-    pub(crate) async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerError> {
+    pub async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerError> {
         Ok(self.work.custody_probe().await?)
     }
 
-    pub(crate) async fn run_narrative(
+    pub async fn run_narrative(
         &self,
         command_id: CommandId,
         opportunity: &DecisionOpportunity,
@@ -2835,7 +2803,7 @@ impl ControllerRunner {
             .await
     }
 
-    pub(crate) async fn run_operational(
+    pub async fn run_operational(
         &self,
         command_id: CommandId,
         opportunity: &DecisionOpportunity,
@@ -3054,7 +3022,7 @@ impl ControllerRunner {
     /// One cell's cognition. It receives a `&Cell` and never a `Cover`: it
     /// cannot see other cells, the budget, or the agency graph, and the tick
     /// index reaches it only as an opaque value threaded into id derivation.
-    pub(crate) async fn run_cell(&self, cell: &Cell) -> Result<CellRun, ControllerError> {
+    pub async fn run_cell(&self, cell: &Cell) -> Result<CellRun, ControllerError> {
         match cell {
             Cell::Singleton { id, tick, member } => {
                 // The driver's singleton turn takes a derived id, so it is as
@@ -6408,9 +6376,9 @@ mod tests {
         }
     }
     use super::*;
-    use crate::world::elaboration::{EvidenceError, EvidenceQuery, EvidenceReceipt};
-    use crate::world::patch::{RECORD_GAP_PATCH_TOOL, kernel_speak_entry, kernel_speak_grant};
-    use crate::world::{
+    use crate::elaboration::{EvidenceError, EvidenceQuery, EvidenceReceipt};
+    use crate::patch::{RECORD_GAP_PATCH_TOOL, kernel_speak_entry, kernel_speak_grant};
+    use crate::{
         CommitmentKind, CoverBudget, CreateJurisdictionIntent, CreateWorldIntent,
         EntityDeclaration, EntityId, EvidenceRef, JurisdictionKey, Ref, SeedOutcome, SeedPort,
         TickMinutes, WorldScaleIntentRef, derive_cover,
@@ -6424,7 +6392,7 @@ mod tests {
             entry: kernel_speak_entry(),
         }
     }
-    use crate::world::{
+    use crate::{
         AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, ControllerId, CreateWorld,
         DecisionScope, Declaration, DraftHandle, NewController, PrincipalId, ScopeDigest,
         SubjectDeclaration, SubjectKind, WorldId, WorldPatch, WorldPhase,
@@ -6715,7 +6683,7 @@ mod tests {
             opportunities: vec![opportunity.clone()],
             state_digest: "sha256:projector-must-not-see-this-digest".into(),
             last_commit_digest: Some("sha256:projector-must-not-see-the-commit".into()),
-            now: crate::world::FictionalMinutes::default(),
+            now: crate::FictionalMinutes::default(),
             boundaries: Vec::new(),
             scale_deficit: Vec::new(),
         };
@@ -6772,8 +6740,8 @@ mod tests {
     /// except the listener's.
     #[test]
     fn a_subject_does_not_perceive_speech_it_was_not_in_reach_of() {
-        use crate::world::tests::{auth_principal, command, opportunity_for, owner, speech_world};
-        use crate::world::{
+        use crate::tests::{auth_principal, command, opportunity_for, owner, speech_world};
+        use crate::{
             AuthenticatedCaller, DecisionInvocation, Role, RoleBinding, Statement, SubmitReceipt,
             Target, WorldKernel,
         };
@@ -6781,7 +6749,7 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let mut kernel = WorldKernel::create(
             directory.path().join("world.cc"),
-            crate::world::tests::creation(CommandId::new(), "Leakage"),
+            crate::tests::creation(CommandId::new(), "Leakage"),
             &auth_principal(owner()),
         )
         .expect("a created world")
@@ -6863,7 +6831,7 @@ mod tests {
     /// and a route that touches neither endpoint stay out of the surface.
     #[test]
     fn soul_the_typed_view_exposes_only_the_actors_place_and_incident_routes() {
-        use crate::world::{
+        use crate::{
             AccessKind, Cost, EdgeId, EntityId, PlaceSnapshot, Quantity, ResourceSnapshot,
             RouteSnapshot,
         };
@@ -6979,7 +6947,7 @@ mod tests {
             opportunities: vec![opportunity.clone()],
             state_digest: "sha256:state".into(),
             last_commit_digest: None,
-            now: crate::world::FictionalMinutes::default(),
+            now: crate::FictionalMinutes::default(),
             boundaries: Vec::new(),
             scale_deficit: Vec::new(),
         };
@@ -7046,18 +7014,18 @@ mod tests {
         // target, and no other subject's jurisdiction.
         let mut civic = custodial;
         let hall = EntityId::issue();
-        civic.subject.components.authority = BTreeSet::from([crate::world::AuthorityGrant {
-            kind: crate::world::AuthorityKindName("levy".into()),
-            over: crate::world::AuthorityTarget::PlaceSubtree(hall),
+        civic.subject.components.authority = BTreeSet::from([crate::AuthorityGrant {
+            kind: crate::AuthorityKindName("levy".into()),
+            over: crate::AuthorityTarget::PlaceSubtree(hall),
         }]);
         civic.subject.offices_held = vec![OfficeSnapshot {
             institution: other_id,
-            office: crate::world::OfficeName("warden".into()),
+            office: crate::OfficeName("warden".into()),
             incumbent: Some(actor_id),
             authority: civic.subject.components.authority.clone(),
         }];
-        civic.subject.redress = vec![crate::world::ForumSnapshot {
-            grievance: crate::world::GrievanceKindName("seizure".into()),
+        civic.subject.redress = vec![crate::ForumSnapshot {
+            grievance: crate::GrievanceKindName("seizure".into()),
             forum: other_id,
         }];
         let view = civic.typed_view().unwrap();
@@ -7119,7 +7087,7 @@ mod tests {
 
     #[test]
     fn the_generated_tool_catalog_equals_the_granted_catalog() {
-        use crate::world::{
+        use crate::{
             Affordance, AffordanceKindName, Bounds, ComponentOpKind, EffectSlot, OutcomeBand,
             Quantity, RefKind, Role, RoleSpec,
         };
@@ -7135,7 +7103,7 @@ mod tests {
                     },
                     RoleSpec {
                         role: Role("resource".into()),
-                        kind: RefKind::Entity(crate::world::EntityKind::Resource),
+                        kind: RefKind::Entity(crate::EntityKind::Resource),
                     },
                 ],
                 preconditions: Vec::new(),
@@ -7296,7 +7264,7 @@ mod tests {
     #[async_trait]
     impl InferencePort for RecordingPort {
         fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            fixture_prepared_inference(request)
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
         }
 
         async fn infer(
@@ -7341,8 +7309,8 @@ mod tests {
     /// revision, and nothing of a bystander's state.
     #[test]
     fn a_seeded_person_sees_its_own_life_and_no_ids() {
-        use crate::world::patch::{CommitmentKey, CommitmentKind, PressureMagnitude, PressureSource};
-        use crate::world::{
+        use crate::patch::{CommitmentKey, CommitmentKind, PressureMagnitude, PressureSource};
+        use crate::{
             AccessKind, CommitmentSnapshot, Cost, EdgeId, EntityId, FictionalMinutes,
             PlaceSnapshot, PressureSnapshot, Quantity, ResourceSnapshot, RouteSnapshot,
         };
@@ -7410,7 +7378,7 @@ mod tests {
             }],
         );
         let mut actor = actor;
-        actor.material = Some(crate::world::PersonaMaterial {
+        actor.material = Some(crate::PersonaMaterial {
             values: vec![Statement::new("A debt paid late is paid twice.").unwrap()],
             voice: Statement::new("Short sentences, never a wasted one.").unwrap(),
             memories: vec![Statement::new("The gate froze the winter the ferry sank.").unwrap()],
@@ -7562,13 +7530,13 @@ mod tests {
         }
     }
 
-    fn fixture_route(from: EntityId, to: EntityId) -> crate::world::patch::EdgeRecord {
-        crate::world::patch::EdgeRecord::Route {
+    fn fixture_route(from: EntityId, to: EntityId) -> crate::patch::EdgeRecord {
+        crate::patch::EdgeRecord::Route {
             label: "a fixture route".into(),
             from,
             to,
-            access: crate::world::AccessKind::Public,
-            cost: crate::world::Cost(6),
+            access: crate::AccessKind::Public,
+            cost: crate::Cost(6),
             open: true,
         }
     }
@@ -7609,7 +7577,7 @@ mod tests {
             opportunity: opportunity.clone(),
             granted,
             completed,
-            invocation: fixture_prepared_inference(request).unwrap(),
+            invocation: PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request).unwrap(),
         })
     }
 
@@ -7939,8 +7907,8 @@ mod tests {
             .unwrap()
         };
         let expiry = 4_102_444_800_000;
-        let connector_side = prepare_invocation("ghostlight-runtime", expiry, build()).unwrap();
-        let sdk_side = prepare_invocation("ghostlight-runtime", expiry, build()).unwrap();
+        let connector_side = PreparedInference::prepare("ghostlight-runtime", expiry, build()).unwrap();
+        let sdk_side = PreparedInference::prepare("ghostlight-runtime", expiry, build()).unwrap();
         assert_eq!(connector_side, sdk_side);
         assert!(prepared_matches_request(&sdk_side, &build(), command_id, 0));
     }
@@ -8009,10 +7977,10 @@ mod tests {
         // The two clock stamps the two ports would make. Identity must not
         // depend on either of them.
         for (purpose, round, build) in builders {
-            let sdk_side = prepare_invocation("ghostlight-sdk-runtime", 4_102_444_800_000, build())
+            let sdk_side = PreparedInference::prepare("ghostlight-sdk-runtime", 4_102_444_800_000, build())
                 .expect("the SDK-shaped preparation builds");
             let connector_side =
-                prepare_invocation("ghostlight-sdk-runtime", 4_000_000_000_000, build())
+                PreparedInference::prepare("ghostlight-sdk-runtime", 4_000_000_000_000, build())
                     .expect("the connector-shaped preparation builds");
             assert_eq!(sdk_side.purpose, purpose);
             assert!(
@@ -8063,7 +8031,7 @@ mod tests {
             opportunity: opportunity.clone(),
             granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
             completed: Vec::new(),
-            invocation: prepare_invocation("ghostlight-sdk-runtime", 4_102_444_800_000, request)
+            invocation: PreparedInference::prepare("ghostlight-sdk-runtime", 4_102_444_800_000, request)
                 .unwrap(),
         });
         assert!(
@@ -8364,7 +8332,7 @@ mod tests {
             opportunity: opportunity.clone(),
             granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
             completed,
-            invocation: fixture_prepared_inference(request).unwrap(),
+            invocation: PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request).unwrap(),
         })
     }
 
@@ -9397,7 +9365,7 @@ mod tests {
     #[async_trait]
     impl InferencePort for ElaborationScript {
         fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            fixture_prepared_inference(request)
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
         }
 
         async fn infer(
@@ -9463,12 +9431,12 @@ mod tests {
                                 kind: EntityKind::Place,
                                 container: Some(Ref::Draft(DraftHandle::new("commons"))),
                             }),
-                            Declaration::Route(crate::world::RouteDeclaration {
+                            Declaration::Route(crate::RouteDeclaration {
                                 handle: DraftHandle::new("lane"),
                                 label: "The Long Lane".into(),
                                 from: Ref::Draft(DraftHandle::new("commons")),
                                 to: Ref::Draft(DraftHandle::new("road")),
-                                access: crate::world::AccessKind::Public,
+                                access: crate::AccessKind::Public,
                                 cost: Cost(1),
                             }),
                             Declaration::Subject(SubjectDeclaration {
@@ -9581,7 +9549,7 @@ mod tests {
         let outcome = first.step(jurisdiction).await.unwrap();
         assert_eq!(
             outcome,
-            crate::world::elaboration::ElaborationOutcome::Rejected
+            crate::elaboration::ElaborationOutcome::Rejected
         );
         drop(first);
 
@@ -9636,7 +9604,7 @@ mod tests {
         let outcome = second.step(jurisdiction).await.unwrap();
         assert_eq!(
             outcome,
-            crate::world::elaboration::ElaborationOutcome::Committed
+            crate::elaboration::ElaborationOutcome::Committed
         );
 
         // One identity across the whole session, and the answered boundary is
@@ -9693,7 +9661,7 @@ mod tests {
         let outcome = runner.step(JurisdictionKey::Uncovered).await.unwrap();
         assert_eq!(
             outcome,
-            crate::world::elaboration::ElaborationOutcome::Clean
+            crate::elaboration::ElaborationOutcome::Clean
         );
         assert!(script.seen.lock().unwrap().is_empty());
         assert!(store.work.lock().unwrap().is_empty());
@@ -10560,7 +10528,7 @@ mod tests {
         task.await.unwrap();
 
         let replayed =
-            crate::world::WorldKernel::open(&path, live.world_id).expect("the world store replays");
+            crate::WorldKernel::open(&path, live.world_id).expect("the world store replays");
         assert_eq!(
             replayed.state.state_digest, live.state_digest,
             "a grouped tick did not replay to the same digest"
@@ -10579,7 +10547,7 @@ mod tests {
         // A second open is the same open: replay is a function of the store.
         let expected = replayed.state.clone();
         drop(replayed);
-        let again = crate::world::WorldKernel::open(&path, live.world_id)
+        let again = crate::WorldKernel::open(&path, live.world_id)
             .expect("the world store replays twice");
         assert_eq!(again.state, expected);
     }
@@ -10711,7 +10679,7 @@ mod tests {
         mailbox: WorldMailbox,
         task: tokio::task::JoinHandle<()>,
         owner: PrincipalId,
-        principal: crate::app_session::VerifiedPrincipalEvidence,
+        principal: crate::VerifiedPrincipalEvidence,
         sere: EntityId,
         speak: AffordanceId,
     }
@@ -10787,7 +10755,7 @@ mod tests {
             mailbox,
             task,
             owner,
-            principal: crate::app_session::VerifiedPrincipalEvidence::fixture(
+            principal: crate::VerifiedPrincipalEvidence::fixture(
                 "seed-owner",
                 Utc::now() + chrono::Duration::hours(1),
             ),
@@ -10985,7 +10953,7 @@ mod tests {
         // on anyone else's evidence is refused by the reducer.
         let stranger = SeedPort::new(
             fixture.mailbox.clone(),
-            crate::app_session::VerifiedPrincipalEvidence::fixture(
+            crate::VerifiedPrincipalEvidence::fixture(
                 "not-the-owner",
                 Utc::now() + chrono::Duration::hours(1),
             ),
@@ -11470,7 +11438,7 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
         let owner = PrincipalId::new("seed-owner");
-        let principal = crate::app_session::VerifiedPrincipalEvidence::fixture(
+        let principal = crate::VerifiedPrincipalEvidence::fixture(
             "seed-owner",
             Utc::now() + chrono::Duration::hours(1),
         );
@@ -11731,7 +11699,7 @@ mod tests {
         assert!(
             mismatches.iter().any(|mismatch| matches!(
                 mismatch,
-                crate::world::Mismatch::UnknownJurisdictionRoot { .. }
+                crate::Mismatch::UnknownJurisdictionRoot { .. }
             )),
             "{mismatches:?}"
         );
@@ -11761,7 +11729,7 @@ mod tests {
         assert!(
             mismatches.iter().any(|mismatch| matches!(
                 mismatch,
-                crate::world::Mismatch::ScaleWeightsExceedWhole
+                crate::Mismatch::ScaleWeightsExceedWhole
             )),
             "{mismatches:?}"
         );
@@ -11885,11 +11853,11 @@ mod tests {
                 snapshot.world_id,
                 WorldPatch {
                     declarations: Vec::new(),
-                    operations: vec![crate::world::patch::ComponentOp::CreateCommitment {
+                    operations: vec![crate::patch::ComponentOp::CreateCommitment {
                         subject: Ref::Existing(owner_subject),
                         counterparty: None,
                         kind: CommitmentKind::Goal,
-                        due: crate::world::FictionalMinutes(600),
+                        due: crate::FictionalMinutes(600),
                         period: None,
                         checks: Vec::new(),
                         statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
@@ -11949,7 +11917,7 @@ mod tests {
                     expected_revision: snapshot.revision,
                     caller: CallerId::Principal(fixture.owner.clone()),
                     body: CommandBody::AdmitPatch {
-                        answers: Some(crate::world::PatchAnswer::Deficit(
+                        answers: Some(crate::PatchAnswer::Deficit(
                             JurisdictionKey::PlaceSubtree(fixture.sere),
                         )),
                         patch: shed(),
@@ -12467,7 +12435,7 @@ mod tests {
     }
 
     // ---------------------------------------------------------------- step 9
-    use crate::world::{ControllerAssignment, ScopePreimage, digest as world_digest};
+    use crate::{ControllerAssignment, ScopePreimage, digest as world_digest};
     use ghostlight_persona_projection::PersonaTurnIntegrityError;
     use std::sync::atomic::AtomicUsize;
 
@@ -12494,7 +12462,7 @@ mod tests {
         /// every remaining un-authored cause: a transfer out of a neighbour's
         /// custody, a route closing under the actor's feet, a grant revoked out
         /// from under it, a commitment that names a counterparty.
-        Ops(Vec<crate::world::patch::ComponentOp>),
+        Ops(Vec<crate::patch::ComponentOp>),
         /// An owner patch witnessing a pre-declared fact over `place`. Unlike a
         /// neighbour's speech, this names no speaker and writes no `minted_at`
         /// row: `KnowledgeSource::Witnessed` is not `Told`, so
@@ -12582,11 +12550,11 @@ mod tests {
                                 patch: WorldPatch {
                                     declarations: Vec::new(),
                                     operations: vec![
-                                        crate::world::patch::ComponentOp::CreateCommitment {
+                                        crate::patch::ComponentOp::CreateCommitment {
                                             subject: Ref::Existing(*subject),
                                             counterparty: None,
                                             kind: CommitmentKind::Goal,
-                                            due: crate::world::FictionalMinutes(600),
+                                            due: crate::FictionalMinutes(600),
                                             period: None,
                                             checks: Vec::new(),
                                             statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
@@ -12641,7 +12609,7 @@ mod tests {
                                 answers: None,
                                 patch: WorldPatch {
                                     declarations: Vec::new(),
-                                    operations: vec![crate::world::patch::ComponentOp::Witness {
+                                    operations: vec![crate::patch::ComponentOp::Witness {
                                         fact: Ref::Existing(*fact),
                                         place: Ref::Existing(*place),
                                         confidence: Confidence::Certain,
@@ -12675,7 +12643,7 @@ mod tests {
     #[async_trait]
     impl InferencePort for InterruptingPort {
         fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            fixture_prepared_inference(request)
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
         }
 
         async fn infer(
@@ -13139,11 +13107,11 @@ mod tests {
                 kind: EntityKind::Place,
                 container: None,
             }),
-            Declaration::Fact(crate::world::patch::FactDeclaration {
+            Declaration::Fact(crate::patch::FactDeclaration {
                 handle: DraftHandle::new("bell"),
                 label: "A bell rings over the yard".into(),
                 statement: Statement::new("A bell rings over the yard.").unwrap(),
-                standing: crate::world::patch::FactStandingRef::Canonical {
+                standing: crate::patch::FactStandingRef::Canonical {
                     evidence: ledger.clone(),
                 },
             }),
@@ -13179,10 +13147,10 @@ mod tests {
                         // fact here rather than through a second patch — a
                         // live `EntityId` to read back, not a fact this test's
                         // actor is meant to already know.
-                        operations: vec![crate::world::patch::ComponentOp::AcquireKnowledge {
+                        operations: vec![crate::patch::ComponentOp::AcquireKnowledge {
                             subject: Ref::Draft(DraftHandle::new("subject1")),
                             fact: Ref::Draft(DraftHandle::new("bell")),
-                            source: crate::world::patch::AuthoredSource::Witnessed,
+                            source: crate::patch::AuthoredSource::Witnessed,
                             confidence: Confidence::Certain,
                         }],
                         evidence: vec![ledger],
@@ -13410,7 +13378,7 @@ mod tests {
                 opportunity: moved.clone(),
                 granted: vec![speak_snapshot(moved.affordance_ids[0])],
                 completed: Vec::new(),
-                invocation: fixture_prepared_inference(
+                invocation: PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, 
                     interpreter_request(command_id, 1, "interpreter", Vec::new()).unwrap(),
                 )
                 .unwrap(),
@@ -13618,8 +13586,8 @@ mod tests {
     // persisted row actually holds, and over the asymmetry the deleted stage
     // detectors left between the two detail lanes.
 
-    use crate::world::patch::{AuthorityGrantRef, AuthorityTargetRef, RouteDeclaration};
-    use crate::world::{AccessKind, AuthorityKindName, AuthorityTarget};
+    use crate::patch::{AuthorityGrantRef, AuthorityTargetRef, RouteDeclaration};
+    use crate::{AccessKind, AuthorityKindName, AuthorityTarget};
 
     /// An Active world carrying the furniture every un-authored cause needs: a
     /// route the actor stands on, a resource its neighbour holds, and a
@@ -13696,13 +13664,13 @@ mod tests {
                             inhabitant("neighbour", "Subject 1", NewController::OperationalAgent),
                         ],
                         operations: vec![
-                            crate::world::patch::ComponentOp::Admit {
+                            crate::patch::ComponentOp::Admit {
                                 holder: Ref::Draft(DraftHandle::new("neighbour")),
                                 resource: Ref::Draft(DraftHandle::new("tithe")),
                                 qty: Quantity(5),
                                 evidence: ledger.clone(),
                             },
-                            crate::world::patch::ComponentOp::GrantAuthority {
+                            crate::patch::ComponentOp::GrantAuthority {
                                 holder: Ref::Draft(DraftHandle::new("actor")),
                                 grant: AuthorityGrantRef {
                                     kind: AuthorityKindName("levy".into()),
@@ -13817,7 +13785,7 @@ mod tests {
                 "a transfer",
                 "- what this person holds changed",
                 (|world| {
-                    MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::Transfer {
+                    MidTurnCommit::Ops(vec![crate::patch::ComponentOp::Transfer {
                         from: Ref::Existing(world.neighbour),
                         to: Ref::Existing(world.actor),
                         resource: Ref::Existing(world.tithe),
@@ -13826,7 +13794,7 @@ mod tests {
                 }) as Cause,
             ),
             ("a closed route", "- a way out of here changed", |world| {
-                MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::CloseRoute {
+                MidTurnCommit::Ops(vec![crate::patch::ComponentOp::CloseRoute {
                     route: Ref::Existing(world.ramp),
                 }])
             }),
@@ -13834,7 +13802,7 @@ mod tests {
                 "a revoked grant",
                 "- what this person is authorized over changed",
                 |world| {
-                    MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::RevokeAuthority {
+                    MidTurnCommit::Ops(vec![crate::patch::ComponentOp::RevokeAuthority {
                         holder: Ref::Existing(world.actor),
                         grant: AuthorityGrantRef {
                             kind: AuthorityKindName("levy".into()),
@@ -13918,11 +13886,11 @@ mod tests {
             source,
             "Then it is agreed.",
             1,
-            MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::CreateCommitment {
+            MidTurnCommit::Ops(vec![crate::patch::ComponentOp::CreateCommitment {
                 subject: Ref::Existing(world.actor),
                 counterparty: Some(Ref::Existing(world.neighbour)),
                 kind: CommitmentKind::Obligation,
-                due: crate::world::FictionalMinutes(900),
+                due: crate::FictionalMinutes(900),
                 period: None,
                 checks: Vec::new(),
                 statement: Statement::new("What was promised, as the promisor would say it.").unwrap(),
@@ -13983,13 +13951,13 @@ mod tests {
         // Checked once on the fixture as declared, then again after a transfer
         // and a route closure have moved two more component kinds.
         for cause in [
-            MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::Transfer {
+            MidTurnCommit::Ops(vec![crate::patch::ComponentOp::Transfer {
                 from: Ref::Existing(world.neighbour),
                 to: Ref::Existing(world.actor),
                 resource: Ref::Existing(world.tithe),
                 qty: Quantity(1),
             }]),
-            MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::CloseRoute {
+            MidTurnCommit::Ops(vec![crate::patch::ComponentOp::CloseRoute {
                 route: Ref::Existing(world.ramp),
             }]),
         ] {
@@ -14115,7 +14083,7 @@ mod tests {
         // Then the world moves under both rows.
         apply_mid_turn(
             &mailbox,
-            &MidTurnCommit::Ops(vec![crate::world::patch::ComponentOp::CloseRoute {
+            &MidTurnCommit::Ops(vec![crate::patch::ComponentOp::CloseRoute {
                 route: Ref::Existing(world.ramp),
             }]),
         )

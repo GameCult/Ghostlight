@@ -4,7 +4,6 @@ mod heimdall;
 mod idunn_health;
 mod mesh;
 mod runtime;
-mod world;
 
 use anyhow::bail;
 use std::path::PathBuf;

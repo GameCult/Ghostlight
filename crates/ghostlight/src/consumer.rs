@@ -11,8 +11,10 @@
 use super::mailbox::{ConsumerPort, MailboxError};
 use super::patch::{self, PatchDecodeError};
 use super::{
-    CommandId, ConsumerId, KernelError, Mismatch, PatchAnswer, SubmitReceipt, WorldId, WorldPatch,
+    CommandId, ConsumerId, KernelError, Mismatch, PatchAnswer, SubmitReceipt, WorldId,
 };
+#[cfg(test)]
+use super::WorldPatch;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -20,8 +22,8 @@ use std::path::Path;
 
 /// The inbound document and the outbound receipt. Ghostlight-owned typed
 /// records in canonical MessagePack, not CultNet control messages.
-pub(crate) const CONSUMER_PATCH_SCHEMA: &str = "ghostlight.consumer_patch.v0";
-pub(crate) const CONSUMER_RECEIPT_SCHEMA: &str = "ghostlight.consumer_receipt.v0";
+pub const CONSUMER_PATCH_SCHEMA: &str = "ghostlight.consumer_patch.v0";
+pub const CONSUMER_RECEIPT_SCHEMA: &str = "ghostlight.consumer_receipt.v0";
 
 /// The one namespace a consumer's command key is derived under.
 const CONSUMER_COMMAND_NAMESPACE: &str = "ghostlight.consumer.command.v0";
@@ -30,10 +32,10 @@ const CONSUMER_COMMAND_NAMESPACE: &str = "ghostlight.consumer.command.v0";
 /// `patch::MAX_PATCH_BYTES` and stays there; this is derived from it so the
 /// transport guard cannot become a second opinion about how big a patch may be.
 const CONSUMER_ENVELOPE_SLACK: usize = 8 * 1024;
-pub(crate) const CONSUMER_BODY_LIMIT: usize = patch::MAX_PATCH_BYTES + CONSUMER_ENVELOPE_SLACK;
+pub const CONSUMER_BODY_LIMIT: usize = patch::MAX_PATCH_BYTES + CONSUMER_ENVELOPE_SLACK;
 
 /// The environment variable naming the credentials file.
-pub(crate) const CONSUMER_CREDENTIALS_ENVIRONMENT: &str = "GHOSTLIGHT_CONSUMER_CREDENTIALS";
+pub const CONSUMER_CREDENTIALS_ENVIRONMENT: &str = "GHOSTLIGHT_CONSUMER_CREDENTIALS";
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -85,7 +87,7 @@ impl std::fmt::Debug for ConsumerPatchDocument {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct ConsumerReceiptDocument {
+pub struct ConsumerReceiptDocument {
     pub(crate) schema: String,
     pub(crate) world_id: Option<WorldId>,
     /// Absent when the document did not decode far enough to derive one. The
@@ -160,12 +162,12 @@ pub(crate) enum ConsumerRefusal {
 /// That is the fail-closed default, and it is why this door can exist before an
 /// operator has configured anything.
 #[derive(Clone, Debug, Default)]
-pub(crate) struct ConsumerRegistry {
+pub struct ConsumerRegistry {
     entries: BTreeMap<String, [u8; 32]>,
 }
 
 impl ConsumerRegistry {
-    pub(crate) fn empty() -> Self {
+    pub fn empty() -> Self {
         Self::default()
     }
 
@@ -173,7 +175,7 @@ impl ConsumerRegistry {
     /// comments ignored. A file that does not exist yields no consumers; a file
     /// that exists and is malformed is an error, because a mistyped credential
     /// file must not read as an empty one.
-    pub(crate) fn from_secret_file(path: impl AsRef<Path>) -> Result<Self, String> {
+    pub fn from_secret_file(path: impl AsRef<Path>) -> Result<Self, String> {
         let path = path.as_ref();
         if !path.exists() {
             return Ok(Self::empty());
@@ -246,7 +248,7 @@ fn decode_digest(text: &str) -> Option<[u8; 32]> {
 
 /// Decode, bound, authenticate, submit, project. One atomic verdict per
 /// document: there is no partial acceptance, because there is one command.
-pub(crate) async fn admit_document(
+pub async fn admit_document(
     port: &ConsumerPort,
     registry: &ConsumerRegistry,
     bytes: &[u8],
@@ -429,7 +431,7 @@ pub(crate) fn encode_document(document: &ConsumerPatchDocument) -> Result<Vec<u8
     rmp_serde::to_vec_named(document).map_err(|error| error.to_string())
 }
 
-pub(crate) fn encode_receipt(receipt: &ConsumerReceiptDocument) -> Result<Vec<u8>, String> {
+pub fn encode_receipt(receipt: &ConsumerReceiptDocument) -> Result<Vec<u8>, String> {
     rmp_serde::to_vec_named(receipt).map_err(|error| error.to_string())
 }
 
@@ -898,7 +900,7 @@ mod tests {
 
     async fn submit_through(
         mailbox: &WorldMailbox,
-        principal: crate::world::PrincipalId,
+        principal: crate::PrincipalId,
         body: CommandBody,
     ) -> SubmitReceipt {
         let snapshot = mailbox.snapshot().await.unwrap();
@@ -963,7 +965,7 @@ mod tests {
         submit_through(&mailbox, owner(), CommandBody::ApproveDraft).await;
         submit_through(
             &mailbox,
-            crate::world::tests::player(),
+            crate::tests::player(),
             CommandBody::ApproveDraft,
         )
         .await;

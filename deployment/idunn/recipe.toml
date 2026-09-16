@@ -10,7 +10,13 @@ runner = "rust-build"
 argv = ["cargo", "test", "--locked", "-p", "ghostlight-persona-projection"]
 
 [[steps]]
-id = "test-world-owner"
+id = "test-world-library"
+phase = "test"
+runner = "rust-build"
+argv = ["cargo", "test", "--locked", "-p", "ghostlight"]
+
+[[steps]]
+id = "test-dungeon"
 phase = "test"
 runner = "rust-build"
 argv = ["cargo", "test", "--locked", "-p", "ghostlight-dungeon", "--bin", "ghostlight-dungeon"]
@@ -48,10 +54,9 @@ argv = [
   "test",
   "--locked",
   "-p",
-  "ghostlight-dungeon",
-  "--bin",
-  "ghostlight-dungeon",
-  "world::controllers::tests::real_codex_connector_cognition_modes_commit_speech",
+  "ghostlight",
+  "--lib",
+  "controllers::tests::real_codex_connector_cognition_modes_commit_speech",
   "--",
   "--ignored",
   "--exact",

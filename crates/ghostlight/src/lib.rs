@@ -1,9 +1,59 @@
-//! Sealed replacement world owner under construction.
+//! The Ghostlight world library.
 //!
 //! The world owner is one deterministic authority: authenticated commands enter,
 //! one reducer decides, and one journal atomically commits the resulting state.
 //! Controllers may use models, but models never own lifecycle, scope, affordances,
 //! opportunities, reduction, or persistence.
+//!
+//! A consumer reaches this crate through create/open, immutable snapshots,
+//! command submission, typed receipts, and the runner and port entry points
+//! below. The kernel itself is sealed: there is no mutable state, no canonical
+//! ID allocator, no reducer entry, no journal writer, and no authenticated-caller
+//! constructor on the public surface, under every configuration. This crate
+//! declares no cargo features, so no build can lift the seal.
+//!
+//! The negative proofs are doc-tests, which compile as an external crate and so
+//! stand exactly where a consumer stands.
+//!
+//! ```compile_fail,E0603
+//! use ghostlight::WorldKernel;
+//! ```
+//!
+//! ```compile_fail,E0603
+//! use ghostlight::reduce;
+//! ```
+//!
+//! ```compile_fail,E0603
+//! use ghostlight::WorldState;
+//! ```
+//!
+//! ```compile_fail,E0603
+//! use ghostlight::CommandEnvelope;
+//! ```
+//!
+//! ```compile_fail,E0603
+//! use ghostlight::AuthenticatedCaller;
+//! ```
+//!
+//! ```compile_fail,E0603
+//! use ghostlight::journal::WorldJournal;
+//! ```
+//!
+//! ```compile_fail,E0599
+//! let _ = ghostlight::SubjectId::issue();
+//! ```
+//!
+//! ```compile_fail,E0603
+//! let _ = ghostlight::ScopeDigest::fixture("x");
+//! ```
+//!
+//! ```compile_fail,E0425
+//! let _ = ghostlight::fixture_controller_opportunities(&[]);
+//! ```
+//!
+//! ```compile_fail,E0425
+//! let _ = ghostlight::fixture_inference_output("prose", "receipt");
+//! ```
 
 mod action;
 mod clock;
@@ -19,35 +69,40 @@ mod tool_schema;
 mod vault;
 
 pub(crate) use action::ActionMismatch;
-pub(crate) use clock::{FictionalMinutes, Motion, TickMinutes};
-pub(crate) use consumer::{
+pub(crate) use clock::Motion;
+pub use clock::{FictionalMinutes, TickMinutes};
+pub use consumer::{
     CONSUMER_BODY_LIMIT, CONSUMER_CREDENTIALS_ENVIRONMENT, CONSUMER_PATCH_SCHEMA,
     CONSUMER_RECEIPT_SCHEMA, ConsumerRegistry, admit_document, encode_receipt,
 };
-pub(crate) use controllers::{
-    CellRun, ConnectorBinding, ControllerError, ControllerModels, ControllerOpenError,
-    ControllerPendingReason, ControllerRunner, ControllerWorkCustody, NarrativeCapture,
-    NarrativeDecision, NarrativePending, NarrativeRun, OperationalCapture, OperationalDecision,
-    OperationalPending, OperationalRun, SourceRange, SubmissionDisposition, TranslationGapSummary,
-    open_controller_work, open_inference,
+pub use controllers::{
+    CellRun, ConnectorBinding, ControllerError, ControllerModels, ControllerNeed,
+    ControllerPendingReason, ControllerRunner, ControllerWork, ControllerWorkCustody,
+    ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError, ControllerWorkWrite,
+    GroupedCheckpoint, InferenceEvent, InferenceFault, InferenceOutput, InferencePort,
+    InferencePurpose, InferenceRequest, NarrativeCheckpoint, NarrativeRun, OperationalCheckpoint,
+    OperationalRun, PreparedInference, SubmissionDisposition, ToolResultOracle,
+    TracingInferencePort, open_controller_work, open_inference,
 };
-pub(crate) use cover::{
-    AgencyGraph, Cell, CellId, Constituent, Cover, CoverBudget, Resolution, TickIndex, derive_cover,
+pub(crate) use cover::{CellId, Constituent, Resolution};
+pub use cover::{AgencyGraph, Cell, Cover, CoverBudget, CoverBudgetError, TickIndex, derive_cover};
+pub use elaboration::{
+    ElaborationCheckpoint, ElaborationRunner, EvidenceError, EvidenceQuery, EvidenceReceipt,
+    EvidenceSource, SeedCheckpoint, SeedOutcome, SeedRunner, select_row,
 };
-pub(crate) use elaboration::{SeedOutcome, select_row};
-pub(crate) use mailbox::{
-    ConsumerPort, ControllerPort, ElaborationPort, MailboxError, SeedPort, WorldMailbox,
+pub(crate) use mailbox::ElaborationPort;
+pub use mailbox::{ConsumerPort, ControllerPort, MailboxError, SeedPort, WorldMailbox};
+pub use patch::{
+    CommitmentKey, DraftHandle, JurisdictionKey, Mismatch, PatchAnswer, Ref, RefKind, RefName, Role,
+    Site, Statement, WorldPatch,
 };
 pub(crate) use patch::{
-    AccessKind, Affordance, AffordanceKindName, Audience, AuthoredSource, AuthorityGrant,
-    AuthorityKindName, AuthorityTarget, BoundPrecondition, Bounds, ChannelRecord, Commitment,
-    PersonaMaterial,
-    CommitmentKey, CommitmentKind, ComponentOpKind, Confidence, Cost, Declaration,
-    DependencyTarget, DraftHandle, EffectSlot, EntityDeclaration, EntityKind, EvidenceRef,
-    FactRecord, FactStanding, Forum, GrievanceKindName, JurisdictionKey, Knowledge,
-    KnowledgeSource, Mismatch, Office, OfficeName, OutcomeBand, PatchAnswer, Position,
-    Precondition, PressureMagnitude, PressureSource, Quantity, Reach, Ref, RefKind, Role, RoleSpec,
-    Statement, SubjectDeclaration, WorldPatch, WorldScaleIntent, WorldScaleIntentRef,
+    AccessKind, Affordance, Audience, AuthoredSource, AuthorityGrant, AuthorityTarget,
+    BoundPrecondition, Bounds, ChannelRecord, Commitment, CommitmentKind, Confidence, Cost,
+    Declaration, DependencyTarget, EntityDeclaration, EntityKind, EvidenceRef, FactRecord,
+    FactStanding, Forum, GrievanceKindName, Knowledge, KnowledgeSource, Office, OfficeName,
+    PersonaMaterial, Position, PressureMagnitude, PressureSource, Quantity, Reach,
+    SubjectDeclaration, WorldScaleIntent, WorldScaleIntentRef,
 };
 #[cfg(test)]
 use patch::{
@@ -55,22 +110,13 @@ use patch::{
     DependencyRef, FactDeclaration, FactStandingRef, ReachRef, RouteDeclaration,
 };
 #[cfg(test)]
-pub(crate) use patch::{AuthorityGrantRef, AuthorityTargetRef};
-pub(crate) use sdk_inference::{DEFAULT_SDK_MODEL_PREFIX, SdkBinding};
-pub(crate) use vault::VaultEvidenceSource;
-// Test-only narrowing of the controller organ's inference and work-store
-// seams, so `runtime`'s own spec tests can drive `ControllerRunner` over a
-// counting/scripted `InferencePort` and an in-memory `ControllerWorkStore`
-// instead of the real CodexConnector and CultCache-backed store. Production
-// code never sees these names.
-#[cfg(test)]
-pub(crate) use controllers::{
-    ControllerWork, ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError,
-    ControllerWorkWrite, InferenceEvent, InferenceFault, InferenceOutput, InferencePort,
-    InferencePurpose, InferenceRequest, PreparedInference, TracingInferencePort,
-    fixture_inference_events, fixture_inference_output, fixture_prepared_inference,
+pub(crate) use patch::{
+    AffordanceKindName, AuthorityGrantRef, AuthorityKindName, AuthorityTargetRef, ComponentOpKind,
+    EffectSlot, OutcomeBand, Precondition, RoleSpec,
 };
-use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch, Site};
+pub use sdk_inference::{DEFAULT_SDK_MODEL_PREFIX, SdkBinding};
+pub use vault::{VaultError, VaultEvidenceSource};
+use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -81,37 +127,85 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v4";
+/// Proof that the consumer verified a live principal, and the moment that
+/// proof stops being worth anything.
+///
+/// The consumer verifies; this library only bounds. `valid_until` is the
+/// consumer's own session expiry, not a fresh clock read at construction, and
+/// [`WorldMailbox::submit_principal`] refuses evidence presented after it — so
+/// a long-lived holder such as [`SeedPort`] is bounded by the session that
+/// vouched for it rather than by one request's lifetime.
+///
+/// Keeping this type here, rather than taking the consumer's own session type,
+/// is what keeps the consumer's principal format out of the kernel.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VerifiedPrincipalEvidence {
+    account_subject_hash: String,
+    valid_until: DateTime<Utc>,
+}
+
+impl VerifiedPrincipalEvidence {
+    pub fn new(account_subject_hash: impl Into<String>, valid_until: DateTime<Utc>) -> Self {
+        Self {
+            account_subject_hash: account_subject_hash.into(),
+            valid_until,
+        }
+    }
+
+    pub fn account_subject_hash(&self) -> &str {
+        &self.account_subject_hash
+    }
+
+    pub fn valid_until(&self) -> DateTime<Utc> {
+        self.valid_until
+    }
+
+    #[cfg(test)]
+    pub(crate) fn fixture(
+        account_subject_hash: impl Into<String>,
+        valid_until: DateTime<Utc>,
+    ) -> Self {
+        Self::new(account_subject_hash, valid_until)
+    }
+}
+
+pub const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v4";
 pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v4";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
 /// compatibility marker alongside the schema string must derive it from here
 /// rather than hand-copying a second literal that can drift from the schema.
-pub(crate) fn state_schema_compatibility_tag() -> String {
+pub fn state_schema_compatibility_tag() -> String {
     let mut segments = STATE_SCHEMA.rsplit('.');
     let version = segments.next().unwrap_or_default();
     let family = segments.next().unwrap_or_default();
     format!("{family}-{version}")
 }
 
+/// The visibility argument is the whole boundary decision for an ID type: the
+/// ones a consumer names by value are `pub`, the rest stay `pub(crate)`, and no
+/// `issue()` impl is emitted here at all — issuance is private in every case.
 macro_rules! opaque_uuid {
-    ($name:ident) => {
+    ($name:ident, $vis:vis) => {
         #[derive(
             Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash,
         )]
         #[serde(transparent)]
-        pub(crate) struct $name(Uuid);
+        $vis struct $name(Uuid);
+    };
+    ($name:ident) => {
+        opaque_uuid!($name, pub(crate));
     };
 }
 
-opaque_uuid!(WorldId);
-opaque_uuid!(CommandId);
-opaque_uuid!(SubjectId);
-opaque_uuid!(EntityId);
-opaque_uuid!(EdgeId);
+opaque_uuid!(WorldId, pub);
+opaque_uuid!(CommandId, pub);
+opaque_uuid!(SubjectId, pub);
+opaque_uuid!(EntityId, pub);
+opaque_uuid!(EdgeId, pub);
 opaque_uuid!(ControllerId);
-opaque_uuid!(AffordanceId);
+opaque_uuid!(AffordanceId, pub);
 opaque_uuid!(EventId);
 
 impl CommandId {
@@ -119,11 +213,11 @@ impl CommandId {
         Self(Uuid::new_v4())
     }
 
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self::issue()
     }
 
-    pub(crate) fn parse_uuid(value: &str) -> Result<Self, KernelError> {
+    pub fn parse_uuid(value: &str) -> Result<Self, KernelError> {
         Uuid::parse_str(value)
             .map(Self)
             .map_err(|_| KernelError::InvalidCommandId)
@@ -178,7 +272,7 @@ impl WorldId {
 
     /// A named zero for tests that need a world identity and no world.
     #[cfg(test)]
-    pub(super) fn nil_for_test() -> Self {
+    pub(crate) fn nil_for_test() -> Self {
         Self(Uuid::nil())
     }
 
@@ -233,24 +327,24 @@ impl EventId {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(transparent)]
-pub(crate) struct PrincipalId(String);
+pub struct PrincipalId(String);
 
 impl PrincipalId {
-    pub(crate) fn new(value: impl Into<String>) -> Self {
+    pub fn new(value: impl Into<String>) -> Self {
         Self(value.into())
     }
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum WorldPhase {
+pub enum WorldPhase {
     Draft,
     Active,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum SubjectKind {
+pub enum SubjectKind {
     Person,
     Institution,
     Population,
@@ -258,7 +352,7 @@ pub(crate) enum SubjectKind {
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum ControllerMode {
+pub enum ControllerMode {
     Human,
     NarrativePersona,
     OperationalAgent,
@@ -319,32 +413,32 @@ struct CreateWorld {
 /// Unattributed creation intent. World ingress derives ownership, controller
 /// identity, handles, kinds, and affordances from verified principal evidence.
 #[derive(Clone, Debug)]
-pub(crate) struct CreateWorldIntent {
-    pub(crate) id: CommandId,
-    pub(crate) title: String,
+pub struct CreateWorldIntent {
+    pub id: CommandId,
+    pub title: String,
     /// The premise, verbatim from the owner. May be empty: a world with no
     /// brief is a deliberate choice, and its lanes then get no guidance.
-    pub(crate) brief: String,
-    pub(crate) human_subject_label: String,
-    pub(crate) narrative_persona_label: Option<String>,
-    pub(crate) operational_agent_label: Option<String>,
+    pub brief: String,
+    pub human_subject_label: String,
+    pub narrative_persona_label: Option<String>,
+    pub operational_agent_label: Option<String>,
     /// World-wide target of goal-bearing subjects per kind. Required, and may
     /// be empty: a world with no target is a deliberate choice, not a default
     /// that arrives because nobody said anything.
-    pub(crate) targets: BTreeMap<SubjectKind, u32>,
+    pub targets: BTreeMap<SubjectKind, u32>,
     /// The jurisdiction roots genesis declares beside the commons, because
     /// `resolve_patch` only resolves roots the same patch declares.
-    pub(crate) jurisdictions: Vec<CreateJurisdictionIntent>,
+    pub jurisdictions: Vec<CreateJurisdictionIntent>,
 }
 
 /// One jurisdiction root as ingress states it. The handle is a string here and
 /// a `DraftHandle` inside the world subtree, which is the one lowering: the
 /// handle constructor is not reachable from runtime ingress.
 #[derive(Clone, Debug)]
-pub(crate) struct CreateJurisdictionIntent {
-    pub(crate) handle: String,
-    pub(crate) label: String,
-    pub(crate) permille: u32,
+pub struct CreateJurisdictionIntent {
+    pub handle: String,
+    pub label: String,
+    pub permille: u32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -427,8 +521,8 @@ impl AuthenticatedCaller {
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct DecisionScope {
-    pub(crate) subject_id: SubjectId,
+pub struct DecisionScope {
+    pub subject_id: SubjectId,
 }
 
 /// The digest of exactly the components a proposal's verification reads: the
@@ -437,7 +531,7 @@ pub(crate) struct DecisionScope {
 /// helper over ordered containers, so it is a pure function of committed state.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(transparent)]
-pub(crate) struct ScopeDigest(String);
+pub struct ScopeDigest(String);
 
 impl ScopeDigest {
     fn as_str(&self) -> &str {
@@ -464,47 +558,20 @@ struct ScopePreimage<'a> {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct DecisionOpportunity {
-    pub(crate) world_id: WorldId,
+pub struct DecisionOpportunity {
+    pub world_id: WorldId,
     pub(crate) revision: u64,
     pub(crate) scope_digest: ScopeDigest,
-    pub(crate) scope: DecisionScope,
+    pub scope: DecisionScope,
     pub(crate) controller_id: ControllerId,
-    pub(crate) controller_mode: ControllerMode,
-    pub(crate) affordance_ids: Vec<AffordanceId>,
+    pub controller_mode: ControllerMode,
+    pub affordance_ids: Vec<AffordanceId>,
 }
 
 impl DecisionOpportunity {
     pub(crate) fn digest(&self) -> Result<String, KernelError> {
         digest(self)
     }
-}
-
-/// One opportunity per requested mode, all in one freshly issued world with a
-/// freshly issued subject each. Not a committed scope — nothing here is
-/// verifiable against a kernel — just enough shape to hand `derive_cover` a
-/// cover to partition. Exists so `runtime`'s tick-driver tests can build a
-/// small `Cover` without reaching into this module's private ID issuance
-/// (`WorldId::issue`, `SubjectId::issue`, `ControllerId::issue`) themselves.
-#[cfg(test)]
-pub(crate) fn fixture_controller_opportunities(
-    modes: &[ControllerMode],
-) -> Vec<DecisionOpportunity> {
-    let world_id = WorldId::issue();
-    modes
-        .iter()
-        .map(|mode| DecisionOpportunity {
-            world_id,
-            revision: 1,
-            scope_digest: ScopeDigest::fixture("fixture-scope"),
-            scope: DecisionScope {
-                subject_id: SubjectId::issue(),
-            },
-            controller_id: ControllerId::issue(),
-            controller_mode: *mode,
-            affordance_ids: Vec::new(),
-        })
-        .collect()
 }
 
 /// The referent a role is bound to. Canonical IDs only: an invocation happens
@@ -520,7 +587,7 @@ pub(crate) enum Target {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct RoleBinding {
+pub struct RoleBinding {
     pub(crate) role: Role,
     pub(crate) target: Target,
 }
@@ -539,25 +606,25 @@ pub(crate) enum Magnitude {
 /// ceiling check is a comparison rather than a graph walk.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct ProposedEffect {
+pub struct ProposedEffect {
     pub(crate) slot: usize,
     pub(crate) magnitude: Magnitude,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct DecisionInvocation {
-    pub(crate) affordance: AffordanceId,
-    pub(crate) bindings: Vec<RoleBinding>,
+pub struct DecisionInvocation {
+    pub affordance: AffordanceId,
+    pub bindings: Vec<RoleBinding>,
     /// Exactly one entry per slot in the entry, in any order.
-    pub(crate) proposed: Vec<ProposedEffect>,
+    pub proposed: Vec<ProposedEffect>,
     /// Command input, and the only place an utterance's text enters the kernel.
     /// The committed home of those bytes is `facts[fact].statement`.
-    pub(crate) speech: Option<Statement>,
+    pub speech: Option<Statement>,
     /// A visible act in the actor's own words, and the only place it enters
     /// the kernel. It accompanies any invocation: a body is visible whatever
     /// it is doing. Its audience is the actor's place, never the entry's.
-    pub(crate) display: Option<Statement>,
+    pub display: Option<Statement>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -572,16 +639,16 @@ struct CommandEnvelope {
 /// Unattributed human command intent. The mailbox derives the caller from
 /// live app-session evidence before the reducer sees an envelope.
 #[derive(Clone, Debug)]
-pub(crate) struct PrincipalCommandIntent {
-    pub(crate) id: CommandId,
-    pub(crate) world_id: WorldId,
-    pub(crate) expected_revision: u64,
-    pub(crate) body: CommandBody,
+pub struct PrincipalCommandIntent {
+    pub id: CommandId,
+    pub world_id: WorldId,
+    pub expected_revision: u64,
+    pub body: CommandBody,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
-pub(crate) enum CommandBody {
+pub enum CommandBody {
     ApproveDraft,
     ActivateWorld,
     ExerciseDecision {
@@ -872,16 +939,16 @@ struct WorldCommit {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct SubjectSnapshot {
-    pub(crate) id: SubjectId,
-    pub(crate) label: String,
-    pub(crate) kind: SubjectKind,
+pub struct SubjectSnapshot {
+    pub id: SubjectId,
+    pub label: String,
+    pub kind: SubjectKind,
     /// Absent for an externally controlled mirror, which has no controller and
     /// no turn. Every reader fails closed on `None`; none gets a default.
     pub(crate) controller_id: Option<ControllerId>,
-    pub(crate) controller_mode: Option<ControllerMode>,
-    pub(crate) human_controller: Option<PrincipalId>,
-    pub(crate) affordances: BTreeSet<AffordanceId>,
+    pub controller_mode: Option<ControllerMode>,
+    pub human_controller: Option<PrincipalId>,
+    pub affordances: BTreeSet<AffordanceId>,
     pub(crate) position: Option<EntityId>,
     /// Exactly what the scope digest binds for this subject, carried whole
     /// rather than lowered into projections that then have to be diffed back
@@ -918,7 +985,7 @@ pub(crate) struct SubjectSnapshot {
     /// whether this subject already reduces its jurisdiction's scale deficit.
     /// The seed brief needs to say which subjects count; recomputing the
     /// conjunction outside the kernel would be a second definition of alive.
-    pub(crate) qualified: bool,
+    pub qualified: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -988,26 +1055,26 @@ pub(crate) struct ForumSnapshot {
 /// block — is a projection of it and a narrower snapshot would be a second
 /// vocabulary to keep in step.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub(crate) struct AffordanceSnapshot {
-    pub(crate) id: AffordanceId,
-    pub(crate) entry: Affordance,
+pub struct AffordanceSnapshot {
+    pub id: AffordanceId,
+    pub entry: Affordance,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct ResourceSnapshot {
+pub struct ResourceSnapshot {
     pub(crate) id: EntityId,
     pub(crate) label: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct PlaceSnapshot {
-    pub(crate) id: EntityId,
-    pub(crate) label: String,
+pub struct PlaceSnapshot {
+    pub id: EntityId,
+    pub label: String,
     pub(crate) container: Option<EntityId>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct RouteSnapshot {
+pub struct RouteSnapshot {
     pub(crate) id: EdgeId,
     pub(crate) label: String,
     pub(crate) from: EntityId,
@@ -1018,61 +1085,61 @@ pub(crate) struct RouteSnapshot {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct WorldSnapshot {
-    pub(crate) world_id: WorldId,
-    pub(crate) revision: u64,
-    pub(crate) phase: WorldPhase,
-    pub(crate) owner: PrincipalId,
-    pub(crate) title: String,
-    pub(crate) brief: String,
-    pub(crate) draft_approvals: BTreeSet<PrincipalId>,
-    pub(crate) required_approvers: BTreeSet<PrincipalId>,
-    pub(crate) subjects: Vec<SubjectSnapshot>,
-    pub(crate) affordances: Vec<AffordanceSnapshot>,
-    pub(crate) places: Vec<PlaceSnapshot>,
-    pub(crate) resources: Vec<ResourceSnapshot>,
-    pub(crate) routes: Vec<RouteSnapshot>,
+pub struct WorldSnapshot {
+    pub world_id: WorldId,
+    pub revision: u64,
+    pub phase: WorldPhase,
+    pub owner: PrincipalId,
+    pub title: String,
+    pub brief: String,
+    pub draft_approvals: BTreeSet<PrincipalId>,
+    pub required_approvers: BTreeSet<PrincipalId>,
+    pub subjects: Vec<SubjectSnapshot>,
+    pub affordances: Vec<AffordanceSnapshot>,
+    pub places: Vec<PlaceSnapshot>,
+    pub resources: Vec<ResourceSnapshot>,
+    pub routes: Vec<RouteSnapshot>,
     /// Already ordered by pressure, then attention debt, then id: one owner, so
     /// Eve, the mesh projection, and any future driver read the same order and
     /// none computes its own.
-    pub(crate) opportunities: Vec<DecisionOpportunity>,
+    pub opportunities: Vec<DecisionOpportunity>,
     /// Everyone in a world shares the clock, and no controller can read a `due`
     /// without it.
-    pub(crate) now: FictionalMinutes,
+    pub now: FictionalMinutes,
     /// The elaborator's surface. There is no global pressure register and no
     /// commitment gazetteer.
-    pub(crate) boundaries: Vec<CausalBoundary>,
-    pub(crate) scale_deficit: Vec<ScaleDeficitRow>,
-    pub(crate) state_digest: String,
-    pub(crate) last_commit_digest: Option<String>,
+    pub boundaries: Vec<CausalBoundary>,
+    pub scale_deficit: Vec<ScaleDeficitRow>,
+    pub state_digest: String,
+    pub last_commit_digest: Option<String>,
 }
 
 /// One committed act as the human operator's story feed reads it. It is the
 /// operator surface, not a perception surface: no subject-facing lane receives
 /// it, and `SelectedDecision` never sees an event log at all.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct OperatorEvent {
-    pub(crate) revision: u64,
-    pub(crate) speaker: SubjectId,
-    pub(crate) speaker_label: String,
-    pub(crate) speech: Option<Statement>,
-    pub(crate) display: Option<Statement>,
+pub struct OperatorEvent {
+    pub revision: u64,
+    pub speaker: SubjectId,
+    pub speaker_label: String,
+    pub speech: Option<Statement>,
+    pub display: Option<Statement>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct CommitReceipt {
-    pub(crate) command_id: CommandId,
-    pub(crate) resulting_revision: u64,
-    pub(crate) resulting_state_digest: String,
-    pub(crate) commit_digest: String,
+pub struct CommitReceipt {
+    pub command_id: CommandId,
+    pub resulting_revision: u64,
+    pub resulting_state_digest: String,
+    pub commit_digest: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct CreationReceipt {
-    pub(crate) command_id: CommandId,
-    pub(crate) world_id: WorldId,
-    pub(crate) resulting_state_digest: String,
-    pub(crate) commit_digest: String,
+pub struct CreationReceipt {
+    pub command_id: CommandId,
+    pub world_id: WorldId,
+    pub resulting_state_digest: String,
+    pub commit_digest: String,
 }
 
 impl CreationReceipt {
@@ -1108,13 +1175,13 @@ impl From<&WorldCommit> for CommitReceipt {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum SubmitReceipt {
+pub enum SubmitReceipt {
     Applied(CommitReceipt),
     AlreadyApplied(CommitReceipt),
 }
 
 #[derive(Debug, Error)]
-pub(crate) enum KernelError {
+pub enum KernelError {
     #[error("command ID must be a UUID")]
     InvalidCommandId,
     #[error("world title must not be empty")]
@@ -3094,7 +3161,7 @@ fn overlapping_holder(state: &WorldState) -> Option<SubjectId> {
 /// scope digest — is byte-identical.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-pub(super) struct ScopeComponents {
+pub struct ScopeComponents {
     position: Option<Position>,
     routes: BTreeMap<EdgeId, EdgeRecord>,
     holdings: BTreeMap<EntityId, Quantity>,
@@ -3657,7 +3724,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
 /// derived when its predicate stops holding.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(tag = "boundary", rename_all = "snake_case")]
-pub(crate) enum CausalBoundary {
+pub enum CausalBoundary {
     UnelaboratedDestination {
         route: EdgeId,
         place: EntityId,
@@ -3686,17 +3753,17 @@ pub(crate) enum CausalBoundary {
 /// the one `digest()` owner, in the `ScopeDigest` idiom.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(transparent)]
-pub(crate) struct BoundaryDigest(String);
+pub struct BoundaryDigest(String);
 
 impl BoundaryDigest {
     /// The digest text, for the one command-key derivation that hashes it.
-    pub(super) fn text(&self) -> &str {
+    pub(crate) fn text(&self) -> &str {
         &self.0
     }
 
     /// The deficit lane's answer has no preimage of its own: its digest is the
     /// session's, produced by the same `sha256:` spelling.
-    pub(super) fn from_digest(value: String) -> Self {
+    pub(crate) fn from_digest(value: String) -> Self {
         Self(value)
     }
 }
@@ -3826,12 +3893,12 @@ fn exact_boundary(
 
 /// One region's count for one subject kind.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct ScaleDeficitRow {
-    pub(crate) jurisdiction: JurisdictionKey,
-    pub(crate) kind: SubjectKind,
-    pub(crate) target: u32,
-    pub(crate) qualified: u32,
-    pub(crate) deficit: u32,
+pub struct ScaleDeficitRow {
+    pub jurisdiction: JurisdictionKey,
+    pub kind: SubjectKind,
+    pub target: u32,
+    pub qualified: u32,
+    pub deficit: u32,
 }
 
 /// Whether a subject counts toward the world's scale target. Aliveness is
@@ -4059,9 +4126,9 @@ fn granted_entries(
 /// entry, the scope holds it, and `entry` is its catalog definition. It is the
 /// only way to name an affordance to `action::exercise`, so a caller cannot
 /// reach the invocation pipeline without passing the grant check first.
-pub(super) struct GrantedAffordance<'a> {
-    pub(super) id: AffordanceId,
-    pub(super) entry: &'a Affordance,
+pub(crate) struct GrantedAffordance<'a> {
+    pub(crate) id: AffordanceId,
+    pub(crate) entry: &'a Affordance,
 }
 
 /// The membership half of the affordance check, shared by `reduce` and
@@ -4853,26 +4920,26 @@ mod tests {
     /// home of an utterance: `facts[fact].statement`. The committed event's
     /// own `AssertClaim` effect carries the same bytes as the replay witness,
     /// but no projection reads that copy; `facts` is the surface.
-    pub(super) fn spoken<'a>(state: &'a WorldState, event: &DecisionEvent) -> Option<&'a str> {
+    pub(crate) fn spoken<'a>(state: &'a WorldState, event: &DecisionEvent) -> Option<&'a str> {
         event
             .speech
             .and_then(|fact| state.facts.get(&fact))
             .map(|record| record.statement.as_str())
     }
 
-    pub(super) fn owner() -> PrincipalId {
+    pub(crate) fn owner() -> PrincipalId {
         PrincipalId::new("owner@example.test")
     }
 
-    pub(super) fn player() -> PrincipalId {
+    pub(crate) fn player() -> PrincipalId {
         PrincipalId::new("player@example.test")
     }
 
-    pub(super) fn auth_principal(principal: PrincipalId) -> AuthenticatedCaller {
+    pub(crate) fn auth_principal(principal: PrincipalId) -> AuthenticatedCaller {
         AuthenticatedCaller::fixture(CallerId::Principal(principal))
     }
 
-    pub(super) fn subject(
+    pub(crate) fn subject(
         handle: &str,
         label: &str,
         kind: SubjectKind,
@@ -4891,17 +4958,17 @@ mod tests {
     }
 
     /// The one place the base fixture world declares.
-    pub(super) const COMMONS: &str = "commons";
+    pub(crate) const COMMONS: &str = "commons";
 
     /// How many entities the base fixture world admits at genesis: the commons
     /// and nothing else. A patch-lane test that proves a rejection allocated
     /// nothing compares against this rather than against zero.
-    pub(super) const FIXTURE_ENTITIES: usize = 1;
+    pub(crate) const FIXTURE_ENTITIES: usize = 1;
 
     /// The committed Speak entry. A post-genesis declaration grants it by
     /// canonical reference, like every other structure a previous commit
     /// allocated: the kernel synthesizes the entry once, at genesis.
-    pub(super) fn speak_entry(kernel: &WorldKernel) -> Ref<AffordanceId> {
+    pub(crate) fn speak_entry(kernel: &WorldKernel) -> Ref<AffordanceId> {
         Ref::Existing(
             *kernel
                 .state
@@ -4916,7 +4983,7 @@ mod tests {
     /// A catalog entry by kind name. An affordance id names an entry, not a
     /// subject's copy of one, so a test that needs an entry a scope does not
     /// hold asks for it by name rather than by list position.
-    pub(super) fn affordance_named(snapshot: &WorldSnapshot, kind: &str) -> AffordanceId {
+    pub(crate) fn affordance_named(snapshot: &WorldSnapshot, kind: &str) -> AffordanceId {
         snapshot
             .affordances
             .iter()
@@ -4925,7 +4992,7 @@ mod tests {
             .expect("the fixture world declares this affordance")
     }
 
-    pub(super) fn creation(id: CommandId, title: &str) -> CreateWorld {
+    pub(crate) fn creation(id: CommandId, title: &str) -> CreateWorld {
         CreateWorld {
             id,
             owner: owner(),
@@ -4991,7 +5058,7 @@ mod tests {
         }
     }
 
-    pub(super) fn command(
+    pub(crate) fn command(
         snapshot: &WorldSnapshot,
         id: CommandId,
         caller: CallerId,
@@ -5006,7 +5073,7 @@ mod tests {
         }
     }
 
-    pub(super) fn submit_owner(
+    pub(crate) fn submit_owner(
         kernel: &mut WorldKernel,
         snapshot: &WorldSnapshot,
         body: CommandBody,
@@ -5024,7 +5091,7 @@ mod tests {
             .unwrap()
     }
 
-    pub(super) fn activate(kernel: &mut WorldKernel) -> WorldSnapshot {
+    pub(crate) fn activate(kernel: &mut WorldKernel) -> WorldSnapshot {
         let genesis = kernel.snapshot().unwrap();
         submit_owner(kernel, &genesis, CommandBody::ApproveDraft);
         let after_owner = kernel.snapshot().unwrap();
@@ -5047,15 +5114,15 @@ mod tests {
     /// The canonical IDs of the shared topology fixture: three places, four
     /// routes with every access and open combination the operations read, and one
     /// subject standing in the yard.
-    pub(super) struct Topology {
-        pub(super) yard: EntityId,
-        pub(super) road: EntityId,
-        pub(super) gate: EntityId,
-        pub(super) ramp: EdgeId,
-        pub(super) shutter: EdgeId,
-        pub(super) toll: EdgeId,
-        pub(super) span: EdgeId,
-        pub(super) walker: SubjectId,
+    pub(crate) struct Topology {
+        pub(crate) yard: EntityId,
+        pub(crate) road: EntityId,
+        pub(crate) gate: EntityId,
+        pub(crate) ramp: EdgeId,
+        pub(crate) shutter: EdgeId,
+        pub(crate) toll: EdgeId,
+        pub(crate) span: EdgeId,
+        pub(crate) walker: SubjectId,
     }
 
     fn place(handle: &str, label: &str) -> Declaration {
@@ -5085,7 +5152,7 @@ mod tests {
         })
     }
 
-    pub(super) fn topology_patch(speak: Ref<AffordanceId>) -> WorldPatch {
+    pub(crate) fn topology_patch(speak: Ref<AffordanceId>) -> WorldPatch {
         WorldPatch {
             declarations: vec![
                 place("yard", "The Cavity Yard"),
@@ -5143,7 +5210,7 @@ mod tests {
         }
     }
 
-    pub(super) fn admit_topology(kernel: &mut WorldKernel) -> Topology {
+    pub(crate) fn admit_topology(kernel: &mut WorldKernel) -> Topology {
         let before = kernel.snapshot().unwrap();
         let receipt = submit_owner(
             kernel,
@@ -5193,25 +5260,25 @@ mod tests {
     /// The canonical IDs of the custody fixture: two resources and two holder
     /// subjects standing in the topology, with the first holder carrying an
     /// evidenced opening balance.
-    pub(super) struct Custody {
-        pub(super) tithe: EntityId,
-        pub(super) ingot: EntityId,
-        pub(super) holder: SubjectId,
-        pub(super) counterparty: SubjectId,
+    pub(crate) struct Custody {
+        pub(crate) tithe: EntityId,
+        pub(crate) ingot: EntityId,
+        pub(crate) holder: SubjectId,
+        pub(crate) counterparty: SubjectId,
     }
 
     /// The seed world's authority kinds, offices, and grievance. They are world
     /// data: the kernel compares these strings and reads them no other way.
-    pub(super) const LEVY_KIND: &str = "levy";
-    pub(super) const ADMIT_KIND: &str = "admit";
-    pub(super) const COMMAND_KIND: &str = "command";
-    pub(super) const JUDGE_KIND: &str = "judge";
-    pub(super) const WARDEN_OFFICE: &str = "warden";
-    pub(super) const BAILIFF_OFFICE: &str = "bailiff";
-    pub(super) const SEIZURE_GRIEVANCE: &str = "seizure";
+    pub(crate) const LEVY_KIND: &str = "levy";
+    pub(crate) const ADMIT_KIND: &str = "admit";
+    pub(crate) const COMMAND_KIND: &str = "command";
+    pub(crate) const JUDGE_KIND: &str = "judge";
+    pub(crate) const WARDEN_OFFICE: &str = "warden";
+    pub(crate) const BAILIFF_OFFICE: &str = "bailiff";
+    pub(crate) const SEIZURE_GRIEVANCE: &str = "seizure";
 
-    pub(super) const TITHE_RECEIPT: &str = "receipt:rhythm-tithe-census";
-    pub(super) const OPENING_BALANCE: u64 = 7;
+    pub(crate) const TITHE_RECEIPT: &str = "receipt:rhythm-tithe-census";
+    pub(crate) const OPENING_BALANCE: u64 = 7;
 
     fn resource(handle: &str, label: &str) -> Declaration {
         Declaration::Entity(EntityDeclaration {
@@ -5240,7 +5307,7 @@ mod tests {
         })
     }
 
-    pub(super) const CARRY_HANDLE: &str = "carry";
+    pub(crate) const CARRY_HANDLE: &str = "carry";
 
     /// The worked affordances for the action lane. Every one carries the same
     /// four roles and the same bounded `Transfer` slot, so a test varies exactly
@@ -5346,7 +5413,7 @@ mod tests {
     /// Carry, and five variants that each move one dial: a holding demand above
     /// the opening balance, a reach budget short of the two-hop path, one that
     /// covers it, a band that names no effect, and three equally weighted bands.
-    pub(super) fn carry_affordances() -> Vec<Declaration> {
+    pub(crate) fn carry_affordances() -> Vec<Declaration> {
         vec![
             carry_variant(
                 CARRY_HANDLE,
@@ -5432,16 +5499,16 @@ mod tests {
     }
 
     /// Yard to gate over the open shutter alone.
-    pub(super) const NEAR_REACH: u32 = 5;
+    pub(crate) const NEAR_REACH: u32 = 5;
     /// Yard to gate over the ramp and the span, which is the only open public
     /// path while the shutter is closed.
-    pub(super) const FAR_REACH: u32 = 19;
+    pub(crate) const FAR_REACH: u32 = 19;
 
     /// Declarations and evidence are Draft-only, so the resources, the holders,
     /// and the one evidenced `Admit` that creates the opening balance all land
     /// before activation. There is no holdings declaration field: quantity is
     /// created by `Admit` and by nothing else, in this lane as in every other.
-    pub(super) fn custody_patch(topology: &Topology, speak: Ref<AffordanceId>) -> WorldPatch {
+    pub(crate) fn custody_patch(topology: &Topology, speak: Ref<AffordanceId>) -> WorldPatch {
         WorldPatch {
             declarations: carry_affordances()
                 .into_iter()
@@ -5462,7 +5529,7 @@ mod tests {
         }
     }
 
-    pub(super) fn admit_custody(kernel: &mut WorldKernel, topology: &Topology) -> Custody {
+    pub(crate) fn admit_custody(kernel: &mut WorldKernel, topology: &Topology) -> Custody {
         let before = kernel.snapshot().unwrap();
         let receipt = submit_owner(
             kernel,
@@ -5501,7 +5568,7 @@ mod tests {
 
     /// Topology, custody, then activation: everything a custody test needs, in
     /// the one order the phase rules allow.
-    pub(super) fn custody_world(kernel: &mut WorldKernel) -> (Topology, Custody, WorldSnapshot) {
+    pub(crate) fn custody_world(kernel: &mut WorldKernel) -> (Topology, Custody, WorldSnapshot) {
         let topology = admit_topology(kernel);
         let custody = admit_custody(kernel, &topology);
         let active = activate(kernel);
@@ -5512,47 +5579,47 @@ mod tests {
     /// institution holding jurisdiction over the hall, a person who holds that
     /// jurisdiction only through an office, a person and a resource inside the
     /// hall, and a person standing outside it.
-    pub(super) struct Civic {
-        pub(super) hall: EntityId,
-        pub(super) chamber: EntityId,
-        pub(super) passage: EdgeId,
-        pub(super) causeway: EdgeId,
-        pub(super) postern: EdgeId,
-        pub(super) treasury: SubjectId,
-        pub(super) reeve: SubjectId,
-        pub(super) farmer: SubjectId,
-        pub(super) outsider: SubjectId,
-        pub(super) grain: EntityId,
+    pub(crate) struct Civic {
+        pub(crate) hall: EntityId,
+        pub(crate) chamber: EntityId,
+        pub(crate) passage: EdgeId,
+        pub(crate) causeway: EdgeId,
+        pub(crate) postern: EdgeId,
+        pub(crate) treasury: SubjectId,
+        pub(crate) reeve: SubjectId,
+        pub(crate) farmer: SubjectId,
+        pub(crate) outsider: SubjectId,
+        pub(crate) grain: EntityId,
     }
 
-    pub(super) fn authority_kind(name: &str) -> AuthorityKindName {
+    pub(crate) fn authority_kind(name: &str) -> AuthorityKindName {
         AuthorityKindName(name.into())
     }
 
-    pub(super) fn office(name: &str) -> OfficeName {
+    pub(crate) fn office(name: &str) -> OfficeName {
         OfficeName(name.into())
     }
 
-    pub(super) fn grievance(name: &str) -> GrievanceKindName {
+    pub(crate) fn grievance(name: &str) -> GrievanceKindName {
         GrievanceKindName(name.into())
     }
 
-    pub(super) fn over_place(place: EntityId) -> AuthorityTargetRef {
+    pub(crate) fn over_place(place: EntityId) -> AuthorityTargetRef {
         AuthorityTargetRef::PlaceSubtree(Ref::Existing(place))
     }
 
-    pub(super) fn over_subject(subject_id: SubjectId) -> AuthorityTargetRef {
+    pub(crate) fn over_subject(subject_id: SubjectId) -> AuthorityTargetRef {
         AuthorityTargetRef::Subject(Ref::Existing(subject_id))
     }
 
-    pub(super) fn grant_of(kind: &str, over: AuthorityTargetRef) -> AuthorityGrantRef {
+    pub(crate) fn grant_of(kind: &str, over: AuthorityTargetRef) -> AuthorityGrantRef {
         AuthorityGrantRef {
             kind: authority_kind(kind),
             over,
         }
     }
 
-    pub(super) fn grant_to(holder: SubjectId, kind: &str, over: AuthorityTargetRef) -> ComponentOp {
+    pub(crate) fn grant_to(holder: SubjectId, kind: &str, over: AuthorityTargetRef) -> ComponentOp {
         ComponentOp::GrantAuthority {
             holder: Ref::Existing(holder),
             grant: grant_of(kind, over),
@@ -5748,7 +5815,7 @@ mod tests {
             .collect()
     }
 
-    pub(super) fn civic_patch(topology: &Topology, speak: Ref<AffordanceId>) -> WorldPatch {
+    pub(crate) fn civic_patch(topology: &Topology, speak: Ref<AffordanceId>) -> WorldPatch {
         let person = |handle: &str, label: &str, place: Ref<EntityId>, handles: &[&str]| {
             Declaration::Subject(SubjectDeclaration {
                 handle: DraftHandle::new(handle),
@@ -5910,7 +5977,7 @@ mod tests {
         }
     }
 
-    pub(super) fn admit_civic(kernel: &mut WorldKernel, topology: &Topology) -> Civic {
+    pub(crate) fn admit_civic(kernel: &mut WorldKernel, topology: &Topology) -> Civic {
         let before = kernel.snapshot().unwrap();
         let receipt = submit_owner(
             kernel,
@@ -5963,7 +6030,7 @@ mod tests {
     }
 
     /// Topology, the civic subgraph, then activation.
-    pub(super) fn civic_world(kernel: &mut WorldKernel) -> (Topology, Civic, WorldSnapshot) {
+    pub(crate) fn civic_world(kernel: &mut WorldKernel) -> (Topology, Civic, WorldSnapshot) {
         let topology = admit_topology(kernel);
         let civic = admit_civic(kernel, &topology);
         let active = activate(kernel);
@@ -5973,28 +6040,28 @@ mod tests {
     /// The speech bench: a hall containing a yard, a speaker and a listener in
     /// the hall, a bystander in the yard, a stranger nowhere, one evidenced
     /// canonical fact, and a horn that carries over the hall subtree.
-    pub(super) struct Speech {
-        pub(super) hall: EntityId,
-        pub(super) yard: EntityId,
-        pub(super) speaker: SubjectId,
-        pub(super) listener: SubjectId,
-        pub(super) bystander: SubjectId,
-        pub(super) stranger: SubjectId,
-        pub(super) flood: EntityId,
-        pub(super) horn: EntityId,
-        pub(super) whisper: AffordanceId,
-        pub(super) proclaim: AffordanceId,
-        pub(super) recant: AffordanceId,
-        pub(super) stair: EdgeId,
+    pub(crate) struct Speech {
+        pub(crate) hall: EntityId,
+        pub(crate) yard: EntityId,
+        pub(crate) speaker: SubjectId,
+        pub(crate) listener: SubjectId,
+        pub(crate) bystander: SubjectId,
+        pub(crate) stranger: SubjectId,
+        pub(crate) flood: EntityId,
+        pub(crate) horn: EntityId,
+        pub(crate) whisper: AffordanceId,
+        pub(crate) proclaim: AffordanceId,
+        pub(crate) recant: AffordanceId,
+        pub(crate) stair: EdgeId,
     }
 
-    pub(super) const FLOOD_STATEMENT: &str = "The lower hinge is flooding.";
-    pub(super) const FLOOD_EVIDENCE: &str = "vault:flood-survey";
+    pub(crate) const FLOOD_STATEMENT: &str = "The lower hinge is flooding.";
+    pub(crate) const FLOOD_EVIDENCE: &str = "vault:flood-survey";
 
     /// A world with one room inside another, four subjects, a fact, and a
     /// channel. Two world-declared speaking entries exercise both audiences: an
     /// addressed co-located `whisper` and a channel-bound `proclaim`.
-    pub(super) fn speech_world(kernel: &mut WorldKernel) -> (Speech, WorldSnapshot) {
+    pub(crate) fn speech_world(kernel: &mut WorldKernel) -> (Speech, WorldSnapshot) {
         let before = kernel.snapshot().unwrap();
         let speak = speak_entry(kernel);
         let person = |handle: &str, label: &str, place: Option<&str>| {
@@ -6174,7 +6241,7 @@ mod tests {
     }
 
     /// Submits as owner and returns the complete mismatch set.
-    pub(super) fn reject_owner(
+    pub(crate) fn reject_owner(
         kernel: &mut WorldKernel,
         snapshot: &WorldSnapshot,
         body: CommandBody,
@@ -6196,7 +6263,7 @@ mod tests {
         mismatches
     }
 
-    pub(super) fn operations(operations: Vec<ComponentOp>) -> CommandBody {
+    pub(crate) fn operations(operations: Vec<ComponentOp>) -> CommandBody {
         CommandBody::AdmitPatch {
             answers: None,
             patch: WorldPatch {
@@ -6207,7 +6274,7 @@ mod tests {
         }
     }
 
-    pub(super) fn opportunity_for(
+    pub(crate) fn opportunity_for(
         snapshot: &WorldSnapshot,
         subject_id: SubjectId,
     ) -> DecisionOpportunity {
@@ -7571,7 +7638,7 @@ mod tests {
     #[test]
     fn an_institution_and_its_voice_are_two_subjects_joined_by_an_office() {
         let directory = tempfile::tempdir().unwrap();
-        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Two");
+        let mut kernel = crate::custody_tests::custody_kernel(directory.path(), "Two");
         let (_, civic, active) = civic_world(&mut kernel);
 
         let treasury = opportunity_for(&active, civic.treasury);
@@ -7620,7 +7687,7 @@ mod tests {
     #[test]
     fn a_levy_round_trips_from_catalog_to_conservation() {
         let directory = tempfile::tempdir().unwrap();
-        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Levy");
+        let mut kernel = crate::custody_tests::custody_kernel(directory.path(), "Levy");
         let (_, civic, active) = civic_world(&mut kernel);
         let before_total: u64 = kernel
             .state
@@ -7706,7 +7773,7 @@ mod tests {
     #[test]
     fn office_admission_is_person_and_institution_shaped() {
         let directory = tempfile::tempdir().unwrap();
-        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Offices");
+        let mut kernel = crate::custody_tests::custody_kernel(directory.path(), "Offices");
         let (_, civic, _) = civic_world(&mut kernel);
         let refuse = |kernel: &mut WorldKernel, ops: Vec<ComponentOp>| {
             let before = kernel.snapshot().unwrap();
@@ -7756,7 +7823,7 @@ mod tests {
     #[test]
     fn overlapping_jurisdiction_within_one_subject_is_rejected() {
         let directory = tempfile::tempdir().unwrap();
-        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Overlap");
+        let mut kernel = crate::custody_tests::custody_kernel(directory.path(), "Overlap");
         let (_, civic, _) = civic_world(&mut kernel);
         let refuse = |kernel: &mut WorldKernel, ops: Vec<ComponentOp>| {
             let before = kernel.snapshot().unwrap();
@@ -7823,7 +7890,7 @@ mod tests {
     #[test]
     fn civic_operations_are_rejected_with_the_complete_set() {
         let directory = tempfile::tempdir().unwrap();
-        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "CivicSet");
+        let mut kernel = crate::custody_tests::custody_kernel(directory.path(), "CivicSet");
         let (_, civic, _) = civic_world(&mut kernel);
         let before = kernel.snapshot().unwrap();
         let broken = vec![
@@ -7897,7 +7964,7 @@ mod tests {
     fn an_idempotent_civic_operation_is_no_change() {
         let directory = tempfile::tempdir().unwrap();
         let mut kernel =
-            crate::world::custody_tests::custody_kernel(directory.path(), "Idempotent");
+            crate::custody_tests::custody_kernel(directory.path(), "Idempotent");
         let (_, civic, _) = civic_world(&mut kernel);
         for operation in [
             grant_to(civic.treasury, LEVY_KIND, over_place(civic.hall)),
@@ -7933,7 +8000,7 @@ mod tests {
     #[test]
     fn scope_digest_reads_authority_and_delegation_but_not_occupancy() {
         let directory = tempfile::tempdir().unwrap();
-        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Digest");
+        let mut kernel = crate::custody_tests::custody_kernel(directory.path(), "Digest");
         let (topology, civic, _) = civic_world(&mut kernel);
         let scope = |subject_id| DecisionScope { subject_id };
         let digest_of = |kernel: &WorldKernel, subject_id| {
@@ -8023,7 +8090,7 @@ mod tests {
     #[test]
     fn a_forum_is_visible_only_to_its_standing() {
         let directory = tempfile::tempdir().unwrap();
-        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Redress");
+        let mut kernel = crate::custody_tests::custody_kernel(directory.path(), "Redress");
         let (_, civic, active) = civic_world(&mut kernel);
         let of = |subject_id: SubjectId| {
             active
@@ -8074,7 +8141,7 @@ mod tests {
     #[test]
     fn a_same_patch_destination_is_covered_by_no_grant() {
         let directory = tempfile::tempdir().unwrap();
-        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "DraftDoor");
+        let mut kernel = crate::custody_tests::custody_kernel(directory.path(), "DraftDoor");
         let topology = admit_topology(&mut kernel);
         let before = kernel.snapshot().unwrap();
         let patch = WorldPatch {
@@ -8137,7 +8204,7 @@ mod custody_tests {
     };
     use super::*;
 
-    pub(super) fn custody_kernel(path: &Path, title: &str) -> WorldKernel {
+    pub(crate) fn custody_kernel(path: &Path, title: &str) -> WorldKernel {
         WorldKernel::create(
             path.join("world.cc"),
             creation(CommandId::new(), title),
@@ -12038,7 +12105,7 @@ mod witness_tests {
     /// opportunity's binding.
     #[test]
     fn soul_persona_material_is_set_whole_and_outside_the_scope_digest() {
-        use crate::world::patch::PersonaReadRef;
+        use crate::patch::PersonaReadRef;
 
         let directory = tempfile::tempdir().unwrap();
         let (mut kernel, world, active) = nesting_kernel(directory.path(), "Material");
@@ -12207,7 +12274,7 @@ mod clock_tests {
     /// The canonical IDs of the clock fixture: a hall containing a yard, a
     /// dead end reached by exactly one route, three subjects, a resource, and
     /// one commitment of each kind.
-    pub(super) struct Clockwork {
+    pub(crate) struct Clockwork {
         yard: EntityId,
         dead_end: EntityId,
         gate: EdgeId,

@@ -18,9 +18,9 @@ binding, and elaborator sessions in Draft. Other consumers use the same
 capabilities with their own policy; Delvehold, for one, starts from a
 `Uniform` detail rule.
 
-Source does not yet match this boundary: the world kernel lives in
-`crates/ghostlight-dungeon/src/world/` beside Dungeon's runtime. Extracting it
-into a library crate is the first pass of plan step 15.
+The world kernel lives in the `ghostlight` library crate
+(`crates/ghostlight/`); `ghostlight-dungeon` consumes it across a public
+boundary and cannot reach its internals.
 
 ## Objective
 

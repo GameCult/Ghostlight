@@ -7,7 +7,7 @@ use super::{
     WorldKernel, WorldPatch, WorldPhase, WorldScaleIntentRef, WorldSnapshot, journal,
     patch::kernel_speak_grant, prepare_creation,
 };
-use crate::app_session::VerifiedPrincipalEvidence;
+use crate::VerifiedPrincipalEvidence;
 use chrono::Utc;
 use std::path::Path;
 use thiserror::Error;
@@ -21,7 +21,7 @@ const GENESIS_PLACE: &str = "commons";
 const REQUEST_CAPACITY: usize = 32;
 
 #[derive(Clone, Debug)]
-pub(crate) struct WorldMailbox {
+pub struct WorldMailbox {
     sender: mpsc::Sender<Request>,
 }
 
@@ -80,7 +80,7 @@ enum Request {
 }
 
 #[derive(Debug, Error)]
-pub(crate) enum MailboxError {
+pub enum MailboxError {
     #[error("world owner mailbox is unavailable")]
     Unavailable,
     #[error("world command outcome is unknown after enqueue: {command_id:?}")]
@@ -90,7 +90,7 @@ pub(crate) enum MailboxError {
 }
 
 impl WorldMailbox {
-    pub(crate) fn open(path: impl AsRef<Path>) -> Result<(Self, JoinHandle<()>), KernelError> {
+    pub fn open(path: impl AsRef<Path>) -> Result<(Self, JoinHandle<()>), KernelError> {
         let owned = match journal::WorldJournal::open_owner(path.as_ref())? {
             journal::JournalOpen::Empty(empty) => OwnedWorld::Empty(empty),
             journal::JournalOpen::Live { journal, state } => {
@@ -102,7 +102,7 @@ impl WorldMailbox {
         Ok((Self { sender }, task))
     }
 
-    pub(crate) async fn create(
+    pub async fn create(
         &self,
         input: CreateWorldIntent,
         principal: &VerifiedPrincipalEvidence,
@@ -223,7 +223,7 @@ impl WorldMailbox {
     /// minted. `VerifiedPrincipalEvidence` can outlive one request inside a
     /// long-running port such as `SeedPort`, so this is the gate that keeps
     /// holding it bounded by the session's own expiry.
-    pub(crate) async fn submit_principal(
+    pub async fn submit_principal(
         &self,
         intent: PrincipalCommandIntent,
         principal: &VerifiedPrincipalEvidence,
@@ -352,7 +352,7 @@ impl WorldMailbox {
     /// the tick task cannot know the live revision either. It is visible inside
     /// the world subtree and unreachable from runtime ingress, which builds
     /// `CallerId::Principal` from verified evidence and nothing else.
-    pub(crate) async fn submit_clock(
+    pub async fn submit_clock(
         &self,
         command_id: CommandId,
         minutes: TickMinutes,
@@ -445,7 +445,7 @@ impl WorldMailbox {
     /// The tick driver's adjacency projection. It is on `WorldMailbox` and on
     /// neither `ControllerPort` nor `ElaborationPort`: a controller organ that
     /// tried to read adjacency would fail to compile.
-    pub(crate) async fn agency_graph(&self) -> Result<AgencyGraph, MailboxError> {
+    pub async fn agency_graph(&self) -> Result<AgencyGraph, MailboxError> {
         let (reply, response) = oneshot::channel();
         self.sender
             .send(Request::AgencyGraph { reply })
@@ -458,7 +458,7 @@ impl WorldMailbox {
             .map_err(MailboxError::Kernel)
     }
 
-    pub(crate) async fn operator_log(&self) -> Result<Vec<OperatorEvent>, MailboxError> {
+    pub async fn operator_log(&self) -> Result<Vec<OperatorEvent>, MailboxError> {
         let (reply, response) = oneshot::channel();
         self.sender
             .send(Request::OperatorLog { reply })
@@ -471,7 +471,7 @@ impl WorldMailbox {
             .map_err(MailboxError::Kernel)
     }
 
-    pub(crate) async fn snapshot(&self) -> Result<WorldSnapshot, MailboxError> {
+    pub async fn snapshot(&self) -> Result<WorldSnapshot, MailboxError> {
         let (reply, response) = oneshot::channel();
         self.sender
             .send(Request::Snapshot { reply })
@@ -549,7 +549,7 @@ pub(crate) struct ElaborationPort {
 }
 
 impl ElaborationPort {
-    pub(crate) fn new(mailbox: WorldMailbox) -> Self {
+    pub fn new(mailbox: WorldMailbox) -> Self {
         Self { mailbox }
     }
 
@@ -585,13 +585,13 @@ impl ElaborationPort {
 /// submission through `submit_principal` is refused once that expiry has
 /// passed, whatever the port itself still thinks the session's shape is.
 #[derive(Clone)]
-pub(crate) struct SeedPort {
+pub struct SeedPort {
     mailbox: WorldMailbox,
     principal: VerifiedPrincipalEvidence,
 }
 
 impl SeedPort {
-    pub(crate) fn new(mailbox: WorldMailbox, principal: VerifiedPrincipalEvidence) -> Self {
+    pub fn new(mailbox: WorldMailbox, principal: VerifiedPrincipalEvidence) -> Self {
         Self { mailbox, principal }
     }
 
@@ -652,12 +652,12 @@ impl SeedPort {
 /// nothing, and returns a receipt rather than state — so a snapshot method here
 /// would be authority granted before the pass that needs it.
 #[derive(Clone)]
-pub(crate) struct ConsumerPort {
+pub struct ConsumerPort {
     mailbox: WorldMailbox,
 }
 
 impl ConsumerPort {
-    pub(crate) fn new(mailbox: WorldMailbox) -> Self {
+    pub fn new(mailbox: WorldMailbox) -> Self {
         Self { mailbox }
     }
 
@@ -684,16 +684,16 @@ impl ConsumerPort {
 }
 
 #[derive(Clone)]
-pub(crate) struct ControllerPort {
+pub struct ControllerPort {
     mailbox: WorldMailbox,
 }
 
 impl ControllerPort {
-    pub(crate) fn new(mailbox: WorldMailbox) -> Self {
+    pub fn new(mailbox: WorldMailbox) -> Self {
         Self { mailbox }
     }
 
-    pub(crate) async fn snapshot(&self) -> Result<WorldSnapshot, MailboxError> {
+    pub async fn snapshot(&self) -> Result<WorldSnapshot, MailboxError> {
         self.mailbox.snapshot().await
     }
 
@@ -718,7 +718,7 @@ impl ControllerPort {
             .await
     }
 
-    pub(crate) async fn submit_controller(
+    pub async fn submit_controller(
         &self,
         command_id: CommandId,
         opportunity: &DecisionOpportunity,
@@ -920,7 +920,7 @@ async fn run_owner(mut owned: OwnedWorld, mut receiver: mpsc::Receiver<Request>)
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::{
+    use crate::{
         CallerId, CommandBody, Declaration, DraftHandle, EntityDeclaration, EntityKind, Mismatch,
         NewController, PrincipalId, SubjectDeclaration, SubjectKind, WorldId,
     };
@@ -1391,7 +1391,7 @@ mod tests {
                 .unwrap();
             snapshot = mailbox.snapshot().await.unwrap();
         }
-        let pick = |mode: crate::world::ControllerMode| {
+        let pick = |mode: crate::ControllerMode| {
             snapshot
                 .opportunities
                 .iter()
@@ -1399,14 +1399,14 @@ mod tests {
                 .expect("an active opportunity")
                 .clone()
         };
-        let bound = pick(crate::world::ControllerMode::OperationalAgent);
-        let unrelated = pick(crate::world::ControllerMode::NarrativePersona);
+        let bound = pick(crate::ControllerMode::OperationalAgent);
+        let unrelated = pick(crate::ControllerMode::NarrativePersona);
 
         let speak = |opportunity: &DecisionOpportunity, text: &str| DecisionInvocation {
             affordance: opportunity.affordance_ids[0],
             bindings: Vec::new(),
             proposed: Vec::new(),
-            speech: Some(crate::world::Statement::new(text).unwrap()),
+            speech: Some(crate::Statement::new(text).unwrap()),
             display: None,
         };
         mailbox
@@ -1454,17 +1454,17 @@ mod tests {
                 .unwrap();
             snapshot = mailbox.snapshot().await.unwrap();
         }
-        assert_eq!(snapshot.phase, crate::world::WorldPhase::Active);
+        assert_eq!(snapshot.phase, crate::WorldPhase::Active);
         let forged = DecisionOpportunity {
             world_id: WorldId::issue(),
             revision: 0,
-            scope_digest: crate::world::ScopeDigest::fixture("sha256:not-a-scope"),
-            scope: crate::world::DecisionScope {
-                subject_id: crate::world::SubjectId::issue(),
+            scope_digest: crate::ScopeDigest::fixture("sha256:not-a-scope"),
+            scope: crate::DecisionScope {
+                subject_id: crate::SubjectId::issue(),
             },
-            controller_id: crate::world::ControllerId::issue(),
-            controller_mode: crate::world::ControllerMode::OperationalAgent,
-            affordance_ids: vec![crate::world::AffordanceId::issue()],
+            controller_id: crate::ControllerId::issue(),
+            controller_mode: crate::ControllerMode::OperationalAgent,
+            affordance_ids: vec![crate::AffordanceId::issue()],
         };
         let result = mailbox
             .submit_controller(
@@ -1474,7 +1474,7 @@ mod tests {
                     affordance: forged.affordance_ids[0],
                     bindings: Vec::new(),
                     proposed: Vec::new(),
-                    speech: Some(crate::world::Statement::new("Let me in.").unwrap()),
+                    speech: Some(crate::Statement::new("Let me in.").unwrap()),
                     display: None,
                 },
             )

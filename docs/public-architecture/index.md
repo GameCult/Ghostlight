@@ -43,7 +43,8 @@ unchanged.
 
 ## Scope
 
-The public reference follows the current source in `crates/ghostlight-dungeon`.
+The public reference follows the current source in `crates/ghostlight` (the
+library) and `crates/ghostlight-dungeon` (the daemon that consumes it).
 Research plans and older fixture pipelines remain in the repository but are not
 presented as live runtime stages. Physical model names are deployment choices;
 the architecture names the stable logical tiers: Fast, Balanced, and Capable.

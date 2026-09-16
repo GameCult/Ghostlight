@@ -54,7 +54,7 @@ const ELABORATION_INSTRUCTIONS: &str = "Use only the supplied tools to author st
 /// The answer a session is bound to, plus the ancestry it was built against.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct ElaboratorSession {
+pub struct ElaboratorSession {
     pub(super) world_id: WorldId,
     pub(super) jurisdiction: JurisdictionKey,
     pub(super) answer: PatchAnswer,
@@ -73,7 +73,7 @@ pub(super) struct ElaboratorSession {
 /// the kernel, not the model.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "stage", rename_all = "snake_case")]
-pub(super) enum ElaborationCheckpoint {
+pub enum ElaborationCheckpoint {
     ElaboratorInFlight {
         command_id: CommandId,
         session: ElaboratorSession,
@@ -109,7 +109,7 @@ pub(super) enum ElaborationCheckpoint {
 /// draft there, and the refusal is the user turn that follows that round.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct Refusal {
+pub struct Refusal {
     pub(super) after_round: usize,
     pub(super) mismatches: Vec<Mismatch>,
 }
@@ -264,18 +264,18 @@ fn refusal_reopens(
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
 #[error("{detail}")]
-pub(crate) struct EvidenceError {
+pub struct EvidenceError {
     detail: String,
 }
 
 /// The referents the answer names, as world labels.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct EvidenceQuery {
+pub struct EvidenceQuery {
     pub(crate) referents: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct EvidenceReceipt {
+pub struct EvidenceReceipt {
     /// The exact reference an admitted patch may carry.
     pub(crate) reference: EvidenceRef,
     /// What the elaborator is allowed to read. Prompt material, never state.
@@ -289,7 +289,7 @@ pub(crate) struct EvidenceReceipt {
 /// string is canonical and that an `Admit`'s reference is listed in the same
 /// patch.
 #[async_trait]
-pub(crate) trait EvidenceSource: Send + Sync {
+pub trait EvidenceSource: Send + Sync {
     async fn retrieve(&self, query: &EvidenceQuery) -> Result<Vec<EvidenceReceipt>, EvidenceError>;
 }
 
@@ -343,7 +343,7 @@ pub(super) enum ElaborationOutcome {
 
 /// One jurisdiction's authoring loop. Holds no state between steps; every field
 /// is a port or an identity.
-pub(crate) struct ElaborationRunner {
+pub struct ElaborationRunner {
     mailbox: ElaborationPort,
     inference: Arc<dyn InferencePort>,
     evidence: Arc<dyn EvidenceSource>,
@@ -604,7 +604,7 @@ impl ElaborationRunner {
     /// the uncovered residual. Sequential: a boundary binds to its own digest,
     /// so the loops' logical independence is preserved without eight tasks
     /// against one connector and a capacity-32 mailbox.
-    pub(crate) async fn sweep(&self) -> Result<(), ControllerError> {
+    pub async fn sweep(&self) -> Result<(), ControllerError> {
         let snapshot = self.mailbox.snapshot().await.map_err(snapshot_error)?;
         let mut jurisdictions: Vec<JurisdictionKey> = snapshot
             .scale_deficit
@@ -1303,7 +1303,7 @@ const SEED_INSTRUCTIONS: &str = "Use only the supplied tools to author living st
 /// answer field it must never submit would be a field that lies.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct SeedSession {
+pub struct SeedSession {
     pub(super) world_id: WorldId,
     pub(super) jurisdiction: JurisdictionKey,
     pub(super) kind: SubjectKind,
@@ -1331,7 +1331,7 @@ fn seed_command_id(session: &SeedSession) -> Result<CommandId, ControllerError> 
 /// the conversation does not produce.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "stage", rename_all = "snake_case")]
-pub(super) enum SeedCheckpoint {
+pub enum SeedCheckpoint {
     SeedInFlight {
         command_id: CommandId,
         session: SeedSession,
@@ -1489,7 +1489,7 @@ pub(super) fn valid_seed_progression(existing: &SeedCheckpoint, next: &SeedCheck
 
 /// What one seed `step` did, for the transport that asked for it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum SeedOutcome {
+pub enum SeedOutcome {
     /// Every row's deficit is zero: the terminating condition.
     Clean,
     /// The world is not Draft. Seeding is Draft's lane exactly as elaboration
@@ -1508,7 +1508,7 @@ pub(crate) enum SeedOutcome {
 }
 
 impl SeedOutcome {
-    pub(crate) fn name(self) -> &'static str {
+    pub fn name(self) -> &'static str {
         match self {
             Self::Clean => "clean",
             Self::NotDraft => "not_draft",
@@ -1523,7 +1523,7 @@ impl SeedOutcome {
 
 /// The Draft authoring loop. Holds no state between steps; every field is a
 /// port, an identity, or the owner's own one-sentence brief.
-pub(crate) struct SeedRunner {
+pub struct SeedRunner {
     mailbox: SeedPort,
     inference: Arc<dyn InferencePort>,
     evidence: Arc<dyn EvidenceSource>,
@@ -1743,7 +1743,7 @@ impl SeedRunner {
     /// One bounded sweep. The budget is the caller's, because who may spend a
     /// paid endpoint is a transport question and how far a deficit has fallen
     /// is not.
-    pub(crate) async fn sweep(&self, sessions: usize) -> Result<SeedOutcome, ControllerError> {
+    pub async fn sweep(&self, sessions: usize) -> Result<SeedOutcome, ControllerError> {
         let mut last = SeedOutcome::Clean;
         for _ in 0..sessions {
             last = self.step().await?;
@@ -1803,7 +1803,7 @@ impl SeedRunner {
 /// The first shortfall the world reports, in the order the snapshot reports
 /// them. The panel calls this too, so the card and the runner cannot disagree
 /// about what happens next.
-pub(crate) fn select_row(snapshot: &WorldSnapshot) -> Option<ScaleDeficitRow> {
+pub fn select_row(snapshot: &WorldSnapshot) -> Option<ScaleDeficitRow> {
     snapshot
         .scale_deficit
         .iter()

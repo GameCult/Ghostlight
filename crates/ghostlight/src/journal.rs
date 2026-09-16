@@ -1021,10 +1021,10 @@ fn kernel_error(error: KernelError) -> JournalError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::WorldScaleIntentRef;
-    use crate::world::patch::kernel_speak_grant;
-    use crate::world::tests::speak_entry;
-    use crate::world::{
+    use crate::WorldScaleIntentRef;
+    use crate::patch::kernel_speak_grant;
+    use crate::tests::speak_entry;
+    use crate::{
         AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CreateWorld, Declaration,
         DraftHandle, EntityDeclaration, EntityId, EntityKind, NewController, Position, PrincipalId,
         Ref, SubjectDeclaration, SubjectKind, WorldKernel, WorldPatch,
@@ -1270,8 +1270,8 @@ mod tests {
     /// its command. The clock chain refuses a rewritten reading the same way.
     #[test]
     fn a_forged_motion_does_not_replay() {
-        use crate::world::tests::{activate, auth_principal, command, owner};
-        use crate::world::{
+        use crate::tests::{activate, auth_principal, command, owner};
+        use crate::{
             AuthenticatedCaller, CallerId, CommandBody, FictionalMinutes, SystemCapability,
             TickMinutes,
         };
@@ -1281,7 +1281,7 @@ mod tests {
         let authenticated = auth_principal(owner());
         let (mut kernel, _) = WorldKernel::create(
             &path,
-            crate::world::tests::creation(CommandId::new(), "Chronicle"),
+            crate::tests::creation(CommandId::new(), "Chronicle"),
             &authenticated,
         )
         .unwrap();
@@ -1322,14 +1322,14 @@ mod tests {
     /// to move a different subject no longer reduces from its command.
     #[test]
     fn a_forged_relocate_effect_does_not_apply() {
-        use crate::world::tests::{activate, admit_topology, auth_principal, command, owner};
+        use crate::tests::{activate, admit_topology, auth_principal, command, owner};
 
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
         let authenticated = auth_principal(owner());
         let (mut kernel, _) = WorldKernel::create(
             &path,
-            crate::world::tests::creation(CommandId::new(), "Kharad"),
+            crate::tests::creation(CommandId::new(), "Kharad"),
             &authenticated,
         )
         .unwrap();
@@ -1346,7 +1346,7 @@ mod tests {
                         answers: None,
                         patch: WorldPatch {
                             declarations: Vec::new(),
-                            operations: vec![crate::world::ComponentOp::Relocate {
+                            operations: vec![crate::ComponentOp::Relocate {
                                 subject: Ref::Existing(topology.walker),
                                 via: Ref::Existing(topology.ramp),
                             }],
@@ -1364,11 +1364,11 @@ mod tests {
         let WorldEffect::PatchAdmitted { resolved, .. } = &mut forged.effect else {
             panic!("expected an admitted patch effect");
         };
-        let crate::world::ResolvedOp::Relocate { subject_id, .. } = &mut resolved.operations[0]
+        let crate::ResolvedOp::Relocate { subject_id, .. } = &mut resolved.operations[0]
         else {
             panic!("expected a lowered relocation");
         };
-        *subject_id = crate::world::SubjectId::issue();
+        *subject_id = crate::SubjectId::issue();
         forged.digest = commit_digest(forged).unwrap();
         forged_head.last_commit_digest = Some(forged.digest.clone());
 
@@ -1386,22 +1386,22 @@ mod tests {
     /// contiguous chain, and asserts recovery refuses it.
     #[test]
     fn soul_a_forged_band_or_effect_in_the_journal_dies_at_replay() {
-        use crate::world::tests::{
+        use crate::tests::{
             activate, admit_custody, admit_topology, affordance_named, auth_principal, command,
             opportunity_for, owner,
         };
-        use crate::world::{
+        use crate::{
             AuthenticatedCaller, DecisionInvocation, Magnitude, ProposedEffect, Quantity,
             RoleBinding, Target,
         };
 
-        let forge = |kind: &str, mutate: &dyn Fn(&mut crate::world::DecisionEvent)| {
+        let forge = |kind: &str, mutate: &dyn Fn(&mut crate::DecisionEvent)| {
             let directory = tempfile::tempdir().unwrap();
             let path = directory.path().join("world.cc");
             let authenticated = auth_principal(owner());
             let (mut kernel, _) = WorldKernel::create(
                 &path,
-                crate::world::tests::creation(CommandId::new(), "ForgedDecision"),
+                crate::tests::creation(CommandId::new(), "ForgedDecision"),
                 &authenticated,
             )
             .unwrap();
@@ -1413,7 +1413,7 @@ mod tests {
             let caller = CallerId::Controller(opportunity.controller_id);
             let command_id = CommandId::new();
             let role = |name: &str, target| RoleBinding {
-                role: crate::world::Role(name.into()),
+                role: crate::Role(name.into()),
                 target,
             };
             kernel
@@ -1460,7 +1460,7 @@ mod tests {
             forged.digest = commit_digest(forged).unwrap();
             forged_head.last_commit_digest = Some(forged.digest.clone());
             forged_head.state_digest = String::new();
-            forged_head.state_digest = crate::world::state_digest(&forged_head).unwrap();
+            forged_head.state_digest = crate::state_digest(&forged_head).unwrap();
             (forged_head, forged_commits)
         };
 
@@ -1475,7 +1475,7 @@ mod tests {
 
         // A magnitude the ceiling admitted but the lowering never produced.
         let (head, commits) = forge("carry", &|event| {
-            let Some(crate::world::ResolvedOp::Transfer { qty, .. }) = event.effects.first_mut()
+            let Some(crate::ResolvedOp::Transfer { qty, .. }) = event.effects.first_mut()
             else {
                 panic!("expected a lowered transfer");
             };
@@ -1547,14 +1547,14 @@ mod tests {
     /// `recover`, which is the path `WorldJournal::open` takes.
     #[test]
     fn soul_forged_topology_store_rows_are_refused_on_recover() {
-        use crate::world::patch::{AccessKind, Cost, EdgeRecord, MAX_ROUTE_COST};
-        use crate::world::tests::{admit_topology, auth_principal, owner};
+        use crate::patch::{AccessKind, Cost, EdgeRecord, MAX_ROUTE_COST};
+        use crate::tests::{admit_topology, auth_principal, owner};
 
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
         let (mut kernel, _) = WorldKernel::create(
             &path,
-            crate::world::tests::creation(CommandId::new(), "Forged Rows"),
+            crate::tests::creation(CommandId::new(), "Forged Rows"),
             &auth_principal(owner()),
         )
         .unwrap();
@@ -1603,7 +1603,7 @@ mod tests {
         let non_place_endpoint = {
             let mut state = kernel.state.clone();
             state.entities.get_mut(&topology.road).unwrap().kind =
-                crate::world::EntityKind::Resource;
+                crate::EntityKind::Resource;
             state
         };
         let stray_position = {
@@ -1629,13 +1629,13 @@ mod tests {
     /// refused outright, with no migration adapter in the path.
     #[test]
     fn soul_a_pre_topology_store_row_is_refused() {
-        use crate::world::tests::{admit_topology, auth_principal, owner};
+        use crate::tests::{admit_topology, auth_principal, owner};
 
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
         let (mut kernel, _) = WorldKernel::create(
             &path,
-            crate::world::tests::creation(CommandId::new(), "Old Store"),
+            crate::tests::creation(CommandId::new(), "Old Store"),
             &auth_principal(owner()),
         )
         .unwrap();
@@ -1678,8 +1678,8 @@ mod tests {
     /// the same envelope is already applied.
     #[test]
     fn restart_replay_after_a_levy_is_exact() {
-        use crate::world::tests::{affordance_named, civic_world, command, opportunity_for, owner};
-        use crate::world::{
+        use crate::tests::{affordance_named, civic_world, command, opportunity_for, owner};
+        use crate::{
             DecisionInvocation, Magnitude, ProposedEffect, Quantity, Role, RoleBinding,
             SubmitReceipt, Target,
         };
@@ -1688,8 +1688,8 @@ mod tests {
         let path = directory.path().join("world.cc");
         let (mut kernel, _) = WorldKernel::create(
             &path,
-            crate::world::tests::creation(CommandId::new(), "Replayed Levy"),
-            &crate::world::tests::auth_principal(owner()),
+            crate::tests::creation(CommandId::new(), "Replayed Levy"),
+            &crate::tests::auth_principal(owner()),
         )
         .unwrap();
         let (_, civic, active) = civic_world(&mut kernel);
@@ -1751,18 +1751,18 @@ mod tests {
     /// institution, or empties a delegation is refused by `recover`.
     #[test]
     fn a_forged_authority_or_incumbency_is_corrupt() {
-        use crate::world::tests::{
+        use crate::tests::{
             BAILIFF_OFFICE, LEVY_KIND, WARDEN_OFFICE, auth_principal, authority_kind, civic_world,
             office, owner,
         };
-        use crate::world::{AuthorityGrant, AuthorityTarget, Office};
+        use crate::{AuthorityGrant, AuthorityTarget, Office};
         use std::collections::BTreeSet;
 
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
         let (mut kernel, _) = WorldKernel::create(
             &path,
-            crate::world::tests::creation(CommandId::new(), "Forged Civics"),
+            crate::tests::creation(CommandId::new(), "Forged Civics"),
             &auth_principal(owner()),
         )
         .unwrap();
@@ -1864,13 +1864,13 @@ mod tests {
     /// refused outright, with no migration adapter in the path.
     #[test]
     fn a_store_from_the_previous_schema_is_refused() {
-        use crate::world::tests::{auth_principal, civic_world, owner};
+        use crate::tests::{auth_principal, civic_world, owner};
 
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
         let (mut kernel, _) = WorldKernel::create(
             &path,
-            crate::world::tests::creation(CommandId::new(), "Pre-Authority"),
+            crate::tests::creation(CommandId::new(), "Pre-Authority"),
             &auth_principal(owner()),
         )
         .unwrap();
@@ -1917,17 +1917,17 @@ mod tests {
     /// decision current.
     #[test]
     fn a_relocation_never_corrupts_a_civic_store() {
-        use crate::world::tests::{
+        use crate::tests::{
             LEVY_KIND, auth_principal, civic_world, operations, over_subject, owner, reject_owner,
             submit_owner,
         };
-        use crate::world::{ComponentOp, Mismatch, SubmitReceipt};
+        use crate::{ComponentOp, Mismatch, SubmitReceipt};
 
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
         let (mut kernel, _) = WorldKernel::create(
             &path,
-            crate::world::tests::creation(CommandId::new(), "Moving Civics"),
+            crate::tests::creation(CommandId::new(), "Moving Civics"),
             &auth_principal(owner()),
         )
         .unwrap();
@@ -1941,19 +1941,19 @@ mod tests {
             ));
             verify_state_shape(&kernel.state).expect("the committed store keeps its shape");
             assert!(
-                crate::world::overlapping_holder(&kernel.state).is_none(),
+                crate::overlapping_holder(&kernel.state).is_none(),
                 "a committed store never holds two overlapping jurisdictions"
             );
         };
         let place_covers = |kernel: &WorldKernel| {
-            crate::world::covers(
+            crate::covers(
                 &kernel.state,
-                crate::world::AuthorityTarget::PlaceSubtree(civic.hall),
-                crate::world::Target::Subject(civic.farmer),
+                crate::AuthorityTarget::PlaceSubtree(civic.hall),
+                crate::Target::Subject(civic.farmer),
             )
         };
         let name_farmer = || {
-            vec![crate::world::tests::grant_to(
+            vec![crate::tests::grant_to(
                 civic.treasury,
                 LEVY_KIND,
                 over_subject(civic.farmer),
@@ -2001,7 +2001,7 @@ mod tests {
 #[cfg(test)]
 mod custody_tests {
     use super::*;
-    use crate::world::{
+    use crate::{
         CallerId, CommandBody, CommandId, ComponentOp, DependencyRef, EntityKind, Quantity, Ref,
         SubmitReceipt, WorldKernel, WorldPatch,
         tests::{admit_custody, admit_topology, auth_principal, command, creation, owner},
@@ -2020,7 +2020,7 @@ mod custody_tests {
                 .unwrap();
         let topology = admit_topology(&mut kernel);
         let custody = admit_custody(&mut kernel, &topology);
-        let active = crate::world::tests::activate(&mut kernel);
+        let active = crate::tests::activate(&mut kernel);
 
         let envelope = command(
             &active,
@@ -2062,8 +2062,8 @@ mod custody_tests {
     /// seed does not reproduce fails effect equality on the way back in.
     #[test]
     fn restart_replay_after_an_action_is_exact() {
-        use crate::world::tests::affordance_named;
-        use crate::world::{AuthenticatedCaller, Magnitude, ProposedEffect, RoleBinding, Target};
+        use crate::tests::affordance_named;
+        use crate::{AuthenticatedCaller, Magnitude, ProposedEffect, RoleBinding, Target};
 
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
@@ -2076,13 +2076,13 @@ mod custody_tests {
         .unwrap();
         let topology = admit_topology(&mut kernel);
         let custody = admit_custody(&mut kernel, &topology);
-        let active = crate::world::tests::activate(&mut kernel);
+        let active = crate::tests::activate(&mut kernel);
         let carry = affordance_named(&active, "carry");
-        let opportunity = crate::world::tests::opportunity_for(&active, custody.holder);
+        let opportunity = crate::tests::opportunity_for(&active, custody.holder);
         let caller = CallerId::Controller(opportunity.controller_id);
 
         let role = |name: &str, target| RoleBinding {
-            role: crate::world::Role(name.into()),
+            role: crate::Role(name.into()),
             target,
         };
         let envelope = command(
@@ -2091,7 +2091,7 @@ mod custody_tests {
             caller.clone(),
             CommandBody::ExerciseDecision {
                 opportunity: opportunity.clone(),
-                invocation: crate::world::DecisionInvocation {
+                invocation: crate::DecisionInvocation {
                     affordance: carry,
                     bindings: vec![
                         role("from", Target::Subject(custody.holder)),
@@ -2180,7 +2180,7 @@ mod custody_tests {
                 .unwrap();
         let topology = admit_topology(&mut kernel);
         let custody = admit_custody(&mut kernel, &topology);
-        crate::world::tests::activate(&mut kernel);
+        crate::tests::activate(&mut kernel);
         verify_state_shape(&kernel.state).expect("the admitted world has a canonical shape");
 
         let mut zero = kernel.state.clone();
@@ -2218,7 +2218,7 @@ mod custody_tests {
         let mut dangling = kernel.state.clone();
         dangling.dependencies.insert(
             custody.holder,
-            BTreeSet::from([crate::world::DependencyTarget::Subject(custody.holder)]),
+            BTreeSet::from([crate::DependencyTarget::Subject(custody.holder)]),
         );
         assert!(matches!(
             verify_state_shape(&dangling),
@@ -2244,7 +2244,7 @@ mod custody_tests {
         // `Admit` and its evidence are Draft-only, so the opening balance is
         // already on the log before activation.
         let custody = admit_custody(&mut kernel, &topology);
-        let active = crate::world::tests::activate(&mut kernel);
+        let active = crate::tests::activate(&mut kernel);
 
         let envelope = command(
             &active,
@@ -2324,14 +2324,14 @@ mod custody_tests {
         .unwrap();
         let topology = admit_topology(&mut kernel);
         let custody = admit_custody(&mut kernel, &topology);
-        crate::world::tests::activate(&mut kernel);
+        crate::tests::activate(&mut kernel);
         verify_state_shape(&kernel.state).expect("the admitted world has a canonical shape");
 
         // A place is not a resource, so a resource dependency naming one dangles.
         let mut wrong_kind = kernel.state.clone();
         wrong_kind.dependencies.insert(
             custody.holder,
-            BTreeSet::from([crate::world::DependencyTarget::Resource(topology.yard)]),
+            BTreeSet::from([crate::DependencyTarget::Resource(topology.yard)]),
         );
         assert!(matches!(
             verify_state_shape(&wrong_kind),
@@ -2352,7 +2352,7 @@ mod custody_tests {
         let absent = *orphan.subjects.keys().next().unwrap();
         orphan.dependencies.insert(
             absent,
-            BTreeSet::from([crate::world::DependencyTarget::Resource(custody.tithe)]),
+            BTreeSet::from([crate::DependencyTarget::Resource(custody.tithe)]),
         );
         orphan.subjects.remove(&absent);
         assert!(matches!(
@@ -2364,8 +2364,8 @@ mod custody_tests {
     /// A world with one routine, one past-due goal, and a commit chain that
     /// reaches them: the fixture the two clock-forgery checks below need.
     fn ticking_world(path: &std::path::Path) -> (WorldKernel, super::super::SubjectId, CommandId) {
-        use crate::world::tests::{activate, auth_principal, command, operations, owner};
-        use crate::world::{
+        use crate::tests::{activate, auth_principal, command, operations, owner};
+        use crate::{
             AuthenticatedCaller, CallerId, CommandBody, CommitmentKind, ComponentOp,
             FictionalMinutes, Ref, SystemCapability, TickMinutes,
         };
@@ -2373,7 +2373,7 @@ mod custody_tests {
         let authenticated = auth_principal(owner());
         let (mut kernel, _) = WorldKernel::create(
             path,
-            crate::world::tests::creation(CommandId::new(), "Ticking"),
+            crate::tests::creation(CommandId::new(), "Ticking"),
             &authenticated,
         )
         .unwrap();
@@ -2394,7 +2394,7 @@ mod custody_tests {
                             due: FictionalMinutes(10),
                             period: Some(TickMinutes::new(10).unwrap()),
                             checks: Vec::new(),
-                            statement: crate::world::Statement::new("What was promised, as the promisor would say it.").unwrap(),
+                            statement: crate::Statement::new("What was promised, as the promisor would say it.").unwrap(),
                         },
                         ComponentOp::CreateCommitment {
                             subject: Ref::Existing(subject),
@@ -2403,7 +2403,7 @@ mod custody_tests {
                             due: FictionalMinutes(20),
                             period: None,
                             checks: Vec::new(),
-                            statement: crate::world::Statement::new("What was promised, as the promisor would say it.").unwrap(),
+                            statement: crate::Statement::new("What was promised, as the promisor would say it.").unwrap(),
                         },
                     ]),
                 ),
@@ -2436,7 +2436,7 @@ mod custody_tests {
     /// magnitude, a rewritten roll, and a fabricated row each stop replaying.
     #[test]
     fn soul_a_forged_tick_motion_does_not_replay() {
-        use crate::world::{FictionalMinutes, PressureMagnitude, PressureSource};
+        use crate::{FictionalMinutes, PressureMagnitude, PressureSource};
 
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
@@ -2453,7 +2453,7 @@ mod custody_tests {
         assert!(!motion.fulfilled.is_empty(), "the routine rolled");
         assert!(!motion.pressed.is_empty(), "the past-due goal pressed");
 
-        let forge = |rewrite: fn(&mut crate::world::Motion)| {
+        let forge = |rewrite: fn(&mut crate::Motion)| {
             let mut forged_head = kernel.state.clone();
             let mut forged_commits = kernel.journal.commits.clone();
             let forged = forged_commits.get_mut(&tick_id).unwrap();
@@ -2466,7 +2466,7 @@ mod custody_tests {
             verify_history(&forged_head, &forged_commits)
         };
 
-        let rewrites: [fn(&mut crate::world::Motion); 4] = [
+        let rewrites: [fn(&mut crate::Motion); 4] = [
             // A magnitude the tick never wrote.
             |motion| motion.pressed[0].magnitude = PressureMagnitude(42),
             // A roll to a date the period does not reach.
@@ -2502,8 +2502,8 @@ mod custody_tests {
 
         // The forgery an in-crate caller cannot write: `TickMinutes::new`
         // refuses zero, and the field is private, so the only door is serde.
-        assert!(crate::world::TickMinutes::new(0).is_none());
-        let zero: crate::world::TickMinutes =
+        assert!(crate::TickMinutes::new(0).is_none());
+        let zero: crate::TickMinutes =
             rmp_serde::from_slice(&rmp_serde::to_vec(&0u32).unwrap()).expect("a transparent span");
 
         let mut forged = kernel.state.clone();
@@ -2546,8 +2546,8 @@ mod custody_tests {
     /// to stops recovering.
     #[test]
     fn soul_a_forged_elaborator_commit_row_fails_replay() {
-        use crate::world::tests::{activate, submit_owner};
-        use crate::world::{
+        use crate::tests::{activate, submit_owner};
+        use crate::{
             AuthenticatedCaller, CausalBoundary, Declaration, DraftHandle, EntityDeclaration,
             JurisdictionKey, PatchAnswer, RouteDeclaration, SystemCapability,
         };
@@ -2580,8 +2580,8 @@ mod custody_tests {
                             label: "The Long Lane".into(),
                             from: Ref::Existing(commons),
                             to: Ref::Draft(DraftHandle::new("road")),
-                            access: crate::world::AccessKind::Public,
-                            cost: crate::world::Cost(1),
+                            access: crate::AccessKind::Public,
+                            cost: crate::Cost(1),
                         }),
                     ],
                     operations: Vec::new(),
@@ -2591,7 +2591,7 @@ mod custody_tests {
         );
         activate(&mut kernel);
 
-        let boundary = crate::world::derive_boundaries(&kernel.state)
+        let boundary = crate::derive_boundaries(&kernel.state)
             .unwrap()
             .into_iter()
             .find(|boundary| matches!(boundary, CausalBoundary::UnelaboratedDestination { .. }))
@@ -2636,7 +2636,7 @@ mod custody_tests {
             )
             .unwrap()
         };
-        let rows_of = |commits: Vec<crate::world::WorldCommit>| {
+        let rows_of = |commits: Vec<crate::WorldCommit>| {
             let mut rows: Vec<CultCacheEnvelope> = commits
                 .iter()
                 .map(|commit| {
@@ -2647,17 +2647,17 @@ mod custody_tests {
             rows
         };
 
-        let honest: Vec<crate::world::WorldCommit> =
+        let honest: Vec<crate::WorldCommit> =
             kernel.journal.commits.values().cloned().collect();
         recover(rows_of(honest.clone()), None).expect("the honest history replays");
 
         // Rewrite only the recorded caller, to a jurisdiction that does not
         // cover the answer the same row carries.
         let mut forged_one = false;
-        let forged: Vec<crate::world::WorldCommit> = honest
+        let forged: Vec<crate::WorldCommit> = honest
             .into_iter()
             .map(|mut commit| {
-                if let crate::world::CommittedCommand::WorldCommand(command) = &mut commit.command
+                if let crate::CommittedCommand::WorldCommand(command) = &mut commit.command
                     && matches!(
                         command.caller,
                         CallerId::System(SystemCapability::Elaborator { .. })
