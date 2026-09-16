@@ -10136,7 +10136,8 @@ mod tests {
     }
 
     /// Row to row, a session is whole: from a persisted in-flight checkpoint,
-    /// a next checkpoint that differs only in the lens, only in the text (with
+    /// a next checkpoint that differs only in the lens (always another lens
+    /// than the recorded one), only in the text (with
     /// its invocation prepared under that text, so integrity passes and the
     /// refusal is progression's), or only in the ancestry is refused by the
     /// real store as an illegal transition. The unchanged checkpoint is
@@ -10218,7 +10219,15 @@ mod tests {
                 invocation,
             }
         };
-        let lens = rewrite(&|session| session.lens = Lens::Numen);
+        // Another lens than the one the fixture drew, whichever that was: the
+        // fixture draws under uniform weights, so no fixed lens is safe.
+        let lens = rewrite(&|session| {
+            session.lens = if session.lens == Lens::Numen {
+                Lens::Patina
+            } else {
+                Lens::Numen
+            }
+        });
         let text = with_texts(
             &checkpoint,
             "text a later build wrote",
