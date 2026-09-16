@@ -186,7 +186,13 @@ pub(crate) fn draw(
     world_id: WorldId,
     command_id: CommandId,
 ) -> Result<Lens, KernelError> {
-    if !weights.draws() {
+    // The guard is on the divisor itself, as `select_band`'s is: no other
+    // statement of "these weights draw" can let the modulo below divide by zero.
+    let total: u128 = Lens::ALL
+        .iter()
+        .map(|lens| u128::from(weights.get(*lens)))
+        .sum();
+    if total == 0 {
         return Err(KernelError::Invariant("lens weights never draw".into()));
     }
     let preimage = digest(&LensPreimage {
@@ -198,10 +204,6 @@ pub(crate) fn draw(
         .and_then(|hex| hex.get(..16))
         .and_then(|head| u64::from_str_radix(head, 16).ok())
         .ok_or_else(|| KernelError::Invariant("lens draw digest is not hex".into()))?;
-    let total: u128 = Lens::ALL
-        .iter()
-        .map(|lens| u128::from(weights.get(*lens)))
-        .sum();
     let mut position = u128::from(head) % total;
     for lens in Lens::ALL {
         let weight = u128::from(weights.get(lens));
