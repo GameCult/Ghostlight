@@ -10135,6 +10135,62 @@ mod tests {
         task.await.unwrap();
     }
 
+    /// The call site draws from the session's own command id. Under the stock
+    /// weights, where every lens can be drawn, each of several fresh worlds runs
+    /// one refused round; the lens its row records is the draw over that world
+    /// and the id the row is keyed by, and its text is that lens's. The premise
+    /// is asserted: in every world some other id draws another lens, so a call
+    /// site that drew from an unrelated id would record a different lens in
+    /// most worlds and this test would see it (an unrelated random id agrees
+    /// with the session's in all eight worlds about once in 8^8 runs).
+    #[tokio::test]
+    async fn a_fresh_session_draws_its_lens_from_its_own_command_id() {
+        for _ in 0..8 {
+            let (_directory, mailbox, task, commons, road) = elaboration_mailbox().await;
+            let snapshot = mailbox.snapshot().await.unwrap();
+            assert!(
+                Lens::ALL
+                    .into_iter()
+                    .all(|lens| snapshot.lens_weights.get(lens) > 0),
+                "the fixture's weights force the draw"
+            );
+            let store = fresh_store();
+            let runner = elaboration_runner(&mailbox, shed_script(road), store.clone());
+            assert_eq!(
+                runner
+                    .step(JurisdictionKey::PlaceSubtree(commons))
+                    .await
+                    .unwrap(),
+                crate::elaboration::ElaborationOutcome::Rejected
+            );
+            drop(runner);
+            let (command_id, recorded) = {
+                let stored = store.work.lock().unwrap();
+                assert_eq!(stored.len(), 1);
+                let (id, work) = stored.iter().next().unwrap();
+                (*id, recorded_session(work))
+            };
+            let expected =
+                crate::lens::draw(&snapshot.lens_weights, snapshot.world_id, command_id).unwrap();
+            assert!(
+                (0..64u64).any(|index| {
+                    let other =
+                        CommandId::parse_uuid(&format!("00000000-0000-4000-8000-{index:012x}"))
+                            .unwrap();
+                    other != command_id
+                        && crate::lens::draw(&snapshot.lens_weights, snapshot.world_id, other)
+                            .unwrap()
+                            != expected
+                }),
+                "no other id draws another lens in this world"
+            );
+            assert_eq!(recorded.lens, expected, "the session drew from another id");
+            assert_eq!(recorded.instructions, expected.instructions());
+            drop(mailbox);
+            task.await.unwrap();
+        }
+    }
+
     /// Row to row, a session is whole: from a persisted in-flight checkpoint,
     /// a next checkpoint that differs only in the lens (always another lens
     /// than the recorded one), only in the text (with
