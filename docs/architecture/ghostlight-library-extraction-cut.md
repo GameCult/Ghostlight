@@ -88,8 +88,32 @@ file, tying all four acceptance sites together. All four of Soul's
 mutations now exit 1 where they previously exited 0, and every
 pre-existing assertion still passes. `require_order` was unusable here
 because its `last_line` resolves a substring and would have bound the
-library step to the acceptance invocation. Soul has not yet passed on this
-fix batch.
+library step to the acceptance invocation.
+
+Soul passed on the fix batch and confirmed it does what it claimed:
+whole-invocation pinning survives image swaps, line swaps, re-indentation,
+continuation splits and appended flags; the order checks catch a move into
+the reuse branch; the runbook is tied in both directions; `fail` inside a
+command substitution does abort, because `set -e` fires on the
+assignment's status; nothing was weakened. It also found the structural
+limit, recorded and not fixed:
+- **C2-F6 (high, recorded):** an exact-line pin proves the lines exist,
+  not that they run. Wrapping the block in `if false`, prefixing the
+  opener with `true || \`, or swallowing it in a heredoc keeps every
+  pinned line byte-identical and the checker exits 0.
+- **C2-F7 (medium, recorded):** the four steps carry no explicit `||
+  exit`; abort depends entirely on `set -euo pipefail` at
+  `deploy-…sh:2`, which nothing pins. Removing the `e` leaves the checker
+  green, so a failing kernel suite would be followed by a sealed release.
+- **C2-F8 (low, recorded):** a duplicated block passes, since the helper
+  takes the first match and never asserts a count.
+
+These stay recorded rather than fixed: that script is a legacy actuator
+under Ghostlight's do-not-invoke warning and is retired at the deployment
+gate, and the authority that actually runs the tests is Ghostlight's own
+`deployment/idunn/recipe.toml`. Closing them means control-flow analysis
+in a bash checker for a script we intend to delete. Revisit only if the
+deployment gate keeps the script.
 
 Follow-ups outside this migration, from the fix batch:
 - `scripts/deploy-ghostlight-yggdrasil.sh:974`, the web container, is
