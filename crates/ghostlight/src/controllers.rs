@@ -11291,6 +11291,35 @@ mod tests {
         task.await.unwrap();
     }
 
+    /// No session starts after one has returned a quarantine-class error. Under
+    /// a pool of one the second entry waits for the first session's permit; the
+    /// first session faults with an integrity violation, and the second never
+    /// reaches the provider boundary.
+    #[tokio::test]
+    async fn no_session_starts_after_a_quarantine_error() {
+        let (_directory, mailbox, task, _commons, _roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road", "The Far Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let port = Arc::new(SweepPort::new(|_, _| {
+            Err(InferenceFault::integrity_violation(
+                "the fixture port disputes every receipt",
+            ))
+        }));
+        let runner = sweep_runner(&mailbox, port.clone(), fresh_store());
+        let Err(error) = runner.sweep(pool(1)).await else {
+            panic!("a quarantine-class fault did not end the sweep with an error");
+        };
+        assert!(error.requires_quarantine(), "{error:?}");
+        assert_eq!(port.calls(), 1, "a session started after a quarantine-class error");
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
     /// Probe 3's deficit half, through the sweep. Sweep one's deficit session
     /// is refused; a clock tick moves the ancestry, and with it the id a fresh
     /// derivation would give the deficit. Sweep two finds the refused session by

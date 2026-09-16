@@ -1829,26 +1829,31 @@ const ELABORATION_SWEEP_INTERVAL: Duration = Duration::from_secs(300);
 
 /// The authoring lane's only driver. It runs when the cognition organ opened at
 /// all, which is the config gate the runtime already has: no mode flag joins it.
-/// Each sweep runs its sessions under the elaboration pool and never touches the
-/// simulation pool. Sweeps never overlap, because this loop awaits one before it
-/// ticks the next, so one sweep's claim set is the only set of sessions alive.
+/// Sweeps never overlap, because this loop awaits one before it ticks the next,
+/// so one sweep's claim set is the only set of sessions alive.
 async fn elaborate_world(state: AppState) {
     let mut interval = tokio::time::interval(ELABORATION_SWEEP_INTERVAL);
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     interval.tick().await;
     loop {
         interval.tick().await;
-        let Some(runner) = state
-            .controllers
-            .as_deref()
-            .filter(|_| !state.controller_quarantined.load(Ordering::SeqCst))
-            .map(ControllerRunner::elaborator)
-        else {
-            continue;
-        };
-        if let Err(error) = runner.sweep(state.elaboration_permits.clone()).await {
-            tracing::debug!(%error, "elaboration sweep did not complete");
-        }
+        run_elaboration_sweep(&state).await;
+    }
+}
+
+/// One sweep, apart from the wall clock that decides when to run it. Its
+/// sessions run under the elaboration pool and never touch the simulation pool.
+async fn run_elaboration_sweep(state: &AppState) {
+    let Some(runner) = state
+        .controllers
+        .as_deref()
+        .filter(|_| !state.controller_quarantined.load(Ordering::SeqCst))
+        .map(ControllerRunner::elaborator)
+    else {
+        return;
+    };
+    if let Err(error) = runner.sweep(state.elaboration_permits.clone()).await {
+        tracing::debug!(%error, "elaboration sweep did not complete");
     }
 }
 
@@ -3398,14 +3403,9 @@ mod tests {
             .clone()
             .try_acquire_many_owned(u32::try_from(TEST_CONTROLLER_CONCURRENCY).expect("a small pool"))
             .expect("the simulation pool is free");
-        let runner = state.controllers.clone().expect("the runner");
-        tokio::time::timeout(
-            Duration::from_secs(30),
-            runner.elaborator().sweep(state.elaboration_permits.clone()),
-        )
-        .await
-        .expect("the sweep waited on the simulation pool")
-        .expect("the sweep completed");
+        tokio::time::timeout(Duration::from_secs(30), run_elaboration_sweep(&state))
+            .await
+            .expect("the sweep waited on the simulation pool");
         assert!(
             port.calls.load(Ordering::SeqCst) > before,
             "no elaboration inference completed"
