@@ -24,6 +24,15 @@ a `pub(crate)` convention.
    `WorldState`, canonical ID allocator, reducer entry, journal writer, or
    authenticated-caller constructor. Negative proofs are compile-fail tests
    from outside the library.
+
+   Sealing means **unforgeable admission**, not unconstructible values
+   (operator ruling Q1-9, 2026-09-16). Public ID types, `ScopeDigest` and
+   `DecisionOpportunity` derive `Deserialize` because Dungeon's own Eve
+   payloads carry them, so any caller can build a syntactically valid one.
+   The kernel must reject every one it did not issue, and rejection tests
+   written from outside the crate are the proof. A compile-fail test pins a
+   path name and cannot see constructibility: adding a `Default` impl that
+   mints an ID left all ten green.
 2. **No behavior change.** Every existing test passes unchanged in meaning.
    No schema string, command id namespace, digest preimage, or store layout
    changes: a `world.cc` and controller work store written before the cut open

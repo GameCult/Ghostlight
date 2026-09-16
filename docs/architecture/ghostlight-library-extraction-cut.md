@@ -123,7 +123,12 @@ Follow-ups outside this migration, from the fix batch:
 - `require_command_options` searches a fixed 18-line window, so a block
   that grows past it stops being checked silently.
 
-Open: **Q1-9 what sealing means.** A: restate invariant 1 as unforgeable
+**Q1-9 what sealing means (ruled, operator, 2026-09-16): option A.** The
+invariant is unforgeable admission, not unconstructible types. External
+code may hold a syntactically valid ID, digest, or opportunity; the kernel
+must reject any it did not issue, and that is proven by rejection tests
+written from outside the crate. The compile_fail set stays for the
+genuinely private items. The question as first posed: A: restate invariant 1 as unforgeable
 *admission* — external code may hold a syntactically valid ID or opportunity,
 and the kernel must reject any it did not issue — and prove it with rejection
 tests from an external crate plus the existing compile_fail set. B: make the
