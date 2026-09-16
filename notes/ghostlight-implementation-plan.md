@@ -873,8 +873,9 @@ Operator decisions, 2026-09-15: the world kernel is extracted from
 `crates/ghostlight-dungeon` into a library crate before any library pass, and
 the eight titles ship as the library's stock lens set.
 
-Library passes: (L0) extract the kernel into a library crate with a real
-public boundary; (L1) the stock lens set, weights, sampler, and concurrent
+Library passes: (L0, landed 2026-09-16 at `108b691..ab95d78`; see
+`docs/architecture/ghostlight-library-extraction-postmortem.md`) extract the
+kernel into a library crate with a real public boundary; (L1) the stock lens set, weights, sampler, and concurrent
 sessions over today's demand; (L2) per-world evidence binding on every
 elaborator session; (L3) typed detail rules (`Uniform`, `ByDistance`),
 rule-driven demand under the world-target ceiling, and the permille, root,

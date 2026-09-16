@@ -170,16 +170,27 @@ Soul found:
   prove non-existence. Enforcing codes needs a snapshot tool such as
   trybuild; recorded, not added.
 
-Open: **Q1-10 how the single minter is enforced.** Every text scanner in
-this migration has lost to a short evasion: the minter scanner twice, and
-the gamecult-ops wiring test (C2-F6). "Exactly one production call site" is
-semantic. A: replace the scanner with Clippy's `disallowed-methods` for
-`ghostlight::VerifiedPrincipalEvidence::new` and one
-`#[allow(clippy::disallowed_methods)]` at the real minter; Clippy resolves
-aliases, globs and function paths regardless of formatting, and roughly 100
-lines of scanner are deleted. Cost: a Clippy step in the recipe. B: patch
-the five evasions into the scanner and keep it as a tripwire with stated
-limits. **Recommended: A.**
+**Q1-10 how the single minter is enforced (defaulted, 2026-09-16).** Asked
+how much it mattered, the operator said not at all. The scanner stays as a
+tripwire with stated limits: it guards only against the project's own
+Dungeon code, and what evades it is deliberate. S4 is a recorded follow-up,
+with Clippy's `disallowed-methods` for
+`ghostlight::VerifiedPrincipalEvidence::new` noted as the fix if a second
+minter ever becomes plausible.
+
+S1, S7 and S8 landed at Ghostlight `bde05de..af9c95a`. S1 submits a
+genuinely issued digest made stale by another controller's speech, plus the
+current digest with its last digit altered. Soul confirmed the premise
+check fails when staleness does not happen and that no earlier check
+intercepts the forgery, then found two surviving comparison mutants
+(case-insensitive, hex-only after the label). Those, and "player"
+vocabulary in library tests, landed at `b14507c` (uppercased-letter,
+bare-hex and relabelled forgeries, all six comparison mutants killed) and
+`ab95d78` (test-only rename to "human", one test name changed). Soul's
+final pass found nothing to fix.
+
+**L0 closed, 2026-09-16.** Postmortem:
+`ghostlight-library-extraction-postmortem.md`. Follow-ups are listed there.
 
 **Q1-9 what sealing means (ruled, operator, 2026-09-16): option A.** The
 invariant is unforgeable admission, not unconstructible types. External
@@ -826,6 +837,24 @@ list plus its compile-fail proofs); the liability it retires is the
 convention "Dungeon does not touch kernel internals", which becomes a
 compile error with no feature that can lift it, and five fixture wrappers
 that existed only to work around private port constructors.
+
+Actual, reconciled 2026-09-16 against `6ddabca` (Ghostlight) and `647e57e`
+(gamecult-ops):
+
+| Area | Estimate | Actual |
+|---|---|---|
+| Crate sources incl. in-module tests | about +65 net | +1202 / −992 (+210 net) |
+| Integration tests | not planned | +479 |
+| Manifests and lock | about +50 | +50 / −2 |
+| Ghostlight recipe | about +6 | +10 / −5 |
+| gamecult-ops | about +5 | +61 / −9 |
+
+The miss is explained, not hidden. The single-minter scanner grew about 110
+lines chasing Soul's evasions and remains evadable (S4). The boundary needed
+roughly 90 more public items than this map enumerated, each forced by a
+compile error or a `private_interfaces` warning. The integration tests buy
+ruling Q1-9, which postdates the estimate. Features and binaries added:
+none, as estimated.
 
 ## Findings not assigned to a cut
 

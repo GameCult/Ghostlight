@@ -283,10 +283,11 @@ Dungeon is a consumer of the Ghostlight library. Session Zero is Dungeon
 authority; the library capabilities it needs are consumer-neutral and live in
 the ontology doc's "Elaboration lenses and detail rules (target)". The world kernel is
 the `ghostlight` library crate and Dungeon consumes it across a public
-boundary; L0 landed at `108b691` and `f859d2c`. Soul's open items (F1 the
-name-based seal, F2 the bypassable minter count, F3 the over-wide surface)
-and operator question Q1-9 are in
-`docs/architecture/ghostlight-library-extraction-cut.md`.
+boundary sealed by admission: the kernel rejects any ID, digest or
+opportunity it did not issue. L0 is closed (`108b691..ab95d78`); its
+follow-ups are listed in
+`docs/architecture/ghostlight-library-extraction-postmortem.md`. L1, the
+stock lens set, is the next cut.
 
 Also owed on the way, found 2026-09-15 by reading source:
 

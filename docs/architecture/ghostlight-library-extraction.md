@@ -1,7 +1,18 @@
 # Ghostlight library extraction (plan step 15, L0)
 
-Status: target written 2026-09-15. Cut map pending (Imagination). Nothing
-landed.
+Status: closed 2026-09-16. Landed in Ghostlight `108b691..ab95d78` and
+gamecult-ops `6aba281..803f2c7`; the means and every Soul verdict are in
+`ghostlight-library-extraction-cut.md`, the scars in
+`ghostlight-library-extraction-postmortem.md`.
+
+Reconciled with the Body. Invariant 1 holds as restated by Q1-9 and is
+proven by `crates/ghostlight/tests/external_admission.rs`; the compile_fail
+doc-tests prove "does not compile", not privacy, because stable rustc does
+not enforce their error codes. Invariants 2, 4, 6 and 7 hold as written.
+Invariant 3 holds for library source and tests: no Eve, Heimdall, AppSession
+or player vocabulary remains. Invariant 5 holds on Windows; the Linux release
+is unexercised until Idunn builds it. The open questions below were all
+ruled (Q1-1 through Q1-10 in the cut map) and are kept as history.
 
 ## Target
 
