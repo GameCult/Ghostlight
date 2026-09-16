@@ -76,14 +76,14 @@ pub struct ElaboratorSession {
 }
 
 impl ElaboratorSession {
-    /// Whether two sessions answer the same thing: the fields the command id
-    /// is derived from, plus the answer they digest. Ancestry, lens and
+    /// Whether two sessions answer the same thing: world, jurisdiction and
+    /// answer. The answer's digest is not compared, because the command id both
+    /// sessions were found under is derived from it. Ancestry, lens and
     /// instructions are not identity; they are what a recorded session carries.
     fn same_answer(&self, other: &ElaboratorSession) -> bool {
         self.world_id == other.world_id
             && self.jurisdiction == other.jurisdiction
             && self.answer == other.answer
-            && self.answer_digest == other.answer_digest
     }
 }
 
