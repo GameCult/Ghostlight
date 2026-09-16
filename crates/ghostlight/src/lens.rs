@@ -127,10 +127,6 @@ impl Lens {
     /// The elaborator's instructions under this lens: the shared sentence, then
     /// the lens clause. Read once, when a session is first built; the session
     /// then carries the text, and nothing rebuilds it from here.
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "read by its tests until a session carries a lens")
-    )]
     pub(crate) fn instructions(self) -> String {
         format!(
             "{ELABORATION_INSTRUCTIONS} Lens: {}. Reach for {}. Lead with {}; every supplied tool remains available.",
@@ -190,10 +186,6 @@ struct LensPreimage {
 /// `select_band` uses, not a second entropy shape. The same world, session
 /// identity, and weights draw the same lens. Modulo rather than rejection
 /// sampling: the bias is bounded by `total_weight / 2^64`.
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "read by its tests until a session draws its lens")
-)]
 pub(crate) fn draw(
     weights: &LensWeights,
     world_id: WorldId,
