@@ -1610,6 +1610,67 @@ not repo artifacts.
   - Counts: library 459 (458 + 1 ignored), doc 10, external_admission 12,
     Dungeon 54 (53 + 1 ignored), build_provenance 1, persona-projection 13.
     Forced-rebuild warnings identical to Cut 3.
+- **Panic handling ruled:** a session-task panic becomes an error returned
+  after already-started siblings finish, no new session starts after it, and
+  the runtime driver keeps running and logs it. Whether it quarantines stays
+  with L1.f1. **Authority:** operator (agreed to c4.s1.f4's stated fix).
+  **Ruled:** 2026-09-16.
+- **Fix batch landed:** `6f35229` (c4.s1.f1), `c90b5a0` (c4.s1.f3), `a3d109b`
+  (c4.s1.f7), `4b50130` (c4.s1.f2), `0764842` (c4.s1.f4).
+  - c4.s1.f1: `a_finished_boundary_session_stays_finished_after_the_world_moves`
+    joins the ReadyToSubmit test in killing M3.1. Reachability, traced by
+    Hands and attacked by Soul: through the sweep, the adoption rule changes
+    behaviour only for `ReadyToSubmit` boundary rows found by id. Listed rows
+    receive their own session. A changed answer moves the id, because the id
+    hashes the scope digest. Deficit ids carry ancestry. Otherwise only a
+    digest collision reaches it.
+  - c4.s1.f3: `a_draft_world_is_not_swept` checks no listing read, no
+    inference, no row, a whole pool, and an unchanged revision. `WorldPhase`
+    has no Archived case. MS5 is killed.
+  - c4.s1.f7: `the_sweep_claims_work_no_root_covers` sweeps a
+    `MissingStructure` boundary on an unpositioned debtor under `Uncovered`.
+    MS2 is killed.
+  - c4.s1.f2: `a_speak_turn_and_a_sweep_draw_only_from_their_own_pools` drives
+    a speak turn through the production HTTP router and a sweep, reads both
+    pools inside the provider boundary, and exhausts each pool in turn. MC3
+    and M4.4 are killed; 30/30.
+  - c4.s1.f4: a `SessionPermit` guard's Drop sets the per-sweep stop flag
+    before releasing the permit, unless the session returned normally without
+    a quarantine-class error. A task that did not return becomes
+    `ControllerError::Serialization("an elaboration session did not return:
+    …")`, quarantine-class and returned after every started sibling
+    finishes. `elaborate_world` takes its interval. Tests:
+    `a_panicking_session_lets_its_sibling_finish`,
+    `no_session_starts_after_a_panic`,
+    `the_elaboration_driver_survives_a_panicking_sweep`. R1 (restore
+    `resume_unwind`), R2 and RQ are killed; 30/30.
+  - Counts: library 464 (463 + 1 ignored), Dungeon 56 (55 + 1 ignored), doc
+    10, external_admission 12, build_provenance 1, persona-projection 13.
+    Distinct warnings identical to `21edeca`.
+- **Soul findings, pass 2** (promises 1–6 of the batch held; the guard releases
+  its permit exactly once on normal return, retryable error, quarantine, panic,
+  and cancellation of the whole sweep; a panicked session is adopted next sweep
+  without duplicating its refusal; R1 fails the driver test by the driver
+  ending, not a timeout):
+  - **c4.s2.f1 (pre-existing gap, low-medium, fix):** the guard's
+    "a retryable error does not raise stop" leg is unpinned. Mutation
+    `held.stop = outcome.is_err()` (`elaboration.rs:677`) survives, because the
+    retryable test uses a pool of 2. A pool-of-1 probe with a retryable first
+    call kills it. A regression would end every sweep at the first
+    connector-capacity fault.
+  - **c4.s2.f2 (pre-existing gap, low-medium, fix):** `Uncovered` is pinned
+    only when no deficit row exists. Pushing it only in that case
+    (`elaboration.rs:759`) survives. A world with a root in deficit and an
+    unrooted debtor would never sweep the debtor's `MissingStructure`.
+  - **c4.s2.f3 (pre-existing, low, fix by deletion):** `same_answer`'s
+    `answer_digest` comparison (`elaboration.rs:86`) never decides, because the
+    id already binds the digest. Equivalent under two Soul passes (c3.s1.f6,
+    this pass).
+  - **c4.s2.f4 (introduced by design, low, L1.f1):** a panic inside `persist`
+    poisons the journal lock (`controllers.rs:1694` maps poison to
+    `WorkPersistence`). Every later sweep then errors, and the driver logs it
+    only at `debug` (`runtime.rs:1856`), so an operator would not see a
+    wedged elaboration lane. Evidence for the L1.f1 ruling, not a fix here.
 
 ### L1-Q10 Whether the in-flight listing excludes rows ready to submit
 
@@ -1624,6 +1685,9 @@ not repo artifacts.
 - **Recommendation:** A now, with the crash window and C recorded under
   L1.f14, which owns row retirement.
 - **Depends on it:** nothing else in L1.
+- **Ruling:** A. The listing excludes `ReadyToSubmit` rows. The crash window
+  and option C are recorded under L1.f14. **Authority:** operator.
+  **Ruled:** 2026-09-16.
 
 ## Cut 5. Reconcile the target and the maps
 
