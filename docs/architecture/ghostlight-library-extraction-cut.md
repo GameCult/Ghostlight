@@ -54,8 +54,31 @@ deletion; and the acceptance test path lives in `acceptance_test=` at
 list, pinned by the wiring test and repeated in the runbook prose. Operator
 consequence: changing `acceptance_test` changes the acceptance binding, so
 sealed witnesses under `/srv/ghostlight/acceptance/<binding-sha>/` from
-before this commit will miss and regenerate. Soul has not passed on Cut 2
-yet.
+before this commit will miss and regenerate.
+
+Soul passed on Cut 2 and found the assertions pin text, not invocations:
+- **C2-F1 (high, fixing):** deleting the two lines above the pinned cargo
+  line in `scripts/deploy-ghostlight-yggdrasil.sh` leaves it byte-identical
+  as trailing argv on the *persona-projection* container, so the kernel
+  tests never run and the wiring test still exits 0. Prefixing the
+  `docker run` line with `: ` does the same.
+- **C2-F2 (medium, fixing):** nothing pins the order of the four cargo
+  steps; the library block moved after the release build and the wiring
+  test passed, which would seal an artifact before the kernel tests ran.
+- **C2-F3 (medium, fixing):** the wiring test never reads the runbook, so
+  only three of the four acceptance sites are enforced to agree.
+- **C2-F4 (medium, pre-existing, recorded):** `deploy-…sh:937` takes a
+  reuse branch when the release directory for a commit already exists, so a
+  redeploy of a sealed commit runs no cargo steps at all. This bounds "the
+  deploy runs the kernel tests" to a commit's first build. Operator owns
+  whether that is right.
+- **C2-F5 (low, recorded):** `docs/repo-census-2026-09/*` still shows
+  `src/world/...`. Dated census; no deploy effect.
+
+Held: the step sits in the same branch, image and mounts as its
+neighbours, and `set -euo pipefail` with `trap` means a library-test
+failure does abort the deploy. The acceptance test exists at
+`crates/ghostlight/src/controllers.rs:8980` under `-p ghostlight --lib`.
 
 Open: **Q1-9 what sealing means.** A: restate invariant 1 as unforgeable
 *admission* — external code may hold a syntactically valid ID or opportunity,
