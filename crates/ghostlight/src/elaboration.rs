@@ -639,7 +639,9 @@ impl ElaborationRunner {
     ///
     /// Every spawned session finishes before this returns. A quarantine-class
     /// error is returned after that, and no session starts after one has
-    /// returned such an error; any other error ends only its own session.
+    /// returned such an error. A session that panics is that same error: its
+    /// siblings finish, nothing starts after it, and it is returned. Any other
+    /// error ends only its own session.
     pub async fn sweep(&self, permits: Arc<Semaphore>) -> Result<(), ControllerError> {
         let snapshot = self.mailbox.snapshot().await.map_err(snapshot_error)?;
         if snapshot.phase != WorldPhase::Active {
@@ -666,14 +668,16 @@ impl ElaborationRunner {
             let snapshot = snapshot.clone();
             let stopped = stopped.clone();
             running.spawn(async move {
+                let mut held = SessionPermit {
+                    _permit: permit,
+                    stopped,
+                    stop: true,
+                };
                 let outcome = runner.step_session(command_id, session, &snapshot).await;
-                if outcome
+                held.stop = outcome
                     .as_ref()
-                    .is_err_and(ControllerError::requires_quarantine)
-                {
-                    stopped.store(true, Ordering::SeqCst);
-                }
-                drop(permit);
+                    .is_err_and(ControllerError::requires_quarantine);
+                drop(held);
                 outcome
             });
         }
@@ -687,7 +691,11 @@ impl ElaborationRunner {
                 Ok(Err(error)) => {
                     tracing::debug!(%error, "elaboration step did not admit a patch");
                 }
-                Err(error) => std::panic::resume_unwind(error.into_panic()),
+                Err(error) => {
+                    quarantine.get_or_insert(ControllerError::Serialization(format!(
+                        "an elaboration session did not return: {error}"
+                    )));
+                }
             }
         }
         quarantine.map_or(Ok(()), Err)
@@ -714,6 +722,24 @@ impl ElaborationRunner {
         self.step_session(command_id, session, &snapshot)
             .await
             .map(Some)
+    }
+}
+
+/// One session's permit. Raises the sweep's stop before the permit is released
+/// on every exit but a clean return: a quarantine-class error, or a session that
+/// never returned because it panicked. `drop` runs before the fields drop, so
+/// the sweep waiting on this permit sees the stop when it wakes.
+struct SessionPermit {
+    _permit: tokio::sync::OwnedSemaphorePermit,
+    stopped: Arc<AtomicBool>,
+    stop: bool,
+}
+
+impl Drop for SessionPermit {
+    fn drop(&mut self) {
+        if self.stop {
+            self.stopped.store(true, Ordering::SeqCst);
+        }
     }
 }
 

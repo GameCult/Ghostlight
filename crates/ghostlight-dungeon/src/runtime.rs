@@ -407,7 +407,7 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
     };
     tokio::spawn(maintain_mesh_projection(state.clone()));
     tokio::spawn(drive_cover_tick(state.clone(), configured_tick_interval()));
-    tokio::spawn(elaborate_world(state.clone()));
+    tokio::spawn(elaborate_world(state.clone(), ELABORATION_SWEEP_INTERVAL));
     let app = app_router(state.clone(), web_root);
     tracing::info!(address = %bound_address, "Ghostlight Dungeon world owner serving");
     let server = axum::serve(
@@ -1831,8 +1831,8 @@ const ELABORATION_SWEEP_INTERVAL: Duration = Duration::from_secs(300);
 /// all, which is the config gate the runtime already has: no mode flag joins it.
 /// Sweeps never overlap, because this loop awaits one before it ticks the next,
 /// so one sweep's claim set is the only set of sessions alive.
-async fn elaborate_world(state: AppState) {
-    let mut interval = tokio::time::interval(ELABORATION_SWEEP_INTERVAL);
+async fn elaborate_world(state: AppState, interval: Duration) {
+    let mut interval = tokio::time::interval(interval);
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     interval.tick().await;
     loop {
@@ -3592,6 +3592,122 @@ mod tests {
         drop(held);
         assert_eq!(state.controller_permits.available_permits(), simulation);
         assert_eq!(state.elaboration_permits.available_permits(), elaboration);
+    }
+
+    /// Panics on its first `infer` call. Every later call announces itself on
+    /// `again` and answers with text.
+    struct PanicOnceInferencePort {
+        first: AtomicBool,
+        again: Semaphore,
+    }
+
+    #[async_trait::async_trait]
+    impl InferencePort for PanicOnceInferencePort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
+        }
+
+        async fn infer(
+            &self,
+            _request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            if self.first.swap(false, Ordering::SeqCst) {
+                panic!("the fixture port panics inside the first elaboration session");
+            }
+            self.again.add_permits(1);
+            Ok(InferenceOutput::new(
+                vec![InferenceEvent::Text("The driver fixture speaks.".into())],
+                "sha256:panic-once-port",
+            ))
+        }
+    }
+
+    /// `AlwaysFreshWorkStore`, announcing each in-flight listing: one per sweep.
+    struct SweepCountingWorkStore {
+        listed: Semaphore,
+    }
+
+    #[async_trait::async_trait]
+    impl ControllerWorkStore for SweepCountingWorkStore {
+        async fn lookup(
+            &self,
+            command_id: CommandId,
+        ) -> Result<ControllerWorkLookup, ControllerWorkStoreError> {
+            AlwaysFreshWorkStore.lookup(command_id).await
+        }
+
+        async fn persist(
+            &self,
+            work: &ControllerWork,
+        ) -> Result<ControllerWorkWrite, ControllerWorkStoreError> {
+            AlwaysFreshWorkStore.persist(work).await
+        }
+
+        async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError> {
+            AlwaysFreshWorkStore.custody_probe().await
+        }
+
+        async fn elaboration_in_flight(
+            &self,
+        ) -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError> {
+            self.listed.add_permits(1);
+            AlwaysFreshWorkStore.elaboration_in_flight().await
+        }
+    }
+
+    /// The elaboration driver outlives a sweep whose session panicked. The
+    /// driver runs at a one-millisecond interval over a world with a deficit,
+    /// under an elaboration pool of one, so a sweep that stops after a panic
+    /// has no sibling session. The first sweep's session panics; the driver
+    /// then reads a second listing, which only a second sweep does, and that
+    /// sweep's session reaches the provider. If the driver task ends first,
+    /// the test fails on that instead of waiting.
+    #[tokio::test]
+    async fn the_elaboration_driver_survives_a_panicking_sweep() {
+        let fixture = fixture().await;
+        two_cell_world(
+            &fixture.state,
+            &fixture.cookie,
+            BTreeMap::from([(SubjectKind::Person, 4)]),
+            vec![CreateJurisdictionIntent {
+                handle: "sere".into(),
+                label: "The Low Sere".into(),
+                permille: 1000,
+            }],
+            true,
+        )
+        .await;
+        let port = Arc::new(PanicOnceInferencePort {
+            first: AtomicBool::new(true),
+            again: Semaphore::new(0),
+        });
+        let store = Arc::new(SweepCountingWorkStore {
+            listed: Semaphore::new(0),
+        });
+        let mut state = fixture.state.clone();
+        state.controllers = Some(Arc::new(
+            ControllerRunner::open(
+                state.world.clone(),
+                port.clone(),
+                store.clone(),
+                test_controller_models(),
+            )
+            .expect("the fixture ports open"),
+        ));
+        state.elaboration_permits = Arc::new(Semaphore::new(1));
+
+        let mut driver = tokio::spawn(elaborate_world(state.clone(), Duration::from_millis(1)));
+        tokio::select! {
+            listed = store.listed.acquire_many(2) => listed.unwrap().forget(),
+            ended = &mut driver => panic!("the elaboration driver ended: {ended:?}"),
+        }
+        assert!(!port.first.load(Ordering::SeqCst), "the first sweep's session never panicked");
+        tokio::select! {
+            again = port.again.acquire() => again.unwrap().forget(),
+            ended = &mut driver => panic!("the elaboration driver ended: {ended:?}"),
+        }
+        assert!(!state.controller_quarantined.load(Ordering::SeqCst));
+        driver.abort();
     }
 
     /// Raises `ControllerError::requires_quarantine` on every call. Used to

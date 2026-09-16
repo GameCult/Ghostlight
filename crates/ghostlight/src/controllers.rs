@@ -11489,6 +11489,136 @@ mod tests {
         task.await.unwrap();
     }
 
+    /// Holds the first session on each of two dead ends in the provider
+    /// boundary together, then panics the one on the Unwalked Road while the
+    /// Far Road's waits for the test. Every later call answers its road with a
+    /// shed.
+    struct PanickingPort {
+        both: tokio::sync::Barrier,
+        panicking: tokio::sync::Semaphore,
+        release: tokio::sync::Semaphore,
+        first_unwalked: AtomicBool,
+        first_far: AtomicBool,
+        roads: Box<dyn Fn(usize, &PreparedInference) -> Result<InferenceOutput, InferenceFault> + Send + Sync>,
+        calls: std::sync::atomic::AtomicUsize,
+    }
+
+    #[async_trait]
+    impl InferencePort for PanickingPort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
+        }
+
+        async fn infer(
+            &self,
+            request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            let call = self.calls.fetch_add(1, Ordering::SeqCst);
+            if prompt_of(&request).contains("The Unwalked Road") {
+                if self.first_unwalked.swap(false, Ordering::SeqCst) {
+                    self.both.wait().await;
+                    self.panicking.add_permits(1);
+                    panic!("the fixture port panics inside one session");
+                }
+            } else if self.first_far.swap(false, Ordering::SeqCst) {
+                self.both.wait().await;
+                self.release.acquire().await.unwrap().forget();
+            }
+            (self.roads)(call, &request)
+        }
+    }
+
+    /// A session that panics does not take its sweep down with it. Two
+    /// sessions are in the provider boundary together; one panics while the
+    /// other is still held there. The held session finishes its inference and
+    /// commits in the same sweep, the sweep returns a quarantine-class error
+    /// naming the panic, and every permit is free. A second sweep then runs
+    /// normally: it resumes the panicked session's row and commits it.
+    #[tokio::test]
+    async fn a_panicking_session_lets_its_sibling_finish() {
+        let (_directory, mailbox, task, _commons, roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road", "The Far Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let port = Arc::new(PanickingPort {
+            both: tokio::sync::Barrier::new(2),
+            panicking: tokio::sync::Semaphore::new(0),
+            release: tokio::sync::Semaphore::new(0),
+            first_unwalked: AtomicBool::new(true),
+            first_far: AtomicBool::new(true),
+            roads: Box::new(shed_on_the_named_road(vec![
+                ("The Unwalked Road", roads[0]),
+                ("The Far Road", roads[1]),
+            ])),
+            calls: std::sync::atomic::AtomicUsize::new(0),
+        });
+        let permits = pool(2);
+        let store = fresh_store();
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        let sweep = tokio::spawn({
+            let runner = runner.clone();
+            let permits = permits.clone();
+            async move { runner.sweep(permits).await }
+        });
+        port.panicking.acquire().await.unwrap().forget();
+        port.release.add_permits(1);
+        let Err(error) = sweep.await.expect("a session's panic ended the sweep") else {
+            panic!("a panicking session did not end the sweep with an error");
+        };
+        assert!(error.requires_quarantine(), "{error:?}");
+        assert!(error.to_string().contains("panic"), "{error}");
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert!(
+            place_labelled(&snapshot, "The Shed on The Far Road").is_some(),
+            "the held sibling did not commit in the panicking sweep"
+        );
+        assert_eq!(snapshot.boundaries.len(), 1);
+        assert_eq!(port.calls.load(Ordering::SeqCst), 2);
+        assert_eq!(permits.available_permits(), 2, "a permit outlived its session");
+
+        runner.sweep(permits.clone()).await.expect("the sweep after a panic did not run");
+        assert_eq!(port.calls.load(Ordering::SeqCst), 3);
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert!(snapshot.boundaries.is_empty());
+        assert!(place_labelled(&snapshot, "The Shed on The Unwalked Road").is_some());
+        assert_eq!(store.work.lock().unwrap().len(), 2, "the resumed session opened a row");
+        assert_eq!(permits.available_permits(), 2);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// No session starts after one has panicked. Under a pool of one the
+    /// second entry waits for the first session's permit; the first session
+    /// panics, and the second never reaches the provider boundary.
+    #[tokio::test]
+    async fn no_session_starts_after_a_panic() {
+        let (_directory, mailbox, task, _commons, _roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road", "The Far Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let port = Arc::new(SweepPort::new(|_, _| {
+            panic!("the fixture port panics inside every session")
+        }));
+        let permits = pool(1);
+        let runner = sweep_runner(&mailbox, port.clone(), fresh_store());
+        let Err(error) = runner.sweep(permits.clone()).await else {
+            panic!("a panicking session did not end the sweep with an error");
+        };
+        assert!(error.requires_quarantine(), "{error:?}");
+        assert_eq!(port.calls(), 1, "a session started after a panic");
+        assert_eq!(permits.available_permits(), 1);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
     /// Probe 3's deficit half, through the sweep. Sweep one's deficit session
     /// is refused; a clock tick moves the ancestry, and with it the id a fresh
     /// derivation would give the deficit. Sweep two finds the refused session by
