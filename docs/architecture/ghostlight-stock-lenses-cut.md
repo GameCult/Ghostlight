@@ -1205,12 +1205,58 @@ not repo artifacts.
     code's still opens (the (a) trade, stated).
   - P3.7 Deficit rediscovery after an unrelated commit is Cut 4's promise
     (P4.6), not this cut's; no test in this cut is ignored.
-- **Landed:**
-- **Verdicts:**
+- **Landed:** `dfb3c52` (c1.s1.f2, the draw's divisor guarded directly),
+  `4334dd7` (c2.s2.f1, lens sets compared by effective weight), `18b1098`
+  (Cut 3 proper; carries two unfulfilled-expectation warnings that the next
+  commit removes), `4457fde` (c1.s1.f3, markers removed), `2bf8164`
+  (non-adoption across world or jurisdiction). `session_command_id` now takes
+  `(world_id, jurisdiction, &answer_digest)`, so the lens is absent by
+  signature; the derivation bytes are unchanged.
+- **Verdicts:** Soul pass 1 against `2bf8164`.
 
 | Promise | Verdict | Evidence | Mutations |
 |---|---|---|---|
-| | | | |
+| P3.1 | HOLDS for identity; UNPROVEN that the call-site draw reads the command id (c3.s1.f2) | The UUID pin equals Cut 0's `56dbcdb2…`; `session_command_id` takes no session | M3.6a, M3.6b kill; Soul S3 (draw with `CommandId::new()`) survives |
+| P3.2 | HOLDS; its illegal-transition pin is flaky (c3.s1.f1) | At `1a402e1` the boundary test failed as Superseded; it now commits through a store reopen with the refusal intact. The weights test keeps the recorded lens across reopen. Lens, text and ancestry transitions are each observed accepted under M3.4 and refused without it | M3.1, M3.2, M3.4; Soul S1 kills |
+| P3.3 | HOLDS | Eight-lens admission equals `base-mismatches.json`; prompts byte-equal | M3.3 |
+| P3.4 | HOLDS | Catalog signatures and digest rerun, equal to Cut 0; no `patch.rs` or sidecar diff | signature proof |
+| P3.5 | HOLDS | v15 row refused at open; the same payload under v16 opens | none |
+| P3.6 | HOLDS | Disagreeing stored text and invocation refused; agreeing arbitrary text opens. Nothing pins that resume uses the stored text (c3.s1.f3) | M3.5 kills; Soul S5 survives committed tests |
+| P3.7 | HOLDS | Deficit orphan reproduced as base behaviour; no ignores added | none |
+| c1.s1.f2 | HOLDS | Divisor guarded (`lens.rs:195-203`); no panic with `draws()` weakened | MF2.1 |
+| c2.s2.f1 | HOLDS | `weighs_the_same_as` over `Lens::ALL`; padded twins refused in both directions through the mailbox | MF21.1 |
+| c1.s1.f3 | HOLDS | Markers gone; forced-rebuild warnings identical to Cut 2 | none |
+
+- **Soul findings, pass 1:**
+  - **c3.s1.f1 (introduced, medium, fix):** flaky pin.
+    `controllers.rs:10221` rewrites `session.lens = Lens::Numen`, but
+    `refused_checkpoint()` draws under uniform weights with a random world id.
+    About one run in eight the recorded lens is already Numen, and
+    `assert_ne!(next, checkpoint)` (`:10230`) fails. Soul observed 2 failures
+    in 9 runs.
+  - **c3.s1.f2 (introduced, low, fix):** every lens-observing test uses a
+    single-lens world, so the draw is forced. A call site that draws with an
+    unrelated command id (S3) survives. Only `lens.rs` unit tests pin the
+    recipe.
+  - **c3.s1.f3 (introduced, low, fix; the untested Q7 ruling):** mutation S5,
+    which rebuilds the resumed text from `session.lens.instructions()` (`:476`),
+    survives every committed test. No test proves that a session resumes
+    with its stored text after the lens's text changes in code, which was the
+    purpose of L1-Q7 (a). Recorded cost within Q7: nothing ties a row's stored
+    text to its recorded lens. A row with arbitrary text or another lens's
+    text, invocation prepared to match, opens and drives inference with that
+    text. Only the local store file can write it (`pub(super)` fields).
+  - **c3.s1.f4 (pre-existing, low-medium, recorded):** see L1.f13 (seed lane).
+  - **c3.s1.f5 (pre-existing orphaning, lens re-roll introduced, low,
+    recorded):** the boundary's scope preimage includes the route record
+    (`lib.rs:3892-3899`). A caller with patch authority who alters a lane's
+    cost moves the digest while the boundary survives. The next session
+    re-rolls its lens and the in-flight row is orphaned. Containment,
+    occupant or incident changes remove the boundary outright
+    (`lib.rs:3878-3884`). A fresh session after a real structural change is
+    arguably correct; the orphan row adds to orphan hygiene.
+  - **c3.s1.f6 (info):** dropping `answer_digest` from `same_answer` (S2) is an
+    equivalent mutant, because the id already carries the digest.
 
 ## Cut 4. Concurrent sessions over a per-sweep claim set, under the elaboration ceiling
 
@@ -1516,14 +1562,14 @@ not repo artifacts.
 | 0 | — | — | scratch captures only | scratch captures only, no repo change |
 | 1 | 0 | `lens.rs` ~150 + tests ~130; `lib.rs` 2 lines + test helper ~6 | 0 deps; 0 targets | `lens.rs` +372 (217 code, 155 tests; the tool tables are one name per line under rustfmt); `lib.rs` +7; `elaboration.rs` 1 line changed; 0 deps; 0 targets |
 | 2 | ~6 (doc lines replaced, the v2 denial case) | library: state field, command, effect, two reducer arms, resolve param, mismatch variant, snapshot field, replay check ~90; 19 literal sites × 1 line; tests ~220; Dungeon: payload field, policy fn, Eve control and binding, three schema strings, harness ~40; tests ~60; docs ~8 | 0 deps; `consumer.v4` → `v5`; `world_create.v3` → `v4` | 12 files, +825 / −40: production ~130 across `lib.rs`, `patch.rs`, `journal.rs`, `mailbox.rs`, `action.rs`, `runtime.rs`, `eve.rs` plus 20 construction sites; tests ~650 (refusal matrix, direct `apply_effect` half, forged rows, state rows, replay). 0 deps; the two schema bumps as estimated |
-| 3 | ~4 (the constant as integrity reference, the whole-session supersession equality) | session fields, draw and text in `select_answer`, adoption rule, request param ~60; tests ~200; docs ~3 | `controller_work.v15` → `v16` | |
+| 3 | ~4 (the constant as integrity reference, the whole-session supersession equality) | session fields, draw and text in `select_answer`, adoption rule, request param ~60; tests ~200; docs ~3 | `controller_work.v15` → `v16` | 6 files, +1071 / −113: production about +100 / −60 (`elaboration.rs` session fields, `same_answer`, adoption, draw in `select_answer`, request parameter, id signature, the constant deleted; `lens.rs` the constant moved in, the divisor guard, `weighs_the_same_as`, markers removed; `lib.rs` one call; `controllers.rs` two constants); tests about +890 (real-store tests, fixture generalization, two added tests); docs 1 line. `controller_work.v15` → `v16` as estimated |
 | 4 | ~35 (sequential sweep, `Inactive`, doc lines) | `sweep` + `demand_entries` with rediscovery ~110; trait method + three store impls ~45; second pool and its config ~25; tests ~360; docs ~14 | public `sweep` signature gains a `Semaphore`; `ControllerWorkStore` gains one required method; one new env variable | |
 | 5 | ~14 | ~25 | 0 | |
 
 Net for L1: about +1,300 lines, of which about two thirds are tests, no new
 dependency, no new crate, no new binary, four schema strings replaced, one
 environment variable added, one required method on the store trait. The growth buys the capabilities the target
-names (lenses, world-owned weights and their owner command, a recorded
+names (lenses, world-owned weights and their owner command, a
 replayable draw recorded on the session, concurrent sessions under a
 ceiling that cannot starve simulation, an explicit weights payload) and
 retires one liability: a sweep whose only protection against a second
@@ -1557,6 +1603,15 @@ session on one answer was that nobody wrote one.
     approvals are effectively the owner approving their own world. If
     approvals are bound then, bind them to the world's structure, excluding
     lens weights. **Authority:** operator. **Ruled:** 2026-09-16.
+- **L1.f13 (pre-existing, low-medium, operator):** the seed lane has the
+  deficit-shaped rediscovery defect. `seed_command_id`
+  (`elaboration.rs:1381-1386`) hashes ancestry, so an owner Draft commit after
+  a refused seed round moves the key. The next seed session misses the row,
+  repeats the inference without the refusal it earned, and orphans the old
+  row (Soul's probe: rows = 2, no refusal carried). The whole-session
+  comparison at `:1650` can only be reached for same-ancestry rows and is
+  effectively inert. L1-Q9 (A) fixes the elaborator lane only; the seed lane
+  is outside L1.
 
 - **L1.f1 (pre-existing, medium, operator-triaged, not blocking L1):** a
   sweep error whose `requires_quarantine()` is true reaches
