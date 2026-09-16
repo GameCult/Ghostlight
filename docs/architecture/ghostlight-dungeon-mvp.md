@@ -476,7 +476,15 @@ permit pool with a quarantine flag, and advances the clock after the cells so
 every cell in a tick shares one `now` and one tick index. Its budget is
 configuration (`GHOSTLIGHT_COVER_CELL_BUDGET`, `GHOSTLIGHT_COVER_CONSTITUENT_CAP`,
 `GHOSTLIGHT_COVER_URGENCY_SLOTS`, `GHOSTLIGHT_CONTROLLER_MAX_CONCURRENT`,
-`GHOSTLIGHT_TICK_INTERVAL_SECONDS`); changing any is a restart. The five
+`GHOSTLIGHT_TICK_INTERVAL_SECONDS`); changing any is a restart. Concurrency is
+two pools, one per lane, each read at open. The simulation pool
+(`GHOSTLIGHT_CONTROLLER_MAX_CONCURRENT`, default 4) is a budget: speak turns
+and cover cells draw from it and nothing else does. The elaboration pool
+(`GHOSTLIGHT_ELABORATION_MAX_CONCURRENT`, default 2, minimum 1) is a ceiling:
+the most elaboration sessions that run at once, with no connector capacity
+reserved for them. Neither lane acquires the other's pool. Both reach the
+connector under one caller id, so under connector capacity pressure the
+connector decides which request is refused. The five
 controller models are configuration too (`GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL`,
 `_PERSONA_MODEL`, `_INTERPRETER_MODEL`, `_OPERATIONAL_MODEL`,
 `_ELABORATOR_MODEL`), each with a default when absent.

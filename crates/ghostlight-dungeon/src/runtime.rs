@@ -72,12 +72,17 @@ struct AppState {
     /// and holds only digests; a missing file means no consumers.
     consumer: ConsumerPort,
     consumers: Arc<ConsumerRegistry>,
-    /// The one cognition organ, shared. Concurrency is owned by
-    /// `controller_permits` and quarantine by `controller_quarantined`: an
-    /// exclusive lock here would be a second owner of both, and a tick spends a
-    /// budget of inferences rather than one.
+    /// The one cognition organ, shared. Concurrency is owned by the two pools
+    /// below and quarantine by `controller_quarantined`: an exclusive lock here
+    /// would be a second owner of both, and a tick spends a budget of
+    /// inferences rather than one.
     controllers: Option<Arc<ControllerRunner>>,
+    /// The simulation budget: speak turns and cover cells, and nothing else,
+    /// draw from it.
     controller_permits: Arc<Semaphore>,
+    /// The elaboration ceiling. Only the elaboration sweep draws from it, and
+    /// it never draws from `controller_permits`.
+    elaboration_permits: Arc<Semaphore>,
     /// Set once a turn loses its local invariant. No further permit is granted;
     /// in-flight turns finish or fail on their own bindings.
     controller_quarantined: Arc<AtomicBool>,
@@ -357,6 +362,7 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         world,
         controllers: controllers.map(Arc::new),
         controller_permits: Arc::new(Semaphore::new(configured_controller_concurrency())),
+        elaboration_permits: Arc::new(Semaphore::new(configured_elaboration_ceiling())),
         controller_quarantined: Arc::new(AtomicBool::new(false)),
         cover_budget,
         cover: Arc::new(Mutex::new(None)),
@@ -1082,7 +1088,7 @@ async fn dispatch_controller(
         .into_response();
     };
     // One permit for the whole turn, from the same pool the tick driver spends.
-    // There is no second concurrency owner.
+    // Two pools, one per lane; neither lane draws from the other's.
     let permit = state.controller_permits.clone().acquire_owned().await;
     let result = match opportunity.controller_mode {
         ghostlight::ControllerMode::NarrativePersona => controller
@@ -1882,6 +1888,17 @@ fn configured_controller_concurrency() -> usize {
         .unwrap_or(4)
 }
 
+/// A ceiling, not a budget: the most sessions elaboration may run at once.
+/// Nothing reserves connector capacity for it; a connector capacity refusal is
+/// a retryable fault the next sweep retries.
+fn configured_elaboration_ceiling() -> usize {
+    std::env::var("GHOSTLIGHT_ELABORATION_MAX_CONCURRENT")
+        .ok()
+        .and_then(|value| value.trim().parse::<usize>().ok())
+        .filter(|value| *value >= 1)
+        .unwrap_or(2)
+}
+
 fn configured_tick_interval() -> Duration {
     std::env::var("GHOSTLIGHT_TICK_INTERVAL_SECONDS")
         .ok()
@@ -2445,6 +2462,8 @@ mod tests {
     /// Small enough that a test can hold every permit and prove a route does
     /// not cross the provider boundary.
     const TEST_CONTROLLER_CONCURRENCY: usize = 2;
+    /// The elaboration pool the fixture opens, beside the simulation pool.
+    const TEST_ELABORATION_CEILING: usize = 2;
     use crate::idunn_health::tests::route_observation_fixture;
     use axum::{
         body::{Body, to_bytes},
@@ -2611,6 +2630,7 @@ mod tests {
             world,
             controllers: Some(Arc::new(controllers)),
             controller_permits: Arc::new(Semaphore::new(TEST_CONTROLLER_CONCURRENCY)),
+            elaboration_permits: Arc::new(Semaphore::new(TEST_ELABORATION_CEILING)),
             controller_quarantined: Arc::new(AtomicBool::new(false)),
             cover_budget: CoverBudget {
                 cells: 240,
