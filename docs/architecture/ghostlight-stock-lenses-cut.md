@@ -1257,6 +1257,28 @@ not repo artifacts.
     arguably correct; the orphan row adds to orphan hygiene.
   - **c3.s1.f6 (info):** dropping `answer_digest` from `same_answer` (S2) is an
     equivalent mutant, because the id already carries the digest.
+- **Test-only fix batch landed:** `f63dfd1` (c3.s1.f1), `b3b5053` (c3.s1.f2),
+  `2c3b513` (c3.s1.f3). Production diff against `ef64008` is empty; all hunks
+  are inside `controllers.rs`'s test module.
+  - c3.s1.f1: at `ef64008` the illegal-transition test failed 3 of 40 looped
+    runs. The lens rewrite now always differs from the recorded lens, and
+    120 of 120 runs passed.
+  - c3.s1.f2: `a_fresh_session_draws_its_lens_from_its_own_command_id` checks
+    eight worlds under stock weights through the real call site, asserting the
+    premise that an unrelated id draws differently. S3 (draw with
+    `CommandId::new()`, `elaboration.rs:713`) now fails it, against `b3b5053`.
+  - c3.s1.f3: `a_resumed_session_keeps_its_stored_text_when_the_lens_text_changes`
+    resumes a real-store row whose stored text differs from the lens's current
+    text and asserts every later inference carries the stored text. S5
+    (`elaboration.rs:476`, the text rebuilt from the lens) now fails against
+    `2c3b513`. It is caught first by the store refusing the mutant's checkpoint;
+    the text assertion is a second guard.
+  - Counts: library 445 (444 + 1 ignored), doc 10, external_admission 12,
+    Dungeon 53, build_provenance 1, persona-projection 13. Warnings identical to
+    Cut 3.
+  - No separate Soul pass on this batch. It is test-only with an empty
+    production diff and defined, killed mutations. Cut 4's Soul pass reruns S3
+    and S5 independently.
 
 ## Cut 4. Concurrent sessions over a per-sweep claim set, under the elaboration ceiling
 
