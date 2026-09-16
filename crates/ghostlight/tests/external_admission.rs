@@ -348,8 +348,9 @@ async fn a_wholly_deserialized_opportunity_is_refused_and_commits_nothing() {
 /// when the world moved under it. Only an exact comparison of the whole
 /// digest refuses it; a check of its length or of any prefix would admit it.
 /// A stale digest still differs early, so the test also submits the current
-/// digest with its last digit changed, which a comparison that skips any
-/// suffix would admit.
+/// digest changed in one way each that a weaker comparison would admit: its
+/// last digit changed (suffix skipped), one hex letter uppercased (case
+/// ignored), and its hex bare or under another label (label ignored).
 ///
 /// Genesis places every subject in one commons, so one controller's speech
 /// lands as knowledge on the others, and knowledge is a scope component: the
@@ -415,28 +416,64 @@ async fn a_stale_issued_scope_digest_is_refused_and_commits_nothing() {
     assert_eq!(world.committed().await, before);
 
     // A stale digest differs from the current one almost everywhere, so it
-    // cannot tell a whole-digest comparison from one that skips a suffix. The
-    // current digest with only its final hex digit changed can.
+    // cannot tell a whole-digest comparison from one that compares less. Each
+    // forgery below is the current digest changed in exactly one way that a
+    // weaker comparison would admit; each asserts that premise first.
+    let (label, hex) = current_digest
+        .split_once(':')
+        .expect("an issued digest is algorithm:hex");
+    assert_eq!(label, "sha256");
+    assert_eq!(hex.len(), 64);
+    assert!(hex.bytes().all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f')));
+
+    // Only the final hex digit changed: a comparison that skips a suffix.
     let mut near = current_digest.clone();
     let last = near.pop().expect("a digest is not empty");
     near.push(if last == '0' { '1' } else { '0' });
     assert_eq!(near.len(), current_digest.len());
     assert_ne!(near, current_digest);
-    let forged = forge(&current, "scope_digest", json!(near));
-    let result = world
-        .port()
-        .submit_controller(
-            CommandId::new(),
-            &forged,
-            speak(forged.affordance_ids[0], "One digit from the real scope."),
-        )
-        .await;
-    assert!(
-        matches!(
-            result,
-            Err(MailboxError::Kernel(KernelError::ScopeChanged { .. }))
-        ),
-        "a digest one digit from the current scope was not refused: {result:?}"
-    );
-    assert_eq!(world.committed().await, before);
+
+    // One hex letter uppercased: a case-insensitive comparison.
+    let letter = hex
+        .find(|c: char| matches!(c, 'a'..='f'))
+        .expect("the issued digest has a hex letter to uppercase");
+    let mut upper = hex.to_owned();
+    upper.replace_range(letter..=letter, &hex[letter..=letter].to_ascii_uppercase());
+    let upper = format!("{label}:{upper}");
+    assert_ne!(upper, current_digest);
+    assert!(upper.eq_ignore_ascii_case(&current_digest));
+
+    // The same hex without its label, and under another label: a comparison of
+    // the hex alone.
+    let bare = hex.to_owned();
+    let relabeled = format!("blake3:{hex}");
+    for forgery in [&bare, &relabeled] {
+        assert_ne!(forgery, &current_digest);
+        assert_eq!(forgery.rsplit(':').next(), Some(hex));
+    }
+
+    for (forgery, what) in [
+        (near, "one digit from"),
+        (upper, "one letter's case from"),
+        (bare, "the unlabeled hex of"),
+        (relabeled, "the hex under another label of"),
+    ] {
+        let forged = forge(&current, "scope_digest", json!(forgery));
+        let result = world
+            .port()
+            .submit_controller(
+                CommandId::new(),
+                &forged,
+                speak(forged.affordance_ids[0], "Nearly the real scope."),
+            )
+            .await;
+        assert!(
+            matches!(
+                result,
+                Err(MailboxError::Kernel(KernelError::ScopeChanged { .. }))
+            ),
+            "a digest {what} the current scope was not refused: {result:?}"
+        );
+        assert_eq!(world.committed().await, before, "{what}");
+    }
 }
