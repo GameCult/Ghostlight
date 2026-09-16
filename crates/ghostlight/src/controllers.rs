@@ -2603,7 +2603,7 @@ pub enum ControllerError {
 }
 
 impl ControllerError {
-    /// Quarantine only the cognition organ. WorldMailbox and AppSession remain
+    /// Quarantine only the cognition organ. WorldMailbox and its consumer remain
     /// authoritative and available; this error must never become a daemon-wide
     /// fatal signal.
     pub fn requires_quarantine(&self) -> bool {

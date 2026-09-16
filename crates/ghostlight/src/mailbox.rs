@@ -577,7 +577,7 @@ impl ElaborationPort {
 ///
 /// It carries the owner's `VerifiedPrincipalEvidence` for the session's
 /// lifetime because a multi-round session cannot re-derive it: the only minter
-/// is `AppSessionOwner` holding a live cookie, and a checkpoint that stored an
+/// is the consumer authenticating a live principal, and a checkpoint that stored an
 /// account hash so the runner could re-mint one would be a second minter and an
 /// offline forge path. The evidence is captured from the request that asked for
 /// the work and dies with the port — but holding it is also bounded by the
