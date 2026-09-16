@@ -35,7 +35,10 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use thiserror::Error;
+use tokio::sync::Semaphore;
+use tokio::task::JoinSet;
 #[cfg(test)]
 use uuid::Uuid;
 
@@ -346,15 +349,9 @@ pub(super) enum ElaborationLoopEvaluation {
     Complete { capture: ElaborationCapture },
 }
 
-/// What one `step` did, for the driver.
+/// What one session's step did.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum ElaborationOutcome {
-    /// No boundary and no deficit in this jurisdiction: the terminating
-    /// condition.
-    Clean,
-    /// The world is not Active, so there is nothing to elaborate: seed
-    /// admission is the owner's lane.
-    Inactive,
     Committed,
     /// The kernel returned a complete mismatch set; the next round repairs it.
     Rejected,
@@ -364,8 +361,9 @@ pub(super) enum ElaborationOutcome {
     NoPatch,
 }
 
-/// One jurisdiction's authoring loop. Holds no state between steps; every field
-/// is a port or an identity.
+/// The authoring lane's runner. Holds no state between sweeps; every field is a
+/// port or an identity, so a clone is the same runner.
+#[derive(Clone)]
 pub struct ElaborationRunner {
     mailbox: ElaborationPort,
     inference: Arc<dyn InferencePort>,
@@ -391,26 +389,22 @@ impl ElaborationRunner {
         }
     }
 
-    /// One answer, start to finish. Session identity is derived, so a crashed
-    /// loop finds its row again: a boundary that survives a repair keeps its
-    /// digest and therefore its command id, and a boundary whose digest moved
-    /// is a different answer with a different id.
-    pub(super) async fn step(
+    /// One entry of a sweep's claim set, start to finish, under the sweep's
+    /// snapshot. The entry is either a fresh session under its derived id or
+    /// an in-flight row the sweep adopted, under that row's id. The store row
+    /// found by that id still decides the session: a boundary that survives a
+    /// repair keeps its digest and therefore its command id, and a boundary
+    /// whose digest moved is a different answer with a different id.
+    pub(super) async fn step_session(
         &self,
-        jurisdiction: JurisdictionKey,
+        command_id: CommandId,
+        fresh: ElaboratorSession,
+        snapshot: &WorldSnapshot,
     ) -> Result<ElaborationOutcome, ControllerError> {
-        let snapshot = self.mailbox.snapshot().await.map_err(snapshot_error)?;
-        if snapshot.phase != WorldPhase::Active {
-            return Ok(ElaborationOutcome::Inactive);
-        }
-        let Some((command_id, fresh)) = select_answer(&snapshot, jurisdiction)? else {
-            return Ok(ElaborationOutcome::Clean);
-        };
-
         let receipts = self
             .evidence
             .retrieve(&EvidenceQuery {
-                referents: answer_referents(&snapshot, &fresh.answer),
+                referents: answer_referents(snapshot, &fresh.answer),
             })
             .await
             .map_err(|error| ControllerError::WorkPersistence(error.to_string()))?;
@@ -455,7 +449,7 @@ impl ElaborationRunner {
                 },
             ) => (agent_prompt, refusals, completed),
             None => (
-                build_prompt(&snapshot, &session, &receipts),
+                build_prompt(snapshot, &session, &receipts),
                 Vec::new(),
                 Vec::new(),
             ),
@@ -634,35 +628,92 @@ impl ElaborationRunner {
         .await
     }
 
-    /// One sweep over every jurisdiction the world's scale intent names, then
-    /// the uncovered residual. Sequential: a boundary binds to its own digest,
-    /// so the loops' logical independence is preserved without eight tasks
-    /// against one connector and a capacity-32 mailbox.
-    pub async fn sweep(&self) -> Result<(), ControllerError> {
+    /// One sweep: one snapshot, one read of the store's in-flight sessions, one
+    /// claim set, and one session per entry. One permit per session for its
+    /// whole step, from the ceiling the caller owns. The library holds no
+    /// concurrency number of its own.
+    ///
+    /// The claim set is the only set of sessions alive only while one sweep
+    /// runs at a time. The caller's loop awaits each sweep; nothing here guards
+    /// against overlap.
+    ///
+    /// Every spawned session finishes before this returns. A quarantine-class
+    /// error is returned after that, and no session starts after one has
+    /// returned such an error; any other error ends only its own session.
+    pub async fn sweep(&self, permits: Arc<Semaphore>) -> Result<(), ControllerError> {
         let snapshot = self.mailbox.snapshot().await.map_err(snapshot_error)?;
-        let mut jurisdictions: Vec<JurisdictionKey> = snapshot
-            .scale_deficit
-            .iter()
-            .map(|row| row.jurisdiction)
-            .collect();
-        jurisdictions.dedup();
-        if !jurisdictions.contains(&JurisdictionKey::Uncovered) {
-            jurisdictions.push(JurisdictionKey::Uncovered);
+        if snapshot.phase != WorldPhase::Active {
+            return Ok(());
         }
-        for jurisdiction in jurisdictions {
-            // The stop condition is "no open boundary and no deficit", plus the
-            // only other fixed point: a pass over this answer that admits
-            // nothing. Without it a boundary the model cannot answer becomes a
-            // hot spin against a paid endpoint.
-            match self.step(jurisdiction).await {
-                Ok(_) => {}
-                Err(error) if error.requires_quarantine() => return Err(error),
-                Err(error) => {
+        let in_flight = self.work.elaboration_in_flight().await?;
+        let entries = demand_entries(&snapshot, &sweep_jurisdictions(&snapshot), &in_flight)?;
+        let snapshot = Arc::new(snapshot);
+        // Raised by a session before it releases its permit, so the sweep sees
+        // it before it starts the session that permit admits.
+        let stopped = Arc::new(AtomicBool::new(false));
+        let mut running = JoinSet::new();
+        for (command_id, session) in entries {
+            if stopped.load(Ordering::SeqCst) {
+                break;
+            }
+            let Ok(permit) = permits.clone().acquire_owned().await else {
+                break;
+            };
+            if stopped.load(Ordering::SeqCst) {
+                break;
+            }
+            let runner = self.clone();
+            let snapshot = snapshot.clone();
+            let stopped = stopped.clone();
+            running.spawn(async move {
+                let outcome = runner.step_session(command_id, session, &snapshot).await;
+                if outcome
+                    .as_ref()
+                    .is_err_and(ControllerError::requires_quarantine)
+                {
+                    stopped.store(true, Ordering::SeqCst);
+                }
+                drop(permit);
+                outcome
+            });
+        }
+        let mut quarantine = None;
+        while let Some(joined) = running.join_next().await {
+            match joined {
+                Ok(Ok(_)) => {}
+                Ok(Err(error)) if error.requires_quarantine() => {
+                    quarantine.get_or_insert(error);
+                }
+                Ok(Err(error)) => {
                     tracing::debug!(%error, "elaboration step did not admit a patch");
                 }
+                Err(error) => std::panic::resume_unwind(error.into_panic()),
             }
         }
-        Ok(())
+        quarantine.map_or(Ok(()), Err)
+    }
+
+    /// The first entry of one jurisdiction's claim set, stepped: what a sweep
+    /// does for that entry, without the pool. Tests read the outcome here.
+    #[cfg(test)]
+    pub(super) async fn step_in(
+        &self,
+        jurisdiction: JurisdictionKey,
+    ) -> Result<Option<ElaborationOutcome>, ControllerError> {
+        let snapshot = self.mailbox.snapshot().await.map_err(snapshot_error)?;
+        if snapshot.phase != WorldPhase::Active {
+            return Ok(None);
+        }
+        let in_flight = self.work.elaboration_in_flight().await?;
+        let Some((command_id, session)) = demand_entries(&snapshot, &[jurisdiction], &in_flight)?
+            .into_iter()
+            .next()
+        else {
+            return Ok(None);
+        };
+        self.step_session(command_id, session, &snapshot)
+            .await
+            .map(Some)
     }
 }
 
@@ -670,60 +721,147 @@ fn snapshot_error(error: MailboxError) -> ControllerError {
     ControllerError::Snapshot(error)
 }
 
-/// The oldest derived boundary in this jurisdiction, else its first nonzero
-/// deficit row, else nothing. `snapshot.boundaries` is already ordered by the
-/// kernel's derivation, so "oldest" is "first in that order".
+/// Every jurisdiction the world's scale deficit names, then the uncovered
+/// residual.
+fn sweep_jurisdictions(snapshot: &WorldSnapshot) -> Vec<JurisdictionKey> {
+    let mut jurisdictions: Vec<JurisdictionKey> = snapshot
+        .scale_deficit
+        .iter()
+        .map(|row| row.jurisdiction)
+        .collect();
+    jurisdictions.dedup();
+    if !jurisdictions.contains(&JurisdictionKey::Uncovered) {
+        jurisdictions.push(JurisdictionKey::Uncovered);
+    }
+    jurisdictions
+}
+
+/// The claim set: for each jurisdiction in order, every derived boundary it
+/// covers in the kernel's derivation order, then its deficit when the row is
+/// nonzero. Scheduling state, rebuilt each sweep and never persisted.
 ///
-/// Returns the session a new run would start, with its command id. The id is
-/// derived from the answer alone; the lens is drawn from that id and the
-/// world's current weights, and the lens's text is authored here. When the
-/// store already holds this answer's row, `step` discards this session and
-/// reads the recorded one.
-fn select_answer(
+/// Rediscovery reads state. Before anything is drawn, each entry is matched
+/// against the store's in-flight sessions by world, jurisdiction and answer;
+/// ancestry, lens and text are not compared. A match is the entry: its session
+/// and its command id are adopted and nothing is drawn. Only an unmatched
+/// entry derives an id and draws a lens.
+///
+/// A boundary under nested roots is covered by each of them, so an answer
+/// already claimed is not claimed again, and no command id is claimed twice.
+/// The stop condition is "no open boundary and no deficit", plus the one other
+/// fixed point: a `NoPatch` session, which the store returns by id and which
+/// runs no inference.
+fn demand_entries(
+    snapshot: &WorldSnapshot,
+    jurisdictions: &[JurisdictionKey],
+    in_flight: &[(CommandId, ElaboratorSession)],
+) -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerError> {
+    let ancestry = snapshot.last_commit_digest.clone().unwrap_or_default();
+    let mut claimed_ids = BTreeSet::new();
+    let mut entries: Vec<(CommandId, ElaboratorSession)> = Vec::new();
+    for &jurisdiction in jurisdictions {
+        for (answer, answer_digest) in answers_in(snapshot, jurisdiction, &ancestry)? {
+            if entries.iter().any(|(_, claimed)| claimed.answer == answer) {
+                continue;
+            }
+            let entry = match adopt(snapshot.world_id, jurisdiction, &answer, in_flight) {
+                Some(row) => row,
+                None => fresh_session(snapshot, jurisdiction, answer, answer_digest, &ancestry)?,
+            };
+            if claimed_ids.insert(entry.0) {
+                entries.push(entry);
+            }
+        }
+    }
+    Ok(entries)
+}
+
+/// The in-flight row that answers this entry, if any. The listing is least
+/// recently stored first, so the first match is the oldest; any other is an
+/// orphan, left as it is and named.
+fn adopt(
+    world_id: WorldId,
+    jurisdiction: JurisdictionKey,
+    answer: &PatchAnswer,
+    in_flight: &[(CommandId, ElaboratorSession)],
+) -> Option<(CommandId, ElaboratorSession)> {
+    let mut matches = in_flight.iter().filter(|(_, session)| {
+        session.world_id == world_id
+            && session.jurisdiction == jurisdiction
+            && session.answer == *answer
+    });
+    let adopted = matches.next()?.clone();
+    for (orphan, _) in matches {
+        tracing::warn!(
+            adopted = ?adopted.0,
+            orphan = ?orphan,
+            "an in-flight elaboration row answers an entry another row already answers"
+        );
+    }
+    Some(adopted)
+}
+
+/// The answers one jurisdiction holds, in the kernel's derivation order, each
+/// with its digest.
+fn answers_in(
     snapshot: &WorldSnapshot,
     jurisdiction: JurisdictionKey,
-) -> Result<Option<(CommandId, ElaboratorSession)>, ControllerError> {
-    let ancestry = snapshot.last_commit_digest.clone().unwrap_or_default();
-    let (answer, answer_digest) = if let Some(boundary) = snapshot
+    ancestry: &str,
+) -> Result<Vec<(PatchAnswer, BoundaryDigest)>, ControllerError> {
+    let mut answers: Vec<(PatchAnswer, BoundaryDigest)> = snapshot
         .boundaries
         .iter()
-        .find(|boundary| boundary_in(snapshot, jurisdiction, boundary))
-    {
-        (
-            PatchAnswer::Boundary(boundary.clone()),
-            boundary_digest(boundary),
-        )
-    } else {
-        let deficit = snapshot
-            .scale_deficit
-            .iter()
-            .any(|row| row.jurisdiction == jurisdiction && row.deficit > 0);
-        if !deficit {
-            return Ok(None);
-        }
+        .filter(|boundary| boundary_in(snapshot, jurisdiction, boundary))
+        .map(|boundary| {
+            (
+                PatchAnswer::Boundary(boundary.clone()),
+                boundary_digest(boundary),
+            )
+        })
+        .collect();
+    let deficit = snapshot
+        .scale_deficit
+        .iter()
+        .any(|row| row.jurisdiction == jurisdiction && row.deficit > 0);
+    if deficit {
         // A deficit mixes the ancestry, so each admitted commit opens a fresh
         // session and the loop advances instead of resubmitting one id forever.
-        let digest = digest_of(&(snapshot.world_id, jurisdiction, "deficit", &ancestry))?;
-        (
+        let digest = digest_of(&(snapshot.world_id, jurisdiction, "deficit", ancestry))?;
+        answers.push((
             PatchAnswer::Deficit(jurisdiction),
             BoundaryDigest::from_digest(digest),
-        )
-    };
+        ));
+    }
+    Ok(answers)
+}
+
+/// The session a new run would start, with its command id. The id is derived
+/// from the answer alone; the lens is drawn from that id and the world's
+/// current weights, and the lens's text is authored here. When the store
+/// already holds a row under this id, `step_session` discards this session and
+/// reads the recorded one.
+fn fresh_session(
+    snapshot: &WorldSnapshot,
+    jurisdiction: JurisdictionKey,
+    answer: PatchAnswer,
+    answer_digest: BoundaryDigest,
+    ancestry: &str,
+) -> Result<(CommandId, ElaboratorSession), ControllerError> {
     let command_id = session_command_id(snapshot.world_id, jurisdiction, &answer_digest)?;
     let lens = lens::draw(&snapshot.lens_weights, snapshot.world_id, command_id)
         .map_err(|error| ControllerError::Serialization(error.to_string()))?;
-    Ok(Some((
+    Ok((
         command_id,
         ElaboratorSession {
             world_id: snapshot.world_id,
             jurisdiction,
             answer,
             answer_digest,
-            ancestry,
+            ancestry: ancestry.to_owned(),
             lens,
             instructions: lens.instructions(),
         },
-    )))
+    ))
 }
 
 /// Selection reads the same covering the kernel's authority check does: a

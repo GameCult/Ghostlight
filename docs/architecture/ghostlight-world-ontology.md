@@ -664,10 +664,13 @@ An elaborator is one `OperationalAgent` loop. Two separate things shape a
 session. Its jurisdiction is authority: the place subtree it may write in,
 carried as `SystemCapability::Elaborator { jurisdiction }`. Its lens decides
 what kind of structure the session reaches for. A lens never enters the caller
-identity, never narrows or widens admission, and never fills a quota. Target:
-sessions draw a lens by the world's lens weights (below, "Elaboration lenses
-and detail rules"). Shipped: the sweep runs one sequential unlensed session per
-jurisdiction. The tool catalog is
+identity, never narrows or widens admission, and never fills a quota.
+Sessions run concurrently over distinct demand entries (every open boundary
+and one deficit per jurisdiction), each drawing its lens by the world's weights
+(below, "Elaboration lenses and detail rules") and recording it, each holding
+one permit of the elaboration ceiling. A sweep first reads the store's
+in-flight sessions and resumes any that answer a current demand entry, and
+sweeps run one at a time. The tool catalog is
 generated from this document's operation set and declaration kinds, plus
 `record_gap` and `submit`. It cannot contain an operation the reducer does not
 own, because it is derived from the reducer's vocabulary.

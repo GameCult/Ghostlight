@@ -1829,8 +1829,9 @@ const ELABORATION_SWEEP_INTERVAL: Duration = Duration::from_secs(300);
 
 /// The authoring lane's only driver. It runs when the cognition organ opened at
 /// all, which is the config gate the runtime already has: no mode flag joins it.
-/// One sequential sweep per wake, because a boundary binds to its own digest and
-/// the loops are logically independent without being separate tasks.
+/// Each sweep runs its sessions under the elaboration pool and never touches the
+/// simulation pool. Sweeps never overlap, because this loop awaits one before it
+/// ticks the next, so one sweep's claim set is the only set of sessions alive.
 async fn elaborate_world(state: AppState) {
     let mut interval = tokio::time::interval(ELABORATION_SWEEP_INTERVAL);
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
@@ -1845,7 +1846,7 @@ async fn elaborate_world(state: AppState) {
         else {
             continue;
         };
-        if let Err(error) = runner.sweep().await {
+        if let Err(error) = runner.sweep(state.elaboration_permits.clone()).await {
             tracing::debug!(%error, "elaboration sweep did not complete");
         }
     }
@@ -3338,6 +3339,80 @@ mod tests {
         );
     }
 
+    /// Ruling L1-Q4: neither lane starves the other. With every elaboration
+    /// permit held by the test, a cover tick still runs both of its cells; with
+    /// every simulation permit held, an elaboration sweep still reaches the
+    /// provider. The timeouts only turn a lane blocked on the other lane's pool
+    /// into a failure instead of a hang; no ordering rests on them.
+    #[tokio::test]
+    async fn saturating_one_pool_never_delays_the_other() {
+        let fixture = fixture().await;
+        two_cell_world(
+            &fixture.state,
+            &fixture.cookie,
+            BTreeMap::from([(SubjectKind::Person, 4)]),
+            vec![CreateJurisdictionIntent {
+                handle: "sere".into(),
+                label: "The Low Sere".into(),
+                permille: 1000,
+            }],
+            true,
+        )
+        .await;
+
+        let port = Arc::new(CountingInferencePort::new());
+        let mut state = fixture.state.clone();
+        state.controllers = Some(Arc::new(
+            ControllerRunner::open(
+                state.world.clone(),
+                port.clone(),
+                Arc::new(AlwaysFreshWorkStore),
+                test_controller_models(),
+            )
+            .expect("the fixture ports open"),
+        ));
+        let snapshot = state.world.snapshot().await.unwrap();
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        assert!(
+            snapshot.scale_deficit.iter().any(|row| row.deficit > 0),
+            "the fixture gives the elaborator nothing to answer"
+        );
+
+        let elaboration = state
+            .elaboration_permits
+            .clone()
+            .try_acquire_many_owned(u32::try_from(TEST_ELABORATION_CEILING).expect("a small pool"))
+            .expect("the elaboration pool is free");
+        tokio::time::timeout(Duration::from_secs(30), run_cover_tick(&state))
+            .await
+            .expect("the cover tick waited on the elaboration pool");
+        assert!(
+            port.calls.load(Ordering::SeqCst) >= 2,
+            "both singleton cells should have reached the port"
+        );
+        drop(elaboration);
+
+        let before = port.calls.load(Ordering::SeqCst);
+        let simulation = state
+            .controller_permits
+            .clone()
+            .try_acquire_many_owned(u32::try_from(TEST_CONTROLLER_CONCURRENCY).expect("a small pool"))
+            .expect("the simulation pool is free");
+        let runner = state.controllers.clone().expect("the runner");
+        tokio::time::timeout(
+            Duration::from_secs(30),
+            runner.elaborator().sweep(state.elaboration_permits.clone()),
+        )
+        .await
+        .expect("the sweep waited on the simulation pool")
+        .expect("the sweep completed");
+        assert!(
+            port.calls.load(Ordering::SeqCst) > before,
+            "no elaboration inference completed"
+        );
+        drop(simulation);
+    }
+
     /// Raises `ControllerError::requires_quarantine` on every call. Used to
     /// prove the tick driver's quarantine edge rather than any cognition
     /// outcome.
@@ -3972,7 +4047,10 @@ mod tests {
             )
             .await;
             let cover = state.cover.lock().await.clone();
-            let elaboration = runner.elaborator().sweep().await;
+            let elaboration = runner
+                .elaborator()
+                .sweep(state.elaboration_permits.clone())
+                .await;
             let after = state.world.snapshot().await.unwrap();
             line(format!(
                 "tick {tick} took={:?} revision {before}->{} now={:?} cover={cover:?} quarantined={} elaboration={elaboration:?} boundaries={} deficit_rows={} subjects={}",

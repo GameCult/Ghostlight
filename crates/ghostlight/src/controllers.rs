@@ -1524,8 +1524,10 @@ pub trait ControllerWorkStore: Send + Sync {
     async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError>;
 
     /// Every elaboration session still in flight, with its command id: rows in
-    /// `ElaboratorInFlight` or `ReadyToSubmit`, never `NoPatch`, least recently
-    /// stored first. The elaboration sweep reads this once, before it draws
+    /// `ElaboratorInFlight`, least recently stored first. Never `NoPatch`, and
+    /// never `ReadyToSubmit`, which is also the stage a committed session ends
+    /// in: a finished deficit row adopted by what it answers would resubmit its
+    /// commit forever. The elaboration sweep reads this once, before it draws
     /// anything, so work is rediscovered by what it answers rather than only by
     /// re-deriving its id. No default body: a store that cannot list its
     /// sessions says so at compile time.
@@ -1813,10 +1815,9 @@ impl ControllerWorkStore for CultCacheControllerWorkStore {
 /// The elaboration session a row carries, when that session can still run.
 fn in_flight_elaboration(work: &ControllerWork) -> Option<(CommandId, ElaboratorSession)> {
     match work {
-        ControllerWork::Elaboration(
-            checkpoint @ (ElaborationCheckpoint::ElaboratorInFlight { .. }
-            | ElaborationCheckpoint::ReadyToSubmit { .. }),
-        ) => Some((checkpoint.command_id(), checkpoint.session().clone())),
+        ControllerWork::Elaboration(checkpoint @ ElaborationCheckpoint::ElaboratorInFlight { .. }) => {
+            Some((checkpoint.command_id(), checkpoint.session().clone()))
+        }
         _ => None,
     }
 }
@@ -9485,10 +9486,44 @@ mod tests {
 
     /// An Active world under the given lens weights, with one dead end per
     /// label: each a place inside an inhabited commons, reached by its own
-    /// route and holding nothing. The roads come back in label order.
+    /// route and holding nothing. The roads come back in label order. No
+    /// jurisdiction root is declared, so a sweep reaches only the uncovered
+    /// residual; tests of one session's step use `step_in` on the commons.
     async fn dead_end_mailbox(
         lens_weights: LensWeights,
         dead_ends: &[&str],
+    ) -> (
+        tempfile::TempDir,
+        WorldMailbox,
+        tokio::task::JoinHandle<()>,
+        EntityId,
+        Vec<EntityId>,
+    ) {
+        dead_end_world(lens_weights, dead_ends, Roots::None, 0).await
+    }
+
+    /// Where a dead-end world's jurisdiction roots are.
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum Roots {
+        None,
+        /// The commons, holding the whole target.
+        Commons,
+        /// The commons and a ward inside it, half each. The dead ends stand in
+        /// the ward, so each boundary is covered by both roots.
+        Nested,
+    }
+
+    /// The same world, with its roots declared and `persons` persons wanted.
+    /// With roots, the one subject holds a goal and so qualifies: a root's
+    /// deficit row exists only while its target or its qualified count is
+    /// nonzero, and a sweep visits only the jurisdictions that have a row. The
+    /// subject stands in the ward when there is one, so it counts toward both
+    /// roots. Under `Commons` the deficit is `persons - 1`.
+    async fn dead_end_world(
+        lens_weights: LensWeights,
+        dead_ends: &[&str],
+        roots: Roots,
+        persons: u32,
     ) -> (
         tempfile::TempDir,
         WorldMailbox,
@@ -9506,6 +9541,17 @@ mod tests {
             kind: EntityKind::Place,
             container: None,
         })];
+        let road_container = if roots == Roots::Nested {
+            declarations.push(Declaration::Entity(EntityDeclaration {
+                handle: DraftHandle::new("ward"),
+                label: "The Ward".into(),
+                kind: EntityKind::Place,
+                container: Some(Ref::Draft(DraftHandle::new("commons"))),
+            }));
+            "ward"
+        } else {
+            "commons"
+        };
         for (index, label) in dead_ends.iter().enumerate() {
             // The first dead end keeps the single-road fixture's own handles
             // and route label.
@@ -9515,7 +9561,7 @@ mod tests {
                 handle: road.clone(),
                 label: (*label).into(),
                 kind: EntityKind::Place,
-                container: Some(Ref::Draft(DraftHandle::new("commons"))),
+                container: Some(Ref::Draft(DraftHandle::new(road_container))),
             }));
             declarations.push(Declaration::Route(crate::RouteDeclaration {
                 handle: DraftHandle::new(&format!("lane{suffix}")),
@@ -9532,8 +9578,21 @@ mod tests {
             kind: SubjectKind::Person,
             controller: NewController::NarrativePersona,
             affordances: kernel_speak_grant(),
-            position: Some(Ref::Draft(DraftHandle::new("commons"))),
+            position: Some(Ref::Draft(DraftHandle::new(road_container))),
         }));
+        let operations = if roots == Roots::None {
+            Vec::new()
+        } else {
+            vec![crate::patch::ComponentOp::CreateCommitment {
+                subject: Ref::Draft(DraftHandle::new("subject")),
+                counterparty: None,
+                kind: CommitmentKind::Goal,
+                due: crate::FictionalMinutes(600),
+                period: None,
+                checks: Vec::new(),
+                statement: Statement::new("Keep the commons lamps lit.").unwrap(),
+            }]
+        };
         let creation = mailbox
             .create_fixture(
                 CreateWorld {
@@ -9544,10 +9603,23 @@ mod tests {
                     brief: String::new(),
                     patch: WorldPatch {
                         declarations,
-                        operations: Vec::new(),
+                        operations,
                         evidence: Vec::new(),
                     },
-                    scale_intent: WorldScaleIntentRef::default(),
+                    scale_intent: match roots {
+                        Roots::None => WorldScaleIntentRef::default(),
+                        Roots::Commons => WorldScaleIntentRef {
+                            targets: BTreeMap::from([(SubjectKind::Person, persons)]),
+                            jurisdictions: BTreeMap::from([(DraftHandle::new("commons"), 1000)]),
+                        },
+                        Roots::Nested => WorldScaleIntentRef {
+                            targets: BTreeMap::from([(SubjectKind::Person, persons)]),
+                            jurisdictions: BTreeMap::from([
+                                (DraftHandle::new("commons"), 500),
+                                (DraftHandle::new("ward"), 500),
+                            ]),
+                        },
+                    },
                 },
                 &authenticated,
             )
@@ -9647,10 +9719,10 @@ mod tests {
             store.clone(),
             models().elaborator,
         );
-        let outcome = first.step(jurisdiction).await.unwrap();
+        let outcome = first.step_in(jurisdiction).await.unwrap();
         assert_eq!(
             outcome,
-            crate::elaboration::ElaborationOutcome::Rejected
+            Some(crate::elaboration::ElaborationOutcome::Rejected)
         );
         drop(first);
 
@@ -9702,10 +9774,10 @@ mod tests {
             store.clone(),
             models().elaborator,
         );
-        let outcome = second.step(jurisdiction).await.unwrap();
+        let outcome = second.step_in(jurisdiction).await.unwrap();
         assert_eq!(
             outcome,
-            crate::elaboration::ElaborationOutcome::Committed
+            Some(crate::elaboration::ElaborationOutcome::Committed)
         );
 
         // One identity across the whole session, and the answered boundary is
@@ -9847,10 +9919,10 @@ mod tests {
         let runner = elaboration_runner(&mailbox, shed_script(road), store.clone());
         assert_eq!(
             runner
-                .step(JurisdictionKey::PlaceSubtree(commons))
+                .step_in(JurisdictionKey::PlaceSubtree(commons))
                 .await
                 .unwrap(),
-            crate::elaboration::ElaborationOutcome::Rejected
+            Some(crate::elaboration::ElaborationOutcome::Rejected)
         );
         drop(runner);
         drop(mailbox);
@@ -9953,8 +10025,8 @@ mod tests {
         let store = Arc::new(CultCacheControllerWorkStore::open(&path).unwrap());
         let first = elaboration_runner(&mailbox, script.clone(), store.clone());
         assert_eq!(
-            first.step(jurisdiction).await.unwrap(),
-            crate::elaboration::ElaborationOutcome::Rejected
+            first.step_in(jurisdiction).await.unwrap(),
+            Some(crate::elaboration::ElaborationOutcome::Rejected)
         );
         drop(first);
         drop(store);
@@ -9979,8 +10051,8 @@ mod tests {
         assert_eq!(Some(recorded.ancestry.clone()), before);
         let second = elaboration_runner(&mailbox, script.clone(), store.clone());
         assert_eq!(
-            second.step(jurisdiction).await.unwrap(),
-            crate::elaboration::ElaborationOutcome::Committed,
+            second.step_in(jurisdiction).await.unwrap(),
+            Some(crate::elaboration::ElaborationOutcome::Committed),
             "the world moving superseded the boundary's session"
         );
         {
@@ -10023,8 +10095,8 @@ mod tests {
         let script = shed_script(road);
         let first = elaboration_runner(&mailbox, script.clone(), store.clone());
         assert_eq!(
-            first.step(jurisdiction).await.unwrap(),
-            crate::elaboration::ElaborationOutcome::Rejected
+            first.step_in(jurisdiction).await.unwrap(),
+            Some(crate::elaboration::ElaborationOutcome::Rejected)
         );
         drop(first);
         let (command_id, row) = {
@@ -10064,8 +10136,8 @@ mod tests {
             store.work.lock().unwrap().insert(command_id, forged.clone());
             let runner = elaboration_runner(&mailbox, script.clone(), store.clone());
             assert_eq!(
-                runner.step(jurisdiction).await.unwrap(),
-                crate::elaboration::ElaborationOutcome::Superseded,
+                runner.step_in(jurisdiction).await.unwrap(),
+                Some(crate::elaboration::ElaborationOutcome::Superseded),
                 "a row under another {what} was adopted"
             );
             drop(runner);
@@ -10077,8 +10149,8 @@ mod tests {
         store.work.lock().unwrap().insert(command_id, row);
         let runner = elaboration_runner(&mailbox, script.clone(), store.clone());
         assert_eq!(
-            runner.step(jurisdiction).await.unwrap(),
-            crate::elaboration::ElaborationOutcome::Committed
+            runner.step_in(jurisdiction).await.unwrap(),
+            Some(crate::elaboration::ElaborationOutcome::Committed)
         );
         drop(runner);
         drop(mailbox);
@@ -10113,8 +10185,8 @@ mod tests {
         let store = Arc::new(CultCacheControllerWorkStore::open(&path).unwrap());
         let first = elaboration_runner(&mailbox, script.clone(), store.clone());
         assert_eq!(
-            first.step(jurisdiction).await.unwrap(),
-            crate::elaboration::ElaborationOutcome::Rejected
+            first.step_in(jurisdiction).await.unwrap(),
+            Some(crate::elaboration::ElaborationOutcome::Rejected)
         );
         drop(first);
         let (command_id, recorded) = {
@@ -10146,8 +10218,8 @@ mod tests {
         let store = Arc::new(CultCacheControllerWorkStore::open(&path).unwrap());
         let second = elaboration_runner(&mailbox, script.clone(), store.clone());
         assert_eq!(
-            second.step(jurisdiction).await.unwrap(),
-            crate::elaboration::ElaborationOutcome::Committed
+            second.step_in(jurisdiction).await.unwrap(),
+            Some(crate::elaboration::ElaborationOutcome::Committed)
         );
         drop(second);
         {
@@ -10177,7 +10249,7 @@ mod tests {
         assert_eq!(remaining.boundaries.len(), 1, "the answered dead end survived");
         let idle = idle_script();
         let third = elaboration_runner(&mailbox, idle.clone(), store.clone());
-        third.step(jurisdiction).await.unwrap();
+        third.step_in(jurisdiction).await.unwrap();
         drop(third);
         {
             let journal = store.journal.lock().unwrap();
@@ -10224,10 +10296,10 @@ mod tests {
             let runner = elaboration_runner(&mailbox, shed_script(road), store.clone());
             assert_eq!(
                 runner
-                    .step(JurisdictionKey::PlaceSubtree(commons))
+                    .step_in(JurisdictionKey::PlaceSubtree(commons))
                     .await
                     .unwrap(),
-                crate::elaboration::ElaborationOutcome::Rejected
+                Some(crate::elaboration::ElaborationOutcome::Rejected)
             );
             drop(runner);
             let (command_id, recorded) = {
@@ -10435,8 +10507,8 @@ mod tests {
         let recording = fresh_store();
         let first = elaboration_runner(&mailbox, script.clone(), recording.clone());
         assert_eq!(
-            first.step(jurisdiction).await.unwrap(),
-            crate::elaboration::ElaborationOutcome::Rejected
+            first.step_in(jurisdiction).await.unwrap(),
+            Some(crate::elaboration::ElaborationOutcome::Rejected)
         );
         drop(first);
         let refused = {
@@ -10468,8 +10540,8 @@ mod tests {
         let resumed_from = script.seen.lock().unwrap().len();
         let second = elaboration_runner(&mailbox, script.clone(), store.clone());
         assert_eq!(
-            second.step(jurisdiction).await.unwrap(),
-            crate::elaboration::ElaborationOutcome::Committed
+            second.step_in(jurisdiction).await.unwrap(),
+            Some(crate::elaboration::ElaborationOutcome::Committed)
         );
         drop(second);
         {
@@ -10546,8 +10618,8 @@ mod tests {
             let script = shed_script(roads[0]);
             let first = elaboration_runner(&mailbox, script.clone(), store.clone());
             assert_eq!(
-                first.step(jurisdiction).await.unwrap(),
-                crate::elaboration::ElaborationOutcome::Rejected,
+                first.step_in(jurisdiction).await.unwrap(),
+                Some(crate::elaboration::ElaborationOutcome::Rejected),
                 "{lens:?}"
             );
             drop(first);
@@ -10574,8 +10646,8 @@ mod tests {
             }
             let second = elaboration_runner(&mailbox, script.clone(), store.clone());
             assert_eq!(
-                second.step(jurisdiction).await.unwrap(),
-                crate::elaboration::ElaborationOutcome::Committed,
+                second.step_in(jurisdiction).await.unwrap(),
+                Some(crate::elaboration::ElaborationOutcome::Committed),
                 "{lens:?} changed what the kernel admits"
             );
             drop(second);
@@ -10604,7 +10676,7 @@ mod tests {
         let idle = idle_script();
         let runner = elaboration_runner(&mailbox, idle.clone(), store.clone());
         runner
-            .step(JurisdictionKey::PlaceSubtree(commons))
+            .step_in(JurisdictionKey::PlaceSubtree(commons))
             .await
             .unwrap();
         drop(runner);
@@ -10623,6 +10695,965 @@ mod tests {
         drop(seen);
         drop(mailbox);
         task.await.unwrap();
+    }
+
+    // ---- Cut 4: concurrent sessions over a claim set ------------------------
+
+    /// A port for sweep tests. `respond` decides each call's output from the
+    /// call's index and the prepared request. When `gated`, every call first
+    /// announces itself on `entered` and then waits inside `infer` for a permit
+    /// on `release`, so a test decides when sessions leave the provider
+    /// boundary. It records the most calls in flight at once, and, when given
+    /// the pool, how many of its permits were free while each call was in
+    /// flight.
+    struct SweepPort {
+        respond: Box<dyn Fn(usize, &PreparedInference) -> Result<InferenceOutput, InferenceFault> + Send + Sync>,
+        gated: bool,
+        entered: tokio::sync::Semaphore,
+        release: tokio::sync::Semaphore,
+        pool: Option<Arc<tokio::sync::Semaphore>>,
+        in_flight: std::sync::atomic::AtomicUsize,
+        high_water: std::sync::atomic::AtomicUsize,
+        free_while_inferring: Mutex<Vec<usize>>,
+        seen: Mutex<Vec<PreparedInference>>,
+    }
+
+    impl SweepPort {
+        fn new(
+            respond: impl Fn(usize, &PreparedInference) -> Result<InferenceOutput, InferenceFault>
+            + Send
+            + Sync
+            + 'static,
+        ) -> Self {
+            Self {
+                respond: Box::new(respond),
+                gated: false,
+                entered: tokio::sync::Semaphore::new(0),
+                release: tokio::sync::Semaphore::new(0),
+                pool: None,
+                in_flight: std::sync::atomic::AtomicUsize::new(0),
+                high_water: std::sync::atomic::AtomicUsize::new(0),
+                free_while_inferring: Mutex::new(Vec::new()),
+                seen: Mutex::new(Vec::new()),
+            }
+        }
+
+        fn calls(&self) -> usize {
+            self.seen.lock().unwrap().len()
+        }
+    }
+
+    #[async_trait]
+    impl InferencePort for SweepPort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
+        }
+
+        async fn infer(
+            &self,
+            request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            let call = {
+                let mut seen = self.seen.lock().unwrap();
+                seen.push(request.clone());
+                seen.len() - 1
+            };
+            let in_flight = self.in_flight.fetch_add(1, Ordering::SeqCst) + 1;
+            self.high_water.fetch_max(in_flight, Ordering::SeqCst);
+            if let Some(pool) = &self.pool {
+                self.free_while_inferring
+                    .lock()
+                    .unwrap()
+                    .push(pool.available_permits());
+            }
+            if self.gated {
+                self.entered.add_permits(1);
+                self.release.acquire().await.unwrap().forget();
+            }
+            self.in_flight.fetch_sub(1, Ordering::SeqCst);
+            (self.respond)(call, &request)
+        }
+    }
+
+    /// Counts the in-flight listings a runner reads and announces each one.
+    struct ListingProbe {
+        inner: Arc<dyn ControllerWorkStore>,
+        listings: std::sync::atomic::AtomicUsize,
+        listed: tokio::sync::Semaphore,
+    }
+
+    impl ListingProbe {
+        fn over(inner: Arc<dyn ControllerWorkStore>) -> Arc<Self> {
+            Arc::new(Self {
+                inner,
+                listings: std::sync::atomic::AtomicUsize::new(0),
+                listed: tokio::sync::Semaphore::new(0),
+            })
+        }
+    }
+
+    #[async_trait]
+    impl ControllerWorkStore for ListingProbe {
+        async fn lookup(
+            &self,
+            command_id: CommandId,
+        ) -> Result<ControllerWorkLookup, ControllerWorkStoreError> {
+            self.inner.lookup(command_id).await
+        }
+
+        async fn persist(
+            &self,
+            work: &ControllerWork,
+        ) -> Result<ControllerWorkWrite, ControllerWorkStoreError> {
+            self.inner.persist(work).await
+        }
+
+        async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError> {
+            self.inner.custody_probe().await
+        }
+
+        async fn elaboration_in_flight(
+            &self,
+        ) -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError> {
+            let listed = self.inner.elaboration_in_flight().await;
+            self.listings.fetch_add(1, Ordering::SeqCst);
+            self.listed.add_permits(1);
+            listed
+        }
+    }
+
+    fn sweep_runner(
+        mailbox: &WorldMailbox,
+        port: Arc<dyn InferencePort>,
+        store: Arc<dyn ControllerWorkStore>,
+    ) -> ElaborationRunner {
+        ElaborationRunner::new(
+            ElaborationPort::new(mailbox.clone()),
+            port,
+            Arc::new(NullEvidenceSource),
+            store,
+            models().elaborator,
+        )
+    }
+
+    fn pool(size: usize) -> Arc<tokio::sync::Semaphore> {
+        Arc::new(tokio::sync::Semaphore::new(size))
+    }
+
+    /// The first user turn of a prepared request: the session's prompt.
+    fn prompt_of(request: &PreparedInference) -> String {
+        match request.invocation.request.input.first() {
+            Some(CodexInputItem::UserText { text }) => text.clone(),
+            other => panic!("the first turn is not the prompt: {other:?}"),
+        }
+    }
+
+    fn wire_of(request: &PreparedInference) -> String {
+        serde_json::to_string(&request.invocation.request.input).unwrap()
+    }
+
+    const REFUSAL_TURN: &str = "The world refused the patch you submitted";
+
+    /// A shed declared inside `container`, then a submit.
+    fn shed_round(container: Value, label: &str, receipt: &str) -> Result<InferenceOutput, InferenceFault> {
+        tool_round(
+            vec![
+                (
+                    "declare_place",
+                    json!({"handle": "shed", "label": label, "container": container}),
+                ),
+                ("submit", json!({})),
+            ],
+            receipt,
+        )
+    }
+
+    /// A shed inside a handle nothing declares, which the kernel refuses.
+    fn refused_round(call: usize) -> Result<InferenceOutput, InferenceFault> {
+        shed_round(
+            json!({"ref": "draft", "value": "nowhere"}),
+            "The Roadside Shed",
+            &format!("refused-{call}"),
+        )
+    }
+
+    fn idle_round(call: usize) -> Result<InferenceOutput, InferenceFault> {
+        output(
+            vec![InferenceEvent::Text("nothing to add".into())],
+            &format!("idle-{call}"),
+        )
+    }
+
+    /// Answers each dead end named in `roads` with a shed on that road, and
+    /// commits it.
+    fn shed_on_the_named_road(
+        roads: Vec<(&'static str, EntityId)>,
+    ) -> impl Fn(usize, &PreparedInference) -> Result<InferenceOutput, InferenceFault> {
+        move |call, request| {
+            let prompt = prompt_of(request);
+            let (label, road) = roads
+                .iter()
+                .find(|(label, _)| prompt.contains(label))
+                .expect("the prompt names one of the roads");
+            shed_round(
+                json!({"ref": "existing", "value": serde_json::to_value(road).unwrap()}),
+                &format!("The Shed on {label}"),
+                &format!("shed-{call}"),
+            )
+        }
+    }
+
+    fn place_labelled(snapshot: &WorldSnapshot, label: &str) -> Option<EntityId> {
+        snapshot
+            .places
+            .iter()
+            .find(|place| place.label == label)
+            .map(|place| place.id)
+    }
+
+    fn speak_of(snapshot: &WorldSnapshot) -> AffordanceId {
+        snapshot
+            .affordances
+            .iter()
+            .find(|entry| entry.entry.kind.0 == "speak")
+            .expect("the kernel Speak entry")
+            .id
+    }
+
+    fn elaboration_commands(custody: ControllerWorkCustody) -> usize {
+        let ControllerWorkCustody::Owned {
+            elaboration_commands,
+            ..
+        } = custody
+        else {
+            panic!("custody is uncertain: {custody:?}");
+        };
+        elaboration_commands
+    }
+
+    fn row_payload(store: &CultCacheControllerWorkStore, command_id: CommandId) -> Option<Vec<u8>> {
+        let key = store_key(command_id).unwrap();
+        store
+            .journal
+            .lock()
+            .unwrap()
+            .rows
+            .iter()
+            .find(|row| row.key == key)
+            .map(|row| row.payload.clone())
+    }
+
+    /// Two dead ends, two distinct entries, a pool of two. Both sessions are
+    /// held inside the provider boundary at once, and while they are the pool
+    /// has no permit free; released, each commits its own shed under its own
+    /// command id, row and provider request id. The store's in-flight listing
+    /// was read once for the whole sweep.
+    #[tokio::test]
+    async fn distinct_entries_run_at_once_under_the_ceiling() {
+        let (_directory, mailbox, task, _commons, roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road", "The Far Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let permits = pool(2);
+        let mut port = SweepPort::new(shed_on_the_named_road(vec![
+            ("The Unwalked Road", roads[0]),
+            ("The Far Road", roads[1]),
+        ]));
+        port.gated = true;
+        port.pool = Some(permits.clone());
+        let port = Arc::new(port);
+        let recording = fresh_store();
+        let store = ListingProbe::over(recording.clone());
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        let sweep = tokio::spawn({
+            let permits = permits.clone();
+            async move { runner.sweep(permits).await }
+        });
+
+        port.entered.acquire_many(2).await.unwrap().forget();
+        assert_eq!(port.in_flight.load(Ordering::SeqCst), 2, "two sessions were not in flight at once");
+        assert_eq!(permits.available_permits(), 0);
+        port.release.add_permits(2);
+        sweep.await.unwrap().unwrap();
+
+        assert_eq!(port.high_water.load(Ordering::SeqCst), 2);
+        assert_eq!(*port.free_while_inferring.lock().unwrap(), vec![0, 0]);
+        assert_eq!(store.listings.load(Ordering::SeqCst), 1, "the listing was not read once per sweep");
+        let stored = recording.work.lock().unwrap();
+        assert_eq!(stored.len(), 2, "two entries, two rows");
+        assert!(stored.values().all(|work| matches!(
+            work,
+            ControllerWork::Elaboration(ElaborationCheckpoint::ReadyToSubmit { .. })
+        )));
+        let request_ids: BTreeSet<String> = port
+            .seen
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|request| request.invocation.request.request_id.clone())
+            .collect();
+        assert_eq!(request_ids.len(), 2, "two sessions shared a provider request id");
+        drop(stored);
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert!(snapshot.boundaries.is_empty(), "a dead end was not answered");
+        for label in ["The Shed on The Unwalked Road", "The Shed on The Far Road"] {
+            assert!(place_labelled(&snapshot, label).is_some(), "{label} was not committed");
+        }
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// The same two entries under a pool of one: the first session is held
+    /// inside the provider boundary with no permit free, and the second starts
+    /// only after the first has finished.
+    #[tokio::test]
+    async fn the_sweep_never_exceeds_its_ceiling() {
+        let (_directory, mailbox, task, _commons, roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road", "The Far Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let permits = pool(1);
+        let mut port = SweepPort::new(shed_on_the_named_road(vec![
+            ("The Unwalked Road", roads[0]),
+            ("The Far Road", roads[1]),
+        ]));
+        port.gated = true;
+        port.pool = Some(permits.clone());
+        let port = Arc::new(port);
+        let runner = sweep_runner(&mailbox, port.clone(), fresh_store());
+        let sweep = tokio::spawn({
+            let permits = permits.clone();
+            async move { runner.sweep(permits).await }
+        });
+
+        for _ in 0..2 {
+            port.entered.acquire().await.unwrap().forget();
+            assert_eq!(port.in_flight.load(Ordering::SeqCst), 1);
+            assert_eq!(permits.available_permits(), 0, "a session infers without a permit");
+            port.release.add_permits(1);
+        }
+        sweep.await.unwrap().unwrap();
+        assert_eq!(port.calls(), 2);
+        assert_eq!(port.high_water.load(Ordering::SeqCst), 1);
+        assert_eq!(*port.free_while_inferring.lock().unwrap(), vec![0, 0]);
+        assert!(mailbox.snapshot().await.unwrap().boundaries.is_empty());
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// The test holds the only permit. The sweep reads its listing, builds its
+    /// claim set and queues on the pool: releasing the permit hands it straight
+    /// to the waiting sweep, and until then nothing has reached the provider
+    /// boundary.
+    #[tokio::test]
+    async fn a_sweep_holds_a_permit_while_it_infers() {
+        let (_directory, mailbox, task, _commons, _roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let permits = pool(1);
+        let held = permits.clone().try_acquire_owned().unwrap();
+        let mut port = SweepPort::new(|call, _| idle_round(call));
+        port.pool = Some(permits.clone());
+        let port = Arc::new(port);
+        let store = ListingProbe::over(fresh_store());
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        let sweep = tokio::spawn({
+            let permits = permits.clone();
+            async move { runner.sweep(permits).await }
+        });
+
+        store.listed.acquire().await.unwrap().forget();
+        assert_eq!(port.calls(), 0);
+        drop(held);
+        assert_eq!(
+            permits.available_permits(),
+            0,
+            "the released permit was not taken by a sweep waiting on the pool"
+        );
+        sweep.await.unwrap().unwrap();
+        assert_eq!(port.calls(), 1);
+        assert_eq!(*port.free_while_inferring.lock().unwrap(), vec![0]);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Probe 1's collision, in its positive form: one open boundary under a
+    /// pool with room for two runs exactly one session, one inference and one
+    /// row, and commits.
+    #[tokio::test]
+    async fn one_answer_is_one_session_per_sweep() {
+        let (_directory, mailbox, task, _commons, roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let port = Arc::new(SweepPort::new(shed_on_the_named_road(vec![(
+            "The Unwalked Road",
+            roads[0],
+        )])));
+        let store = fresh_store();
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        runner.sweep(pool(2)).await.unwrap();
+        assert_eq!(port.calls(), 1);
+        assert_eq!(elaboration_commands(store.custody_probe().await.unwrap()), 1);
+        assert!(mailbox.snapshot().await.unwrap().boundaries.is_empty());
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// A dead end inside a ward inside the commons, both roots declared: the
+    /// boundary is covered by each root and is claimed once.
+    #[tokio::test]
+    async fn a_boundary_under_nested_roots_is_claimed_once() {
+        let (_directory, mailbox, task, commons, _roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road"],
+            Roots::Nested,
+            0,
+        )
+        .await;
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let ward = place_labelled(&snapshot, "The Ward").unwrap();
+        let roots: BTreeSet<JurisdictionKey> =
+            snapshot.scale_deficit.iter().map(|row| row.jurisdiction).collect();
+        assert_eq!(
+            roots,
+            BTreeSet::from([
+                JurisdictionKey::PlaceSubtree(commons),
+                JurisdictionKey::PlaceSubtree(ward)
+            ]),
+            "the fixture does not declare both roots"
+        );
+        let port = Arc::new(SweepPort::new(|call, _| idle_round(call)));
+        let store = fresh_store();
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        runner.sweep(pool(2)).await.unwrap();
+        assert_eq!(port.calls(), 1, "the nested boundary was claimed more than once");
+        assert_eq!(store.work.lock().unwrap().len(), 1);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// A deficit and no boundary. One sweep runs one deficit session, which
+    /// commits a qualified person. The commit moves the ancestry, and the next
+    /// sweep runs a new session under a new command id: the committed row is
+    /// finished, not in flight, and is not adopted.
+    #[tokio::test]
+    async fn a_deficit_entry_is_one_per_jurisdiction_per_ancestry() {
+        let (_directory, mailbox, task, commons, _roads) =
+            dead_end_world(crate::tests::stock_weights(), &[], Roots::Commons, 3).await;
+        let speak = speak_of(&mailbox.snapshot().await.unwrap());
+        let port = Arc::new(SweepPort::new(move |call, _| {
+            if call == 0 {
+                author_persons("deficit-person", commons, speak, &["p1"])
+            } else {
+                idle_round(call)
+            }
+        }));
+        let store = fresh_store();
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        runner.sweep(pool(2)).await.unwrap();
+        assert_eq!(port.calls(), 1, "one deficit, one session");
+        let first: Vec<CommandId> = store.work.lock().unwrap().keys().copied().collect();
+        assert_eq!(first.len(), 1);
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert!(snapshot.subjects.iter().any(|subject| subject.label == "Sere p1"));
+        assert!(snapshot.boundaries.is_empty());
+
+        runner.sweep(pool(2)).await.unwrap();
+        assert_eq!(port.calls(), 2, "the second ancestry ran no new session");
+        let stored = store.work.lock().unwrap();
+        assert_eq!(stored.len(), 2, "the committed row was adopted");
+        for work in stored.values() {
+            assert_eq!(
+                recorded_session(work).answer,
+                crate::PatchAnswer::Deficit(JurisdictionKey::PlaceSubtree(commons))
+            );
+        }
+        drop(stored);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// A retryable fault ends only its own session: the sibling commits, and
+    /// the sweep ends `Ok`.
+    #[tokio::test]
+    async fn a_retryable_fault_ends_only_its_own_session() {
+        let (_directory, mailbox, task, _commons, roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road", "The Far Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let far = shed_on_the_named_road(vec![("The Far Road", roads[1])]);
+        let port = Arc::new(SweepPort::new(move |call, request| {
+            if prompt_of(request).contains("The Unwalked Road") {
+                Err(InferenceFault::retryable("the fixture connector is at capacity"))
+            } else {
+                far(call, request)
+            }
+        }));
+        let runner = sweep_runner(&mailbox, port.clone(), fresh_store());
+        runner.sweep(pool(2)).await.expect("a retryable fault ended the sweep");
+        assert_eq!(port.calls(), 2);
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert!(place_labelled(&snapshot, "The Shed on The Far Road").is_some());
+        assert_eq!(snapshot.boundaries.len(), 1, "the faulted dead end was answered");
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Holds the two sessions of `a_quarantine_error_is_returned_after_every_session_finishes`
+    /// in the provider boundary together, then faults the first with an
+    /// integrity violation while the second waits for the test.
+    struct QuarantinePort {
+        both: tokio::sync::Barrier,
+        faulted: tokio::sync::Semaphore,
+        release: tokio::sync::Semaphore,
+        far: Box<dyn Fn(usize, &PreparedInference) -> Result<InferenceOutput, InferenceFault> + Send + Sync>,
+        calls: std::sync::atomic::AtomicUsize,
+    }
+
+    #[async_trait]
+    impl InferencePort for QuarantinePort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
+        }
+
+        async fn infer(
+            &self,
+            request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            let call = self.calls.fetch_add(1, Ordering::SeqCst);
+            self.both.wait().await;
+            if prompt_of(&request).contains("The Unwalked Road") {
+                self.faulted.add_permits(1);
+                return Err(InferenceFault::integrity_violation(
+                    "the fixture port disputes this receipt",
+                ));
+            }
+            self.release.acquire().await.unwrap().forget();
+            (self.far)(call, &request)
+        }
+    }
+
+    /// A quarantine-class error ends the sweep with `Err`, and only after every
+    /// session it spawned has finished: the sibling still in flight when the
+    /// fault lands commits before the sweep returns.
+    #[tokio::test]
+    async fn a_quarantine_error_is_returned_after_every_session_finishes() {
+        let (_directory, mailbox, task, _commons, roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road", "The Far Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let port = Arc::new(QuarantinePort {
+            both: tokio::sync::Barrier::new(2),
+            faulted: tokio::sync::Semaphore::new(0),
+            release: tokio::sync::Semaphore::new(0),
+            far: Box::new(shed_on_the_named_road(vec![("The Far Road", roads[1])])),
+            calls: std::sync::atomic::AtomicUsize::new(0),
+        });
+        let runner = sweep_runner(&mailbox, port.clone(), fresh_store());
+        let sweep = tokio::spawn(async move { runner.sweep(pool(2)).await });
+        port.faulted.acquire().await.unwrap().forget();
+        port.release.add_permits(1);
+        let result = sweep.await.unwrap();
+        let Err(error) = result else {
+            panic!("a quarantine-class fault did not end the sweep with an error");
+        };
+        assert!(error.requires_quarantine(), "{error:?}");
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert!(
+            place_labelled(&snapshot, "The Shed on The Far Road").is_some(),
+            "the sweep returned before its sibling session finished"
+        );
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Probe 3's deficit half, through the sweep. Sweep one's deficit session
+    /// is refused; a clock tick moves the ancestry, and with it the id a fresh
+    /// derivation would give the deficit. Sweep two finds the refused session by
+    /// what it answers, resumes it under its first command id with the refusal
+    /// in its next invocation, and commits. Two inferences across both sweeps,
+    /// one row.
+    #[tokio::test]
+    async fn a_stranded_deficit_session_is_adopted_with_its_refusal_intact() {
+        let (directory, mailbox, task, commons, _roads) =
+            dead_end_world(crate::tests::stock_weights(), &[], Roots::Commons, 3).await;
+        let speak = speak_of(&mailbox.snapshot().await.unwrap());
+        let port = Arc::new(SweepPort::new(move |call, request| {
+            if wire_of(request).contains(REFUSAL_TURN) {
+                author_persons("deficit-repair", commons, speak, &["p1"])
+            } else {
+                refused_round(call)
+            }
+        }));
+        let store = Arc::new(
+            CultCacheControllerWorkStore::open(directory.path().join("controller-work.cc")).unwrap(),
+        );
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        runner.sweep(pool(1)).await.unwrap();
+        let (first_id, refused) = {
+            let journal = store.journal.lock().unwrap();
+            assert_eq!(journal.work.len(), 1);
+            let (id, work) = journal.work.iter().next().unwrap();
+            let ControllerWork::Elaboration(ElaborationCheckpoint::ElaboratorInFlight { refusals, .. }) = work else {
+                panic!("the refusal did not reopen the session: {work:?}");
+            };
+            assert_eq!(refusals.len(), 1);
+            (*id, recorded_session(work))
+        };
+        mailbox
+            .submit_clock(CommandId::new(), TickMinutes::new(60).unwrap())
+            .await
+            .unwrap();
+        assert_ne!(
+            mailbox.snapshot().await.unwrap().last_commit_digest,
+            Some(refused.ancestry.clone()),
+            "the tick did not move the ancestry"
+        );
+
+        runner.sweep(pool(1)).await.unwrap();
+        assert_eq!(port.calls(), 2, "the refused round was repeated or skipped");
+        {
+            let journal = store.journal.lock().unwrap();
+            assert_eq!(journal.work.len(), 1, "the resume opened a second row");
+            let work = journal.work.get(&first_id).expect("the first command id");
+            let ControllerWork::Elaboration(ElaborationCheckpoint::ReadyToSubmit { refusals, completed, session, .. }) = work else {
+                panic!("the adopted session did not commit: {work:?}");
+            };
+            assert_eq!((refusals.len(), completed.len()), (1, 2));
+            assert_eq!(session, &refused, "the adoption rewrote the session");
+        }
+        assert_eq!(elaboration_commands(store.custody_probe().await.unwrap()), 1);
+        let seen = port.seen.lock().unwrap();
+        assert!(!wire_of(&seen[0]).contains(REFUSAL_TURN));
+        assert!(wire_of(&seen[1]).contains(REFUSAL_TURN), "the resumed round lost its refusal");
+        drop(seen);
+        assert!(
+            mailbox
+                .snapshot()
+                .await
+                .unwrap()
+                .subjects
+                .iter()
+                .any(|subject| subject.label == "Sere p1")
+        );
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Probe 3's boundary half, through the sweep. Sweep one's boundary session
+    /// is refused; the owner commits an unrelated change and the clock ticks;
+    /// sweep two repairs the session under its id with the refusal in its input,
+    /// and commits. One row.
+    #[tokio::test]
+    async fn a_boundary_session_is_repaired_after_a_commit_and_a_tick() {
+        let (directory, mailbox, task, _commons, roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let named = shed_on_the_named_road(vec![("The Unwalked Road", roads[0])]);
+        let port = Arc::new(SweepPort::new(move |call, request| {
+            if wire_of(request).contains(REFUSAL_TURN) {
+                named(call, request)
+            } else {
+                refused_round(call)
+            }
+        }));
+        let store = Arc::new(
+            CultCacheControllerWorkStore::open(directory.path().join("controller-work.cc")).unwrap(),
+        );
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        runner.sweep(pool(1)).await.unwrap();
+        let command_id = {
+            let journal = store.journal.lock().unwrap();
+            assert_eq!(journal.work.len(), 1);
+            *journal.work.keys().next().unwrap()
+        };
+
+        let before = mailbox.snapshot().await.unwrap();
+        mailbox
+            .submit_fixture(
+                owner_command(
+                    &before,
+                    CommandBody::SetLensWeights {
+                        weights: only(Lens::Numen),
+                    },
+                ),
+                &owner_caller(),
+            )
+            .await
+            .unwrap();
+        mailbox
+            .submit_clock(CommandId::new(), TickMinutes::new(60).unwrap())
+            .await
+            .unwrap();
+        let after = mailbox.snapshot().await.unwrap();
+        assert_eq!(after.revision, before.revision + 2);
+        assert_eq!(after.boundaries, before.boundaries, "the commits moved the boundary");
+
+        runner.sweep(pool(1)).await.unwrap();
+        assert_eq!(port.calls(), 2);
+        {
+            let journal = store.journal.lock().unwrap();
+            assert_eq!(journal.work.len(), 1, "the repair opened a second row");
+            assert!(matches!(
+                journal.work.get(&command_id),
+                Some(ControllerWork::Elaboration(ElaborationCheckpoint::ReadyToSubmit { .. }))
+            ));
+        }
+        assert!(wire_of(&port.seen.lock().unwrap()[1]).contains(REFUSAL_TURN));
+        assert!(mailbox.snapshot().await.unwrap().boundaries.is_empty());
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// A deficit session the model keeps getting wrong. After its first
+    /// refusal, five clock ticks each move the ancestry and are each followed by
+    /// a sweep; every sweep resumes the same session for one more round. The
+    /// store holds one elaboration row throughout, and the provider was called
+    /// once per sweep.
+    #[tokio::test]
+    async fn the_store_gains_no_orphan_per_commit() {
+        let (directory, mailbox, task, _commons, _roads) =
+            dead_end_world(crate::tests::stock_weights(), &[], Roots::Commons, 3).await;
+        let port = Arc::new(SweepPort::new(|call, _| refused_round(call)));
+        let store = Arc::new(
+            CultCacheControllerWorkStore::open(directory.path().join("controller-work.cc")).unwrap(),
+        );
+        let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+        let mut results = vec![runner.sweep(pool(1)).await];
+        for tick in 1..=5 {
+            mailbox
+                .submit_clock(CommandId::new(), TickMinutes::new(60).unwrap())
+                .await
+                .unwrap();
+            results.push(runner.sweep(pool(1)).await);
+            assert_eq!(port.calls(), tick + 1, "tick {tick}: one inference per sweep");
+            assert_eq!(
+                store.journal.lock().unwrap().work.len(),
+                1,
+                "tick {tick}: the store gained a row"
+            );
+        }
+        // The sixth round is the last the budget allows; how that round ends
+        // is not this test's subject.
+        assert!(results[..5].iter().all(Result::is_ok), "{results:?}");
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Rows shaped like real ones that answer something else are never adopted
+    /// and never touched; the sweep builds a fresh session for its entry.
+    /// - Another jurisdiction: the nested world's boundary, refused once under
+    ///   the root the sweep does not claim it under.
+    /// - Another world: a refused row from a second world, its answer and
+    ///   jurisdiction set to this world's entry, copied into this world's store
+    ///   through the raw backing store.
+    /// - A finished session: a deficit `NoPatch` row from before a tick.
+    #[tokio::test]
+    async fn a_row_for_another_answer_is_not_adopted() {
+        // Another jurisdiction.
+        {
+            let (directory, mailbox, task, _commons, _roads) = dead_end_world(
+                crate::tests::stock_weights(),
+                &["The Unwalked Road"],
+                Roots::Nested,
+                0,
+            )
+            .await;
+            let snapshot = mailbox.snapshot().await.unwrap();
+            let claimed = snapshot.scale_deficit[0].jurisdiction;
+            let other = snapshot
+                .scale_deficit
+                .iter()
+                .map(|row| row.jurisdiction)
+                .find(|jurisdiction| *jurisdiction != claimed)
+                .unwrap();
+            let port = Arc::new(SweepPort::new(|call, request| {
+                if prompt_of(request).contains("The Unwalked Road") && call == 0 {
+                    refused_round(call)
+                } else {
+                    idle_round(call)
+                }
+            }));
+            let store = Arc::new(
+                CultCacheControllerWorkStore::open(directory.path().join("controller-work.cc"))
+                    .unwrap(),
+            );
+            let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+            assert_eq!(
+                runner.step_in(other).await.unwrap(),
+                Some(crate::elaboration::ElaborationOutcome::Rejected)
+            );
+            let other_id = *store.journal.lock().unwrap().work.keys().next().unwrap();
+            let other_bytes = row_payload(&store, other_id).unwrap();
+
+            runner.sweep(pool(1)).await.unwrap();
+            assert_eq!(port.calls(), 2, "the entry built no fresh session");
+            let journal = store.journal.lock().unwrap();
+            assert_eq!(journal.work.len(), 2, "the other jurisdiction's row was adopted");
+            let fresh = journal
+                .work
+                .iter()
+                .find(|(id, _)| **id != other_id)
+                .map(|(_, work)| recorded_session(work))
+                .unwrap();
+            assert_eq!(fresh.jurisdiction, claimed);
+            drop(journal);
+            assert_eq!(row_payload(&store, other_id).unwrap(), other_bytes, "the other row was touched");
+            drop(runner);
+            drop(mailbox);
+            task.await.unwrap();
+        }
+
+        // Another world.
+        {
+            let (_elsewhere, foreign_mailbox, foreign_task, _, _) = dead_end_world(
+                crate::tests::stock_weights(),
+                &["The Unwalked Road"],
+                Roots::Commons,
+                0,
+            )
+            .await;
+            let scratch = fresh_store();
+            let foreign_runner = sweep_runner(
+                &foreign_mailbox,
+                Arc::new(SweepPort::new(|call, _| refused_round(call))),
+                scratch.clone(),
+            );
+            foreign_runner.sweep(pool(1)).await.unwrap();
+            drop(foreign_runner);
+            drop(foreign_mailbox);
+            foreign_task.await.unwrap();
+            let ControllerWork::Elaboration(foreign) =
+                scratch.work.lock().unwrap().values().next().unwrap().clone()
+            else {
+                unreachable!();
+            };
+
+            let (directory, mailbox, task, _commons, _roads) = dead_end_world(
+                crate::tests::stock_weights(),
+                &["The Unwalked Road"],
+                Roots::Commons,
+                0,
+            )
+            .await;
+            let snapshot = mailbox.snapshot().await.unwrap();
+            let ElaborationCheckpoint::ElaboratorInFlight {
+                command_id,
+                mut session,
+                agent_prompt,
+                refusals,
+                completed,
+                invocation,
+            } = foreign
+            else {
+                panic!("the foreign refusal did not reopen its session");
+            };
+            let CausalBoundary::UnelaboratedDestination { scope, .. } = &snapshot.boundaries[0] else {
+                panic!("the dead end is not an unelaborated destination");
+            };
+            assert_ne!(session.world_id, snapshot.world_id);
+            session.jurisdiction = snapshot.scale_deficit[0].jurisdiction;
+            session.answer = crate::PatchAnswer::Boundary(snapshot.boundaries[0].clone());
+            session.answer_digest = scope.clone();
+            let foreign = ElaborationCheckpoint::ElaboratorInFlight {
+                command_id,
+                session,
+                agent_prompt,
+                refusals,
+                completed,
+                invocation,
+            };
+            assert!(foreign.integrity_is_valid());
+            let store = Arc::new(
+                open_with_raw_row(
+                    &directory,
+                    "controller-work.cc",
+                    &foreign,
+                    CONTROLLER_WORK_ROW,
+                    CONTROLLER_WORK_SCHEMA,
+                )
+                .expect("the copied row opens"),
+            );
+            let foreign_bytes = row_payload(&store, command_id).unwrap();
+            let port = Arc::new(SweepPort::new(|call, _| idle_round(call)));
+            let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+            runner.sweep(pool(1)).await.unwrap();
+            assert_eq!(port.calls(), 1, "the entry built no fresh session");
+            assert_eq!(store.journal.lock().unwrap().work.len(), 2, "the foreign row was adopted");
+            assert_eq!(
+                row_payload(&store, command_id).unwrap(),
+                foreign_bytes,
+                "the foreign row was touched"
+            );
+            drop(runner);
+            drop(mailbox);
+            task.await.unwrap();
+        }
+
+        // A finished session.
+        {
+            let (directory, mailbox, task, _commons, _roads) =
+                dead_end_world(crate::tests::stock_weights(), &[], Roots::Commons, 3).await;
+            let port = Arc::new(SweepPort::new(|call, _| idle_round(call)));
+            let store = Arc::new(
+                CultCacheControllerWorkStore::open(directory.path().join("controller-work.cc"))
+                    .unwrap(),
+            );
+            let runner = sweep_runner(&mailbox, port.clone(), store.clone());
+            runner.sweep(pool(1)).await.unwrap();
+            let finished = {
+                let journal = store.journal.lock().unwrap();
+                let (id, work) = journal.work.iter().next().unwrap();
+                assert!(matches!(
+                    work,
+                    ControllerWork::Elaboration(ElaborationCheckpoint::NoPatch { .. })
+                ));
+                *id
+            };
+            let finished_bytes = row_payload(&store, finished).unwrap();
+            mailbox
+                .submit_clock(CommandId::new(), TickMinutes::new(60).unwrap())
+                .await
+                .unwrap();
+            runner.sweep(pool(1)).await.unwrap();
+            assert_eq!(port.calls(), 2, "the finished row was adopted in place of a fresh session");
+            assert_eq!(store.journal.lock().unwrap().work.len(), 2);
+            assert_eq!(row_payload(&store, finished).unwrap(), finished_bytes);
+            drop(runner);
+            drop(mailbox);
+            task.await.unwrap();
+        }
     }
 
     /// A jurisdiction with no boundary and no deficit is the terminating
@@ -10647,10 +11678,10 @@ mod tests {
         );
         // The road's own subtree holds the road's boundary; a leaf with nothing
         // under it and no deficit row is clean.
-        let outcome = runner.step(JurisdictionKey::Uncovered).await.unwrap();
+        let outcome = runner.step_in(JurisdictionKey::Uncovered).await.unwrap();
         assert_eq!(
             outcome,
-            crate::elaboration::ElaborationOutcome::Clean
+            None
         );
         assert!(script.seen.lock().unwrap().is_empty());
         assert!(store.work.lock().unwrap().is_empty());
@@ -12566,7 +13597,10 @@ mod tests {
             fresh_store(),
             models().elaborator,
         );
-        elaborator.sweep().await.unwrap();
+        elaborator
+            .sweep(Arc::new(tokio::sync::Semaphore::new(1)))
+            .await
+            .unwrap();
         drop(elaborator);
 
         mailbox
