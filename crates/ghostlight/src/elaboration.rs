@@ -18,6 +18,7 @@ use super::controllers::{
 };
 #[cfg(test)]
 use super::patch::RECORD_GAP_PATCH_TOOL;
+use super::lens::{self, Lens};
 use super::patch::{self, ComponentOp, FactStandingRef};
 use super::patch::{
     PATCH_TOOLS, PatchToolShape, SUBMIT_PATCH_TOOL, patch_tool_signatures, patch_tools,
@@ -49,9 +50,8 @@ pub(super) const SEED_ROUND_BUDGET: usize = 24;
 
 const ELABORATION_NAMESPACE: &str = "ghostlight.command.elaboration.v1";
 
-pub(super) const ELABORATION_INSTRUCTIONS: &str = "Use only the supplied tools to author structure inside your jurisdiction. Answer the boundary or deficit you were given, then submit. Recording a gap changes nothing.";
-
-/// The answer a session is bound to, plus the ancestry it was built against.
+/// The answer a session is bound to, plus the ancestry it was built against,
+/// the lens it drew, and the instruction text it was built with.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ElaboratorSession {
@@ -63,6 +63,25 @@ pub struct ElaboratorSession {
     pub(super) answer_digest: BoundaryDigest,
     /// The commit digest the draft is built against.
     pub(super) ancestry: String,
+    /// Drawn once when the session is first built from its command id, recorded
+    /// here, and never redrawn; a resumed session reads it back.
+    pub(super) lens: Lens,
+    /// The instruction text this session was built with, persisted as
+    /// `agent_prompt` is; integrity binds the stored invocation to this text,
+    /// not to the code constant.
+    pub(super) instructions: String,
+}
+
+impl ElaboratorSession {
+    /// Whether two sessions answer the same thing: the fields the command id
+    /// is derived from, plus the answer they digest. Ancestry, lens and
+    /// instructions are not identity; they are what a recorded session carries.
+    fn same_answer(&self, other: &ElaboratorSession) -> bool {
+        self.world_id == other.world_id
+            && self.jurisdiction == other.jurisdiction
+            && self.answer == other.answer
+            && self.answer_digest == other.answer_digest
+    }
 }
 
 /// The stages one authoring session moves through. The draft is **not** a
@@ -135,11 +154,11 @@ impl ElaborationCheckpoint {
         match self {
             Self::ElaboratorInFlight {
                 command_id,
+                session,
                 agent_prompt,
                 refusals,
                 completed,
                 invocation,
-                ..
             } => {
                 !agent_prompt.is_empty()
                     && canonical_model(&invocation.invocation.request.model)
@@ -154,6 +173,7 @@ impl ElaborationCheckpoint {
                                 *command_id,
                                 completed.len(),
                                 &invocation.invocation.request.model,
+                                &session.instructions,
                                 conversation,
                             )
                             .is_ok_and(|expected| {
@@ -197,7 +217,10 @@ impl ElaborationCheckpoint {
 }
 
 /// A session may gather more evidence and may end, but it may never rewrite the
-/// answer it bound to.
+/// answer it bound to, the ancestry it was built against, the lens it drew, or
+/// the text it was built with. This compares a row to the row that follows it,
+/// so the whole session must be equal; the adoption rule in `step` compares a
+/// fresh derivation to a row, and there only the answer's identity must be.
 pub(super) fn valid_elaboration_progression(
     existing: &ElaborationCheckpoint,
     next: &ElaborationCheckpoint,
@@ -368,10 +391,10 @@ impl ElaborationRunner {
         }
     }
 
-    /// One answer, start to finish. Session identity is derived, so resumption
-    /// needs no registry: a boundary that survives a repair keeps its digest and
-    /// therefore its command id, and a boundary whose digest moved is a
-    /// different answer with a different id.
+    /// One answer, start to finish. Session identity is derived, so a crashed
+    /// loop finds its row again: a boundary that survives a repair keeps its
+    /// digest and therefore its command id, and a boundary whose digest moved
+    /// is a different answer with a different id.
     pub(super) async fn step(
         &self,
         jurisdiction: JurisdictionKey,
@@ -380,15 +403,14 @@ impl ElaborationRunner {
         if snapshot.phase != WorldPhase::Active {
             return Ok(ElaborationOutcome::Inactive);
         }
-        let Some(session) = select_answer(&snapshot, jurisdiction)? else {
+        let Some((command_id, fresh)) = select_answer(&snapshot, jurisdiction)? else {
             return Ok(ElaborationOutcome::Clean);
         };
-        let command_id = session_command_id(&session)?;
 
         let receipts = self
             .evidence
             .retrieve(&EvidenceQuery {
-                referents: answer_referents(&snapshot, &session.answer),
+                referents: answer_referents(&snapshot, &fresh.answer),
             })
             .await
             .map_err(|error| ControllerError::WorkPersistence(error.to_string()))?;
@@ -397,14 +419,19 @@ impl ElaborationRunner {
             .map(|receipt| receipt.reference.clone())
             .collect();
 
-        let existing = match self.work.lookup(command_id).await? {
-            ControllerWorkLookup::Missing => None,
+        // The row is the recorded session. Identity decides whether it is this
+        // answer's row; everything else about the session is read from it: the
+        // ancestry, because the world moving is not the answer moving, and the
+        // lens and its text, because a resume never redraws. The fresh session
+        // is used only when no row exists.
+        let (session, existing) = match self.work.lookup(command_id).await? {
+            ControllerWorkLookup::Missing => (fresh, None),
             ControllerWorkLookup::Confirmed(ControllerWork::Elaboration(checkpoint))
             | ControllerWorkLookup::CustodyUncertain(ControllerWork::Elaboration(checkpoint)) => {
-                if checkpoint.session() != &session {
+                if !checkpoint.session().same_answer(&fresh) {
                     return Ok(ElaborationOutcome::Superseded);
                 }
-                Some(checkpoint)
+                (checkpoint.session().clone(), Some(checkpoint))
             }
             ControllerWorkLookup::Confirmed(_) | ControllerWorkLookup::CustodyUncertain(_) => {
                 return Err(ControllerError::CommandMismatch);
@@ -446,6 +473,7 @@ impl ElaborationRunner {
                         command_id,
                         completed.len(),
                         &self.model,
+                        &session.instructions,
                         conversation,
                     )?;
                     let invocation = self.inference.prepare(request).map_err(|source| {
@@ -581,7 +609,13 @@ impl ElaborationRunner {
                 ));
             }
         };
-        let request = elaboration_request(command_id, completed.len(), &self.model, conversation)?;
+        let request = elaboration_request(
+            command_id,
+            completed.len(),
+            &self.model,
+            &session.instructions,
+            conversation,
+        )?;
         let invocation =
             self.inference
                 .prepare(request)
@@ -639,41 +673,57 @@ fn snapshot_error(error: MailboxError) -> ControllerError {
 /// The oldest derived boundary in this jurisdiction, else its first nonzero
 /// deficit row, else nothing. `snapshot.boundaries` is already ordered by the
 /// kernel's derivation, so "oldest" is "first in that order".
+///
+/// Returns the session a new run would start, with its command id. The id is
+/// derived from the answer alone; the lens is drawn from that id and the
+/// world's current weights, and the lens's text is authored here. When the
+/// store already holds this answer's row, `step` discards this session and
+/// reads the recorded one.
 fn select_answer(
     snapshot: &WorldSnapshot,
     jurisdiction: JurisdictionKey,
-) -> Result<Option<ElaboratorSession>, ControllerError> {
+) -> Result<Option<(CommandId, ElaboratorSession)>, ControllerError> {
     let ancestry = snapshot.last_commit_digest.clone().unwrap_or_default();
-    if let Some(boundary) = snapshot
+    let (answer, answer_digest) = if let Some(boundary) = snapshot
         .boundaries
         .iter()
         .find(|boundary| boundary_in(snapshot, jurisdiction, boundary))
     {
-        return Ok(Some(ElaboratorSession {
+        (
+            PatchAnswer::Boundary(boundary.clone()),
+            boundary_digest(boundary),
+        )
+    } else {
+        let deficit = snapshot
+            .scale_deficit
+            .iter()
+            .any(|row| row.jurisdiction == jurisdiction && row.deficit > 0);
+        if !deficit {
+            return Ok(None);
+        }
+        // A deficit mixes the ancestry, so each admitted commit opens a fresh
+        // session and the loop advances instead of resubmitting one id forever.
+        let digest = digest_of(&(snapshot.world_id, jurisdiction, "deficit", &ancestry))?;
+        (
+            PatchAnswer::Deficit(jurisdiction),
+            BoundaryDigest::from_digest(digest),
+        )
+    };
+    let command_id = session_command_id(snapshot.world_id, jurisdiction, &answer_digest)?;
+    let lens = lens::draw(&snapshot.lens_weights, snapshot.world_id, command_id)
+        .map_err(|error| ControllerError::Serialization(error.to_string()))?;
+    Ok(Some((
+        command_id,
+        ElaboratorSession {
             world_id: snapshot.world_id,
             jurisdiction,
-            answer: PatchAnswer::Boundary(boundary.clone()),
-            answer_digest: boundary_digest(boundary),
+            answer,
+            answer_digest,
             ancestry,
-        }));
-    }
-    let deficit = snapshot
-        .scale_deficit
-        .iter()
-        .any(|row| row.jurisdiction == jurisdiction && row.deficit > 0);
-    if !deficit {
-        return Ok(None);
-    }
-    // A deficit mixes the ancestry, so each admitted commit opens a fresh
-    // session and the loop advances instead of resubmitting one id forever.
-    let digest = digest_of(&(snapshot.world_id, jurisdiction, "deficit", &ancestry))?;
-    Ok(Some(ElaboratorSession {
-        world_id: snapshot.world_id,
-        jurisdiction,
-        answer: PatchAnswer::Deficit(jurisdiction),
-        answer_digest: BoundaryDigest::from_digest(digest),
-        ancestry,
-    }))
+            lens,
+            instructions: lens.instructions(),
+        },
+    )))
 }
 
 /// Selection reads the same covering the kernel's authority check does: a
@@ -1230,10 +1280,14 @@ pub(super) fn derive_elaboration_capture(
     }
 }
 
+/// `instructions` is the session's recorded text, never a code constant: the
+/// first round, every later round, a repair, and the integrity check all build
+/// the request from what the session carries.
 pub(super) fn elaboration_request(
     command_id: CommandId,
     round: usize,
     model: &str,
+    instructions: &str,
     input: Vec<CodexInputItem>,
 ) -> Result<InferenceRequest, ControllerError> {
     tool_request(
@@ -1241,7 +1295,7 @@ pub(super) fn elaboration_request(
         round,
         InferencePurpose::Elaboration,
         model,
-        ELABORATION_INSTRUCTIONS,
+        instructions,
         input,
         patch_tools(),
         RequestShape {
@@ -1254,7 +1308,10 @@ pub(super) fn elaboration_request(
 }
 
 /// A session's identity is derived from the world, the jurisdiction, and the
-/// answer's digest, so a crashed loop resumes the same store row and the
+/// answer's digest, and from nothing else a session carries: not its ancestry,
+/// not its lens, not its text. It takes those three fields rather than a
+/// session because the lens is drawn from this id, so the id exists before the
+/// session does. A crashed loop resumes the same store row and the
 /// mailbox's idempotency probe sees the same command. The derivation itself is
 /// `CommandId::derived`, which is the one recipe every derived command key
 /// uses.
@@ -1268,11 +1325,15 @@ pub(super) fn elaboration_request(
 /// for. The `controller_work` row and schema constants carry v9 for the same
 /// reason the `consumer.v1` bump exists — a pre-refactor checkpoint refuses to
 /// open rather than resuming under a mismatched id.
-fn session_command_id(session: &ElaboratorSession) -> Result<CommandId, ControllerError> {
-    let scope = digest_of(&(session.world_id, session.jurisdiction))?;
+fn session_command_id(
+    world_id: WorldId,
+    jurisdiction: JurisdictionKey,
+    answer_digest: &BoundaryDigest,
+) -> Result<CommandId, ControllerError> {
+    let scope = digest_of(&(world_id, jurisdiction))?;
     Ok(CommandId::derived(
         ELABORATION_NAMESPACE,
-        &[&scope, session.answer_digest.text()],
+        &[&scope, answer_digest.text()],
     ))
 }
 
@@ -2394,6 +2455,17 @@ mod tests {
     /// this pass resumes under a different command id. That is a silent id
     /// migration for in-flight elaboration rows, and this test pins the fact so
     /// it cannot move again unnoticed.
+    /// The command id of a session's identity fields, for tests that hold a
+    /// whole session.
+    fn id_of(session: &ElaboratorSession) -> CommandId {
+        session_command_id(
+            session.world_id,
+            session.jurisdiction,
+            &session.answer_digest,
+        )
+        .unwrap()
+    }
+
     #[test]
     fn soul_the_session_command_id_derivation_moved_under_the_refactor() {
         let session = ElaboratorSession {
@@ -2402,9 +2474,11 @@ mod tests {
             answer: PatchAnswer::Deficit(JurisdictionKey::Uncovered),
             answer_digest: BoundaryDigest::from_digest("sha256:deadbeef".into()),
             ancestry: "sha256:ancestry".into(),
+            lens: Lens::Patina,
+            instructions: Lens::Patina.instructions(),
         };
-        let live = session_command_id(&session).unwrap();
-        assert_eq!(live, session_command_id(&session).unwrap());
+        let live = id_of(&session);
+        assert_eq!(live, id_of(&session));
 
         // The pass-9 spelling, reproduced exactly.
         let mut hasher = Sha256::new();
@@ -2429,7 +2503,7 @@ mod tests {
             answer_digest: BoundaryDigest::from_digest("sha256:cafe".into()),
             ..session.clone()
         };
-        assert_ne!(live, session_command_id(&moved).unwrap());
+        assert_ne!(live, id_of(&moved));
     }
 
     /// The author owns the size of what it authors. The kernel gets no cap.
@@ -2545,6 +2619,13 @@ mod tests {
     /// A boundary that survives a repair keeps its digest and therefore its
     /// command id, so a crashed loop resumes the same store row. A different
     /// answer is a different id.
+    ///
+    /// L1 recorded a lens and its text on the session and left the identity
+    /// alone: the id is byte-equal to the one captured before L1 (Cut 0,
+    /// `base-session-id.txt`), and a session that differs only in lens, text
+    /// or ancestry has the same id. The derivation takes no session, so those
+    /// fields cannot reach it; the pinned text is what catches a changed
+    /// recipe.
     #[test]
     fn a_session_identity_is_derived_from_its_answer() {
         let session = |digest: &str| ElaboratorSession {
@@ -2553,18 +2634,32 @@ mod tests {
             answer: PatchAnswer::Deficit(JurisdictionKey::Uncovered),
             answer_digest: BoundaryDigest::from_digest(digest.to_owned()),
             ancestry: "sha256:ancestry".into(),
+            lens: Lens::Patina,
+            instructions: Lens::Patina.instructions(),
         };
-        let first = session_command_id(&session("sha256:one")).unwrap();
-        assert_eq!(first, session_command_id(&session("sha256:one")).unwrap());
-        assert_ne!(first, session_command_id(&session("sha256:two")).unwrap());
+        let first = id_of(&session("sha256:one"));
+        assert_eq!(
+            first,
+            CommandId::parse_uuid("56dbcdb2-9337-ac07-f322-37376b58cbcb").unwrap()
+        );
+        assert_eq!(first, id_of(&session("sha256:one")));
+        assert_ne!(first, id_of(&session("sha256:two")));
+        let recorded = ElaboratorSession {
+            lens: Lens::Numen,
+            instructions: "text a later build wrote".into(),
+            ancestry: "sha256:later".into(),
+            ..session("sha256:one")
+        };
+        assert_eq!(first, id_of(&recorded));
     }
 
     // ---- Soul --------------------------------------------------------
 
     /// The identity's preimage is (world, jurisdiction, answer digest) and all
     /// three separate. The ancestry is deliberately not in it for the boundary
-    /// lane: a boundary that survives a repair keeps its id, which is what
-    /// makes the resume idempotent rather than orphaning a store row.
+    /// lane: a boundary that survives a repair keeps its id, so the resume
+    /// finds its store row; `step`'s adoption rule then reads the row's session
+    /// rather than demanding the fresh one equal it.
     #[test]
     fn soul_a_session_identity_separates_world_jurisdiction_and_answer() {
         let root = EntityId(Uuid::from_u128(1));
@@ -2577,6 +2672,8 @@ mod tests {
                     answer: PatchAnswer::Deficit(jurisdiction),
                     answer_digest: BoundaryDigest::from_digest(digest.to_owned()),
                     ancestry: ancestry.to_owned(),
+                    lens: Lens::Patina,
+                    instructions: Lens::Patina.instructions(),
                 }
             };
         let base = session(
@@ -2585,7 +2682,7 @@ mod tests {
             "sha256:one",
             "sha256:ancestry",
         );
-        let id = |value: &ElaboratorSession| session_command_id(value).unwrap();
+        let id = id_of;
 
         assert_ne!(
             id(&base),

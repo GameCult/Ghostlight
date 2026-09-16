@@ -74,8 +74,8 @@ pub(super) const CELL_TOOL_STEP_BUDGET: usize = 2;
 /// carried by tool identity, never by a model-written argument.
 const HANDLE_SEPARATOR: &str = "__";
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v15";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v15";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v16";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v16";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -6376,7 +6376,8 @@ mod tests {
         }
     }
     use super::*;
-    use crate::elaboration::{EvidenceError, EvidenceQuery, EvidenceReceipt};
+    use crate::elaboration::{ElaboratorSession, EvidenceError, EvidenceQuery, EvidenceReceipt};
+    use crate::{CausalBoundary, Lens, LensWeights};
     use crate::patch::{RECORD_GAP_PATCH_TOOL, kernel_speak_entry, kernel_speak_grant};
     use crate::{
         CommitmentKind, CoverBudget, CreateJurisdictionIntent, CreateWorldIntent,
@@ -9411,49 +9412,72 @@ mod tests {
         EntityId,
         EntityId,
     ) {
+        let (directory, mailbox, task, commons, roads) =
+            dead_end_mailbox(crate::tests::stock_weights(), &["The Unwalked Road"]).await;
+        (directory, mailbox, task, commons, roads[0])
+    }
+
+    /// An Active world under the given lens weights, with one dead end per
+    /// label: each a place inside an inhabited commons, reached by its own
+    /// route and holding nothing. The roads come back in label order.
+    async fn dead_end_mailbox(
+        lens_weights: LensWeights,
+        dead_ends: &[&str],
+    ) -> (
+        tempfile::TempDir,
+        WorldMailbox,
+        tokio::task::JoinHandle<()>,
+        EntityId,
+        Vec<EntityId>,
+    ) {
         let directory = tempfile::tempdir().unwrap();
         let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
         let owner = PrincipalId::new("owner");
         let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let mut declarations = vec![Declaration::Entity(EntityDeclaration {
+            handle: DraftHandle::new("commons"),
+            label: "The Commons".into(),
+            kind: EntityKind::Place,
+            container: None,
+        })];
+        for (index, label) in dead_ends.iter().enumerate() {
+            // The first dead end keeps the single-road fixture's own handles
+            // and route label.
+            let suffix = if index == 0 { String::new() } else { format!("_{index}") };
+            let road = DraftHandle::new(&format!("road{suffix}"));
+            declarations.push(Declaration::Entity(EntityDeclaration {
+                handle: road.clone(),
+                label: (*label).into(),
+                kind: EntityKind::Place,
+                container: Some(Ref::Draft(DraftHandle::new("commons"))),
+            }));
+            declarations.push(Declaration::Route(crate::RouteDeclaration {
+                handle: DraftHandle::new(&format!("lane{suffix}")),
+                label: format!("The Long Lane{suffix}"),
+                from: Ref::Draft(DraftHandle::new("commons")),
+                to: Ref::Draft(road),
+                access: crate::AccessKind::Public,
+                cost: Cost(1),
+            }));
+        }
+        declarations.push(Declaration::Subject(SubjectDeclaration {
+            handle: DraftHandle::new("subject"),
+            label: "Subject".into(),
+            kind: SubjectKind::Person,
+            controller: NewController::NarrativePersona,
+            affordances: kernel_speak_grant(),
+            position: Some(Ref::Draft(DraftHandle::new("commons"))),
+        }));
         let creation = mailbox
             .create_fixture(
                 CreateWorld {
-                    lens_weights: crate::tests::stock_weights(),
+                    lens_weights,
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Elaboration Fixture".into(),
                     brief: String::new(),
                     patch: WorldPatch {
-                        declarations: vec![
-                            Declaration::Entity(EntityDeclaration {
-                                handle: DraftHandle::new("commons"),
-                                label: "The Commons".into(),
-                                kind: EntityKind::Place,
-                                container: None,
-                            }),
-                            Declaration::Entity(EntityDeclaration {
-                                handle: DraftHandle::new("road"),
-                                label: "The Unwalked Road".into(),
-                                kind: EntityKind::Place,
-                                container: Some(Ref::Draft(DraftHandle::new("commons"))),
-                            }),
-                            Declaration::Route(crate::RouteDeclaration {
-                                handle: DraftHandle::new("lane"),
-                                label: "The Long Lane".into(),
-                                from: Ref::Draft(DraftHandle::new("commons")),
-                                to: Ref::Draft(DraftHandle::new("road")),
-                                access: crate::AccessKind::Public,
-                                cost: Cost(1),
-                            }),
-                            Declaration::Subject(SubjectDeclaration {
-                                handle: DraftHandle::new("subject"),
-                                label: "Subject".into(),
-                                kind: SubjectKind::Person,
-                                controller: NewController::NarrativePersona,
-                                affordances: kernel_speak_grant(),
-                                position: Some(Ref::Draft(DraftHandle::new("commons"))),
-                            }),
-                        ],
+                        declarations,
                         operations: Vec::new(),
                         evidence: Vec::new(),
                     },
@@ -9489,9 +9513,14 @@ mod tests {
                 .expect("the declared place")
                 .id
         };
-        let (commons, road) = (place("The Commons"), place("The Unwalked Road"));
-        assert_eq!(snapshot.boundaries.len(), 1, "one dead end, and only one");
-        (directory, mailbox, task, commons, road)
+        let commons = place("The Commons");
+        let roads = dead_ends.iter().map(|label| place(label)).collect();
+        assert_eq!(
+            snapshot.boundaries.len(),
+            dead_ends.len(),
+            "one boundary per dead end, and no other"
+        );
+        (directory, mailbox, task, commons, roads)
     }
 
     /// Spec test 20, which the pass wired and did not write. Round one submits a
@@ -9638,6 +9667,668 @@ mod tests {
         assert!(second_wire.contains("The Roadside Shed"), "the refused round left the wire");
 
         drop(second);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Round one declares a shed inside a handle nothing declares and submits,
+    /// which the kernel refuses; round two declares the same shed on the road
+    /// and submits, which commits.
+    fn shed_script(road: EntityId) -> Arc<ElaborationScript> {
+        let road_id = serde_json::to_value(road).unwrap();
+        let shed = |container: Value| {
+            vec![
+                (
+                    "declare_place",
+                    json!({
+                        "handle": "shed",
+                        "label": "The Roadside Shed",
+                        "container": container,
+                    }),
+                ),
+                ("submit", json!({})),
+            ]
+        };
+        Arc::new(ElaborationScript {
+            outputs: Mutex::new(vec![
+                tool_round(
+                    shed(json!({"ref": "draft", "value": "nowhere"})),
+                    "elaboration-round-zero",
+                ),
+                tool_round(
+                    shed(json!({"ref": "existing", "value": road_id})),
+                    "elaboration-round-one",
+                ),
+            ]),
+            seen: Mutex::new(Vec::new()),
+        })
+    }
+
+    /// A model that has nothing to add, for as many rounds as a session has.
+    fn idle_script() -> Arc<ElaborationScript> {
+        Arc::new(ElaborationScript {
+            outputs: Mutex::new(
+                (0..crate::elaboration::ELABORATION_ROUND_BUDGET)
+                    .map(|round| {
+                        output(
+                            vec![InferenceEvent::Text("nothing to add".into())],
+                            &format!("idle-{round}"),
+                        )
+                    })
+                    .collect(),
+            ),
+            seen: Mutex::new(Vec::new()),
+        })
+    }
+
+    fn elaboration_runner(
+        mailbox: &WorldMailbox,
+        script: Arc<ElaborationScript>,
+        store: Arc<dyn ControllerWorkStore>,
+    ) -> ElaborationRunner {
+        ElaborationRunner::new(
+            ElaborationPort::new(mailbox.clone()),
+            script,
+            Arc::new(NullEvidenceSource),
+            store,
+            models().elaborator,
+        )
+    }
+
+    /// The session a checkpoint carries, whatever its stage.
+    fn recorded_session(work: &ControllerWork) -> ElaboratorSession {
+        let ControllerWork::Elaboration(
+            ElaborationCheckpoint::ElaboratorInFlight { session, .. }
+            | ElaborationCheckpoint::ReadyToSubmit { session, .. }
+            | ElaborationCheckpoint::NoPatch { session, .. },
+        ) = work
+        else {
+            panic!("not an elaboration checkpoint: {work:?}");
+        };
+        session.clone()
+    }
+
+    /// Every stock lens named, the given one at one and the rest at zero.
+    fn only(lens: Lens) -> LensWeights {
+        LensWeights::new(
+            Lens::ALL
+                .into_iter()
+                .map(|each| (each, u32::from(each == lens)))
+                .collect(),
+        )
+    }
+
+    fn owner_command(snapshot: &WorldSnapshot, body: CommandBody) -> CommandEnvelope {
+        CommandEnvelope {
+            id: CommandId::new(),
+            world_id: snapshot.world_id,
+            expected_revision: snapshot.revision,
+            caller: CallerId::Principal(PrincipalId::new("owner")),
+            body,
+        }
+    }
+
+    fn owner_caller() -> AuthenticatedCaller {
+        AuthenticatedCaller::fixture(CallerId::Principal(PrincipalId::new("owner")))
+    }
+
+    /// A real refused-and-reopened elaboration checkpoint: round one refused,
+    /// its refusal recorded, the repair invocation prepared. Taken from a run,
+    /// not assembled by hand.
+    async fn refused_checkpoint() -> ElaborationCheckpoint {
+        let (_directory, mailbox, task, commons, road) = elaboration_mailbox().await;
+        let store = fresh_store();
+        let runner = elaboration_runner(&mailbox, shed_script(road), store.clone());
+        assert_eq!(
+            runner
+                .step(JurisdictionKey::PlaceSubtree(commons))
+                .await
+                .unwrap(),
+            crate::elaboration::ElaborationOutcome::Rejected
+        );
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+        let stored = store.work.lock().unwrap();
+        let ControllerWork::Elaboration(
+            checkpoint @ ElaborationCheckpoint::ElaboratorInFlight { .. },
+        ) = stored.values().next().unwrap().clone()
+        else {
+            panic!("the refusal did not reopen the session");
+        };
+        checkpoint
+    }
+
+    /// Pushes one raw row into a fresh store file under the given row type and
+    /// schema, then opens it.
+    fn open_with_raw_row(
+        directory: &tempfile::TempDir,
+        name: &str,
+        checkpoint: &ElaborationCheckpoint,
+        row_type: &str,
+        schema: &str,
+    ) -> Result<CultCacheControllerWorkStore, ControllerWorkStoreError> {
+        let path = directory.path().join(name);
+        {
+            let mut store = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
+            store
+                .push(&CultCacheEnvelope {
+                    key: store_key(checkpoint.command_id()).unwrap(),
+                    r#type: row_type.into(),
+                    payload: rmp_serde::to_vec_named(&ControllerWork::Elaboration(
+                        checkpoint.clone(),
+                    ))
+                    .unwrap(),
+                    stored_at: Utc::now().to_rfc3339(),
+                    schema_id: Some(schema.into()),
+                })
+                .unwrap();
+        }
+        CultCacheControllerWorkStore::open(&path)
+    }
+
+    /// The same in-flight checkpoint with its session's text replaced and its
+    /// invocation prepared under `request_text`.
+    fn with_texts(
+        checkpoint: &ElaborationCheckpoint,
+        stored_text: &str,
+        request_text: &str,
+    ) -> ElaborationCheckpoint {
+        let ElaborationCheckpoint::ElaboratorInFlight {
+            command_id,
+            session,
+            agent_prompt,
+            refusals,
+            completed,
+            invocation,
+        } = checkpoint.clone()
+        else {
+            panic!("not in flight");
+        };
+        let request = crate::elaboration::elaboration_request(
+            command_id,
+            completed.len(),
+            &invocation.invocation.request.model,
+            request_text,
+            invocation.invocation.request.input.clone(),
+        )
+        .unwrap();
+        ElaborationCheckpoint::ElaboratorInFlight {
+            command_id,
+            session: ElaboratorSession {
+                instructions: stored_text.into(),
+                ..session
+            },
+            agent_prompt,
+            refusals,
+            completed,
+            invocation: PreparedInference::prepare(
+                "ghostlight-controller-test",
+                4_102_444_800_000,
+                request,
+            )
+            .unwrap(),
+        }
+    }
+
+    /// Probe 3's boundary half, kept. A refused boundary session is persisted;
+    /// an unrelated commit moves the world's last commit digest; a fresh runner
+    /// over the reopened store resumes the same row, repairs from the refusal it
+    /// earned, and commits under the same command id. The world moving is not
+    /// the answer moving, so the row is adopted rather than reported
+    /// `Superseded`.
+    #[tokio::test]
+    async fn a_boundary_session_resumes_after_an_unrelated_commit() {
+        let (directory, mailbox, task, commons, road) = elaboration_mailbox().await;
+        let jurisdiction = JurisdictionKey::PlaceSubtree(commons);
+        let path = directory.path().join("controller-work.cc");
+        let script = shed_script(road);
+
+        let store = Arc::new(CultCacheControllerWorkStore::open(&path).unwrap());
+        let first = elaboration_runner(&mailbox, script.clone(), store.clone());
+        assert_eq!(
+            first.step(jurisdiction).await.unwrap(),
+            crate::elaboration::ElaborationOutcome::Rejected
+        );
+        drop(first);
+        drop(store);
+        let before = mailbox.snapshot().await.unwrap().last_commit_digest;
+        mailbox
+            .submit_clock(CommandId::new(), TickMinutes::new(60).unwrap())
+            .await
+            .unwrap();
+        assert_ne!(
+            mailbox.snapshot().await.unwrap().last_commit_digest,
+            before,
+            "the unrelated commit did not move the ancestry"
+        );
+
+        let store = Arc::new(CultCacheControllerWorkStore::open(&path).unwrap());
+        let (command_id, recorded) = {
+            let journal = store.journal.lock().unwrap();
+            assert_eq!(journal.work.len(), 1);
+            let (id, work) = journal.work.iter().next().unwrap();
+            (*id, recorded_session(work))
+        };
+        assert_eq!(Some(recorded.ancestry.clone()), before);
+        let second = elaboration_runner(&mailbox, script.clone(), store.clone());
+        assert_eq!(
+            second.step(jurisdiction).await.unwrap(),
+            crate::elaboration::ElaborationOutcome::Committed,
+            "the world moving superseded the boundary's session"
+        );
+        {
+            let journal = store.journal.lock().unwrap();
+            assert_eq!(journal.work.len(), 1, "the resume opened a second row");
+            let work = journal.work.get(&command_id).expect("the same command id");
+            assert_eq!(recorded_session(work), recorded, "the resume rewrote the session");
+        }
+        let seen = script.seen.lock().unwrap();
+        assert_eq!(seen.len(), 2, "the resume repeated or skipped an inference");
+        let second_wire = serde_json::to_string(&seen[1].invocation.request.input).unwrap();
+        assert!(
+            second_wire.contains("The world refused the patch you submitted"),
+            "the resumed round lost the refusal it earned"
+        );
+        assert!(mailbox.snapshot().await.unwrap().boundaries.is_empty());
+
+        drop(seen);
+        drop(second);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// A session records the lens it drew and keeps it. The world draws only
+    /// Patina; round one is refused and persisted; the owner then moves every
+    /// weight to Numen, which is also a commit, so the ancestry moves too; the
+    /// store is reopened and a fresh runner resumes the same row and commits
+    /// under the same command id, with the lens, text and ancestry the row
+    /// recorded, and the repair invocation still carries Patina's text and the
+    /// refusal. The world's second dead end then starts a new session, which
+    /// draws from the weights as they now are.
+    #[tokio::test]
+    async fn a_resumed_session_keeps_its_recorded_lens_when_the_weights_change() {
+        let (directory, mailbox, task, commons, roads) = dead_end_mailbox(
+            only(Lens::Patina),
+            &["The Unwalked Road", "The Far Road"],
+        )
+        .await;
+        let jurisdiction = JurisdictionKey::PlaceSubtree(commons);
+        let path = directory.path().join("controller-work.cc");
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let answered = match snapshot.boundaries.first() {
+            Some(CausalBoundary::UnelaboratedDestination { place, .. }) => *place,
+            other => panic!("the first boundary is not a dead end: {other:?}"),
+        };
+        assert!(roads.contains(&answered));
+        let script = shed_script(answered);
+
+        let store = Arc::new(CultCacheControllerWorkStore::open(&path).unwrap());
+        let first = elaboration_runner(&mailbox, script.clone(), store.clone());
+        assert_eq!(
+            first.step(jurisdiction).await.unwrap(),
+            crate::elaboration::ElaborationOutcome::Rejected
+        );
+        drop(first);
+        let (command_id, recorded) = {
+            let journal = store.journal.lock().unwrap();
+            let (id, work) = journal.work.iter().next().unwrap();
+            (*id, recorded_session(work))
+        };
+        assert_eq!(recorded.lens, Lens::Patina);
+        assert_eq!(recorded.instructions, Lens::Patina.instructions());
+        drop(store);
+
+        let before = mailbox.snapshot().await.unwrap();
+        mailbox
+            .submit_fixture(
+                owner_command(
+                    &before,
+                    CommandBody::SetLensWeights {
+                        weights: only(Lens::Numen),
+                    },
+                ),
+                &owner_caller(),
+            )
+            .await
+            .unwrap();
+        let after = mailbox.snapshot().await.unwrap();
+        assert_eq!(after.lens_weights, only(Lens::Numen));
+        assert_ne!(after.last_commit_digest, before.last_commit_digest);
+
+        let store = Arc::new(CultCacheControllerWorkStore::open(&path).unwrap());
+        let second = elaboration_runner(&mailbox, script.clone(), store.clone());
+        assert_eq!(
+            second.step(jurisdiction).await.unwrap(),
+            crate::elaboration::ElaborationOutcome::Committed
+        );
+        drop(second);
+        {
+            let journal = store.journal.lock().unwrap();
+            assert_eq!(journal.work.len(), 1, "the resume opened a second row");
+            let work = journal.work.get(&command_id).expect("the same command id");
+            let resumed = recorded_session(work);
+            assert_eq!(resumed.lens, Lens::Patina, "the resume redrew the lens");
+            assert_eq!(resumed.instructions, Lens::Patina.instructions());
+            assert_eq!(resumed, recorded);
+        }
+        {
+            let seen = script.seen.lock().unwrap();
+            assert_eq!(seen.len(), 2);
+            for invocation in seen.iter() {
+                assert_eq!(
+                    invocation.invocation.request.instructions,
+                    Lens::Patina.instructions()
+                );
+            }
+            let repair = serde_json::to_string(&seen[1].invocation.request.input).unwrap();
+            assert!(repair.contains("The world refused the patch you submitted"));
+        }
+
+        // The remaining dead end is a different answer and a new session.
+        let remaining = mailbox.snapshot().await.unwrap();
+        assert_eq!(remaining.boundaries.len(), 1, "the answered dead end survived");
+        let idle = idle_script();
+        let third = elaboration_runner(&mailbox, idle.clone(), store.clone());
+        third.step(jurisdiction).await.unwrap();
+        drop(third);
+        {
+            let journal = store.journal.lock().unwrap();
+            assert_eq!(journal.work.len(), 2);
+            let (_, work) = journal
+                .work
+                .iter()
+                .find(|(id, _)| **id != command_id)
+                .unwrap();
+            let fresh = recorded_session(work);
+            assert_eq!(fresh.lens, Lens::Numen);
+            assert_eq!(fresh.instructions, Lens::Numen.instructions());
+        }
+        assert_eq!(
+            idle.seen.lock().unwrap()[0].invocation.request.instructions,
+            Lens::Numen.instructions()
+        );
+
+        drop(store);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Row to row, a session is whole: from a persisted in-flight checkpoint,
+    /// a next checkpoint that differs only in the lens, only in the text (with
+    /// its invocation prepared under that text, so integrity passes and the
+    /// refusal is progression's), or only in the ancestry is refused by the
+    /// real store as an illegal transition. The unchanged checkpoint is
+    /// accepted as already present, so the refusals are not an inert harness.
+    #[tokio::test]
+    async fn a_checkpoint_that_changes_the_lens_or_its_text_is_an_illegal_transition() {
+        let checkpoint = refused_checkpoint().await;
+        let directory = tempfile::tempdir().unwrap();
+        let store = CultCacheControllerWorkStore::open(directory.path().join("work.cc")).unwrap();
+        let ElaborationCheckpoint::ElaboratorInFlight {
+            command_id,
+            session,
+            agent_prompt,
+            invocation,
+            ..
+        } = checkpoint.clone()
+        else {
+            unreachable!();
+        };
+        // The row enters the store through its initial stage, as a session's
+        // does: no rounds, and the round-zero invocation over the prompt alone.
+        let request = crate::elaboration::elaboration_request(
+            command_id,
+            0,
+            &invocation.invocation.request.model,
+            &session.instructions,
+            vec![CodexInputItem::UserText {
+                text: agent_prompt.clone(),
+            }],
+        )
+        .unwrap();
+        let initial = ElaborationCheckpoint::ElaboratorInFlight {
+            command_id,
+            session,
+            agent_prompt,
+            refusals: Vec::new(),
+            completed: Vec::new(),
+            invocation: PreparedInference::prepare(
+                "ghostlight-controller-test",
+                4_102_444_800_000,
+                request,
+            )
+            .unwrap(),
+        };
+        assert!(initial.integrity_is_valid());
+        for work in [&initial, &checkpoint] {
+            store
+                .persist(&ControllerWork::Elaboration(work.clone()))
+                .await
+                .expect("the session's own rows progress");
+        }
+        assert_eq!(
+            store
+                .persist(&ControllerWork::Elaboration(checkpoint.clone()))
+                .await
+                .unwrap(),
+            ControllerWorkWrite::AlreadyPresent
+        );
+
+        let rewrite = |change: &dyn Fn(&mut ElaboratorSession)| {
+            let ElaborationCheckpoint::ElaboratorInFlight {
+                command_id,
+                mut session,
+                agent_prompt,
+                refusals,
+                completed,
+                invocation,
+            } = checkpoint.clone()
+            else {
+                unreachable!();
+            };
+            change(&mut session);
+            ElaborationCheckpoint::ElaboratorInFlight {
+                command_id,
+                session,
+                agent_prompt,
+                refusals,
+                completed,
+                invocation,
+            }
+        };
+        let lens = rewrite(&|session| session.lens = Lens::Numen);
+        let text = with_texts(
+            &checkpoint,
+            "text a later build wrote",
+            "text a later build wrote",
+        );
+        let ancestry = rewrite(&|session| session.ancestry = "sha256:a later commit".into());
+        for (what, next) in [("lens", lens), ("text", text), ("ancestry", ancestry)] {
+            assert!(next.integrity_is_valid(), "the {what} rewrite fails integrity");
+            assert_ne!(next, checkpoint);
+            let result = store.persist(&ControllerWork::Elaboration(next)).await;
+            let Err(ControllerWorkStoreError::Fault { detail }) = &result else {
+                panic!("a checkpoint that changed the {what} was accepted: {result:?}");
+            };
+            assert!(
+                detail.contains("attempted an illegal checkpoint transition"),
+                "{what}: {detail}"
+            );
+        }
+        let journal = store.journal.lock().unwrap();
+        assert_eq!(
+            journal.work.get(&command_id),
+            Some(&ControllerWork::Elaboration(checkpoint))
+        );
+    }
+
+    /// Integrity binds the stored invocation to the stored text. A row whose
+    /// session says one text and whose invocation was prepared under another
+    /// fails its checkpoint binding at open. A row whose two texts agree on a
+    /// string no current lens authors opens: that is the trade ruling L1-Q7 (a)
+    /// makes, stated as a test, so a lens-text edit strands no store.
+    #[tokio::test]
+    async fn a_row_whose_text_and_invocation_disagree_is_refused_at_open() {
+        let checkpoint = refused_checkpoint().await;
+        let directory = tempfile::tempdir().unwrap();
+
+        let disagree = with_texts(&checkpoint, "STORED TEXT A", "REQUEST TEXT B");
+        let Err(ControllerWorkStoreError::Fault { detail }) = open_with_raw_row(
+            &directory,
+            "disagree.cc",
+            &disagree,
+            CONTROLLER_WORK_ROW,
+            CONTROLLER_WORK_SCHEMA,
+        ) else {
+            panic!("a row whose text and invocation disagree opened");
+        };
+        assert!(detail.contains("failed its checkpoint binding"), "{detail}");
+
+        let agree = with_texts(&checkpoint, "STORED TEXT A", "STORED TEXT A");
+        assert!(
+            Lens::ALL
+                .into_iter()
+                .all(|lens| lens.instructions() != "STORED TEXT A")
+        );
+        let store = open_with_raw_row(
+            &directory,
+            "agree.cc",
+            &agree,
+            CONTROLLER_WORK_ROW,
+            CONTROLLER_WORK_SCHEMA,
+        )
+        .expect("a row whose texts agree opens whatever the code now authors");
+        assert_eq!(
+            store.lookup(agree.command_id()).await.unwrap(),
+            ControllerWorkLookup::Confirmed(ControllerWork::Elaboration(agree))
+        );
+    }
+
+    /// A real lensed in-flight payload under the previous row version is
+    /// refused at open and not migrated; the same payload under the current
+    /// version opens, so the refusal is the version's.
+    #[tokio::test]
+    async fn a_controller_work_row_from_v15_is_refused_at_open() {
+        let checkpoint = refused_checkpoint().await;
+        let directory = tempfile::tempdir().unwrap();
+        let Err(error) = open_with_raw_row(
+            &directory,
+            "v15.cc",
+            &checkpoint,
+            "controller_work.v15",
+            "ghostlight.controller_work.v15",
+        ) else {
+            panic!("a v15 row was accepted by the {CONTROLLER_WORK_ROW} store");
+        };
+        assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
+        open_with_raw_row(
+            &directory,
+            "current.cc",
+            &checkpoint,
+            CONTROLLER_WORK_ROW,
+            CONTROLLER_WORK_SCHEMA,
+        )
+        .expect("the same payload under the current version opens");
+    }
+
+    /// The kernel's refusal of round one's patch, captured before L1 (Cut 0,
+    /// `base-mismatches.json`).
+    const BASE_MISMATCHES: &str = r#"[{"mismatch":"unresolved_draft","site":{"site":"declaration","at":"shed"},"referent":"nowhere","expected":{"namespace":"entity","kind":"place"}}]"#;
+
+    /// A lens never gates admission. For each stock lens, a world that draws
+    /// only that lens runs the same two rounds: round one is refused with the
+    /// mismatch set captured before lenses existed, and round two commits. The
+    /// eight prompts are byte-equal, because the prompt carries no lens text;
+    /// the eight instructions are each lens's own and share the one sentence
+    /// before the lens clause.
+    #[tokio::test]
+    async fn soul_the_same_patch_admits_the_same_under_every_lens() {
+        let mut prompts = BTreeSet::new();
+        let mut texts = BTreeSet::new();
+        for lens in Lens::ALL {
+            let (_directory, mailbox, task, commons, roads) =
+                dead_end_mailbox(only(lens), &["The Unwalked Road"]).await;
+            let jurisdiction = JurisdictionKey::PlaceSubtree(commons);
+            let store = fresh_store();
+            let script = shed_script(roads[0]);
+            let first = elaboration_runner(&mailbox, script.clone(), store.clone());
+            assert_eq!(
+                first.step(jurisdiction).await.unwrap(),
+                crate::elaboration::ElaborationOutcome::Rejected,
+                "{lens:?}"
+            );
+            drop(first);
+            {
+                let stored = store.work.lock().unwrap();
+                let ControllerWork::Elaboration(ElaborationCheckpoint::ElaboratorInFlight {
+                    session,
+                    agent_prompt,
+                    refusals,
+                    ..
+                }) = stored.values().next().unwrap()
+                else {
+                    panic!("{lens:?}: the refusal did not reopen the session");
+                };
+                assert_eq!(
+                    serde_json::to_string(&refusals[0].mismatches).unwrap(),
+                    BASE_MISMATCHES,
+                    "{lens:?} changed what the kernel refused"
+                );
+                assert_eq!(session.lens, lens);
+                assert_eq!(session.instructions, lens.instructions());
+                prompts.insert(agent_prompt.clone());
+                texts.insert(session.instructions.clone());
+            }
+            let second = elaboration_runner(&mailbox, script.clone(), store.clone());
+            assert_eq!(
+                second.step(jurisdiction).await.unwrap(),
+                crate::elaboration::ElaborationOutcome::Committed,
+                "{lens:?} changed what the kernel admits"
+            );
+            drop(second);
+            assert!(mailbox.snapshot().await.unwrap().boundaries.is_empty());
+            drop(mailbox);
+            task.await.unwrap();
+        }
+        assert_eq!(prompts.len(), 1, "a lens reached the prompt");
+        assert_eq!(texts.len(), 8, "two lenses share a text");
+        let shared = |text: &str| text.split(" Lens: ").next().unwrap().to_owned();
+        let sentences: BTreeSet<String> = texts.iter().map(|text| shared(text)).collect();
+        assert_eq!(sentences.len(), 1, "the lenses differ outside their clause");
+    }
+
+    /// The catalog takes no lens, by signature: both renderings are
+    /// zero-argument functions. The `Tools:` line of a lensed session's prompt
+    /// is `patch_tool_signatures()` byte for byte, and the tools on its wire
+    /// are `patch_tools()`.
+    #[tokio::test]
+    async fn the_catalog_takes_no_lens() {
+        let _: fn() -> String = crate::patch::patch_tool_signatures;
+        let _: fn() -> Vec<CodexToolDefinition> = crate::patch::patch_tools;
+        let (_directory, mailbox, task, commons, _roads) =
+            dead_end_mailbox(only(Lens::Numen), &["The Unwalked Road"]).await;
+        let store = fresh_store();
+        let idle = idle_script();
+        let runner = elaboration_runner(&mailbox, idle.clone(), store.clone());
+        runner
+            .step(JurisdictionKey::PlaceSubtree(commons))
+            .await
+            .unwrap();
+        drop(runner);
+        let seen = idle.seen.lock().unwrap();
+        let first = &seen[0].invocation.request;
+        assert_eq!(first.instructions, Lens::Numen.instructions());
+        assert_eq!(first.tools, crate::patch::patch_tools());
+        let Some(CodexInputItem::UserText { text }) = first.input.first() else {
+            panic!("the first turn is not the prompt");
+        };
+        let tools = text
+            .lines()
+            .find_map(|line| line.strip_prefix("Tools: "))
+            .expect("the prompt names its tools");
+        assert_eq!(tools, crate::patch::patch_tool_signatures());
+        drop(seen);
         drop(mailbox);
         task.await.unwrap();
     }

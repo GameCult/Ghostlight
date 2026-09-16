@@ -3,10 +3,12 @@
 //! or quota. This module owns the stock table, each lens's instruction text,
 //! and the draw recipe; it reads no world state and writes nothing.
 
-use super::elaboration::ELABORATION_INSTRUCTIONS;
 use super::{CommandId, KernelError, WorldId, digest};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+
+/// The sentence every lens's instructions begin with.
+const ELABORATION_INSTRUCTIONS: &str = "Use only the supplied tools to author structure inside your jurisdiction. Answer the boundary or deficit you were given, then submit. Recording a gap changes nothing.";
 
 /// The library's stock lens set. Serialized by snake_case name, so a name the
 /// library does not know cannot be represented at any deserialization boundary.
@@ -123,7 +125,8 @@ impl Lens {
     }
 
     /// The elaborator's instructions under this lens: the shared sentence, then
-    /// the lens clause.
+    /// the lens clause. Read once, when a session is first built; the session
+    /// then carries the text, and nothing rebuilds it from here.
     #[cfg_attr(
         not(test),
         expect(dead_code, reason = "read by its tests until a session carries a lens")

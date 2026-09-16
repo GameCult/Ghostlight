@@ -306,7 +306,7 @@ knowledge row, and never another subject's snapshot. The re-lowering's
 provider request is a distinct round (`interpreter_round`) with its own
 content-addressed request id, so it cannot collide with the first lowering's
 request. State schema is `ghostlight.world_state.consumer.v5`, commit schema
-`ghostlight.world_commit.consumer.v5`, controller work `controller_work.v15`,
+`ghostlight.world_commit.consumer.v5`, controller work `controller_work.v16`,
 Persona turn receipt `ghostlight.persona_turn_receipt.v3`; earlier stores and
 earlier rows are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
