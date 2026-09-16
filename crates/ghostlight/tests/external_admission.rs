@@ -342,3 +342,101 @@ async fn a_wholly_deserialized_opportunity_is_refused_and_commits_nothing() {
     );
     assert_eq!(world.committed().await, before);
 }
+
+/// A forgery indistinguishable in shape from a real digest, because it is a
+/// real digest: one the kernel genuinely issued for this scope, gone stale
+/// when the world moved under it. Only an exact comparison of the whole
+/// digest refuses it; a check of its length or of any prefix would admit it.
+/// A stale digest still differs early, so the test also submits the current
+/// digest with its last digit changed, which a comparison that skips any
+/// suffix would admit.
+///
+/// Genesis places every subject in one commons, so one controller's speech
+/// lands as knowledge on the others, and knowledge is a scope component: the
+/// listener's digest moves, the speaker's does not.
+#[tokio::test]
+async fn a_stale_issued_scope_digest_is_refused_and_commits_nothing() {
+    let world = World::active().await;
+    let controllers: Vec<_> = world
+        .snapshot()
+        .await
+        .opportunities
+        .into_iter()
+        .filter(|opportunity| opportunity.controller_mode != ControllerMode::Human)
+        .collect();
+    let [speaker, stale] = <[DecisionOpportunity; 2]>::try_from(controllers)
+        .expect("the world declares two model-controlled subjects");
+    world
+        .port()
+        .submit_controller(
+            CommandId::new(),
+            &speaker,
+            speak(speaker.affordance_ids[0], "Everyone in the commons hears this."),
+        )
+        .await
+        .expect("an issued opportunity is admitted");
+    let current = world
+        .snapshot()
+        .await
+        .opportunities
+        .into_iter()
+        .find(|opportunity| opportunity.scope == stale.scope)
+        .expect("the listener still holds an opportunity");
+    // The digest is not a public field; it is read the way a consumer reads
+    // it, off the wire.
+    let digest_of = |opportunity: &DecisionOpportunity| {
+        serde_json::to_value(opportunity).unwrap()["scope_digest"]
+            .as_str()
+            .expect("a scope digest is a string on the wire")
+            .to_owned()
+    };
+    let (stale_digest, current_digest) = (digest_of(&stale), digest_of(&current));
+    assert_ne!(
+        stale_digest, current_digest,
+        "the speech did not move the listener's scope digest"
+    );
+    assert_eq!(stale_digest.len(), current_digest.len());
+    let before = world.committed().await;
+    let result = world
+        .port()
+        .submit_controller(
+            CommandId::new(),
+            &stale,
+            speak(stale.affordance_ids[0], "Against a scope that has moved."),
+        )
+        .await;
+    assert!(
+        matches!(
+            result,
+            Err(MailboxError::Kernel(KernelError::ScopeChanged { .. }))
+        ),
+        "a stale issued scope digest was not refused: {result:?}"
+    );
+    assert_eq!(world.committed().await, before);
+
+    // A stale digest differs from the current one almost everywhere, so it
+    // cannot tell a whole-digest comparison from one that skips a suffix. The
+    // current digest with only its final hex digit changed can.
+    let mut near = current_digest.clone();
+    let last = near.pop().expect("a digest is not empty");
+    near.push(if last == '0' { '1' } else { '0' });
+    assert_eq!(near.len(), current_digest.len());
+    assert_ne!(near, current_digest);
+    let forged = forge(&current, "scope_digest", json!(near));
+    let result = world
+        .port()
+        .submit_controller(
+            CommandId::new(),
+            &forged,
+            speak(forged.affordance_ids[0], "One digit from the real scope."),
+        )
+        .await;
+    assert!(
+        matches!(
+            result,
+            Err(MailboxError::Kernel(KernelError::ScopeChanged { .. }))
+        ),
+        "a digest one digit from the current scope was not refused: {result:?}"
+    );
+    assert_eq!(world.committed().await, before);
+}
