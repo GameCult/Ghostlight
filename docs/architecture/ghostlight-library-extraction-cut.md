@@ -42,6 +42,21 @@ Soul found six defects. Triage:
   `controller_work.v3` against code at `consumer.v4` and
   `controller_work.v15`. Outside L0; it changes no behavior here.
 
+Cut 2 landed at gamecult-ops `6aba281` (text only; nothing live was run).
+The library test step is in the runbook, the deploy script, and the wiring
+test, ordered as `recipe.toml` orders it. Two spec defects Hands reported
+rather than redesigned: the assertion this map specified was vacuous
+(`require_text` is `grep -Fq`, and the string given is a substring of the
+persona-projection line, so it passed with the library step deleted), so
+Hands used the file's existing exact-line helper and proved it fails under
+deletion; and the acceptance test path lives in `acceptance_test=` at
+`scripts/deploy-ghostlight-yggdrasil.sh:34`, a fourth site this map did not
+list, pinned by the wiring test and repeated in the runbook prose. Operator
+consequence: changing `acceptance_test` changes the acceptance binding, so
+sealed witnesses under `/srv/ghostlight/acceptance/<binding-sha>/` from
+before this commit will miss and regenerate. Soul has not passed on Cut 2
+yet.
+
 Open: **Q1-9 what sealing means.** A: restate invariant 1 as unforgeable
 *admission* — external code may hold a syntactically valid ID or opportunity,
 and the kernel must reject any it did not issue — and prove it with rejection
