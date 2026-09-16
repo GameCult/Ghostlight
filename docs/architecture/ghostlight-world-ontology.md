@@ -665,21 +665,28 @@ session. Its jurisdiction is authority: the place subtree it may write in,
 carried as `SystemCapability::Elaborator { jurisdiction }`. Its lens decides
 what kind of structure the session reaches for. A lens never enters the caller
 identity, never narrows or widens admission, and never fills a quota.
-Sessions run concurrently over distinct demand entries (every open boundary
-and one deficit per jurisdiction), each drawing its lens by the world's weights
-(below, "Elaboration lenses and detail rules") and recording it, each holding
-one permit of the elaboration ceiling. A sweep first reads the store's
-in-flight sessions and resumes any that answer a current demand entry, and
-sweeps run one at a time. The tool catalog is
+Each sweep builds a claim set of distinct demand entries (every open boundary
+once, and one deficit per jurisdiction), held in memory for that sweep and
+never persisted. Sessions run concurrently over it, each drawing its lens by
+the world's weights (below, "Elaboration lenses and detail rules") and
+recording it, each holding one permit of the elaboration ceiling for its whole
+step. A sweep first reads the store's in-flight sessions and resumes any that
+answer a current demand entry, and the caller runs sweeps one at a time. The
+ceiling is the caller's, passed to each sweep; the library holds no
+concurrency number. Dungeon keeps two pools: the elaboration pool
+(`GHOSTLIGHT_ELABORATION_MAX_CONCURRENT`, a ceiling) and the simulation pool
+(`GHOSTLIGHT_CONTROLLER_MAX_CONCURRENT`, a budget) that speak turns and cover
+cells draw from, and neither lane acquires the other's. The tool catalog is
 generated from this document's operation set and declaration kinds, plus
 `record_gap` and `submit`. It cannot contain an operation the reducer does not
 own, because it is derived from the reducer's vocabulary.
 
 ```text
 loop:
-  draw a title by the world's weights (target)
-  take the oldest open boundary or seed request in my jurisdiction;
-    if none, take my jurisdiction's scale deficit
+  take one demand entry in my jurisdiction: an open boundary or seed request,
+    or my jurisdiction's scale deficit
+  if the store holds an in-flight session answering it, resume that session;
+    otherwise draw a lens by the world's weights and record it on the session
   retrieve evidence from the Vault for its referents; keep exact receipts
   build one WorldPatch with declaration and operation tools
   submit; on rejection, repair the same draft from the complete mismatch set
@@ -718,20 +725,30 @@ that extension is a code change, not a world patch.
 
 ### Elaboration lenses and detail rules (target)
 
-Adopted 2026-09-15, not implemented. These are library capabilities, neutral
+Adopted 2026-09-15. Plan step 15 pass L1 implemented the Lenses and Stock lens
+set bullets and the concurrency half of the Sessions bullet. Per-world evidence
+binding (L2), detail rules, rule-driven demand and sessions in Draft (L3), and
+individuation (L4) are not implemented. These are library capabilities, neutral
 to every consumer. A consumer supplies the policy: Ghostlight Dungeon's
 Session Zero (`ghostlight-session-zero.md`) is one consumer of them, and no
 consumer's concept enters this vocabulary.
 
-- **Lenses.** A world carries a lens set and weights, supplied by its creator
-  and changeable by the owner. A lens is a label, brief text, and an ordered
-  emphasis over the operation catalog. Every lens receives the whole derived
-  catalog. A session draws one lens from a sampler seeded by world id and
-  session ordinal and records it on its checkpoint and receipt as evaluation
-  evidence. The same patch under two lenses has the same admission result. A
-  zero weight never draws; an all-zero weight set is refused.
-- **Stock lens set.** The library ships eight lenses any consumer may use or
-  replace:
+- **Lenses.** A world carries weights over the library's lenses as world
+  data. Its creator states them in `CreateWorld` (the library holds no
+  default), and the owner replaces them with `SetLensWeights` in any phase; a
+  set that weighs the same as the current one is refused as
+  `NoCanonicalChange`. A lens is a label, brief text, and an ordered emphasis
+  over the operation catalog, carried as instruction text only. Every lens
+  receives the whole derived catalog. A session draws one lens from a digest
+  of its world id and its command id, the kernel's `select_band` recipe, so
+  the same session under the same weights draws the same lens; the lens is
+  not part of the command id. The session records the lens and its instruction
+  text on its checkpoint, and a resumed session reads both back and never
+  redraws. The same patch under two lenses has the same admission result. A
+  zero weight never draws; a weight set that cannot draw is refused as
+  `LensWeightsNeverDraw` at creation and at `SetLensWeights`.
+- **Stock lens set.** The library ships eight lenses. The set is closed; a
+  consumer chooses among them by weight:
 
   | Lens | Reaches for | Leads with |
   |---|---|---|
@@ -774,15 +791,15 @@ consumer's concept enters this vocabulary.
   rule that reads positions, a subject moving changes demand without a commit.
   `IndividuationRequired` derives for a population whose place's level asks
   for persons.
-- **Sessions.** Up to the configured concurrency run at once, in Draft and in
-  Active, each answering the head of demand. Each world binds one evidence
-  source, which every session and the seed lane read.
+- **Sessions.** Up to the caller's elaboration ceiling run at once (L1, in
+  Active). Running in Draft and answering the head of rule-driven demand are
+  not implemented (L3). Each world binds one evidence source, which every
+  session and the seed lane read (L2, not implemented).
 
 Cut when these land: authored jurisdiction roots as confinement units,
-permille distribution, the `Uncovered` deficit row, the sequential
-per-jurisdiction sweep, `NullEvidenceSource` on the Active elaborator lane,
-"Draft answers nothing" for the elaborator lane, and genesis declaration of any
-consumer subject.
+permille distribution, the `Uncovered` deficit row, `NullEvidenceSource` on
+the Active elaborator lane, "Draft answers nothing" for the elaborator lane,
+and genesis declaration of any consumer subject.
 
 Verification: the lens-invariant admission test; sampler determinism and
 weight-following frequencies; zero-weight refusal; `Uniform` assigning every
