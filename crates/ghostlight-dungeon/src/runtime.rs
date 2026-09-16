@@ -15,7 +15,7 @@ use ghostlight::{
     ConsumerPort, ConsumerRegistry, ControllerError, ControllerModels, ControllerPendingReason,
     ControllerRunner, ControllerWorkCustody, Cover, CoverBudget, CreateJurisdictionIntent,
     CreateWorldIntent, DEFAULT_SDK_MODEL_PREFIX, DecisionInvocation, DecisionOpportunity,
-    KernelError, MailboxError, NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId,
+    KernelError, Lens, LensWeights, MailboxError, NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId,
     SdkBinding, SeedOutcome, SeedPort, Statement, SubjectId, SubjectKind, SubmissionDisposition,
     SubmitReceipt, TickMinutes, VaultEvidenceSource, VerifiedPrincipalEvidence, WorldMailbox,
     WorldPhase, WorldSnapshot, derive_cover, open_controller_work, open_inference,
@@ -159,7 +159,7 @@ struct CreatePayload {
     title: String,
     /// The world's premise in the owner's words, projected to every lane as
     /// guidance. Required, may be empty; a payload that omits it is refused,
-    /// which is what `world_create.v3` means.
+    /// which is what `world_create.v4` means.
     brief: String,
     subject_label: String,
     #[serde(default)]
@@ -169,13 +169,17 @@ struct CreatePayload {
     /// World-wide target of goal-bearing subjects per kind. Required, and may
     /// be empty: a world with no target is a deliberate choice, not a default
     /// that arrives because nobody said anything. A payload that omits it is
-    /// refused, which is what `world_create.v3` means.
+    /// refused, which is what `world_create.v4` means.
     targets: BTreeMap<SubjectKind, u32>,
     /// The jurisdiction roots, declared by genesis beside the commons because
     /// `resolve_patch` only resolves roots the same patch declares. A duplicate
     /// handle and a permille sum over 1000 are refused by the resolver, not
     /// pre-checked here: a pre-check would be a second reducer.
     jurisdictions: Vec<CreateJurisdiction>,
+    /// Required, and must draw: a payload that omits it is refused, which is
+    /// what `world_create.v4` means. An unknown lens name is refused by
+    /// deserialization before any handler runs.
+    lens_weights: LensWeights,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1471,6 +1475,7 @@ async fn execute_world(
                             permille: root.permille,
                         })
                         .collect(),
+                    lens_weights: payload.lens_weights,
                 },
                 verified_principal,
             )
@@ -1858,6 +1863,12 @@ fn configured_cover_budget() -> anyhow::Result<CoverBudget> {
     }
     .validated()
     .context("cover budget configuration is not usable")
+}
+
+/// Dungeon policy for a world created before Session Zero's sliders exist
+/// (D2). Not a library default; the library requires the weights to be stated.
+pub(crate) fn uniform_lens_weights() -> LensWeights {
+    LensWeights::new(Lens::ALL.into_iter().map(|lens| (lens, 1)).collect())
 }
 
 /// Sized to the connector's per-caller quota. `Capacity` and `InFlight`
@@ -2883,14 +2894,15 @@ mod tests {
             &fixture.cookie,
             invocation(
                 "world.create",
-                "ghostlight.world_create.v3",
+                "ghostlight.world_create.v4",
                 0,
                 json!({
                     "title":"Cutover World",
                     "brief":"",
                     "subject_label":"Operator",
                     "targets":{},
-                    "jurisdictions":[]
+                    "jurisdictions":[],
+                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
                 }),
                 &uuid::Uuid::new_v4().to_string(),
             ),
@@ -2964,14 +2976,15 @@ mod tests {
         let id = uuid::Uuid::new_v4().to_string();
         let command = invocation(
             "world.create",
-            "ghostlight.world_create.v3",
+            "ghostlight.world_create.v4",
             0,
             json!({
                 "title":"Retry World",
                 "brief":"",
                 "subject_label":"Operator",
                 "targets":{},
-                "jurisdictions":[]
+                "jurisdictions":[],
+                "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
             }),
             &id,
         );
@@ -3147,6 +3160,7 @@ mod tests {
                     operational_agent_label: Some("Operational Agent".into()),
                     targets,
                     jurisdictions,
+                    lens_weights: uniform_lens_weights(),
                 },
                 &principal,
             )
@@ -4003,10 +4017,10 @@ mod tests {
 
     // ---- The seed command ------------------------------------------------
 
-    /// Spec test 1. `world_create.v2` is not kept alive beside v3: an
-    /// invocation announcing it dies at validation before any handler runs, and
-    /// a payload that announces v3 but omits the brief or the scale target is a
-    /// payload error rather than a defaulted intent. Neither creates a world.
+    /// Spec test 1. The previous create schema is not kept alive beside
+    /// `world_create.v4`: a complete payload announcing it dies at validation before any handler runs,
+    /// and a payload that announces v4 but omits the lens weights or the brief
+    /// is a payload error rather than a defaulted intent. None creates a world.
     #[tokio::test]
     async fn a_stale_create_payload_is_refused() {
         let fixture = fixture().await;
@@ -4015,9 +4029,9 @@ mod tests {
             &fixture.cookie,
             invocation(
                 "world.create",
-                "ghostlight.world_create.v2",
+                "ghostlight.world_create.v3",
                 0,
-                json!({"title":"Stale World","subject_label":"Operator","targets":{},"jurisdictions":[]}),
+                json!({"title":"Stale World","brief":"","subject_label":"Operator","targets":{},"jurisdictions":[]}),
                 &uuid::Uuid::new_v4().to_string(),
             ),
         )
@@ -4025,14 +4039,39 @@ mod tests {
         assert_eq!(stale["state"], "denied");
         assert!(current_world(&fixture.state).await.unwrap().is_none());
 
+        let unweighted = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({"title":"Unweighted World","brief":"","subject_label":"Operator","targets":{},"jurisdictions":[]}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(unweighted["state"], "denied");
+        // Refused as a payload, before genesis: a defaulted empty set would
+        // also be denied, by the resolver, and must not pass for this.
+        let message = unweighted["message"].as_str().unwrap_or_default();
+        assert!(
+            message.contains("missing field `lens_weights`"),
+            "the omission was not refused at the payload: {message}"
+        );
+        assert!(
+            current_world(&fixture.state).await.unwrap().is_none(),
+            "a v4 payload with no lens weights created a world anyway"
+        );
+
         let partial = post(
             &fixture.state,
             &fixture.cookie,
             invocation(
                 "world.create",
-                "ghostlight.world_create.v3",
+                "ghostlight.world_create.v4",
                 0,
-                json!({"title":"Half World","subject_label":"Operator","targets":{},"jurisdictions":[]}),
+                json!({"title":"Half World","subject_label":"Operator","targets":{},"jurisdictions":[],"lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}}),
                 &uuid::Uuid::new_v4().to_string(),
             ),
         )
@@ -4040,8 +4079,60 @@ mod tests {
         assert_eq!(partial["state"], "denied");
         assert!(
             current_world(&fixture.state).await.unwrap().is_none(),
-            "a v2 payload with no scale target created a world anyway"
+            "a v4 payload with no brief created a world anyway"
         );
+    }
+
+    /// A lens name the library does not know, beside one it does, is refused
+    /// by deserialization before any handler runs. No world is created.
+    #[tokio::test]
+    async fn a_create_payload_naming_an_unknown_lens_is_refused() {
+        let fixture = fixture().await;
+        let result = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({"title":"Tribunal World","brief":"","subject_label":"Operator","targets":{},"jurisdictions":[],"lens_weights":{"patina":1,"tribunal":1}}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(result["state"], "denied");
+        let message = result["message"].as_str().unwrap_or_default();
+        assert!(
+            message.contains("tribunal"),
+            "the unknown lens was not refused by name: {message}"
+        );
+        assert!(current_world(&fixture.state).await.unwrap().is_none());
+    }
+
+    /// Every lens named, every weight zero: the payload decodes, and the
+    /// library's genesis refuses it with `LensWeightsNeverDraw`. No world.
+    #[tokio::test]
+    async fn a_create_payload_whose_lenses_never_draw_is_refused() {
+        let fixture = fixture().await;
+        let result = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({"title":"Still World","brief":"","subject_label":"Operator","targets":{},"jurisdictions":[],"lens_weights":{"patina":0,"charter":0,"ledger":0,"hearth":0,"tangle":0,"veil":0,"ember":0,"numen":0}}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(result["state"], "denied");
+        let message = result["message"].as_str().unwrap_or_default();
+        assert!(
+            message.contains("LensWeightsNeverDraw"),
+            "the refusal did not name the draw rule: {message}"
+        );
+        assert!(current_world(&fixture.state).await.unwrap().is_none());
     }
 
     /// Every `control.button` in a surface, at whatever depth.

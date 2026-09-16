@@ -44,9 +44,9 @@ pub(crate) struct EveRouteHint {
     pub(crate) transport: Option<String>,
 }
 
-/// The `world_create.v3` payload, in one place, so the button that captures it
+/// The `world_create.v4` payload, in one place, so the button that captures it
 /// and the descriptor that advertises it cannot drift.
-const CREATE_BINDINGS: [&str; 7] = [
+const CREATE_BINDINGS: [&str; 8] = [
     "title",
     "brief",
     "subject_label",
@@ -54,6 +54,7 @@ const CREATE_BINDINGS: [&str; 7] = [
     "operational_agent_label",
     "targets",
     "jurisdictions",
+    "lens_weights",
 ];
 
 const SEED_BINDINGS: [&str; 2] = ["vault_scope", "brief"];
@@ -256,6 +257,11 @@ pub(crate) fn authenticated_surface(
 
     match snapshot {
         None => {
+            // Dungeon policy, editable before submission; the library holds no
+            // default weights.
+            let default_lens_weights =
+                serde_json::to_string(&crate::runtime::uniform_lens_weights())
+                    .context("the default lens weights encode")?;
             children.extend([
                 json!({
                     "id":"world.create.title",
@@ -299,6 +305,13 @@ pub(crate) fn authenticated_surface(
                     "stateBindings":[local_draft("jurisdictions", "json")],
                     "children":[]
                 }),
+                json!({
+                    "id":"world.create.lens_weights",
+                    "kind":"control.input.textarea",
+                    "props":{"label":"Lens weights","rows":2,"value":default_lens_weights,"placeholder":default_lens_weights},
+                    "stateBindings":[local_draft("lens_weights", "json")],
+                    "children":[]
+                }),
                 command_button(
                     "world.create",
                     "Create world",
@@ -309,7 +322,7 @@ pub(crate) fn authenticated_surface(
             ]);
             commands.push(command_descriptor(
                 "world.create",
-                "ghostlight.world_create.v3",
+                "ghostlight.world_create.v4",
                 &CREATE_BINDINGS,
                 "WorldMailbox",
             ));
@@ -611,7 +624,7 @@ pub(crate) fn operation_schema(operation: &str) -> Option<&'static str> {
         "heimdall.auth.begin" => "heimdall.auth_begin_command.v1",
         "heimdall.auth.complete" => "heimdall.auth_complete_command.v1",
         "app.auth.logout" => "ghostlight.app_logout.v2",
-        "world.create" => "ghostlight.world_create.v3",
+        "world.create" => "ghostlight.world_create.v4",
         "world.approve" => "ghostlight.world_approve.v0",
         "world.activate" => "ghostlight.world_activate.v0",
         "world.advance_time" => "ghostlight.world_advance_time.v0",
@@ -758,6 +771,27 @@ mod tests {
         assert!(!encoded.contains("session_zero"));
         assert!(!encoded.contains("campaign"));
         assert_eq!(surface["version"], 0);
+
+        // The lens control's default is Dungeon's uniform policy, every stock
+        // lens named, and it decodes as the weights the payload will carry.
+        fn find<'a>(node: &'a Value, id: &str) -> Option<&'a Value> {
+            if node["id"] == id {
+                return Some(node);
+            }
+            node.as_object()?
+                .values()
+                .flat_map(|value| match value {
+                    Value::Array(items) => items.iter().collect::<Vec<_>>(),
+                    other => vec![other],
+                })
+                .find_map(|child| find(child, id))
+        }
+        let control = find(&surface, "world.create.lens_weights").expect("a lens weights control");
+        let default = control["props"]["value"].as_str().expect("a default value");
+        let decoded: ghostlight::LensWeights = serde_json::from_str(default).unwrap();
+        assert_eq!(decoded, crate::runtime::uniform_lens_weights());
+        assert_eq!(decoded.iter().count(), ghostlight::Lens::ALL.len());
+        assert!(decoded.iter().all(|(_, weight)| weight == 1));
     }
 
     #[test]

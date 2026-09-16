@@ -19,8 +19,9 @@
 use chrono::{Duration, Utc};
 use ghostlight::{
     CommandBody, CommandId, ControllerMode, ControllerPort, CreateWorldIntent, DecisionInvocation,
-    DecisionOpportunity, KernelError, MailboxError, PrincipalCommandIntent, Statement,
-    SubjectId, SubmitReceipt, VerifiedPrincipalEvidence, WorldMailbox, WorldPhase, WorldSnapshot,
+    DecisionOpportunity, KernelError, Lens, LensWeights, MailboxError, PrincipalCommandIntent,
+    Statement, SubjectId, SubmitReceipt, VerifiedPrincipalEvidence, WorldMailbox, WorldPhase,
+    WorldSnapshot,
 };
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
@@ -33,6 +34,7 @@ struct World {
     _directory: tempfile::TempDir,
     _owner: tokio::task::JoinHandle<()>,
     mailbox: WorldMailbox,
+    principal: VerifiedPrincipalEvidence,
 }
 
 impl World {
@@ -52,6 +54,9 @@ impl World {
                     operational_agent_label: Some("Operational Agent".into()),
                     targets: BTreeMap::new(),
                     jurisdictions: Vec::new(),
+                    // An external crate has no library fixture; it states its
+                    // own weights, as every consumer must.
+                    lens_weights: LensWeights::new(BTreeMap::from([(Lens::Patina, 1)])),
                 },
                 &principal,
             )
@@ -76,6 +81,7 @@ impl World {
             _directory: directory,
             _owner: owner,
             mailbox,
+            principal,
         };
         assert_eq!(world.snapshot().await.phase, WorldPhase::Active);
         world
@@ -476,4 +482,92 @@ async fn a_stale_issued_scope_digest_is_refused_and_commits_nothing() {
         );
         assert_eq!(world.committed().await, before, "{what}");
     }
+}
+
+/// Every stock lens named, with real weights: the shape a consumer's weight
+/// control produces, so a refusal below is about the caller and not the value.
+fn real_weights() -> LensWeights {
+    LensWeights::new(BTreeMap::from([
+        (Lens::Patina, 3),
+        (Lens::Charter, 1),
+        (Lens::Ledger, 0),
+        (Lens::Hearth, 2),
+        (Lens::Tangle, 1),
+        (Lens::Veil, 1),
+        (Lens::Ember, 1),
+        (Lens::Numen, 1),
+    ]))
+}
+
+/// A second verified principal holds a live session and valid weights and is
+/// not the owner. The kernel refuses it and nothing commits; the same body
+/// from the owner then commits, so the refusal is not an inert harness.
+#[tokio::test]
+async fn set_lens_weights_from_a_non_owner_is_refused_and_commits_nothing() {
+    let world = World::active().await;
+    let snapshot = world.snapshot().await;
+    let stranger =
+        VerifiedPrincipalEvidence::new("external-admission-stranger", Utc::now() + Duration::hours(1));
+    let before = world.committed().await;
+    let result = world
+        .mailbox
+        .submit_principal(
+            PrincipalCommandIntent {
+                id: CommandId::new(),
+                world_id: snapshot.world_id,
+                expected_revision: snapshot.revision,
+                body: CommandBody::SetLensWeights {
+                    weights: real_weights(),
+                },
+            },
+            &stranger,
+        )
+        .await;
+    assert!(
+        matches!(
+            result,
+            Err(MailboxError::Kernel(KernelError::Unauthorized))
+        ),
+        "a non-owner replaced the lens weights: {result:?}"
+    );
+    assert_eq!(world.committed().await, before);
+    assert_ne!(world.snapshot().await.lens_weights, real_weights());
+
+    let receipt = world
+        .mailbox
+        .submit_principal(
+            PrincipalCommandIntent {
+                id: CommandId::new(),
+                world_id: snapshot.world_id,
+                expected_revision: snapshot.revision,
+                body: CommandBody::SetLensWeights {
+                    weights: real_weights(),
+                },
+            },
+            &world.principal,
+        )
+        .await
+        .expect("the owner replaces the lens weights");
+    assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+    let after = world.snapshot().await;
+    assert_eq!(after.revision, before.0 + 1);
+    assert_eq!(after.lens_weights, real_weights());
+}
+
+/// A lens name the library does not know cannot be decoded into a command
+/// body, beside names it does. This is a serde limit, stated as one: the body
+/// never exists, so no kernel admission is being proven here.
+#[test]
+fn set_lens_weights_with_an_unknown_lens_does_not_decode() {
+    let refused = serde_json::from_value::<CommandBody>(json!({
+        "type": "set_lens_weights",
+        "weights": {"patina": 1, "veil ": 1},
+    }));
+    assert!(refused.is_err(), "an unknown lens decoded: {refused:?}");
+    let accepted = serde_json::from_value::<CommandBody>(json!({
+        "type": "set_lens_weights",
+        "weights": {"patina": 1, "veil": 1},
+    }))
+    .expect("known lens names decode");
+    assert!(matches!(accepted, CommandBody::SetLensWeights { .. }));
 }

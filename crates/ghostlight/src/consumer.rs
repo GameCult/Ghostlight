@@ -1219,7 +1219,7 @@ mod tests {
             }],
             evidence: vec![EvidenceRef::new(MIRROR_EVIDENCE)],
         };
-        let resolved = patch::resolve_patch(&kernel.state, command_id, &foreign, None)
+        let resolved = patch::resolve_patch(&kernel.state, command_id, &foreign, None, None)
             .expect("the patch resolves");
         let effect = super::super::WorldEffect::PatchAdmitted {
             answers: None,
@@ -2234,7 +2234,7 @@ mod tests {
         assert!(super::super::journal::verify_state_shape(&previous).is_err());
         assert_eq!(
             super::super::STATE_SCHEMA,
-            "ghostlight.world_state.consumer.v4"
+            "ghostlight.world_state.consumer.v5"
         );
     }
 

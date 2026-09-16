@@ -188,6 +188,7 @@ impl WorldMailbox {
                     evidence: Vec::new(),
                 },
                 scale_intent,
+                lens_weights: input.lens_weights,
             },
             AuthenticatedCaller::verified_principal(principal_id),
         )
@@ -933,6 +934,7 @@ mod tests {
 
     fn creation(id: CommandId, title: &str) -> CreateWorld {
         CreateWorld {
+            lens_weights: crate::tests::stock_weights(),
             id,
             owner: PrincipalId::new("owner"),
             title: title.into(),
@@ -1354,6 +1356,7 @@ mod tests {
         let created = mailbox
             .create_fixture(
                 CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Soul Stamping".into(),

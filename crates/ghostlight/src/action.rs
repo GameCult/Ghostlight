@@ -172,6 +172,7 @@ pub(super) fn exercise(
                 evidence: Vec::new(),
             },
             None,
+            None,
         )
         .map_err(KernelError::PatchRejected)?
         .operations

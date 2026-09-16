@@ -6667,6 +6667,7 @@ mod tests {
             material: None,
         };
         let snapshot = WorldSnapshot {
+            lens_weights: crate::tests::stock_weights(),
             world_id: opportunity.world_id,
             revision: opportunity.revision,
             phase: WorldPhase::Active,
@@ -6924,6 +6925,7 @@ mod tests {
             open: true,
         };
         let snapshot = WorldSnapshot {
+            lens_weights: crate::tests::stock_weights(),
             world_id: opportunity.world_id,
             revision: opportunity.revision,
             phase: WorldPhase::Active,
@@ -7419,6 +7421,7 @@ mod tests {
             affordance_ids: vec![speak_affordance],
         };
         let snapshot = WorldSnapshot {
+            lens_weights: crate::tests::stock_weights(),
             world_id: opportunity.world_id,
             revision: opportunity.revision,
             phase: WorldPhase::Active,
@@ -8415,6 +8418,7 @@ mod tests {
         let creation = mailbox
             .create_fixture(
                 CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Controller Fixture".into(),
@@ -9010,6 +9014,7 @@ mod tests {
         let creation = mailbox
             .create_fixture(
                 CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Midnight Roll Call".into(),
@@ -9413,6 +9418,7 @@ mod tests {
         let creation = mailbox
             .create_fixture(
                 CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Elaboration Fixture".into(),
@@ -9703,6 +9709,7 @@ mod tests {
         let creation = mailbox
             .create_fixture(
                 CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Cover Fixture".into(),
@@ -10250,6 +10257,7 @@ mod tests {
         let creation = mailbox
             .create_fixture(
                 CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Apart Fixture".into(),
@@ -10695,6 +10703,7 @@ mod tests {
         mailbox
             .create_fixture(
                 CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Seed Fixture".into(),
@@ -11447,6 +11456,7 @@ mod tests {
         mailbox
             .create(
                 CreateWorldIntent {
+                    lens_weights: crate::tests::stock_weights(),
                     id: CommandId::new(),
                     title: "The Whole Road".into(),
                     brief: String::new(),
@@ -11607,6 +11617,7 @@ mod tests {
         let owner = PrincipalId::new("seed-owner");
         let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
         let genesis = |intent: WorldScaleIntentRef, roots: &[&str]| CreateWorld {
+            lens_weights: crate::tests::stock_weights(),
             id: CommandId::new(),
             owner: owner.clone(),
             title: "Two Roots".into(),
@@ -13135,6 +13146,7 @@ mod tests {
         let creation = mailbox
             .create_fixture(
                 CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Witness Fixture".into(),
@@ -13634,6 +13646,7 @@ mod tests {
         let creation = mailbox
             .create_fixture(
                 CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
                     id: CommandId::new(),
                     owner: owner.clone(),
                     title: "Interruption Fixture".into(),

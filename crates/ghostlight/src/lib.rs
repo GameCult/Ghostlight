@@ -171,8 +171,8 @@ impl VerifiedPrincipalEvidence {
     }
 }
 
-pub const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v4";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v4";
+pub const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v5";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v5";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -410,6 +410,9 @@ struct CreateWorld {
     /// Authored once, here, and never mutated: `CommandBody::AdmitPatch` carries
     /// no intent, so write-once is the command shape rather than a check.
     scale_intent: WorldScaleIntentRef,
+    /// The world's flavor as genesis writes it. `SetLensWeights` may replace
+    /// it later; this command carries what the world began with.
+    lens_weights: LensWeights,
 }
 
 /// Unattributed creation intent. World ingress derives ownership, controller
@@ -431,6 +434,9 @@ pub struct CreateWorldIntent {
     /// The jurisdiction roots genesis declares beside the commons, because
     /// `resolve_patch` only resolves roots the same patch declares.
     pub jurisdictions: Vec<CreateJurisdictionIntent>,
+    /// Required. The library holds no default weights; a consumer states the
+    /// world's flavor or is refused.
+    pub lens_weights: LensWeights,
 }
 
 /// One jurisdiction root as ingress states it. The handle is a string here and
@@ -672,6 +678,14 @@ pub enum CommandBody {
     AdvanceTime {
         minutes: TickMinutes,
     },
+    /// Replaces the world's whole lens weight set. Owner only, in any phase,
+    /// under genesis admission: a set that never draws is refused, and a zero
+    /// weight is admitted and never draws. Identical weights are still a
+    /// commit, because the owner's act is canonical. A session that already
+    /// drew keeps its recorded lens.
+    SetLensWeights {
+        weights: LensWeights,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -845,6 +859,10 @@ struct WorldState {
     now: FictionalMinutes,
     /// The authored scale target, written once by genesis and never mutated.
     scale_intent: WorldScaleIntent,
+    /// Written by genesis and replaced only by `SetLensWeights`; read by the
+    /// elaborator's draw and by nothing that admits. It enters `state_digest`
+    /// and no `ScopePreimage`.
+    lens_weights: LensWeights,
     controller_assignments: BTreeMap<DecisionScope, ControllerAssignment>,
     /// What an affordance *is*. World-authored, Draft-only, written by
     /// `admit_resolved` alone.
@@ -895,6 +913,11 @@ enum WorldEffect {
         minutes: TickMinutes,
         to: FictionalMinutes,
         motion: Motion,
+    },
+    /// The owner replaced the world's lens weights. `apply_effect` re-decides
+    /// the owner and the draw rule.
+    LensWeightsReplaced {
+        weights: LensWeights,
     },
 }
 
@@ -1113,6 +1136,7 @@ pub struct WorldSnapshot {
     /// commitment gazetteer.
     pub boundaries: Vec<CausalBoundary>,
     pub scale_deficit: Vec<ScaleDeficitRow>,
+    pub lens_weights: LensWeights,
     pub state_digest: String,
     pub last_commit_digest: Option<String>,
 }
@@ -1318,6 +1342,7 @@ fn prepare_creation(
         input.id,
         &input.patch,
         Some(&input.scale_intent),
+        Some(&input.lens_weights),
     )
     .map_err(KernelError::PatchRejected)?;
     Ok(PreparedCreation {
@@ -1640,7 +1665,7 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
                 !(patch.declarations.is_empty() && patch.evidence.is_empty()),
             )?;
             let confinement = require_patch_author(state, &command.caller, answers.as_ref())?;
-            let resolved = patch::resolve_patch(state, command.id, patch, None)
+            let resolved = patch::resolve_patch(state, command.id, patch, None, None)
                 .map_err(KernelError::PatchRejected)?;
             if let Some(ground) = confinement {
                 confine_to_ground(state, &resolved, ground).map_err(KernelError::PatchRejected)?;
@@ -1648,6 +1673,17 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
             Ok(WorldEffect::PatchAdmitted {
                 answers: answers.clone(),
                 resolved,
+            })
+        }
+        CommandBody::SetLensWeights { weights } => {
+            require_owner(state, &command.caller)?;
+            if !weights.draws() {
+                return Err(KernelError::PatchRejected(vec![
+                    Mismatch::LensWeightsNeverDraw,
+                ]));
+            }
+            Ok(WorldEffect::LensWeightsReplaced {
+                weights: weights.clone(),
             })
         }
     }
@@ -1770,6 +1806,9 @@ impl WorldState {
             last_opportunity_at: BTreeMap::new(),
             now: FictionalMinutes::default(),
             scale_intent: WorldScaleIntent::default(),
+            // Never persisted: genesis overwrites it, and `verify_state_shape`
+            // refuses a stored set that never draws.
+            lens_weights: LensWeights::default(),
             controller_assignments: BTreeMap::new(),
             affordance_catalog: BTreeMap::new(),
             affordance_grants: BTreeMap::new(),
@@ -1812,6 +1851,7 @@ impl WorldState {
             command.id,
             &command.patch,
             Some(&command.scale_intent),
+            Some(&command.lens_weights),
         )
         .map_err(KernelError::PatchRejected)?;
         if &expected != resolved {
@@ -2046,6 +2086,9 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
     }
     if let Some(intent) = &resolved.scale_intent {
         state.scale_intent = intent.clone();
+    }
+    if let Some(weights) = &resolved.lens_weights {
+        state.lens_weights = weights.clone();
     }
     apply_operations(state, &resolved.operations, &resolved.evidence)
 }
@@ -3718,6 +3761,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
         now: state.now,
         boundaries: derive_boundaries(state)?,
         scale_deficit: derive_scale_deficit(state)?,
+        lens_weights: state.lens_weights.clone(),
         state_digest: state.state_digest.clone(),
         last_commit_digest: state.last_commit_digest.clone(),
     })
@@ -4892,6 +4936,14 @@ fn apply_effect(
                     .insert(written.source, written.magnitude);
             }
         }
+        WorldEffect::LensWeightsReplaced { weights } => {
+            if caller != &CallerId::Principal(state.owner.clone()) || !weights.draws() {
+                return Err(KernelError::Invariant(
+                    "lens weights effect does not satisfy owner admission".into(),
+                ));
+            }
+            state.lens_weights = weights.clone();
+        }
     }
     Ok(())
 }
@@ -5064,6 +5116,7 @@ mod tests {
                 ],
             },
             scale_intent: WorldScaleIntentRef::default(),
+            lens_weights: stock_weights(),
         }
     }
 
@@ -8246,6 +8299,7 @@ mod custody_tests {
         let mut candidate = kernel.state.clone();
         let forged = WorldEffect::PatchAdmitted {
             resolved: ResolvedPatch {
+                lens_weights: None,
                 subjects: Vec::new(),
                 entities: Vec::new(),
                 routes: Vec::new(),
@@ -8840,6 +8894,7 @@ mod custody_tests {
 
         let forge = |operations: Vec<ResolvedOp>| WorldEffect::PatchAdmitted {
             resolved: ResolvedPatch {
+                lens_weights: None,
                 subjects: Vec::new(),
                 entities: Vec::new(),
                 routes: Vec::new(),
@@ -11492,6 +11547,7 @@ mod witness_tests {
                 operations: vec![witness(world.asteroid, world.village, Confidence::Certain)],
                 evidence: Vec::new(),
             },
+            None,
             None,
         )
         .expect("the witness resolves over committed state");
@@ -14372,7 +14428,7 @@ mod clock_tests {
             panic!("the operations helper builds an admitted patch");
         };
         let resolved =
-            patch::resolve_patch(&kernel.state, CommandId::new(), patch, None).expect("resolves");
+            patch::resolve_patch(&kernel.state, CommandId::new(), patch, None, None).expect("resolves");
         assert!(
             resolved.scale_intent.is_none(),
             "an Active patch resolved a scale intent"
@@ -14380,6 +14436,292 @@ mod clock_tests {
 
         submit_owner(&mut kernel, &active, body);
         assert_eq!(kernel.state.scale_intent, authored);
+    }
+
+    // ---- lens weights: world data, genesis, and the owner command --------
+
+    fn every_lens_at_zero() -> LensWeights {
+        LensWeights::new(Lens::ALL.into_iter().map(|lens| (lens, 0)).collect())
+    }
+
+    #[test]
+    fn genesis_writes_the_lens_weights_it_was_given() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let given = LensWeights::new(BTreeMap::from([(Lens::Patina, 2), (Lens::Numen, 1)]));
+        let mut input = creation(CommandId::new(), "Flavored");
+        input.lens_weights = given.clone();
+        let (kernel, _) = WorldKernel::create(&path, input, &auth_principal(owner())).unwrap();
+        let created = kernel.snapshot().unwrap();
+        assert_eq!(created.lens_weights, given);
+        assert_eq!(kernel.state.lens_weights, given);
+
+        let world_id = created.world_id;
+        drop(kernel);
+        let replayed = WorldKernel::open(&path, world_id).unwrap();
+        assert_eq!(replayed.snapshot().unwrap(), created);
+        assert_eq!(replayed.state.state_digest, created.state_digest);
+    }
+
+    #[test]
+    fn a_genesis_lens_set_that_never_draws_is_refused() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let mut input = creation(CommandId::new(), "Flavorless");
+        input.lens_weights = every_lens_at_zero();
+        let Err(error) = WorldKernel::create(&path, input, &auth_principal(owner())) else {
+            panic!("a genesis lens set that never draws was admitted");
+        };
+        let KernelError::PatchRejected(mismatches) = error else {
+            panic!("expected a rejected genesis patch, got {error:?}");
+        };
+        assert_eq!(mismatches, vec![Mismatch::LensWeightsNeverDraw]);
+        assert!(!path.exists(), "a refused genesis wrote a world file");
+
+        // The same creation with one real weight among the zeros is admitted.
+        let mut input = creation(CommandId::new(), "Flavorless");
+        let mut weights = BTreeMap::from_iter(every_lens_at_zero().iter());
+        weights.insert(Lens::Veil, 1);
+        input.lens_weights = LensWeights::new(weights);
+        WorldKernel::create(&path, input, &auth_principal(owner())).expect("one nonzero weight");
+    }
+
+    /// Soul falsification, the lens twin of the scale intent's write-once
+    /// test: an Active patch resolves no weights; only the owner's
+    /// `SetLensWeights` replaces them, in Draft and in Active; every other
+    /// caller is `Unauthorized`; a set that never draws is refused; and
+    /// `apply_effect` re-decides the owner against a hand-built effect.
+    #[test]
+    fn soul_the_lens_weights_are_replaced_only_by_the_owner_command() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, _) = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "Owner Flavor"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let draft_weights = LensWeights::new(BTreeMap::from([
+            (Lens::Patina, 0),
+            (Lens::Charter, 3),
+            (Lens::Ledger, 1),
+        ]));
+        let draft = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &draft,
+            CommandBody::SetLensWeights {
+                weights: draft_weights.clone(),
+            },
+        );
+        assert_eq!(kernel.state.revision, draft.revision + 1);
+        assert_eq!(kernel.state.lens_weights, draft_weights);
+
+        let active = activate(&mut kernel);
+        let active_weights = LensWeights::new(BTreeMap::from([
+            (Lens::Hearth, 5),
+            (Lens::Tangle, 0),
+            (Lens::Ember, 2),
+        ]));
+        submit_owner(
+            &mut kernel,
+            &active,
+            CommandBody::SetLensWeights {
+                weights: active_weights.clone(),
+            },
+        );
+        assert_eq!(kernel.state.revision, active.revision + 1);
+        assert_eq!(kernel.state.lens_weights, active_weights);
+
+        // An Active patch is handed no weights, so it cannot resolve any.
+        let resolved = patch::resolve_patch(
+            &kernel.state,
+            CommandId::new(),
+            &operations_patch(&kernel),
+            None,
+            None,
+        )
+        .expect("resolves");
+        assert!(resolved.lens_weights.is_none(), "an Active patch resolved lens weights");
+        let after_patch = kernel.snapshot().unwrap();
+        let patch = operations_patch(&kernel);
+        submit_owner(
+            &mut kernel,
+            &after_patch,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch,
+            },
+        );
+        assert_eq!(kernel.state.lens_weights, active_weights);
+
+        // Every caller but the owner, with real weights.
+        let proposed = super::tests::stock_weights();
+        let before = kernel.state.clone();
+        for caller in [
+            CallerId::Principal(human_principal()),
+            CallerId::Principal(PrincipalId::new("stranger@example.test")),
+            elaborator(JurisdictionKey::Uncovered),
+            CallerId::System(SystemCapability::Clock),
+            CallerId::System(SystemCapability::Consumer {
+                consumer: ConsumerId::of_name("lens-consumer"),
+            }),
+        ] {
+            let result = submit_as(
+                &mut kernel,
+                caller.clone(),
+                CommandBody::SetLensWeights {
+                    weights: proposed.clone(),
+                },
+            );
+            assert!(
+                matches!(result, Err(KernelError::Unauthorized)),
+                "{caller:?} replaced the lens weights: {result:?}"
+            );
+        }
+        assert_eq!(kernel.state, before);
+
+        // The owner, with every lens named at zero.
+        let result = submit_as(
+            &mut kernel,
+            CallerId::Principal(owner()),
+            CommandBody::SetLensWeights {
+                weights: every_lens_at_zero(),
+            },
+        );
+        let Err(KernelError::PatchRejected(mismatches)) = result else {
+            panic!("a lens set that never draws was admitted: {result:?}");
+        };
+        assert_eq!(mismatches, vec![Mismatch::LensWeightsNeverDraw]);
+        assert_eq!(kernel.state, before);
+
+        // The owner, with valid weights, against the revision before the
+        // last commit.
+        let stale = command(
+            &draft,
+            CommandId::new(),
+            CallerId::Principal(owner()),
+            CommandBody::SetLensWeights {
+                weights: proposed.clone(),
+            },
+        );
+        assert!(matches!(
+            kernel.submit(stale, &auth_principal(owner())),
+            Err(KernelError::RevisionMismatch { .. })
+        ));
+        assert_eq!(kernel.state, before);
+
+        // `apply_effect` re-decides: a hand-built effect under a non-owner or
+        // a system caller never applies, and neither does one that never draws.
+        for (caller, weights) in [
+            (CallerId::Principal(human_principal()), proposed.clone()),
+            (CallerId::System(SystemCapability::Clock), proposed.clone()),
+            (CallerId::Principal(owner()), every_lens_at_zero()),
+        ] {
+            let mut candidate = kernel.state.clone();
+            let error = apply_effect(
+                &mut candidate,
+                CommandId::new(),
+                &caller,
+                &WorldEffect::LensWeightsReplaced { weights },
+            )
+            .unwrap_err();
+            assert!(
+                matches!(
+                    error,
+                    KernelError::Invariant(_) | KernelError::Unauthorized
+                ),
+                "{caller:?}: {error:?}"
+            );
+            assert_eq!(candidate, kernel.state);
+        }
+        // The honest effect applies through the same arm.
+        let mut candidate = kernel.state.clone();
+        apply_effect(
+            &mut candidate,
+            CommandId::new(),
+            &CallerId::Principal(owner()),
+            &WorldEffect::LensWeightsReplaced {
+                weights: proposed.clone(),
+            },
+        )
+        .expect("the owner's effect applies");
+        assert_eq!(candidate.lens_weights, proposed);
+
+        // Identical weights from the owner are still a commit.
+        let current = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &current,
+            CommandBody::SetLensWeights {
+                weights: active_weights.clone(),
+            },
+        );
+        assert_eq!(kernel.state.revision, current.revision + 1);
+        assert_eq!(kernel.state.lens_weights, active_weights);
+    }
+
+    /// An owner commit that adds a commitment to the first person: a real
+    /// Active patch with no answer, and nothing to do with lenses.
+    fn operations_patch(kernel: &WorldKernel) -> WorldPatch {
+        let subject = kernel
+            .state
+            .subjects
+            .iter()
+            .find(|(_, state)| state.kind == SubjectKind::Person)
+            .map(|(id, _)| *id)
+            .expect("a person");
+        let CommandBody::AdmitPatch { patch, .. } = operations(vec![ComponentOp::CreateCommitment {
+            subject: Ref::Existing(subject),
+            counterparty: None,
+            kind: CommitmentKind::Goal,
+            due: FictionalMinutes(kernel.state.now.0 + 500),
+            period: None,
+            checks: Vec::new(),
+            statement: Statement::new("A promise kept with no flavor at all.").unwrap(),
+        }]) else {
+            panic!("the operations helper builds an admitted patch");
+        };
+        patch
+    }
+
+    #[test]
+    fn lens_weights_enter_the_state_digest_and_no_scope_digest() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, _) = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "Digest Flavor"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let active = activate(&mut kernel);
+
+        let mut other = kernel.state.clone();
+        other.lens_weights =
+            LensWeights::new(BTreeMap::from([(Lens::Patina, 1), (Lens::Veil, 7)]));
+        assert_ne!(
+            state_digest(&other).unwrap(),
+            state_digest(&kernel.state).unwrap(),
+            "lens weights did not enter the state digest"
+        );
+
+        let digests = |kernel: &WorldKernel| -> BTreeMap<SubjectId, ScopeDigest> {
+            derive_opportunities(&kernel.state)
+                .unwrap()
+                .into_iter()
+                .map(|opportunity| (opportunity.scope.subject_id, opportunity.scope_digest))
+                .collect()
+        };
+        let before = digests(&kernel);
+        assert!(!before.is_empty(), "the active fixture derives opportunities");
+        submit_owner(
+            &mut kernel,
+            &active,
+            CommandBody::SetLensWeights {
+                weights: other.lens_weights.clone(),
+            },
+        );
+        assert_ne!(kernel.state.state_digest, active.state_digest);
+        assert_eq!(digests(&kernel), before, "lens weights entered a scope digest");
     }
 
     /// Soul falsification: a discharge names one subject's own live key.
@@ -15028,6 +15370,7 @@ mod clock_tests {
             &kernel.state,
             command_id,
             &shed_under(clockwork.dead_end, "shed"),
+            None,
             None,
         )
         .expect("the patch resolves");
