@@ -3413,6 +3413,187 @@ mod tests {
         drop(simulation);
     }
 
+    /// Reads both pools on every `infer` call. After `arm`, the next call is
+    /// held inside the provider boundary until the test releases it, and its
+    /// reading is kept as `(simulation free, elaboration free)`.
+    struct PoolObservingPort {
+        simulation: Arc<Semaphore>,
+        elaboration: Arc<Semaphore>,
+        armed: AtomicBool,
+        held: std::sync::Mutex<Option<(usize, usize)>>,
+        entered: Semaphore,
+        release: Semaphore,
+    }
+
+    impl PoolObservingPort {
+        fn over(state: &AppState) -> Self {
+            Self {
+                simulation: state.controller_permits.clone(),
+                elaboration: state.elaboration_permits.clone(),
+                armed: AtomicBool::new(false),
+                held: std::sync::Mutex::new(None),
+                entered: Semaphore::new(0),
+                release: Semaphore::new(0),
+            }
+        }
+
+        /// Arms the gate, waits for the lane `run` starts to reach the provider
+        /// boundary, returns what that call read, and lets it go. The timeout
+        /// only turns a lane blocked on a pool into a failure instead of a
+        /// hang; the reading does not rest on it.
+        async fn reading_of<T: Send + 'static>(
+            &self,
+            run: impl std::future::Future<Output = T> + Send + 'static,
+        ) -> ((usize, usize), T) {
+            self.armed.store(true, Ordering::SeqCst);
+            let lane = tokio::spawn(run);
+            tokio::time::timeout(Duration::from_secs(30), self.entered.acquire())
+                .await
+                .expect("the lane never reached the provider boundary")
+                .unwrap()
+                .forget();
+            let reading = self.held.lock().unwrap().take().expect("the held call's reading");
+            self.release.add_permits(1);
+            (reading, lane.await.expect("the lane panicked"))
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl InferencePort for PoolObservingPort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
+        }
+
+        async fn infer(
+            &self,
+            _request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            let reading = (
+                self.simulation.available_permits(),
+                self.elaboration.available_permits(),
+            );
+            if self.armed.swap(false, Ordering::SeqCst) {
+                *self.held.lock().unwrap() = Some(reading);
+                self.entered.add_permits(1);
+                self.release.acquire().await.unwrap().forget();
+            }
+            Ok(InferenceOutput::new(
+                vec![InferenceEvent::Text("The pool fixture speaks.".into())],
+                "sha256:pool-observing-port",
+            ))
+        }
+    }
+
+    /// One `world.controller.act` through the HTTP route, for the first
+    /// opportunity whose controller is `mode`.
+    async fn controller_turn(
+        state: AppState,
+        cookie: String,
+        mode: ghostlight::ControllerMode,
+    ) -> Value {
+        let world = current_world(&state).await.unwrap().expect("a world");
+        let opportunity = world
+            .opportunities
+            .iter()
+            .find(|opportunity| opportunity.controller_mode == mode)
+            .expect("an opportunity for that controller")
+            .clone();
+        post(
+            &state,
+            &cookie,
+            invocation(
+                "world.controller.act",
+                "ghostlight.world_controller_act.v0",
+                eve::surface_version(Some(&world)),
+                json!({"opportunity":opportunity}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await
+    }
+
+    /// Ruling L1-Q4 for a player's controller turn, read at the provider
+    /// boundary. While a turn infers it holds one simulation permit and no
+    /// elaboration permit, and with every elaboration permit held by the test
+    /// it still reaches the provider. A sweep is the mirror: while it infers
+    /// the simulation pool is whole, and with every simulation permit held it
+    /// still reaches the provider.
+    #[tokio::test]
+    async fn a_speak_turn_and_a_sweep_draw_only_from_their_own_pools() {
+        let fixture = fixture().await;
+        two_cell_world(
+            &fixture.state,
+            &fixture.cookie,
+            BTreeMap::from([(SubjectKind::Person, 4)]),
+            vec![CreateJurisdictionIntent {
+                handle: "sere".into(),
+                label: "The Low Sere".into(),
+                permille: 1000,
+            }],
+            true,
+        )
+        .await;
+        let mut state = fixture.state.clone();
+        let port = Arc::new(PoolObservingPort::over(&state));
+        state.controllers = Some(Arc::new(
+            ControllerRunner::open(
+                state.world.clone(),
+                port.clone(),
+                Arc::new(AlwaysFreshWorkStore),
+                test_controller_models(),
+            )
+            .expect("the fixture ports open"),
+        ));
+        let simulation = TEST_CONTROLLER_CONCURRENCY;
+        let elaboration = TEST_ELABORATION_CEILING;
+
+        let (reading, _) = port
+            .reading_of(controller_turn(
+                state.clone(),
+                fixture.cookie.clone(),
+                ghostlight::ControllerMode::NarrativePersona,
+            ))
+            .await;
+        assert_eq!(
+            reading,
+            (simulation - 1, elaboration),
+            "a speak turn did not hold exactly one simulation permit and no elaboration permit"
+        );
+
+        let held = state
+            .elaboration_permits
+            .clone()
+            .try_acquire_many_owned(u32::try_from(elaboration).expect("a small pool"))
+            .expect("the elaboration pool is free");
+        let (reading, _) = port
+            .reading_of(controller_turn(
+                state.clone(),
+                fixture.cookie.clone(),
+                ghostlight::ControllerMode::OperationalAgent,
+            ))
+            .await;
+        assert_eq!(reading, (simulation - 1, 0));
+        drop(held);
+        assert!(!state.controller_quarantined.load(Ordering::SeqCst));
+
+        let sweep = |state: AppState| async move { run_elaboration_sweep(&state).await };
+        let (reading, ()) = port.reading_of(sweep(state.clone())).await;
+        assert_eq!(reading.0, simulation, "a sweep held a simulation permit");
+        assert!(reading.1 < elaboration, "a sweep inferred without an elaboration permit");
+
+        let held = state
+            .controller_permits
+            .clone()
+            .try_acquire_many_owned(u32::try_from(simulation).expect("a small pool"))
+            .expect("the simulation pool is free");
+        let (reading, ()) = port.reading_of(sweep(state.clone())).await;
+        assert_eq!(reading.0, 0);
+        assert!(reading.1 < elaboration);
+        drop(held);
+        assert_eq!(state.controller_permits.available_permits(), simulation);
+        assert_eq!(state.elaboration_permits.available_permits(), elaboration);
+    }
+
     /// Raises `ControllerError::requires_quarantine` on every call. Used to
     /// prove the tick driver's quarantine edge rather than any cognition
     /// outcome.
