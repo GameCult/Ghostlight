@@ -11450,6 +11450,40 @@ mod tests {
         task.await.unwrap();
     }
 
+    /// A retryable fault does not stop the sweep. Under a pool of one the second
+    /// entry waits for the first session's permit, so it is not spawned until
+    /// the first session has ended; that session's call faults as retryable,
+    /// and the second session still runs and commits in the same sweep.
+    #[tokio::test]
+    async fn a_retryable_fault_does_not_stop_the_sweep() {
+        let (_directory, mailbox, task, _commons, roads) = dead_end_world(
+            crate::tests::stock_weights(),
+            &["The Unwalked Road", "The Far Road"],
+            Roots::Commons,
+            0,
+        )
+        .await;
+        let shed = shed_on_the_named_road(vec![
+            ("The Unwalked Road", roads[0]),
+            ("The Far Road", roads[1]),
+        ]);
+        let port = Arc::new(SweepPort::new(move |call, request| {
+            if call == 0 {
+                Err(InferenceFault::retryable("the fixture connector is at capacity"))
+            } else {
+                shed(call, request)
+            }
+        }));
+        let runner = sweep_runner(&mailbox, port.clone(), fresh_store());
+        runner.sweep(pool(1)).await.expect("a retryable fault ended the sweep");
+        assert_eq!(port.calls(), 2, "no session started after a retryable fault");
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert_eq!(snapshot.boundaries.len(), 1, "the second session did not commit");
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
     /// Holds the two sessions of `a_quarantine_error_is_returned_after_every_session_finishes`
     /// in the provider boundary together, then faults the first with an
     /// integrity violation while the second waits for the test.
