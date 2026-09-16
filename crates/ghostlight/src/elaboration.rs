@@ -49,7 +49,7 @@ pub(super) const SEED_ROUND_BUDGET: usize = 24;
 
 const ELABORATION_NAMESPACE: &str = "ghostlight.command.elaboration.v1";
 
-const ELABORATION_INSTRUCTIONS: &str = "Use only the supplied tools to author structure inside your jurisdiction. Answer the boundary or deficit you were given, then submit. Recording a gap changes nothing.";
+pub(super) const ELABORATION_INSTRUCTIONS: &str = "Use only the supplied tools to author structure inside your jurisdiction. Answer the boundary or deficit you were given, then submit. Recording a gap changes nothing.";
 
 /// The answer a session is bound to, plus the ancestry it was built against.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

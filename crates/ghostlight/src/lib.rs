@@ -62,6 +62,7 @@ mod controllers;
 mod cover;
 mod elaboration;
 mod journal;
+mod lens;
 mod mailbox;
 mod patch;
 mod sdk_inference;
@@ -90,6 +91,7 @@ pub use elaboration::{
     ElaborationCheckpoint, ElaborationRunner, EvidenceError, EvidenceQuery, EvidenceReceipt,
     EvidenceSource, SeedCheckpoint, SeedOutcome, SeedRunner, select_row,
 };
+pub use lens::{Lens, LensWeights};
 pub(crate) use mailbox::ElaborationPort;
 pub use mailbox::{ConsumerPort, ControllerPort, MailboxError, SeedPort, WorldMailbox};
 pub use patch::{
@@ -4992,6 +4994,11 @@ mod tests {
             .find(|entry| entry.entry.kind.0 == kind)
             .map(|entry| entry.id)
             .expect("the fixture world declares this affordance")
+    }
+
+    /// Every stock lens at weight one.
+    pub(crate) fn stock_weights() -> LensWeights {
+        LensWeights::new(Lens::ALL.into_iter().map(|lens| (lens, 1)).collect())
     }
 
     pub(crate) fn creation(id: CommandId, title: &str) -> CreateWorld {
