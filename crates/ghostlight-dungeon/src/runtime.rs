@@ -3093,7 +3093,8 @@ mod tests {
 
     use ghostlight::{
         ControllerPort, ControllerWork, ControllerWorkLookup, ControllerWorkStore,
-        ControllerWorkStoreError, ControllerWorkWrite, InferenceEvent, InferenceFault,
+        ControllerWorkStoreError, ControllerWorkWrite, ElaboratorSession, InferenceEvent,
+        InferenceFault,
         InferenceOutput, InferencePort, InferencePurpose, InferenceRequest, PreparedInference,
         SubjectId,
     };
@@ -3227,6 +3228,12 @@ mod tests {
                 elaboration_commands: 0,
                 seed_commands: 0,
             })
+        }
+
+        async fn elaboration_in_flight(
+            &self,
+        ) -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError> {
+            Ok(Vec::new())
         }
     }
 

@@ -7,8 +7,9 @@
 //! affordance fields.
 
 use super::elaboration::{
-    ElaborationCheckpoint, ElaborationRunner, EvidenceSource, NullEvidenceSource, SeedCheckpoint,
-    SeedRunner, valid_elaboration_progression, valid_seed_progression,
+    ElaborationCheckpoint, ElaborationRunner, ElaboratorSession, EvidenceSource,
+    NullEvidenceSource, SeedCheckpoint, SeedRunner, valid_elaboration_progression,
+    valid_seed_progression,
 };
 use super::sdk_inference::{
     ChildProcessLink, DEFAULT_SDK_MODEL_PREFIX, RoutedInferencePort, SdkBinding, SdkInferencePort,
@@ -1521,6 +1522,16 @@ pub trait ControllerWorkStore: Send + Sync {
     /// Proves custody of the backing path without interpreting ordinary model
     /// or world pending states as store failure.
     async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError>;
+
+    /// Every elaboration session still in flight, with its command id: rows in
+    /// `ElaboratorInFlight` or `ReadyToSubmit`, never `NoPatch`, least recently
+    /// stored first. The elaboration sweep reads this once, before it draws
+    /// anything, so work is rediscovered by what it answers rather than only by
+    /// re-deriving its id. No default body: a store that cannot list its
+    /// sessions says so at compile time.
+    async fn elaboration_in_flight(
+        &self,
+    ) -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError>;
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1765,6 +1776,48 @@ impl ControllerWorkStore for CultCacheControllerWorkStore {
             elaboration_commands: count(WorkLane::Elaboration),
             seed_commands: count(WorkLane::Seed),
         })
+    }
+
+    /// One pass over the rows, under the same custody check `lookup` makes.
+    async fn elaboration_in_flight(
+        &self,
+    ) -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError> {
+        let journal = self.journal.lock().map_err(|_| {
+            ControllerWorkStoreError::new("controller work store lock was poisoned")
+        })?;
+        if journal.uncertain.is_some() {
+            return Err(ControllerWorkStoreError::new(
+                "controller work store ownership is uncertain; reopen before another command",
+            ));
+        }
+        verify_journal_custody(&journal)?;
+        let stored_at: BTreeMap<&str, &str> = journal
+            .rows
+            .iter()
+            .filter(|row| row.r#type == CONTROLLER_WORK_ROW)
+            .map(|row| (row.key.as_str(), row.stored_at.as_str()))
+            .collect();
+        let mut listed = Vec::new();
+        for (command_id, work) in &journal.work {
+            if let Some(entry) = in_flight_elaboration(work) {
+                let key = store_key(*command_id)?;
+                let at = stored_at.get(key.as_str()).copied().unwrap_or_default();
+                listed.push((at, key, entry));
+            }
+        }
+        listed.sort_by(|left, right| (left.0, &left.1).cmp(&(right.0, &right.1)));
+        Ok(listed.into_iter().map(|(_, _, entry)| entry).collect())
+    }
+}
+
+/// The elaboration session a row carries, when that session can still run.
+fn in_flight_elaboration(work: &ControllerWork) -> Option<(CommandId, ElaboratorSession)> {
+    match work {
+        ControllerWork::Elaboration(
+            checkpoint @ (ElaborationCheckpoint::ElaboratorInFlight { .. }
+            | ElaborationCheckpoint::ReadyToSubmit { .. }),
+        ) => Some((checkpoint.command_id(), checkpoint.session().clone())),
+        _ => None,
     }
 }
 
@@ -8401,6 +8454,19 @@ mod tests {
                 elaboration_commands: count(WorkLane::Elaboration),
                 seed_commands: count(WorkLane::Seed),
             })
+        }
+
+        /// In map order: this store keeps no write time.
+        async fn elaboration_in_flight(
+            &self,
+        ) -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError> {
+            Ok(self
+                .work
+                .lock()
+                .unwrap()
+                .values()
+                .filter_map(in_flight_elaboration)
+                .collect())
         }
     }
 

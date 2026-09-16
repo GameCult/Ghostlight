@@ -88,8 +88,8 @@ pub use controllers::{
 pub(crate) use cover::{CellId, Constituent, Resolution};
 pub use cover::{AgencyGraph, Cell, Cover, CoverBudget, CoverBudgetError, TickIndex, derive_cover};
 pub use elaboration::{
-    ElaborationCheckpoint, ElaborationRunner, EvidenceError, EvidenceQuery, EvidenceReceipt,
-    EvidenceSource, SeedCheckpoint, SeedOutcome, SeedRunner, select_row,
+    ElaborationCheckpoint, ElaborationRunner, ElaboratorSession, EvidenceError, EvidenceQuery,
+    EvidenceReceipt, EvidenceSource, SeedCheckpoint, SeedOutcome, SeedRunner, select_row,
 };
 pub use lens::{Lens, LensWeights};
 pub(crate) use mailbox::ElaborationPort;

@@ -142,7 +142,7 @@ impl ElaborationCheckpoint {
         }
     }
 
-    fn session(&self) -> &ElaboratorSession {
+    pub(super) fn session(&self) -> &ElaboratorSession {
         match self {
             Self::ElaboratorInFlight { session, .. }
             | Self::ReadyToSubmit { session, .. }
