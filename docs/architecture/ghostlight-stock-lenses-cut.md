@@ -1671,6 +1671,31 @@ not repo artifacts.
     `WorkPersistence`). Every later sweep then errors, and the driver logs it
     only at `debug` (`runtime.rs:1856`), so an operator would not see a
     wedged elaboration lane. Evidence for the L1.f1 ruling, not a fix here.
+- **Second fix batch landed:** `635123f` (c4.s2.f2), `2b4b833` (c4.s2.f1),
+  `872ba35` (c4.s2.f3, the deletion in its own commit).
+  - c4.s2.f1: `a_retryable_fault_does_not_stop_the_sweep` kills
+    `held.stop = outcome.is_err()`. It uses a pool of 1, so the second
+    session exists only after the first faults; 30/30.
+  - c4.s2.f2: `the_sweep_claims_uncovered_work_beside_a_root_in_deficit`
+    kills the mutation that pushes `Uncovered` only when there is no deficit.
+  - c4.s2.f3: `&& self.answer_digest == other.answer_digest` removed from
+    `same_answer`. Counts unchanged; `session_command_id` still hashes the
+    digest, and two tests fail if it stops.
+- **Soul's final pass** (against `b15ade4`; all three code items sound):
+  - The retryable-fault test cannot pass through overlap: the only permit is
+    held through `step_session`.
+  - The deletion is safe: `same_answer`'s single caller compares a session
+    whose id already binds the digest. One behaviour change: a forged row
+    under a derived id with a different digest is now adopted instead of
+    Superseded. Row integrity never bound id to digest, and the foreign-row
+    test already accepts adoption of copied rows.
+  - The Uncovered gap remaining is L1.f15.
+  - Doc findings: the ontology loop claimed seed requests and Vault evidence
+    for the Active sweep, the handoff said "title weights", and `map.yaml` did
+    not name L2. All three fixed at close-out.
+  - Soul's forced rebuild left an empty untracked
+    `crates/ghostlight-dungeon/src/lib.rs`. It was verified empty and
+    untracked, then removed.
 
 ### L1-Q10 Whether the in-flight listing excludes rows ready to submit
 
@@ -1718,12 +1743,16 @@ not repo artifacts.
 - **Promises:** P5.1 No document describes the sequential unlensed sweep
   as the live system. P5.2 Every schema string in the live docs matches
   `lib.rs:172-173`, `controllers.rs:77-78` and `eve.rs:614`.
-- **Landed:**
-- **Verdicts:**
+- **Landed:** `39b2af4` (ontology), `04fd004` (plan, handoff, `map.yaml`),
+  `b15ade4` (MVP doc), and close-out fixes by the root agent. The source
+  anchors in P5.2 have moved to `lib.rs:174-175`, `controllers.rs:78-79` and
+  `eve.rs:627`.
+- **Verdicts:** Soul's final pass against `b15ade4`, plus the close-out fixes.
 
 | Promise | Verdict | Evidence | Mutations |
 |---|---|---|---|
-| | | | |
+| P5.1 | HOLDS after close-out | No live doc describes the sequential sweep; the target doc was rewritten at close-out. Soul found the ontology loop claiming seed requests and Vault evidence for the Active sweep; fixed | none; doc claims checked against source |
+| P5.2 | HOLDS | `consumer.v5`, `controller_work.v16` and `world_create.v4` in the live docs match source. The remaining older names are marked history (L0 docs, plan steps 13 and 14, smoke runs, map step 13) | none |
 
 ## Subtraction ledger
 
@@ -1734,7 +1763,7 @@ not repo artifacts.
 | 2 | ~6 (doc lines replaced, the v2 denial case) | library: state field, command, effect, two reducer arms, resolve param, mismatch variant, snapshot field, replay check ~90; 19 literal sites × 1 line; tests ~220; Dungeon: payload field, policy fn, Eve control and binding, three schema strings, harness ~40; tests ~60; docs ~8 | 0 deps; `consumer.v4` → `v5`; `world_create.v3` → `v4` | 12 files, +825 / −40: production ~130 across `lib.rs`, `patch.rs`, `journal.rs`, `mailbox.rs`, `action.rs`, `runtime.rs`, `eve.rs` plus 20 construction sites; tests ~650 (refusal matrix, direct `apply_effect` half, forged rows, state rows, replay). 0 deps; the two schema bumps as estimated |
 | 3 | ~4 (the constant as integrity reference, the whole-session supersession equality) | session fields, draw and text in `select_answer`, adoption rule, request param ~60; tests ~200; docs ~3 | `controller_work.v15` → `v16` | 6 files, +1071 / −113: production about +100 / −60 (`elaboration.rs` session fields, `same_answer`, adoption, draw in `select_answer`, request parameter, id signature, the constant deleted; `lens.rs` the constant moved in, the divisor guard, `weighs_the_same_as`, markers removed; `lib.rs` one call; `controllers.rs` two constants); tests about +890 (real-store tests, fixture generalization, two added tests); docs 1 line. `controller_work.v15` → `v16` as estimated |
 | 4 | ~35 (sequential sweep, `Inactive`, doc lines) | `sweep` + `demand_entries` with rediscovery ~110; trait method + three store impls ~45; second pool and its config ~25; tests ~360; docs ~14 | public `sweep` signature gains a `Semaphore`; `ControllerWorkStore` gains one required method; one new env variable | `elaboration.rs` production +220 / −82 (including the test-only `step_in`); `controllers.rs` production +56 / −2; `runtime.rs` production +41 / −18; tests about +1,430 / −194 (fixtures, gated ports, three real-store non-adoption cases); docs about +21. 0 deps; one env variable; one required trait method; one new public re-export (`ElaboratorSession`); `sweep` signature change |
-| 5 | ~14 | ~25 | 0 | |
+| 5 | ~14 | ~25 | 0 | Code (second Cut 4 fix batch): +107 / −12, two tests and one deleted comparison. Docs: +70 / −39 across the ontology, plan, handoff, `map.yaml` and MVP doc. 0 deps |
 
 Net for L1: about +1,300 lines, of which about two thirds are tests, no new
 dependency, no new crate, no new binary, four schema strings replaced, one
@@ -1744,6 +1773,21 @@ replayable draw recorded on the session, concurrent sessions under a
 ceiling that cannot starve simulation, an explicit weights payload) and
 retires one liability: a sweep whose only protection against a second
 session on one answer was that nobody wrote one.
+
+Actual for L1, reconciled 2026-09-16 against `817c9f4`: 12 crate files,
++4,907 / −266 (`controllers.rs` +2,807, mostly tests; `runtime.rs` +571;
+`elaboration.rs` +467; `lib.rs` +414; `lens.rs` +379 new; `journal.rs` +223;
+`external_admission.rs` +237). Docs, notes and map +1,957 / −46, most of it
+this cut map. The estimate was about +1,300; the overrun is overwhelmingly
+test code, the same shape as L0. The tests bought real catches: a flaky
+illegal-transition pin (3 of 40 runs), the untested Q7 resume rule, the
+untested retryable-no-stop guard leg, a no-op revision under two spellings,
+and a forged row caught by the wrong check. Four schema strings replaced as
+estimated, one environment variable, one required trait method, one new
+production type (`SessionPermit`), no dependency, crate or binary. Liabilities
+retired beyond the estimate: the elaborator repair loop that never worked
+across sweeps (L1.f10), and a background driver that a single task panic
+killed silently.
 
 ## Findings not assigned to a cut
 
@@ -1782,6 +1826,16 @@ session on one answer was that nobody wrote one.
   comparison at `:1650` can only be reached for same-ancestry rows and is
   effectively inert. L1-Q9 (A) fixes the elaborator lane only; the seed lane
   is outside L1.
+- **L1.f15 (pre-existing behaviour, low, recorded):** `Uncovered` work is
+  pinned only for worlds with at most one named root. The mutation
+  `if jurisdictions.len() < 2` survives the whole suite: a world whose deficit
+  names two roots and not `Uncovered` would never sweep uncovered boundaries.
+  The behaviour is correct today; the case is untested.
+- **L1.f16 (capability, operator):** the ontology once said consumers "may use
+  or replace" the stock lenses. `Lens` is a closed enum of eight, so
+  consumers choose weights only. Cut 5 made the doc match the code. Whether a
+  consumer-supplied lens set is still wanted is the operator's decision;
+  recommendation is to defer until a consumer needs one, likely Delvehold.
 - **L1.f14 (pre-existing, medium, operator):** stored controller-work rows
   are never retired. Soul's probe B: every committed elaborator session leaves
   a permanent `ReadyToSubmit` row. Probe A: a session refused on its last

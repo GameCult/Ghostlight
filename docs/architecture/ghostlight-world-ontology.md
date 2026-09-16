@@ -683,11 +683,13 @@ own, because it is derived from the reducer's vocabulary.
 
 ```text
 loop:
-  take one demand entry in my jurisdiction: an open boundary or seed request,
-    or my jurisdiction's scale deficit
+  take one demand entry in my jurisdiction: an open boundary, or my
+    jurisdiction's scale deficit (seed requests are Draft-only; the Active
+    sweep does not answer them)
   if the store holds an in-flight session answering it, resume that session;
     otherwise draw a lens by the world's weights and record it on the session
-  retrieve evidence from the Vault for its referents; keep exact receipts
+  retrieve evidence for its referents from the world's evidence source; keep
+    exact receipts (the Active lane binds none yet: `NullEvidenceSource`, L2)
   build one WorldPatch with declaration and operation tools
   submit; on rejection, repair the same draft from the complete mismatch set
   on commit, checkpoint: admitted commit ancestry, open leads, exact rejections

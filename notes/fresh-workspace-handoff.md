@@ -274,7 +274,7 @@ unplaced; retire it or place its subjects.
 
 Passes when a human, on a local daemon with the SDK sidecar, runs Dungeon's
 Session Zero end to end (`docs/architecture/ghostlight-session-zero.md`):
-chooses a Vault, describes the experience, sets title weights, sketches,
+chooses a Vault, describes the experience, sets lens weights, sketches,
 chooses a start, activates, and plays by speaking, gesturing, and travelling
 while detail grows toward them. It proves one player; hosted play and
 multi-player membership are not in this gate. Plan step 15 tracks library

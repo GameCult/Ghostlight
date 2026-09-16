@@ -391,8 +391,8 @@ current_status:
     `ghostlight` library crate; postmortem and follow-ups in
     docs/architecture/ghostlight-library-extraction-postmortem.md); L1, the
     stock lens set, is implemented (835ea4d..872ba35; cut map
-    docs/architecture/ghostlight-stock-lenses-cut.md); the remaining library
-    capabilities are next (typed
+    docs/architecture/ghostlight-stock-lenses-cut.md); L2 is next, then the
+    remaining library capabilities (typed
     detail rules as a function from place to detail level, per-world evidence
     binding, elaborators in Draft; ontology doc "Elaboration lenses and detail
     rules"), then Dungeon's Session Zero consuming them
