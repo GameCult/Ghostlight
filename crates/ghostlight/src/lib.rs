@@ -680,10 +680,10 @@ pub enum CommandBody {
     },
     /// Replaces the world's whole lens weight set. Owner only, in any phase,
     /// under genesis admission: a set that never draws is refused, and a zero
-    /// weight is admitted and never draws. A set equal to the current one
-    /// changes nothing canonical and is refused with `NoCanonicalChange`
-    /// after admission, so nothing commits. A session that already drew
-    /// keeps its recorded lens.
+    /// weight is admitted and never draws. A set that weighs every lens as
+    /// the current one does, however its map is spelled, changes nothing
+    /// canonical and is refused with `NoCanonicalChange` after admission, so
+    /// nothing commits. A session that already drew keeps its recorded lens.
     SetLensWeights {
         weights: LensWeights,
     },
@@ -1686,7 +1686,7 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
             // Admission first, then effect: a caller who may not set weights,
             // or a set that never draws, is refused as such even when it
             // equals the current set. Only an admitted set can be a no-op.
-            if weights == &state.lens_weights {
+            if weights.weighs_the_same_as(&state.lens_weights) {
                 return Err(KernelError::PatchRejected(vec![
                     Mismatch::NoCanonicalChange,
                 ]));

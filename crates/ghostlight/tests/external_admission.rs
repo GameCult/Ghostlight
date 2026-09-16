@@ -611,6 +611,88 @@ async fn identical_lens_weights_from_the_owner_commit_nothing() {
     assert_eq!(world.snapshot().await.lens_weights, real_weights());
 }
 
+/// A lens a weight map does not name weighs zero, so padding a set with zero
+/// weights, or dropping its zero weights, spells the same set. Through the
+/// public mailbox, in both directions: the world's set is sparse and a padded
+/// twin is refused as `NoCanonicalChange`; the world's set is padded and a
+/// sparse twin is refused the same way. Each refusal leaves revision, digests
+/// and operator log unchanged and the stored spelling as it was. A set that
+/// really moves a weight then commits, so the refusals are not an inert harness.
+#[tokio::test]
+async fn a_lens_set_spelled_with_or_without_its_zero_weights_commits_nothing() {
+    let world = World::active().await;
+    let set = |entries: &[(Lens, u32)]| LensWeights::new(entries.iter().copied().collect());
+    let submit = |weights: LensWeights| {
+        let world = &world;
+        async move {
+            let snapshot = world.snapshot().await;
+            world
+                .mailbox
+                .submit_principal(
+                    PrincipalCommandIntent {
+                        id: CommandId::new(),
+                        world_id: snapshot.world_id,
+                        expected_revision: snapshot.revision,
+                        body: CommandBody::SetLensWeights { weights },
+                    },
+                    &world.principal,
+                )
+                .await
+        }
+    };
+    let refused_as_no_change = |weights: LensWeights, stored: LensWeights| {
+        let world = &world;
+        let submit = &submit;
+        async move {
+            let before = world.committed().await;
+            let result = submit(weights.clone()).await;
+            let Err(MailboxError::Kernel(KernelError::PatchRejected(mismatches))) = &result else {
+                panic!("{weights:?} over {stored:?} was not refused as no change: {result:?}");
+            };
+            assert_eq!(mismatches, &vec![Mismatch::NoCanonicalChange]);
+            assert_eq!(world.committed().await, before, "{weights:?} committed");
+            assert_eq!(world.snapshot().await.lens_weights, stored);
+        }
+    };
+
+    // Sparse on the world, padded in the command. The world was created with
+    // `{patina: 1}`.
+    let sparse = set(&[(Lens::Patina, 1)]);
+    assert_eq!(world.snapshot().await.lens_weights, sparse);
+    refused_as_no_change(set(&[(Lens::Patina, 1), (Lens::Charter, 0)]), sparse.clone()).await;
+    let every = LensWeights::new(
+        Lens::ALL
+            .into_iter()
+            .map(|lens| (lens, u32::from(lens == Lens::Patina)))
+            .collect(),
+    );
+    assert_eq!(every.iter().count(), 8);
+    refused_as_no_change(every, sparse.clone()).await;
+
+    // A real change commits, and stores its own spelling: padded.
+    let before = world.committed().await;
+    let padded = set(&[(Lens::Patina, 0), (Lens::Charter, 3)]);
+    let receipt = submit(padded.clone()).await.expect("moving weight from patina to charter commits");
+    assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+    assert_eq!(world.committed().await.0, before.0 + 1);
+    assert_eq!(world.snapshot().await.lens_weights, padded);
+
+    // Padded on the world, sparse in the command.
+    refused_as_no_change(set(&[(Lens::Charter, 3)]), padded.clone()).await;
+    refused_as_no_change(
+        set(&[(Lens::Charter, 3), (Lens::Veil, 0), (Lens::Numen, 0)]),
+        padded.clone(),
+    )
+    .await;
+
+    // A set that moves one weight by one is a change.
+    let before = world.committed().await;
+    let moved = set(&[(Lens::Charter, 3), (Lens::Numen, 1)]);
+    submit(moved.clone()).await.expect("adding weight to numen commits");
+    assert_eq!(world.committed().await.0, before.0 + 1);
+    assert_eq!(world.snapshot().await.lens_weights, moved);
+}
+
 /// A lens name the library does not know cannot be decoded into a command
 /// body, beside names it does. This is a serde limit, stated as one: the body
 /// never exists, so no kernel admission is being proven here.

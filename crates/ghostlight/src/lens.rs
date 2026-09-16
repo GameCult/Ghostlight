@@ -163,6 +163,16 @@ impl LensWeights {
     pub(crate) fn draws(&self) -> bool {
         self.0.values().any(|weight| *weight > 0)
     }
+
+    /// Every stock lens weighs the same in both sets. A lens a map does not
+    /// name weighs zero, so `{charter: 3}` and `{patina: 0, charter: 3}` are
+    /// one set spelled two ways: they draw identically and neither replaces
+    /// the other.
+    pub(crate) fn weighs_the_same_as(&self, other: &LensWeights) -> bool {
+        Lens::ALL
+            .into_iter()
+            .all(|lens| self.get(lens) == other.get(lens))
+    }
 }
 
 /// The draw's whole input: the world and the session's fixed identity. The
