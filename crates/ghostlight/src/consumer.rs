@@ -965,7 +965,7 @@ mod tests {
         submit_through(&mailbox, owner(), CommandBody::ApproveDraft).await;
         submit_through(
             &mailbox,
-            crate::tests::player(),
+            crate::tests::human_principal(),
             CommandBody::ApproveDraft,
         )
         .await;

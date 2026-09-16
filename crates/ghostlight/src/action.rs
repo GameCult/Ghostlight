@@ -1025,7 +1025,7 @@ mod tests {
         ADMIT_KIND, COMMAND_KIND, Civic, LEVY_KIND, OPENING_BALANCE, SEIZURE_GRIEVANCE, Topology,
         WARDEN_OFFICE, activate, affordance_named, auth_principal, authority_kind, civic_world,
         command, custody_world, grant_to, grievance, office, operations, opportunity_for,
-        over_place, over_subject, player, reject_owner, submit_owner,
+        over_place, over_subject, human_principal, reject_owner, submit_owner,
     };
     use crate::{
         AffordanceKindName, AuthenticatedCaller, AuthoredSource, CallerId, CommandBody, Confidence,
@@ -1732,7 +1732,7 @@ mod tests {
                 command(
                     &active,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     CommandBody::ExerciseDecision {
                         opportunity: opportunity_for(&active, human),
                         invocation: DecisionInvocation {
@@ -1744,7 +1744,7 @@ mod tests {
                         },
                     },
                 ),
-                &auth_principal(player()),
+                &auth_principal(human_principal()),
             )
             .expect("the Speak entry commits");
         assert!(matches!(receipt, SubmitReceipt::Applied(_)));

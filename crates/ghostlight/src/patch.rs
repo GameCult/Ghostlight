@@ -7295,7 +7295,7 @@ mod tests {
     use super::*;
     use crate::tests::{
         FIXTURE_ENTITIES, activate, admit_topology, auth_principal, command, creation, owner,
-        player, reject_owner, speak_entry, submit_owner,
+        human_principal, reject_owner, speak_entry, submit_owner,
     };
     use crate::{
         CallerId, CommandBody, CommandId, KernelError, SubmitReceipt, WorldKernel, WorldPhase,
@@ -7910,7 +7910,7 @@ mod tests {
                 label: "A Late Arrival".into(),
                 kind: SubjectKind::Person,
                 controller: NewController::Human {
-                    principal: player(),
+                    principal: human_principal(),
                 },
                 affordances: BTreeSet::from([speak_entry(&kernel)]),
                 position: None,
@@ -8352,14 +8352,14 @@ mod tests {
                 command(
                     &before,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     admit(patch_of(vec![entity(
                         "rhythm-road",
                         "The Rhythm Road",
                         EntityKind::Place,
                     )])),
                 ),
-                &auth_principal(player()),
+                &auth_principal(human_principal()),
             )
             .unwrap_err();
         assert!(matches!(error, KernelError::Unauthorized));
@@ -8415,16 +8415,16 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let mut kernel = draft_world(directory.path());
         let before = kernel.snapshot().unwrap();
-        let genesis_player = before
+        let genesis_human = before
             .subjects
             .iter()
-            .find(|subject| subject.label == "The Player")
-            .expect("the genesis player subject")
+            .find(|subject| subject.label == "The Human")
+            .expect("the genesis human subject")
             .id;
 
         let patch = patch_of(vec![Declaration::Subject(SubjectDeclaration {
-            handle: DraftHandle::new("player"),
-            label: "Another Player".into(),
+            handle: DraftHandle::new("human"),
+            label: "Another Human".into(),
             kind: SubjectKind::Person,
             controller: NewController::NarrativePersona,
             affordances: BTreeSet::from([speak_entry(&kernel)]),
@@ -8435,10 +8435,10 @@ mod tests {
             .state
             .subjects
             .iter()
-            .find(|(_, subject)| subject.label == "Another Player")
+            .find(|(_, subject)| subject.label == "Another Human")
             .expect("the admitted subject")
             .0;
-        assert_ne!(admitted, genesis_player);
+        assert_ne!(admitted, genesis_human);
 
         let command_id = CommandId::new();
         let first = resolve_patch(&kernel.state, command_id, &patch, None).unwrap();
@@ -8634,7 +8634,7 @@ mod tests {
         let unauthorized = super::super::apply_effect(
             &mut candidate,
             CommandId::issue(),
-            &CallerId::Principal(player()),
+            &CallerId::Principal(human_principal()),
             &honest,
         )
         .unwrap_err();

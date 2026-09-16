@@ -4933,8 +4933,8 @@ mod tests {
         PrincipalId::new("owner@example.test")
     }
 
-    pub(crate) fn player() -> PrincipalId {
-        PrincipalId::new("player@example.test")
+    pub(crate) fn human_principal() -> PrincipalId {
+        PrincipalId::new("human@example.test")
     }
 
     pub(crate) fn auth_principal(principal: PrincipalId) -> AuthenticatedCaller {
@@ -5030,11 +5030,11 @@ mod tests {
                         carries_speech: true,
                     }),
                     subject(
-                        "player",
-                        "The Player",
+                        "human",
+                        "The Human",
                         SubjectKind::Person,
                         NewController::Human {
-                            principal: player(),
+                            principal: human_principal(),
                         },
                     ),
                     subject(
@@ -5102,10 +5102,10 @@ mod tests {
                 command(
                     &after_owner,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     CommandBody::ApproveDraft,
                 ),
-                &auth_principal(player()),
+                &auth_principal(human_principal()),
             )
             .unwrap();
         let approved = kernel.snapshot().unwrap();
@@ -6543,7 +6543,7 @@ mod tests {
     }
 
     #[test]
-    fn draft_activation_player_and_autonomous_actions_share_one_reducer() {
+    fn draft_activation_human_and_autonomous_actions_share_one_reducer() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("world.cc");
         let (mut kernel, _) = WorldKernel::create(
@@ -6561,34 +6561,34 @@ mod tests {
         assert_eq!(active.phase, WorldPhase::Active);
         assert_eq!(active.opportunities.len(), 3);
 
-        let player_opportunity = opportunity(&active, ControllerMode::Human);
+        let human_opportunity = opportunity(&active, ControllerMode::Human);
         kernel
             .submit(
                 command(
                     &active,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     CommandBody::ExerciseDecision {
-                        invocation: speak(&player_opportunity, "I open the door."),
-                        opportunity: player_opportunity,
+                        invocation: speak(&human_opportunity, "I open the door."),
+                        opportunity: human_opportunity,
                     },
                 ),
-                &auth_principal(player()),
+                &auth_principal(human_principal()),
             )
             .unwrap();
-        let after_player = kernel.snapshot().unwrap();
+        let after_human = kernel.snapshot().unwrap();
         assert_eq!(kernel.state.events.len(), 1);
         assert_eq!(
             spoken(&kernel.state, &kernel.state.events[0]),
             Some("I open the door.")
         );
 
-        let persona_opportunity = opportunity(&after_player, ControllerMode::NarrativePersona);
+        let persona_opportunity = opportunity(&after_human, ControllerMode::NarrativePersona);
         let persona_caller = CallerId::Controller(persona_opportunity.controller_id);
         kernel
             .submit(
                 command(
-                    &after_player,
+                    &after_human,
                     CommandId::new(),
                     persona_caller.clone(),
                     CommandBody::ExerciseDecision {
@@ -6641,10 +6641,10 @@ mod tests {
                 command(
                     &owner_approved,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     CommandBody::ActivateWorld,
                 ),
-                &auth_principal(player())
+                &auth_principal(human_principal())
             ),
             Err(KernelError::Unauthorized)
         ));
@@ -6667,10 +6667,10 @@ mod tests {
                 command(
                     &owner_approved,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     CommandBody::ApproveDraft,
                 ),
-                &auth_principal(player()),
+                &auth_principal(human_principal()),
             )
             .unwrap();
         let approved = kernel.snapshot().unwrap();
@@ -6683,13 +6683,13 @@ mod tests {
                 command(
                     &active,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     CommandBody::ExerciseDecision {
                         invocation: speak(&persona, "Puppet"),
                         opportunity: persona,
                     },
                 ),
-                &auth_principal(player())
+                &auth_principal(human_principal())
             ),
             Err(KernelError::ControllerMismatch)
         ));
@@ -6724,13 +6724,13 @@ mod tests {
                 command(
                     &active,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     CommandBody::ExerciseDecision {
                         invocation: denied_invocation,
                         opportunity: original.clone(),
                     },
                 ),
-                &auth_principal(player())
+                &auth_principal(human_principal())
             ),
             Err(KernelError::AffordanceDenied)
         ));
@@ -6744,7 +6744,7 @@ mod tests {
                 command(
                     &active,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     CommandBody::ExerciseDecision {
                         invocation: DecisionInvocation {
                             affordance: forged_affordance,
@@ -6756,7 +6756,7 @@ mod tests {
                         opportunity: tampered,
                     },
                 ),
-                &auth_principal(player())
+                &auth_principal(human_principal())
             ),
             Err(KernelError::AffordanceDenied)
         ));
@@ -6769,13 +6769,13 @@ mod tests {
                 command(
                     &active,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     CommandBody::ExerciseDecision {
                         invocation: speak(&original, "No"),
                         opportunity: forged_scope,
                     },
                 ),
-                &auth_principal(player())
+                &auth_principal(human_principal())
             ),
             Err(KernelError::ScopeChanged { .. })
         ));
@@ -6792,13 +6792,13 @@ mod tests {
                 command(
                     &active,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     CommandBody::ExerciseDecision {
                         invocation: speak(&original, "No"),
                         opportunity: unknown_scope,
                     },
                 ),
-                &auth_principal(player())
+                &auth_principal(human_principal())
             ),
             Err(KernelError::OpportunityMismatch)
         ));
@@ -7066,10 +7066,10 @@ mod tests {
                 command(
                     &second_snapshot,
                     CommandId::new(),
-                    CallerId::Principal(player()),
+                    CallerId::Principal(human_principal()),
                     CommandBody::ApproveDraft,
                 ),
-                &auth_principal(player()),
+                &auth_principal(human_principal()),
             )
             .unwrap();
         let after_second = kernel.snapshot().unwrap();
@@ -7131,7 +7131,7 @@ mod tests {
         assert_eq!(
             rejected,
             vec![Mismatch::DuplicateHandle {
-                handle: DraftHandle::new("player")
+                handle: DraftHandle::new("human")
             }]
         );
         assert!(
@@ -7286,7 +7286,7 @@ mod tests {
         let forged = command(
             &snapshot,
             CommandId::new(),
-            CallerId::Principal(player()),
+            CallerId::Principal(human_principal()),
             CommandBody::ApproveDraft,
         );
         assert!(matches!(
@@ -12268,7 +12268,7 @@ mod clock_tests {
     use super::patch::{PreconditionRef, PressureSourceRef, WorldScaleIntentRef};
     use super::tests::{
         activate, affordance_named, auth_principal, command, creation, operations, opportunity_for,
-        owner, player, reject_owner, submit_owner,
+        owner, human_principal, reject_owner, submit_owner,
     };
     use super::*;
     use std::path::Path;
@@ -12922,7 +12922,7 @@ mod clock_tests {
         assert!(TickMinutes::new(super::patch::MAX_ROUTE_COST + 1).is_none());
 
         for caller in [
-            CallerId::Principal(player()),
+            CallerId::Principal(human_principal()),
             CallerId::Controller(active.opportunities[0].controller_id),
         ] {
             let error = kernel
@@ -13692,7 +13692,7 @@ mod clock_tests {
             targets: BTreeMap::from([(SubjectKind::Person, 10)]),
             jurisdictions: BTreeMap::from([
                 (DraftHandle::new(super::tests::COMMONS), 700),
-                (DraftHandle::new("player"), 400),
+                (DraftHandle::new("human"), 400),
             ]),
         };
         let Err(error) = WorldKernel::create(
@@ -13706,9 +13706,9 @@ mod clock_tests {
             panic!("expected a rejected genesis patch");
         };
         assert!(mismatches.contains(&Mismatch::ScaleWeightsExceedWhole));
-        // `player` is a subject handle, not a place.
+        // `human` is a subject handle, not a place.
         assert!(mismatches.contains(&Mismatch::UnknownJurisdictionRoot {
-            handle: DraftHandle::new("player"),
+            handle: DraftHandle::new("human"),
         }));
 
         // Half the whole distributes half the target, rounded down.
