@@ -45,7 +45,8 @@ cutover.
 - **Outputs:** a rejection receipt changes nothing. An accepted command returns
   one `WorldCommit`, including any reducer-issued ID mapping, and atomically
   appends one digest-chained revision. A structurally valid command that lowers
-  to no factual, speech, lifecycle, or time mutation returns `NoEffect` and does
+  to no factual, speech, lifecycle, or time mutation is refused with
+  `Mismatch::NoCanonicalChange` inside `PatchRejected` and does
   not advance revision, change either digest, allocate IDs, or append a journal
   row.
 - **Derived state:** immutable snapshots and subject views, currently executable

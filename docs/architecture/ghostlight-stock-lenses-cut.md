@@ -800,8 +800,10 @@ not repo artifacts.
     => { require_owner(state, &command.caller)?; if !weights.draws() {
     return Err(KernelError::PatchRejected(vec![Mismatch::LensWeightsNeverDraw])); }
     Ok(WorldEffect::LensWeightsReplaced { weights: weights.clone() }) }`.
-    Identical weights are still a commit (the owner's act is canonical, as an
-    empty-motion tick is, `lib.rs:1619-1621`); the doc says so.
+    History: this spec said identical weights are still a commit, likening
+    the owner's act to an empty-motion tick. Superseded by c2.s1.f1: an
+    identical set changes nothing canonical and is refused with
+    `NoCanonicalChange`, while a tick moves fictional time.
   - `lib.rs:4708-4894` `apply_effect`: arm `WorldEffect::LensWeightsReplaced
     { weights }` re-deciding `require_owner` and `draws()` (the same
     re-decide shape as `WorldActivated`, `:4788-4798`) then `state.lens_weights
@@ -996,6 +998,32 @@ not repo artifacts.
     passes with `draws()` weakened. Fix: build the forgery so its digests are
     consistent and only the draw rule can refuse it, then mutate `draws()` to
     prove it.
+- **Fix batch landed:** `afca403` (c2.s1.f1) and `acb9b33` (c2.s1.f4).
+  - `reduce`'s `SetLensWeights` arm refuses a set equal to the current
+    weights with `PatchRejected([NoCanonicalChange])`, after the capability,
+    owner and draw checks. The kernel has no `NoEffect` variant; the
+    existing "valid but changes nothing" refusal is used, and the
+    implementation plan's wording is corrected to match.
+  - The forged-row test now builds self-consistent forgeries. A control set
+    rebuilt the same way replays, so only the draw rule refuses the all-zero
+    row, at `verify_state_shape`.
+  - Mutations: MF1.1 (the equality check deleted) fails the external and
+    in-crate tests; MF4.1 (`draws()` changed to `!is_empty()`) fails the
+    forged-row test.
+  - Counts: library 435, doc 10, external_admission 11, Dungeon 53,
+    build_provenance 1, persona-projection 13. Warnings identical.
+- **Soul findings, pass 2** (all against `acb9b33`; promises 1 and 3–7 of the
+  batch held):
+  - **c2.s2.f1 (introduced, low, fix in Cut 3):** the no-op check compares
+    raw maps, but a missing lens reads as weight zero. `{charter:3}` →
+    `{patina:0, charter:3}` commits (revision 3 → 4), and changing back
+    commits again. Both sets draw identically. Fix in Cut 3, beside c1.s1.f2:
+    equality compares every lens's effective weight, not the map's spelling.
+  - **c2.s2.f2 (introduced, low, recorded):** only the in-crate test pins
+    that the no-op check comes after the draw rule (mutation SO.2). The
+    external test cannot observe it. One pin is sufficient.
+  - **c2.s2.f3 (introduced, low, fixed here):** this map's Cut 2 spec still
+    said identical weights commit. It is now marked as history above.
 
 ## Cut 3. The lens and its text on the session, in the store, and the adoption rule
 
@@ -1512,6 +1540,8 @@ session on one answer was that nobody wrote one.
   Only tests and the smoke harness exercise `world.create`, and Cut 2's
   eighth binding inherits the same gap. It bears directly on the playtest
   gate (Dungeon pass D2).
+  - **Ruling:** fix in Dungeon pass D2, which rebuilds the create path anyway.
+    **Authority:** operator. **Ruled:** 2026-09-16.
 - **L1.f12 (pre-existing shape widened by Cut 2, design, operator):** Draft
   approvals are bound to nothing. `draft_approvals` (`lib.rs:806`) is only
   inserted (`lib.rs:4827`) and read (`lib.rs:1594`, `4837`), never cleared.
@@ -1519,6 +1549,14 @@ session on one answer was that nobody wrote one.
   a Draft `AdmitPatch`, and activation still succeeds on the original
   approval. An approval therefore covers any flavor or structure change
   made after it. No spec decided this.
+  - **Correction:** lens weights are not part of this problem. They shape
+    what elaboration adds later, not the world an approver sees, and the
+    owner may change them in any phase (L1-Q3). The substance is structure:
+    a Draft `AdmitPatch` after an approval.
+  - **Ruling:** deferred until multi-player membership is rebuilt. Today
+    approvals are effectively the owner approving their own world. If
+    approvals are bound then, bind them to the world's structure, excluding
+    lens weights. **Authority:** operator. **Ruled:** 2026-09-16.
 
 - **L1.f1 (pre-existing, medium, operator-triaged, not blocking L1):** a
   sweep error whose `requires_quarantine()` is true reaches
