@@ -764,8 +764,10 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     census drops by exactly the listed tests; `every_operation_the_panel_emits_has_a_schema`
     (`:4558`) still passes with `world.controller.act` gone.
   - negative: `rg -n 'derive_cover|drive_cover_tick|elaborate_world|run_elaboration_sweep|elaboration_permits|world\.controller\.act|submit_clock\(' crates/ghostlight-dungeon/src`
-    = 0 (`submit_clock\(` with the paren: the library method name must not
-    match a doc word); `rg -n 'GHOSTLIGHT_(COVER_|TICK_INTERVAL|ELABORATION_MAX)' crates docs/architecture/ghostlight-dungeon-mvp.md`
+    = 0, except exactly one hit for `world\.controller\.act`: M1.1's required
+    test. The paren in `submit_clock\(` keeps the library method name from
+    matching a doc word. Corrected after Soul, 2026-09-22 (PA.f11 replaces
+    this grep with a source-scan test). `rg -n 'GHOSTLIGHT_(COVER_|TICK_INTERVAL|ELABORATION_MAX)' crates docs/architecture/ghostlight-dungeon-mvp.md`
     = 0.
   - mutation: M1.1 re-add `"world.controller.act" => "ghostlight.world_controller_act.v0"`
     to `operation_schema`: `removed_legacy_operation_is_denied_before_dispatch`
@@ -787,7 +789,20 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   conflicts with M1.1's required test, so it holds with exactly one hit, at
   that test. M1.1 failed under mutation. Distinct warnings: 19 before, 19
   after.
-- **Verdicts:** pending Soul.
+- **Verdicts** (Soul, 2026-09-22, against `d69e9d4`, Windows):
+
+  | Promise | Verdict | Note |
+  |---|---|---|
+  | P1.1 | HOLDS | By grep and inspection; unguarded: a startup `submit_clock` loop passed 46/46 (PA.f11) |
+  | P1.2 | HOLDS | By grep and inspection; unguarded: a seed-spawned `sweep` passed 46/46 (PA.f11) |
+  | P1.3 | HOLDS | M1.1 caught at `runtime.rs:2226` |
+  | P1.4 | HOLDS | Library diff empty |
+
+  The negative grep's `world\.controller\.act` term is corrected to exclude
+  the test module. It must hit only the M1.1 test
+  (`removed_legacy_operation_is_denied_before_dispatch`).
+- **Soul findings, triaged:** PA.f11 and PA.f12 are fix; PA.f13 and PA.f14
+  are assigned to Cut 8; PA.f15 is fix.
 
 ## Cut 2. The local inference port
 
@@ -1418,6 +1433,39 @@ Interpreter, the elaborator sweep and lenses.
   evidenced custody (Njordr's outbound batch) reads the commit's caller, or
   asks for a distinct holding kind. That is the outbound pass's question, not
   this map's.
+- **PA.f11 (introduced by Cut 1, medium, fix):** no test pins P1.1 or P1.2.
+  Soul re-added a 30-second `submit_clock` loop beside
+  `maintain_mesh_projection`, and a `sweep` spawned from `seed_once`, and both
+  passed 46/46. Fix: a source-scan test, on the precedent of
+  `soul_no_credential_name_appears_in_the_runtimes_own_source`. It bans
+  `submit_clock(`, `.elaborator(`, `run_narrative(`, `run_operational(`,
+  `run_cell(` and `ElaborationRunner` from Dungeon's non-test source. Cut 8's
+  Persona dispatch goes through `PersonaLane`, which the ban does not name.
+- **PA.f12 (introduced by Cut 1, low, fix):** the dropped
+  `no_proposal_projection_carries_the_canonical_world_commit` was the only
+  test of `submit_receipt`'s `applied` / `already_applied` kinds and revision
+  (`runtime.rs:1124`). The fix is a test that submits a principal command
+  twice with one idempotency key and asserts both kinds and the revision.
+- **PA.f13 (introduced by Cut 1, low, Cut 8):** the route-observation test
+  (`runtime.rs:1966-1984`) drains `controller_permits` as a provider barrier.
+  Nothing in Dungeon draws that pool until Cut 8, so for now the barrier
+  guards nothing, and readiness's `"active"` arm is unreachable. Cut 8
+  restores the draw and must make this test meaningful again, or delete it.
+- **PA.f14 (pre-existing, low, Cut 8):** nothing in Dungeon quarantines.
+  `ControllerError::requires_quarantine` has no reader, and the seed lane has
+  always turned every error into a payload string. The library still refuses
+  `CustodyUncertain` itself. Cut 8 decides whether a Persona dispatch whose
+  error requires quarantine closes that world's play table.
+- **PA.f15 (introduced by Cut 1, medium, fix):** stale docs.
+  - `notes/local-live-smoke.md:3-8, 64, 195` is a runbook for the deleted
+    live smoke. Its command now runs zero tests and exits 0.
+  - `docs/architecture/ghostlight-dungeon-mvp.md:584-595` (Verification
+    contract).
+  - `notes/ghostlight-implementation-plan.md:412-427`
+    (`ControllerHttpResult::Interrupted`, `run_cover_tick`).
+  - `docs/architecture/ghostlight-stock-lenses.md:61` (Dungeon's elaboration
+    pool).
+  - The handoff line about concurrent elaboration under Dungeon's ceiling.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
