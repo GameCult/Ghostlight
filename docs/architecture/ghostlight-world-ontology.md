@@ -225,10 +225,7 @@ cell is one inference over partitioned per-constituent views returning zero
 or one attributed proposal per constituent; declines are submitted first and
 each proposal commits or is refused on its own scope digest; a coarse
 `NarrativePersona` receives its typed view and does not enter the membrane.
-Cell and constituent command ids are sha256-derived. The runtime's
-`drive_cover_tick` is the single owner of tick cadence, cover derivation,
-the bounded concurrency permit pool, the quarantine flag, and the clock,
-which advances after the cells so every cell in a tick shares one `now`.
+Cell and constituent command ids are sha256-derived.
 
 `AdmitPatch` has a third author: `CallerId::System(SystemCapability::Consumer
 { consumer })`, minted only by `WorldMailbox::submit_consumer` after the
@@ -672,10 +669,7 @@ recording it, each holding one permit of the elaboration ceiling for its whole
 step. A sweep first reads the store's in-flight sessions and resumes any that
 answer a current demand entry, and the caller runs sweeps one at a time. The
 ceiling is the caller's, passed to each sweep; the library holds no
-concurrency number. Dungeon keeps two pools: the elaboration pool
-(`GHOSTLIGHT_ELABORATION_MAX_CONCURRENT`, a ceiling) and the simulation pool
-(`GHOSTLIGHT_CONTROLLER_MAX_CONCURRENT`, a budget) that speak turns and cover
-cells draw from, and neither lane acquires the other's. The tool catalog is
+concurrency number. The tool catalog is
 generated from this document's operation set and declaration kinds, plus
 `record_gap` and `submit`. It cannot contain an operation the reducer does not
 own, because it is derived from the reducer's vocabulary.

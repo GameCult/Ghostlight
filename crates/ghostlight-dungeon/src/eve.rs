@@ -1,7 +1,7 @@
 //! Eve/CultUI projection for the one live world owner.
 
 use crate::mesh::{COMMAND_BOUNDARY, COMMAND_RESULT_SCHEMA, PROVIDER_ID, SURFACE_ID};
-use ghostlight::{ControllerMode, JurisdictionKey, OperatorEvent, WorldPhase, WorldSnapshot};
+use ghostlight::{JurisdictionKey, OperatorEvent, WorldPhase, WorldSnapshot};
 use anyhow::{Context, bail};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -113,60 +113,6 @@ fn anonymous_surface_at(version: u64) -> Value {
     )
 }
 
-/// `operator_log` arrives beside the snapshot rather than inside it: the story
-/// feed is the human operator's surface, and no subject-facing lane may reach an
-/// unscoped event log.
-/// The scheduler's compute budget and what the last tick's cover did with it.
-/// Rendered read-only, with no command anywhere: an Eve control to change it
-/// would make a projection an owner. Change is a restart, like the model names.
-#[derive(Clone, Copy, Debug)]
-pub(crate) struct CoverPanel {
-    pub(crate) cells: u16,
-    pub(crate) constituent_cap: u16,
-    pub(crate) urgency_slots: u16,
-    /// `None` until the first tick has run.
-    pub(crate) last: Option<CoverPanelTick>,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub(crate) struct CoverPanelTick {
-    pub(crate) tick: u64,
-    pub(crate) cells: usize,
-    pub(crate) singletons: usize,
-    pub(crate) groups: usize,
-    pub(crate) oversubscribed: bool,
-}
-
-fn cover_card(panel: &CoverPanel) -> Value {
-    let detail = match panel.last {
-        None => "No tick has run yet.".to_owned(),
-        Some(last) => format!(
-            "Tick {}: {} cells, {} in detail, {} coarse.{}",
-            last.tick,
-            last.cells,
-            last.singletons,
-            last.groups,
-            if last.oversubscribed {
-                " The world has outgrown the constituent cap; the cap yielded so every subject stayed covered."
-            } else {
-                ""
-            }
-        ),
-    };
-    json!({
-        "id":"world.cover",
-        "kind":"card",
-        "props":{
-            "title":"Attention budget",
-            "detail":detail,
-            "cellBudget":panel.cells,
-            "constituentCap":panel.constituent_cap,
-            "urgencySlots":panel.urgency_slots
-        },
-        "children":[]
-    })
-}
-
 /// What the seed lane has done and what it will answer next. Everything here is
 /// derived from `scale_deficit` and `revision`: in Draft every commit is a patch
 /// admission, so `revision - 1` is exactly the seed patches committed since
@@ -235,11 +181,13 @@ fn jurisdiction_label(world: &WorldSnapshot, jurisdiction: JurisdictionKey) -> S
     }
 }
 
+/// `operator_log` arrives beside the snapshot rather than inside it: the story
+/// feed is the human operator's surface, and no subject-facing lane may reach an
+/// unscoped event log.
 pub(crate) fn authenticated_surface(
     account: &str,
     snapshot: Option<&WorldSnapshot>,
     operator_log: &[OperatorEvent],
-    cover: &CoverPanel,
 ) -> anyhow::Result<Value> {
     let version = surface_version(snapshot);
     let mut children = vec![json!({
@@ -501,53 +449,6 @@ pub(crate) fn authenticated_surface(
                             "WorldMailbox",
                         ));
                     }
-
-                    if world.owner == ghostlight::PrincipalId::new(account) {
-                        children.push(cover_card(cover));
-                        let mut has_controller_command = false;
-                        for (index, opportunity) in world
-                            .opportunities
-                            .iter()
-                            .filter(|opportunity| {
-                                opportunity.controller_mode != ControllerMode::Human
-                            })
-                            .enumerate()
-                        {
-                            let Some(subject) = world
-                                .subjects
-                                .iter()
-                                .find(|subject| subject.id == opportunity.scope.subject_id)
-                            else {
-                                continue;
-                            };
-                            has_controller_command = true;
-                            // The kernel owns the order; the head is simply the
-                            // first row it returned.
-                            let head = world
-                                .opportunities
-                                .first()
-                                .is_some_and(|first| first.scope == opportunity.scope);
-                            children.push(command_button(
-                                &format!("world.controller.act.{index}"),
-                                &format!(
-                                    "Let {} act{}",
-                                    subject.label,
-                                    if head { " (next)" } else { "" }
-                                ),
-                                "world.controller.act",
-                                json!({"opportunity":opportunity}),
-                                &[],
-                            ));
-                        }
-                        if has_controller_command {
-                            commands.push(command_descriptor(
-                                "world.controller.act",
-                                "ghostlight.world_controller_act.v0",
-                                &["opportunity"],
-                                "ControllerRunner → WorldMailbox",
-                            ));
-                        }
-                    }
                 }
             }
         }
@@ -630,7 +531,6 @@ pub(crate) fn operation_schema(operation: &str) -> Option<&'static str> {
         "world.advance_time" => "ghostlight.world_advance_time.v0",
         "world.seed" => "ghostlight.world_seed.v1",
         "world.speak" => "ghostlight.world_speak.v0",
-        "world.controller.act" => "ghostlight.world_controller_act.v0",
         _ => return None,
     })
 }
@@ -721,15 +621,6 @@ fn short_principal(principal: &str) -> String {
 mod tests {
     use super::*;
 
-    fn fixture_cover() -> CoverPanel {
-        CoverPanel {
-            cells: 240,
-            constituent_cap: 24,
-            urgency_slots: 36,
-            last: None,
-        }
-    }
-
     fn invocation(operation: &str, schema: &str, payload: Value) -> EveCommandInvocation {
         EveCommandInvocation {
             schema: "gamecult.eve.command_invocation.v1".into(),
@@ -763,7 +654,7 @@ mod tests {
 
     #[test]
     fn empty_authenticated_surface_has_create_without_session_zero() {
-        let surface = authenticated_surface("sha256:owner", None, &[], &fixture_cover()).unwrap();
+        let surface = authenticated_surface("sha256:owner", None, &[]).unwrap();
         let encoded = serde_json::to_string(&surface).unwrap();
         assert!(encoded.contains("world.create"));
         assert!(encoded.contains("narrative_persona_label"));

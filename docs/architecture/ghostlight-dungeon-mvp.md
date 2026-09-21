@@ -470,21 +470,12 @@ using unresolved pressure and time since the last opportunity, with subject id
 as the final tiebreak. Causal exposure is derivable from `dependencies` and is
 not an ordering input. It emits `DecisionOpportunity` values and cannot commit.
 
-`drive_cover_tick` is the single owner of tick cadence, cover derivation, and
-the clock: it derives the cover, runs the cells under a bounded concurrency
-permit pool with a quarantine flag, and advances the clock after the cells so
-every cell in a tick shares one `now` and one tick index. Its budget is
-configuration (`GHOSTLIGHT_COVER_CELL_BUDGET`, `GHOSTLIGHT_COVER_CONSTITUENT_CAP`,
-`GHOSTLIGHT_COVER_URGENCY_SLOTS`, `GHOSTLIGHT_CONTROLLER_MAX_CONCURRENT`,
-`GHOSTLIGHT_TICK_INTERVAL_SECONDS`); changing any is a restart. Concurrency is
-two pools, one per lane, each read at open. The simulation pool
-(`GHOSTLIGHT_CONTROLLER_MAX_CONCURRENT`, default 4) is a budget: speak turns
-and cover cells draw from it and nothing else does. The elaboration pool
-(`GHOSTLIGHT_ELABORATION_MAX_CONCURRENT`, default 2, minimum 1) is a ceiling:
-the most elaboration sessions that run at once, with no connector capacity
-reserved for them. Neither lane acquires the other's pool. Both reach the
-connector under one caller id, so under connector capacity pressure the
-connector decides which request is refused. The five
+Dungeon runs no turn on its own: no wall-clock tick, cover cell, elaboration
+sweep or owner-requested controller turn. The clock advances only through the
+owner's `world.advance_time`. The controller pool
+(`GHOSTLIGHT_CONTROLLER_MAX_CONCURRENT`, default 4) is read at open; nothing
+draws from it yet, and runtime readiness reads it. Changing it is a restart.
+The five
 controller models are configuration too (`GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL`,
 `_PERSONA_MODEL`, `_INTERPRETER_MODEL`, `_OPERATIONAL_MODEL`,
 `_ELABORATOR_MODEL`), each with a default when absent.
@@ -501,11 +492,7 @@ against a fresh opportunity, with the delta the subject could perceive since
 its bound revision (`Overheard` rows plus the typed component diff); the
 Persona is never re-run, and the renewed binding carries the one it replaced
 (`interrupted_from`) so a second interruption of the same turn ends it rather
-than lowering it again. Eve reports an overtaken turn through
-`ControllerHttpResult::Interrupted`, which renders in the command result as
-`denied` today; the owner sees the interruption itself — subject, both scope
-digests, the persona prose and receipt, and the untranslatable gap — in that
-result's receipt text, not in the state name.
+than lowering it again.
 
 Resolution covers and grouping are compute budgets for projection. They do not
 create, merge, fission, or qualify identities. Every active subject is in the

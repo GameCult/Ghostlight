@@ -307,9 +307,7 @@ stock lens set, is implemented (`835ea4d..872ba35`; cut map
 `docs/architecture/ghostlight-stock-lenses-cut.md`): lens weights are world
 data the owner replaces with `SetLensWeights`, each elaborator session records
 the lens it drew and that lens's instruction text, and elaboration sessions run
-concurrently under Dungeon's elaboration pool
-(`GHOSTLIGHT_ELABORATION_MAX_CONCURRENT`, default 2), apart from the simulation
-pool.
+concurrently under the caller's ceiling.
 
 Also owed on the way, found 2026-09-15 by reading source:
 

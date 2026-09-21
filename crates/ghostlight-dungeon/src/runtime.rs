@@ -11,14 +11,13 @@ use crate::{
     mesh::{self, MeshPublisher, MeshRuntimeIdentity},
 };
 use ghostlight::{
-    AffordanceId, CONSUMER_BODY_LIMIT, Cell, CellRun, CommandBody, CommandId, ConnectorBinding,
-    ConsumerPort, ConsumerRegistry, ControllerError, ControllerModels, ControllerPendingReason,
-    ControllerRunner, ControllerWorkCustody, Cover, CoverBudget, CreateJurisdictionIntent,
-    CreateWorldIntent, DEFAULT_SDK_MODEL_PREFIX, DecisionInvocation, DecisionOpportunity,
-    KernelError, Lens, LensWeights, MailboxError, NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId,
-    SdkBinding, SeedOutcome, SeedPort, Statement, SubjectId, SubjectKind, SubmissionDisposition,
-    SubmitReceipt, TickMinutes, VaultEvidenceSource, VerifiedPrincipalEvidence, WorldMailbox,
-    WorldPhase, WorldSnapshot, derive_cover, open_controller_work, open_inference,
+    AffordanceId, CONSUMER_BODY_LIMIT, CommandBody, CommandId, ConnectorBinding, ConsumerPort,
+    ConsumerRegistry, ControllerModels, ControllerRunner, ControllerWorkCustody,
+    CreateJurisdictionIntent, CreateWorldIntent, DEFAULT_SDK_MODEL_PREFIX, DecisionInvocation,
+    DecisionOpportunity, KernelError, Lens, LensWeights, MailboxError, PrincipalCommandIntent,
+    PrincipalId, SdkBinding, SeedOutcome, SeedPort, Statement, SubjectKind, SubmitReceipt,
+    TickMinutes, VaultEvidenceSource, VerifiedPrincipalEvidence, WorldMailbox, WorldPhase,
+    WorldSnapshot, open_controller_work, open_inference,
 };
 use anyhow::{Context, bail, ensure};
 use axum::{
@@ -45,10 +44,7 @@ use std::{
     fs,
     net::SocketAddr,
     path::PathBuf,
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-    },
+    sync::Arc,
     time::Duration,
 };
 use tokio::sync::{Mutex, Semaphore, broadcast, mpsc};
@@ -72,25 +68,12 @@ struct AppState {
     /// and holds only digests; a missing file means no consumers.
     consumer: ConsumerPort,
     consumers: Arc<ConsumerRegistry>,
-    /// The one cognition organ, shared. Concurrency is owned by the two pools
-    /// below and quarantine by `controller_quarantined`: an exclusive lock here
-    /// would be a second owner of both, and a tick spends a budget of
-    /// inferences rather than one.
+    /// The one cognition organ, shared. The owner's seeding and the readiness
+    /// custody probe use it; nothing in this process runs it on its own.
     controllers: Option<Arc<ControllerRunner>>,
-    /// The simulation budget: speak turns and cover cells, and nothing else,
-    /// draw from it.
+    /// The controller concurrency pool, sized to the connector's quota. Nothing
+    /// draws from it yet; `runtime_readiness` reads it.
     controller_permits: Arc<Semaphore>,
-    /// The elaboration ceiling. Only the elaboration sweep draws from it, and
-    /// it never draws from `controller_permits`.
-    elaboration_permits: Arc<Semaphore>,
-    /// Set once a turn loses its local invariant. No further permit is granted;
-    /// in-flight turns finish or fail on their own bindings.
-    controller_quarantined: Arc<AtomicBool>,
-    cover_budget: CoverBudget,
-    /// Display-only, written by the tick driver and read by Eve and the mesh
-    /// projection. It decides nothing: the cover it summarises was derived,
-    /// used, and dropped before this was written.
-    cover: Arc<Mutex<Option<CoverSummary>>>,
     sessions: Arc<Mutex<AppSessionOwner>>,
     heimdall: Arc<HeimdallClient>,
     mesh: Option<MeshPublisher>,
@@ -98,59 +81,6 @@ struct AppState {
     runtime_health: Option<RuntimeHealthOwner>,
     revisions: broadcast::Sender<u64>,
     fatal: mpsc::UnboundedSender<String>,
-}
-
-/// What one tick's cover looked like, for the operator surfaces. A projection
-/// of a derived value, never an input to the next tick.
-#[derive(Clone, Debug)]
-struct CoverSummary {
-    tick: u64,
-    cells: usize,
-    singletons: usize,
-    groups: usize,
-    oversubscribed: bool,
-    /// The cells whose turn the world moved under and which re-lowered once
-    /// and committed, in completion order. Filled after the cells run.
-    interrupted: Vec<InterruptedCell>,
-}
-
-/// One re-lowered cell, as the operator's tick line reports it: the subject
-/// and both scope digests, the one the turn was bound to and the one it was
-/// re-lowered against.
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct InterruptedCell {
-    subject: SubjectId,
-    bound_scope_digest: String,
-    renewed_scope_digest: String,
-}
-
-/// The read-only projection of the budget and the last tick, for Eve.
-async fn cover_panel(state: &AppState) -> eve::CoverPanel {
-    eve::CoverPanel {
-        cells: state.cover_budget.cells,
-        constituent_cap: state.cover_budget.constituent_cap,
-        urgency_slots: state.cover_budget.urgency_slots,
-        last: state.cover.lock().await.as_ref().map(|summary| eve::CoverPanelTick {
-            tick: summary.tick,
-            cells: summary.cells,
-            singletons: summary.singletons,
-            groups: summary.groups,
-            oversubscribed: summary.oversubscribed,
-        }),
-    }
-}
-
-impl CoverSummary {
-    fn of(cover: &Cover) -> Self {
-        Self {
-            tick: cover.tick.0,
-            cells: cover.cells.len(),
-            singletons: cover.singletons(),
-            groups: cover.groups(),
-            oversubscribed: cover.oversubscribed,
-            interrupted: Vec::new(),
-        }
-    }
 }
 
 struct ProductionAdmission {
@@ -244,12 +174,6 @@ struct EmptyPayload {}
 #[serde(deny_unknown_fields)]
 struct CompleteAuthPayload {
     handle: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ControllerActPayload {
-    opportunity: DecisionOpportunity,
 }
 
 pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<()> {
@@ -354,7 +278,6 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
     };
     require_no_runtime_custody_failure(&mut fatal_events)?;
     let (revisions, _) = broadcast::channel(32);
-    let cover_budget = configured_cover_budget()?;
     let consumers = Arc::new(open_consumer_registry()?);
     let mut state = AppState {
         consumer: ConsumerPort::new(world.clone()),
@@ -362,10 +285,6 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         world,
         controllers: controllers.map(Arc::new),
         controller_permits: Arc::new(Semaphore::new(configured_controller_concurrency())),
-        elaboration_permits: Arc::new(Semaphore::new(configured_elaboration_ceiling())),
-        controller_quarantined: Arc::new(AtomicBool::new(false)),
-        cover_budget,
-        cover: Arc::new(Mutex::new(None)),
         sessions: Arc::new(Mutex::new(sessions)),
         heimdall,
         mesh,
@@ -406,8 +325,6 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         _ => bail!("managed runtime health authority is partial"),
     };
     tokio::spawn(maintain_mesh_projection(state.clone()));
-    tokio::spawn(drive_cover_tick(state.clone(), configured_tick_interval()));
-    tokio::spawn(elaborate_world(state.clone(), ELABORATION_SWEEP_INTERVAL));
     let app = app_router(state.clone(), web_root);
     tracing::info!(address = %bound_address, "Ghostlight Dungeon world owner serving");
     let server = axum::serve(
@@ -658,7 +575,6 @@ async fn eve_surface(
     let Some(principal) = authenticated_principal(&headers, &state).await else {
         return Json(eve::anonymous_surface()).into_response();
     };
-    let panel = cover_panel(&state).await;
     match current_operator_view(&state)
         .await
         .and_then(|(snapshot, log)| {
@@ -666,7 +582,6 @@ async fn eve_surface(
                 principal.account_subject_hash(),
                 snapshot.as_ref(),
                 &log,
-                &panel,
             )
         }) {
         Ok(surface) => Json(surface).into_response(),
@@ -997,9 +912,6 @@ async fn dispatch_world(
     principal: &VerifiedPrincipalEvidence,
     invocation: EveCommandInvocation,
 ) -> Response {
-    if invocation.operation.operation_id == "world.controller.act" {
-        return dispatch_controller(state, principal, invocation).await;
-    }
     let result = execute_world(state, principal, &invocation).await;
     match result {
         Ok(receipt) => {
@@ -1042,385 +954,6 @@ async fn dispatch_world(
             ))
             .into_response()
         }
-    }
-}
-
-async fn dispatch_controller(
-    state: &AppState,
-    principal: &VerifiedPrincipalEvidence,
-    invocation: EveCommandInvocation,
-) -> Response {
-    let admitted = admit_controller_command(state, principal, &invocation).await;
-    let (command_id, opportunity) = match admitted {
-        Ok(admitted) => admitted,
-        Err(error) => {
-            return Json(eve::command_result(
-                &invocation,
-                "denied",
-                error.to_string(),
-                current_world(state)
-                    .await
-                    .ok()
-                    .map(|snapshot| eve::surface_version(snapshot.as_ref())),
-                None,
-                None,
-            ))
-            .into_response();
-        }
-    };
-
-    let available = state
-        .controllers
-        .as_ref()
-        .filter(|_| !state.controller_quarantined.load(Ordering::SeqCst));
-    let Some(controller) = available else {
-        return Json(eve::command_result(
-            &invocation,
-            "unknown",
-            "Controller cognition is unavailable; no world outcome is claimed.",
-            current_world(state)
-                .await
-                .ok()
-                .map(|snapshot| eve::surface_version(snapshot.as_ref())),
-            None,
-            None,
-        ))
-        .into_response();
-    };
-    // One permit for the whole turn, from the same pool the tick driver spends.
-    // Two pools, one per lane; neither lane draws from the other's.
-    let permit = state.controller_permits.clone().acquire_owned().await;
-    let result = match opportunity.controller_mode {
-        ghostlight::ControllerMode::NarrativePersona => controller
-            .run_narrative(command_id, &opportunity)
-            .await
-            .map(controller_narrative_result),
-        ghostlight::ControllerMode::OperationalAgent => controller
-            .run_operational(command_id, &opportunity)
-            .await
-            .map(controller_operational_result),
-        ghostlight::ControllerMode::Human => unreachable!("human opportunity was not admitted"),
-    };
-    drop(permit);
-    let quarantine = match &result {
-        Ok(ControllerHttpResult::Pending { quarantine, .. }) => *quarantine,
-        Ok(ControllerHttpResult::Completed { .. } | ControllerHttpResult::Interrupted { .. }) => {
-            false
-        }
-        Err(error) => error.requires_quarantine(),
-    };
-    if quarantine {
-        tracing::error!("controller cognition quarantined after losing its local invariant");
-        state.controller_quarantined.store(true, Ordering::SeqCst);
-    }
-
-    match result {
-        Ok(ControllerHttpResult::Completed {
-            message,
-            receipt,
-            world_changed,
-        }) => {
-            let version = if world_changed {
-                match publish_projection(state).await {
-                    Ok(version) => Some(version),
-                    Err(error) => {
-                        tracing::error!(%error, "world revision could not be read after controller commit");
-                        current_world(state)
-                            .await
-                            .ok()
-                            .map(|snapshot| eve::surface_version(snapshot.as_ref()))
-                    }
-                }
-            } else {
-                current_world(state)
-                    .await
-                    .ok()
-                    .map(|snapshot| eve::surface_version(snapshot.as_ref()))
-            };
-            Json(eve::command_result(
-                &invocation,
-                "accepted",
-                message,
-                version,
-                None,
-                Some(receipt),
-            ))
-            .into_response()
-        }
-        Ok(ControllerHttpResult::Interrupted { message, receipt }) => Json(eve::command_result(
-            &invocation,
-            "denied",
-            message,
-            current_world(state)
-                .await
-                .ok()
-                .map(|snapshot| eve::surface_version(snapshot.as_ref())),
-            None,
-            Some(receipt),
-        ))
-        .into_response(),
-        Ok(ControllerHttpResult::Pending {
-            state_name,
-            message,
-            receipt,
-            ..
-        }) => Json(eve::command_result(
-            &invocation,
-            state_name,
-            message,
-            current_world(state)
-                .await
-                .ok()
-                .map(|snapshot| eve::surface_version(snapshot.as_ref())),
-            None,
-            Some(receipt),
-        ))
-        .into_response(),
-        Err(error) => {
-            let state_name = controller_error_disposition(&error);
-            Json(eve::command_result(
-                &invocation,
-                state_name,
-                error.to_string(),
-                current_world(state)
-                    .await
-                    .ok()
-                    .map(|snapshot| eve::surface_version(snapshot.as_ref())),
-                None,
-                None,
-            ))
-            .into_response()
-        }
-    }
-}
-
-async fn admit_controller_command(
-    state: &AppState,
-    principal: &VerifiedPrincipalEvidence,
-    invocation: &EveCommandInvocation,
-) -> Result<(CommandId, DecisionOpportunity), RuntimeCommandError> {
-    let command_id = CommandId::parse_uuid(
-        invocation
-            .operation
-            .idempotency_key
-            .as_deref()
-            .unwrap_or(""),
-    )?;
-    let payload: ControllerActPayload = serde_json::from_value(invocation.payload.clone())
-        .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
-    if payload.opportunity.controller_mode == ghostlight::ControllerMode::Human {
-        return Err(RuntimeCommandError::Payload(
-            "human decisions cannot enter through the controller runner".into(),
-        ));
-    }
-    let snapshot = current_world(state)
-        .await
-        .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?
-        .ok_or_else(|| RuntimeCommandError::Payload("world has not been created".into()))?;
-    if snapshot.owner != PrincipalId::new(principal.account_subject_hash()) {
-        return Err(RuntimeCommandError::Payload(
-            "only the world owner may ask a controller to act".into(),
-        ));
-    }
-    if payload.opportunity.world_id != snapshot.world_id {
-        return Err(RuntimeCommandError::Payload(
-            "controller opportunity belongs to another world".into(),
-        ));
-    }
-    Ok((command_id, payload.opportunity))
-}
-
-enum ControllerHttpResult {
-    Completed {
-        message: &'static str,
-        receipt: Value,
-        world_changed: bool,
-    },
-    Pending {
-        state_name: &'static str,
-        message: &'static str,
-        receipt: Value,
-        quarantine: bool,
-    },
-    /// The turn ended without reaching the world: its one re-lowering was spent
-    /// or refused. Not a commit, and not a retryable state.
-    Interrupted {
-        message: &'static str,
-        receipt: Value,
-    },
-}
-
-fn controller_narrative_result(run: NarrativeRun) -> ControllerHttpResult {
-    match run {
-        NarrativeRun::Completed(decision) => {
-            let (turn, capture, disposition) = decision.into_parts();
-            let (submission, world_changed) = controller_submission(disposition);
-            ControllerHttpResult::Completed {
-                message: "Narrative Persona completed its decision.",
-                receipt: json!({
-                    "kind":"narrative_persona",
-                    "personaProse":turn.source_prose(),
-                    "personaSourceDigest":turn.source_digest(),
-                    "personaReceiptDigest":turn.receipt_digest(),
-                    "interpretation":{
-                        "speech":capture.speech.iter().map(|source| json!({
-                            "startByte":source.start_byte,
-                            "endByte":source.end_byte,
-                        })).collect::<Vec<_>>(),
-                        "display":capture.display.iter().map(|source| json!({
-                            "startByte":source.start_byte,
-                            "endByte":source.end_byte,
-                        })).collect::<Vec<_>>(),
-                        "gaps":capture.gaps.iter().map(|gap| json!({
-                            "kind":gap.kind,
-                            "startByte":gap.source.start_byte,
-                            "endByte":gap.source.end_byte,
-                            "detail":gap.detail,
-                        })).collect::<Vec<_>>(),
-                        "finalization":capture.finalization,
-                        "inferenceReceipts":capture.inference_receipts,
-                    },
-                    "submission":submission,
-                }),
-                world_changed,
-            }
-        }
-        NarrativeRun::Pending(pending) => {
-            controller_pending_result(pending.mode(), pending.reason(), pending.persona_prose())
-        }
-        NarrativeRun::Interrupted(interruption) => ControllerHttpResult::Interrupted {
-            message: "The world moved under this turn and it could not be lowered again.",
-            receipt: json!({
-                "kind":"narrative_interrupted",
-                "subject":interruption.subject(),
-                "boundScopeDigest":interruption.bound_scope_digest(),
-                "freshScopeDigest":interruption.fresh_scope_digest(),
-                "personaProse":interruption.persona_turn().source_prose(),
-                "personaReceiptDigest":interruption.persona_turn().receipt_digest(),
-                "gap":{
-                    "kind":interruption.gap().kind,
-                    "startByte":interruption.gap().source.start_byte,
-                    "endByte":interruption.gap().source.end_byte,
-                    "detail":interruption.gap().detail,
-                },
-            }),
-        },
-    }
-}
-
-fn controller_operational_result(run: OperationalRun) -> ControllerHttpResult {
-    match run {
-        OperationalRun::Completed(decision) => {
-            let (capture, disposition) = decision.into_parts();
-            let (submission, world_changed) = controller_submission(disposition);
-            ControllerHttpResult::Completed {
-                message: "Operational agent completed its decision.",
-                receipt: json!({
-                    "kind":"operational_agent",
-                    "proposal":capture.proposal,
-                    "needs":capture.needs,
-                    "inferenceReceipts":capture.inference_receipts,
-                    "submission":submission,
-                }),
-                world_changed,
-            }
-        }
-        OperationalRun::Pending(pending) => {
-            controller_pending_result(pending.mode(), pending.reason(), None)
-        }
-    }
-}
-
-fn controller_pending_result(
-    mode: ghostlight::ControllerMode,
-    reason: ControllerPendingReason,
-    persona_prose: Option<&str>,
-) -> ControllerHttpResult {
-    let (state_name, message, quarantine) = match reason {
-        ControllerPendingReason::InferenceRetryable => (
-            "pending",
-            "The exact controller inference remains available for connector replay.",
-            false,
-        ),
-        ControllerPendingReason::InferenceRecoveryRequired => (
-            "unknown",
-            "The connector cannot establish an exact outcome for this inference.",
-            false,
-        ),
-        ControllerPendingReason::WorldUnavailable => (
-            "unknown",
-            "The world owner is unavailable; no controller outcome is claimed.",
-            false,
-        ),
-        ControllerPendingReason::WorldOutcomeUnknown => (
-            "unknown",
-            "World commit custody is uncertain; no controller outcome is claimed.",
-            false,
-        ),
-        ControllerPendingReason::StoreReopenRequired => (
-            "unknown",
-            "Controller work-store custody is uncertain; controller cognition has been quarantined.",
-            true,
-        ),
-    };
-    ControllerHttpResult::Pending {
-        state_name,
-        message,
-        receipt: json!({
-            "kind":"controller_pending",
-            "mode":mode,
-            "reason":format!("{reason:?}"),
-            "personaProse":persona_prose,
-        }),
-        quarantine,
-    }
-}
-
-fn controller_submission(disposition: SubmissionDisposition) -> (Value, bool) {
-    match disposition {
-        SubmissionDisposition::NoProposal(receipt) => {
-            let changed = matches!(&receipt, SubmitReceipt::Applied(_));
-            (
-                json!({
-                    "kind":"no_proposal",
-                    "commit":submit_receipt(receipt),
-                }),
-                changed,
-            )
-        }
-        SubmissionDisposition::Completed(receipt) => {
-            let changed = matches!(&receipt, SubmitReceipt::Applied(_));
-            (submit_receipt(receipt), changed)
-        }
-        SubmissionDisposition::PreviouslyConfirmed(confirmation) => (
-            json!({
-                "kind":"previously_confirmed",
-                "commandId":confirmation.command_id,
-                "revision":confirmation.resulting_revision,
-                "stateDigest":confirmation.resulting_state_digest,
-                "commitDigest":confirmation.commit_digest,
-            }),
-            false,
-        ),
-    }
-}
-
-fn controller_error_disposition(error: &ControllerError) -> &'static str {
-    match error {
-        ControllerError::WorkPersistence(_) | ControllerError::Serialization(_) => "unknown",
-        ControllerError::Inference { .. } | ControllerError::ProviderContract { .. } => "unknown",
-        ControllerError::Snapshot(
-            MailboxError::Unavailable | MailboxError::OutcomeUnknown { .. },
-        ) => "unknown",
-        ControllerError::Snapshot(_)
-        | ControllerError::NoOpportunity { .. }
-        | ControllerError::AmbiguousOpportunity
-        | ControllerError::OpportunityMismatch
-        | ControllerError::SpeakUnavailable
-        | ControllerError::NoGrantedAffordance
-        | ControllerError::CommandMismatch
-        | ControllerError::MissingControllerWork
-        | ControllerError::World(_) => "denied",
     }
 }
 
@@ -1708,7 +1241,6 @@ async fn runtime_readiness(state: &AppState) -> anyhow::Result<Value> {
         None => "unavailable",
     };
     let controller_status = match state.controllers.as_deref() {
-        _ if state.controller_quarantined.load(Ordering::SeqCst) => "unavailable",
         Some(controller) => {
             match tokio::time::timeout(Duration::from_millis(100), controller.custody_probe()).await
             {
@@ -1744,28 +1276,6 @@ async fn maintain_mesh_projection(state: AppState) {
     }
 }
 
-/// How often the tick task submits, and how many fictional minutes each
-/// submission names. The wall clock decides *when* to submit and this constant
-/// decides *how many minutes* the command carries; neither reaches `reduce`.
-const CLOCK_TICK_INTERVAL: Duration = Duration::from_secs(60);
-const CLOCK_TICK_MINUTES: u32 = 60;
-
-/// One tick's work, apart from the wall clock that decides when to run it: ask
-/// `submit` for the outcome of one `minutes`-wide `AdvanceTime`, and log
-/// (never propagate) a refusal — no world yet, a Draft world, a stale
-/// revision. `submit` is a narrow port over [`WorldMailbox::submit_clock`], so
-/// a test can capture what one tick submits without driving tokio's timer.
-async fn submit_clock_tick<F, Fut>(minutes: TickMinutes, submit: F)
-where
-    F: FnOnce(CommandId, TickMinutes) -> Fut,
-    Fut: std::future::Future<Output = Result<SubmitReceipt, MailboxError>>,
-{
-    match submit(CommandId::new(), minutes).await {
-        Ok(_) => {}
-        Err(error) => tracing::debug!(%error, "world clock tick was not admitted"),
-    }
-}
-
 /// Where the seed lane's read-only markdown vault lives. Configuration, read at
 /// open exactly as every other runtime path is: the payload names a relative
 /// scope inside it and never the root.
@@ -1797,13 +1307,9 @@ async fn seed_once(
     if snapshot.phase != WorldPhase::Draft {
         return Ok(SeedOutcome::NotDraft);
     }
-    let Some(controllers) = state
-        .controllers
-        .as_deref()
-        .filter(|_| !state.controller_quarantined.load(Ordering::SeqCst))
-    else {
+    let Some(controllers) = state.controllers.as_deref() else {
         return Err(RuntimeCommandError::Payload(
-            "the cognition organ is closed or quarantined".into(),
+            "the cognition organ is closed".into(),
         ));
     };
     let root = std::env::var(SEED_VAULT_ROOT_ENVIRONMENT).map_err(|_| {
@@ -1822,61 +1328,6 @@ async fn seed_once(
         .map_err(|error| RuntimeCommandError::Payload(error.to_string()))
 }
 
-/// How often the authoring lane takes one sweep. Slow, and skipping: a sweep
-/// that admits nothing is a fixed point, not a reason to spin against a paid
-/// inference endpoint.
-const ELABORATION_SWEEP_INTERVAL: Duration = Duration::from_secs(300);
-
-/// The authoring lane's only driver. It runs when the cognition organ opened at
-/// all, which is the config gate the runtime already has: no mode flag joins it.
-/// Sweeps never overlap, because this loop awaits one before it ticks the next,
-/// so one sweep's claim set is the only set of sessions alive.
-async fn elaborate_world(state: AppState, interval: Duration) {
-    let mut interval = tokio::time::interval(interval);
-    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-    interval.tick().await;
-    loop {
-        interval.tick().await;
-        run_elaboration_sweep(&state).await;
-    }
-}
-
-/// One sweep, apart from the wall clock that decides when to run it. Its
-/// sessions run under the elaboration pool and never touch the simulation pool.
-async fn run_elaboration_sweep(state: &AppState) {
-    let Some(runner) = state
-        .controllers
-        .as_deref()
-        .filter(|_| !state.controller_quarantined.load(Ordering::SeqCst))
-        .map(ControllerRunner::elaborator)
-    else {
-        return;
-    };
-    if let Err(error) = runner.sweep(state.elaboration_permits.clone()).await {
-        tracing::debug!(%error, "elaboration sweep did not complete");
-    }
-}
-
-/// The compute budget, read at open exactly as the model names are. It is not
-/// world data and does not live beside `WorldScaleIntent`, which is the authored
-/// target count of goal-bearing subjects: the two are numerically related and
-/// have different owners. Changing either number is a restart.
-fn configured_cover_budget() -> anyhow::Result<CoverBudget> {
-    let read = |name: &str, default: u16| -> u16 {
-        std::env::var(name)
-            .ok()
-            .and_then(|value| value.trim().parse().ok())
-            .unwrap_or(default)
-    };
-    CoverBudget {
-        cells: read("GHOSTLIGHT_COVER_CELL_BUDGET", 240),
-        constituent_cap: read("GHOSTLIGHT_COVER_CONSTITUENT_CAP", 24),
-        urgency_slots: read("GHOSTLIGHT_COVER_URGENCY_SLOTS", 36),
-    }
-    .validated()
-    .context("cover budget configuration is not usable")
-}
-
 /// Dungeon policy for a world created before Session Zero's sliders exist
 /// (D2). Not a library default; the library requires the weights to be stated.
 pub(crate) fn uniform_lens_weights() -> LensWeights {
@@ -1892,236 +1343,6 @@ fn configured_controller_concurrency() -> usize {
         .and_then(|value| value.trim().parse::<usize>().ok())
         .filter(|value| *value >= 1)
         .unwrap_or(4)
-}
-
-/// A ceiling, not a budget: the most sessions elaboration may run at once.
-/// Nothing reserves connector capacity for it; a connector capacity refusal is
-/// a retryable fault the next sweep retries.
-fn configured_elaboration_ceiling() -> usize {
-    std::env::var("GHOSTLIGHT_ELABORATION_MAX_CONCURRENT")
-        .ok()
-        .and_then(|value| value.trim().parse::<usize>().ok())
-        .filter(|value| *value >= 1)
-        .unwrap_or(2)
-}
-
-fn configured_tick_interval() -> Duration {
-    std::env::var("GHOSTLIGHT_TICK_INTERVAL_SECONDS")
-        .ok()
-        .and_then(|value| value.trim().parse::<u64>().ok())
-        .filter(|value| *value >= 1)
-        .map_or(CLOCK_TICK_INTERVAL, Duration::from_secs)
-}
-
-/// The world's only driver: one owner of the tick's cadence, of the cover, and
-/// of the clock. It derives a cover from one snapshot, runs each cell under a
-/// permit, and then advances the clock — after the cells, so every cell in a
-/// tick sees the same `now` and therefore the same tick index, which is what
-/// makes the derived command ids stable and the rotation phase well defined.
-///
-/// The kernel learns one `AdvanceTime` and `0..N` ordinary one-opportunity
-/// submissions. It never learns a tick happened.
-async fn drive_cover_tick(state: AppState, interval: Duration) {
-    let Some(minutes) = TickMinutes::new(CLOCK_TICK_MINUTES) else {
-        tracing::error!("the configured clock tick is outside one year of minutes");
-        return;
-    };
-    let mut ticker = tokio::time::interval(interval);
-    ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-    ticker.tick().await;
-    loop {
-        ticker.tick().await;
-        drive_one_tick(
-            minutes,
-            || run_cover_tick(&state),
-            |id, minutes| state.world.submit_clock(id, minutes),
-        )
-        .await;
-        if let Err(error) = publish_projection(&state).await {
-            tracing::debug!(%error, "world revision could not be read after a tick");
-        }
-    }
-}
-
-/// One tick's ordering, narrowed the same way `submit_clock_tick` narrows the
-/// clock port: `run_cover` is opaque here, never `run_cover_tick` by name, so a
-/// test can substitute a recording fake for the whole cognition organ and
-/// observe call order without a controller runner, a mailbox, or tokio's
-/// timer. Sequencing, not concurrency, is the invariant this buys: the cover
-/// always finishes before the clock is asked to advance, which is what makes
-/// every cell's derived tick index agree with the `AdvanceTime` that follows
-/// it.
-async fn drive_one_tick<RunCover, RunCoverFut, SubmitClock, SubmitClockFut>(
-    minutes: TickMinutes,
-    run_cover: RunCover,
-    submit_clock: SubmitClock,
-) where
-    RunCover: FnOnce() -> RunCoverFut,
-    RunCoverFut: std::future::Future<Output = ()>,
-    SubmitClock: FnOnce(CommandId, TickMinutes) -> SubmitClockFut,
-    SubmitClockFut: std::future::Future<Output = Result<SubmitReceipt, MailboxError>>,
-{
-    run_cover().await;
-    submit_clock_tick(minutes, submit_clock).await;
-}
-
-/// One tick's cognition, apart from the clock and the wall clock that decides
-/// when to run it.
-async fn run_cover_tick(state: &AppState) {
-    let Some(runner) = state.controllers.clone() else {
-        return;
-    };
-    if state.controller_quarantined.load(Ordering::SeqCst) {
-        return;
-    }
-    let (Ok(snapshot), Ok(graph)) = (
-        state.world.snapshot().await,
-        state.world.agency_graph().await,
-    ) else {
-        return;
-    };
-    let cover = derive_cover(
-        snapshot.world_id,
-        snapshot.now,
-        CLOCK_TICK_MINUTES,
-        &snapshot.opportunities,
-        &graph,
-        state.cover_budget,
-    );
-    *state.cover.lock().await = Some(CoverSummary::of(&cover));
-
-    let mut running = tokio::task::JoinSet::new();
-    for cell in cover.cells {
-        let runner = runner.clone();
-        let permits = state.controller_permits.clone();
-        let quarantined = state.controller_quarantined.clone();
-        running.spawn(async move {
-            // Checked once up front, as a fast path that skips contending for
-            // a permit at all, and once more after acquiring one: a cell
-            // already parked behind the pool when a sibling's fault raises
-            // the flag must not proceed just because it queued before the
-            // flag flipped. A permit already held when the flag is set still
-            // finishes on its own binding — quarantine stops the *next* cell
-            // to reach either check, not one already mid-turn.
-            if quarantined.load(Ordering::SeqCst) {
-                return None;
-            }
-            let Ok(_permit) = permits.acquire().await else {
-                return None;
-            };
-            if quarantined.load(Ordering::SeqCst) {
-                return None;
-            }
-            match runner.run_cell(&cell).await {
-                // A tick that reports nothing is a tick nobody can debug. One
-                // line per coarse cell, naming what it consumed and what it
-                // could not: a batch buys one inference, never one admission
-                // rule, and the gap between turns offered and turns committed
-                // is the number that says so.
-                Ok(CellRun::Grouped(grouped)) => {
-                    let committed = grouped
-                        .submissions
-                        .iter()
-                        .filter(|entry| {
-                            matches!(
-                                entry.submission,
-                                SubmissionDisposition::Completed(_)
-                                    | SubmissionDisposition::PreviouslyConfirmed(_)
-                            )
-                        })
-                        .count();
-                    tracing::debug!(
-                        cell = %grouped.cell,
-                        resolution = ?grouped.resolution,
-                        submitted = grouped.submissions.len(),
-                        committed,
-                        needs = grouped.needs.len(),
-                        pending = ?grouped.pending,
-                        "a coarse cell finished"
-                    );
-                }
-                Ok(CellRun::Narrative(NarrativeRun::Pending(pending))) => {
-                    tracing::info!(
-                        reason = ?pending.reason(),
-                        "a detail narrative cell is pending"
-                    );
-                }
-                // The operator's record of a turn the world overtook. It is
-                // reached only after the one re-lowering was spent or refused:
-                // a turn that re-lowers and commits reports as completed like
-                // any other.
-                Ok(CellRun::Narrative(NarrativeRun::Interrupted(interruption))) => {
-                    tracing::info!(
-                        subject = ?interruption.subject(),
-                        bound_scope_digest = interruption.bound_scope_digest(),
-                        fresh_scope_digest = interruption.fresh_scope_digest().unwrap_or("none"),
-                        detail = interruption.gap().detail.as_str(),
-                        "a detail narrative cell was interrupted"
-                    );
-                }
-                Ok(CellRun::Operational(OperationalRun::Pending(pending))) => {
-                    tracing::info!(
-                        reason = ?pending.reason(),
-                        "a detail operational cell is pending"
-                    );
-                }
-                // A turn the world moved under, re-lowered once and committed:
-                // the operator's line carries the subject and both digests,
-                // read from the receipt the decision carries, and the tick
-                // summary keeps the same record for the harness.
-                Ok(CellRun::Narrative(NarrativeRun::Completed(decision)))
-                    if decision.re_lowering().is_some() =>
-                {
-                    let Cell::Singleton { member, .. } = &cell else {
-                        return None;
-                    };
-                    let re_lowering = decision.re_lowering().expect("checked by the guard");
-                    tracing::info!(
-                        subject = ?member.subject,
-                        bound_scope_digest = re_lowering.bound_scope_digest.as_str(),
-                        renewed_scope_digest = re_lowering.renewed_scope_digest.as_str(),
-                        "a detail narrative cell was re-lowered once and committed"
-                    );
-                    return Some(InterruptedCell {
-                        subject: member.subject,
-                        bound_scope_digest: re_lowering.bound_scope_digest,
-                        renewed_scope_digest: re_lowering.renewed_scope_digest,
-                    });
-                }
-                // The operator's only window onto what a cell decided is this
-                // line; the world journal keeps effects, not the run.
-                Ok(CellRun::Narrative(run)) => {
-                    let summary = format!("{run:?}");
-                    tracing::info!(run = %summary.chars().take(600).collect::<String>(), "narrative cell completed");
-                }
-                Ok(CellRun::Operational(run)) => {
-                    let summary = format!("{run:?}");
-                    tracing::info!(run = %summary.chars().take(600).collect::<String>(), "operational cell completed");
-                }
-                Err(error) => {
-                    // A cell that faults does not abort the tick. Custody loss
-                    // does: the work journal is one lock and one custody claim,
-                    // so it is a tick-level outcome rather than a per-cell one.
-                    if error.requires_quarantine() {
-                        tracing::error!(%error, "controller cognition quarantined mid-tick");
-                        quarantined.store(true, Ordering::SeqCst);
-                    } else {
-                        tracing::info!(%error, "a cell did not complete this tick");
-                    }
-                }
-            }
-            None
-        });
-    }
-    let mut interrupted = Vec::new();
-    while let Some(finished) = running.join_next().await {
-        if let Ok(Some(cell)) = finished {
-            interrupted.push(cell);
-        }
-    }
-    if let Some(summary) = state.cover.lock().await.as_mut() {
-        summary.interrupted = interrupted;
-    }
 }
 
 async fn revision_events(State(state): State<AppState>) -> impl IntoResponse {
@@ -2468,8 +1689,6 @@ mod tests {
     /// Small enough that a test can hold every permit and prove a route does
     /// not cross the provider boundary.
     const TEST_CONTROLLER_CONCURRENCY: usize = 2;
-    /// The elaboration pool the fixture opens, beside the simulation pool.
-    const TEST_ELABORATION_CEILING: usize = 2;
     use crate::idunn_health::tests::route_observation_fixture;
     use axum::{
         body::{Body, to_bytes},
@@ -2525,60 +1744,13 @@ mod tests {
         assert!(prepare_admitted_state_layout(&hardlink_root).is_err());
     }
 
-    fn controller_commit() -> ghostlight::CommitReceipt {
-        ghostlight::CommitReceipt {
-            command_id: CommandId::new(),
-            resulting_revision: 9,
-            resulting_state_digest: "sha256:declined-state".into(),
-            commit_digest: "sha256:decline-commit".into(),
-        }
-    }
-
-    #[test]
-    fn no_proposal_projection_carries_the_canonical_world_commit() {
-        let commit = controller_commit();
-        let (applied, changed) = controller_submission(SubmissionDisposition::NoProposal(
-            SubmitReceipt::Applied(commit.clone()),
-        ));
-        assert!(changed);
-        assert_eq!(applied["kind"], "no_proposal");
-        assert_eq!(applied["commit"]["kind"], "applied");
-        assert_eq!(applied["commit"]["revision"], 9);
-
-        let (replayed, changed) = controller_submission(SubmissionDisposition::NoProposal(
-            SubmitReceipt::AlreadyApplied(commit),
-        ));
-        assert!(!changed);
-        assert_eq!(replayed["kind"], "no_proposal");
-        assert_eq!(replayed["commit"]["kind"], "already_applied");
-    }
-
     struct Fixture {
         _directory: tempfile::TempDir,
         state: AppState,
         cookie: String,
     }
 
-    /// A real CodexConnector behind the fixture, read from the environment
-    /// the production runtime reads. Only the ignored live smoke uses it.
-    struct LiveController {
-        /// Absent when every lane routes to the sidecar; `open_inference`
-        /// refuses a model neither transport can carry.
-        connector: Option<ConnectorBinding>,
-        /// Present only when the smoke is run against the Claude SDK sidecar
-        /// instead of, or alongside, the connector.
-        sdk: Option<SdkBinding>,
-        models: ControllerModels,
-        /// Where the whole membrane is written, request by request, when the
-        /// smoke is asked to show it.
-        trace: Option<PathBuf>,
-    }
-
     async fn fixture() -> Fixture {
-        fixture_with(None).await
-    }
-
-    async fn fixture_with(live: Option<LiveController>) -> Fixture {
         let directory = tempfile::tempdir().unwrap();
         let key = directory.path().join("session.key");
         std::fs::write(&key, [17_u8; 32]).unwrap();
@@ -2597,30 +1769,21 @@ mod tests {
         let (world, _owner) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
         let controller_key = directory.path().join("controller.key");
         std::fs::write(&controller_key, "runtime-test-controller-key").unwrap();
-        let live = live.unwrap_or_else(|| LiveController {
-            connector: Some(ConnectorBinding {
-                endpoint: "127.0.0.1:9".parse().unwrap(),
-                key_path: controller_key.clone(),
-                caller_runtime_id: "ghostlight-runtime-test".into(),
-            }),
-            sdk: None,
-            models: ControllerModels {
-                projector: "gpt-5.6-luna".into(),
-                persona: "gpt-5.6-sol".into(),
-                interpreter: "gpt-5.6-terra".into(),
-                operational_agent: "gpt-5.6-terra".into(),
-                elaborator: "gpt-5.6-terra".into(),
-            },
-            trace: None,
-        });
-        let inference = open_inference(live.connector, live.sdk, &live.models).unwrap();
-        let inference: Arc<dyn ghostlight::InferencePort> = match live.trace {
-            Some(path) => Arc::new(ghostlight::TracingInferencePort::new(inference, path)),
-            None => inference,
+        let models = ControllerModels {
+            projector: "gpt-5.6-luna".into(),
+            persona: "gpt-5.6-sol".into(),
+            interpreter: "gpt-5.6-terra".into(),
+            operational_agent: "gpt-5.6-terra".into(),
+            elaborator: "gpt-5.6-terra".into(),
         };
+        let connector = ConnectorBinding {
+            endpoint: "127.0.0.1:9".parse().unwrap(),
+            key_path: controller_key,
+            caller_runtime_id: "ghostlight-runtime-test".into(),
+        };
+        let inference = open_inference(Some(connector), None, &models).unwrap();
         let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
-        let controllers =
-            ControllerRunner::open(world.clone(), inference, work, live.models).unwrap();
+        let controllers = ControllerRunner::open(world.clone(), inference, work, models).unwrap();
         let mesh = MeshPublisher::open(
             directory.path().join("mesh.cc"),
             None,
@@ -2636,14 +1799,6 @@ mod tests {
             world,
             controllers: Some(Arc::new(controllers)),
             controller_permits: Arc::new(Semaphore::new(TEST_CONTROLLER_CONCURRENCY)),
-            elaboration_permits: Arc::new(Semaphore::new(TEST_ELABORATION_CEILING)),
-            controller_quarantined: Arc::new(AtomicBool::new(false)),
-            cover_budget: CoverBudget {
-                cells: 240,
-                constituent_cap: 24,
-                urgency_slots: 36,
-            },
-            cover: Arc::new(Mutex::new(None)),
             sessions: Arc::new(Mutex::new(sessions)),
             heimdall: Arc::new(HeimdallClient::fixture()),
             mesh: Some(mesh),
@@ -3051,25 +2206,31 @@ mod tests {
     #[tokio::test]
     async fn removed_legacy_operation_is_denied_before_dispatch() {
         let fixture = fixture().await;
-        let result = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "session_zero.begin",
-                "ghostlight.session_zero_begin.v1",
-                0,
-                json!({}),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(result["state"], "denied");
-        assert!(
-            result["message"]
-                .as_str()
-                .unwrap()
-                .contains("not advertised")
-        );
+        for (operation, schema) in [
+            ("session_zero.begin", "ghostlight.session_zero_begin.v1"),
+            ("world.controller.act", "ghostlight.world_controller_act.v0"),
+        ] {
+            let result = post(
+                &fixture.state,
+                &fixture.cookie,
+                invocation(
+                    operation,
+                    schema,
+                    0,
+                    json!({}),
+                    &uuid::Uuid::new_v4().to_string(),
+                ),
+            )
+            .await;
+            assert_eq!(result["state"], "denied", "{operation}");
+            assert!(
+                result["message"]
+                    .as_str()
+                    .unwrap()
+                    .contains("not advertised"),
+                "{operation}"
+            );
+        }
     }
 
     #[tokio::test]
@@ -3096,77 +2257,15 @@ mod tests {
         );
     }
 
-    /// One tick submits exactly the configured span, and nothing else: the
-    /// captured argument is the `TickMinutes` `submit_clock_tick` was given,
-    /// with no measured elapsed duration — no `Duration`, no `Instant` — ever
-    /// constructed along the way. Driven through the narrow port rather than
-    /// `drive_cover_tick` itself, so the assertion holds without waiting on
-    /// tokio's timer or on a cognition organ.
-    #[tokio::test]
-    async fn a_clock_tick_submits_the_configured_span_and_nothing_measured() {
-        let minutes = TickMinutes::new(CLOCK_TICK_MINUTES).expect("a valid configured tick");
-        let captured: std::sync::Arc<std::sync::Mutex<Option<TickMinutes>>> =
-            std::sync::Arc::new(std::sync::Mutex::new(None));
-        let sink = captured.clone();
-        submit_clock_tick(minutes, move |_id, submitted| {
-            *sink.lock().unwrap() = Some(submitted);
-            std::future::ready(Ok(SubmitReceipt::AlreadyApplied(controller_commit())))
-        })
-        .await;
-        let submitted = captured.lock().unwrap().expect("the tick submitted a span");
-        assert_eq!(submitted.minutes(), CLOCK_TICK_MINUTES);
-    }
-
-    use ghostlight::{
-        ControllerPort, ControllerWork, ControllerWorkLookup, ControllerWorkStore,
-        ControllerWorkStoreError, ControllerWorkWrite, ElaboratorSession, InferenceEvent,
-        InferenceFault,
-        InferenceOutput, InferencePort, InferencePurpose, InferenceRequest, PreparedInference,
-        SubjectId,
-    };
-    use std::sync::atomic::AtomicUsize;
-
-    /// Builds an active world with exactly two controller-bearing subjects — a
-    /// narrative persona and an operational agent — beside its one Human
-    /// subject. `derive_cover` skips the Human opportunity, so this cover is
-    /// always exactly two singleton cells: the most `world.create`'s own
-    /// intent can produce without reaching past the production ingress
-    /// surface into the kernel's private command types the rest of this
-    /// module deliberately does not name.
-    async fn active_two_cell_world(state: &AppState, cookie: &str) {
-        two_cell_world(state, cookie, BTreeMap::new(), Vec::new(), true).await;
-    }
-
-    /// The same genesis, with an authored scale intent and without the
-    /// approve/activate pair, so a test can look at the Draft world the seed
-    /// lane actually runs against.
+    /// A Draft world from `world.create`'s own intent: the owner's Human
+    /// subject beside a narrative persona and an operational agent, with the
+    /// given scale intent and jurisdictions, so a test can look at the Draft
+    /// world the seed lane actually runs against.
     async fn two_cell_world(
         state: &AppState,
         cookie: &str,
         targets: BTreeMap<SubjectKind, u32>,
         jurisdictions: Vec<CreateJurisdictionIntent>,
-        activate: bool,
-    ) {
-        titled_two_cell_world(
-            state,
-            cookie,
-            "Cover Tick Fixture",
-            "",
-            targets,
-            jurisdictions,
-            activate,
-        )
-        .await;
-    }
-
-    async fn titled_two_cell_world(
-        state: &AppState,
-        cookie: &str,
-        title: &str,
-        brief: &str,
-        targets: BTreeMap<SubjectKind, u32>,
-        jurisdictions: Vec<CreateJurisdictionIntent>,
-        activate: bool,
     ) {
         let principal = state
             .sessions
@@ -3175,13 +2274,13 @@ mod tests {
             .account_for_cookie(cookie, Utc::now())
             .unwrap()
             .expect("the fixture cookie names a live session");
-        let receipt = state
+        state
             .world
             .create(
                 CreateWorldIntent {
                     id: CommandId::new(),
-                    title: title.into(),
-                    brief: brief.into(),
+                    title: "Draft Fixture".into(),
+                    brief: String::new(),
                     human_subject_label: "Operator".into(),
                     narrative_persona_label: Some("Persona".into()),
                     operational_agent_label: Some("Operational Agent".into()),
@@ -3193,780 +2292,6 @@ mod tests {
             )
             .await
             .unwrap();
-        let mut snapshot = state.world.snapshot().await.unwrap();
-        if !activate {
-            return;
-        }
-        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
-            state
-                .world
-                .submit_principal(
-                    PrincipalCommandIntent {
-                        id: CommandId::new(),
-                        world_id: receipt.world_id,
-                        expected_revision: snapshot.revision,
-                        body,
-                    },
-                    &principal,
-                )
-                .await
-                .unwrap();
-            snapshot = state.world.snapshot().await.unwrap();
-        }
-    }
-
-    fn test_controller_models() -> ControllerModels {
-        ControllerModels {
-            projector: "projector".into(),
-            persona: "persona".into(),
-            interpreter: "interpreter".into(),
-            operational_agent: "operator".into(),
-            elaborator: "elaborator".into(),
-        }
-    }
-
-    /// A store that never remembers anything: every command looks unwritten
-    /// and every write lands clean. Sufficient for tests whose subject is the
-    /// tick driver's permit and quarantine handling rather than checkpoint
-    /// resumption.
-    struct AlwaysFreshWorkStore;
-
-    #[async_trait::async_trait]
-    impl ControllerWorkStore for AlwaysFreshWorkStore {
-        async fn lookup(
-            &self,
-            _command_id: CommandId,
-        ) -> Result<ControllerWorkLookup, ControllerWorkStoreError> {
-            Ok(ControllerWorkLookup::Missing)
-        }
-
-        async fn persist(
-            &self,
-            _work: &ControllerWork,
-        ) -> Result<ControllerWorkWrite, ControllerWorkStoreError> {
-            Ok(ControllerWorkWrite::Applied)
-        }
-
-        async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError> {
-            Ok(ControllerWorkCustody::Owned {
-                narrative_commands: 0,
-                operational_commands: 0,
-                elaboration_commands: 0,
-                seed_commands: 0,
-            })
-        }
-
-        async fn elaboration_in_flight(
-            &self,
-        ) -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError> {
-            Ok(Vec::new())
-        }
-    }
-
-    /// Counts concurrent `infer` calls. Each call increments an in-flight
-    /// counter, records the running high-water mark, yields once so a
-    /// concurrently spawned cell gets a chance to run, then decrements. If
-    /// `run_cover_tick` ever let two cells' inference calls overlap, this
-    /// would observe it.
-    struct CountingInferencePort {
-        in_flight: AtomicUsize,
-        high_water: AtomicUsize,
-        calls: AtomicUsize,
-    }
-
-    impl CountingInferencePort {
-        fn new() -> Self {
-            Self {
-                in_flight: AtomicUsize::new(0),
-                high_water: AtomicUsize::new(0),
-                calls: AtomicUsize::new(0),
-            }
-        }
-    }
-
-    #[async_trait::async_trait]
-    impl InferencePort for CountingInferencePort {
-        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
-        }
-
-        async fn infer(
-            &self,
-            _request: PreparedInference,
-        ) -> Result<InferenceOutput, InferenceFault> {
-            let in_flight = self.in_flight.fetch_add(1, Ordering::SeqCst) + 1;
-            self.calls.fetch_add(1, Ordering::SeqCst);
-            self.high_water.fetch_max(in_flight, Ordering::SeqCst);
-            tokio::task::yield_now().await;
-            self.in_flight.fetch_sub(1, Ordering::SeqCst);
-            Ok(InferenceOutput::new(
-                vec![InferenceEvent::Text("The cover tick fixture speaks.".into())],
-                "sha256:counting-port",
-            ))
-        }
-    }
-
-    /// The tick driver spawns one task per cell into one `JoinSet` up front,
-    /// each gated by `state.controller_permits` before it may call the port.
-    /// This proves that gate is load-bearing: with the pool sized to one and
-    /// a cover of two singleton cells (the most a genesis world's two
-    /// controller-bearing subjects can produce), the counting port must never
-    /// observe a second concurrent `infer` call while the first is still
-    /// in flight, even though both cells were spawned before either ran.
-    #[tokio::test]
-    async fn the_tick_driver_never_exceeds_its_controller_permit_pool() {
-        let fixture = fixture().await;
-        active_two_cell_world(&fixture.state, &fixture.cookie).await;
-
-        let port = Arc::new(CountingInferencePort::new());
-        let mut state = fixture.state.clone();
-        state.controllers = Some(Arc::new(
-            ControllerRunner::open(
-                state.world.clone(),
-                port.clone(),
-                Arc::new(AlwaysFreshWorkStore),
-                test_controller_models(),
-            )
-            .expect("the fixture ports open"),
-        ));
-        state.controller_permits = Arc::new(Semaphore::new(1));
-
-        run_cover_tick(&state).await;
-
-        assert!(
-            port.calls.load(Ordering::SeqCst) >= 2,
-            "both singleton cells should have reached the port at least once"
-        );
-        assert_eq!(
-            port.high_water.load(Ordering::SeqCst),
-            1,
-            "a permit pool of one must never admit a second concurrent call"
-        );
-    }
-
-    /// Ruling L1-Q4: neither lane starves the other. With every elaboration
-    /// permit held by the test, a cover tick still runs both of its cells; with
-    /// every simulation permit held, an elaboration sweep still reaches the
-    /// provider. The timeouts only turn a lane blocked on the other lane's pool
-    /// into a failure instead of a hang; no ordering rests on them.
-    #[tokio::test]
-    async fn saturating_one_pool_never_delays_the_other() {
-        let fixture = fixture().await;
-        two_cell_world(
-            &fixture.state,
-            &fixture.cookie,
-            BTreeMap::from([(SubjectKind::Person, 4)]),
-            vec![CreateJurisdictionIntent {
-                handle: "sere".into(),
-                label: "The Low Sere".into(),
-                permille: 1000,
-            }],
-            true,
-        )
-        .await;
-
-        let port = Arc::new(CountingInferencePort::new());
-        let mut state = fixture.state.clone();
-        state.controllers = Some(Arc::new(
-            ControllerRunner::open(
-                state.world.clone(),
-                port.clone(),
-                Arc::new(AlwaysFreshWorkStore),
-                test_controller_models(),
-            )
-            .expect("the fixture ports open"),
-        ));
-        let snapshot = state.world.snapshot().await.unwrap();
-        assert_eq!(snapshot.phase, WorldPhase::Active);
-        assert!(
-            snapshot.scale_deficit.iter().any(|row| row.deficit > 0),
-            "the fixture gives the elaborator nothing to answer"
-        );
-
-        let elaboration = state
-            .elaboration_permits
-            .clone()
-            .try_acquire_many_owned(u32::try_from(TEST_ELABORATION_CEILING).expect("a small pool"))
-            .expect("the elaboration pool is free");
-        tokio::time::timeout(Duration::from_secs(30), run_cover_tick(&state))
-            .await
-            .expect("the cover tick waited on the elaboration pool");
-        assert!(
-            port.calls.load(Ordering::SeqCst) >= 2,
-            "both singleton cells should have reached the port"
-        );
-        drop(elaboration);
-
-        let before = port.calls.load(Ordering::SeqCst);
-        let simulation = state
-            .controller_permits
-            .clone()
-            .try_acquire_many_owned(u32::try_from(TEST_CONTROLLER_CONCURRENCY).expect("a small pool"))
-            .expect("the simulation pool is free");
-        tokio::time::timeout(Duration::from_secs(30), run_elaboration_sweep(&state))
-            .await
-            .expect("the sweep waited on the simulation pool");
-        assert!(
-            port.calls.load(Ordering::SeqCst) > before,
-            "no elaboration inference completed"
-        );
-        drop(simulation);
-    }
-
-    /// Reads both pools on every `infer` call. After `arm`, the next call is
-    /// held inside the provider boundary until the test releases it, and its
-    /// reading is kept as `(simulation free, elaboration free)`.
-    struct PoolObservingPort {
-        simulation: Arc<Semaphore>,
-        elaboration: Arc<Semaphore>,
-        armed: AtomicBool,
-        held: std::sync::Mutex<Option<(usize, usize)>>,
-        entered: Semaphore,
-        release: Semaphore,
-    }
-
-    impl PoolObservingPort {
-        fn over(state: &AppState) -> Self {
-            Self {
-                simulation: state.controller_permits.clone(),
-                elaboration: state.elaboration_permits.clone(),
-                armed: AtomicBool::new(false),
-                held: std::sync::Mutex::new(None),
-                entered: Semaphore::new(0),
-                release: Semaphore::new(0),
-            }
-        }
-
-        /// Arms the gate, waits for the lane `run` starts to reach the provider
-        /// boundary, returns what that call read, and lets it go. The timeout
-        /// only turns a lane blocked on a pool into a failure instead of a
-        /// hang; the reading does not rest on it.
-        async fn reading_of<T: Send + 'static>(
-            &self,
-            run: impl std::future::Future<Output = T> + Send + 'static,
-        ) -> ((usize, usize), T) {
-            self.armed.store(true, Ordering::SeqCst);
-            let lane = tokio::spawn(run);
-            tokio::time::timeout(Duration::from_secs(30), self.entered.acquire())
-                .await
-                .expect("the lane never reached the provider boundary")
-                .unwrap()
-                .forget();
-            let reading = self.held.lock().unwrap().take().expect("the held call's reading");
-            self.release.add_permits(1);
-            (reading, lane.await.expect("the lane panicked"))
-        }
-    }
-
-    #[async_trait::async_trait]
-    impl InferencePort for PoolObservingPort {
-        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
-        }
-
-        async fn infer(
-            &self,
-            _request: PreparedInference,
-        ) -> Result<InferenceOutput, InferenceFault> {
-            let reading = (
-                self.simulation.available_permits(),
-                self.elaboration.available_permits(),
-            );
-            if self.armed.swap(false, Ordering::SeqCst) {
-                *self.held.lock().unwrap() = Some(reading);
-                self.entered.add_permits(1);
-                self.release.acquire().await.unwrap().forget();
-            }
-            Ok(InferenceOutput::new(
-                vec![InferenceEvent::Text("The pool fixture speaks.".into())],
-                "sha256:pool-observing-port",
-            ))
-        }
-    }
-
-    /// One `world.controller.act` through the HTTP route, for the first
-    /// opportunity whose controller is `mode`.
-    async fn controller_turn(
-        state: AppState,
-        cookie: String,
-        mode: ghostlight::ControllerMode,
-    ) -> Value {
-        let world = current_world(&state).await.unwrap().expect("a world");
-        let opportunity = world
-            .opportunities
-            .iter()
-            .find(|opportunity| opportunity.controller_mode == mode)
-            .expect("an opportunity for that controller")
-            .clone();
-        post(
-            &state,
-            &cookie,
-            invocation(
-                "world.controller.act",
-                "ghostlight.world_controller_act.v0",
-                eve::surface_version(Some(&world)),
-                json!({"opportunity":opportunity}),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await
-    }
-
-    /// Ruling L1-Q4 for a player's controller turn, read at the provider
-    /// boundary. While a turn infers it holds one simulation permit and no
-    /// elaboration permit, and with every elaboration permit held by the test
-    /// it still reaches the provider. A sweep is the mirror: while it infers
-    /// the simulation pool is whole, and with every simulation permit held it
-    /// still reaches the provider.
-    #[tokio::test]
-    async fn a_speak_turn_and_a_sweep_draw_only_from_their_own_pools() {
-        let fixture = fixture().await;
-        two_cell_world(
-            &fixture.state,
-            &fixture.cookie,
-            BTreeMap::from([(SubjectKind::Person, 4)]),
-            vec![CreateJurisdictionIntent {
-                handle: "sere".into(),
-                label: "The Low Sere".into(),
-                permille: 1000,
-            }],
-            true,
-        )
-        .await;
-        let mut state = fixture.state.clone();
-        let port = Arc::new(PoolObservingPort::over(&state));
-        state.controllers = Some(Arc::new(
-            ControllerRunner::open(
-                state.world.clone(),
-                port.clone(),
-                Arc::new(AlwaysFreshWorkStore),
-                test_controller_models(),
-            )
-            .expect("the fixture ports open"),
-        ));
-        let simulation = TEST_CONTROLLER_CONCURRENCY;
-        let elaboration = TEST_ELABORATION_CEILING;
-
-        let (reading, _) = port
-            .reading_of(controller_turn(
-                state.clone(),
-                fixture.cookie.clone(),
-                ghostlight::ControllerMode::NarrativePersona,
-            ))
-            .await;
-        assert_eq!(
-            reading,
-            (simulation - 1, elaboration),
-            "a speak turn did not hold exactly one simulation permit and no elaboration permit"
-        );
-
-        let held = state
-            .elaboration_permits
-            .clone()
-            .try_acquire_many_owned(u32::try_from(elaboration).expect("a small pool"))
-            .expect("the elaboration pool is free");
-        let (reading, _) = port
-            .reading_of(controller_turn(
-                state.clone(),
-                fixture.cookie.clone(),
-                ghostlight::ControllerMode::OperationalAgent,
-            ))
-            .await;
-        assert_eq!(reading, (simulation - 1, 0));
-        drop(held);
-        assert!(!state.controller_quarantined.load(Ordering::SeqCst));
-
-        let sweep = |state: AppState| async move { run_elaboration_sweep(&state).await };
-        let (reading, ()) = port.reading_of(sweep(state.clone())).await;
-        assert_eq!(reading.0, simulation, "a sweep held a simulation permit");
-        assert!(reading.1 < elaboration, "a sweep inferred without an elaboration permit");
-
-        let held = state
-            .controller_permits
-            .clone()
-            .try_acquire_many_owned(u32::try_from(simulation).expect("a small pool"))
-            .expect("the simulation pool is free");
-        let (reading, ()) = port.reading_of(sweep(state.clone())).await;
-        assert_eq!(reading.0, 0);
-        assert!(reading.1 < elaboration);
-        drop(held);
-        assert_eq!(state.controller_permits.available_permits(), simulation);
-        assert_eq!(state.elaboration_permits.available_permits(), elaboration);
-    }
-
-    /// Panics on its first `infer` call. Every later call announces itself on
-    /// `again` and answers with text.
-    struct PanicOnceInferencePort {
-        first: AtomicBool,
-        again: Semaphore,
-    }
-
-    #[async_trait::async_trait]
-    impl InferencePort for PanicOnceInferencePort {
-        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
-        }
-
-        async fn infer(
-            &self,
-            _request: PreparedInference,
-        ) -> Result<InferenceOutput, InferenceFault> {
-            if self.first.swap(false, Ordering::SeqCst) {
-                panic!("the fixture port panics inside the first elaboration session");
-            }
-            self.again.add_permits(1);
-            Ok(InferenceOutput::new(
-                vec![InferenceEvent::Text("The driver fixture speaks.".into())],
-                "sha256:panic-once-port",
-            ))
-        }
-    }
-
-    /// `AlwaysFreshWorkStore`, announcing each in-flight listing: one per sweep.
-    struct SweepCountingWorkStore {
-        listed: Semaphore,
-    }
-
-    #[async_trait::async_trait]
-    impl ControllerWorkStore for SweepCountingWorkStore {
-        async fn lookup(
-            &self,
-            command_id: CommandId,
-        ) -> Result<ControllerWorkLookup, ControllerWorkStoreError> {
-            AlwaysFreshWorkStore.lookup(command_id).await
-        }
-
-        async fn persist(
-            &self,
-            work: &ControllerWork,
-        ) -> Result<ControllerWorkWrite, ControllerWorkStoreError> {
-            AlwaysFreshWorkStore.persist(work).await
-        }
-
-        async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError> {
-            AlwaysFreshWorkStore.custody_probe().await
-        }
-
-        async fn elaboration_in_flight(
-            &self,
-        ) -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError> {
-            self.listed.add_permits(1);
-            AlwaysFreshWorkStore.elaboration_in_flight().await
-        }
-    }
-
-    /// The elaboration driver outlives a sweep whose session panicked. The
-    /// driver runs at a one-millisecond interval over a world with a deficit,
-    /// under an elaboration pool of one, so a sweep that stops after a panic
-    /// has no sibling session. The first sweep's session panics; the driver
-    /// then reads a second listing, which only a second sweep does, and that
-    /// sweep's session reaches the provider. If the driver task ends first,
-    /// the test fails on that instead of waiting.
-    #[tokio::test]
-    async fn the_elaboration_driver_survives_a_panicking_sweep() {
-        let fixture = fixture().await;
-        two_cell_world(
-            &fixture.state,
-            &fixture.cookie,
-            BTreeMap::from([(SubjectKind::Person, 4)]),
-            vec![CreateJurisdictionIntent {
-                handle: "sere".into(),
-                label: "The Low Sere".into(),
-                permille: 1000,
-            }],
-            true,
-        )
-        .await;
-        let port = Arc::new(PanicOnceInferencePort {
-            first: AtomicBool::new(true),
-            again: Semaphore::new(0),
-        });
-        let store = Arc::new(SweepCountingWorkStore {
-            listed: Semaphore::new(0),
-        });
-        let mut state = fixture.state.clone();
-        state.controllers = Some(Arc::new(
-            ControllerRunner::open(
-                state.world.clone(),
-                port.clone(),
-                store.clone(),
-                test_controller_models(),
-            )
-            .expect("the fixture ports open"),
-        ));
-        state.elaboration_permits = Arc::new(Semaphore::new(1));
-
-        let mut driver = tokio::spawn(elaborate_world(state.clone(), Duration::from_millis(1)));
-        tokio::select! {
-            listed = store.listed.acquire_many(2) => listed.unwrap().forget(),
-            ended = &mut driver => panic!("the elaboration driver ended: {ended:?}"),
-        }
-        assert!(!port.first.load(Ordering::SeqCst), "the first sweep's session never panicked");
-        tokio::select! {
-            again = port.again.acquire() => again.unwrap().forget(),
-            ended = &mut driver => panic!("the elaboration driver ended: {ended:?}"),
-        }
-        assert!(!state.controller_quarantined.load(Ordering::SeqCst));
-        driver.abort();
-    }
-
-    /// Raises `ControllerError::requires_quarantine` on every call. Used to
-    /// prove the tick driver's quarantine edge rather than any cognition
-    /// outcome.
-    struct QuarantiningInferencePort {
-        calls: AtomicUsize,
-    }
-
-    #[async_trait::async_trait]
-    impl InferencePort for QuarantiningInferencePort {
-        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
-        }
-
-        async fn infer(
-            &self,
-            _request: PreparedInference,
-        ) -> Result<InferenceOutput, InferenceFault> {
-            self.calls.fetch_add(1, Ordering::SeqCst);
-            Err(InferenceFault::integrity_violation(
-                "the fixture port disputes every receipt",
-            ))
-        }
-    }
-
-    /// `run_cover_tick`'s per-cell task checks `controller_quarantined` twice:
-    /// once up front, before contending for a permit at all, and once more
-    /// right after acquiring one. With the pool sized to one, only one of
-    /// this tick's two cells can ever hold the permit at a time, and the
-    /// second cannot be granted it until the first has fully returned —
-    /// which, for a faulting cell, means the flag is already set. So the
-    /// second cell's post-acquire check always sees it and returns without
-    /// ever reaching the port, deterministically, regardless of which cell
-    /// happened to acquire first. The flag's cross-tick teeth are separate:
-    /// `run_cover_tick`'s own top-of-function guard means the *next* tick
-    /// never derives a cover at all once quarantined, so no cell of any later
-    /// tick reaches the port either. Both edges are asserted here.
-    #[tokio::test]
-    async fn quarantine_raised_mid_tick_stops_the_sibling_cell_and_every_later_tick() {
-        let fixture = fixture().await;
-        active_two_cell_world(&fixture.state, &fixture.cookie).await;
-
-        let port = Arc::new(QuarantiningInferencePort {
-            calls: AtomicUsize::new(0),
-        });
-        let mut state = fixture.state.clone();
-        state.controllers = Some(Arc::new(
-            ControllerRunner::open(
-                state.world.clone(),
-                port.clone(),
-                Arc::new(AlwaysFreshWorkStore),
-                test_controller_models(),
-            )
-            .expect("the fixture ports open"),
-        ));
-        // One permit, two cells: the second cell cannot even attempt the
-        // port until the first has returned, which is what makes the
-        // post-acquire recheck deterministic rather than a race.
-        state.controller_permits = Arc::new(Semaphore::new(1));
-
-        run_cover_tick(&state).await;
-        assert!(
-            state.controller_quarantined.load(Ordering::SeqCst),
-            "an integrity-violating fault must quarantine the cognition organ"
-        );
-        let calls_after_first_tick = port.calls.load(Ordering::SeqCst);
-        assert_eq!(
-            calls_after_first_tick, 1,
-            "the sibling cell waiting on the permit must not reach the port \
-             once the first cell's fault raised the flag"
-        );
-
-        run_cover_tick(&state).await;
-        assert_eq!(
-            port.calls.load(Ordering::SeqCst),
-            calls_after_first_tick,
-            "a quarantined organ must not let a later tick's cells reach the port"
-        );
-    }
-
-    /// Lands a real commit on the world's operational agent, through its own
-    /// granted `speak` affordance and `WorldMailbox::submit_controller` — the
-    /// same production port a controller's own decision uses, not a test-only
-    /// ingress. Mirrors `ghostlight`'s `controllers`'s own `MidTurnCommit::Speech`,
-    /// but from outside the `world` module, using only what this module's
-    /// tests already have `pub(crate)` access to.
-    async fn speak_through(mailbox: &WorldMailbox, speaker: SubjectId, text: &str) {
-        let port = ControllerPort::new(mailbox.clone());
-        let snapshot = port.snapshot().await.unwrap();
-        let opportunity = snapshot
-            .opportunities
-            .iter()
-            .find(|entry| entry.scope.subject_id == speaker)
-            .expect("the speaker has a live opportunity")
-            .clone();
-        let entry = snapshot
-            .affordances
-            .iter()
-            .find(|entry| {
-                entry.entry.kind.0 == "speak" && opportunity.affordance_ids.contains(&entry.id)
-            })
-            .expect("the speaker was granted speech")
-            .clone();
-        port.submit_controller(
-            CommandId::new(),
-            &opportunity,
-            DecisionInvocation {
-                affordance: entry.id,
-                bindings: Vec::new(),
-                proposed: Vec::new(),
-                speech: Some(Statement::new(text.to_string()).unwrap()),
-                display: None,
-            },
-        )
-        .await
-        .expect("the mid-turn speech committed");
-    }
-
-    /// Answers a narrative cell's inference by purpose, landing a real
-    /// commit on the world's operational agent just before each Interpreter
-    /// round returns. Every other purpose — the operational agent's own
-    /// cell, spawned into the same tick — declines immediately: its outcome
-    /// is not this test's subject, and this port scripts one narrative turn
-    /// only.
-    struct InterruptingCoverPort {
-        mailbox: WorldMailbox,
-        source: String,
-        speech: String,
-        speaker: SubjectId,
-        interpreter_calls: AtomicUsize,
-    }
-
-    #[async_trait::async_trait]
-    impl InferencePort for InterruptingCoverPort {
-        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
-            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
-        }
-
-        async fn infer(
-            &self,
-            request: PreparedInference,
-        ) -> Result<InferenceOutput, InferenceFault> {
-            match request.purpose {
-                InferencePurpose::Projector => Ok(InferenceOutput::new(
-                    vec![InferenceEvent::Text("The room holds its breath.".into())],
-                    "sha256:projector",
-                )),
-                InferencePurpose::Persona => Ok(InferenceOutput::new(
-                    vec![InferenceEvent::Text(self.source.clone())],
-                    "sha256:persona",
-                )),
-                InferencePurpose::Interpreter => {
-                    let round = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
-                    let text = if round == 0 {
-                        "The tollhouse ledger is short."
-                    } else {
-                        "A second bell rings over the yard."
-                    };
-                    speak_through(&self.mailbox, self.speaker, text).await;
-                    Ok(InferenceOutput::new(
-                        vec![
-                            InferenceEvent::ToolCall {
-                                call_id: format!("call_speak_{round}"),
-                                name: "speak".into(),
-                                arguments: json!({ "source_quote": self.speech })
-                                    .to_string(),
-                            },
-                            InferenceEvent::ToolCall {
-                                call_id: format!("call_finish_{round}"),
-                                name: "finish_interpretation".into(),
-                                arguments: "{}".into(),
-                            },
-                        ],
-                        format!("sha256:interpreter-{round}"),
-                    ))
-                }
-                // The operational agent's own cell shares this tick and this
-                // port; declining every other purpose keeps this fixture to
-                // the one narrative turn it scripts.
-                InferencePurpose::OperationalAgent
-                | InferencePurpose::GroupedAgent
-                | InferencePurpose::Elaboration => Err(InferenceFault::recovery_required(
-                    "fixture agent declines every purpose but the narrative one",
-                )),
-            }
-        }
-    }
-
-    /// Soul's follow-up: the driver's own `Interrupted` arm
-    /// (`Ok(CellRun::Narrative(NarrativeRun::Interrupted(..)))` in
-    /// `run_cover_tick`), exercised through the tick driver rather than
-    /// `ControllerRunner::run_narrative` directly. The operational agent
-    /// speaks once between the narrative cell's Persona turn and its first
-    /// submit — a re-lowering, per `ghostlight`'s `controllers`'s own
-    /// `a_neighbours_speech_between_the_turn_and_submit_is_re_lowered_once`
-    /// — and once more between the re-lowered submit and its own commit,
-    /// spending the one re-lowering the turn is owed
-    /// (`a_second_scope_change_after_the_re_lowering_spends_nothing`'s own
-    /// shape, reached here through the driver instead of the runner). The
-    /// gap the pass exists to close: the tick commits exactly the
-    /// operational agent's two acts and nothing from the overtaken turn.
-    #[tokio::test]
-    async fn a_second_mid_turn_change_reaches_the_drivers_interrupted_arm() {
-        use ghostlight::ControllerMode;
-
-        let fixture = fixture().await;
-        active_two_cell_world(&fixture.state, &fixture.cookie).await;
-
-        let snapshot = fixture.state.world.snapshot().await.unwrap();
-        let operational_agent = snapshot
-            .subjects
-            .iter()
-            .find(|subject| subject.controller_mode == Some(ControllerMode::OperationalAgent))
-            .expect("the genesis world grants an operational agent")
-            .id;
-
-        let source = "I say, \"Hold the line at the gate.\"";
-        let speech = "Hold the line at the gate.";
-
-        let port = Arc::new(InterruptingCoverPort {
-            mailbox: fixture.state.world.clone(),
-            source: source.into(),
-            speech: speech.into(),
-            speaker: operational_agent,
-            interpreter_calls: AtomicUsize::new(0),
-        });
-        let mut state = fixture.state.clone();
-        state.controllers = Some(Arc::new(
-            ControllerRunner::open(
-                state.world.clone(),
-                port.clone(),
-                Arc::new(AlwaysFreshWorkStore),
-                test_controller_models(),
-            )
-            .expect("the fixture ports open"),
-        ));
-        // One permit serializes the two cells' full runs (see
-        // `the_tick_driver_never_exceeds_its_controller_permit_pool`), so the
-        // operational agent's own turn — which this port declines on its
-        // first call — can never interleave with the narrative cell's
-        // Interpreter rounds.
-        state.controller_permits = Arc::new(Semaphore::new(1));
-
-        let committed_before = fixture.state.world.operator_log().await.unwrap().len();
-        run_cover_tick(&state).await;
-        let committed_after = fixture.state.world.operator_log().await.unwrap().len();
-
-        assert_eq!(
-            port.interpreter_calls.load(Ordering::SeqCst),
-            2,
-            "the turn should spend exactly its one re-lowering, not loop or stop short"
-        );
-        assert_eq!(
-            committed_after - committed_before,
-            2,
-            "only the operational agent's two mid-turn acts land; the \
-             overtaken narrative turn commits nothing"
-        );
     }
 
     /// The library half of this rule is `sdk_inference`'s own
@@ -4016,89 +2341,6 @@ mod tests {
         }
     }
 
-    /// `drive_one_tick` never names `run_cover_tick`: `run_cover` is opaque to
-    /// it, so this test substitutes a fake that walks a real `Cover` — derived
-    /// through production ingress from a real active world — and records each
-    /// cell's tick index, alongside a fake clock submitter that records its
-    /// own call. Asserts the ordering invariant `drive_one_tick` exists to
-    /// buy — every cell recorded before the clock — and that every recorded
-    /// cell carries the one tick index `derive_cover` stamped on the whole
-    /// cover, matching `drive_cover_tick`'s own doc comment.
-    #[tokio::test]
-    async fn drive_one_tick_runs_every_cell_before_the_clock_and_all_share_one_tick() {
-        use ghostlight::{Cell, TickIndex};
-
-        let fixture = fixture().await;
-        active_two_cell_world(&fixture.state, &fixture.cookie).await;
-
-        let snapshot = fixture.state.world.snapshot().await.unwrap();
-        let graph = fixture.state.world.agency_graph().await.unwrap();
-        let cover = derive_cover(
-            snapshot.world_id,
-            snapshot.now,
-            CLOCK_TICK_MINUTES,
-            &snapshot.opportunities,
-            &graph,
-            CoverBudget {
-                cells: 240,
-                constituent_cap: 24,
-                urgency_slots: 36,
-            },
-        );
-        assert_eq!(
-            cover.cells.len(),
-            2,
-            "a genesis world's two controller-bearing subjects derive two singleton cells"
-        );
-
-        #[derive(Debug, Clone, PartialEq, Eq)]
-        enum Event {
-            Cell(TickIndex),
-            Clock,
-        }
-        let order: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(Vec::new()));
-
-        let cell_order = order.clone();
-        let cells = cover.cells.clone();
-        let run_cover = move || {
-            let order = cell_order.clone();
-            let cells = cells.clone();
-            async move {
-                for cell in cells {
-                    let tick = match cell {
-                        Cell::Singleton { tick, .. } | Cell::Group { tick, .. } => tick,
-                    };
-                    order.lock().await.push(Event::Cell(tick));
-                }
-            }
-        };
-        let clock_order = order.clone();
-        let minutes = TickMinutes::new(CLOCK_TICK_MINUTES).expect("a valid configured tick");
-        drive_one_tick(minutes, run_cover, move |_id, _minutes| {
-            let order = clock_order.clone();
-            async move {
-                order.lock().await.push(Event::Clock);
-                Ok(SubmitReceipt::AlreadyApplied(controller_commit()))
-            }
-        })
-        .await;
-
-        let recorded = order.lock().await.clone();
-        let (cell_events, clock_events) = recorded.split_at(recorded.len() - 1);
-        assert_eq!(
-            clock_events,
-            [Event::Clock],
-            "the clock must be the last thing recorded"
-        );
-        assert_eq!(cell_events.len(), 2, "every cell must have run");
-        assert!(
-            cell_events
-                .iter()
-                .all(|event| matches!(event, Event::Cell(tick) if *tick == cover.tick)),
-            "every cell in the tick must carry the same tick index"
-        );
-    }
-
     /// A missing credentials path is the fail-closed default: no consumer is
     /// configured, and startup proceeds. A path that names a file that exists
     /// but does not decode is a different situation entirely -- a mistyped or
@@ -4136,284 +2378,6 @@ mod tests {
         assert!(
             result.is_err(),
             "a malformed credentials file must refuse the registry, not start empty"
-        );
-    }
-
-    /// Spec test 18. The local live smoke: a world created with a real scale
-    /// intent, seeded from a real Vault until its deficit is zero or the
-    /// session budget is spent, then approved, activated, and ticked by the
-    /// production tick driver, elaboration sweep, and clock against a real
-    /// CodexConnector. Everything else in this module proves the machine under
-    /// fixture ports; this is the one place the road is tested. It asserts only
-    /// that the loop ran; the log is the deliverable — patches committed,
-    /// deficit per round, subjects qualified, and the prose a tick produces
-    /// from a world that now has people in it.
-    #[tokio::test]
-    #[ignore = "requires a vault plus either a running CodexConnector or a built Claude SDK sidecar with an ambient Claude Code login; see GHOSTLIGHT_SMOKE_* and GHOSTLIGHT_SDK_* environment"]
-    async fn live_smoke_seeds_then_ticks_a_world_against_the_connector() {
-        let _ = tracing_subscriber::fmt()
-            .with_env_filter(EnvFilter::from_default_env())
-            .try_init();
-        let env = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("{name} is required"));
-        let runtime_id = env("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID");
-        let live = LiveController {
-            connector: std::env::var("GHOSTLIGHT_CONTROLLER_CONNECTOR")
-                .ok()
-                .map(|endpoint| ConnectorBinding {
-                    endpoint: endpoint.parse().unwrap(),
-                    key_path: PathBuf::from(env("GHOSTLIGHT_CONTROLLER_CREDENTIAL")),
-                    caller_runtime_id: runtime_id.clone(),
-                }),
-            sdk: std::env::var_os("GHOSTLIGHT_SDK_SIDECAR")
-                .map(PathBuf::from)
-                .map(|sidecar_entry| SdkBinding {
-                    sidecar_entry,
-                    caller_runtime_id: runtime_id,
-                    model_prefix: std::env::var("GHOSTLIGHT_SDK_MODEL_PREFIX")
-                        .unwrap_or_else(|_| DEFAULT_SDK_MODEL_PREFIX.into()),
-                }),
-            models: ControllerModels {
-                projector: env("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL"),
-                persona: env("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL"),
-                interpreter: env("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL"),
-                operational_agent: env("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL"),
-                elaborator: env("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL"),
-            },
-            trace: std::env::var_os("GHOSTLIGHT_SMOKE_TRACE").map(PathBuf::from),
-        };
-        let ticks: u32 = env("GHOSTLIGHT_SMOKE_TICKS").parse().unwrap();
-        let log_path = PathBuf::from(env("GHOSTLIGHT_SMOKE_LOG"));
-        let mut log = std::fs::File::create(&log_path).unwrap();
-        use std::io::Write as _;
-        let mut line = |text: String| {
-            writeln!(log, "{} {text}", Utc::now().to_rfc3339()).unwrap();
-            log.flush().unwrap();
-        };
-
-        let seed_sessions: usize = env("GHOSTLIGHT_SMOKE_SEED_SESSIONS").parse().unwrap();
-        let seed_target: u32 = env("GHOSTLIGHT_SMOKE_SEED_TARGET").parse().unwrap();
-        let vault_scope = std::env::var("GHOSTLIGHT_SMOKE_VAULT_SCOPE").unwrap_or_default();
-        let brief = std::env::var("GHOSTLIGHT_SMOKE_SEED_BRIEF").unwrap_or_default();
-        let root_label = env("GHOSTLIGHT_SMOKE_SEED_ROOT_LABEL");
-        let title = std::env::var("GHOSTLIGHT_SMOKE_WORLD_TITLE").unwrap_or_else(|_| root_label.clone());
-        // Read here rather than only inside `seed_once`, so a misconfigured run
-        // fails at the top instead of after the first paid session.
-        let _ = env(SEED_VAULT_ROOT_ENVIRONMENT);
-
-        let fixture = fixture_with(Some(live)).await;
-        let state = &fixture.state;
-        titled_two_cell_world(
-            state,
-            &fixture.cookie,
-            &title,
-            &brief,
-            BTreeMap::from([(SubjectKind::Person, seed_target)]),
-            vec![CreateJurisdictionIntent {
-                handle: "seed_root".into(),
-                label: root_label,
-                permille: 1000,
-            }],
-            false,
-        )
-        .await;
-
-        let principal = state
-            .sessions
-            .lock()
-            .await
-            .account_for_cookie(&fixture.cookie, Utc::now())
-            .unwrap()
-            .expect("the fixture cookie names a live session");
-        let draft = state.world.snapshot().await.unwrap();
-        line(format!(
-            "draft world={:?} revision={} deficit_rows={} shortfall={:?}",
-            draft.world_id,
-            draft.revision,
-            draft.scale_deficit.len(),
-            ghostlight::select_row(&draft)
-        ));
-        let mut seed_patches = 0usize;
-        for round in 1..=seed_sessions {
-            let before = state.world.snapshot().await.unwrap();
-            if ghostlight::select_row(&before).is_none() {
-                line(format!("seed round {round} skipped: no shortfall left"));
-                break;
-            }
-            let started = std::time::Instant::now();
-            let outcome = seed_once(
-                state,
-                &principal,
-                &before,
-                // The brief is the world's now; the session adds nothing.
-                SeedPayload {
-                    vault_scope: vault_scope.clone(),
-                    brief: None,
-                },
-            )
-            .await;
-            let after = state.world.snapshot().await.unwrap();
-            line(format!(
-                "seed round {round} took={:?} outcome={:?} revision {}->{} patches={} qualified={} rows={:?}",
-                started.elapsed(),
-                outcome.as_ref().map(|value| value.name()),
-                before.revision,
-                after.revision,
-                after.revision.saturating_sub(1),
-                after
-                    .subjects
-                    .iter()
-                    .filter(|subject| subject.qualified)
-                    .count(),
-                after
-                    .scale_deficit
-                    .iter()
-                    .map(|row| (row.kind, row.target, row.qualified, row.deficit))
-                    .collect::<Vec<_>>()
-            ));
-            // A rejection persists a repair prompt that the next step
-            // consumes, so it is a session in progress, not an end.
-            // `NoProgress` is a committed patch that moved no row; it still
-            // proves the lane authored and landed something.
-            if matches!(
-                outcome,
-                Ok(SeedOutcome::Committed | SeedOutcome::NoProgress)
-            ) {
-                seed_patches += 1;
-            } else if !matches!(outcome, Ok(SeedOutcome::Rejected)) {
-                break;
-            }
-        }
-        for subject in &state.world.snapshot().await.unwrap().subjects {
-            line(format!(
-                "  seeded {} kind={:?} mode={:?} grants={} qualified={}",
-                subject.label,
-                subject.kind,
-                subject.controller_mode,
-                subject.affordances.len(),
-                subject.qualified
-            ));
-        }
-
-        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
-            let snapshot = state.world.snapshot().await.unwrap();
-            state
-                .world
-                .submit_principal(
-                    PrincipalCommandIntent {
-                        id: CommandId::new(),
-                        world_id: snapshot.world_id,
-                        expected_revision: snapshot.revision,
-                        body,
-                    },
-                    &principal,
-                )
-                .await
-                .unwrap();
-        }
-        let snapshot = state.world.snapshot().await.unwrap();
-        assert_eq!(snapshot.phase, WorldPhase::Active);
-        line(format!(
-            "activated world={:?} revision={} phase={:?} subjects={} opportunities={} now={:?} boundaries={} deficit_rows={}",
-            snapshot.world_id,
-            snapshot.revision,
-            snapshot.phase,
-            snapshot.subjects.len(),
-            snapshot.opportunities.len(),
-            snapshot.now,
-            snapshot.boundaries.len(),
-            snapshot.scale_deficit.len()
-        ));
-        for subject in &snapshot.subjects {
-            line(format!(
-                "  subject {} kind={:?} mode={:?} affordances={}",
-                subject.label,
-                subject.kind,
-                subject.controller_mode,
-                subject.affordances.len()
-            ));
-        }
-        let runner = state.controllers.clone().expect("a live controller runner");
-        let mut logged_events = 0usize;
-        for tick in 1..=ticks {
-            let started = std::time::Instant::now();
-            let before = state.world.snapshot().await.unwrap().revision;
-            drive_one_tick(
-                TickMinutes::new(CLOCK_TICK_MINUTES).unwrap(),
-                || run_cover_tick(state),
-                |id, minutes| state.world.submit_clock(id, minutes),
-            )
-            .await;
-            let cover = state.cover.lock().await.clone();
-            let elaboration = runner
-                .elaborator()
-                .sweep(state.elaboration_permits.clone())
-                .await;
-            let after = state.world.snapshot().await.unwrap();
-            line(format!(
-                "tick {tick} took={:?} revision {before}->{} now={:?} cover={cover:?} quarantined={} elaboration={elaboration:?} boundaries={} deficit_rows={} subjects={}",
-                started.elapsed(),
-                after.revision,
-                after.now,
-                state.controller_quarantined.load(Ordering::SeqCst),
-                after.boundaries.len(),
-                after.scale_deficit.len(),
-                after.subjects.len()
-            ));
-            // Runbook "Interrupted cell": one line per re-lowered cell, with
-            // the subject and both scope digests.
-            for cell in cover.iter().flat_map(|cover| cover.interrupted.iter()) {
-                let label = after
-                    .subjects
-                    .iter()
-                    .find(|subject| subject.id == cell.subject)
-                    .map(|subject| subject.label.as_str())
-                    .unwrap_or("<unknown subject>");
-                line(format!(
-                    "  interrupted cell subject={label} bound={} renewed={}",
-                    cell.bound_scope_digest, cell.renewed_scope_digest
-                ));
-            }
-            let events = state.world.operator_log().await.unwrap();
-            for event in events.iter().skip(logged_events) {
-                line(format!(
-                    "  r{} {}: {}",
-                    event.revision,
-                    event.speaker_label,
-                    match (&event.speech, &event.display) {
-                        (Some(speech), Some(display)) => {
-                            format!("{} [seen: {}]", speech.as_str(), display.as_str())
-                        }
-                        (Some(speech), None) => speech.as_str().to_owned(),
-                        (None, Some(display)) => format!("[seen: {}]", display.as_str()),
-                        (None, None) => "<no speech>".to_owned(),
-                    }
-                ));
-            }
-            logged_events = events.len();
-            if let Ok(custody) = runner.custody_probe().await {
-                line(format!("  custody {custody:?}"));
-            }
-        }
-        let final_snapshot = state.world.snapshot().await.unwrap();
-        line(format!(
-            "done revision={} state_digest={} events={}",
-            final_snapshot.revision, final_snapshot.state_digest, logged_events
-        ));
-        assert!(
-            final_snapshot.revision > snapshot.revision,
-            "the clock alone must move the revision"
-        );
-        // A road run that reached the provider and landed no seed is a failed
-        // run, not a quiet one: the smoke exists to prove inference happened.
-        // Silence is not failure. A person given a place, a debt, and a clock
-        // and nothing else correctly says nothing, and the trace shows why.
-        assert!(
-            seed_sessions == 0 || seed_patches >= 1,
-            "no seed session committed a patch; read the seed round outcomes in the log"
-        );
-        assert!(
-            ticks == 0 || logged_events >= 1,
-            "no subject spoke in {ticks} ticks; inference did not reach the world"
         );
     }
 
@@ -4568,14 +2532,7 @@ mod tests {
             .account_subject_hash()
             .to_owned();
         let stranger = "someone-else";
-        let cover = eve::CoverPanel {
-            cells: 240,
-            constituent_cap: 24,
-            urgency_slots: 36,
-            last: None,
-        };
-
-        let mut surfaces = vec![eve::authenticated_surface(&owner, None, &[], &cover).unwrap()];
+        let mut surfaces = vec![eve::authenticated_surface(&owner, None, &[]).unwrap()];
         two_cell_world(
             &fixture.state,
             &fixture.cookie,
@@ -4585,13 +2542,12 @@ mod tests {
                 label: "The Low Sere".into(),
                 permille: 1000,
             }],
-            false,
         )
         .await;
         let draft = fixture.state.world.snapshot().await.unwrap();
         assert_eq!(draft.phase, WorldPhase::Draft);
         for account in [owner.as_str(), stranger] {
-            surfaces.push(eve::authenticated_surface(account, Some(&draft), &[], &cover).unwrap());
+            surfaces.push(eve::authenticated_surface(account, Some(&draft), &[]).unwrap());
         }
         for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
             let snapshot = fixture.state.world.snapshot().await.unwrap();
@@ -4621,7 +2577,7 @@ mod tests {
         let active = fixture.state.world.snapshot().await.unwrap();
         assert_eq!(active.phase, WorldPhase::Active);
         for account in [owner.as_str(), stranger] {
-            surfaces.push(eve::authenticated_surface(account, Some(&active), &[], &cover).unwrap());
+            surfaces.push(eve::authenticated_surface(account, Some(&active), &[]).unwrap());
         }
         surfaces.push(eve::anonymous_surface());
 
@@ -4677,7 +2633,6 @@ mod tests {
                 label: "The Low Sere".into(),
                 permille: 1000,
             }],
-            false,
         )
         .await;
         let draft = fixture.state.world.snapshot().await.unwrap();
@@ -4773,7 +2728,6 @@ mod tests {
                 label: "The Low Sere".into(),
                 permille: 1000,
             }],
-            false,
         )
         .await;
         let draft = fixture.state.world.snapshot().await.unwrap();
@@ -4781,12 +2735,6 @@ mod tests {
             &owner,
             Some(&draft),
             &[],
-            &eve::CoverPanel {
-                cells: 240,
-                constituent_cap: 24,
-                urgency_slots: 36,
-                last: None,
-            },
         )
         .unwrap();
         let encoded = serde_json::to_string(&surface).unwrap();
@@ -4833,7 +2781,6 @@ mod tests {
             &fixture.cookie,
             BTreeMap::new(),
             Vec::new(),
-            false,
         )
         .await;
         let live = fixture
@@ -4892,7 +2839,6 @@ mod tests {
             &fixture.cookie,
             BTreeMap::new(),
             Vec::new(),
-            false,
         )
         .await;
         let live = fixture
