@@ -778,7 +778,16 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     `run_operational` or `ElaborationRunner::sweep`.
   - P1.3 `world.controller.act` is denied before dispatch.
   - P1.4 The library diff is empty.
-- **Landed:** —
+- **Landed:** `d69e9d4` (Hands, 2026-09-22). −2184 net lines; the Dungeon bin
+  census went 56 → 46 (ten tests, one more than listed:
+  `no_proposal_projection_carries_the_canonical_world_commit` tested the
+  deleted `controller_submission`). `controller_quarantined` went too,
+  because its only writers were deleted. Its readiness arm and seed-gate
+  filter went with it. The negative grep's `world\.controller\.act` term
+  conflicts with M1.1's required test, so it holds with exactly one hit, at
+  that test. M1.1 failed under mutation. Distinct warnings: 19 before, 19
+  after.
+- **Verdicts:** pending Soul.
 
 ## Cut 2. The local inference port
 
