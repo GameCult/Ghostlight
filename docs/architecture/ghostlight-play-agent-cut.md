@@ -6,7 +6,10 @@ Written 2026-09-22 against Ghostlight `cb0b604` on
 premise correction and the Q11 ruling). `cb0b604..5ff1d54` changes no file under
 `crates/`, `sidecar/` or `web/`, so every line number below is against
 `cb0b604` = `5ff1d54` source. Hands start at Cut 1 from the commit that lands
-this file, once the open questions below carry rulings.
+this file. Rulings recorded at `37be2ce` (PA-Q1, Q3, Q7, Q10, Q12, Q13
+accepted; PA-Q15 new) were folded in the same day: PA-Q5, PA-Q7, PA-Q10,
+PA-Q12, PA-Q13, Cuts 3, 4, 5 and 7, the ledger and the findings were revised,
+and superseded text is kept only under History.
 
 ## How status is read
 
@@ -74,7 +77,9 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
   core (relocate, transfer, consume, admit, bind, release, communicate,
   witness, acquire_knowledge, forget, create/discharge_commitment,
   advance/reduce_pressure, open/close_route, the five light declarations,
-  set_persona_material) is 31,609 characters, about 9,000 tokens. A granted
+  set_persona_material) is 31,609 characters, about 9,000 tokens. This core
+  was measured before PA-Q15 replaced `admit` with `mint`; the ruled starting
+  list is under PA-Q7. A granted
   `speak` tool is 160 characters. Script: scratchpad `catalog_size.py`.
 - **Source-verified facts the design rests on** (read, not probed):
   - Rust drives every connector round: an inert port returns one round's calls
@@ -280,10 +285,15 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
     AdmitPatch)` and `(Play, AdvanceTime)` and nothing else;
   - `require_patch_author` returns `Ok(None)` (unconfined) for `Play`;
   - `require_answer` admits `(Active, None)` with declarations for `Play` and
-    for no other caller; `Play` is refused in Draft (`WrongPhase`) and refused
-    any patch carrying evidence (`Mismatch`, new variant
-    `PlayCarriesEvidence`), so it cannot mint quantity;
-  - `require_clock_caller` admits `Play`.
+    for no other caller; `Play` is refused in Draft (`WrongPhase`);
+  - `require_clock_caller` admits `Play`;
+  - `Play`, and no other caller, may declare a `Ruled` fact and `Mint`
+    quantity (PA-Q15, ruled; shape under PA-Q15 "Design"). `Play` carries no
+    evidence receipts, so its `Admit` is refused by the existing gate like
+    anyone's without a receipt; it uses `Mint` instead.
+- **History (superseded by PA-Q15):** this default first refused any `Play`
+  patch carrying evidence (`PlayCarriesEvidence`), so that `Play` could not
+  mint quantity. The operator ruled the opposite.
 - **"Only one thing holds it":** the capability is compile-time narrowed like
   every other port; exclusivity is Dungeon constructing one `PlayPort` in
   `AppState`, pinned by a negative grep (Cut 3, Cut 8).
@@ -353,6 +363,18 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
   curated Dungeon list of `PATCH_TOOLS` names (Dungeon policy, pinned ⊆
   `PATCH_TOOLS` by test, the lens `leads_with` precedent), starting from the
   22-tool core plus `retire` and `grant_affordance`.
+- **Revised by PA-Q15 (the starting list Cut 8 pins):** `admit` leaves the
+  list, because `Play` holds no receipts and every `Admit` it wrote would be
+  refused; `mint` takes its place. `declare_fact` stays, and its `standing`
+  now offers `ruled`. `witness` and `acquire_knowledge` (`Witnessed`) stay,
+  because they are how a ruled fact reaches a subject and so the Projector.
+  The list: `relocate, transfer, consume, mint, bind, release, communicate,
+  witness, acquire_knowledge, forget, create_commitment,
+  discharge_commitment, advance_pressure, reduce_pressure, open_route,
+  close_route, declare_place, declare_route, declare_resource, declare_fact,
+  declare_subject, set_persona_material, retire, grant_affordance,
+  revoke_affordance` (25 tools). Its size is re-measured from the fixture
+  after Cut 5.
 - **Recommendation: B**, measured at the gate against A on the same turn
   script; the list is one constant and widening it is a one-line change.
 - **Depends on it:** Cut 7 (the library takes a name list), Cut 8 (the list).
@@ -416,19 +438,17 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
   precondition, and moving by the player's own act (invariant 3), both need
   verbs it cannot get. Placement is fine: the agent, holding `Play`, declares
   a route from the commons and relocates the subject as its own ruling.
-- **Options:**
-  - A: **`ComponentOp::GrantAffordance { subject, affordance }` and
-    `RevokeAffordance`**, writing `affordance_grants` for an existing subject
-    and existing catalog entry. Owner, `Play`, and the seed lane (Draft, owner)
-    may use them; confined authors are refused (a grant is authority, not
-    structure). The seed can then grant the player the world's verbs in
-    Draft, and the agent can grant or take verbs in play (bound hands).
-  - B: rebind a seeded Person to the human principal. Binding a human is
-    genesis-only on purpose (`admits_human`, `lib.rs:1775-1778`), because a
-    human joins the required approvers.
-  - C: let the agent rule the player's physical acts as raw ops. Violates
-    invariant 3.
-- **Recommendation: A.**
+- **Design (ruled A):** `ComponentOp::GrantAffordance { subject, affordance }`
+  and `RevokeAffordance` write `affordance_grants` for an existing subject and
+  an existing catalog entry. The owner (including the seed lane, which is the
+  owner in Draft) and `Play` may use them. Confined authors are refused,
+  because a grant is authority, not structure. The seed grants the player the
+  world's verbs in Draft, and the agent grants or takes verbs in play (bound
+  hands). Cut 5 specifies it.
+- **History (not taken):** B, rebind a seeded Person to the human principal.
+  Binding a human is genesis-only on purpose (`admits_human`,
+  `lib.rs:1775-1778`), because a human joins the required approvers. C, let the
+  agent rule the player's physical acts as raw ops, which violates invariant 3.
 - **Depends on it:** Cut 5.
 - **Ruling:** A, as recommended.
 - **Authority:** operator.
@@ -452,35 +472,38 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
   Dungeon cannot build or read an inference, cannot see positions, roles,
   resources, routes or knowledge, and cannot decode a patch tool call, because
   every one of those is `pub(crate)`.
-- **Options:**
-  - A: **a consumer-neutral table module in the library** (`table.rs`), the
-    vocabulary any unconfined author running actors needs, and nothing about
-    turns: `pub fn table_view(&WorldSnapshot) -> String` (the whole-world
-    render with bracketed ids, grown from `render_world_structure`, which
-    moves here and the seed lane calls); `pub fn authoring_tools(names:
-    &[&str]) -> Result<Vec<CodexToolDefinition>, TableError>` (a named subset
-    of `PATCH_TOOLS`, refusing unknown names); `pub fn decode_authoring_call(name,
-    arguments) -> Result<WorldPatch, String>` (the existing
-    `apply_tool_call` decode, one call to a one-item patch); `pub fn
-    actor_tools(prefix, &WorldSnapshot, SubjectId) -> Vec<CodexToolDefinition>`
-    and `pub fn decode_actor_call(&WorldSnapshot, SubjectId, kind, arguments)
-    -> Result<(DecisionOpportunity, DecisionInvocation), String>` (the
-    existing `catalog_tools`/`decode_catalog_call`, plus an optional
-    `display`); `pub fn describe_refusal(&WorldSnapshot, &KernelError) ->
-    String`. Plus two inference seams: `pub fn InferenceRequest::play(..)`
-    (wraps `tool_request` under a new `InferencePurpose::Play`) and `pub fn
+- **Design (ruled A):** a consumer-neutral table module in the library,
+  `crates/ghostlight/src/table.rs`. It holds the vocabulary any unconfined
+  author running actors needs, and nothing about turns:
+  - `pub fn table_view(&WorldSnapshot) -> String`: the whole-world render
+    with bracketed ids. It grows from `render_world_structure`, which moves
+    here and which the seed lane then calls here. It must print every id an
+    authoring tool takes, which today's renderer does not: resources are
+    printed by label only (`elaboration.rs:2257-2263`) and facts not at all.
+    `table_view` prints resource ids and holdings, and every fact with its
+    id, its standing (`canonical | claimed by X | ruled`) and who knows it.
+  - `pub fn authoring_tools(names: &[&str]) -> Result<Vec<CodexToolDefinition>,
+    TableError>`: a named subset of `PATCH_TOOLS`, refusing unknown names.
+  - `pub fn decode_authoring_call(name, arguments) -> Result<WorldPatch,
+    String>`: the existing `apply_tool_call` decode, one call to a one-item
+    patch, and the one decoder `apply_tool_call` itself then calls.
+  - `pub fn actor_tools(prefix, &WorldSnapshot, SubjectId) ->
+    Vec<CodexToolDefinition>` and `pub fn decode_actor_call(&WorldSnapshot,
+    SubjectId, kind, arguments) -> Result<(DecisionOpportunity,
+    DecisionInvocation), String>`: the existing
+    `catalog_tools`/`decode_catalog_call`, plus an optional `display`.
+  - `pub fn describe_refusal(&WorldSnapshot, &KernelError) -> String`.
+  - Two inference seams: `pub fn InferenceRequest::play(..)`, which wraps
+    `tool_request` under a new `InferencePurpose::Play`, and `pub fn
     InferenceOutput::events(&self)`/`receipt_digest(&self)`.
-  - B: widen `pub(crate)` to `pub` on the types Dungeon would read and let
-    Dungeon render and decode. Two renderers and two decoders of one
-    vocabulary, one on each side of the boundary: split authority.
-  - C: move the loop into the library as a table runner with Dungeon
-    supplying prompt text and its own tools through a trait. Contradicts the
-    operator's ownership ruling.
-- **Recommendation: A.** It keeps one owner per vocabulary, is consumer-neutral
-  (another consumer could run its own table on it), and leaves the loop,
-  prompt, Dungeon tools and turn lifecycle in Dungeon as ruled. It is a fourth
-  library piece the target did not list; the target's Ownership section
-  should name it when this is ruled.
+
+  It is a fourth library piece the target's first draft did not list. Cut 7
+  specifies it.
+- **History (not taken):** B, widen `pub(crate)` to `pub` and let Dungeon
+  render and decode. That gives one vocabulary two renderers and two decoders,
+  one on each side of the boundary, which is split authority. C, move the loop
+  into the library as a table runner, which contradicts the operator's
+  ownership ruling.
 - **Depends on it:** Cut 7, Cut 8.
 - **Ruling:** A, as recommended.
 - **Authority:** operator.
@@ -491,9 +514,10 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
 - **Asked:** 2026-09-22, from Q11's ruling meeting gate item 3 ("does
   something physical that a precondition refuses, and sees why"). A refused act
   commits nothing, and the Projector renders committed state only, so the
-  narration cannot say why. The agent writes no narration. The play authority
-  cannot state a world truth as a canonical fact without an evidence receipt
-  (`FactStanding::Canonical { evidence }`), and Q5 refuses it evidence.
+  narration cannot say why. The agent writes no narration. (When this was
+  asked, the play authority could not state a world truth at all. PA-Q15 has
+  since given it `Ruled` facts, which is option C's vocabulary; see "After
+  PA-Q15" below.)
 - **Options:**
   - A: **the surface shows the kernel's refusal of the player's own attempt**,
     rendered by `describe_refusal` (Q12) from the `ActionRejected` mismatch set
@@ -508,6 +532,13 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
     commit "the door is barred" and the Projector narrates it. New kernel
     vocabulary for one gate item.
 - **Recommendation: A.**
+- **After PA-Q15:** A stands, and it remains the only way the gate's "sees
+  why" is guaranteed: the kernel's refusal is shown whatever the agent does.
+  The agent may also rule a consequence. For example, it declares a `Ruled`
+  fact, "the cellar door is barred from inside", and `witness`es it at the
+  player's place. That fact is committed, so the next narration renders it as
+  world truth. It is an agent choice, not a Dungeon rule, and it adds nothing
+  to this cut map beyond Cut 3.
 - **Depends on it:** Cut 7 (`describe_refusal`), Cut 8 (`refusal` on the turn),
   Cut 9 (the line).
 - **Ruling:** A, as recommended.
@@ -546,6 +577,76 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
 - **Supersedes:** PA-Q5's `PlayCarriesEvidence` refusal ("so it cannot
   mint quantity") and PA.f7. Cut 3 is respecified to match.
 - **Depends on it:** Cut 3.
+- **Body facts the design rests on** (read at `5ff1d54`):
+  - The evidence gate is structural in the types, not a caller check.
+    `FactStanding` is `Canonical { evidence }` or `Claimed { by }`
+    (`patch.rs:298-303`), with `FactStandingRef` as its proposal twin
+    (`:308-311`). `ComponentOp::Admit` and `ResolvedOp::Admit` carry a
+    required `evidence: EvidenceRef` (`patch.rs:1055-1060`, `:1721-1726`).
+    The resolver refuses a canonical fact or an `Admit` whose receipt is not in
+    the same patch's `evidence` list (`FactWithoutEvidence`, `:3046-3052`;
+    `AdmitWithoutEvidence`, `:3938-3944`). Apply re-checks both
+    (`lib.rs:2044-2060`, `:2373-2390`), and so does replay's shape check
+    (`journal.rs:580-590`).
+  - The resolver is actor-blind. `resolve_patch(state, command_id, patch,
+    scale_intent, lens_weights)` (`patch.rs:2947-2953`) is never told the
+    caller. Every per-author rule runs after it, in `reduce`, and is
+    re-decided in `apply_effect`: `require_patch_author` and
+    `confine_to_ground` (`lib.rs:1655-1685`, `:4786-4802`).
+  - The quantity ledger has one owner: `check_ledger` (`patch.rs:1877-1891`)
+    credits `admitted`, and `apply_operations` recomputes the deltas
+    (`lib.rs:2124-2150`).
+  - `FactCandidate` (`patch.rs:2111`) is the resolver's view of a fact's
+    standing. Its only standing-dependent rule is "evidenced knowledge is
+    knowledge of canon" (`:4288-4296`), which apply repeats
+    (`lib.rs:2638-2646`).
+  - Subjects never see standing in prose. The snapshot lowers standing to
+    `FactStandingView { Canonical, Claimed { by } }` (`lib.rs:1056-1059`,
+    written at `:3660-3663`). The Projector's stimulus renders `how`
+    (`said | seen_doing | known`, from `KnowledgeSource`), certainty and text,
+    never standing (`controllers.rs:4616-4638`). Only the typed views
+    (Interpreter, operational) print it (`controllers.rs:4675-4695`).
+- **Design (for Cut 3):** two additive variants plus one author rule. `Admit`
+  is not reshaped.
+  - **Facts:** `FactStanding::Ruled` and `FactStandingRef::Ruled`, both unit
+    variants. There is exactly one play authority and the journal's commit
+    records its caller, so a field naming the ruler would be a second copy of
+    the caller that could disagree with it. Lowering maps
+    `FactStandingRef::Ruled → FactStanding::Ruled` (`patch.rs:4965-4972`), and
+    `FactCandidate` gains `Ruled` (`:2111`, `:3184`, `:3340`). Canonical stays
+    the only standing that evidenced knowledge may name, so a `Ruled` fact can
+    be known `Witnessed` but never `Evidenced`.
+  - **Quantity:** a new `ComponentOp::Mint { holder, resource, qty }` and
+    `ResolvedOp::Mint`. It resolves like `Admit` without the receipt clause:
+    holder and resource must resolve and `qty` must be nonzero. It credits the
+    ledger as `admitted` (the ledger has no "minted" term to add; the equation
+    `before + admitted + gained - consumed - spent = after` is unchanged), and
+    `operation_ground` treats it like `Admit` (`lib.rs:4604-4606`).
+  - **One author rule:** `require_ruler(caller, &ResolvedPatch) -> Result<(),
+    Vec<Mismatch>>` collects every `Ruled` fact and every `Mint` op and
+    refuses them with `Mismatch::RuledWithoutAuthority { site }` unless
+    `caller == System(Play)`. It is called in `reduce`'s `AdmitPatch` arm after
+    `resolve_patch`, beside `confine_to_ground`, and re-decided in
+    `apply_effect`'s `PatchAdmitted` arm as an `Invariant` error, like
+    confinement.
+  - **Why this shape keeps the gate for everyone else:** `Canonical` and
+    `Admit` keep their required receipts in the type, so every other author's
+    evidence gate is exactly as it is today: the same predicate, at the same
+    three sites, still reached for every author including `Play`. What `Play`
+    gains is two new spellings that only `require_ruler` can admit. Neither
+    existing check becomes "evidence or else".
+  - **Subjects:** the snapshot maps `FactStanding::Ruled` to
+    `FactStandingView::Canonical` (`lib.rs:3660-3663`). A ruled fact is world
+    truth inside the fiction. Which door admitted it is non-fictional
+    provenance, just as a receipt is (`lib.rs:1036-1039`), so no subject-facing
+    surface distinguishes it. The Projector needs no change: a subject told or
+    shown a ruled fact renders it `known` with certainty.
+- **Option not taken:** turning `Admit.evidence` into an enum or `Option`
+  (`Evidence(EvidenceRef) | Ruled`). That changes the wire shape of a
+  consumer's `Admit` (`consumer.rs:547-552`, `ghostlight.consumer_patch.v0`)
+  and the `admit` tool schema. It also moves the evidence gate out of the type
+  and into a caller check, so every author's gate would depend on one
+  condition that stays right.
 
 ## Order, and why
 
@@ -563,7 +664,7 @@ to use the world.
 | 0 | captures | Ghostlight | rulings |
 | 1 | subtraction | Dungeon | 0 |
 | 2 | behaviour | library (inference) | PA-Q1 |
-| 3 | behaviour | library (kernel: play authority, schema v6) | PA-Q5 |
+| 3 | behaviour | library (kernel: play authority, `Ruled` facts, `Mint`; schema v6, work rows v17) | PA-Q5, PA-Q15 |
 | 4 | behaviour | library (kernel: retire) | 3, PA-Q6 |
 | 5 | behaviour | library (kernel: grant/revoke affordance) | 4, PA-Q10 |
 | 6 | behaviour | library (Persona lane, recency marker) | PA-Q2, PA-Q3 |
@@ -753,68 +854,197 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   - P2.3 Each lane routes by its model name to exactly one port.
 - **Landed:** —
 
-## Cut 3. The play authority (kernel), schema `consumer.v6`
+## Cut 3. The play authority, `Ruled` facts and `Mint` (kernel), schema `consumer.v6`
 
 - **Repo/branch:** Ghostlight `codex/ghostlight-dungeon-mvp`. One commit.
-  Written for PA-Q5's default.
-- **Deletes first:** none.
-- **Per-file changes:**
-  - `lib.rs:467-484`: `SystemCapability::Play`, doc: "The play table. Admitted
-    for an unanswered, unconfined, evidence-free Active patch and for the
-    clock; minted only by `PlayPort`."
-  - `lib.rs:1703-1720` and `:4768-4780`: add `(Play, AdmitPatch)` /
-    `(Play, PatchAdmitted)` and `(Play, AdvanceTime)` / `(Play, TimeAdvanced)`.
-  - `lib.rs:1740-1764`: `require_answer(state, caller, answers, declares)`:
-    `(Active, None)` with `declares` is `Ok` when `caller ==
-    System(Play)`; `Play` in Draft is `WrongPhase`. Both call sites
+  Written for PA-Q5's default and PA-Q15's ruling and design. The state,
+  commit and tool-catalog changes land together because they are one bump: a
+  schema bump without its shape change would be a lie, and so would a shape
+  change without one.
+- **First:** Cut 0's captures. `git status` clean.
+- **Deletes first:** none. Everything here is an admission clause or an
+  additive variant.
+- **Per-file changes** (line numbers against `5ff1d54`):
+  - *The capability.* `lib.rs:467-484`: `SystemCapability::Play`, with the doc
+    "The play table. Admitted for unanswered, unconfined Active patches, the
+    only author of `Ruled` facts and `Mint`, and for the clock. Minted only by
+    `PlayPort`."
+  - `lib.rs:1703-1720` and `:4768-4780`: admit `(Play, AdmitPatch)` /
+    `(Play, PatchAdmitted)` and `(Play, AdvanceTime)` / `(Play,
+    TimeAdvanced)`, and nothing else.
+  - `lib.rs:1740-1764`: `require_answer(state, caller, answers, declares)`.
+    `(Active, None)` with `declares` is `Ok` exactly when `caller ==
+    System(Play)`. `Play` in Draft is `WrongPhase`. Both call sites
     (`:1663`, `:4791`) pass the caller.
-  - `lib.rs` `AdmitPatch` arm (`:1655-1685`) and its twin: a `Play` patch with
-    nonempty `evidence` is `PatchRejected([Mismatch::PlayCarriesEvidence])`;
-    `Mismatch` gains the variant (`patch.rs`, beside `LensWeightsNeverDraw`).
   - `lib.rs:4284-4315`: `CallerId::System(SystemCapability::Play) =>
-    Ok(None)`.
+    Ok(None)` (unconfined).
   - `lib.rs:1725-1731`: `require_clock_caller` admits `Play`.
-  - `mailbox.rs`: `pub struct PlayPort` with `new(WorldMailbox)`, `pub async fn
-    snapshot`, `pub async fn submit_patch(&self, CommandId, WorldPatch)`,
-    `pub async fn advance_time(&self, CommandId, TickMinutes)`, both through
-    `submit_stamped` with `CallerId::System(Play)`. `lib.rs:94`: export.
-  - `lib.rs:172-173`: `consumer.v5 → consumer.v6`; `consumer.rs` pins updated
-    as L1 did.
+  - `mailbox.rs`: `pub struct PlayPort` with `new(WorldMailbox)`, `pub async
+    fn snapshot`, `pub async fn submit_patch(&self, CommandId, WorldPatch)`
+    and `pub async fn advance_time(&self, CommandId, TickMinutes)`, both
+    through `submit_stamped` (`:267`) under `CallerId::System(Play)`.
+    `lib.rs:94`: export `PlayPort`.
+  - *Ruled facts.* `patch.rs:298-303`: `FactStanding::Ruled`, doc "Stated by
+    the play table. The kernel does not evaluate it; only `Play` may write
+    it." `patch.rs:308-311`: `FactStandingRef::Ruled`. `patch.rs:2111`:
+    `FactCandidate::Ruled`, set at `:3184` and `:3340`. The evidenced-knowledge
+    clause at `:4288-4296` is untouched: it compares against `Canonical`, so a
+    ruled fact still cannot be known `Evidenced`. `patch.rs:4965-4972` lowers
+    `Ruled → Ruled`. `patch.rs:3046-3052` is untouched (an `if let` on
+    `Canonical`).
+  - `lib.rs:2044-2060` (apply's fact check): the `Ruled` arm is `false`, which
+    is not a stranger. `journal.rs:580-590` (`verify_state_shape`): a `Ruled`
+    standing is live. `lib.rs:4500-4515` (`confine_to_ground`, facts): `Ruled`
+    under any confined author is `OutsideJurisdiction`. This is redundant with
+    `require_ruler` and exists only so the match stays total. `lib.rs:3660-3663`:
+    `FactStanding::Ruled => FactStandingView::Canonical`.
+    `lib.rs:2638-2646` is untouched.
+  - *Mint.* `patch.rs:1014-1188`: `ComponentOp::Mint { holder: Ref<SubjectId>,
+    resource: Ref<EntityId>, qty: Quantity }`, doc "Creates quantity with no
+    receipt. Only `Play` may write it; every other author creates quantity
+    through `Admit` and its evidence." `patch.rs:1689-1780`:
+    `ResolvedOp::Mint { holder, resource, qty }`. Resolution beside `Admit`
+    (`:3913-3960`): the same holder and resource resolution, the `ZeroQuantity`
+    and `QuantityOverflow` checks, the same `candidate_set` and `admitted`
+    delta, and no receipt clause. Lowering beside `:5138-5148`.
+    `lib.rs:2124-2150`: Mint credits `admitted`. `lib.rs:2178`: Mint's
+    referent is its resource. `lib.rs:2373-2390`: apply Mint like Admit
+    without the `evidence.contains` check. `lib.rs:4604-4606`:
+    `operation_ground` treats Mint like Admit. `patch.rs:6922`: `"mint"`.
+  - *The author rule.* `lib.rs`, beside `confine_to_ground` (`:4411`):
+    `fn require_ruler(caller: &CallerId, resolved: &ResolvedPatch) -> Result<(),
+    Vec<Mismatch>>`. It returns `Ok` when the caller is `System(Play)`.
+    Otherwise it returns one `Mismatch::RuledWithoutAuthority { site }` per
+    `Ruled` fact (`Site::Declaration(handle)`) and per `Mint`
+    (`Site::Operation(index)`), and `Ok` if there are none. Called in `reduce`'s
+    `AdmitPatch` arm (`:1655-1685`) right after `resolve_patch` and before
+    confinement, mapped to `PatchRejected`. Re-decided in `apply_effect`'s
+    `PatchAdmitted` arm (`:4786-4802`), mapped to `KernelError::Invariant("admitted
+    patch rules or mints without the play authority")`. `patch.rs:1285`:
+    `Mismatch::RuledWithoutAuthority { site: Site }`.
+  - *Catalog.* `patch.rs:5799` region: `PATCH_TOOLS` gains `mint` (`Operate {
+    variant: "mint" }`, fields `holder`, `resource`, `qty`, the same field
+    kinds as `admit` without `evidence`). Its description says only the play
+    table may mint. `patch.rs:6270-6282`: the `FactStandingRef` composite
+    gains `("ruled", vec![])`, and `declare_fact`'s description says only the
+    play table may rule. The catalog test (`patch.rs:6837`) goes to `(7, 31,
+    40)`. `assert_exhaustive` and the round-trip test cover the new variants.
+    The sidecar fixture is regenerated (`GHOSTLIGHT_WRITE_SIDECAR_FIXTURES=1`,
+    `sdk_inference.rs:1898`).
+  - *Row version.* `controllers.rs:77-78`: `controller_work.v16 → v17`. An
+    in-flight elaboration or seed row stores its tool list, and this cut is the
+    first to change that list (stock-lenses probe Q7). The bump moved here from
+    Cut 4. Cuts 4 and 5 ride this `v17` if they land before a `v17` store
+    exists anywhere; otherwise each bumps again.
+  - *Schema.* `lib.rs:172-173`: `consumer.v5 → consumer.v6`. `consumer.rs:2237`
+    and the length pin are updated as in L1. `CONSUMER_PATCH_SCHEMA` stays
+    `ghostlight.consumer_patch.v0`. A consumer can now decode `Mint` and
+    `ruled`, but admission refuses both for it, so nothing a consumer could
+    have sent before changes meaning.
 - **Authority map:**
-  - Owner: the kernel's admission functions; `PlayPort` is the only minter.
-  - Inputs: caller, phase, answer, patch.
-  - Outputs: an admitted patch or clock advance attributed `System(Play)`.
-  - Forbidden writers: every other caller still meets `AnswerRequired` for an
-    unanswered Active declaration; no other port mints `Play`.
-  - Deletion line: none; admission clauses only.
-- **Verification:**
-  - builds: both crates.
-  - tests (library): `the_play_authority_declares_in_active_without_an_answer`;
-    `an_elaborator_declaration_in_active_without_an_answer_is_still_refused`
-    and `the_owner_still_cannot_declare_unanswered_in_active` (invariant 5,
-    both halves); `the_play_authority_is_unconfined` (a place outside every
-    jurisdiction); `the_play_authority_cannot_carry_evidence`;
-    `the_play_authority_advances_time`; `the_play_authority_cannot_approve_activate_or_exercise`
-    (each body refused `Unauthorized`); `the_play_authority_is_refused_in_draft`;
-    `apply_effect_re_decides_the_play_authority` (a forged `PatchAdmitted`
-    under `Clock` is refused, the `apply_effect_re_decides_elaborator_authority`
-    pattern, `lib.rs:15415`); replay of a `Play` commit reproduces the state
-    digest.
+  - Owner: the kernel's admission functions. `PlayPort` is the only minter of
+    `System(Play)`. `require_ruler` is the only admitter of a `Ruled` fact or
+    a `Mint`.
+  - Inputs: caller, phase, answer, the resolved patch.
+  - Outputs: patches and clock advances attributed `System(Play)`, `Ruled`
+    facts and minted quantity. Every one is journaled with the caller, which is
+    the provenance.
+  - Derived state: `FactStandingView::Canonical` for a ruled fact is display
+    only. It decides nothing, and the kernel reads `FactStanding` itself.
+  - Forbidden writers: the owner, the seed lane (which is the owner in Draft),
+    elaborators and consumers may not write `Ruled` or `Mint`. They keep
+    `Canonical { evidence }` and `Admit { evidence }` with the receipt check
+    exactly as it is. Every caller except `Play` still meets `AnswerRequired`
+    for an unanswered Active declaration.
+  - Shared paths: `reduce` and `apply_effect` (and replay through it) call the
+    same `require_ruler`. The resolver stays actor-blind.
+  - Deletion line: none. PA-Q5's `PlayCarriesEvidence` was never built.
+- **Verification** (Windows; proves Windows only):
+  - builds: `cargo check -p ghostlight`; `cargo check -p ghostlight-dungeon
+    --bin ghostlight-dungeon`; distinct warnings compared with Cut 0.
+  - tests (library), each pinning one rule:
+    - `the_play_authority_declares_in_active_without_an_answer`;
+      `an_elaborator_declaration_in_active_without_an_answer_is_still_refused`;
+      `the_owner_still_cannot_declare_unanswered_in_active` (invariant 5, both
+      halves);
+    - `the_play_authority_is_unconfined` (a place outside every
+      jurisdiction); `the_play_authority_is_refused_in_draft`;
+      `the_play_authority_advances_time`;
+      `the_play_authority_cannot_approve_activate_exercise_or_decline` (each
+      `Unauthorized`);
+    - `the_play_authority_rules_a_fact_and_a_witness_knows_it_as_canon`: a
+      `Ruled` fact, witnessed at a place, appears in the subject's snapshot as
+      `FactStandingView::Canonical`, and in its Projector stimulus as `known`
+      with no author;
+    - `the_play_authority_mints_and_the_ledger_balances`: `before + qty =
+      after`, and `check_ledger` passes on replay;
+    - `no_one_else_may_rule_a_fact`, table-driven over the owner in Draft (the
+      seed's caller), the owner in Active, an elaborator with a valid answer,
+      and a consumer on its own mirror. Each is refused with
+      `RuledWithoutAuthority`, carrying the fact's declaration site;
+    - `no_one_else_may_mint`, the same four callers, refused with
+      `RuledWithoutAuthority` at the op's index;
+    - `the_evidence_gate_is_unchanged_for_every_author`: for the same four
+      callers and for `Play`, a `Canonical` fact or `Admit` whose receipt is
+      not in `evidence` is still `FactWithoutEvidence` /
+      `AdmitWithoutEvidence`, and with the receipt in `evidence` is admitted
+      for the owner in Draft and for an answered elaborator, as today;
+    - `a_ruled_fact_cannot_be_known_evidenced`
+      (`EvidencedKnowledgeOfClaim`);
+    - `apply_effect_re_decides_the_ruler`: a forged `PatchAdmitted` under an
+      elaborator caller, carrying a `Ruled` fact that the resolver would
+      accept, is refused at apply. This follows the
+      `apply_effect_re_decides_elaborator_authority` pattern (`lib.rs:15415`);
+    - `a_journal_holding_a_ruled_fact_and_a_mint_replays`: reopen the journal
+      and compare the state digest;
+    - the existing suite, including the catalog, fixture and consumer pins,
+      with counts updated.
   - external: `tests/external_admission.rs` gains
-    `play_port_is_the_only_play_minter` (compile-pass use of `PlayPort`) and
-    keeps its refusals.
-  - negative: `rg -n 'SystemCapability::Play' crates/ghostlight/src --glob '!*test*'`
-    lists only `lib.rs` admission sites and `mailbox.rs`'s one method.
-  - mutations: M3.1 in `require_answer`, admit any `System(_)` caller instead
-    of `Play`: the elaborator test fails. M3.2 drop the evidence refusal: its
-    test fails. M3.3 admit `(Play, ActivateWorld)`: the "cannot approve" test
-    fails. M3.4 drop `Play` from the `apply_effect` twin: the replay test fails.
+    `play_port_is_the_only_play_minter` (compile-pass use of `PlayPort`) and a
+    consumer document carrying `Mint`, refused.
+  - negative: `rg -n 'SystemCapability::Play' crates/ghostlight/src` outside
+    `#[cfg(test)]` lists only the admission sites (`require_system_capability`,
+    its twin, `require_answer`, `require_patch_author`, `require_clock_caller`,
+    `require_ruler`) and `PlayPort`'s two methods. `rg -n 'PlayCarriesEvidence'
+    crates docs/architecture/ghostlight-play-agent.md` = 0 (the cut map keeps
+    the name only in History). Tested: the pattern matches no other
+    identifier.
+  - mutations (each a loosening, not only a revert):
+    - M3.1 `require_answer`: admit any `System(_)` instead of `Play`. Killed
+      by the elaborator test.
+    - M3.2 `require_ruler`: `caller == System(Play)` → `matches!(caller,
+      CallerId::System(_))`. Killed by `no_one_else_may_rule_a_fact` (elaborator
+      and consumer rows).
+    - M3.3 `require_ruler`: collect `Ruled` facts only, not `Mint`. Killed by
+      `no_one_else_may_mint`.
+    - M3.4 `require_ruler`: admit `Principal(owner)` too. Killed by the owner
+      rows of both tests; this is the seed's caller, which the ruling keeps
+      gated.
+    - M3.5 `apply_effect`: drop the `require_ruler` re-decision. Killed by
+      `apply_effect_re_decides_the_ruler`.
+    - M3.6 Admit resolution (`patch.rs:3938`): `evidenced = true` for `Play`.
+      Killed by `the_evidence_gate_is_unchanged_for_every_author` (`Play`
+      row). This is the spelling that would turn Admit into
+      "evidence or else".
+    - M3.7 Mint apply: credit `consumed` instead of `admitted`. Killed by the
+      ledger test.
+    - M3.8 snapshot (`lib.rs:3650-3668`): filter out knowledge rows whose
+      fact is `Ruled`, which is how a view could hide a ruling from the
+      subjects who hold it. Killed by the witness test.
+    - M3.9 `require_system_capability`: admit `(Play, ActivateWorld)`. Killed
+      by the "cannot approve" test.
 - **Promises:**
   - P3.1 `Play` declares in Active unanswered and unconfined; no other caller
     does.
-  - P3.2 `Play` cannot carry evidence, act in Draft, approve, activate,
-    exercise or decline.
-  - P3.3 Replay re-decides `Play` admission.
+  - P3.2 `Play` alone writes `Ruled` facts and `Mint` quantity. The owner,
+    seed, elaborators and consumers are refused both at `reduce` and at
+    `apply_effect`.
+  - P3.3 The evidence gate on `Canonical` facts and `Admit` is byte-for-byte
+    the same predicate at the same sites for every author, `Play` included.
+  - P3.4 A ruled fact is world truth to every subject that knows it: its view
+    is `Canonical`, and the Projector renders it as known.
+  - P3.5 Minted quantity balances the ledger, and replay reproduces it.
+  - P3.6 `Play` cannot act in Draft, approve, activate, exercise or decline.
 - **Landed:** —
 
 ## Cut 4. Retirement (kernel)
@@ -839,11 +1069,10 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     `snapshot`.
   - `patch.rs:5600`: `PATCH_TOOLS` gains `retire` (`Operate { variant:
     "retire" }`, one field `subject`); counts at `patch.rs` catalog test go to
-    `(7, 31, 40)`; the sidecar fixture is regenerated
+    `(7, 32, 41)` (Cut 3 added `mint`); the sidecar fixture is regenerated
     (`GHOSTLIGHT_WRITE_SIDECAR_FIXTURES=1`).
-  - `controllers.rs:77-78`: `controller_work.v16 → v17`, because an in-flight
-    elaboration or seed row stores the old tool list and would otherwise be
-    refused at open with a less honest error (stock-lenses probe Q7).
+  - Row version: rides Cut 3's `controller_work.v17` (see Cut 3 for when a
+    second bump is due).
 - **Authority map:**
   - Owner: `controller_assignments` stays the sole answer to who may call;
     `Retired` is a value of it, not a second partition.
@@ -873,8 +1102,7 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
 
 ## Cut 5. Granting and revoking affordances (kernel)
 
-- **Repo/branch:** from Cut 4. One commit. Written for PA-Q10 A; if B or C is
-  ruled, this cut is rewritten.
+- **Repo/branch:** from Cut 4. One commit. Written for PA-Q10 A (ruled).
 - **Per-file changes:** `ComponentOp::GrantAffordance { subject, affordance:
   Ref<AffordanceId> }` and `RevokeAffordance`; resolution refuses a retired or
   external subject, an unknown entry, a grant already held or a revoke not held
@@ -882,7 +1110,7 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   (`derive_opportunities` requires one, `lib.rs:4142-4146`); apply writes
   `affordance_grants`; `confine_to_ground` refuses both for every confined
   author. `PATCH_TOOLS` gains `grant_affordance`, `revoke_affordance`
-  (`(7, 33, 42)`), fixture regenerated. Same `v6`/`v17` as Cuts 3–4 if landed
+  (`(7, 34, 43)`), fixture regenerated. Same `v6`/`v17` as Cuts 3–4 if landed
   before either ships; otherwise its own bump.
 - **Verification:** `the_seed_grants_the_player_a_verb_in_draft`;
   `the_play_authority_grants_and_revokes_in_active` (the scope digest moves, the
@@ -952,15 +1180,25 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   (`elaboration.rs:2164-2280`) move to `table.rs`; the seed prompt calls them
   there.
 - **Adds:** `crates/ghostlight/src/table.rs` with the functions named in
-  PA-Q12 A. `table_view` extends the moved renderer with each subject's place,
-  mode, `retired`, granted entry names, and the places' occupants, and ends
-  with the clock and the brief. `decode_authoring_call` is `apply_tool_call`'s
+  PA-Q12's design. `table_view` extends the moved renderer with each subject's
+  place, mode, `retired`, granted entry names and holdings, and the places'
+  occupants. It prints resource ids (the moved renderer prints labels only,
+  `elaboration.rs:2257-2263`) and every fact with its id, its standing
+  (`canonical | claimed by <label> | ruled`) and who knows it, because
+  `mint`, `transfer`, `witness` and `acquire_knowledge` all take those ids. It
+  ends with the clock and the brief. This is the agent's whole-world view.
+  Standing is printed here and nowhere subject-facing. `decode_authoring_call` is `apply_tool_call`'s
   decode arm (`elaboration.rs:1339-1420`) called for one call, so there is
   one decoder: `apply_tool_call` calls it. `decode_actor_call` is
   `decode_catalog_call` (`controllers.rs:6279-6360`) plus a verbatim
   optional `display`, and looks the subject's current opportunity up in the
   snapshot. `describe_refusal` renders `ActionRejected` mismatches through the
-  entry's preconditions and every other `KernelError` by its `Display`.
+  entry's preconditions, and `PatchRejected` mismatches by site with the
+  offending tool call's index, so the agent can repair it; every other
+  `KernelError` renders by its `Display`. The agent holds `Play`, so it never
+  meets `RuledWithoutAuthority` or `AdmitWithoutEvidence` for its own `mint`.
+  It does meet `AdmitWithoutEvidence` if it calls `admit`, which is why `admit`
+  is not in its list (PA-Q7).
   `controllers.rs:99-112`: `InferencePurpose::Play`; `pub fn
   InferenceRequest::play(command_id, round, model, instructions, input, tools,
   max_output_tokens)` over `tool_request` with parallel calls on;
@@ -980,7 +1218,11 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     = 0 after Cut 8.
   - mutations: M7.1 give `decode_actor_call` the snapshot's first opportunity
     instead of the subject's: its test fails. M7.2 let `authoring_tools`
-    skip unknown names: its test fails.
+    skip unknown names: its test fails. M7.3 print resources by label only,
+    as the moved renderer does: `table_view_prints_every_id_the_tools_take`
+    fails on a `mint` example's resource id. (That test takes one generated
+    example per listed tool and asserts that every referenced id appears in
+    the view.)
 - **Promises:** P7.1 One renderer and one decoder per vocabulary. P7.2 Dungeon
   can run an inference and read its output without widening any kernel type.
 - **Landed:** —
@@ -1051,6 +1293,9 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     result: `AlreadyApplied`, one commit);
   - `a_question_holds_the_turn_open_across_a_restart`;
   - `a_refused_player_act_sets_the_refusal_line`;
+  - `a_mint_and_a_ruled_fact_commit_as_play` (the agent's `mint` and a
+    `declare_fact` with `ruled` standing commit with caller `System(Play)`;
+    `admit` is not in `PLAY_TOOLS`);
   - `the_turn_closes_with_the_players_narration`;
   - negative: `rg -n 'PlayPort::new' crates/ghostlight-dungeon/src` = 1.
   - mutations: M8.1 skip the span check for Personas: the quote test fails.
@@ -1093,9 +1338,9 @@ Estimates; Actual is filled from each landing diff.
 |---|---|---|---|---|
 | 1 | Dungeon ~800 source, ~1,100 test, eve ~150 | ~10 | env vars −6 | |
 | 2 | 0 | library ~250 | library +`reqwest`; routing slot +1 | |
-| 3 | 0 | library ~120 + tests | `consumer.v5 → v6` | |
-| 4 | 0 | library ~150 + tests | `PATCH_TOOLS` 39 → 40; `controller_work.v16 → v17`; fixture | |
-| 5 | 0 | library ~120 + tests | `PATCH_TOOLS` → 42; fixture | |
+| 3 | 0 | library ~220 + tests | `consumer.v5 → v6`; `controller_work.v16 → v17`; `PATCH_TOOLS` 39 → 40 (`mint`); `declare_fact` schema +`ruled`; fixture; `FactStanding`/`FactStandingRef`/`FactCandidate` +1 variant each; `Mismatch` +1 | |
+| 4 | 0 | library ~150 + tests | `PATCH_TOOLS` 40 → 41; fixture (rides Cut 3's v6/v17) | |
+| 5 | 0 | library ~120 + tests | `PATCH_TOOLS` 41 → 43; fixture | |
 | 6 | ~40 moved | library ~120 + tests | none | |
 | 7 | ~120 moved | library ~300 + tests | `InferencePurpose` +1 | |
 | 8 | 0 | Dungeon ~600 + tests | store `play-turn-v1.cc`; env +1 | |
@@ -1148,10 +1393,22 @@ Interpreter, the elaborator sweep and lenses.
 - **PA.f6 (pre-existing, low, recorded):** the Projector's stimulus is every
   row the subject has ever held; it grows without bound over a long session.
   The recency marker does not bound it.
-- **PA.f7 (pre-existing, superseded by PA-Q15's ruling):** the play authority cannot create
-  quantity (no evidence) and cannot state a canonical fact; the agent rules
-  with structure and claimed facts only. Enough for the gate; a table that
-  hands out coin needs a ruling on quantity provenance.
+- **PA.f7 (superseded by PA-Q15's ruling; history):** the play authority
+  could neither create quantity nor state a canonical fact. PA-Q15 gave it
+  `Ruled` facts and `Mint`; Cut 3 builds them.
+- **PA.f9 (introduced by PA-Q15, low, recorded):** `PATCH_TOOLS` has one
+  owner and is every authoring lane's catalog, so the elaborator's and the
+  seed's prompts now list `mint` and a `ruled` fact standing, which admission
+  refuses them. The descriptions say "only the play table". A lane that
+  reaches for either earns a `RuledWithoutAuthority` refusal and one repair
+  round. If the gate's seed runs show it happening, a per-lane exclusion list
+  is the follow-up; a second catalog is not.
+- **PA.f10 (introduced by PA-Q15, info):** minted quantity has no provenance
+  besides the commit's `System(Play)` caller. The quantity has the same shape
+  as admitted quantity once held. A consumer contract that must tell loot from
+  evidenced custody (Njordr's outbound batch) reads the commit's caller, or
+  asks for a distinct holding kind. That is the outbound pass's question, not
+  this map's.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
