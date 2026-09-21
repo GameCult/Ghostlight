@@ -75,9 +75,10 @@ Persona changes.
 4. The agent interprets each Persona's prose under the same rules as the
    player's, and commits its own rulings for anything no actor's affordance
    covers.
-5. The player sees their projection: their place, who is present, and what
-   they perceived this turn, with speaker and visible acts, plus any question
-   the agent is asking.
+5. The player sees their projection. The Projector renders the player
+   subject's own slice, including what they perceived this turn, into prose,
+   exactly as it does for a Persona. Beside that prose the surface shows any
+   question the agent is asking.
 
 ## Invariants
 
@@ -120,9 +121,11 @@ Persona changes.
    connector lane does, and adds no second loop. Routing stays per model
    name, so each lane (agent, Projector, Persona, seed) is pointed at a backend
    independently.
-8. **The player's view is a projection.** Nothing the player is shown is world
-   truth unless it was committed. The agent's questions are the one thing
-   shown that is not derived from state.
+8. **The player's view is a projection.** The Projector renders the player's
+   narration from committed state, as it does for every Persona (operator
+   ruling, open question 11). Nothing the player is shown is world truth
+   unless it was committed. The agent's questions are the one thing shown
+   that is not derived from state.
 
 ## Playtest gate
 
@@ -191,13 +194,18 @@ path, it is in scope, because seeding is on the path.
 Imagination establishes each of these by probing the Body, and returns forks
 with a recommendation.
 
-1. **Where the local backend lives.** It could be a third `InferencePort` in
-   `ghostlight` following the connector posture (~150 lines), or a connector
-   behind the shared CultNet connector contract that `state/map.yaml` says
-   every backend uses. The map also records "a generic OpenAI-compatible
-   connector is required before third parties use the deployment", so this
-   pass may be that connector. The handoff says nothing goes into
-   CodexConnector itself.
+1. **Where the local backend lives.** The shared seam today is the
+   in-process `InferencePort` trait, not a CultNet connector API. The SDK
+   sidecar is a private MessagePack child-process pipe that only borrows
+   `codex_connector` input types (checked 2026-09-22). No local or
+   OpenAI-compatible transport exists, so the gate has none to use yet.
+
+   The options are a third `InferencePort` in `ghostlight` that follows the
+   connector posture (~150 lines), or a connector behind a CultNet contract
+   that the operator wants and that does not yet exist. The map records "a
+   generic OpenAI-compatible connector is required before third parties use
+   the deployment", so this pass may be that connector. The handoff says
+   nothing goes into CodexConnector itself.
 2. **What a Persona perceived.** Does the Projector's context already carry
    what the subject perceived since its last turn (speech heard, acts seen,
    `Seen { by }` knowledge)? If not, what is the smallest addition?
@@ -223,11 +231,12 @@ with a recommendation.
    displays, the agent's question, and the player's input.
 10. **The player's subject.** Does the genesis human subject at the commons
     serve, with the agent placing it after seeding?
-11. **The player's prose.** Does the player see perceived events as they are,
-    or rendered into prose by the same Projector a Persona gets? The Projector
-    renders only committed state, so it satisfies invariant 8, and it gives
-    the player the narration the play agent does not write. It also costs one
-    more serial call per turn. Recommend with that cost measured.
+11. **The player's prose.** Ruled 2026-09-22, operator: the player's
+    perception is rendered by the same Projector a Persona gets. "Render it
+    with the Projector; we're paying for it on every Persona already." The
+    Projector renders only committed state, which satisfies invariant 8, and
+    it is the player's narration; the play agent writes none. The cut map
+    measures the extra serial call rather than deciding on it.
 
 ## Verification sketch
 
