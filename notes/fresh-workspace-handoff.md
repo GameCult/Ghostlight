@@ -35,8 +35,8 @@ Active phases. It alone derives authority, applies the typed
 ontology reducer, and commits an atomic CultCache revision. World creation,
 autonomous turns, player commands, elaboration, consumer patches, time
 advance, and administrative changes all enter through the same
-`CommandEnvelope` path; Session Zero (plan step 15) runs inside that same
-kernel and has no separate owner.
+`CommandEnvelope` path; the play agent (plan step 16) holds a named author
+capability in that same kernel and has no separate owner.
 
 The replacement owner is sealed. Its runtime boundary remains create/open,
 immutable snapshot, submit, and typed receipts. Mutable aggregate state,
@@ -251,7 +251,10 @@ unplaced; retire it or place its subjects.
 ### Constraints
 
 - The operator's Claude subscription, inherited by the SDK sidecar from the
-  ambient Claude Code login, is the only live provider. Codex remains lapsed:
+  ambient Claude Code login, is the only live provider, and stays as the
+  cloud fallback until a local lane (Bonsai 2 on Raven's machine) has
+  carried the playtest; no local-model transport exists in source yet.
+  Deleting the sidecar is decided after the gate. Codex remains lapsed:
   no Codex subscription and no API budget; the Codex connector is stopped;
   the smoke substrate at `F:\Projects\Ghostlight-smoke` stays.
 - CodexConnector is a deliberately isolated Codex fork so that Epiphany
@@ -263,7 +266,8 @@ unplaced; retire it or place its subjects.
 
 ### In order
 
-1. The playtest gate below (operator order, 2026-09-15).
+1. The playtest gate below (operator order 2026-09-15; redirected to the
+   play agent 2026-09-22).
 2. The outbound half of the consumer contract: the response batch with a
    non-loopback CultMesh lease.
 3. The deployment gate below.
@@ -272,17 +276,28 @@ unplaced; retire it or place its subjects.
 
 ### Playtest gate
 
-Passes when a human, on a local daemon with the SDK sidecar, runs Dungeon's
-Session Zero end to end (`docs/architecture/ghostlight-session-zero.md`):
-chooses a Vault, describes the experience, sets lens weights, sketches,
-chooses a start, activates, and plays by speaking, gesturing, and travelling
-while detail grows toward them. It proves one player; hosted play and
-multi-player membership are not in this gate. Plan step 15 tracks library
-passes L0–L4 and Dungeon passes D1–D3; D3 closes the gate.
+The gate is plan step 16, the play agent
+(`docs/architecture/ghostlight-play-agent.md`, section "Playtest gate"):
+a human on a local daemon, every play lane on a local model, creates and
+seeds a world from a Vault, activates it, plays, and restarts mid-session with
+the world intact. The target owns the pass list; its cut map
+(`ghostlight-play-agent-cut.md`) is next.
 
-Dungeon is a consumer of the Ghostlight library. Session Zero is Dungeon
-authority; the library capabilities it needs are consumer-neutral and live in
-the ontology doc's "Elaboration lenses and detail rules (target)". The world kernel is
+Operator rulings, 2026-09-22. One Dungeon-owned operational agent dispatches
+and interprets Persona turns, prompts the player, and negotiates results. It
+replaces the Interpreter and the cover/cell/catalog/owner-click orchestration
+on Dungeon's play path; the library keeps them for offline simulation. The
+Projector -> Persona passes are unchanged and a Persona never sees structured
+state. Rejected: Personas reading their own state, which is the
+structured-state dump the projector/interpreter sandwich exists to prevent.
+The agent holds its own named kernel authority, like the clock capability; an
+actor's act commits only by exercising that actor's affordance.
+
+Deferred by ruling, not dropped (the target's "Deferred, by ruling"): L2-L4,
+Session Zero D1-D3 (plan step 15, `docs/architecture/ghostlight-session-zero.md`),
+and L1 follow-ups f16 (configurable lens sets; operator: yes), f1, f13, f14.
+
+Dungeon is a consumer of the Ghostlight library. The world kernel is
 the `ghostlight` library crate and Dungeon consumes it across a public
 boundary sealed by admission: the kernel rejects any ID, digest or
 opportunity it did not issue. L0 is closed (`108b691..ab95d78`); its
@@ -294,7 +309,7 @@ data the owner replaces with `SetLensWeights`, each elaborator session records
 the lens it drew and that lens's instruction text, and elaboration sessions run
 concurrently under Dungeon's elaboration pool
 (`GHOSTLIGHT_ELABORATION_MAX_CONCURRENT`, default 2), apart from the simulation
-pool. L2, per-world evidence binding, is next.
+pool.
 
 Also owed on the way, found 2026-09-15 by reading source:
 
@@ -302,11 +317,9 @@ Also owed on the way, found 2026-09-15 by reading source:
 - The Eve story card renders bare speech text only (`eve.rs`): no speaker,
   no displays, no place or co-presence.
 - Active elaboration runs with `NullEvidenceSource` (`controllers.rs`), so no
-  Vault reaches it.
+  Vault reaches it. This is L2's subject and is deferred with L2; the play
+  path stops elaborating while Active.
 - Ticks run cells in sequence at 15–50 s each; a reply takes minutes.
-
-`runtime.rs` still registers `session_zero.begin`; check whether it is a
-refused name or a surviving authority while in that file.
 
 The eight titles ship as the library's stock lens set. Their 2026-09 removal
 had no operator decision; the correction record in `state/evidence.jsonl`

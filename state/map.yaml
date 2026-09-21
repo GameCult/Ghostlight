@@ -387,16 +387,17 @@ current_status:
     commit 855727f, run 12; an elaborator session carries its lens and
     instruction text). Next, in the
     operator's order (2026-09-15):
-    (a) the playtest gate (plan step 15): L0 is closed (the kernel is the
-    `ghostlight` library crate; postmortem and follow-ups in
-    docs/architecture/ghostlight-library-extraction-postmortem.md); L1, the
-    stock lens set, is implemented (835ea4d..872ba35; cut map
-    docs/architecture/ghostlight-stock-lenses-cut.md); L2 is next, then the
-    remaining library capabilities (typed
-    detail rules as a function from place to detail level, per-world evidence
-    binding, elaborators in Draft; ontology doc "Elaboration lenses and detail
-    rules"), then Dungeon's Session Zero consuming them
-    (docs/architecture/ghostlight-session-zero.md). (b) the outbound consumer
+    (a) the playtest gate, redirected by the operator 2026-09-22: plan
+    step 16, the play agent (target docs/architecture/ghostlight-play-agent.md,
+    committed cb0b604; the gate is its "Playtest gate" section; the cut map
+    ghostlight-play-agent-cut.md is next). One Dungeon-owned operational
+    agent replaces the Interpreter and the cover/cell/catalog/owner-click
+    orchestration on Dungeon's play path; the Projector -> Persona passes are
+    unchanged and a Persona never sees structured state. The library keeps
+    the offline machinery. Deferred by ruling, not dropped: L2-L4, Session
+    Zero D1-D3 (plan step 15), and L1.f16, f1, f13, f14; the list is the
+    target's "Deferred, by ruling". L0 and L1 are closed (postmortems in
+    docs/architecture/). (b) the outbound consumer
     response batch with a non-loopback CultMesh lease, shaped as Njordr's
     signal surface (custody, pressure and dependency, route, event deltas;
     spec owned by GameCult/Njordr `docs/architecture/njordr.md`, Ghostlight's
@@ -404,15 +405,25 @@ current_status:
     (c) the deployment gate (world-v3, Idunn/Odin as recorded in the
     handoff); (d) decision on Eve world.run_tick authority and the Eve
     owner's fourth command-result state for an overtaken turn. Constraints:
-    the operator's Claude subscription, inherited by the sidecar from the
-    ambient login, is the only live provider; no Codex subscription and no
-    API budget. Model backends (Claude SDK sidecar, CodexConnector,
-    OpenAI-compatible APIs) share one standardized CultNet connector API,
-    the same one Epiphany uses. Ghostlight consumes the contract through the
-    `codex-connector` crate pinned in Cargo.toml. CodexConnector itself
-    stays isolated (its main is at 6519289), and is not a live provider
-    here. A generic OpenAI-compatible connector is required before third
-    parties use the deployment. Ghostlight never holds a credential. The elaborator swarm is drained; its review record
+    inference is routed per lane by model name (`RoutedInferencePort`,
+    crates/ghostlight/src/sdk_inference.rs): models prefixed `claude` go to
+    the Claude SDK sidecar, every other model to CodexConnector, and an
+    unclaimed model is refused at open, never fallen back. The sidecar,
+    inheriting the operator's ambient Claude login, is the only live
+    provider; no Codex subscription and no API budget. The playtest gate
+    needs every play lane on a local model (Bonsai 2 on Raven's machine);
+    no local-model transport exists in source yet, and where it lives is
+    the play-agent target's open question 1. The sidecar stays as the cloud
+    fallback until the local lane has carried the playtest; deleting it is
+    decided after the gate. Operator direction: model backends share one
+    standardized CultNet connector API, the same one Epiphany uses. Today
+    only CodexConnector speaks it, consumed through the `codex-connector`
+    crate pinned in Cargo.toml; the SDK sidecar is a private length-prefixed
+    msgpack pipe to a Node child process behind the in-process
+    `InferencePort` trait. CodexConnector itself stays isolated (its main
+    is at 6519289), and is not a live provider here. A generic
+    OpenAI-compatible connector is still required before third parties use
+    the deployment; the local lane may be it (open question 1). Ghostlight never holds a credential. The elaborator swarm is drained; its review record
     and idea ledgers are in experiments/elaboration/ (start at its README),
     and the vault additions are in local bundles named there. Integration
     into the vaults is still wanted and deferred until the operator has time

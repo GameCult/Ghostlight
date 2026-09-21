@@ -862,13 +862,19 @@ first person as a stage direction); a silent turn invoking the `speak` entry
 versus a fourth narrative tool for a wordless turn (recommend `speak` with
 no utterance; one carrier, one command per turn).
 
-### 15. Session Zero — L0 and L1 landed; L2 next
+### 15. Session Zero — L0 and L1 landed; L2–L4 and D1–D3 deferred by ruling
 
 Adopted 2026-09-15. Two owners, one ordering. Library capabilities,
 consumer-neutral, are specified in `docs/architecture/ghostlight-world-ontology.md`
 under "Elaboration lenses and detail rules (target)". Ghostlight Dungeon's
 Session Zero consumes them and is specified in
 `docs/architecture/ghostlight-session-zero.md`. This entry only tracks state.
+
+Deferred by ruling, 2026-09-22 (operator, decision 3): Session Zero is no
+longer the playtest gate; step 16, the play agent, is. L2–L4 and D1–D3 are
+deferred, not dropped, until a consumer that still runs the offline
+machinery needs them; the list, with L1.f16, f1, f13 and f14, is
+`docs/architecture/ghostlight-play-agent.md`, "Deferred, by ruling".
 
 Operator decisions, 2026-09-15: the world kernel is extracted from
 `crates/ghostlight-dungeon` into a library crate before any library pass, and
@@ -886,7 +892,18 @@ and genesis-subject cuts; (L4) individuation where a place's level asks for
 persons. Dungeon
 passes: (D1) Vault registry and world creation with lens weights and a detail
 rule; (D2) the Session Zero Eve surface; (D3) travel affordance and
-per-affordance player controls, which closes the playtest gate.
+per-affordance player controls, which closed the playtest gate until the
+2026-09-22 ruling.
+
+### 16. The play agent — target adopted; cut map next
+
+Adopted 2026-09-22. Target `docs/architecture/ghostlight-play-agent.md`
+(commit `cb0b604`); its means will be in `ghostlight-play-agent-cut.md`.
+This step is the playtest gate (the target's "Playtest gate"). One
+Dungeon-owned operational agent replaces the Interpreter and the
+cover/cell/catalog/owner-click orchestration on Dungeon's play path; the
+Projector → Persona passes are unchanged; the library keeps the offline
+machinery. This entry only tracks state.
 
 ## Subtraction budget
 

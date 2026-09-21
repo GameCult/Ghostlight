@@ -1,7 +1,10 @@
 # Ghostlight Dungeon Session Zero
 
-Status: adopted direction, 2026-09-15. Not implemented. Plan step 15 in
-`notes/ghostlight-implementation-plan.md` carries the pass order.
+Status: adopted direction, 2026-09-15. Not implemented. Its role as the
+playtest gate is superseded (operator, 2026-09-22) by the play agent,
+`ghostlight-play-agent.md` (plan step 16). D1–D3 and the library passes
+L2–L4 they consume are deferred by ruling, not dropped. Plan step 15 in
+`notes/ghostlight-implementation-plan.md` carries the deferred pass order.
 
 ## Ownership
 
