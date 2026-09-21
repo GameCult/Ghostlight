@@ -51,10 +51,17 @@ Persona changes.
 - **Dungeon** owns the play agent: its loop, its prompt, its tool catalog, the
   turn lifecycle, and the Eve surface. None of it enters the library
   vocabulary.
-- **The library** gains only consumer-neutral pieces. These are one author
-  capability for a play authority, a retire primitive, and a callable Persona
-  turn (Projector then Persona) that does not require the controller runner. A
-  consumer other than Dungeon could run its own table on them.
+- **The library** gains only consumer-neutral pieces:
+  - one author capability for a play authority;
+  - retirement, and granting and revoking affordances;
+  - a callable Persona turn (Projector then Persona) that does not require
+    the controller runner;
+  - the table vocabulary (`table.rs`: the world view, named tool subsets and
+    their decoders, and refusal text), plus the public inference seams a
+    consumer needs to build and read a request.
+
+  A consumer other than Dungeon could run its own table on them. (Cut map
+  PA-Q10 and PA-Q12, ruled 2026-09-22.)
 - The library keeps everything the play path stops using: cover, grouped
   cells, action catalogs, the controller runner, the Interpreter, the elaborator
   sweep, and lenses. Offline consumers and simulation still own them.
@@ -107,7 +114,14 @@ Persona changes.
    consumer-neutral author capability. Its holder may:
    - declare in Active without answering elaboration demand;
    - reach the whole world, unconfined to a ground;
-   - advance time.
+   - advance time;
+   - state facts that stand as `Ruled` by it;
+   - mint quantity without an evidence receipt.
+
+   Only the play authority gains the last two. Elaborators, consumers and the
+   seed keep the evidence gate, so a consumer feeding Njordr keeps quantity
+   provenance. The operator: "if the agent can invent people, it can invent
+   loot." (Cut map PA-Q15.)
 
    The elaborator gate is unchanged: elaborator sessions still answer a
    boundary or deficit. The agent is Dungeon's detail demand: when the player
@@ -124,8 +138,11 @@ Persona changes.
 8. **The player's view is a projection.** The Projector renders the player's
    narration from committed state, as it does for every Persona (operator
    ruling, open question 11). Nothing the player is shown is world truth
-   unless it was committed. The agent's questions are the one thing shown
-   that is not derived from state.
+   unless it was committed. The surface also shows the kernel's refusal of
+   the player's own act, rendered from the refusal and the affordance's
+   preconditions. That is the world's verdict, derived from state, not a
+   claim of world truth (cut map PA-Q13). The agent's questions are the one
+   thing shown that is not derived from state.
 
 ## Playtest gate
 

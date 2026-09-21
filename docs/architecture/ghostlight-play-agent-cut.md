@@ -183,7 +183,9 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
   true by construction. C remains the path for credentialed third-party
   endpoints and is recorded as PA.f1.
 - **Depends on it:** Cut 2.
-- **Ruling:** —
+- **Ruling:** A, as recommended.
+- **Authority:** operator.
+- **Ruled:** 2026-09-22.
 
 ### PA-Q2 What a Persona perceived
 
@@ -235,7 +237,9 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
   it; in-flight inference on a local machine is the cheap thing to lose. One
   owner for turn state.
 - **Depends on it:** Cut 6.
-- **Ruling:** —
+- **Ruling:** A, as recommended.
+- **Authority:** operator.
+- **Ruled:** 2026-09-22.
 
 ### PA-Q4 Exercising on an actor's behalf
 
@@ -352,7 +356,9 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
 - **Recommendation: B**, measured at the gate against A on the same turn
   script; the list is one constant and widening it is a one-line change.
 - **Depends on it:** Cut 7 (the library takes a name list), Cut 8 (the list).
-- **Ruling:** —
+- **Ruling:** B, as recommended.
+- **Authority:** operator.
+- **Ruled:** 2026-09-22.
 
 ### PA-Q8 The turn lifecycle, and what survives a restart
 
@@ -424,7 +430,9 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
     invariant 3.
 - **Recommendation: A.**
 - **Depends on it:** Cut 5.
-- **Ruling:** —
+- **Ruling:** A, as recommended.
+- **Authority:** operator.
+- **Ruled:** 2026-09-22.
 
 ### PA-Q11 The player's prose
 
@@ -474,7 +482,9 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
   library piece the target did not list; the target's Ownership section
   should name it when this is ruled.
 - **Depends on it:** Cut 7, Cut 8.
-- **Ruling:** —
+- **Ruling:** A, as recommended.
+- **Authority:** operator.
+- **Ruled:** 2026-09-22.
 
 ### PA-Q13 How the player sees why an act was refused
 
@@ -500,7 +510,9 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
 - **Recommendation: A.**
 - **Depends on it:** Cut 7 (`describe_refusal`), Cut 8 (`refusal` on the turn),
   Cut 9 (the line).
-- **Ruling:** —
+- **Ruling:** A, as recommended.
+- **Authority:** operator.
+- **Ruled:** 2026-09-22.
 
 ### PA-Q14 L1.f13 and the gate
 
@@ -515,6 +527,25 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
   orphan row, never a wrong commit. It stays deferred.
 - **Ruling:** finding.
 - **Authority:** self-under-standing-go.
+
+### PA-Q15 What the play authority may assert and mint
+
+- **Asked:** 2026-09-22, from PA.f7: the play authority could state no fact
+  of its own (a fact is `Canonical` with an evidence receipt, or `Claimed`
+  by a subject) and could mint no quantity (`Admit` requires evidence), so
+  the residue rule (anything untyped becomes a fact) had no standing for the
+  agent's rulings.
+- **Ruling:** the play authority's facts stand as `Ruled` by it, and the
+  play authority mints quantity. The operator: "shackling the Ghostlight
+  Dungeon agent to Njordr's invariants is crazy, if the agent can invent
+  people, it can invent loot." Only `Play` gains either. Elaborators,
+  consumers and the seed keep the evidence gate, so a consumer feeding
+  Njordr keeps quantity provenance.
+- **Authority:** operator.
+- **Ruled:** 2026-09-22.
+- **Supersedes:** PA-Q5's `PlayCarriesEvidence` refusal ("so it cannot
+  mint quantity") and PA.f7. Cut 3 is respecified to match.
+- **Depends on it:** Cut 3.
 
 ## Order, and why
 
@@ -1117,7 +1148,7 @@ Interpreter, the elaborator sweep and lenses.
 - **PA.f6 (pre-existing, low, recorded):** the Projector's stimulus is every
   row the subject has ever held; it grows without bound over a long session.
   The recency marker does not bound it.
-- **PA.f7 (pre-existing, low, recorded):** the play authority cannot create
+- **PA.f7 (pre-existing, superseded by PA-Q15's ruling):** the play authority cannot create
   quantity (no evidence) and cannot state a canonical fact; the agent rules
   with structure and claimed facts only. Enough for the gate; a table that
   hands out coin needs a ruling on quantity provenance.
