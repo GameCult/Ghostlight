@@ -2342,7 +2342,9 @@ Interpreter, the elaborator sweep and lenses.
     names the commitment kind. Occupant and known-by labels carry ids.
     Persona values and memories keep their stored order.
   - PA.f75: section-scoped assertions (`view_section`, `subject_row`) and an
-    exact `command/index` pairing. `PLAY_TOOLS` is cut to the 24 tools, and
+    exact `command/index` pairing. The library test's tool list is cut to
+    24 tools (Dungeon's `PLAY_TOOLS` still holds `communicate` until 8a-fix;
+    PA.f80), and
     channel printing has its own assertion. Adds the fact-secrecy test that
     PA.f57 lacked. The "every other error" test covers all 31 `KernelError`
     variants; the finding's count of 33 was wrong.
@@ -2418,6 +2420,78 @@ Interpreter, the elaborator sweep and lenses.
   now a recorded need, not a captured proposal. Strictness is correct for
   every lane, and no pre-v17 checkpoint exists to diverge. `display: null`
   is refused.
+- **Soul on fix batches 7b and 7c** (Opus, 2026-09-22, against `a6ceaca`,
+  code at `e383cde`, Windows). Lib 618, persona-projection 18, Dungeon
+  check clean, all as reported.
+  - Verdicts:
+    - **PA.f48, PA.f49, PA.f50, PA.f51: HOLD.** Each reader and writer has
+      its own killing test, including the recency-marker boundary.
+    - **PA.f67: HOLDS as written, and the rule itself is wrong** (PA.f78).
+    - **PA.f71, PA.f72: HOLD.** An empty prefix passes names through, which
+      is consistent with `actor_tools("")`.
+    - **PA.f73: HOLDS structurally.** `evidence_calls` and `site_calls` fill
+      in one decoder loop, but two of its tests pass trivially (PA.f79).
+    - **PA.f75: HOLDS.** `KernelError` has 31 variants, all covered.
+      M4, M5, M6 and M8 are killed.
+  - Triage:
+    - PA.f77, PA.f78, PA.f79, PA.f81 and PA.f82 are fix, in library batch 7d.
+    - PA.f80 is corrected in the 7c note above; `communicate` leaves
+      Dungeon's `PLAY_TOOLS` in 8a-fix, as already planned.
+    - Soul's note that `describe_refusal`'s call naming has no live consumer
+      and that `turn.refusal` holds the agent-facing text is already queued:
+      8a-fix switches to `decode_authoring_calls`, and 8b shows the player
+      only `describe_refusal_to_actor`.
+- **PA.f77 (introduced by 7c, medium, fix):**
+  `table_view_prints_only_a_subjects_own_granted_affordances`
+  (`table.rs:2886`) fails about one run in four. Its unscoped
+  `view.find("{label} [{id}]")` first matches the occupant list PA.f74 added
+  under Places, and then reads whichever subject row sorts first. When it
+  passes, it checks the wrong subject. A flaky test blocks Idunn's release
+  gate. **Fix:** use `subject_row`, and sweep the test module for any other
+  unscoped `find` over the view.
+- **PA.f78 (introduced by 7b, medium, fix in its owner):** PA.f67's
+  hand-written word boundary (`is_alphanumeric` at each edge) is the wrong
+  rule.
+  - It accepts "I can" out of "I can't" (straight or curly apostrophe), a
+    span ending between `e` and a combining accent, and "run" out of
+    `run_fast`.
+  - It refuses any CJK quote that doesn't end at punctuation, because every
+    ideograph counts as alphanumeric and the prose has no spaces.
+  - **Ruling (Self, under the standing go):** a span starts and ends on a
+    Unicode word boundary as defined by UAX #29, via the
+    `unicode-segmentation` crate. That is established tooling for exactly
+    this question, replacing a hand rule that failed in three scripts. It
+    is a new dependency: its owner is `ghostlight-persona-projection`'s
+    `SourceSpan::locate`, and its consumers are the Persona capture and gap
+    paths, the Interpreter and Dungeon's `span_is_exact`.
+  - Under UAX #29, "re" out of "re-enter" is still accepted, because a
+    hyphen is a word boundary. That is intended.
+  - Tests cover every one of Soul's probe cases.
+- **PA.f79 (introduced by 7c, low, fix):** two refusal-text tests pass
+  trivially.
+  - The expected-kind test asserts `contains("place")`, but its handle is
+    `missing_place`.
+  - The duplicate-handle test declares only the two colliding items, so a
+    filter that matches every declaration survives.
+
+  **Fix:** assert the rendered kind apart from the handle, and add an
+  unrelated third declaration.
+- **PA.f80 (introduced by 7c, low, corrected):** a report and the cut map
+  said `PLAY_TOOLS` held 24 tools. Dungeon's `play.rs:72` still lists
+  `communicate`. The note is corrected; 8a-fix drops it.
+- **PA.f81 (pre-existing, low, fix):** nothing pins the actor-facing
+  refusal (`table.rs:556-590`) to bare role names. Appending a `Debug` dump
+  of the failed precondition survived every test. It cannot reach a
+  snapshot, but it can leak the entry's own schema. **Fix:** exact-output
+  assertions for one role-bearing and one roleless case.
+- **PA.f82 (introduced by 7b, low, fix):** two values each have two
+  computations.
+  - The resolver's retired set (`patch.rs:3297`) repeats
+    `matches!(…Retired)` instead of calling `is_retired` (`lib.rs:3283`).
+  - The exercise revision is computed in `action.rs:243` and again in
+    `resolution_revision`.
+
+  **Fix:** one predicate, and one source for the revision.
 - **Carried into 8b (invariant 8):** the actor refusal uses bare role names
   and no snapshot, so it cannot leak a label. That is safer than the
   "you are not at the cellar" example: a label resolved against the whole
