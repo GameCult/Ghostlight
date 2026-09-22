@@ -1522,7 +1522,26 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     `GHOSTLIGHT_PLAY_MODEL`, `world.play` routing and the Eve schema.
 - **Promises:** P8.1–P8.4 invariants 1, 3, 4 and restart survival as pinned
   above; P8.5 Persona dispatch draws only from `controller_permits`.
-- **Landed:** —
+- **Landed (8a):** `6b69270` (Hands, Sonnet, 2026-09-22).
+  - `play.rs` is 2477 lines: about 740 of production code, about 1740 of
+    tests. The Dungeon bin went from 48 to 63 tests. The Dungeon crate now
+    depends on `ghostlight-persona-projection` (for `SourceSpan`).
+  - M8.1–M8.3 were killed. The other rules have no mutations yet; Soul
+    covers them.
+  - `commit_authoring_run` is the seam that 8b switches to
+    `decode_authoring_calls` (PA.f54). Until then it commits each call as
+    its own patch.
+  - `run` takes a `turn_id`, the `world.play` idempotency key.
+  - `ControllerPort` is built on demand for a Persona's act.
+  - Owed to 8b:
+    - `a_refused_player_act_sets_the_refusal_line` is not written, because
+      the genesis fixture has no refusable verb. 8b seeds an affordance
+      with a precondition in Draft.
+    - Persona dispatch runs sequentially. 8b holds the lane in an `Arc`
+      and runs dispatches concurrently under the permits.
+    - The refusal line switches to `describe_refusal_to_actor` (PA.f57).
+  - Library gap: PA.f60.
+- **Verdicts (8a):** pending Soul.
 
 ## Cut 9. The Eve play surface; `world.speak` and the story card deleted
 
@@ -2146,6 +2165,13 @@ Interpreter, the elaborator sweep and lenses.
   - `patch.rs`'s test helpers `arguments_for` and `decodes` copy the decode.
     Route them through the one decoder.
   - Add tests that kill X1–X4 and X6.
+- **PA.f60 (found by Cut 8a, medium, fix in 7a):** Dungeon cannot read an
+  `InferenceFault`'s disposition. `requires_recovery()` and
+  `integrity_was_violated()` are `pub(super)`, so Dungeon cannot apply
+  PA.f14's disposition rules to its own play inference, and 8a retries
+  every fault up to the round budget. **Fix:** a public read-only
+  `disposition()` returning the existing three-way value, with no
+  constructor widening.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
