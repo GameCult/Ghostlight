@@ -375,28 +375,39 @@ impl SourceSpan {
     /// A valid span's own start and end are both boundary offsets, by
     /// definition, so the search below tests `quote` at each boundary
     /// `unicode-segmentation` already produced for `source` (`source.len()`
-    /// included as the final one), in order, rather than searching for raw
-    /// substring occurrences and then filtering: one linear pass over the
-    /// boundary list, each step a single `starts_with` bounded by `quote`'s
-    /// own length, with no repeated `find` over a shrinking haystack (PA.f106
-    /// — the repeated-`find` shape below this comment used to cost 2.2s over
-    /// a 32k-char source in a debug build; see `locate_completes_over_a_long_source`
-    /// for the regression guard). This also finds an overlapping later
-    /// candidate whenever an earlier boundary-aligned candidate is rejected
-    /// (PA.f89): `locate("Juno no no", "no no")` returns the boundary-valid
-    /// match at byte 5, because boundary offset 5 is tested on its own,
-    /// independent of whatever byte 2 (not itself a boundary here) would
-    /// have matched. A span made only of whitespace or punctuation is
-    /// unaffected: it is still accepted whenever its own edges land on a
-    /// word boundary.
+    /// included as the final one), in order: one linear pass over the
+    /// boundary list, each candidate rejected in O(1) by a single first-byte
+    /// check before ever calling `starts_with` (PA.f120), and the matching
+    /// end boundary found by binary search over that same already-sorted
+    /// `Vec` rather than a second `HashSet` copy of it allocated on every
+    /// call. Real bound (PA.f120, debug build): boundaries × 1 (the
+    /// first-byte reject) for the vast majority of candidates, plus one
+    /// `starts_with(quote)` — O(quote's own length) — for each candidate
+    /// that does share `quote`'s first byte; see
+    /// `locate_is_fast_over_many_boundaries_and_a_long_quote` for the
+    /// regression guard and its measured before/after timing. This also
+    /// finds an overlapping later candidate whenever an earlier
+    /// boundary-aligned candidate is rejected (PA.f89):
+    /// `locate("Juno no no", "no no")` returns the boundary-valid match at
+    /// byte 5, because boundary offset 5 is tested on its own, independent
+    /// of whatever byte 2 (not itself a boundary here) would have matched. A
+    /// span made only of whitespace or punctuation is unaffected: it is
+    /// still accepted whenever its own edges land on a word boundary.
     pub fn locate(source: &str, quote: &str) -> Option<Self> {
-        if quote.is_empty() {
+        let quote_bytes = quote.as_bytes();
+        // An empty quote has no first byte, so this same guard both refuses
+        // it (PA.f121: an empty quote must never locate as `0..0`) and
+        // drives the first-byte reject below.
+        let Some(&first_byte) = quote_bytes.first() else {
             return None;
-        }
+        };
         let mut boundaries: Vec<usize> = source.split_word_bound_indices().map(|(byte, _)| byte).collect();
         boundaries.push(source.len());
-        let boundary_set: std::collections::HashSet<usize> = boundaries.iter().copied().collect();
-        for start_byte in boundaries {
+        let source_bytes = source.as_bytes();
+        for start_byte in boundaries.iter().copied() {
+            if source_bytes.get(start_byte) != Some(&first_byte) {
+                continue;
+            }
             let Some(candidate) = source.get(start_byte..) else {
                 continue;
             };
@@ -404,7 +415,7 @@ impl SourceSpan {
                 continue;
             }
             let end_byte = start_byte + quote.len();
-            if boundary_set.contains(&end_byte) {
+            if boundaries.binary_search(&end_byte).is_ok() {
                 return Some(Self {
                     start_byte,
                     end_byte,
@@ -962,6 +973,62 @@ mod tests {
             SourceSpan::locate(&source, "aa"),
             None,
             "no interior boundary exists inside one 64k-char word"
+        );
+    }
+
+    /// PA.f120: the guard above has only two boundaries (its own two outer
+    /// edges), so it never exercised the shape this bound is actually
+    /// about — many boundaries, each tested against a long quote — and
+    /// passed unchanged whether `locate` allocated a fresh `HashSet` per
+    /// call or checked a first byte before `starts_with`. A source built
+    /// from many short boundary-separated words, searched for a long quote
+    /// that never occurs, forces one first-byte reject per boundary. No
+    /// timing assertion, for the same reason as the guard above: the point
+    /// is that this completes promptly. Measured on this workstation (debug
+    /// build, this exact test alone, `cargo test`'s own reported time, same
+    /// 528,000-char source and 264,000-char quote both before and after):
+    /// the pre-PA.f120 shape (`HashSet` allocated per call, `starts_with`
+    /// called before any first-byte check) reported ~0.31s; the rewrite
+    /// above reports ~0.13s — real, but well short of the 1.73s figure this
+    /// pass's own brief quoted for a differently-shaped 528k/264k input, so
+    /// that figure is not reproduced here as a claim about this input.
+    #[test]
+    fn locate_is_fast_over_many_boundaries_and_a_long_quote() {
+        let source = "ab ".repeat(176_000);
+        let quote = "z".repeat(264_000);
+        assert_eq!(
+            SourceSpan::locate(&source, &quote),
+            None,
+            "the long quote never occurs in `source`; every boundary must be rejected quickly"
+        );
+    }
+
+    /// PA.f120: `locate` must return the *first* (leftmost) boundary-valid
+    /// candidate, matching its own doc comment and every other test's
+    /// assumption (`locate("Juno no no", "no no")` finding the earlier of
+    /// two candidates). Three boundary-aligned occurrences of "cat" give a
+    /// leftmost candidate distinct from the last one. Mutation: reversing
+    /// the boundary walk (`boundaries.iter().rev()`) returns the last valid
+    /// candidate instead, failing this.
+    #[test]
+    fn locate_returns_the_leftmost_boundary_valid_candidate() {
+        let source = "cat cat cat";
+        let located = SourceSpan::locate(source, "cat").expect("cat occurs boundary-aligned three times");
+        assert_eq!(located.start_byte(), 0, "the leftmost candidate must win, not the last");
+    }
+
+    /// PA.f121: an empty quote must never locate at all, let alone as a
+    /// vacuous `0..0` span — every boundary list's own first entry is
+    /// `0`, and an empty string is a prefix of everything, so a `locate`
+    /// that dropped this guard would report `source.get(0..0)` as a "found"
+    /// quote for any source. Mutation: removing the empty-quote guard makes
+    /// this return `Some` at `0..0` instead of `None`.
+    #[test]
+    fn locate_refuses_an_empty_quote() {
+        assert_eq!(
+            SourceSpan::locate("anything the source might hold", ""),
+            None,
+            "an empty quote must never locate, not even as the vacuous span 0..0"
         );
     }
 
