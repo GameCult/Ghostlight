@@ -375,6 +375,9 @@ four more tests there (`#[cfg(target_os = "linux")]`, see the stock-lenses map).
   declare_subject, set_persona_material, retire, grant_affordance,
   revoke_affordance` (25 tools). Its size is re-measured from the fixture
   after Cut 5.
+- **Revised by PA.f61 (Self, under the standing go, 2026-09-22):**
+  `communicate` leaves the list, which becomes 24 tools.
+  `set_persona_material` is limited to subjects declared in the same patch.
 - **Recommendation: B**, measured at the gate against A on the same turn
   script; the list is one constant and widening it is a one-line change.
 - **Depends on it:** Cut 7 (the library takes a name list), Cut 8 (the list).
@@ -1541,7 +1544,24 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
       and runs dispatches concurrently under the permits.
     - The refusal line switches to `describe_refusal_to_actor` (PA.f57).
   - Library gap: PA.f60.
-- **Verdicts (8a):** pending Soul.
+- **Verdicts (8a)** (Soul, Opus, 2026-09-22, against `6b69270`, Windows):
+
+  | Promise | Verdict | Note |
+  |---|---|---|
+  | Invariant 1 | HOLDS in code, UNPROVEN by test | S6 (the opening rebuilt from a fresh table view) and S7 (the previous turn's opening prepended) survive the restart test (PA.f69) |
+  | Invariant 3 | HOLDS on the actor-call path; FALSIFIED in substance by `communicate` | PA.f61 |
+  | Invariant 4 | HOLDS to the letter, weak in intent | A substring can invert meaning (PA.f67). S1 (a Persona's span checked against the player's prose) survives |
+  | P8.4 | FALSIFIED | PA.f62–PA.f66. The narrower rule holds: a recorded body is resubmitted once, with no double commit |
+  | P8.5 | HOLDS | Dispatch is sequential |
+  | Agent never writes a Persona's input | FALSIFIED in substance by `set_persona_material` on an existing subject | PA.f61 |
+  | `table_view` never reaches a Persona | HOLDS | |
+  | No player act without a live principal | HOLDS | |
+
+  M8.1–M8.3 were killed. S1, S2, S4, S6 and S7 survived; S3 and S5 were killed.
+- **Soul findings, triaged:** PA.f61–PA.f70 are fix. The `play.rs` semantics
+  fixes (8a-fix) come after library batch 7a, and 8b follows.
+  `SourceSpan` boundaries (PA.f67) are fixed in their owner,
+  `ghostlight-persona-projection`.
 
 ## Cut 9. The Eve play surface; `world.speak` and the story card deleted
 
@@ -2172,6 +2192,104 @@ Interpreter, the elaborator sweep and lenses.
   every fault up to the round budget. **Fix:** a public read-only
   `disposition()` returning the existing three-way value, with no
   constructor widening.
+- **PA.f61 (introduced by the PA-Q7 list, high, fix):** two tools on the
+  ruled `PLAY_TOOLS` list break ruled invariants in substance.
+  - `communicate` never checks the speaker against the caller
+    (`patch.rs:4652-4700`) and writes `Told { by: speaker }`. So the agent,
+    as Play, can make any actor "tell" an invented fact with no
+    `ExerciseDecision` and no quoted span, which breaks invariants 3 and 4.
+  - `set_persona_material` on an existing subject rewrites that actor's
+    character, which the Projector then renders into its input. That
+    contradicts "the agent never writes a Persona's input" and the
+    no-puppets reason behind invariant 2.
+  - **Ruling (Self, under the standing go; flagged to the operator; this
+    reverses Self's own 2026-09-22 suggestion that attitude be updated
+    through `set_persona_material`):**
+    - `communicate` leaves `PLAY_TOOLS`. A world event with no speaker is
+      `witness`. Anything a character says comes from dispatching that
+      character and quoting it.
+    - `set_persona_material` stays, for subjects declared in the same patch
+      only: the agent authors new characters but never rewrites an existing
+      one. The play table enforces this by refusing a call whose `subject`
+      is not a draft reference.
+    - An existing character's feelings follow from what it perceives, which
+      is knowledge the agent may give it through `witness` and
+      `acquire_knowledge`. They are not edited by the agent.
+  - PA-Q7's list becomes 24 tools.
+- **PA.f62 (introduced by Cut 8a, high, fix):** a new idempotency key
+  discards an open turn. `run` resumes only when `turn_id` equals the
+  stored one, but every Eve invocation carries its own key, so an answer or
+  a "continue" silently starts a fresh turn.
+  - **Ruling (Self, under the standing go):** the turn's identity is
+    separate from the request key.
+    - One turn per world is open at a time.
+    - A `world.play` request goes to the open turn: it is the answer when
+      the turn is `AwaitingPlayer`, and a continue when it is `Running`. If
+      no turn is open, or the stored turn is `Closed`, the request starts a
+      new turn, whose `turn_id` is that request's key.
+    - Every applied request key is recorded on its turn, and a replayed key
+      is a no-op that returns the turn's current state. That also covers
+      PA.f63.
+- **PA.f63 (introduced by Cut 8a, high, fix):** replaying a closed turn's key
+  runs the whole turn again, and its first call is refused as a reused
+  command id. **Fix:** as PA.f62, a recorded key is a no-op.
+- **PA.f64 (introduced by Cut 8a, high, fix):** Persona prose never reaches
+  the agent. The dispatch result is `"{label} acted"`, and
+  `rebuild_conversation` never reads `persona_turns`, so the agent
+  interprets Personas blind. **Fix:** the dispatch call's result is each
+  dispatched Persona's prose, labelled by subject. It is recorded, and it
+  is rebuilt into the conversation on every round.
+- **PA.f65 (introduced by Cut 8a, high, fix):** an empty answer wedges the
+  turn. The empty tool result fails `prepare` on every attempt, and the
+  turn stays `Running` forever. **Fix:**
+  - The table refuses an empty or whitespace answer before recording it.
+  - An inference that fails `prepare` or `infer` beyond its retries closes
+    the turn with the fault recorded, instead of leaving it `Running`.
+- **PA.f66 (introduced by Cut 8a, medium, fix):** several loop defects.
+  - Exhausting the round budget leaves the turn `Running` with no
+    narration, permanently, which contradicts the spec. **Fix:** it closes
+    the turn and narrates.
+  - A kernel `Invariant` leaves the turn `Running`. **Fix:** it closes the
+    turn with the fault recorded, and the in-memory refusal stands until
+    restart.
+  - `dispatched` is computed before the round on a first run but from the
+    record on resume, so the same round gives different outcomes. **Fix:**
+    on both paths, `dispatched`, as of each call, is derived from the
+    record in call order.
+  - `dispatch_slot` uses list position, not the call index. **Fix:** derive
+    it from `(turn_id, round, call_index, subject)`.
+- **PA.f67 (pre-existing in `SourceSpan`, medium, fix in its owner):**
+  `SourceSpan::locate` is a raw `find`, so "I can" is accepted as a span of
+  "I cannot go". **Fix** in `ghostlight-persona-projection`: a span must
+  start and end on a word boundary (an edge of the source, or next to a
+  non-alphanumeric character). The Interpreter shares it, so its
+  guarantee tightens too.
+- **PA.f68 (introduced by Cut 8a, medium, 8b):** `PlayTurn` carries no world
+  id and the store key is fixed at `"primary"`. Two concurrent `run` calls
+  interleave writes to the one row. A narration that keeps failing leaves
+  the turn unresolved. `narrate` draws no permit. **Fix in 8b:**
+  - The row is keyed by world id.
+  - One running turn per world, under the mutex.
+  - A failing narration closes the turn with the fault recorded.
+  - `narrate` draws a permit.
+- **PA.f69 (introduced by Cut 8a, medium, fix):** tests. Each survivor
+  gets a test that kills it:
+  - S1 (a Persona's span checked against the player's prose);
+  - S2 (any subject accepted as dispatched; the undispatched test asserts
+    nothing);
+  - S4 (the authoring body not recorded before submit);
+  - S6 (the opening rebuilt from a fresh `table_view`);
+  - S7 (the previous turn's opening prepended).
+
+  Also:
+  - The restart test must also cover a mid-turn resume, and must prove
+    that nothing from the previous turn's record crosses into the new
+    turn's request.
+  - `the_turn_closes_with_the_players_narration` must assert the
+    narration.
+- **PA.f70 (info):** Dungeon cannot submit the player's act under Play,
+  because `PlayPort` has no door for `ExerciseDecision`. This holds by
+  construction.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
