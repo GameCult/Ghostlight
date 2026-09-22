@@ -2943,6 +2943,95 @@ Interpreter, the elaborator sweep and lenses.
       store file under that world's service root, so the row is already
       per world. PA.f68's intent holds; Soul checks the path.
   - Dungeon bin 122 → 128. `PlayPort::new` still has one production site.
+- **Soul on 8a-fix5 and Cut 8b** (Opus, 2026-09-22, against `e35454c`,
+  Windows). Dungeon bin 128 and lib 622, as reported.
+  - Held: PA.f125 and PA.f126 (including a crash mid-dispatch with several
+    subjects, and a same-call duplicate), `round_snapshot` as one owner,
+    the refusal line (`describe_refusal_to_actor` takes no snapshot, no
+    invocation and no fact, so it cannot structurally leak), no deadlock
+    and no permit starvation (no permit is ever held while waiting for a
+    lock; the order is always run_lock then store), two concurrent
+    `world.play` calls with one key, and no credential on the play path.
+    No earlier ruling regressed.
+  - Soul's own probe proved a two-subject concurrent dispatch works and
+    keeps JSON order. **No test in the repo dispatches more than one
+    subject**; 8b-fix adds one.
+  - Both accepted discrepancies are correct, but rest on structure rather
+    than tests: one `open_play` call site, CultCache's single-owner lock,
+    and one runtime root per process.
+  - **Verdict: not ready for Cut 9 as specified.** PA.f134 blocks, and
+    PA.f135, PA.f137 and PA.f138 shape the cut.
+  - Triage: PA.f136 to PA.f147 are fix, in 8b-fix. PA.f134 and PA.f135
+    change Cut 9's spec, below.
+- **PA.f134 (Cut 8b, critical, changes Cut 9):** `ask_player` wedges the
+  world. Answering needs `QuestionId { turn_id, round, slot }`, but
+  `turn_id` is minted inside `begin_turn` and emitted nowhere: `RunOutcome`
+  carries it only on `Replayed`, and the route returns `accepted` and drops
+  the outcome. So no client can build `answers`, every later request is
+  `StaleAnswer`, and no new turn can open. Recovery today means deleting
+  the store file.
+  - **Ruling (Self, under the standing go):**
+    - The turn row is the player's surface. Cut 9's card projects the
+      turn's state, the open question with its id and text, the narration,
+      and the refusal line.
+    - PA-Q9's `bindings: ["text"]` becomes `["text", "answers"]`, and the
+      card binds `answers` from the question id it is showing.
+    - `RunOutcome` names the open question on every path, so the route and
+      any other consumer can see it without reading the store.
+    - Cut 9's verification includes answering a question through the
+      surface the card actually renders.
+- **PA.f135 (Cut 8b, high, sequencing for Cut 9):** nothing player-visible
+  exists yet. Narration, question and refusal live only in the play store,
+  and `PersonaLane::narrate` commits nothing.
+  - **Ruling:** Cut 9 does not delete `world.speak` and the story card
+    until its own verification shows a turn closing with its narration
+    visible through the new card.
+- **PA.f136 (8a-fix5, medium, fix):** dispatch is the only door that does
+  not resubmit its recorded body. `parse_dispatch` re-runs on every pass,
+  and the recorded body only decides whether to record. If the world
+  changes so a subject no longer resolves (a retirement), a resumed call
+  runs a shorter list, and that Persona's prose and tools vanish for the
+  rest of the turn while its turn stays in `persona_turns`. **Fix:** the
+  resume reads the recorded body, as the other three doors do.
+- **PA.f137 (Cut 8b, medium, fix):** the seam test calls
+  `table.round_snapshot()` directly, so `execute_round` and `infer_round`
+  calling `fetch_round_snapshot` instead both survive. The deleted
+  source-presence test was the only pin. **Fix:** pin both call sites
+  again, by behaviour if reachable, otherwise by the source test.
+- **PA.f138 (Cut 8b, medium, fix):** the routing test asserts only
+  `accepted`, so a spawned task that never calls `table.run` passes.
+  **Fix:** observe the table, for example the turn row afterwards.
+- **PA.f139 (8a-fix5, low-medium, fix):** `dispatch_owner`'s "earliest call
+  wins" is untested; `.max()` survives. **Fix:** two calls in one round
+  naming one subject, resumed.
+- **PA.f140 (Cut 8b, low, fix):** `service/play-turn-v1.cc` is missing from
+  the admitted state layout that proves each file is a direct,
+  single-linked regular file. **Fix:** add it and its lock.
+- **PA.f141 (Cut 8b, low, fix as doc):** `controller_permits` now has only
+  one consumer, the play table, because Cut 1 deleted Dungeon's own
+  drivers. Persona dispatch *is* the controller work now, so readiness's
+  `"active"` is accurate. **Fix:** say so where the field and the readiness
+  arm are defined.
+- **PA.f142 (Cut 8b, low, fix):** every `world.play` spawns a task that may
+  park on `run_lock` for a whole turn before being refused, with no bound
+  and no signal. **Fix:** the route takes the lock without waiting; a busy
+  turn is refused at once with `TurnStillRunning`.
+- **PA.f143 (Cut 8b, low, fix):** concurrent dispatch ordering is
+  deterministic by reading, but reversing the zip survives. **Fix:** a test
+  with several subjects that pins both the summary order and
+  `persona_turns`.
+- **PA.f144 (pre-existing, low, fix):** `turn.refusal` is never cleared, so
+  a refusal in round 1 is still shown after a later act succeeds. **Fix:**
+  the line belongs to the most recent player act: cleared when a player act
+  commits, and when a turn opens.
+- **PA.f145 and PA.f146 (Cut 8b, low, fix):** `play.rs`'s header still says
+  nothing is reachable from `runtime.rs`, and "advertised" overstates the
+  Eve change: `world.play` is in the validation table only, with no
+  descriptor or button until Cut 9. **Fix:** correct both.
+- **PA.f147 (Cut 8b, low, fix):** the route takes
+  `idempotency_key…unwrap_or_default()`. A caller that skipped validation
+  would get key `""`, recorded in `applied_keys`, making every later
+  keyless play a silent no-op. **Fix:** refuse a missing key.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
