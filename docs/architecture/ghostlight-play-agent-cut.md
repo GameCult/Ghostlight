@@ -2459,6 +2459,34 @@ Interpreter, the elaborator sweep and lenses.
     fails 14 tests on both sides. There is now one computation of the
     exercise revision.
   - Lib 618 → 620. persona-projection 18 → 26. Dungeon bin 63.
+- **Play loop fix 8a-fix landed (Hands, Sonnet, 2026-09-22):** `a5329a9`
+  (library: `WorldPatch::sets_persona_of_existing_subject`, PA.f61's seam)
+  and `029970a` (Dungeon, everything else in one commit; Hands found the
+  A–F split too entangled to make).
+  - PA.f61: `communicate` is off `PLAY_TOOLS`, which now has 24 tools
+    matching the library list. `set_persona_material` on an existing subject
+    is refused through the library predicate.
+  - Actor prefix: `decode_actor_call` owns the strip. Hands also found that
+    `round_tools` emitted actor tool names without the `__` separator, so
+    every real (unscripted) actor call would have been undecodable. It is
+    fixed.
+  - PA.f54: a run of authoring calls is one patch under one command id. A
+    refusal is described through the run's `DecodedBatch`.
+    `execute_authoring_call` is deleted.
+  - PA.f62/f63: `PlayTurn.applied_keys`. A replayed key is a no-op with no
+    inference.
+  - PA.f64: dispatch returns the Persona's prose.
+  - PA.f65: an empty answer is refused, and an exhausted inference closes
+    the turn with `PlayTurn.fault` set.
+  - PA.f66: a spent budget closes and narrates, and an `Invariant` closes
+    with the fault. `dispatch_command_id` is keyed by call slot and subject.
+    Hands claims (c) was already derived from the record and added only a
+    pinning test.
+  - PA.f69: tests for S1, S2, S4 and S7. Hands claims S6 was already
+    covered.
+  - Untested: the `Invariant` close path. There is no legitimate way to
+    force one; the code shares its closing path with tested sites.
+  - Dungeon bin 63 → 78, lib 620 → 621.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
