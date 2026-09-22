@@ -2814,6 +2814,34 @@ Interpreter, the elaborator sweep and lenses.
 - **PA.f124 (8a-fix3, very low, fix):** `execute_dispatch`'s summaries
   print `{subject:?}`, a fifth id spelling. **Fix:** print through the
   library's printer.
+- **Play loop fix 8a-fix4 landed (Hands, Sonnet, 2026-09-22):** `340d583`
+  and `7bede2f` (PA.f113, PA.f114), `5af2a18` (PA.f115 to PA.f117),
+  `d042dc7` (PA.f118, PA.f119), `a395210` (PA.f122), `91e80d3` (PA.f123),
+  `5b9671b` (PA.f124) and `9a2cb2e` (PA.f120, PA.f121).
+  - The library owns the id printer and parser. Dungeon's copies are gone,
+    and the dispatch test reads its id out of a real `table_view`.
+  - A malformed dispatch body, a missing key and a non-string entry are
+    each refused by name.
+  - A Persona cannot speak another Persona's quote.
+  - The ledger test uses three closed turns.
+  - One collision helper, called at both sites. Both snapshot-failure
+    sites are tested by aborting the mailbox owner.
+  - The retry delay is an ordinary field, so tests run the production
+    path.
+  - `execute_dispatch` persists its own recorded Persona turn.
+  - `locate` walks boundaries with a first-byte check and a binary search:
+    528k against a 264k quote went from 0.31 s to 0.13 s in a debug build.
+    Hands could not reproduce Soul's 1.73 s and says so.
+  - `main.rs`'s blanket `#[allow(dead_code)]` is gone. Three orphaned test
+    helpers were deleted. `PlayError::NoPlayerOpportunity` has no producer
+    until 8b.
+  - Reported discrepancies:
+    - The resume path's collision check has only a source-presence test,
+      because `execute_round` takes no caller-supplied snapshot.
+    - Hands' first PA.f123 test passed with the fix deleted; it fired the
+      hook at the dispatch site instead.
+  - Dungeon bin 113 → 122, lib 622, persona-projection 32 → 35. The
+    retry-budget test now takes about 36 s of real time.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
