@@ -1400,7 +1400,24 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   - Not as specified: `table_view` prints a `Ruled` fact as `canonical`,
     because `snapshot()` maps `Ruled` to `FactStandingView::Canonical` for
     every reader (PA.f47).
-- **Verdicts:** pending Soul.
+- **Verdicts** (Soul, Opus, 2026-09-22, against `7d40393`, Windows):
+
+  | Promise | Verdict | Note |
+  |---|---|---|
+  | P7.1 | FALSIFIED | The authoring decode has one production owner (Soul's every-tool probe gave identical patches), but `actor_tools` emits tools `decode_actor_call` refuses (PA.f55) |
+  | P7.2 | UNPROVEN | Everything named compiles and runs from outside the crate on public API alone. A round of several calls cannot become one patch (PA.f54) |
+  | table view never reaches a Persona | FALSIFIED as a guarantee | Unreached today. The pin greps one file (PA.f58). The structural guard is `PersonaLane`'s signature, which takes no text |
+  | issued opportunity | HOLDS | Against the snapshot passed in; kernel admission is the real guard |
+  | seed bytes unchanged | HOLDS | |
+
+  M7.1–M7.3 were killed. Soul's X1 (the affordance filter), X2 (display),
+  X3 (claimed shown as canonical), X4 (the "known by" list) and X6 (site
+  wording) survived. So did X5 and X7 (evidence dropped), with respect to
+  the table's own tests.
+- **Soul findings, triaged:** PA.f53–PA.f59 are fix, in library batch 7a
+  (the table and the batch decoder), which lands before 8b. PA.f48–PA.f51
+  are batch 7b (the kernel). Cut 8a was told the batching rule and the
+  seams mid-flight.
 
 ## Cut 8. The play table and the turn lifecycle (Dungeon)
 
@@ -2049,6 +2066,86 @@ Interpreter, the elaborator sweep and lenses.
   - A Persona turn that goes stale during inference is caught at submit only
     if the scope digest changed. That is the kernel's rule, and Cut 8
     submits through it.
+- **PA.f53 (introduced by Cut 7, high, fix):** `table_view` omits ids that
+  `PLAY_TOOLS` take. It prints no commitment keys (needed by
+  `discharge_commitment`), no pressure rows, channels, dependencies or
+  persona material. Facts are gathered only from knowledge rows
+  (`table.rs:758-776`), so a fact nobody holds is invisible. In Soul's
+  probe, the canonical `flood` fact and the `horn` channel were absent,
+  which means the agent cannot `witness` an unheld fact.
+  - **Fix:** the table view prints every entity and row a `PLAY_TOOLS` tool
+    references: all facts with their standing (PA.f47's `Ruled` included),
+    commitments with keys, pressures, channels, dependencies, and persona
+    material by subject. `WorldSnapshot` gains whatever the omniscient view
+    needs, readable only through `table_view`.
+  - The test checks composite fields as well as top-level references,
+    using a fixture world that holds one of every kind.
+  - Route access, subject kind and controller mode are rendered in plain
+    words, not Rust `Debug`.
+- **PA.f54 (introduced by Cut 7, high, fix):** there is no public way to
+  join decoded calls into one patch. `WorldPatch` fields are `pub(crate)`,
+  and `decode_authoring_call` returns a one-item patch. So "declare the
+  cellar, then relocate into it" in one round is impossible, and a fact
+  declared alone is unheld and then vanishes from the table (PA.f53).
+  - **Ruling (Self, under the standing go):** in a round, each maximal run
+    of consecutive authoring calls is one patch, committed atomically
+    under one command id, with draft handles shared inside the run. Actor
+    calls and table tools end a run.
+  - The library adds `decode_authoring_calls(&[(name, arguments)])`. It
+    returns the patch and a map from each patch site (declaration index,
+    operation index) back to its call index, so a refusal names the
+    model's own call.
+- **PA.f55 (introduced by Cut 7, medium, fix):** `actor_tools` emits
+  `record_need` and `finish_without_proposal`, which `decode_actor_call`
+  refuses, and a prefixed name must be stripped before decoding.
+  **Fix:**
+  - The table's actor vocabulary is the subject's granted entries only. The
+    turn-enders belong to the controller lane.
+  - `actor_tools` and `decode_actor_call` take the same prefix, so a name
+    `actor_tools` emits decodes as emitted.
+  - One decoder.
+- **PA.f56 (introduced by Cut 7, medium, fix):** `describe_refusal` is wrong
+  and thin.
+  - `EmptyEvidence.position` is an evidence-list index, but it is printed as
+    "declaration tool call #N".
+  - `WrongKind` drops the expected and actual kinds.
+  - `CustodyNotConserved` prints no site.
+  - The `RefName` branch is unreachable.
+  - Operation indexes are not call indexes.
+  - `ActionRejected` never reads the entry's preconditions, so the player
+    sees "precondition #0 failed", not "you are not at the cellar", as
+    PA-Q13 A describes.
+  - `TargetKindMismatch` prints Rust `Debug`.
+
+  **Fix:** correct each one. Render preconditions with the labels of the
+  roles bound by the actor's own invocation. Name call indexes through
+  PA.f54's map. Delete the dead branch.
+- **PA.f57 (introduced by Cut 7, medium, fix):** one refusal text serves
+  two readers: the agent, and the player through the refusal line
+  (invariant 8). The `Display` fallback prints principal ids and internal
+  store or journal errors.
+  - **Ruling (Self, under the standing go):** two functions in `table.rs`.
+    - `describe_refusal` is for the agent and keeps full detail.
+    - `describe_refusal_to_actor` returns only what the actor's own attempt
+      reveals: the failed preconditions over roles the actor bound itself.
+      For every other error it returns one fixed line that names nothing.
+  - Cut 8b sets the refusal line from the actor form.
+  - A test proves that a precondition over a fact the player does not hold
+    reveals neither the fact's statement nor its id.
+- **PA.f58 (introduced by Cut 7, low, fix):** `decode_actor_call` silently
+  drops a non-string `display` and a `text` on a non-speech entry. **Fix:**
+  refuse both. Also, the negative pin greps only `controllers.rs` for
+  `table_view`. **Fix:** scan every library source file except `table.rs`
+  for a `table_view(` call. The structural guard is `PersonaLane`'s
+  signature, which takes no text, and the pin's doc names that guard.
+- **PA.f59 (introduced by Cut 7, low, fix):** tests.
+  - `authoring_tools_admits_every_known_name` is mislabelled as the M7.2
+    check.
+  - The shared-decoder test compares only `operations`, for one tool. Make
+    it Soul's every-tool parity probe, comparing whole patches.
+  - `patch.rs`'s test helpers `arguments_for` and `decodes` copy the decode.
+    Route them through the one decoder.
+  - Add tests that kill X1–X4 and X6.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
