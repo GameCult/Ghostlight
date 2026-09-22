@@ -6499,7 +6499,35 @@ pub(super) fn catalog_tools(
     prefix: &str,
     granted: &[AffordanceSnapshot],
 ) -> Vec<CodexToolDefinition> {
-    let mut tools: Vec<CodexToolDefinition> = granted
+    let mut tools = affordance_tools(prefix, granted);
+    tools.push(tool_schema::tool(
+        &format!("{prefix}{RECORD_NEED_TOOL}"),
+        "Record information or capability the agent would need but does not currently have.",
+        tool_schema::object(vec![(
+            "detail".into(),
+            tool_schema::canonical_string("what the agent would need and does not have"),
+        )]),
+    ));
+    tools.push(tool_schema::tool(
+        &format!("{prefix}{FINISH_WITHOUT_PROPOSAL_TOOL}"),
+        "Finish this opportunity without proposing an action.",
+        tool_schema::empty_schema(),
+    ));
+    tools
+}
+
+/// `catalog_tools` minus the two turn-enders: exactly one tool per granted
+/// affordance entry, so `decode_catalog_call` — which only ever matches a
+/// name against `granted`'s own entries — refuses nothing this vocabulary
+/// offers. `record_need` and `finish_without_proposal` end a turn; they are
+/// the controller lane's own vocabulary (`decode_catalog_call` has no arm
+/// for either), not part of what one entry-granted actor may invoke, so the
+/// play table's `actor_tools` reads this and not `catalog_tools`.
+pub(super) fn affordance_tools(
+    prefix: &str,
+    granted: &[AffordanceSnapshot],
+) -> Vec<CodexToolDefinition> {
+    granted
         .iter()
         .map(|entry| {
             let mut properties: Vec<(String, Value)> = Vec::new();
@@ -6539,21 +6567,7 @@ pub(super) fn catalog_tools(
                 tool_schema::object(properties),
             )
         })
-        .collect();
-    tools.push(tool_schema::tool(
-        &format!("{prefix}{RECORD_NEED_TOOL}"),
-        "Record information or capability the agent would need but does not currently have.",
-        tool_schema::object(vec![(
-            "detail".into(),
-            tool_schema::canonical_string("what the agent would need and does not have"),
-        )]),
-    ));
-    tools.push(tool_schema::tool(
-        &format!("{prefix}{FINISH_WITHOUT_PROPOSAL_TOOL}"),
-        "Finish this opportunity without proposing an action.",
-        tool_schema::empty_schema(),
-    ));
-    tools
+        .collect()
 }
 
 /// The same iteration rendered as one prose line, so the prompt's tool list and
@@ -6693,6 +6707,9 @@ pub(super) fn decode_catalog_call(
             .ok_or_else(|| "`text` is missing or not a string".to_owned())?;
         Some(Statement::new(text).ok_or_else(|| "`text` is not canonical".to_owned())?)
     } else {
+        if fields.contains_key("text") {
+            return Err("this entry carries no speech but `text` was proposed".to_owned());
+        }
         None
     };
     Ok(DecisionInvocation {

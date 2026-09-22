@@ -59,11 +59,70 @@ pub fn authoring_tools(names: &[&str]) -> Result<Vec<CodexToolDefinition>, Table
 }
 
 /// One authoring tool call, decoded to the one-item patch it names: exactly
-/// one declaration or one operation, plus any evidence it cites. This is
+/// one declaration or one operation, plus any evidence it cites. The one-call
+/// case of the same code `decode_authoring_calls` shares
+/// (`decode_one_authoring_call`), kept as its own entry point with its own
+/// unprefixed error text: `apply_tool_call`'s `Declare`/`Operate` arms and
+/// the tests that check one tool's own example have no call index to name.
+pub fn decode_authoring_call(name: &str, arguments: &str) -> Result<WorldPatch, String> {
+    decode_one_authoring_call(name, arguments)
+}
+
+/// Where one item in a decoded batch's `patch` came from: a declaration at
+/// this index in `patch.declarations`, or an operation at this index in
+/// `patch.operations`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PatchSite {
+    Declaration(usize),
+    Operation(usize),
+}
+
+/// The result of decoding one maximal run of consecutive authoring calls:
+/// the whole run's `WorldPatch`, plus which call produced each site in it.
+/// Dungeon commits the run atomically under one command id; draft handles
+/// declared by an earlier call in the run resolve against later calls in the
+/// same run because every call's items land in the one shared `patch`.
+#[derive(Debug)]
+pub struct DecodedBatch {
+    pub patch: WorldPatch,
+    /// `site_calls[&site]` is the index into `calls` (the slice
+    /// `decode_authoring_calls` was given) that produced that site. A
+    /// refusal names its call the same way, through this same index.
+    pub site_calls: std::collections::BTreeMap<PatchSite, usize>,
+}
+
+/// One run of authoring calls, decoded to one shared patch (PA.f54): each
+/// call still decodes to exactly one declaration or one operation — the same
+/// one-item rule `decode_authoring_call` documents — but every call's item
+/// lands in the same `WorldPatch`, so a later call's reference to an earlier
+/// call's draft handle resolves within the run. A decode error names the
+/// call's index in `calls`, not merely its tool name, because the same name
+/// can appear more than once in a run.
+pub fn decode_authoring_calls(calls: &[(&str, &str)]) -> Result<DecodedBatch, String> {
+    let mut patch = WorldPatch::default();
+    let mut site_calls = std::collections::BTreeMap::new();
+    for (call_index, (name, arguments)) in calls.iter().enumerate() {
+        let item = decode_one_authoring_call(name, arguments)
+            .map_err(|error| format!("call #{call_index} (`{name}`): {error}"))?;
+        for declaration in item.declarations {
+            site_calls.insert(PatchSite::Declaration(patch.declarations.len()), call_index);
+            patch.declarations.push(declaration);
+        }
+        for operation in item.operations {
+            site_calls.insert(PatchSite::Operation(patch.operations.len()), call_index);
+            patch.operations.push(operation);
+        }
+        patch.evidence.extend(item.evidence);
+    }
+    Ok(DecodedBatch { patch, site_calls })
+}
+
+/// The one decode arm both `decode_authoring_call` and `decode_authoring_calls`
+/// read: one authoring tool call to the one-item patch it names. Also
 /// `apply_tool_call`'s own decode arm, factored out so it has one owner;
 /// `apply_tool_call` calls it for every `Declare` or `Operate` shape rather
 /// than carrying a second copy of the same match.
-pub fn decode_authoring_call(name: &str, arguments: &str) -> Result<WorldPatch, String> {
+fn decode_one_authoring_call(name: &str, arguments: &str) -> Result<WorldPatch, String> {
     let Some(entry) = PATCH_TOOLS.iter().find(|entry| entry.name == name) else {
         return Err(format!("`{name}` is not a tool of this patch"));
     };
@@ -140,13 +199,17 @@ fn subject_opportunity<'a>(
     Some((opportunity, granted))
 }
 
-/// The tool catalog for one subject's own granted affordances: `catalog_tools`
-/// over the entries its current opportunity actually grants. An unknown
+/// The tool catalog for one subject's own granted affordances: an unknown
 /// subject or one with no live opportunity gets an empty catalog rather than
-/// an error — there is nothing for it to call.
+/// an error — there is nothing for it to call. The table's own actor
+/// vocabulary is the subject's granted entries only — `affordance_tools`,
+/// never `catalog_tools`. `record_need` and `finish_without_proposal` end a
+/// turn; that is the controller lane's own vocabulary, and
+/// `decode_actor_call` has no arm for either, so offering them here would
+/// hand the play agent a tool `decode_actor_call` always refuses (PA.f55).
 pub fn actor_tools(prefix: &str, snapshot: &WorldSnapshot, subject: SubjectId) -> Vec<CodexToolDefinition> {
     match subject_opportunity(snapshot, subject) {
-        Some((_, granted)) => controllers::catalog_tools(prefix, &granted),
+        Some((_, granted)) => controllers::affordance_tools(prefix, &granted),
         None => Vec::new(),
     }
 }
@@ -158,12 +221,20 @@ pub fn actor_tools(prefix: &str, snapshot: &WorldSnapshot, subject: SubjectId) -
 /// one, decoded through the same canonical-text rule speech already uses).
 /// The opportunity returned is the snapshot's own, never a value the caller
 /// supplied, so Dungeon can commit it without ever having constructed one.
+///
+/// `prefix` is the same prefix `actor_tools` was called with: a name
+/// `actor_tools` emits (`{prefix}{kind}`) decodes here as emitted, one
+/// decoder rather than a caller stripping the prefix itself before this is
+/// reached (PA.f55). An empty prefix strips nothing, so a bare `kind` still
+/// decodes unchanged.
 pub fn decode_actor_call(
     snapshot: &WorldSnapshot,
     subject: SubjectId,
+    prefix: &str,
     kind: &str,
     arguments: &str,
 ) -> Result<(DecisionOpportunity, DecisionInvocation), String> {
+    let kind = kind.strip_prefix(prefix).unwrap_or(kind);
     let (opportunity, granted) = subject_opportunity(snapshot, subject)
         .ok_or_else(|| "this subject holds no exact opportunity".to_owned())?;
     let entry = granted
@@ -172,8 +243,11 @@ pub fn decode_actor_call(
         .ok_or_else(|| format!("`{kind}` is not granted by this subject's opportunity"))?;
     let mut invocation = controllers::decode_catalog_call(entry, arguments)?;
     if let Ok(Value::Object(fields)) = serde_json::from_str::<Value>(arguments)
-        && let Some(display) = fields.get("display").and_then(Value::as_str)
+        && let Some(display) = fields.get("display")
     {
+        let display = display
+            .as_str()
+            .ok_or_else(|| "`display` is not a string".to_owned())?;
         invocation.display =
             Some(Statement::new(display).ok_or_else(|| "`display` is not canonical text".to_owned())?);
     }
@@ -1280,6 +1354,71 @@ mod tests {
         }
     }
 
+    /// Rule (PA.f54): a later call in one run resolves a draft handle an
+    /// earlier call in the same run declared, because every call's item lands
+    /// in the run's one shared `WorldPatch`. `declare_place` has no field a
+    /// `relocate` call takes (it takes a subject and a route, not a place),
+    /// so `declare_route`'s `from` is the real field this catalog offers that
+    /// takes a place reference; it stands for the same claim PA.f54 names.
+    #[test]
+    fn decode_authoring_calls_shares_draft_handles_across_one_run() {
+        let place = serde_json::json!({
+            "handle": "yard",
+            "label": "The Cavity Yard",
+            "container": null,
+        })
+        .to_string();
+        let route = serde_json::json!({
+            "handle": "ramp",
+            "label": "The Yard Ramp",
+            "from": {"ref": "draft", "value": "yard"},
+            "to": {"ref": "existing", "value": "11111111-1111-4111-8111-111111111111"},
+            "access": {"access": "public"},
+            "cost": 1,
+        })
+        .to_string();
+        let batch = decode_authoring_calls(&[("declare_place", &place), ("declare_route", &route)])
+            .expect("both calls in the run decode together");
+        assert_eq!(batch.patch.declarations.len(), 2);
+        assert_eq!(batch.patch.operations.len(), 0);
+        let Declaration::Route(declared) = &batch.patch.declarations[1] else {
+            panic!("declare_route decoded to something other than a route declaration");
+        };
+        assert_eq!(declared.from, patch::Ref::Draft(patch::DraftHandle::new("yard")));
+
+        // The site map: each declaration's index names the call index that
+        // produced it.
+        assert_eq!(
+            batch.site_calls.get(&PatchSite::Declaration(0)),
+            Some(&0),
+            "declare_place's declaration must be attributed to call #0"
+        );
+        assert_eq!(
+            batch.site_calls.get(&PatchSite::Declaration(1)),
+            Some(&1),
+            "declare_route's declaration must be attributed to call #1"
+        );
+    }
+
+    /// Rule (PA.f54): a decode error names the failing call's index, not only
+    /// its tool name — the same name can appear more than once in one run.
+    #[test]
+    fn decode_authoring_calls_names_the_failing_call_index() {
+        let good = serde_json::json!({
+            "handle": "yard",
+            "label": "The Cavity Yard",
+            "container": null,
+        })
+        .to_string();
+        let error = decode_authoring_calls(&[
+            ("declare_place", &good),
+            ("declare_place", "not json at all"),
+        ])
+        .unwrap_err();
+        assert!(error.contains("call #1"), "{error}");
+        assert!(error.contains("declare_place"), "{error}");
+    }
+
     /// Rule: the elaborator's own decode and the table's decode agree, because
     /// the elaborator's arm now calls the table's function rather than
     /// carrying a second copy.
@@ -1332,13 +1471,105 @@ mod tests {
         })
         .to_string();
         let (opportunity, invocation) =
-            decode_actor_call(&active, speech.speaker, "whisper", &arguments)
+            decode_actor_call(&active, speech.speaker, "", "whisper", &arguments)
                 .expect("whisper decodes against the speaker's own opportunity");
         assert_eq!(opportunity, expected);
         assert_eq!(
             invocation.speech.as_ref().map(Statement::as_str),
             Some("a whispered warning")
         );
+    }
+
+    /// Rule (PA.f55): `actor_tools` never offers `record_need` or
+    /// `finish_without_proposal` — those end a turn, which is the controller
+    /// lane's own vocabulary, and `decode_actor_call` has no arm for either.
+    /// Every name it does emit decodes as emitted once the same prefix is
+    /// handed to `decode_actor_call`.
+    #[test]
+    fn actor_tools_offers_only_names_decode_actor_call_accepts() {
+        let directory = tempfile::tempdir().expect("a temp dir");
+        let mut kernel = crate::WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(super::CommandId::new(), "PlayActorVocabulary"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, active) = speech_world(&mut kernel);
+        let prefix = "c0__";
+        let tools = actor_tools(prefix, &active, speech.speaker);
+        assert!(!tools.is_empty(), "the speaker holds granted affordances");
+        for tool in &tools {
+            assert!(
+                !tool.name.ends_with("record_need") && !tool.name.ends_with("finish_without_proposal"),
+                "actor_tools must not offer the controller lane's turn-enders: {}",
+                tool.name
+            );
+        }
+        let arguments = serde_json::json!({
+            "target": id_text(speech.listener),
+            "text": "a whispered warning",
+        })
+        .to_string();
+        let (_, invocation) =
+            decode_actor_call(&active, speech.speaker, prefix, &format!("{prefix}whisper"), &arguments)
+                .expect("a name actor_tools emits decodes as emitted, prefix included");
+        assert_eq!(
+            invocation.speech.as_ref().map(Statement::as_str),
+            Some("a whispered warning")
+        );
+    }
+
+    /// Rule (PA.f58): a non-string `display` is refused, not silently
+    /// dropped.
+    #[test]
+    fn decode_actor_call_refuses_a_non_string_display() {
+        let directory = tempfile::tempdir().expect("a temp dir");
+        let mut kernel = crate::WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(super::CommandId::new(), "PlayActorDisplay"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, active) = speech_world(&mut kernel);
+        let arguments = serde_json::json!({
+            "target": id_text(speech.listener),
+            "text": "a whispered warning",
+            "display": 7,
+        })
+        .to_string();
+        let error = decode_actor_call(&active, speech.speaker, "", "whisper", &arguments).unwrap_err();
+        assert!(error.contains("display"), "{error}");
+    }
+
+    /// Rule (PA.f58): `text` on an entry that carries no speech is refused,
+    /// not silently dropped.
+    #[test]
+    fn decode_actor_call_refuses_text_on_a_silent_entry() {
+        let fixture = play_fixture();
+        let holder = fixture
+            .snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == fixture.custody.holder)
+            .expect("the holder is in the snapshot");
+        let carry = fixture
+            .snapshot
+            .affordances
+            .iter()
+            .find(|entry| holder.affordances.contains(&entry.id) && entry.entry.kind.0 == "carry")
+            .expect("the holder holds the silent `carry` affordance");
+        let mut object = serde_json::Map::new();
+        for role in &carry.entry.roles {
+            object.insert(role.role.0.clone(), Value::String(id_text(fixture.custody.holder)));
+        }
+        object.insert("slot_0_qty".into(), Value::from(1));
+        object.insert("text".into(), Value::String("this affordance carries no speech".into()));
+        let arguments = Value::Object(object).to_string();
+        let error = decode_actor_call(&fixture.snapshot, fixture.custody.holder, "", "carry", &arguments)
+            .unwrap_err();
+        assert!(error.contains("text"), "{error}");
     }
 
     /// Mutation M7.1: if `decode_actor_call` used the snapshot's first
@@ -1366,7 +1597,7 @@ mod tests {
             "text": "a returned whisper",
         })
         .to_string();
-        let (opportunity, _) = decode_actor_call(&active, speech.listener, "whisper", &arguments)
+        let (opportunity, _) = decode_actor_call(&active, speech.listener, "", "whisper", &arguments)
             .expect("whisper decodes against the listener's own opportunity");
         assert_eq!(opportunity, expected);
         assert_ne!(
@@ -1589,10 +1820,34 @@ mod tests {
     /// Persona prompt.
     #[test]
     fn table_view_never_reaches_persona_or_projector_code() {
-        let source = include_str!("controllers.rs");
-        assert!(
-            !source.contains("table_view"),
-            "controllers.rs must not call table::table_view"
-        );
+        // Every library source file except this one: the structural guard is
+        // that no other module — not `controllers.rs` alone, which is only
+        // where `PersonaLane` and the Projector happen to live today — ever
+        // calls `table_view(`. `PersonaLane`'s own signature takes no text
+        // that could carry it in, so a call anywhere outside `table.rs`
+        // would have to be a fresh, wrong wire-up.
+        const SOURCES: &[(&str, &str)] = &[
+            ("action.rs", include_str!("action.rs")),
+            ("clock.rs", include_str!("clock.rs")),
+            ("consumer.rs", include_str!("consumer.rs")),
+            ("controllers.rs", include_str!("controllers.rs")),
+            ("cover.rs", include_str!("cover.rs")),
+            ("elaboration.rs", include_str!("elaboration.rs")),
+            ("journal.rs", include_str!("journal.rs")),
+            ("lens.rs", include_str!("lens.rs")),
+            ("lib.rs", include_str!("lib.rs")),
+            ("local_inference.rs", include_str!("local_inference.rs")),
+            ("mailbox.rs", include_str!("mailbox.rs")),
+            ("patch.rs", include_str!("patch.rs")),
+            ("sdk_inference.rs", include_str!("sdk_inference.rs")),
+            ("tool_schema.rs", include_str!("tool_schema.rs")),
+            ("vault.rs", include_str!("vault.rs")),
+        ];
+        for (name, source) in SOURCES {
+            assert!(
+                !source.contains("table_view("),
+                "{name} must not call table::table_view"
+            );
+        }
     }
 }

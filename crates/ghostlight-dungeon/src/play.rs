@@ -833,7 +833,11 @@ impl PlayTable {
             Some(RecordedCall::PersonaAct(_, opportunity, invocation)) => (opportunity, invocation),
             _ => {
                 let (opportunity, invocation) =
-                    match decode_actor_call(snapshot, actor.subject, kind, arguments) {
+                    // `kind` is already stripped of its `<handle>__` prefix
+                    // by the `split_once` above, so `""` here decodes it
+                    // unchanged; Cut 8b is the one that wires this dispatch
+                    // through the table's own prefix-stripping properly.
+                    match decode_actor_call(snapshot, actor.subject, "", kind, arguments) {
                         Ok(decoded) => decoded,
                         Err(detail) => {
                             return Ok((RoundOutcome::Continue, format!("refused: {detail}")));
@@ -2244,7 +2248,7 @@ mod tests {
         let snapshot = fixture.world.snapshot().await.unwrap();
         let player = player_id(&snapshot);
         let (opportunity, invocation) =
-            decode_actor_call(&snapshot, player, "speak", &serde_json::json!({"text": "hold fast"}).to_string())
+            decode_actor_call(&snapshot, player, "", "speak", &serde_json::json!({"text": "hold fast"}).to_string())
                 .unwrap();
         let command_id = derived_command_id(&turn_id, 0, 0);
         // The crash window: the kernel already committed the exercise, but
