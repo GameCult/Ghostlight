@@ -2255,12 +2255,16 @@ mod tests {
 
     /// Rule (PA.f73): `UnresolvedDraft` names the handle that never resolved
     /// and the kind it was expected to resolve to, not just its site.
+    /// PA.f79: the handle used to be `missing_place`, which contains the
+    /// expected-kind word itself — a mutation that replaced the rendered
+    /// kind with a fixed `"thing"` still passed `text.contains("place")`.
+    /// The handle here carries no kind word, and the kind is pinned exactly.
     #[test]
     fn describe_refusal_names_unresolved_drafts_handle_and_expected_kind() {
         let fixture = play_fixture();
         let mismatch = Mismatch::UnresolvedDraft {
             site: patch::Site::Operation(3),
-            referent: patch::DraftHandle::new("missing_place"),
+            referent: patch::DraftHandle::new("unresolved_target"),
             expected: RefKind::Entity(crate::EntityKind::Place),
         };
         let text = describe_refusal(
@@ -2270,21 +2274,35 @@ mod tests {
             None,
             &KernelError::PatchRejected(vec![mismatch]),
         );
-        assert!(text.contains("missing_place"), "{text}");
-        assert!(text.contains("place"), "{text}");
+        assert!(text.contains("unresolved_target"), "{text}");
+        assert!(
+            text.contains("draft handle `unresolved_target` was never resolved to a place"),
+            "{text}"
+        );
     }
 
     /// Rule (PA.f73): a handle declared twice in one run is named by both
     /// calls that declared it, not by one ambiguous "the call that declared
     /// `handle`" — the old generic wording could only ever pick one.
+    /// PA.f79: with only the two colliding declarations in the batch, a
+    /// filter that matched every declaration regardless of its handle would
+    /// still produce "call #0 and call #1" and pass. A third, unrelated
+    /// declaration pins the filter: it must be named by neither call.
     #[test]
     fn describe_refusal_names_both_calls_for_a_duplicate_handle() {
         let first = serde_json::json!({"handle": "yard", "label": "The Cavity Yard", "container": null})
             .to_string();
         let second = serde_json::json!({"handle": "yard", "label": "The Second Yard", "container": null})
             .to_string();
-        let batch = decode_authoring_calls(&[("declare_place", &first), ("declare_place", &second)])
-            .expect("both calls decode; duplicate handles are a commit-time, not decode-time, refusal");
+        let unrelated =
+            serde_json::json!({"handle": "gate", "label": "The Rain Gate", "container": null})
+                .to_string();
+        let batch = decode_authoring_calls(&[
+            ("declare_place", &first),
+            ("declare_place", &second),
+            ("declare_place", &unrelated),
+        ])
+        .expect("all three calls decode; duplicate handles are a commit-time, not decode-time, refusal");
         let fixture = play_fixture();
         let text = describe_refusal(
             &fixture.snapshot,
@@ -2297,6 +2315,7 @@ mod tests {
         );
         assert!(text.contains("call #0"), "{text}");
         assert!(text.contains("call #1"), "{text}");
+        assert!(!text.contains("call #2"), "{text}");
     }
 
     /// Rule (PA.f73): an `EmptyEvidence` mismatch names the exact call that
@@ -2542,6 +2561,33 @@ mod tests {
         let error = KernelError::ActionRejected(vec![ActionMismatch::NoAudience { precondition: 0 }]);
         let text = describe_refusal_to_actor(&entry, &error);
         assert!(text.contains("`horn`"), "{text}");
+    }
+
+    /// PA.f81: nothing pinned `describe_refusal_to_actor`'s exact wording for
+    /// a role-bearing precondition — every prior test used `contains`, so
+    /// appending a `{:?}` dump of the failed precondition (which would leak
+    /// internal shape the actor never handed back) survived every one of
+    /// them. Pin the full string for one role-bearing failure.
+    #[test]
+    fn describe_refusal_to_actor_exact_wording_for_a_role_bearing_precondition() {
+        let entry = affordance_snapshot(vec![patch::Precondition::CanBroadcast {
+            via: patch::AudienceSpec::Channel(patch::Role("horn".into())),
+        }]);
+        let error = KernelError::ActionRejected(vec![ActionMismatch::NoAudience { precondition: 0 }]);
+        let text = describe_refusal_to_actor(&entry, &error);
+        assert_eq!(text, "a precondition over role `horn`, which you bound yourself, failed");
+    }
+
+    /// PA.f81: the same pin for a roleless precondition failure
+    /// (`HasStanding`/`NoStanding`).
+    #[test]
+    fn describe_refusal_to_actor_exact_wording_for_a_roleless_precondition() {
+        let entry = affordance_snapshot(vec![patch::Precondition::HasStanding {
+            grievance: patch::GrievanceKindName("noise".into()),
+        }]);
+        let error = KernelError::ActionRejected(vec![ActionMismatch::NoStanding { precondition: 0 }]);
+        let text = describe_refusal_to_actor(&entry, &error);
+        assert_eq!(text, "a precondition you bound no role for failed");
     }
 
     /// Rule (PA.f57): every `KernelError` other than `ActionRejected` —
@@ -2882,16 +2928,10 @@ mod tests {
             .iter()
             .find(|affordance| !holder.affordances.contains(&affordance.id))
             .expect("the fixture world declares an affordance the holder was not granted");
-        let subject_line_start = format!("{} [{}]", holder.label, id_text(holder.id));
-        let start = view
-            .find(&subject_line_start)
-            .expect("the holder's row is in the view");
-        let row = &view[start..];
-        let end = row.find(");").map_or(row.len(), |index| index + 1);
+        let row = subject_row(&view, &holder.label, &id_text(holder.id));
         assert!(
-            !row[..end].contains(&ungranted.entry.kind.0),
-            "table_view granted the holder an affordance it does not hold: {}",
-            &row[..end]
+            !row.contains(&ungranted.entry.kind.0),
+            "table_view granted the holder an affordance it does not hold: {row}"
         );
     }
 
