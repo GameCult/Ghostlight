@@ -471,8 +471,9 @@ mod tests {
         EntityDeclaration, EntityId, EntityKind, EvidenceRef, FactDeclaration, FactStandingRef,
         FictionalMinutes, JurisdictionKey, NewController, PatchGround, Quantity, Ref,
         RouteDeclaration, Statement, SubjectDeclaration, SubjectId, SubjectKind, SystemCapability,
-        WorldId, WorldKernel, WorldMailbox, WorldScaleIntentRef, agency_graph, derive_boundaries,
-        derive_cover, derive_opportunities, derive_scale_deficit, ground_covers,
+        WorldEffect, WorldId, WorldKernel, WorldMailbox, WorldScaleIntentRef, agency_graph,
+        commit_digest, derive_boundaries, derive_cover, derive_opportunities,
+        derive_scale_deficit, ground_covers,
     };
     use super::*;
     use std::collections::BTreeSet;
@@ -1908,11 +1909,19 @@ mod tests {
 
     // ---- Soul: falsification of the pass's own claims ----------------------
 
-    /// A committed decision under the forgery, with a real event beneath it,
-    /// and proof that the honest state — a mirror with no controller and no
-    /// grant — passes the same shape check.
+    /// PA.f40: this used to claim `verify_state_shape` refused a re-scoped
+    /// event on a controller-id mismatch. That clause was deleted in PA.f31;
+    /// the version that called only `verify_state_shape` kept passing, but
+    /// only by accident, through the unrelated speech-claim clause (the
+    /// event's fixture always carries speech, and a claim asserted by one
+    /// subject is never canonical when re-scoped onto another). What
+    /// actually refuses a mirror-scoped forgery in general is a full replay:
+    /// re-deriving the effect from the original, unforged command via
+    /// `reduce` no longer reproduces the forged commit, so `verify_history`
+    /// — not the structural shape check — is what this test pins. Renamed
+    /// and routed accordingly.
     #[test]
-    fn soul_a_forged_decision_event_on_a_mirror_is_refused_at_replay() {
+    fn a_forged_mirror_acted_event_is_refused_by_verify_history() {
         let directory = tempfile::tempdir().unwrap();
         let (mut kernel, mirror) = mirror_kernel(directory.path(), "Acted");
         let snapshot = kernel.snapshot().unwrap();
@@ -1939,21 +1948,24 @@ mod tests {
             "the fixture must commit a real event for this forgery to mean anything"
         );
 
-        // The honest state passes: an externally controlled subject with no
-        // controller id and no affordance grant is legal.
-        super::super::journal::verify_state_shape(&kernel.state)
-            .expect("a world holding a mirror is a well-shaped world");
-
-        // Re-scoping the committed event onto the mirror is refused: the
-        // mirror's assignment has no controller id to match.
-        let mut forged = kernel.state.clone();
-        let mut event = forged.events.first().cloned().expect("a committed event");
+        // Re-scope the committed effect onto the mirror and route the
+        // forgery through the commit log: replaying the original, unforged
+        // command via `reduce` no longer reproduces this effect.
+        let head = kernel.state.clone();
+        let mut commits = kernel.journal.commits_for_test();
+        let exercised = commits
+            .values_mut()
+            .find(|commit| commit.resulting_revision == head.revision)
+            .expect("the exercise decision is the head commit");
+        let WorldEffect::DecisionExercised { event, .. } = &mut exercised.effect else {
+            panic!("expected the head commit to carry a DecisionExercised effect");
+        };
         event.scope = DecisionScope {
             subject_id: mirror.first,
         };
-        forged.events = vec![event];
+        exercised.digest = commit_digest(exercised).unwrap();
         assert!(
-            super::super::journal::verify_state_shape(&forged).is_err(),
+            super::super::journal::verify_history(&head, &commits).is_err(),
             "a forged history in which the mirror acted replayed"
         );
     }

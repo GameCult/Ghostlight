@@ -186,6 +186,15 @@ impl WorldJournal {
         self.commits.len()
     }
 
+    /// PA.f40: a test outside this module needs the full commit map to forge
+    /// one commit's effect and route the forgery through `verify_history`
+    /// directly, the same way this module's own forgery tests already do via
+    /// `self.commits.clone()`.
+    #[cfg(test)]
+    pub(super) fn commits_for_test(&self) -> BTreeMap<CommandId, WorldCommit> {
+        self.commits.clone()
+    }
+
     #[cfg(test)]
     pub(super) fn fail_after_durable_commit_for_test(&mut self) {
         self.fail_after_durable_commit = true;
@@ -336,7 +345,11 @@ fn verify_append(
     Ok(())
 }
 
-fn verify_history(
+/// `pub(super)`, matching `verify_state_shape`: a Soul-style forgery test
+/// outside this module routes its falsification through the same function
+/// that actually judges a committed history, rather than through the
+/// structural-only `verify_state_shape`.
+pub(super) fn verify_history(
     state: &WorldState,
     commits: &BTreeMap<CommandId, WorldCommit>,
 ) -> Result<(), JournalError> {
@@ -2390,6 +2403,36 @@ mod custody_tests {
         assert!(
             message.contains("unadmitted row type"),
             "unexpected refusal: {message}"
+        );
+    }
+
+    /// PA.f39, M9: the Draft-only approval shape clause is defence in depth,
+    /// so it is pinned directly on `verify_state_shape` rather than only
+    /// through a full submit path. A fresh Draft world's approvals pass; a
+    /// forged principal outside `required_approvers` does not.
+    #[test]
+    fn draft_approvals_outside_required_approvers_is_corrupt() {
+        use crate::tests::{auth_principal, creation, owner};
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (kernel, _) = WorldKernel::create(
+            &path,
+            creation(CommandId::new(), "PAf39ApprovalShape"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        assert_eq!(kernel.state.phase, crate::WorldPhase::Draft);
+        verify_state_shape(&kernel.state)
+            .expect("a fresh Draft world has a canonical approval shape");
+
+        let mut forged = kernel.state.clone();
+        forged
+            .draft_approvals
+            .insert(crate::PrincipalId::new("interloper@example.test"));
+        assert!(
+            matches!(verify_state_shape(&forged), Err(JournalError::Corrupt(_))),
+            "an approval outside the required set passed the shape check"
         );
     }
 

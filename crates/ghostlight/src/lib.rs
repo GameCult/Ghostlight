@@ -18478,4 +18478,207 @@ mod clock_tests {
             "the obligation pressed somewhere along the replayed path"
         );
     }
+
+    // ---- Retirement fix batch, test gaps (PA.f39) --------------------------
+
+    /// PA.f39, M2: `AcquireKnowledge` refuses a retired subject regardless of
+    /// source. `Evidenced` already carries its own provenance guard
+    /// (`EvidencedKnowledgeOfClaim`), which makes it plausible for a future
+    /// edit to narrow the retirement check to `source != Evidenced`; this
+    /// proves the retirement check still fires for an `Evidenced` acquire
+    /// too.
+    #[test]
+    fn a_retired_subject_cannot_acquire_evidenced_knowledge() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf39Evidenced");
+        owner_retires(&mut kernel, clockwork.farmer).expect("retire");
+        let patch = WorldPatch {
+            declarations: vec![Declaration::Fact(FactDeclaration {
+                handle: DraftHandle::new("news"),
+                label: "The Harvest Report".into(),
+                statement: Statement::new("The winter grain is counted.").unwrap(),
+                standing: FactStandingRef::Canonical {
+                    evidence: EvidenceRef::new("vault:count"),
+                },
+            })],
+            operations: vec![ComponentOp::AcquireKnowledge {
+                subject: Ref::Existing(clockwork.farmer),
+                fact: Ref::Draft(DraftHandle::new("news")),
+                source: AuthoredSource::Evidenced,
+                confidence: Confidence::Certain,
+            }],
+            evidence: vec![EvidenceRef::new("vault:count")],
+        };
+        let error = submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch { answers: None, patch },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::RetiredSubjectActed { operation: 0 })),
+            "{error:?}"
+        );
+    }
+
+    /// PA.f39, M6: `is_retired` reads `ControllerAssignment::Retired`
+    /// specifically. If it also matched `ExternallyControlled`, a mirror
+    /// would be silently dropped from `Reach::Subjects` audience derivation —
+    /// the same site PA.f33 fixed for an actually retired member. A mirror is
+    /// not retired, and stays in the audience.
+    #[test]
+    fn a_mirror_in_a_subjects_channel_stays_in_the_audience() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf39MirrorAudience");
+        let mirror = declare_mirror(&mut kernel, &clockwork, "pa-f39-mirror");
+        let mut patch = ruled_fact_patch("news");
+        patch.declarations.push(Declaration::Channel(ChannelDeclaration {
+            handle: DraftHandle::new("wire"),
+            label: "The Wire".into(),
+            reach: ReachRef::Subjects(BTreeSet::from([
+                Ref::Existing(mirror),
+                Ref::Existing(clockwork.farmer),
+            ])),
+            controller: None,
+        }));
+        patch.operations.push(ComponentOp::Communicate {
+            speaker: Ref::Existing(clockwork.farmer),
+            fact: Ref::Draft(DraftHandle::new("news")),
+            to: AudienceRef::Channel(Ref::Draft(DraftHandle::new("wire"))),
+        });
+        submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch { answers: None, patch },
+        )
+        .expect("admitted");
+        let mirror_knows = kernel
+            .state
+            .knowledge
+            .get(&mirror)
+            .map(BTreeMap::len)
+            .unwrap_or(0);
+        assert_eq!(
+            mirror_knows, 1,
+            "a mirror was excluded from a Subjects-reach audience"
+        );
+    }
+
+    /// PA.f39, Soul's probe S2: `CanReach` to a placeless target reachable
+    /// only through a `Reach::Subjects` channel — no co-location is possible
+    /// — is refused once the target retires. This exercises `audience()`'s
+    /// channel side, which PA.f33's Colocated-only `CanReach` test
+    /// (`a_retired_subject_is_unreachable_through_can_reach`) never reaches,
+    /// and kills a mutation that removes `audience()`'s retired filter.
+    #[test]
+    fn a_retired_placeless_subject_is_unreachable_through_a_subjects_channel() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf39S2");
+        let speak = super::tests::speak_entry(&kernel);
+        submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![
+                        Declaration::Subject(SubjectDeclaration {
+                            handle: DraftHandle::new("outcast"),
+                            label: "The Placeless Outcast".into(),
+                            kind: SubjectKind::Person,
+                            controller: NewController::NarrativePersona,
+                            affordances: BTreeSet::from([speak.clone()]),
+                            position: None,
+                        }),
+                        Declaration::Channel(ChannelDeclaration {
+                            handle: DraftHandle::new("wire"),
+                            label: "The Outcast Wire".into(),
+                            reach: ReachRef::Subjects(BTreeSet::from([
+                                Ref::Draft(DraftHandle::new("outcast")),
+                                Ref::Existing(clockwork.farmer),
+                            ])),
+                            controller: None,
+                        }),
+                        Declaration::Affordance(AffordanceDeclaration {
+                            handle: DraftHandle::new("hail"),
+                            kind: AffordanceKindName("hail".into()),
+                            roles: vec![
+                                RoleSpec {
+                                    role: Role("target".into()),
+                                    kind: RefKind::Subject(None),
+                                },
+                                RoleSpec {
+                                    role: Role("channel".into()),
+                                    kind: RefKind::Entity(EntityKind::Channel),
+                                },
+                            ],
+                            preconditions: vec![Precondition::CanReach {
+                                subject: Role("target".into()),
+                                via: AudienceSpec::Channel(Role("channel".into())),
+                            }],
+                            effect_slots: Vec::new(),
+                            outcome_bands: vec![OutcomeBand {
+                                weight: 1,
+                                effects: Vec::new(),
+                            }],
+                            carries_speech: true,
+                        }),
+                    ],
+                    operations: vec![ComponentOp::GrantAffordance {
+                        subject: Ref::Existing(clockwork.farmer),
+                        affordance: Ref::Draft(DraftHandle::new("hail")),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .expect("the play authority declares the placeless outcast and its channel");
+
+        let positions = kernel.state.positions.clone();
+        let outcast = *kernel
+            .state
+            .subjects
+            .keys()
+            .find(|id| !positions.contains_key(id))
+            .expect("the declared placeless outcast");
+        let wire = *kernel.state.channels.keys().next().expect("the declared channel");
+        let snapshot = kernel.snapshot().unwrap();
+        let hail = affordance_named(&snapshot, "hail");
+        let opportunity = opportunity_for(&snapshot, clockwork.farmer);
+        let invocation = DecisionInvocation {
+            affordance: hail,
+            bindings: vec![
+                binding("target", Target::Subject(outcast)),
+                binding("channel", Target::Entity(wire)),
+            ],
+            proposed: Vec::new(),
+            speech: Some(Statement::new("Hail!").unwrap()),
+            display: None,
+        };
+        submit_as(
+            &mut kernel,
+            CallerId::Controller(opportunity.controller_id),
+            CommandBody::ExerciseDecision {
+                invocation: invocation.clone(),
+                opportunity: opportunity.clone(),
+            },
+        )
+        .expect("the live outcast is reachable through the channel");
+
+        owner_retires(&mut kernel, outcast).expect("retire the outcast");
+        let snapshot = kernel.snapshot().unwrap();
+        let opportunity = opportunity_for(&snapshot, clockwork.farmer);
+        let error = submit_as(
+            &mut kernel,
+            CallerId::Controller(opportunity.controller_id),
+            CommandBody::ExerciseDecision { invocation, opportunity },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::ActionRejected(set)
+                if set.contains(&ActionMismatch::CannotReach { precondition: 0 })),
+            "{error:?}"
+        );
+    }
 }
