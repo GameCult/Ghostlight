@@ -2487,6 +2487,132 @@ Interpreter, the elaborator sweep and lenses.
   - Untested: the `Invariant` close path. There is no legitimate way to
     force one; the code shares its closing path with tested sites.
   - Dungeon bin 63 → 78, lib 620 → 621.
+- **Soul on 7d and 8a-fix** (Opus, 2026-09-22, against `80e6649`,
+  Windows). persona-projection 26, lib 621 and Dungeon bin 78, all as
+  reported.
+  - Held:
+    - PA.f61's `communicate` removal.
+    - The actor-prefix round trip; no handle collides with a tool name.
+    - PA.f54: a run is one patch, and an actor call splits it.
+    - Replay within the current row.
+    - PA.f64 prose (`source_prose`, not structured state).
+    - PA.f65.
+    - PA.f66a, and PA.f66c (it was already correct; the reverse mutation
+      is killed).
+    - S1, S2, S7, and the narration assertion.
+    - 7d's UAX #29 behaviour (emoji, ZWJ, flags, `1,000`, `can't`).
+    - `is_retired` as the resolver's one liveness predicate.
+  - Survived: S6, S4, `communicate` re-added, list position hashed at the
+    dispatch call site, and the library predicate cut to `.take(1)`.
+  - Triage: PA.f83 to PA.f96 are fix, in 8a-fix2. PA.f91 is recorded.
+    PA.f97 is split between 8a-fix2 and 8b.
+- **PA.f83 (8a-fix, high, fix):** the turn's identity is still the first
+  request key, and a key is forgotten when its turn's row is replaced.
+  After K1 and then K2, a retry of K1 opens a new turn with `turn_id` K1,
+  and `derived_command_id` reproduces K1's old command ids. Probe: a new
+  `declare_resource` was refused as a reused command id.
+  - **Ruling (Self, under the standing go):**
+    - `turn_id` is minted fresh (UUID v4) when a turn opens. It is never a
+      request key, and command ids derive from it, so they cannot collide
+      across turns.
+    - The store keeps a ledger of applied request keys that spans turns: a
+      map from key to `turn_id`, covering the open turn and the most recent
+      64 closed turns. A key found in the ledger is a no-op that returns
+      that turn's state.
+    - Keys older than that window are forgotten, and the doc says so. At
+      worst a retry that old repeats a player act under fresh command ids.
+      The window keeps the rewrite of the row bounded.
+- **PA.f84 (8a-fix, high, fix):** a late retry of an older key answers
+  whatever question is open now; nothing ties an answer to its question.
+  - **Ruling (Self, under the standing go):**
+    - A turn that is `AwaitingPlayer` exposes a `question_id`, derived from
+      `(turn_id, round, slot)`.
+    - `run` takes a request of `text` plus `answers: Option<QuestionId>`.
+    - While a question is open, a request whose `answers` matches it
+      answers it. A request with no `answers`, or a mismatched one, is
+      refused as stale, and nothing is recorded or changed.
+    - While the turn is `Running`, empty text continues it. Non-empty text
+      is refused as "the turn is still running", not silently dropped
+      (PA.f97).
+    - An `answers` sent when no question is open is refused.
+    - 8b carries `answers` through the Eve schema.
+- **PA.f85 (8a-fix, high, fix):** any deterministic failure while building
+  the request, snapshotting or narrating returns early through `?`. That
+  leaves an unrecoverable turn in `Running` (probe: a non-UUID key).
+  **Fix:** every failure after a turn opens goes through one
+  close-with-fault helper, which closes the turn with the fault and its
+  detail recorded. The three copied close sites collapse into it (PA.f93).
+  Minting `turn_id` removes the non-UUID trigger.
+- **PA.f86 (8a-fix, medium, fix):** S6 survives, because the restart tests
+  assert the stored `opening_prompt` rather than the request that was sent.
+  **Fix:** change the world between rounds, then assert the resumed
+  request's opening `UserText`.
+- **PA.f87 (8a-fix, medium, fix):** the S4 test compares positions in the
+  source text, and it finds `record_call`, not `persist`. **Fix:** a
+  behavioural test in which the port fails or panics after the body is
+  persisted and before submission; a reopened store must hold the body.
+  Delete the source-order test.
+- **PA.f88 (8a-fix, medium, fix):** nothing ties Dungeon's `PLAY_TOOLS` to
+  the pinned list of 24 tools. **Fix:** the list gets one owner. The
+  library doesn't own Dungeon's policy, so Dungeon's `PLAY_TOOLS` is the
+  owner and a Dungeon test pins its exact contents. The library test's
+  copy stays as the library's own fixture and says so.
+- **PA.f89 (pre-existing, low-medium, fix in its owner):**
+  `SourceSpan::locate` uses `match_indices`, which skips overlapping
+  candidates, so `locate("Juno no no", "no no")` returns `None`. **Fix:**
+  resume the search one char past each candidate's start. Spans made only
+  of whitespace or punctuation are verbatim quotes and stay accepted
+  (recorded).
+- **PA.f90 (8a-fix, medium, fix):** a failed dispatch still counts as
+  dispatched, so its actor tools are offered with no Persona prose behind
+  them. **Fix:** a subject counts as dispatched only when its Persona turn
+  produced prose and that prose was recorded.
+- **PA.f91 (8a-fix, medium, recorded):** a single run can retire Mara,
+  declare a new subject labelled "Mara", and author its persona material.
+  - **Ruling (Self, under the standing go): recorded, no fix.**
+    - The play agent may retire and may create. The operator: "if the agent
+      can invent people, it can invent loot".
+    - The new subject is a new character, with a new id and no memory or
+      knowledge. The retirement is in the journal, and nothing was
+      rewritten in place.
+    - Deciding that two labels are "the same character" is a language
+      judgment, not a kernel rule.
+    - What invariant 2 forbids is an existing Persona's input changing
+      under it. That still can't happen.
+- **PA.f92 (8a-fix, low, fix):** `sets_persona_of_existing_subject` has no
+  multi-op test, so `.take(1)` survives, and Dungeon's check is the only
+  thing enforcing invariant 2. **Fix:** a library test in which the write
+  to the existing subject comes in a later op.
+- **PA.f93 (8a-fix, medium, fix):** the close-with-fault handling is copied
+  three times, and errors from snapshot and narrate bypass it. **Fix:**
+  fold it into PA.f85's single helper.
+  - **Ruling:** no substitutable submit trait is added just to force an
+    `Invariant`. The path shares the helper that the tested sites use, and
+    this is recorded.
+- **PA.f94 (pre-existing, medium, fix):** inference retries ignore
+  `InferenceFault::disposition()`. There are 12 immediate retries, even on
+  `IntegrityViolation`. **Fix:** only `Retryable` retries, with bounded
+  exponential backoff. `RecoveryRequired` and `IntegrityViolation` close
+  the turn at once with the fault's detail. Remove the stale library-gap
+  doc and its dangling reference.
+- **PA.f95 (8a-fix, low, fix):**
+  - The budget doc is stale.
+  - The `#[serde(default)]` attributes can never apply.
+  - `close_turn` and `begin_turn` take unused parameters.
+
+  **Fix:** delete them.
+- **PA.f96 (8a-fix, low, fix):** the PA.f66d test calls the hash helper,
+  not the call site. **Fix:** assert the command id actually submitted for
+  a reordered dispatch list.
+- **PA.f97 (pre-existing and 8a-fix, low-medium, split):**
+  - Actor tool names can reach 86 characters, against a common limit of
+    64. **Fix in 8a-fix2:** the handle becomes the first 8 hex digits of
+    the subject id, and a collision within one snapshot is a turn fault.
+    That gives at most 8 + 2 + 48 = 58.
+  - Dropped player text is covered by PA.f84.
+  - `turn.refusal` holds agent-facing detail; 8b gives the player only the
+    actor form.
+  - Concurrent `run` calls are handled by 8b's per-world mutex.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
