@@ -3196,6 +3196,82 @@ Interpreter, the elaborator sweep and lenses.
 - **PA.f160 (Cut 9, low):** the additive fold is monotone only while a play
   view exists; losing it drops the version by the whole accumulated
   revision. Subsumed by PA.f148's fix.
+- **Soul on Cut 10** (Opus, 2026-09-23, against `0c09324`, Windows).
+  - Held: the submodule pin is unmoved; the bridge imports the vendored
+    lowering's own `dist` and re-spells nothing; the round trip posts
+    through `api_router`; the binding-shape and envelope fixes are both
+    killed by their mutations; PA.f148 holds for world commands; PA.f151
+    holds in a live surface dump (no question id, no `answers` control);
+    PA.f152 and PA.f159 hold against a second account ("only the world's
+    owner may play"); admission is genuinely synchronous.
+  - **Verdict: not ready for the playtest.** PA.f161 and PA.f162 block.
+  - Triage: PA.f161 to PA.f168 are Cut 11.
+- **PA.f161 (Cut 10, high, blocker):** the fold moved out of the document
+  and into its consumer. `runtime.rs:1233` compares the client's echoed
+  `sourceVersion` against `authenticated_wake_version`, which is
+  `surface_version + play.revision`. Both the vendored lowering and
+  `web/src/main.ts` echo `document.version` alone, and any row that has
+  ever held a question has `revision >= 1`, so **every answer is refused as
+  stale, permanently**. `authenticated_wake_version`'s own doc says it is
+  never a value a client feeds back. PA.f84's safety survives (it
+  over-refuses), its usability does not.
+  - **Ruling (Self, under the standing go):** the play row records the
+    world's `surface_version` at the moment its question opened. An answer
+    is stale when the client's `sourceVersion` is **older than that**, and
+    that is the only comparison. The question's identity stays in the row
+    and is resolved server-side, so PA.f84 keeps its guarantee: an answer
+    cannot land on a question the player never saw. `playRevision` either
+    gains this reader or goes (PA.f165).
+- **PA.f162 (Cut 10, high, blocker):** the round-trip test shells out to
+  `node` and needs `jsdom` and `ajv`, which nothing in Ghostlight declares
+  or installs. On a clean checkout it fails. Idunn's Linux gate runs
+  `cargo test --locked` in a pinned container that installs no vendored npm
+  packages and may carry no node, so **the release gate fails before it
+  builds**. Hands' 145 was measured against `node_modules` left in the main
+  tree by its own debugging.
+  - **Ruling (Self, under the standing go):**
+    - The bridge's captured intents are committed as a fixture, stamped
+      with the submodule revision that produced them. The Rust test
+      replays that fixture through `api_router`, so the gate needs no node.
+    - A second test regenerates the fixture with the bridge and fails if it
+      differs from what the current pin produces. It runs only when the
+      bridge is available, and it **says plainly when it is skipped**; a
+      silently skipped job is a scar this pipeline already carries.
+    - The `gamecult-ops` runbook gets that dev job. The fixture without
+      the regeneration check would be a copy of the client's behaviour
+      pretending to be the client.
+- **PA.f163 (Cut 10, medium, fix):** PA.f150's test is vacuous. Deleting
+  the spawned task's `publish_projection` leaves the whole suite green,
+  because this same cut made admission synchronous, so `dispatch_world`'s
+  own Ok arm already published. The test asserts only that `recv()`
+  returned. The fix is still needed: the question, narration and refusal
+  all land after the response. **Fix:** assert the wake that follows the
+  turn's own commit, not the one the response already caused.
+- **PA.f164 (Cut 10, medium, fix):** a `world.create` form filled as
+  labelled is refused with "missing field `targets`". `lens_weights`
+  carries an authored `value`, which the lowering captures;
+  `targets` and `jurisdictions` carry only `placeholder`, which it never
+  captures. **Fix:** seed `"[]"` and `"{}"` as authored values, and check
+  every other control for the same gap.
+- **PA.f165 (Cut 10, low, fix):** `playRevision` has no reader outside
+  tests. It becomes PA.f161's reader or it goes.
+- **PA.f166, PA.f167, PA.f168 (Cut 10, low, fix):** `play.rs:681` still
+  describes the fold Cut 10 undid; `local_draft`'s doc calls `accessMode`
+  inert when the lowering disables a control without it; `unwrap_bindings`
+  discards flat siblings instead of refusing them.
+- **Also for Cut 11:** several new doc comments are scar tours — narrating
+  the previous wrong machine before stating the rule (`eve.rs:215`,
+  `eve.rs:689`, `runtime.rs:1416`). `AGENTS.md` forbids that, and in
+  PA.f161's case the narration is where the false claim lived.
+- **Unverified leg, for the playtest:** seeding is still gated on
+  `GHOSTLIGHT_SEED_VAULT_ROOT`. The round trip proves the payload reaches
+  the vault lookup, never that a seed succeeds. Nobody has run that end to
+  end.
+- **Judgement on `deserialize_json_capture`:** kept, narrowly. It is the
+  smallest server-side accommodation for a lowering with no JSON control,
+  but it loosens the payload for every caller, including CultMesh, to buy
+  something only the browser needed. It must not become the reason
+  structured controls never arrive.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
