@@ -902,6 +902,22 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
 - **Soul findings, triaged:** PA.f16 to PA.f20 and PA.f22 are fix, as one
   batch after Cut 3 lands, because they touch files Cut 3 is editing. PA.f21
   is recorded.
+- **Fix batch landed:** `a062b56` (PA.f16, PA.f17) and `4ac7b82` (PA.f18–f20,
+  PA.f22), by Hands on Sonnet, 2026-09-22.
+  - The client is built with `.no_proxy()` and `redirect::Policy::none()`.
+    Client construction in tests is serialized on a module mutex, because
+    reqwest reads the proxy variables at build time.
+  - A 3xx takes the ordinary `recovery_required` disposition.
+  - An absent response `id` and a null or absent `tool_calls` are tolerated.
+    A tool-call `id` stays required, because the loop correlates on it.
+  - An empty model prefix is refused at open. Duplicate call ids are
+    refused as `integrity_violation`.
+  - The id validators have one copy, in `controllers.rs`.
+  - The loopback check is in `LocalInferencePort::new`.
+  - A request with no tools omits `tools` and `parallel_tool_calls`.
+  - Every fix was killed by its own mutation. `local_inference::` went 7 → 21
+    tests; lib 488 → 502.
+- **Re-verification of P2.2:** pending Soul.
 
 ## Cut 3. The play authority, `Ruled` facts and `Mint` (kernel), schema `consumer.v6`
 
