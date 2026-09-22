@@ -2901,6 +2901,22 @@ Interpreter, the elaborator sweep and lenses.
 - **PA.f133 (8a-fix4, low, recorded then folded):** "only a source-presence
   test is possible" describes a choice, not a constraint. PA.f127's
   `round_snapshot()` owner is the answer.
+- **Play loop fix 8a-fix5 landed (Hands, Sonnet, 2026-09-22):** `43987dc`.
+  - PA.f125: the `Dispatch` body is recorded and persisted in
+    `execute_round` before `execute_dispatch` runs, which is the order every
+    other door already uses. A new `PlayTurn::dispatch_owner(subject)` names
+    the earliest call whose body claims a subject, so a resumed call knows
+    its own work from another call's, and a same-call duplicate mention is
+    still refused.
+  - PA.f126: the replacement test resumes a hand-built crashed turn and
+    asserts the tool result still carries the prose. All three mutations,
+    including the honest revert, fail it.
+  - PA.f128 to PA.f132 are done. `PlayError::NoPlayerOpportunity` is
+    deleted; Hands found no site that should raise it and would not change
+    `begin_turn`'s behaviour unasked.
+  - PA.f132: the guard test now uses a shared-prefix quote, which reaches
+    `starts_with`, at about 0.44 s.
+  - Dungeon bin 122, persona-projection 35. Net +291/-98.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
