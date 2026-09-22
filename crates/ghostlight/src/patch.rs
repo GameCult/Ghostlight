@@ -1600,6 +1600,12 @@ pub enum Mismatch {
     RetiresAMirror {
         operation: usize,
     },
+    /// `Retire` named a `Human`-controlled subject while the world is still in
+    /// `Draft`. A human's Draft approval cannot be removed by removing the
+    /// human; the same retire is admitted once the world is `Active`.
+    RetiresAnApprover {
+        operation: usize,
+    },
     /// `GrantAffordance` or `RevokeAffordance` named a retired or an
     /// `ExternallyControlled` subject: neither holds a grant this patch may
     /// touch.
@@ -3811,6 +3817,24 @@ pub(super) fn resolve_patch(
                 }
                 if retired.contains(&subject_key) {
                     mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                    continue;
+                }
+                // A human's Draft approval cannot be removed by removing the
+                // human: `required_approvers` reads the live controller
+                // assignment and `Retired` carries no human principal, so an
+                // owner could otherwise retire the human, approve alone, and
+                // activate. Once the world is Active, approvals are frozen
+                // history judged by replay, and the human's subject may die.
+                if state.phase == super::WorldPhase::Draft
+                    && let Key::Existing(existing_id) = &subject_key
+                    && state
+                        .controller_assignments
+                        .get(&super::DecisionScope { subject_id: *existing_id })
+                        .is_some_and(|assignment| assignment.human_principal().is_some())
+                {
+                    mismatches.push(Mismatch::RetiresAnApprover {
                         operation: position,
                     });
                     continue;

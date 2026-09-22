@@ -2992,6 +2992,16 @@ fn apply_operation(
                         "retire operation names a mirror this world does not own".into(),
                     ));
                 }
+                // A human's Draft approval cannot be removed by removing the
+                // human: re-decided here beside the resolver's
+                // `RetiresAnApprover`, since resolution is speculative and
+                // this is the actual commit. Active retires the human freely;
+                // its approval is frozen history by then, judged by replay.
+                ControllerAssignment::Human { .. } if state.phase == WorldPhase::Draft => {
+                    return Err(KernelError::Invariant(
+                        "retire operation would remove a Draft approver".into(),
+                    ));
+                }
                 ControllerAssignment::Human { .. }
                 | ControllerAssignment::NarrativePersona { .. }
                 | ControllerAssignment::OperationalAgent { .. } => {}
@@ -17648,4 +17658,132 @@ mod clock_tests {
             "{error:?}"
         );
     }
+
+    // ---- Retirement fix batch (PA.f31-PA.f35) ------------------------------
+
+    fn human_subject(snapshot: &WorldSnapshot) -> SubjectId {
+        snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.controller_mode == Some(ControllerMode::Human))
+            .expect("the genesis human")
+            .id
+    }
+
+    /// PA.f31: `verify_state_shape` no longer judges a `DecisionEvent` against
+    /// the subject's *present* controller identity. Retiring a subject that
+    /// has acted commits, and the history survives a full reopen-and-replay
+    /// (`recover` -> `verify_history` -> `verify_state_shape` for every
+    /// commit, per the caller census in the report).
+    #[test]
+    fn retiring_a_subject_that_acted_survives_reopen_and_replay() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let world_id = {
+            let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf31RetireActed");
+            exercise(
+                &mut kernel,
+                clockwork.reeve,
+                clockwork.threaten,
+                vec![binding("target", Target::Subject(clockwork.farmer))],
+            )
+            .expect("the threat commits");
+            owner_retires(&mut kernel, clockwork.reeve)
+                .expect("a subject with history can be retired");
+            kernel.state.world_id
+        };
+        let reopened = WorldKernel::open(&path, world_id).expect("the store replays");
+        let retired = reopened
+            .snapshot()
+            .unwrap()
+            .subjects
+            .iter()
+            .find(|subject| subject.label == "The Yard Reeve")
+            .expect("the reeve survives replay")
+            .retired;
+        assert!(retired);
+    }
+
+    /// PA.f31: revoking a verb a subject has already used commits, and the
+    /// event that used it survives reopen-and-replay for the same reason: the
+    /// grant a `DecisionEvent` rode is judged once, at commit, not re-judged
+    /// against the present-day grant set.
+    #[test]
+    fn revoking_a_used_verb_survives_reopen_and_replay() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let world_id = {
+            let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf31RevokeUsed");
+            exercise(
+                &mut kernel,
+                clockwork.reeve,
+                clockwork.threaten,
+                vec![binding("target", Target::Subject(clockwork.farmer))],
+            )
+            .expect("the threat commits");
+            let before = kernel.snapshot().unwrap();
+            submit_owner(
+                &mut kernel,
+                &before,
+                operations(vec![ComponentOp::RevokeAffordance {
+                    subject: Ref::Existing(clockwork.reeve),
+                    affordance: Ref::Existing(clockwork.threaten),
+                }]),
+            );
+            kernel.state.world_id
+        };
+        let reopened = WorldKernel::open(&path, world_id).expect("the store replays");
+        assert_eq!(reopened.state.events.len(), 1);
+    }
+
+    /// PA.f32(a): the resolver refuses `Retire` for a `Human`-controlled
+    /// subject while the world is Draft, before the owner can retire the
+    /// human, approve alone, and activate without the human's approval.
+    #[test]
+    fn retiring_the_human_in_draft_is_refused() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "PAf32DraftRefusal"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let human = human_subject(&kernel.snapshot().unwrap());
+        let error = owner_retires(&mut kernel, human).unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::RetiresAnApprover { operation: 0 })),
+            "{error:?}"
+        );
+    }
+
+    /// PA.f32(b, c): once the world is Active, the human's Draft approval is
+    /// frozen history, so the owner may retire the human — the player's
+    /// subject may die — and the retire survives reopen-and-replay because
+    /// the journal's approval-shape check no longer re-reads the present-day
+    /// controller roster in Active.
+    #[test]
+    fn retiring_the_human_in_active_survives_reopen_and_replay() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (world_id, human) = {
+            let (mut kernel, clockwork, active) = clock_kernel(directory.path(), "PAf32ActiveRetire");
+            let _ = &clockwork;
+            let human = human_subject(&active);
+            owner_retires(&mut kernel, human).expect("the owner retires the human subject");
+            (kernel.state.world_id, human)
+        };
+        let reopened = WorldKernel::open(&path, world_id).expect("the store replays");
+        let retired = reopened
+            .snapshot()
+            .unwrap()
+            .subjects
+            .iter()
+            .find(|subject| subject.id == human)
+            .expect("the human survives replay")
+            .retired;
+        assert!(retired);
+    }
+
 }

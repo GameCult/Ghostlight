@@ -876,19 +876,25 @@ pub(super) fn verify_state_shape(state: &WorldState) -> Result<(), JournalError>
             ));
         }
     }
-    let required = super::required_approvers(state);
-    if !state.draft_approvals.is_subset(&required)
-        || (state.phase != super::WorldPhase::Draft && !required.is_subset(&state.draft_approvals))
-    {
-        return Err(JournalError::Corrupt(
-            "draft approvals do not match canonical controller ownership".into(),
-        ));
+    // Approval shape holds only in Draft. Once the world is Active, the
+    // approvals that admitted it are frozen history: they are judged once by
+    // `reduce`'s `ActivateWorld` arm and after that by replay, not re-judged
+    // here against the present-day controller roster. Retiring the human
+    // (PA.f32) or adding a later human-controlled subject must not make a
+    // past activation retroactively corrupt.
+    if state.phase == super::WorldPhase::Draft {
+        let required = super::required_approvers(state);
+        if !state.draft_approvals.is_subset(&required) {
+            return Err(JournalError::Corrupt(
+                "draft approvals do not match canonical controller ownership".into(),
+            ));
+        }
     }
     let mut event_ids = BTreeSet::new();
     let mut claimed = BTreeSet::new();
     let mut previous_event_revision = 0;
     for event in &state.events {
-        let assignment = state
+        state
             .controller_assignments
             .get(&event.scope)
             .ok_or_else(|| JournalError::Corrupt("event references an unknown scope".into()))?;
@@ -915,13 +921,15 @@ pub(super) fn verify_state_shape(state: &WorldState) -> Result<(), JournalError>
             || event.revision == 0
             || event.revision > state.revision
             || event.revision <= previous_event_revision
-            // A forged history in which a mirror acted fails here: its
-            // assignment has no controller id to match.
-            || Some(event.controller_id) != assignment.id()
-            || !state
-                .affordance_grants
-                .get(&event.scope)
-                .is_some_and(|granted| granted.contains(&event.affordance))
+            // Present-tense controller identity and present-tense affordance
+            // grants are not judged here: retiring a subject or revoking a
+            // verb it once used must not corrupt the history of that use.
+            // Authority at commit time is judged once, by `reduce`, and after
+            // that by replay (`verify_history` re-runs `reduce` for every
+            // commit) and by the digest chain. This shape check only holds
+            // time-invariant facts: the event's scope resolves to a live
+            // assignment (checked above) and its affordance is a catalog
+            // entry (checked above).
             || event.band >= entry.outcome_bands.len()
             // Speech rides only a speech-carrying entry; such an entry always
             // addresses someone, by words or by a visible act; a display may
