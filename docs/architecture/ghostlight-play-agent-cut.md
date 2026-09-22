@@ -1218,7 +1218,18 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   needed no new arm. The loosening of M4.2 (`expected_caller` still `Some` for
   `Retired`) survived: `mode()` gates first. The loosening of M4.3 (confine
   only elaborators) survived: no consumer-authored `Retire` test. See PA.f30.
-- **Verdicts:** pending Soul.
+- **Verdicts** (Soul, Opus, 2026-09-22, against `732b1d3`, Windows):
+
+  | Promise | Verdict | Note |
+  |---|---|---|
+  | P4.1 | FALSIFIED | A retired subject is still an audience, and a raw `Communicate` speaker, through a `Reach::Subjects` channel (PA.f33). No opportunity, cannot act, and replay: these hold |
+  | P4.2 | FALSIFIED in practice | Retiring any subject with history fails `verify_append` (PA.f31). `Forget` can still edit a retired subject's knowledge (PA.f34) |
+  | P4.3 | HOLDS as written | The owner's Draft retire of the human removes the consent gate (PA.f32) |
+
+  M4.1 was killed. Soul's MuA, MuC and MuE survived the Hands suite (PA.f35).
+- **Soul findings, triaged:** PA.f31–PA.f35 are fix, in one batch after the
+  current fix batch lands. The design is settled by Self under the standing
+  go. It is recorded in each finding.
 
 ## Cut 5. Granting and revoking affordances (kernel)
 
@@ -1242,7 +1253,12 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
 - **Landed:** `732b1d3` (Hands, Sonnet, 2026-09-22). Catalog (7, 34, 43). The
   loosening of M5.1 (allow a Human's last revoke) survived, and so did the
   loosening of M5.2 (confine only elaborators). See PA.f30.
-- **Verdicts:** pending Soul.
+- **Verdicts** (Soul, Opus, 2026-09-22, against `732b1d3`, Windows):
+
+  | Promise | Verdict | Note |
+  |---|---|---|
+  | P5.1 | HOLDS | Revoke confinement is untested: MuB survived (PA.f35) |
+  | P5.2 | HOLDS | Structurally, and the replay shape check enforces it. A used verb cannot be revoked at all (PA.f31). MuD survived (PA.f35) |
 
 ## Cut 6. The Persona lane and the recency marker (library)
 
@@ -1671,6 +1687,68 @@ Interpreter, the elaborator sweep and lenses.
     loosened);
   - a direct pin that `expected_caller()` is `None` for `Retired` (M4.2
     loosened).
+- **PA.f31 (introduced by Cuts 4-5, high, fix):** `journal.rs:920` and
+  `:924` in `verify_state_shape` judge every past `DecisionEvent` against
+  the subject's *current* controller (`Some(event.controller_id) ==
+  assignment.id()`) and its current grants. As a result, retiring any
+  subject that has acted fails `verify_append` with `CorruptJournal`, and so
+  does revoking a verb that has been used. Soul's probe: the reeve exercises
+  `threaten`, then is retired or has `threaten` revoked. The clauses held
+  only while assignments and grants never changed.
+  - **Ruling (Self, under the standing go):** an event's authority is judged
+    when it commits, by `reduce`. After that it is judged by replay
+    (`verify_history` re-runs `reduce`) and by the digest chain. The shape
+    check must not re-judge history against present state.
+  - Hands first lists every caller of `verify_state_shape` and confirms that
+    each load path also replays or verifies the chain. It then deletes the
+    anachronistic clauses and keeps the time-invariant ones: the subject
+    exists, and the affordance is a catalog entry.
+  - If any load path relies on the shape check without replay, Hands stops
+    and reports.
+  - Tests: retire a subject that acted; revoke a used verb; both survive
+    reopen and replay.
+- **PA.f32 (introduced by Cut 4, high, fix):** `required_approvers`
+  (`lib.rs:4388`) reads the live assignment, and `human_principal()` is
+  `None` for `Retired`. So the owner can retire the human's subject in
+  Draft, approve, and activate with no human approval: a consent bypass
+  (F3). Retiring the human after activation fails the journal's approval
+  check (`journal.rs:880`, F4).
+  - **Ruling (Self, under the standing go):** retiring a `Human`-controlled
+    subject in Draft is refused with a new `Mismatch`. A human's approval
+    cannot be removed by removing the human.
+  - In Active it is allowed, so the player's subject can die. This is
+    flagged in Self's report so the operator sees it.
+  - The approval shape check holds only in Draft. In Active, approvals are
+    frozen history, judged by replay (the PA.f31 principle).
+  - Tests: the Draft refusal, and an Active retire of the human that
+    survives replay. Mutation: let the Draft retire through.
+- **PA.f33 (introduced by Cut 4, medium, fix):** channel reach ignores
+  retirement.
+  - `audience()`'s `Reach::Subjects` arm (`lib.rs:3189`) returns members
+    without filtering out retired ones.
+  - `Communicate` resolves a retired speaker (`patch.rs:4573-4615`).
+  - `CanReach` (`action.rs:540`) passes for a retired target.
+  - **Fix:** audience derivation excludes retired subjects, a retired
+    `Communicate` speaker is refused, and `CanReach` fails for a retired
+    target. Channel declarations may still name retired members, because
+    audience derivation is the one owner.
+- **PA.f34 (introduced by Cut 4, low, fix):** `AcquireKnowledge`
+  (`patch.rs:4498`), `Forget` (`:4548`) and `InstallIncumbent`
+  (`:4393-4455`) accept a retired subject. **Fix:** refuse all three for a
+  retired subject. Holdings stay transferable *from* a retired holder, so a
+  body can be looted.
+- **PA.f35 (introduced by Cuts 4-5, low, fix):** Soul's mutations that
+  survive the Hands suite:
+  - MuA: the resolver's Retire drops `positions.remove`; killed by a
+    Retire-then-Relocate probe.
+  - MuB: `RevokeAffordance` falls out of confinement.
+  - MuC: `retired` is taken from `mode().is_none()`, which flags mirrors.
+  - MuD: the revoke candidate set is not updated, so three revokes pass the
+    resolver.
+  - MuE: `retired.insert` is dropped.
+
+  Soul's probes in `scratchpad/soul_probe.rs` kill all but MuE. **Fix:** add
+  the probes as tests, and add one that kills MuE.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
