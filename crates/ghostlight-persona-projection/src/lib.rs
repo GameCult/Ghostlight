@@ -380,12 +380,15 @@ impl SourceSpan {
     /// check before ever calling `starts_with` (PA.f120), and the matching
     /// end boundary found by binary search over that same already-sorted
     /// `Vec` rather than a second `HashSet` copy of it allocated on every
-    /// call. Real bound (PA.f120, debug build): boundaries × 1 (the
-    /// first-byte reject) for the vast majority of candidates, plus one
-    /// `starts_with(quote)` — O(quote's own length) — for each candidate
-    /// that does share `quote`'s first byte; see
-    /// `locate_is_fast_over_many_boundaries_and_a_long_quote` for the
-    /// regression guard and its measured before/after timing. This also
+    /// call. Real bound (PA.f120/PA.f132): boundaries × `quote.len()` byte
+    /// comparisons in the worst case — the first-byte check is a constant
+    /// factor over candidates that share no prefix with `quote` at all, not
+    /// a change to that worst case; a source built from candidates sharing
+    /// `quote`'s own long prefix still pays close to the full comparison at
+    /// every one, since `starts_with` only rejects once the first
+    /// differing byte is reached. See
+    /// `locate_is_fast_over_many_boundaries_and_a_shared_prefix_quote` for
+    /// the regression guard and its measured before/after timing. This also
     /// finds an overlapping later candidate whenever an earlier
     /// boundary-aligned candidate is rejected (PA.f89):
     /// `locate("Juno no no", "no no")` returns the boundary-valid match at
@@ -976,30 +979,30 @@ mod tests {
         );
     }
 
-    /// PA.f120: the guard above has only two boundaries (its own two outer
-    /// edges), so it never exercised the shape this bound is actually
-    /// about — many boundaries, each tested against a long quote — and
-    /// passed unchanged whether `locate` allocated a fresh `HashSet` per
-    /// call or checked a first byte before `starts_with`. A source built
-    /// from many short boundary-separated words, searched for a long quote
-    /// that never occurs, forces one first-byte reject per boundary. No
-    /// timing assertion, for the same reason as the guard above: the point
-    /// is that this completes promptly. Measured on this workstation (debug
-    /// build, this exact test alone, `cargo test`'s own reported time, same
-    /// 528,000-char source and 264,000-char quote both before and after):
-    /// the pre-PA.f120 shape (`HashSet` allocated per call, `starts_with`
-    /// called before any first-byte check) reported ~0.31s; the rewrite
-    /// above reports ~0.13s — real, but well short of the 1.73s figure this
-    /// pass's own brief quoted for a differently-shaped 528k/264k input, so
-    /// that figure is not reproduced here as a claim about this input.
+    /// PA.f132: the guard above (`quote` a repeated `z`, `source` built from
+    /// no `z` at all) never exercises `starts_with` at all — every candidate
+    /// shares no first byte with `quote`, so the O(1) first-byte reject
+    /// alone accounts for the whole timing, and the guard would pass
+    /// unchanged even if `starts_with` were quadratic in `quote`'s own
+    /// length. The actual worst case the doc comment above now names is
+    /// boundaries that *do* share `quote`'s own long prefix: 100
+    /// boundary-aligned 20,000-byte words of `a`, searched for a
+    /// 20,000-byte quote that is all `a` but its last byte, forces
+    /// `starts_with` to scan nearly the full quote at every one of the 100
+    /// candidates before rejecting on the final byte. No timing assertion,
+    /// for the same reason as the guard above: the point is that this still
+    /// completes promptly. Measured on this workstation (debug build, this
+    /// exact test alone, `cargo test`'s own reported time): ~0.44s.
     #[test]
-    fn locate_is_fast_over_many_boundaries_and_a_long_quote() {
-        let source = "ab ".repeat(176_000);
-        let quote = "z".repeat(264_000);
+    fn locate_is_fast_over_many_boundaries_and_a_shared_prefix_quote() {
+        let source = "a".repeat(20_000) + " ";
+        let source = source.repeat(100);
+        let quote = "a".repeat(19_999) + "b";
         assert_eq!(
             SourceSpan::locate(&source, &quote),
             None,
-            "the long quote never occurs in `source`; every boundary must be rejected quickly"
+            "the quote never occurs in `source` (it diverges on its own last byte); \
+             every shared-prefix boundary must still be rejected promptly"
         );
     }
 

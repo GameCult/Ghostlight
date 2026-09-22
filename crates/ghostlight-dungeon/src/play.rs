@@ -273,6 +273,26 @@ impl PlayTurn {
         subjects
     }
 
+    /// The `(round, slot)` of the earliest `Dispatch` call in this turn's
+    /// own record that names `subject`, if any (PA.f125): call order is
+    /// total, so exactly one call can be credited with producing a
+    /// subject's own `persona_turns` entry — the first one, in call order,
+    /// that ever named it. `execute_round` records and persists a dispatch
+    /// call's own body before `execute_dispatch` runs any persona turn, so
+    /// a crash-resumed call already appears here, under its own
+    /// `(round, slot)`, before this is ever consulted — letting
+    /// `execute_dispatch` recognize its own not-yet-finished work instead
+    /// of refusing it as `already acted` against a different call.
+    fn dispatch_owner(&self, subject: SubjectId) -> Option<(usize, usize)> {
+        self.calls
+            .iter()
+            .filter_map(|call| match &call.body {
+                Some(RecordedCall::Dispatch(list)) if list.contains(&subject) => Some((call.round, call.slot)),
+                _ => None,
+            })
+            .min()
+    }
+
     fn call_record(&self, round: usize, slot: usize) -> Option<&CallRecord> {
         self.calls
             .iter()
@@ -524,9 +544,6 @@ pub(crate) enum PlayError {
     Controller(#[from] ControllerError),
     #[error("play store error: {0}")]
     Store(#[from] anyhow::Error),
-    #[error("no live human opportunity for the player")]
-    #[allow(dead_code)] // PA.f117: no production site raises this yet; reported, not wired here.
-    NoPlayerOpportunity,
     #[error("an empty or whitespace-only answer is refused")]
     EmptyAnswer,
     /// PA.f84: `request.answers` did not name the turn's own currently open
@@ -1124,6 +1141,29 @@ impl PlayTable {
 
             if name == DISPATCH_TOOL {
                 let (subjects, refusals) = parse_dispatch(arguments, &snapshot);
+                // PA.f125: this call's own body — which subjects it intends
+                // to dispatch — is recorded and persisted before
+                // `execute_dispatch` runs any persona turn, the same "body
+                // durable before effects" order every other door already
+                // uses (PA-Q8, `persist`'s own doc comment). Without this, a
+                // crash between `execute_dispatch`'s own per-subject persist
+                // and this call's own record here left `persona_turns`
+                // durable with no call record naming it; a resume then
+                // mistook the already-durable Persona turn for a *different*
+                // call's completed dispatch ("already acted"), and the
+                // Persona's own prose never reached the agent (PA.f64).
+                if turn.call_record(round, this_slot).and_then(|call| call.body.clone()).is_none() {
+                    record_call(
+                        turn,
+                        call_id,
+                        round,
+                        this_slot,
+                        Some(RecordedCall::Dispatch(subjects.clone())),
+                        None,
+                    );
+                    self.persist(turn).await?;
+                }
+                self.fire_before_submit_hook().await;
                 let (outcome, dispatch_summary) =
                     self.execute_dispatch(turn, round, this_slot, &subjects).await?;
                 // PA.f98, PA.f114: bad input — an unknown id, a non-string
@@ -1446,13 +1486,47 @@ impl PlayTable {
         call_slot: usize,
         subjects: &[SubjectId],
     ) -> Result<(RoundOutcome, String), PlayError> {
+        // PA.f125: snapshotted before this call's own subjects run, so a
+        // subject *this* call adds to `persona_turns` later in this same
+        // loop (the same subject named twice in one `dispatch` call,
+        // PA.f124) is never mistaken for a subject this call is *resuming*
+        // after a crash — only a subject already durable *before* this
+        // invocation began can be that.
+        let already_durable: Vec<SubjectId> = turn.persona_turns.iter().map(|(id, _)| *id).collect();
         let mut summary = Vec::new();
         for subject in subjects {
-            if turn.persona_turns.iter().any(|(id, _)| id == subject) {
-                // PA.f124: printed through the library's own `id_text`, the
-                // same printer `table_view` and `dispatch`'s own matching
-                // use — not a fifth hand-spelled debug-paren strip.
-                summary.push(format!("{} already acted", id_text(*subject)));
+            if let Some(prose) = turn
+                .persona_turns
+                .iter()
+                .find(|(id, _)| id == subject)
+                .map(|(_, persona_turn)| persona_turn.source_prose().to_owned())
+            {
+                let resuming_this_call =
+                    already_durable.contains(subject) && turn.dispatch_owner(*subject) == Some((round, call_slot));
+                if resuming_this_call {
+                    // PA.f125: this call's own body is already durable
+                    // before any persona turn ran (`execute_round` records
+                    // and persists it before this door is entered), so a
+                    // crash between one subject's own persist and this
+                    // call's own final result finds its own prose here on
+                    // resume, rather than refusing it as "already acted"
+                    // against a call that never actually completed.
+                    let snapshot = match self.play.snapshot().await {
+                        Ok(snapshot) => snapshot,
+                        Err(error) => {
+                            self.close_with_fault(turn, error.to_string()).await?;
+                            return Ok((RoundOutcome::Closed, summary.join("; ")));
+                        }
+                    };
+                    let label = subject_label(&snapshot, *subject);
+                    summary.push(format!("{label}: {prose}"));
+                } else {
+                    // PA.f124: printed through the library's own `id_text`,
+                    // the same printer `table_view` and `dispatch`'s own
+                    // matching use — not a fifth hand-spelled debug-paren
+                    // strip.
+                    summary.push(format!("{} already acted", id_text(*subject)));
+                }
                 continue;
             }
             let snapshot = match self.play.snapshot().await {
@@ -1609,19 +1683,15 @@ fn subject_label(snapshot: &WorldSnapshot, subject: SubjectId) -> String {
 /// reach 86 chars against a common 64-char function-name limit; 8 hex
 /// digits plus the `__` separator keeps every name well under that limit
 /// (`the_longest_possible_actor_tool_name_is_64_chars_or_fewer`) while still
-/// reading as the same bracketed id prefix `table_view` prints (the same
-/// debug-paren strip `table.rs`'s own `id_text` uses, before truncating).
+/// reading as the same bracketed id prefix `table_view` prints. The id text
+/// itself comes from the library's own `id_text` (PA.f113/PA.f129) — no
+/// second, hand-written debug-paren strip here.
 /// Collision between two subjects sharing a handle is astronomically
 /// unlikely but not impossible; `round_tools` refuses the whole round as a
 /// turn fault rather than silently addressing the wrong subject
 /// (`find_handle_collision`).
 fn handle_for(id: SubjectId) -> String {
-    let text = format!("{id:?}");
-    let inner = match (text.find('('), text.rfind(')')) {
-        (Some(open), Some(close)) if open < close => &text[open + 1..close],
-        _ => text.as_str(),
-    };
-    inner.chars().filter(char::is_ascii_hexdigit).take(8).collect()
+    id_text(id).chars().filter(char::is_ascii_hexdigit).take(8).collect()
 }
 
 /// Appends one actor tool's own acting subject's label and full canonical id
@@ -2179,7 +2249,6 @@ mod tests {
         /// already queued or sent afterward resolves `MailboxError::Unavailable`
         /// rather than hanging or silently succeeding. Unused by a test that
         /// never aborts it, which is most of them.
-        #[allow(dead_code)]
         owner: JoinHandle<()>,
     }
 
@@ -5531,73 +5600,189 @@ mod tests {
             .unwrap();
     }
 
-    /// PA.f123: `execute_dispatch` used to be the only call kind that did
-    /// not persist its own recorded body at its own site — every other tool
-    /// call's own door (the two tests just above, plus
-    /// `the_authoring_patch_is_persisted_before_it_is_submitted`) persists
-    /// before submitting; a dispatch call's own `continue` reached none of
-    /// that until the *round's* own later persist. `before_submit_hook`,
-    /// which `execute_dispatch` now also fires right after each dispatched
-    /// subject's own turn is persisted, hands this test the durable turn
-    /// read straight off disk — not the in-memory copy `execute_dispatch`
-    /// already mutated regardless of whether it persisted — so seeing the
-    /// dispatched Persona's own turn already there proves the persist
-    /// itself happened, not merely that the field was set in memory.
-    /// Mutation: deleting `execute_dispatch`'s own
-    /// `self.persist(turn).await?` call (keeping the hook fire) fails this,
-    /// because the hook then reads the stale pre-dispatch turn off disk.
+    /// PA.f125. `execute_dispatch` persisted the dispatched Persona's own
+    /// `persona_turns` entry (its own `self.persist` right after each
+    /// subject completes, PA.f123) *before* the `Dispatch` call's own body
+    /// was ever recorded — `execute_round`'s `record_call` for the dispatch
+    /// call itself used to run only after `execute_dispatch` returned. A
+    /// crash in that window left `persona_turns` durable with no call
+    /// record naming it at all; on resume, the unfixed code read the
+    /// already-durable `persona_turns` entry as evidence some *other* call
+    /// already dispatched the subject, so the resumed dispatch call's own
+    /// tool result became `<id> already acted` instead of the Persona's own
+    /// prose — PA.f64's whole point defeated on exactly the path a crash
+    /// makes likely.
+    ///
+    /// The fix: `execute_round` now records and persists the dispatch
+    /// call's own body before `execute_dispatch` runs any persona turn, and
+    /// `execute_dispatch` tells its own not-yet-finished work apart from a
+    /// different call's completed dispatch through `PlayTurn::dispatch_owner`
+    /// (first call, in call order, to name a subject).
+    ///
+    /// First pass, live: `before_submit_hook` reads the store fresh off
+    /// disk right before the dispatched Persona's own turn is submitted
+    /// (subsuming PA.f123's own coverage), and the dispatch call's own body
+    /// must already be there. Mutation: reordering the record after the
+    /// persist, or deleting either, leaves the hook reading a turn whose
+    /// `calls` are still empty.
+    ///
+    /// Second pass, resumed: a hand-built crashed turn — no call record at
+    /// all for the dispatch call, but `persona_turns` already carrying the
+    /// Persona's own turn, exactly what the pre-fix crash window left on
+    /// disk (Soul's probe shape: built as the persist writes it, not
+    /// re-derived from anything `dispatch_owner`/`dispatched_subjects`
+    /// itself computes) — resumes into a tool result that still carries the
+    /// Persona's own prose, never "already acted", and the Personas port
+    /// sees no fresh inference request (the Persona is not re-inferred).
+    /// All three mutations above fail this half too: without the record,
+    /// `dispatch_owner` finds no call at all naming the subject and the
+    /// resumed call falls back to "already acted".
     #[tokio::test]
-    async fn the_dispatched_personas_own_turn_is_persisted_before_the_next_call_submits() {
+    async fn a_resumed_dispatch_call_recovers_its_own_persona_prose_not_already_acted() {
         const PROSE: &str = "Mara nods once.";
-        let fixture = play_world(Some("Mara"), "player-f123-dispatch-persist").await;
+
+        // First pass: live, hook-verified durability ordering.
+        {
+            let fixture = play_world(Some("Mara"), "player-f125-first-pass").await;
+            let snapshot = fixture.world.snapshot().await.unwrap();
+            let mara = persona_id(&snapshot);
+            let mara_text = subject_id_text(&snapshot, mara);
+            let round = output(
+                "r0",
+                vec![
+                    call_event("c0", DISPATCH_TOOL, serde_json::json!({"subjects": [mara_text]})),
+                    call_event("c1", END_TURN_TOOL, serde_json::json!({})),
+                ],
+            );
+            let personas = PersonaLane::new(
+                ControllerPort::new(fixture.world.clone()),
+                ScriptedPort::new(vec![
+                    output("proj-mara", vec![text_event("Mara considers.")]),
+                    output("persona-mara", vec![text_event(PROSE)]),
+                ]),
+                "gpt-5.6-sol".into(),
+                "gpt-5.6-sol".into(),
+            )
+            .unwrap();
+            let directory = tempfile::tempdir().unwrap();
+            let table = PlayTable::new(
+                fixture.world.clone(),
+                personas,
+                ScriptedPort::new(vec![round]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(2)),
+                directory.path().join("play-turn-v1.cc"),
+            )
+            .unwrap();
+            table.set_before_submit_hook(move |durable_turn| {
+                let turn = durable_turn.expect("a turn is durably on disk at submission time");
+                let recorded = turn
+                    .calls
+                    .iter()
+                    .find(|call| call.round == 0 && call.slot == 0)
+                    .and_then(|call| call.body.clone());
+                assert!(
+                    matches!(recorded, Some(RecordedCall::Dispatch(_))),
+                    "the dispatch call's own body must already be on disk before its Persona turn submits: {recorded:?}"
+                );
+            });
+            table
+                .run(&fixture.principal, test_turn_id(920), "Who's there?".into())
+                .await
+                .unwrap();
+        }
+
+        // Second pass: resumed from the exact crash window PA.f125 closes.
+        let fixture = play_world(Some("Mara"), "player-f125-resume").await;
         let snapshot = fixture.world.snapshot().await.unwrap();
         let mara = persona_id(&snapshot);
-        let mara_handle = handle_for(mara);
         let mara_text = subject_id_text(&snapshot, mara);
         let round = output(
             "r0",
             vec![
                 call_event("c0", DISPATCH_TOOL, serde_json::json!({"subjects": [mara_text]})),
-                call_event(
-                    "c1",
-                    &format!("{mara_handle}{HANDLE_SEPARATOR}speak"),
-                    serde_json::json!({"text": PROSE}),
-                ),
-                call_event("c2", END_TURN_TOOL, serde_json::json!({})),
+                call_event("c1", END_TURN_TOOL, serde_json::json!({})),
             ],
         );
+        let turn_id = test_turn_id(921);
+        let crashed_turn = PlayTurn {
+            turn_id: turn_id.clone(),
+            applied_keys: Vec::new(),
+            opening_prompt: format!(
+                "{}\n\nThe player writes:\n{}\n",
+                table_view(&snapshot),
+                "Who's there?"
+            ),
+            player_prose: vec!["Who's there?".into()],
+            rounds: vec![round],
+            // No call record at all for the dispatch call: exactly what a
+            // crash between `execute_dispatch`'s own per-subject persist
+            // and `execute_round`'s own (pre-fix) later `record_call` left
+            // on disk.
+            calls: Vec::new(),
+            persona_turns: vec![(mara, fake_persona_turn(PROSE))],
+            question: None,
+            refusal: None,
+            narration: None,
+            fault: None,
+            state: PlayTurnState::Running,
+        };
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        {
+            let mut store = PlayTurnStore::open(&store_path).unwrap();
+            store.open_new_turn(crashed_turn).unwrap();
+        }
+        let personas_port = ScriptedPort::new(vec![]);
         let personas = PersonaLane::new(
             ControllerPort::new(fixture.world.clone()),
-            ScriptedPort::new(vec![
-                output("proj-mara", vec![text_event("Mara considers.")]),
-                output("persona-mara", vec![text_event(PROSE)]),
-            ]),
+            personas_port.clone(),
             "gpt-5.6-sol".into(),
             "gpt-5.6-sol".into(),
         )
         .unwrap();
-        let directory = tempfile::tempdir().unwrap();
         let table = PlayTable::new(
             fixture.world.clone(),
             personas,
-            ScriptedPort::new(vec![round]),
+            ScriptedPort::new(vec![]),
             "gpt-5.6-terra".into(),
             Arc::new(Semaphore::new(2)),
-            directory.path().join("play-turn-v1.cc"),
+            &store_path,
         )
         .unwrap();
-        table.set_before_submit_hook(move |durable_turn| {
-            let turn = durable_turn.expect("a turn is durably on disk at submission time");
-            assert!(
-                turn.persona_turns.iter().any(|(id, _)| *id == mara),
-                "the dispatched Persona's own turn must already be on disk before the next call submits: {:?}",
-                turn.persona_turns
-            );
-        });
         table
-            .run(&fixture.principal, test_turn_id(920), "Who's there?".into())
+            .run(&fixture.principal, turn_id, String::new().into())
             .await
             .unwrap();
+
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        let dispatch_result = turn
+            .calls
+            .iter()
+            .find(|call| call.round == 0 && call.slot == 0)
+            .and_then(|call| call.result.clone())
+            .unwrap();
+        let mara_turns = turn.persona_turns.iter().filter(|(id, _)| *id == mara).count();
+        drop(stored);
+        assert!(
+            dispatch_result.contains(PROSE),
+            "the resumed dispatch call must still carry the Persona's own prose: {dispatch_result}"
+        );
+        assert!(
+            !dispatch_result.contains("already acted"),
+            "the resumed dispatch call must not be refused as already acted: {dispatch_result}"
+        );
+        // Not the shared `personas_port`'s own `seen_requests` (round 0's
+        // `end_turn` still legitimately narrates through the same lane for
+        // the player, on the same port): the direct signal that the Persona
+        // herself was not re-inferred is that her own `persona_turns` entry
+        // is still exactly the one this test seeded, not a second one a
+        // fresh `personas.turn()` call would have pushed.
+        assert_eq!(
+            mara_turns, 1,
+            "resuming a completed dispatch must not re-infer the Persona into a duplicate persona_turns entry"
+        );
     }
 
     /// PA.f62/PA.f63: an answer under a fresh request key resumes the
@@ -5961,17 +6146,19 @@ mod tests {
         );
     }
 
-    /// PA.f83, PA.f116: K1, K2 and K3 each open and close their own turn in
-    /// order; opening K3 archives *both* K1 and K2 into the store's own
-    /// `KeyLedger`, so a retry of K2 — the archived entry in the *middle*,
-    /// not the ledger's front (oldest) entry — must still name K2's own
-    /// `turn_id`. With only two closed turns the retried key's own entry
-    /// happened to sit at the ledger's front regardless of whether
-    /// `turn_id_for` actually searched or just returned the front entry, so
-    /// that shape passed without exercising the search at all; a third
-    /// closed turn is needed to tell the two apart. Mutation:
-    /// `KeyLedger::turn_id_for` returning `self.closed.front()`'s id on any
-    /// match must fail this.
+    /// PA.f83, PA.f116, PA.f128: K1, K2, K3 and K4 each open and close their
+    /// own turn in order; opening K4 archives K1, K2 and K3 into the
+    /// store's own `KeyLedger` (one more entry per turn that closes and is
+    /// then displaced), so a retry of K2 — the archived entry in the
+    /// ledger's own *middle*, at neither end — must still name K2's own
+    /// `turn_id`. With only K1 and K2 closed (PA.f116's own shape), the
+    /// retried key's entry happened to sit at the ledger's back regardless
+    /// of whether `turn_id_for` actually searched or just returned the back
+    /// entry, so that shape passed without exercising the search at all
+    /// (PA.f128); a fourth closed turn is needed to put K2 at neither end.
+    /// Mutations: `KeyLedger::turn_id_for` returning `self.closed.front()`'s
+    /// id on any match, or `self.closed.iter().find(...)?; self.closed.back()`'s
+    /// id on any match, must both fail this.
     #[tokio::test]
     async fn a_retried_key_from_a_turn_before_the_most_recent_is_a_no_op() {
         let fixture = play_world(None, "player-ledger-retry").await;
@@ -6016,6 +6203,9 @@ mod tests {
         let k3 = test_turn_id(612);
         let turn3_id = run_and_close(&fixture, &store_path, "proj-k3", k3, "K3.").await;
         assert_ne!(turn2_id, turn3_id);
+        let k4 = test_turn_id(613);
+        let turn4_id = run_and_close(&fixture, &store_path, "proj-k4", k4, "K4.").await;
+        assert_ne!(turn3_id, turn4_id);
 
         // A retry of K2: an empty scripted port means any inference attempt
         // fails loudly, so this stays a genuine "zero inference calls" check.
@@ -6038,14 +6228,14 @@ mod tests {
         );
         let stored = table.store.lock().await;
         let turn = stored.current().unwrap();
-        assert_eq!(turn.turn_id, turn3_id, "the retry must not open a fourth turn");
+        assert_eq!(turn.turn_id, turn4_id, "the retry must not open a fifth turn");
         // PA.f109: the replay's own outcome names the turn it replayed —
-        // K2's own turn, neither K1's (the ledger's front entry) nor K3's
-        // (the store's current one).
+        // K2's own turn, neither K1's (the ledger's front entry), K3's, nor
+        // K4's (the store's current one).
         assert_eq!(
             outcome,
             RunOutcome::Replayed { turn_id: turn2_id },
-            "a replayed key's own outcome must name the turn it originally opened, not the ledger's front entry"
+            "a replayed key's own outcome must name the turn it originally opened, not the ledger's front or back entry"
         );
     }
 
