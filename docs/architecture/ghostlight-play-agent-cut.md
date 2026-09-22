@@ -2441,6 +2441,24 @@ Interpreter, the elaborator sweep and lenses.
       and that `turn.refusal` holds the agent-facing text is already queued:
       8a-fix switches to `decode_authoring_calls`, and 8b shows the player
       only `describe_refusal_to_actor`.
+- **Library fix batch 7d landed (Hands, Sonnet, 2026-09-22):** `4fea8fd`
+  (PA.f78), `9b91940` (PA.f77, PA.f79, PA.f81) and `3c2bdf3` (PA.f82).
+  - PA.f78: `SourceSpan::locate` accepts a span only on UAX #29 word
+    boundaries, via `unicode-segmentation` 1.x. That adds one lockfile
+    entry with no transitive dependencies. The hand-written helpers are
+    deleted.
+    - Refused: "I can" in "I can't" (either apostrophe), "cafe" in a
+      decomposed "café", "run" in "run_fast", and "Stop." in "Stop.Now"
+      (the crate's own result).
+    - Accepted: "我不" in "我不能去", " cannot", and "re" in "re-enter".
+  - PA.f77: the flaky test uses `subject_row`. Eight sequential runs of the
+    table suite passed 41 of 41 each time.
+  - PA.f79 and PA.f81: exact-kind, third-declaration and exact-output
+    assertions. Each named mutation is killed.
+  - PA.f82: the resolver calls the kernel's `is_retired`. Forcing it false
+    fails 14 tests on both sides. There is now one computation of the
+    exercise revision.
+  - Lib 618 → 620. persona-projection 18 → 26. Dungeon bin 63.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
