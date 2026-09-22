@@ -2917,6 +2917,32 @@ Interpreter, the elaborator sweep and lenses.
   - PA.f132: the guard test now uses a shared-prefix quote, which reaches
     `starts_with`, at about 0.44 s.
   - Dungeon bin 122, persona-projection 35. Net +291/-98.
+- **Cut 8b landed (Hands, Sonnet, 2026-09-22):** `1b20a0f` (`play.rs`:
+  the `round_snapshot()` owner, the actor-form refusal line, concurrent
+  dispatch, `run_lock`) and `a99fdfe` (`runtime.rs`, `eve.rs`: `AppState`,
+  `GHOSTLIGHT_PLAY_MODEL`, `world.play` routing,
+  `ghostlight.world_play.v0`).
+  - PA.f127 and PA.f133 are closed: one `round_snapshot()` runs the
+    collision check once, reached behaviourally through a
+    `#[cfg(test)] force_round_snapshot` seam, and the source-presence test
+    is deleted.
+  - `turn.refusal` is `describe_refusal_to_actor` against the real
+    affordance snapshot. Its test asserts no id or label leaks
+    (invariant 8).
+  - Dispatch runs concurrently under `controller_permits`, and
+    `close_turn`'s narration draws a permit too.
+  - Hands added `claimed_this_call` dedup, because concurrency broke the
+    old `persona_turns`-only check.
+  - PA.f13: the permit barrier stays, and now guards a boundary that can
+    really be busy. Readiness's `"active"` arm is reachable again.
+  - Two discrepancies, both **accepted (Self, under the standing go)**:
+    - The per-world lock lives in `PlayTable` (`run_lock`), not in
+      `AppState`. This daemon runs one world per process, and a second
+      lock over the same decision would be a second owner.
+    - `STORE_KEY` stays `"primary"`, because each `PlayTable` owns its own
+      store file under that world's service root, so the row is already
+      per world. PA.f68's intent holds; Soul checks the path.
+  - Dungeon bin 122 → 128. `PlayPort::new` still has one production site.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
