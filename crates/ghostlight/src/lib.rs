@@ -83,7 +83,7 @@ pub use controllers::{
     ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError, ControllerWorkWrite,
     GroupedCheckpoint, InferenceEvent, InferenceFault, InferenceOutput, InferencePort,
     InferencePurpose, InferenceRequest, NarrativeCheckpoint, NarrativeRun, OperationalCheckpoint,
-    OperationalRun, PreparedInference, SubmissionDisposition, ToolResultOracle,
+    OperationalRun, PersonaLane, PreparedInference, SubmissionDisposition, ToolResultOracle,
     TracingInferencePort, open_controller_work, open_inference,
 };
 pub(crate) use cover::{CellId, Constituent, Resolution};
@@ -1031,6 +1031,11 @@ pub struct SubjectSnapshot {
     /// The seed brief needs to say which subjects count; recomputing the
     /// conjunction outside the kernel would be a second definition of alive.
     pub qualified: bool,
+    /// The greatest `DecisionEvent.revision` whose scope is this subject, or
+    /// `None` if the subject never acted. Derived from `state.events` alone:
+    /// no new state, no schema change. The recency marker `projector_knowledge`
+    /// stamps onto each knowledge row is `minted_at > last_acted_at`.
+    pub(crate) last_acted_at: Option<u64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -3738,6 +3743,20 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 .map(move |fact| (fact, event.revision))
         })
         .collect();
+    // One pass over the causal record so each subject can be stamped with the
+    // revision of its own last exercised decision. `None` for a subject that
+    // never acted.
+    let last_acted_at: BTreeMap<SubjectId, u64> =
+        state
+            .events
+            .iter()
+            .fold(BTreeMap::new(), |mut acc, event| {
+                let entry = acc.entry(event.scope.subject_id).or_insert(event.revision);
+                if event.revision > *entry {
+                    *entry = event.revision;
+                }
+                acc
+            });
     let subjects = state
         .subjects
         .iter()
@@ -3863,6 +3882,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                     })
                     .collect(),
                 qualified: qualifies(state, *subject_id),
+                last_acted_at: last_acted_at.get(subject_id).copied(),
             })
         })
         .collect::<Result<Vec<_>, KernelError>>()?;

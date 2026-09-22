@@ -2869,33 +2869,23 @@ impl ControllerRunner {
             ControllerWorkLookup::Missing => {}
         }
         let selected = self.select(opportunity).await?;
-        let identity = selected.persona_identity();
-        let typed_view = selected.typed_view()?;
-        let projector_context = selected.projector_context()?;
-        let visible_stimulus = selected.visible_stimulus()?;
-        let guidance = selected.snapshot.brief.clone();
-        let projector_prompt = build_projector_prompt(&ProjectorPrompt {
-            identity: &identity,
-            typed_context: &projector_context,
-            visible_stimulus: &visible_stimulus,
-            domain_guidance: &guidance,
-            word_budget: PERSONA_WORD_BUDGET,
-        });
+        let build = build_projector_invocation(
+            |request| self.prepare(request),
+            command_id,
+            &self.models.projector,
+            &selected,
+        )?;
         let checkpoint = NarrativeCheckpoint::Projector {
             command_id,
-            identity,
-            typed_view,
-            guidance,
+            identity: build.identity,
+            typed_view: build.typed_view,
+            guidance: build.guidance,
             components: selected.subject.components.clone(),
             persona_model: self.models.persona.clone(),
             interpreter_model: self.models.interpreter.clone(),
             opportunity: selected.opportunity,
             granted: selected.granted.clone(),
-            invocation: self.prepare(projector_request(
-                command_id,
-                &self.models.projector,
-                projector_prompt,
-            )?)?,
+            invocation: build.invocation,
         };
         if self
             .persist(ControllerWork::Narrative(checkpoint.clone()))
@@ -3619,12 +3609,14 @@ impl ControllerRunner {
                 None => return Err(error),
             },
         };
-        let persona_prompt = build_persona_prompt(&PersonaPrompt {
-            identity: &identity,
-            lived_stream: &lived_stream,
-            domain_guidance: &guidance,
-            word_budget: PERSONA_WORD_BUDGET,
-        });
+        let persona_invocation = build_persona_invocation(
+            |request| self.prepare(request),
+            command_id,
+            &persona_model,
+            &identity,
+            &lived_stream,
+            &guidance,
+        )?;
         let next = NarrativeCheckpoint::Persona {
             command_id,
             identity,
@@ -3635,11 +3627,7 @@ impl ControllerRunner {
             opportunity,
             granted,
             projector_output,
-            invocation: self.prepare(persona_request(
-                command_id,
-                &persona_model,
-                persona_prompt,
-            )?)?,
+            invocation: persona_invocation,
         };
         match self
             .persist(ControllerWork::Narrative(next.clone()))
@@ -4177,6 +4165,144 @@ impl ControllerRunner {
     }
 }
 
+/// The unpersisted Persona lane (PA-Q3 A): Projector then Persona for one
+/// decision opportunity, or Projector alone to narrate the player's own view.
+/// It holds no `ControllerWorkStore` and writes no work row — a restart
+/// mid-turn repeats the two inferences, and the returned, receipt-bound
+/// `PersonaTurn` is persisted by its caller (Dungeon's own turn record, Cut
+/// 8), not by this type. One owner for turn state.
+pub struct PersonaLane {
+    mailbox: ControllerPort,
+    inference: Arc<dyn InferencePort>,
+    projector_model: String,
+    persona_model: String,
+}
+
+impl PersonaLane {
+    pub fn new(
+        mailbox: ControllerPort,
+        inference: Arc<dyn InferencePort>,
+        projector_model: String,
+        persona_model: String,
+    ) -> Result<Self, ControllerOpenError> {
+        if !canonical_model(&projector_model) || !canonical_model(&persona_model) {
+            return Err(ControllerOpenError::InvalidModels);
+        }
+        Ok(Self {
+            mailbox,
+            inference,
+            projector_model,
+            persona_model,
+        })
+    }
+
+    fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, ControllerError> {
+        let purpose = request.purpose;
+        self.inference
+            .prepare(request)
+            .map_err(|source| ControllerError::Inference { purpose, source })
+    }
+
+    async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, ControllerError> {
+        let purpose = request.purpose;
+        self.inference
+            .infer(request)
+            .await
+            .map_err(|source| ControllerError::Inference { purpose, source })
+    }
+
+    async fn select(
+        &self,
+        exact_opportunity: &DecisionOpportunity,
+    ) -> Result<SelectedDecision, ControllerError> {
+        let snapshot = self
+            .mailbox
+            .snapshot()
+            .await
+            .map_err(ControllerError::Snapshot)?;
+        select_one(&snapshot, exact_opportunity)
+    }
+
+    /// Projector then Persona over one selected subject. The Persona's input
+    /// is exactly the Projector's own prose (invariant 2, P6.1): both requests
+    /// are built by the same free functions `run_narrative` builds them with,
+    /// so this lane cannot hand either prompt anything but the subject's own
+    /// rendered slice. A retired subject holds no live opportunity (its
+    /// controller mode is `None`, Cut 4), so `select` already refuses it with
+    /// `NoOpportunity` before any inference runs.
+    pub async fn turn(
+        &self,
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+    ) -> Result<PersonaTurn, ControllerError> {
+        if opportunity.controller_mode != ControllerMode::NarrativePersona {
+            return Err(ControllerError::NoOpportunity {
+                expected: ControllerMode::NarrativePersona,
+            });
+        }
+        let selected = self.select(opportunity).await?;
+        let projector = build_projector_invocation(
+            |request| self.prepare(request),
+            command_id,
+            &self.projector_model,
+            &selected,
+        )?;
+        let projector_output = self.infer(projector.invocation).await?;
+        let (lived_stream, projector_receipt) =
+            projector_output.prose_only(InferencePurpose::Projector)?;
+        let persona_invocation = build_persona_invocation(
+            |request| self.prepare(request),
+            command_id,
+            &self.persona_model,
+            &projector.identity,
+            &lived_stream,
+            &projector.guidance,
+        )?;
+        let persona_output = self.infer(persona_invocation).await?;
+        let (persona_prose, persona_receipt) =
+            persona_output.prose_only(InferencePurpose::Persona)?;
+        Ok(PersonaTurn::record(
+            PersonaTurnBinding {
+                world_id: encoded_id(&opportunity.world_id)?,
+                controller_id: encoded_id(&opportunity.controller_id)?,
+                opportunity_digest: opportunity.digest()?,
+                world_revision: opportunity.revision,
+                scope_digest: opportunity.scope_digest.as_str().to_owned(),
+                projector_receipt_digest: projector_receipt,
+                persona_inference_receipt_digest: persona_receipt,
+                interrupted_from: None,
+            },
+            persona_prose,
+        ))
+    }
+
+    /// The player's own view: the same Projector `turn` runs, over the
+    /// player's own selected slice, with no Persona stage after it (Q11,
+    /// P6.3).
+    pub async fn narrate(
+        &self,
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+    ) -> Result<String, ControllerError> {
+        if opportunity.controller_mode != ControllerMode::Human {
+            return Err(ControllerError::NoOpportunity {
+                expected: ControllerMode::Human,
+            });
+        }
+        let selected = self.select(opportunity).await?;
+        let projector = build_projector_invocation(
+            |request| self.prepare(request),
+            command_id,
+            &self.projector_model,
+            &selected,
+        )?;
+        let projector_output = self.infer(projector.invocation).await?;
+        let (lived_stream, _projector_receipt) =
+            projector_output.prose_only(InferencePurpose::Projector)?;
+        Ok(lived_stream)
+    }
+}
+
 #[derive(Clone)]
 struct SelectedDecision {
     snapshot: WorldSnapshot,
@@ -4677,11 +4803,17 @@ impl SelectedDecision {
                     Perceived::Seen { by } => ("seen_doing", Value::String(by)),
                     Perceived::Known => ("known", Value::Null),
                 };
+                // The recency marker: strictly after the subject's own last
+                // exercised decision, so a subject that never acted
+                // (`last_acted_at` is `None`) sees every minted row as new,
+                // and the subject's own acting revision is not itself new.
+                let new = entry.minted_at > self.subject.last_acted_at;
                 json!({
                     "how": how,
                     "by": by,
                     "certainty": entry.confidence,
                     "text": entry.statement.as_str(),
+                    "new": new,
                 })
             })
             .collect()
@@ -5985,6 +6117,75 @@ struct RecordNeedCall {
 #[serde(deny_unknown_fields)]
 struct EmptyToolCall {}
 
+/// What the shared Projector-request builder produces. `identity`, `typed_view`
+/// and `guidance` are carried out alongside the prepared invocation because
+/// both callers need them again: the narrative lane folds them into its
+/// persisted checkpoint, and `PersonaLane::turn` carries `identity` and
+/// `guidance` into the Persona request it builds next.
+struct ProjectorInvocation {
+    identity: String,
+    typed_view: String,
+    guidance: String,
+    invocation: PreparedInference,
+}
+
+/// The one builder of a Projector request. Its input is exactly the selected
+/// subject's own slice — typed context and visible stimulus, both derived from
+/// `selected` alone — so no caller can pass arbitrary text into the Projector
+/// prompt (Cut 6, P6.1, invariant 2). `run_narrative` and `PersonaLane::turn`
+/// and `PersonaLane::narrate` all build the Projector request through this
+/// function, so the prompt has one seam.
+fn build_projector_invocation(
+    prepare: impl Fn(InferenceRequest) -> Result<PreparedInference, ControllerError>,
+    command_id: CommandId,
+    model: &str,
+    selected: &SelectedDecision,
+) -> Result<ProjectorInvocation, ControllerError> {
+    let identity = selected.persona_identity();
+    let typed_view = selected.typed_view()?;
+    let projector_context = selected.projector_context()?;
+    let visible_stimulus = selected.visible_stimulus()?;
+    let guidance = selected.snapshot.brief.clone();
+    let projector_prompt = build_projector_prompt(&ProjectorPrompt {
+        identity: &identity,
+        typed_context: &projector_context,
+        visible_stimulus: &visible_stimulus,
+        domain_guidance: &guidance,
+        word_budget: PERSONA_WORD_BUDGET,
+    });
+    let invocation = prepare(projector_request(command_id, model, projector_prompt)?)?;
+    Ok(ProjectorInvocation {
+        identity,
+        typed_view,
+        guidance,
+        invocation,
+    })
+}
+
+/// The one builder of a Persona request. Its only input is the Projector's own
+/// prose (`lived_stream`) plus the identity and guidance already carried out of
+/// `build_projector_invocation`: no structured state, no subject id, no scope
+/// digest, no revision, no typed-view key ever reaches this function, so none
+/// can reach the prompt it builds (Cut 6, P6.1, invariant 2). `run_projector`
+/// and `PersonaLane::turn` both build the Persona request through this
+/// function.
+fn build_persona_invocation(
+    prepare: impl Fn(InferenceRequest) -> Result<PreparedInference, ControllerError>,
+    command_id: CommandId,
+    model: &str,
+    identity: &str,
+    lived_stream: &str,
+    guidance: &str,
+) -> Result<PreparedInference, ControllerError> {
+    let persona_prompt = build_persona_prompt(&PersonaPrompt {
+        identity,
+        lived_stream,
+        domain_guidance: guidance,
+        word_budget: PERSONA_WORD_BUDGET,
+    });
+    prepare(persona_request(command_id, model, persona_prompt)?)
+}
+
 fn projector_request(
     command_id: CommandId,
     model: &str,
@@ -6485,6 +6686,7 @@ mod tests {
     }
     use super::*;
     use crate::elaboration::{ElaboratorSession, EvidenceError, EvidenceQuery, EvidenceReceipt};
+    use crate::tests::{operations, opportunity_for};
     use crate::{CausalBoundary, Lens, LensWeights};
     use crate::patch::{RECORD_GAP_PATCH_TOOL, kernel_speak_entry, kernel_speak_grant};
     use crate::{
@@ -6749,6 +6951,7 @@ mod tests {
             pressures: Vec::new(),
             qualified: false,
             material: None,
+            last_acted_at: None,
         };
         let speaker = SubjectSnapshot {
             id: speaker_id,
@@ -6776,6 +6979,7 @@ mod tests {
             pressures: Vec::new(),
             qualified: false,
             material: None,
+            last_acted_at: None,
         };
         let snapshot = WorldSnapshot {
             lens_weights: crate::tests::stock_weights(),
@@ -6938,6 +7142,779 @@ mod tests {
         assert!(!heard.contains("The Yard Bystander"));
         assert!(!heard.contains("The Placeless Stranger"));
     }
+
+    // ---- Cut 6: the Persona lane and the recency marker ------------------
+
+    /// Records every `InferenceRequest` a lane prepares, in order, and returns
+    /// one canned output per `infer` call in the same order. A leak into the
+    /// Projector or Persona prompt is then a fact about the captured bytes,
+    /// not a guess about the code that built them.
+    struct CapturingPort {
+        prepared: Mutex<Vec<InferenceRequest>>,
+        outputs: Mutex<Vec<Result<InferenceOutput, InferenceFault>>>,
+    }
+
+    #[async_trait]
+    impl InferencePort for CapturingPort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            self.prepared.lock().unwrap().push(request.clone());
+            PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
+        }
+
+        async fn infer(
+            &self,
+            _request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            self.outputs.lock().unwrap().remove(0)
+        }
+    }
+
+    /// Every `CodexInputItem::UserText` in a captured request's input,
+    /// concatenated: what actually reached the provider, independent of how
+    /// many input items carried it.
+    fn request_text(request: &InferenceRequest) -> String {
+        request
+            .provider
+            .input
+            .iter()
+            .map(|item| match item {
+                CodexInputItem::UserText { text } => text.clone(),
+                _ => String::new(),
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    /// Three colocated-by-room subjects for the Persona lane's tests: Iris and
+    /// Mara share the commons and can hear each other; Otho stands alone in
+    /// the vault, so the fact his own line mints is told to him and no one
+    /// else. Returns the mailbox, its owning task, a snapshot taken right
+    /// after Otho's and then Iris's line, Mara's id, and the two lines' text.
+    async fn persona_lane_world() -> (
+        tempfile::TempDir,
+        WorldMailbox,
+        tokio::task::JoinHandle<()>,
+        WorldSnapshot,
+        SubjectId,
+        String,
+        String,
+    ) {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        mailbox
+            .create_fixture(
+                CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Persona Lane Fixture".into(),
+                    brief: "Speak plainly.".into(),
+                    patch: WorldPatch {
+                        declarations: vec![
+                            Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("commons"),
+                                label: "The Commons".into(),
+                                kind: EntityKind::Place,
+                                container: None,
+                            }),
+                            Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("vault"),
+                                label: "The Vault".into(),
+                                kind: EntityKind::Place,
+                                container: None,
+                            }),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("iris"),
+                                label: "Iris in the tollhouse".into(),
+                                kind: SubjectKind::Person,
+                                controller: NewController::NarrativePersona,
+                                affordances: kernel_speak_grant(),
+                                position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                            }),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("mara"),
+                                label: "Mara at the rain gate".into(),
+                                kind: SubjectKind::Person,
+                                controller: NewController::NarrativePersona,
+                                affordances: kernel_speak_grant(),
+                                position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                            }),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("otho"),
+                                label: "Otho in the vault".into(),
+                                kind: SubjectKind::Person,
+                                controller: NewController::NarrativePersona,
+                                affordances: kernel_speak_grant(),
+                                position: Some(Ref::Draft(DraftHandle::new("vault"))),
+                            }),
+                        ],
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
+                    scale_intent: WorldScaleIntentRef::default(),
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: snapshot.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        fn who(snapshot: &WorldSnapshot, label: &str) -> SubjectId {
+            snapshot
+                .subjects
+                .iter()
+                .find(|subject| subject.label == label)
+                .expect("the declared subject")
+                .id
+        }
+        let iris = who(&snapshot, "Iris in the tollhouse");
+        let mara = who(&snapshot, "Mara at the rain gate");
+        let otho = who(&snapshot, "Otho in the vault");
+
+        let secret = "The vault key is hidden beneath a loose stone.".to_string();
+        let heard = "The lower hinge is flooding.".to_string();
+        let speak_id = crate::tests::affordance_named(&snapshot, "speak");
+        let port = ControllerPort::new(mailbox.clone());
+
+        // Otho speaks alone: the fact is told to Otho and to no one else.
+        let otho_opportunity = opportunity_for(&snapshot, otho);
+        port.submit_controller(
+            CommandId::new(),
+            &otho_opportunity,
+            DecisionInvocation {
+                affordance: speak_id,
+                bindings: Vec::new(),
+                proposed: Vec::new(),
+                speech: Some(Statement::new(secret.as_str()).unwrap()),
+                display: None,
+            },
+        )
+        .await
+        .unwrap();
+        snapshot = mailbox.snapshot().await.unwrap();
+
+        // Iris speaks in the commons: Iris and Mara both hear it.
+        let iris_opportunity = opportunity_for(&snapshot, iris);
+        port.submit_controller(
+            CommandId::new(),
+            &iris_opportunity,
+            DecisionInvocation {
+                affordance: speak_id,
+                bindings: Vec::new(),
+                proposed: Vec::new(),
+                speech: Some(Statement::new(heard.as_str()).unwrap()),
+                display: None,
+            },
+        )
+        .await
+        .unwrap();
+        snapshot = mailbox.snapshot().await.unwrap();
+
+        (directory, mailbox, task, snapshot, mara, secret, heard)
+    }
+
+    /// Verification (invariant 2, P6.1): the Persona's only input is the
+    /// Projector's own prose. None of the subject's ids, the scope digest, the
+    /// revision, or the typed view's own structural keys ever reach it, and
+    /// the captured text is exactly what the shared builder produces from
+    /// identity, guidance and the Projector's prose — nothing else.
+    #[tokio::test]
+    async fn a_persona_turn_carries_no_structured_state() {
+        let (_directory, mailbox, _task, snapshot, mara, _secret, _heard) =
+            persona_lane_world().await;
+        let opportunity = opportunity_for(&snapshot, mara);
+        let port = ControllerPort::new(mailbox.clone());
+        let projector_prose = "Iris says the hinge is flooding.";
+        let persona_prose = "I take that in.";
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(vec![
+                output(vec![InferenceEvent::Text(projector_prose.into())], "projector"),
+                output(vec![InferenceEvent::Text(persona_prose.into())], "persona"),
+            ]),
+        });
+        let lane = PersonaLane::new(
+            port,
+            capturing.clone(),
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+        lane.turn(CommandId::new(), &opportunity).await.unwrap();
+
+        let prepared = capturing.prepared.lock().unwrap();
+        assert_eq!(prepared.len(), 2);
+        let persona_request = &prepared[1];
+        assert_eq!(persona_request.provider.input.len(), 1);
+        let persona_text = request_text(persona_request);
+
+        let selected = select_one(&snapshot, &opportunity).unwrap();
+        let subject_id = encoded_id(&mara).unwrap();
+        let controller_id = encoded_id(&opportunity.controller_id).unwrap();
+        let revision = opportunity.revision.to_string();
+        for forbidden in [
+            subject_id.as_str(),
+            controller_id.as_str(),
+            opportunity.scope_digest.as_str(),
+            revision.as_str(),
+            "state_digest",
+            "offices_held",
+            "offices_granted",
+            "dependencies",
+            "commitments",
+            "pressures",
+            "authority",
+            "redress",
+            "channels",
+            "holdings",
+            "permission",
+        ] {
+            assert!(
+                !persona_text.contains(forbidden),
+                "Persona request leaked `{forbidden}`"
+            );
+        }
+        let expected = build_persona_prompt(&PersonaPrompt {
+            identity: &selected.persona_identity(),
+            lived_stream: projector_prose,
+            domain_guidance: &selected.snapshot.brief,
+            word_budget: PERSONA_WORD_BUDGET,
+        });
+        assert_eq!(persona_text, expected);
+    }
+
+    /// Verification: a fact another subject holds is absent from both the
+    /// Projector and the Persona request. Otho's secret never reaches Mara's
+    /// snapshot in the first place (the kernel's own perception invariant),
+    /// so this pins that neither request can carry what the subject's own
+    /// slice never held.
+    #[tokio::test]
+    async fn a_persona_turn_never_sees_a_secret_the_subject_does_not_hold() {
+        let (_directory, mailbox, _task, snapshot, mara, secret, _heard) =
+            persona_lane_world().await;
+        let opportunity = opportunity_for(&snapshot, mara);
+        let port = ControllerPort::new(mailbox.clone());
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(vec![
+                output(
+                    vec![InferenceEvent::Text("Iris says the hinge is flooding.".into())],
+                    "projector",
+                ),
+                output(vec![InferenceEvent::Text("I take that in.".into())], "persona"),
+            ]),
+        });
+        let lane = PersonaLane::new(
+            port,
+            capturing.clone(),
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+        lane.turn(CommandId::new(), &opportunity).await.unwrap();
+
+        let prepared = capturing.prepared.lock().unwrap();
+        assert_eq!(prepared.len(), 2);
+        for request in prepared.iter() {
+            assert!(
+                !request_text(request).contains(secret.as_str()),
+                "a Persona lane request carried a fact its subject does not hold"
+            );
+        }
+    }
+
+    /// Verification: act, then hear two lines — those two are `new`, and the
+    /// row heard before the act is not. The kernel's own fan-out excludes an
+    /// actor from its own telling (`fan_out`, `lib.rs`), so a real turn
+    /// carries no row at exactly the acting revision; the boundary M6.2
+    /// exists to catch — `new` computed with `>=` instead of `>` — is pinned
+    /// directly below over a `minted_at` equal to `last_acted_at`.
+    #[test]
+    fn the_marker_flags_rows_since_the_last_act() {
+        use crate::tests::{auth_principal, command, opportunity_for, owner, speech_world};
+        use crate::{
+            AuthenticatedCaller, DecisionInvocation, Role, RoleBinding, Statement, SubmitReceipt,
+            Target, WorldKernel,
+        };
+
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            crate::tests::creation(CommandId::new(), "Recency"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, mut active) = speech_world(&mut kernel);
+
+        let mut whisper = |kernel: &mut WorldKernel, from: SubjectId, to: SubjectId, text: &str| {
+            let opportunity = opportunity_for(&active, from);
+            let caller = CallerId::Controller(opportunity.controller_id);
+            let receipt = kernel
+                .submit(
+                    command(
+                        &active,
+                        CommandId::new(),
+                        caller.clone(),
+                        CommandBody::ExerciseDecision {
+                            opportunity,
+                            invocation: DecisionInvocation {
+                                affordance: speech.whisper,
+                                bindings: vec![RoleBinding {
+                                    role: Role("target".into()),
+                                    target: Target::Subject(to),
+                                }],
+                                proposed: Vec::new(),
+                                speech: Some(Statement::new(text).unwrap()),
+                                display: None,
+                            },
+                        },
+                    ),
+                    &AuthenticatedCaller::fixture(caller),
+                )
+                .expect("the whisper commits");
+            assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+            active = kernel.snapshot().unwrap();
+        };
+
+        whisper(&mut kernel, speech.speaker, speech.listener, "Old news.");
+        whisper(&mut kernel, speech.listener, speech.speaker, "I heard you.");
+        whisper(&mut kernel, speech.speaker, speech.listener, "New line one.");
+        whisper(&mut kernel, speech.speaker, speech.listener, "New line two.");
+        drop(whisper);
+
+        let subject = active
+            .subjects
+            .iter()
+            .find(|subject| subject.id == speech.listener)
+            .unwrap()
+            .clone();
+        let opportunity = opportunity_for(&active, speech.listener);
+        let granted: Vec<AffordanceSnapshot> = active
+            .affordances
+            .iter()
+            .filter(|entry| subject.affordances.contains(&entry.id))
+            .cloned()
+            .collect();
+        let selected = SelectedDecision {
+            snapshot: active.clone(),
+            subject,
+            opportunity,
+            granted,
+        };
+        let rows = selected.projector_knowledge();
+        let seen: Vec<(&str, bool)> = rows
+            .iter()
+            .map(|row| (row["text"].as_str().unwrap(), row["new"].as_bool().unwrap()))
+            .collect();
+        assert_eq!(
+            seen,
+            vec![
+                ("Old news.", false),
+                ("New line one.", true),
+                ("New line two.", true),
+            ]
+        );
+
+        // The exact boundary M6.2 exists to catch: a row minted at exactly the
+        // subject's own last-acted revision is not new under `>` (the
+        // subject's own moment, not an arrival since it), and would wrongly
+        // flag as new under `>=`.
+        let mut boundary = selected.subject.clone();
+        boundary.last_acted_at = Some(2);
+        boundary.knowledge = vec![
+            KnowledgeSnapshot {
+                fact: EntityId::issue(),
+                statement: Statement::new("Before the act.").unwrap(),
+                standing: FactStandingView::Canonical,
+                confidence: Confidence::Believed,
+                source: KnowledgeSource::Witnessed,
+                minted_at: Some(1),
+            },
+            KnowledgeSnapshot {
+                fact: EntityId::issue(),
+                statement: Statement::new("At the act.").unwrap(),
+                standing: FactStandingView::Canonical,
+                confidence: Confidence::Believed,
+                source: KnowledgeSource::Witnessed,
+                minted_at: Some(2),
+            },
+            KnowledgeSnapshot {
+                fact: EntityId::issue(),
+                statement: Statement::new("After the act.").unwrap(),
+                standing: FactStandingView::Canonical,
+                confidence: Confidence::Believed,
+                source: KnowledgeSource::Witnessed,
+                minted_at: Some(3),
+            },
+        ];
+        let boundary_selected = SelectedDecision {
+            snapshot: selected.snapshot.clone(),
+            subject: boundary,
+            opportunity: selected.opportunity.clone(),
+            granted: selected.granted.clone(),
+        };
+        let boundary_rows = boundary_selected.projector_knowledge();
+        let boundary_seen: Vec<(&str, bool)> = boundary_rows
+            .iter()
+            .map(|row| (row["text"].as_str().unwrap(), row["new"].as_bool().unwrap()))
+            .collect();
+        assert_eq!(
+            boundary_seen,
+            vec![
+                ("Before the act.", false),
+                ("At the act.", false),
+                ("After the act.", true),
+            ]
+        );
+    }
+
+    /// Verification: a subject that never acted has `last_acted_at: None`, and
+    /// every minted row it holds is `new`.
+    #[test]
+    fn a_subject_that_never_acted_sees_every_row_new() {
+        use crate::tests::{auth_principal, command, opportunity_for, owner, speech_world};
+        use crate::{
+            AuthenticatedCaller, DecisionInvocation, Role, RoleBinding, Statement, SubmitReceipt,
+            Target, WorldKernel,
+        };
+
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            crate::tests::creation(CommandId::new(), "Never Acted"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, mut active) = speech_world(&mut kernel);
+
+        for text in ["First line.", "Second line."] {
+            let opportunity = opportunity_for(&active, speech.speaker);
+            let caller = CallerId::Controller(opportunity.controller_id);
+            let receipt = kernel
+                .submit(
+                    command(
+                        &active,
+                        CommandId::new(),
+                        caller.clone(),
+                        CommandBody::ExerciseDecision {
+                            opportunity,
+                            invocation: DecisionInvocation {
+                                affordance: speech.whisper,
+                                bindings: vec![RoleBinding {
+                                    role: Role("target".into()),
+                                    target: Target::Subject(speech.listener),
+                                }],
+                                proposed: Vec::new(),
+                                speech: Some(Statement::new(text).unwrap()),
+                                display: None,
+                            },
+                        },
+                    ),
+                    &AuthenticatedCaller::fixture(caller),
+                )
+                .expect("the whisper commits");
+            assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+            active = kernel.snapshot().unwrap();
+        }
+
+        let subject = active
+            .subjects
+            .iter()
+            .find(|subject| subject.id == speech.listener)
+            .unwrap()
+            .clone();
+        assert_eq!(subject.last_acted_at, None);
+        let opportunity = opportunity_for(&active, speech.listener);
+        let granted: Vec<AffordanceSnapshot> = active
+            .affordances
+            .iter()
+            .filter(|entry| subject.affordances.contains(&entry.id))
+            .cloned()
+            .collect();
+        let selected = SelectedDecision {
+            snapshot: active.clone(),
+            subject,
+            opportunity,
+            granted,
+        };
+        let rows = selected.projector_knowledge();
+        assert_eq!(rows.len(), 2);
+        for row in rows {
+            assert_eq!(row["new"], Value::Bool(true));
+        }
+    }
+
+    /// Verification: `turn` refuses any mode but `NarrativePersona`, and
+    /// `narrate` refuses any mode but `Human` — before either ever reaches the
+    /// mailbox.
+    #[tokio::test]
+    async fn narrate_refuses_a_persona_and_turn_refuses_a_human() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, _task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let port = ControllerPort::new(mailbox);
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(Vec::new()),
+        });
+        let lane = PersonaLane::new(
+            port,
+            capturing,
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+
+        let human_opportunity = fixture_opportunity(ControllerMode::Human);
+        let error = lane
+            .turn(CommandId::new(), &human_opportunity)
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            ControllerError::NoOpportunity {
+                expected: ControllerMode::NarrativePersona
+            }
+        ));
+
+        let persona_opportunity = fixture_opportunity(ControllerMode::NarrativePersona);
+        let error = lane
+            .narrate(CommandId::new(), &persona_opportunity)
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            ControllerError::NoOpportunity {
+                expected: ControllerMode::Human
+            }
+        ));
+    }
+
+    /// Cut 4's retirement leaves a retired subject with no controller mode, so
+    /// `select` refuses it before any inference runs — for `turn` under its
+    /// own opportunity, and for `narrate` even when the caller's opportunity
+    /// falsely claims `Human`, proving the refusal is `select`'s and not just
+    /// the entry gate's.
+    #[tokio::test]
+    async fn a_persona_lane_refuses_a_retired_subject() {
+        let (_directory, mailbox, _task, snapshot, mara, _secret, _heard) =
+            persona_lane_world().await;
+        let opportunity = opportunity_for(&snapshot, mara);
+        let owner = PrincipalId::new("owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        mailbox
+            .submit_fixture(
+                CommandEnvelope {
+                    id: CommandId::new(),
+                    world_id: snapshot.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(owner.clone()),
+                    body: operations(vec![crate::patch::ComponentOp::Retire {
+                        subject: Ref::Existing(mara),
+                    }]),
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+
+        let port = ControllerPort::new(mailbox.clone());
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(Vec::new()),
+        });
+        let lane = PersonaLane::new(
+            port,
+            capturing,
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+
+        let turn_error = lane.turn(CommandId::new(), &opportunity).await.unwrap_err();
+        assert!(matches!(
+            turn_error,
+            ControllerError::NoOpportunity {
+                expected: ControllerMode::NarrativePersona
+            }
+        ));
+
+        let mut as_human = opportunity.clone();
+        as_human.controller_mode = ControllerMode::Human;
+        let narrate_error = lane
+            .narrate(CommandId::new(), &as_human)
+            .await
+            .unwrap_err();
+        assert!(matches!(narrate_error, ControllerError::NoOpportunity { .. }));
+    }
+
+    /// PA-Q2's default plus Cut 6: the stimulus is exactly Cut 0's capture
+    /// (session scratchpad `play-cut0/base-stimulus.txt`: one `Told` row, one
+    /// `Seen` row, one held fact with no author) with exactly one `"new"`
+    /// field added per row. This subject never acted, so both minted rows are
+    /// new; the third row was never minted by an event at all (no
+    /// `minted_at`), so it carries no arrival time to compare and is not new.
+    #[test]
+    fn the_stimulus_equals_cut_zeros_capture_plus_the_marker() {
+        let subject_id = SubjectId::issue();
+        let speaker_id = SubjectId::issue();
+        let controller_id = ControllerId::issue();
+        let speak_affordance = AffordanceId::issue();
+        let opportunity = DecisionOpportunity {
+            world_id: WorldId::issue(),
+            revision: 9,
+            scope_digest: ScopeDigest::fixture("sha256:base-stimulus"),
+            scope: DecisionScope { subject_id },
+            controller_id,
+            controller_mode: ControllerMode::NarrativePersona,
+            affordance_ids: vec![speak_affordance],
+        };
+        let subject = SubjectSnapshot {
+            id: subject_id,
+            label: "Mara at the rain gate".into(),
+            kind: SubjectKind::Person,
+            controller_id: Some(controller_id),
+            controller_mode: Some(ControllerMode::NarrativePersona),
+            human_controller: None,
+            affordances: BTreeSet::from([speak_affordance]),
+            position: None,
+            retired: false,
+            components: fixture_components(),
+            offices_held: Vec::new(),
+            offices_granted: Vec::new(),
+            redress: Vec::new(),
+            knowledge: vec![
+                KnowledgeSnapshot {
+                    fact: EntityId::issue(),
+                    statement: Statement::new("The lower hinge is flooding.").unwrap(),
+                    standing: FactStandingView::Claimed { by: speaker_id },
+                    confidence: Confidence::Believed,
+                    source: KnowledgeSource::Told {
+                        by: speaker_id,
+                        via: None,
+                    },
+                    minted_at: Some(1),
+                },
+                KnowledgeSnapshot {
+                    fact: EntityId::issue(),
+                    statement: Statement::new("I set the ledger face down.").unwrap(),
+                    standing: FactStandingView::Claimed { by: speaker_id },
+                    confidence: Confidence::Believed,
+                    source: KnowledgeSource::Seen { by: speaker_id },
+                    minted_at: Some(2),
+                },
+                KnowledgeSnapshot {
+                    fact: EntityId::issue(),
+                    statement: Statement::new("The rain gate sticks in the cold.").unwrap(),
+                    standing: FactStandingView::Canonical,
+                    confidence: Confidence::Certain,
+                    source: KnowledgeSource::Witnessed,
+                    minted_at: None,
+                },
+            ],
+            commitments: Vec::new(),
+            pressures: Vec::new(),
+            qualified: false,
+            material: None,
+            last_acted_at: None,
+        };
+        let speaker = SubjectSnapshot {
+            id: speaker_id,
+            label: "Iris in the tollhouse".into(),
+            kind: SubjectKind::Person,
+            controller_id: Some(ControllerId::issue()),
+            controller_mode: Some(ControllerMode::OperationalAgent),
+            human_controller: None,
+            affordances: BTreeSet::new(),
+            position: None,
+            retired: false,
+            components: fixture_components(),
+            offices_held: Vec::new(),
+            offices_granted: Vec::new(),
+            redress: Vec::new(),
+            knowledge: Vec::new(),
+            commitments: Vec::new(),
+            pressures: Vec::new(),
+            qualified: false,
+            material: None,
+            last_acted_at: None,
+        };
+        let snapshot = WorldSnapshot {
+            lens_weights: crate::tests::stock_weights(),
+            world_id: opportunity.world_id,
+            revision: opportunity.revision,
+            phase: WorldPhase::Active,
+            owner: PrincipalId::new("base-stimulus-owner"),
+            title: "Base Stimulus".into(),
+            brief: String::new(),
+            draft_approvals: BTreeSet::new(),
+            required_approvers: BTreeSet::new(),
+            subjects: vec![subject.clone(), speaker],
+            affordances: vec![speak_snapshot(speak_affordance)],
+            places: Vec::new(),
+            resources: Vec::new(),
+            routes: Vec::new(),
+            opportunities: vec![opportunity.clone()],
+            state_digest: "sha256:base-stimulus-state".into(),
+            last_commit_digest: None,
+            now: crate::FictionalMinutes::default(),
+            boundaries: Vec::new(),
+            scale_deficit: Vec::new(),
+        };
+        let selected = SelectedDecision {
+            snapshot,
+            subject,
+            opportunity,
+            granted: vec![speak_snapshot(speak_affordance)],
+        };
+
+        let stimulus = selected.visible_stimulus().unwrap();
+        let expected = serde_json::to_string_pretty(&serde_json::json!([
+            {
+                "by": "Iris in the tollhouse",
+                "certainty": "believed",
+                "how": "said",
+                "new": true,
+                "text": "The lower hinge is flooding."
+            },
+            {
+                "by": "Iris in the tollhouse",
+                "certainty": "believed",
+                "how": "seen_doing",
+                "new": true,
+                "text": "I set the ledger face down."
+            },
+            {
+                "by": null,
+                "certainty": "certain",
+                "how": "known",
+                "new": false,
+                "text": "The rain gate sticks in the cold."
+            }
+        ]))
+        .unwrap();
+        assert_eq!(stimulus, expected);
+    }
+
     /// Soul falsification: the typed view carries the acting subject's own place
     /// and the routes incident to it, and no more. Another subject's position
     /// and a route that touches neither endpoint stay out of the surface.
@@ -6999,6 +7976,7 @@ mod tests {
             pressures: Vec::new(),
             qualified: false,
             material: None,
+            last_acted_at: None,
         };
         let other = SubjectSnapshot {
             id: other_id,
@@ -7022,6 +8000,7 @@ mod tests {
             pressures: Vec::new(),
             qualified: false,
             material: None,
+            last_acted_at: None,
         };
         let named_place = |id, label: &str| PlaceSnapshot {
             id,
@@ -7466,6 +8445,7 @@ mod tests {
             pressures,
             qualified: true,
             material: None,
+            last_acted_at: None,
         };
         let actor = subject(
             actor_id,
