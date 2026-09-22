@@ -1758,6 +1758,19 @@ Interpreter, the elaborator sweep and lenses.
   (`RetiresAMirror`), and a consumer's ground holds only mirrors. So its
   refusal is structural twice over, and the test documents this. Soul
   checks this batch together with the PA.f31–f35 batch.
+- **Fix batch 4 landed (Hands, Sonnet, 2026-09-22):** `fd64595` (PA.f31,
+  PA.f32) and `e18aa03` (PA.f33 to PA.f35). Lib 525 → 541.
+  - `verify_state_shape` has two production callers, `verify_append` and
+    `verify_history`, and both replay. The anachronistic clauses are deleted.
+  - `Mismatch::RetiresAnApprover` refuses a Draft retire of the human, and
+    apply re-decides it. The approval shape check runs only in Draft.
+  - `audience()`'s `Reach::Subjects` arm filters out retired subjects.
+    `CanReach` reads `audience()`, so it is fixed by the same change.
+  - `Mismatch::RetiredSubjectActed` refuses a retired `Communicate` speaker,
+    `AcquireKnowledge`, `Forget` and `InstallIncumbent`.
+  - A retired holder's holdings still transfer (tested).
+  - MuA to MuE are killed by named tests. Soul checks fix batches 3 and 4
+    together.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
