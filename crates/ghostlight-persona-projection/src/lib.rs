@@ -371,6 +371,18 @@ impl SourceSpan {
     /// offsets `unicode-segmentation` reports for `source`, or `source.len()`;
     /// a first occurrence that fails either edge is skipped in favor of a
     /// later one.
+    ///
+    /// PA.f89: `str::match_indices` only ever reports non-overlapping
+    /// matches, so a candidate whose start lies inside an earlier, rejected
+    /// candidate's own span is never even offered — `locate("Juno no no",
+    /// "no no")` used to return `None`, because the boundary-valid match at
+    /// byte 5 overlaps the boundary-invalid one `match_indices` yields first
+    /// at byte 2. The search below finds a candidate the same way, but on a
+    /// rejection resumes the scan one *char* past that candidate's own start
+    /// (never past its end), so an overlapping later candidate is still
+    /// reachable. A span made only of whitespace or punctuation is unaffected:
+    /// it is still accepted whenever its own edges land on a word boundary,
+    /// exactly as before.
     pub fn locate(source: &str, quote: &str) -> Option<Self> {
         if quote.is_empty() {
             return None;
@@ -380,17 +392,28 @@ impl SourceSpan {
             .map(|(byte, _)| byte)
             .collect();
         boundaries.insert(source.len());
-        source
-            .match_indices(quote)
-            .find(|(start_byte, matched)| {
-                boundaries.contains(start_byte)
-                    && boundaries.contains(&(start_byte + matched.len()))
-            })
-            .map(|(start_byte, matched)| Self {
-                start_byte,
-                end_byte: start_byte + matched.len(),
-                verbatim: matched.to_owned(),
-            })
+        let mut search_from = 0usize;
+        loop {
+            let haystack = source.get(search_from..)?;
+            let relative_start = haystack.find(quote)?;
+            let start_byte = search_from + relative_start;
+            let end_byte = start_byte + quote.len();
+            if boundaries.contains(&start_byte) && boundaries.contains(&end_byte) {
+                return Some(Self {
+                    start_byte,
+                    end_byte,
+                    verbatim: quote.to_owned(),
+                });
+            }
+            // Resume one char past this candidate's own start, not past its
+            // end, so a later candidate overlapping this one is still found.
+            let mut chars = source[start_byte..].char_indices();
+            chars.next();
+            search_from = match chars.next() {
+                Some((offset, _)) => start_byte + offset,
+                None => return None,
+            };
+        }
     }
 
     pub fn whole(source: &str) -> Self {
@@ -860,6 +883,48 @@ mod tests {
     #[test]
     fn a_quote_ending_before_a_period_between_letters_reports_the_crate_result() {
         assert_eq!(SourceSpan::locate("Stop.Now", "Stop."), None);
+    }
+
+    /// PA.f89: `match_indices` never reports overlapping matches, so the
+    /// boundary-valid "no no" starting at byte 5 was unreachable once the
+    /// boundary-invalid one starting at byte 2 (inside "Juno") was tried
+    /// first and rejected — `locate` used to return `None` here. Mutation:
+    /// reverting to `source.match_indices(quote).find(...)` fails this.
+    #[test]
+    fn an_overlapping_later_candidate_is_found_after_a_rejected_earlier_one() {
+        let source = "Juno no no";
+        let located = SourceSpan::locate(source, "no no").expect("the overlapping later candidate locates");
+        assert_eq!(located.start_byte(), 5);
+        assert_eq!(located.end_byte(), source.len());
+        assert_eq!(located.verbatim(), "no no");
+    }
+
+    /// The same defect, checked against the spec's own second example.
+    #[test]
+    fn a_second_overlapping_candidate_is_found_after_a_rejected_first() {
+        let source = "xab ab ab";
+        let located = SourceSpan::locate(source, "ab ab").expect("the overlapping later candidate locates");
+        assert_eq!(located.start_byte(), 4);
+        assert_eq!(located.end_byte(), source.len());
+        assert_eq!(located.verbatim(), "ab ab");
+    }
+
+    /// A span made only of whitespace still locates when its own edges land
+    /// on a word boundary: the UAX #29 rule is unchanged by the overlap fix.
+    #[test]
+    fn a_whitespace_only_span_is_still_accepted() {
+        let source = "left  right";
+        let located = SourceSpan::locate(source, "  ").expect("a whitespace-only quote locates");
+        assert_eq!(located.verbatim(), "  ");
+    }
+
+    /// A span made only of punctuation still locates when its own edges land
+    /// on a word boundary: the UAX #29 rule is unchanged by the overlap fix.
+    #[test]
+    fn a_punctuation_only_span_is_still_accepted() {
+        let source = "Wait... now";
+        let located = SourceSpan::locate(source, "...").expect("a punctuation-only quote locates");
+        assert_eq!(located.verbatim(), "...");
     }
 
     #[test]

@@ -7770,6 +7770,34 @@ mod tests {
         assert!(!draft.sets_persona_of_existing_subject());
     }
 
+    /// PA.f92: a single-op fixture only ever exercises `operations[0]`, so a
+    /// `.take(1)` mutation on the scan inside `sets_persona_of_existing_subject`
+    /// would still pass every test above. Here op 0 is a harmless `Relocate`
+    /// with no bearing on personas at all, and the persona write to an
+    /// existing subject arrives only in op 1 — a query that stopped after the
+    /// first operation would miss it and wrongly report `false`.
+    #[test]
+    fn sets_persona_of_existing_subject_scans_every_operation_not_just_the_first() {
+        let patch = WorldPatch {
+            declarations: Vec::new(),
+            operations: vec![
+                ComponentOp::Relocate {
+                    subject: Ref::Draft(DraftHandle::new("wanderer")),
+                    via: Ref::Draft(DraftHandle::new("path")),
+                },
+                ComponentOp::SetPersonaMaterial {
+                    subject: Ref::Existing(SubjectId::issue()),
+                    values: Vec::new(),
+                    voice: Statement::new("flat and even").unwrap(),
+                    memories: Vec::new(),
+                    reads: Vec::new(),
+                },
+            ],
+            evidence: Vec::new(),
+        };
+        assert!(patch.sets_persona_of_existing_subject());
+    }
+
     fn entity(handle: &str, label: &str, kind: EntityKind) -> Declaration {
         Declaration::Entity(EntityDeclaration {
             handle: DraftHandle::new(handle),
