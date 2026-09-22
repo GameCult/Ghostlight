@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use unicode_segmentation::UnicodeSegmentation;
 
 pub const MEMBRANE_SCHEMA: &str = "ghostlight.persona_projection_membrane.v1";
 pub const COGNITION_CONTROLLER_SCHEMA: &str = "ghostlight.decision_controller.v1";
@@ -340,29 +341,6 @@ impl PersonaTurn {
     }
 }
 
-/// Whether `byte` is a valid left edge for a quoted span: the start of
-/// `source`, or the character immediately before it is not
-/// Unicode-alphanumeric. `byte` must itself be a valid char boundary, which
-/// every caller here gets for free from `match_indices`.
-fn starts_on_word_boundary(source: &str, byte: usize) -> bool {
-    byte == 0
-        || !source[..byte]
-            .chars()
-            .next_back()
-            .is_some_and(char::is_alphanumeric)
-}
-
-/// The mirror of [`starts_on_word_boundary`] for the right edge: the end of
-/// `source`, or the character immediately after it is not
-/// Unicode-alphanumeric.
-fn ends_on_word_boundary(source: &str, byte: usize) -> bool {
-    byte == source.len()
-        || !source[byte..]
-            .chars()
-            .next()
-            .is_some_and(char::is_alphanumeric)
-}
-
 /// An exact UTF-8 byte range in the preserved Persona source prose.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct SourceSpan {
@@ -383,24 +361,30 @@ impl SourceSpan {
         })
     }
 
-    /// The first occurrence of `quote` in `source` that lands on a word
-    /// boundary at both ends. The model quotes words; the harness counts
-    /// bytes. A model that counts bytes itself cut three of eight utterances
-    /// mid-word on the first Claude road run — and a raw substring `find`
-    /// has the same defect the other way: "I can" is a byte-exact match
-    /// inside "I cannot go", but it is not the word the model claims to be
-    /// quoting. Each end must be the edge of `source` or sit next to a
-    /// non-alphanumeric (Unicode-aware) character; a first occurrence that
-    /// fails either edge is skipped in favor of a later one.
+    /// The first occurrence of `quote` in `source` that lands on a Unicode
+    /// word boundary (UAX #29) at both ends. The model quotes words; the
+    /// harness counts bytes. A model that counts bytes itself cut three of
+    /// eight utterances mid-word on the first Claude road run — and a raw
+    /// substring `find` has the same defect the other way: "I can" is a
+    /// byte-exact match inside "I cannot go", but it is not the word the
+    /// model claims to be quoting. Each end must be one of the boundary
+    /// offsets `unicode-segmentation` reports for `source`, or `source.len()`;
+    /// a first occurrence that fails either edge is skipped in favor of a
+    /// later one.
     pub fn locate(source: &str, quote: &str) -> Option<Self> {
         if quote.is_empty() {
             return None;
         }
+        let mut boundaries: std::collections::HashSet<usize> = source
+            .split_word_bound_indices()
+            .map(|(byte, _)| byte)
+            .collect();
+        boundaries.insert(source.len());
         source
             .match_indices(quote)
             .find(|(start_byte, matched)| {
-                starts_on_word_boundary(source, *start_byte)
-                    && ends_on_word_boundary(source, start_byte + matched.len())
+                boundaries.contains(start_byte)
+                    && boundaries.contains(&(start_byte + matched.len()))
             })
             .map(|(start_byte, matched)| Self {
                 start_byte,
@@ -801,6 +785,81 @@ mod tests {
             SourceSpan::locate(source, "Wait for the bell").expect("a comma-bounded quote locates");
         assert_eq!(located.verbatim(), "Wait for the bell");
         assert!(located.is_exact_in(source));
+    }
+
+    /// PA.f78: the hand-written `is_alphanumeric`-neighbour rule accepted "I
+    /// can" inside "I can't go" because an ASCII apostrophe does not read as
+    /// alphanumeric — but UAX #29 keeps a MidLetter apostrophe glued to the
+    /// letters on both sides, so "can't" is one word and "I can" must be
+    /// refused.
+    #[test]
+    fn a_quote_split_by_an_apostrophe_contraction_is_refused() {
+        assert_eq!(SourceSpan::locate("I can't go", "I can"), None);
+    }
+
+    /// The same rule under the curly apostrophe (U+2019), which the hand rule
+    /// also treated as non-alphanumeric and therefore wrongly accepted.
+    #[test]
+    fn a_quote_split_by_a_curly_apostrophe_contraction_is_refused() {
+        assert_eq!(SourceSpan::locate("I can\u{2019}t go", "I can"), None);
+    }
+
+    /// A combining acute accent (U+0301) after "e" is a word-internal Extend
+    /// character under UAX #29: it never introduces a boundary, so "the
+    /// cafe" ending before the mark is not a valid span even though the mark
+    /// itself is not alphanumeric.
+    #[test]
+    fn a_quote_ending_before_a_combining_mark_is_refused() {
+        let source = "the cafe\u{0301} is open";
+        assert_eq!(SourceSpan::locate(source, "the cafe"), None);
+    }
+
+    /// An underscore is ExtendNumLet under UAX #29, so "run_fast" is one
+    /// word and "run" alone does not end on a boundary.
+    #[test]
+    fn a_quote_ending_before_an_underscore_is_refused() {
+        assert_eq!(SourceSpan::locate("run_fast", "run"), None);
+    }
+
+    /// CJK ideographs carry no spaces and are not `char::is_alphanumeric`
+    /// exceptions under the old hand rule's assumptions, but UAX #29 breaks
+    /// between adjacent ideographs, so each one is its own word and a
+    /// leading two-character quote must be accepted.
+    #[test]
+    fn a_cjk_quote_with_no_surrounding_whitespace_is_accepted() {
+        let source = "我不能去";
+        let located = SourceSpan::locate(source, "我不").expect("ideographs break individually");
+        assert_eq!(located.start_byte(), 0);
+        assert_eq!(located.verbatim(), "我不");
+    }
+
+    /// A leading space is itself a word-boundary segment, so a quote that
+    /// starts mid-source with its own leading space is still boundary-valid.
+    #[test]
+    fn a_quote_with_a_leading_space_is_accepted() {
+        let source = "I cannot go";
+        let located = SourceSpan::locate(source, " cannot").expect("a leading-space quote locates");
+        assert_eq!(located.verbatim(), " cannot");
+    }
+
+    /// A hyphen is not glued to its neighbours under UAX #29 (it is not one
+    /// of the Mid* classes), so it is itself a word boundary and "re" out of
+    /// "re-enter" is accepted.
+    #[test]
+    fn a_quote_ending_before_a_hyphen_is_accepted() {
+        let source = "please re-enter the code";
+        let located = SourceSpan::locate(source, "re").expect("a hyphen-bounded quote locates");
+        assert_eq!(located.verbatim(), "re");
+    }
+
+    /// "Stop." in "Stop.Now": a full stop between two letters is MidNumLet
+    /// under UAX #29, so the crate glues the whole run into one word and
+    /// this quote is refused. Recorded rather than asserted as an
+    /// independently-motivated rule: the crate's UAX #29 behavior is the
+    /// authority here, not a special case carved out for this input.
+    #[test]
+    fn a_quote_ending_before_a_period_between_letters_reports_the_crate_result() {
+        assert_eq!(SourceSpan::locate("Stop.Now", "Stop."), None);
     }
 
     #[test]
