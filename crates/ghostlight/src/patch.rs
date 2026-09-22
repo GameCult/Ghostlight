@@ -1606,6 +1606,14 @@ pub enum Mismatch {
     RetiresAnApprover {
         operation: usize,
     },
+    /// `Communicate`, `AcquireKnowledge`, `Forget`, or `InstallIncumbent`
+    /// named a retired subject as the one acting, learning, forgetting, or
+    /// taking office. A retired subject is a body, not an actor: it may still
+    /// be a holdings source (looted), a channel member, or a route endpoint,
+    /// but it cannot be the one who speaks, knows, or holds office.
+    RetiredSubjectActed {
+        operation: usize,
+    },
     /// `GrantAffordance` or `RevokeAffordance` named a retired or an
     /// `ExternallyControlled` subject: neither holds a grant this patch may
     /// touch.
@@ -4446,6 +4454,12 @@ pub(super) fn resolve_patch(
                 else {
                     continue;
                 };
+                if retired.contains(&incumbent_key) {
+                    mismatches.push(Mismatch::RetiredSubjectActed {
+                        operation: position,
+                    });
+                    continue;
+                }
                 let slot = (institution_key.clone(), office.clone());
                 let Some(current) = selection.get(&slot).cloned() else {
                     mismatches.push(Mismatch::UnknownOffice {
@@ -4543,6 +4557,12 @@ pub(super) fn resolve_patch(
                 let (Some(subject_key), Some(fact_key)) = (subject_key, fact_key) else {
                     continue;
                 };
+                if retired.contains(&subject_key) {
+                    mismatches.push(Mismatch::RetiredSubjectActed {
+                        operation: position,
+                    });
+                    continue;
+                }
                 // Evidenced knowledge is knowledge of canon. A receipt cannot
                 // vouch for an assertion the kernel never evaluated.
                 if *source == AuthoredSource::Evidenced
@@ -4588,6 +4608,12 @@ pub(super) fn resolve_patch(
                 let (Some(subject_key), Some(fact_key)) = (subject_key, fact_key) else {
                     continue;
                 };
+                if retired.contains(&subject_key) {
+                    mismatches.push(Mismatch::RetiredSubjectActed {
+                        operation: position,
+                    });
+                    continue;
+                }
                 if knowledge.remove(&(subject_key, fact_key)).is_none() {
                     mismatches.push(Mismatch::NoOperationEffect {
                         operation: position,
@@ -4622,6 +4648,12 @@ pub(super) fn resolve_patch(
                 else {
                     continue;
                 };
+                if retired.contains(&speaker_key) {
+                    mismatches.push(Mismatch::RetiredSubjectActed {
+                        operation: position,
+                    });
+                    continue;
+                }
                 // Ontology admission: communication reaches only subjects inside
                 // the channel's reach, and a speaker outside it is not speaking.
                 if !candidate_in_audience(

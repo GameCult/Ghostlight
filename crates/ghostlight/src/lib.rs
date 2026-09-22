@@ -3164,6 +3164,17 @@ fn channel_referents_exist(state: &WorldState, record: &ChannelRecord) -> bool {
             .is_none_or(|subject_id| state.subjects.contains_key(&subject_id))
 }
 
+/// Whether a subject's controller assignment is `Retired`. The one statement
+/// of retirement read by anything downstream of it (audience derivation,
+/// preconditions, resolvers): a mirror's assignment is `ExternallyControlled`
+/// and is never retired by this check, only an actual `Retire` sets it.
+fn is_retired(state: &WorldState, subject_id: SubjectId) -> bool {
+    matches!(
+        state.controller_assignments.get(&DecisionScope { subject_id }),
+        Some(ControllerAssignment::Retired)
+    )
+}
+
 /// Everyone standing anywhere under one place. The one downward-facing read of
 /// `positions`: `audience`'s `Reach::Place` arm and `ResolvedOp::Witness` are
 /// its two callers, so what "under a place" means cannot drift between a
@@ -3203,7 +3214,15 @@ fn audience(state: &WorldState, actor: SubjectId, of: &Audience) -> BTreeSet<Sub
                 return BTreeSet::new();
             };
             match &record.reach {
-                Reach::Subjects(members) => members.clone(),
+                // Audience derivation is the one owner of who is reachable, so
+                // a channel may still *declare* a retired member (PA.f33);
+                // retirement is filtered here, at the single read site, not at
+                // declaration time.
+                Reach::Subjects(members) => members
+                    .iter()
+                    .copied()
+                    .filter(|member| !is_retired(state, *member))
+                    .collect(),
                 Reach::Place(root) => under_place(state, *root),
             }
         }
@@ -12551,8 +12570,9 @@ mod witness_tests {
 mod clock_tests {
     use super::patch::{PreconditionRef, PressureSourceRef, WorldScaleIntentRef};
     use super::tests::{
-        activate, affordance_named, auth_principal, command, creation, operations, opportunity_for,
-        owner, human_principal, reject_owner, submit_owner,
+        activate, affordance_named, authority_kind, auth_principal, command, creation, office,
+        operations, opportunity_for, owner, human_principal, reject_owner, speech_world,
+        submit_owner,
     };
     use super::*;
     use std::path::Path;
@@ -17786,4 +17806,357 @@ mod clock_tests {
         assert!(retired);
     }
 
+    /// PA.f33: audience derivation (`audience()`) is the one owner of who a
+    /// channel reaches, so a channel may still *declare* a retired member,
+    /// but that member is filtered out at the one read site — it gains no
+    /// knowledge from a telling into that channel.
+    #[test]
+    fn channel_audience_excludes_a_retired_member() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf33Audience");
+        owner_retires(&mut kernel, clockwork.reeve).expect("retire");
+        let mut patch = ruled_fact_patch("news");
+        patch.declarations.push(Declaration::Channel(ChannelDeclaration {
+            handle: DraftHandle::new("wire"),
+            label: "The Wire".into(),
+            reach: ReachRef::Subjects(BTreeSet::from([
+                Ref::Existing(clockwork.reeve),
+                Ref::Existing(clockwork.farmer),
+            ])),
+            controller: None,
+        }));
+        patch.operations.push(ComponentOp::Communicate {
+            speaker: Ref::Existing(clockwork.farmer),
+            fact: Ref::Draft(DraftHandle::new("news")),
+            to: AudienceRef::Channel(Ref::Draft(DraftHandle::new("wire"))),
+        });
+        submit_as(&mut kernel, play_caller(), CommandBody::AdmitPatch { answers: None, patch })
+            .expect("admitted");
+        let reeve_knows = kernel
+            .state
+            .knowledge
+            .get(&clockwork.reeve)
+            .map(BTreeMap::len)
+            .unwrap_or(0);
+        assert_eq!(reeve_knows, 0, "a retired subject was an audience");
+    }
+
+    /// PA.f33: `Communicate` resolves and refuses a retired speaker with
+    /// `RetiredSubjectActed`, whether or not it is also that channel's
+    /// controller.
+    #[test]
+    fn a_retired_subject_cannot_speak_through_a_channel() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf33RetiredSpeaks");
+        let mut declare = ruled_fact_patch("wire-decl");
+        declare.declarations.push(Declaration::Channel(ChannelDeclaration {
+            handle: DraftHandle::new("wire"),
+            label: "The Wire".into(),
+            reach: ReachRef::Subjects(BTreeSet::from([
+                Ref::Existing(clockwork.reeve),
+                Ref::Existing(clockwork.farmer),
+            ])),
+            controller: None,
+        }));
+        submit_as(&mut kernel, play_caller(), CommandBody::AdmitPatch { answers: None, patch: declare })
+            .expect("declare");
+        owner_retires(&mut kernel, clockwork.reeve).expect("retire");
+        let wire = *kernel.state.channels.keys().next().unwrap();
+        let mut patch = ruled_fact_patch("news");
+        patch.operations.push(ComponentOp::Communicate {
+            speaker: Ref::Existing(clockwork.reeve),
+            fact: Ref::Draft(DraftHandle::new("news")),
+            to: AudienceRef::Channel(Ref::Existing(wire)),
+        });
+        let error = submit_as(&mut kernel, play_caller(), CommandBody::AdmitPatch { answers: None, patch })
+            .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::RetiredSubjectActed { operation: 0 })),
+            "{error:?}"
+        );
+    }
+
+    /// PA.f33: `CanReach` is `audience().contains(target)`, so a retired
+    /// target fails the same precondition every other reach check now
+    /// respects — one statement of reach, one fix.
+    #[test]
+    fn a_retired_subject_is_unreachable_through_can_reach() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "PAf33CanReach"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, _) = speech_world(&mut kernel);
+        owner_retires(&mut kernel, speech.listener).expect("the owner retires the listener");
+        let snapshot = kernel.snapshot().unwrap();
+        let opportunity = opportunity_for(&snapshot, speech.speaker);
+        let invocation = DecisionInvocation {
+            affordance: speech.whisper,
+            bindings: vec![binding("target", Target::Subject(speech.listener))],
+            proposed: Vec::new(),
+            speech: Some(Statement::new("Are you still there?").unwrap()),
+            display: None,
+        };
+        let error = submit_as(
+            &mut kernel,
+            CallerId::Controller(opportunity.controller_id),
+            CommandBody::ExerciseDecision { invocation, opportunity },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::ActionRejected(set)
+                if set.contains(&ActionMismatch::CannotReach { precondition: 0 })),
+            "{error:?}"
+        );
+    }
+
+    /// PA.f34: `AcquireKnowledge` refuses a retired subject.
+    #[test]
+    fn a_retired_subject_cannot_acquire_knowledge() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf34Acquire");
+        owner_retires(&mut kernel, clockwork.reeve).expect("retire");
+        let mut patch = ruled_fact_patch("news");
+        patch.operations.push(ComponentOp::AcquireKnowledge {
+            subject: Ref::Existing(clockwork.reeve),
+            fact: Ref::Draft(DraftHandle::new("news")),
+            source: AuthoredSource::Witnessed,
+            confidence: Confidence::Certain,
+        });
+        let error = submit_as(&mut kernel, play_caller(), CommandBody::AdmitPatch { answers: None, patch })
+            .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::RetiredSubjectActed { operation: 0 })),
+            "{error:?}"
+        );
+    }
+
+    /// PA.f34: `Forget` refuses a retired subject.
+    #[test]
+    fn a_retired_subject_cannot_forget() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf34Forget");
+        let mut declare = ruled_fact_patch("news");
+        declare.operations.push(ComponentOp::AcquireKnowledge {
+            subject: Ref::Existing(clockwork.reeve),
+            fact: Ref::Draft(DraftHandle::new("news")),
+            source: AuthoredSource::Witnessed,
+            confidence: Confidence::Certain,
+        });
+        submit_as(&mut kernel, play_caller(), CommandBody::AdmitPatch { answers: None, patch: declare })
+            .expect("the reeve learns the fact");
+        let fact = *kernel.state.knowledge[&clockwork.reeve].keys().next().unwrap();
+        owner_retires(&mut kernel, clockwork.reeve).expect("retire");
+        let before = kernel.snapshot().unwrap();
+        let error = reject_owner(
+            &mut kernel,
+            &before,
+            operations(vec![ComponentOp::Forget {
+                subject: Ref::Existing(clockwork.reeve),
+                fact: Ref::Existing(fact),
+            }]),
+        );
+        assert_eq!(error, vec![Mismatch::RetiredSubjectActed { operation: 0 }]);
+    }
+
+    /// PA.f34: `InstallIncumbent` refuses a retired subject as incumbent.
+    #[test]
+    fn a_retired_subject_cannot_take_office() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf34Office");
+        owner_retires(&mut kernel, clockwork.farmer).expect("retire");
+        let before = kernel.snapshot().unwrap();
+        let error = reject_owner(
+            &mut kernel,
+            &before,
+            operations(vec![
+                ComponentOp::OpenOffice {
+                    institution: Ref::Existing(clockwork.treasury),
+                    office: office("warden"),
+                    delegated: BTreeSet::from([authority_kind("levy")]),
+                },
+                ComponentOp::InstallIncumbent {
+                    institution: Ref::Existing(clockwork.treasury),
+                    office: office("warden"),
+                    incumbent: Ref::Existing(clockwork.farmer),
+                },
+            ]),
+        );
+        assert_eq!(error, vec![Mismatch::RetiredSubjectActed { operation: 1 }]);
+    }
+
+    /// PA.f34: a retired subject's holdings remain transferable — a body may
+    /// still be looted after it stops acting.
+    #[test]
+    fn holdings_are_still_transferable_from_a_retired_holder() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf34Loot");
+        owner_retires(&mut kernel, clockwork.farmer).expect("retire");
+        let before = kernel.snapshot().unwrap();
+        let grain = *kernel
+            .state
+            .holdings
+            .get(&clockwork.farmer)
+            .expect("the retired farmer still holds grain")
+            .keys()
+            .next()
+            .expect("at least one resource");
+        submit_owner(
+            &mut kernel,
+            &before,
+            operations(vec![ComponentOp::Transfer {
+                from: Ref::Existing(clockwork.farmer),
+                to: Ref::Existing(clockwork.reeve),
+                resource: Ref::Existing(grain),
+                qty: Quantity(2),
+            }]),
+        );
+        assert_eq!(
+            kernel.state.holdings[&clockwork.reeve][&grain],
+            Quantity(2)
+        );
+    }
+
+    /// PA.f35, MuA: the resolver's `Retire` arm removes the subject's
+    /// Position (`positions.remove`) in the same candidate pass a later
+    /// `Relocate` in the same patch reads, so retire-then-relocate in one
+    /// patch is rejected as `UnplacedSubject` rather than silently placing a
+    /// retired subject.
+    #[test]
+    fn retiring_then_relocating_in_one_patch_is_rejected() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf35RetireRelocate");
+        let stair = *kernel
+            .state
+            .edges
+            .iter()
+            .find(|(_, edge)| edge.endpoints().0 == clockwork.yard)
+            .unwrap()
+            .0;
+        let before = kernel.snapshot().unwrap();
+        let error = reject_owner(
+            &mut kernel,
+            &before,
+            operations(vec![
+                ComponentOp::Retire { subject: Ref::Existing(clockwork.reeve) },
+                ComponentOp::Relocate {
+                    subject: Ref::Existing(clockwork.reeve),
+                    via: Ref::Existing(stair),
+                },
+            ]),
+        );
+        assert_eq!(error, vec![Mismatch::UnplacedSubject { operation: 1 }]);
+    }
+
+    /// PA.f35, MuB: `RevokeAffordance` is confined exactly as every other
+    /// structural operation, so an elaborator cannot use it to touch a
+    /// subject's grants outside its jurisdiction.
+    #[test]
+    fn an_elaborator_cannot_revoke() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf35ElabRevoke");
+        let answered = dead_end_boundary(&kernel);
+        let speak = super::tests::speak_entry(&kernel);
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered)),
+                patch: WorldPatch {
+                    declarations: vec![Declaration::Subject(SubjectDeclaration {
+                        handle: DraftHandle::new("stray"),
+                        label: "The Roadside Stray".into(),
+                        kind: SubjectKind::Person,
+                        controller: NewController::NarrativePersona,
+                        affordances: BTreeSet::from([
+                            speak.clone(),
+                            Ref::Existing(clockwork.threaten),
+                        ]),
+                        position: Some(Ref::Existing(clockwork.dead_end)),
+                    })],
+                    operations: vec![ComponentOp::RevokeAffordance {
+                        subject: Ref::Draft(DraftHandle::new("stray")),
+                        affordance: Ref::Existing(clockwork.threaten),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::OutsideJurisdiction { site: Site::Operation(0) })),
+            "{error:?}"
+        );
+    }
+
+    /// PA.f35, MuC: `retired` on a subject snapshot row is read from
+    /// `ControllerAssignment::Retired` specifically, not from
+    /// `mode().is_none()` — a mirror's mode is also `None`, and a mirror must
+    /// never be reported retired.
+    #[test]
+    fn a_mirror_is_not_reported_retired() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf35MirrorFlag");
+        let mirror = declare_mirror(&mut kernel, &clockwork, "pa-f35-mirror");
+        let snapshot = kernel.snapshot().unwrap();
+        let row = snapshot.subjects.iter().find(|s| s.id == mirror).unwrap();
+        assert!(!row.retired);
+    }
+
+    /// PA.f35, MuD: the affordance-holdings candidate set is updated after
+    /// every grant and revoke in a patch, not only the first, so three
+    /// revokes in one patch still catch the one that would leave the subject
+    /// mute.
+    #[test]
+    fn three_revokes_in_one_patch_cannot_mute_the_subject() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf35ThreeRevokes");
+        let speak = super::tests::speak_entry(&kernel);
+        let before = kernel.snapshot().unwrap();
+        let error = reject_owner(
+            &mut kernel,
+            &before,
+            operations(vec![
+                ComponentOp::RevokeAffordance {
+                    subject: Ref::Existing(clockwork.reeve),
+                    affordance: Ref::Existing(clockwork.threaten),
+                },
+                ComponentOp::RevokeAffordance {
+                    subject: Ref::Existing(clockwork.reeve),
+                    affordance: Ref::Existing(clockwork.deliver),
+                },
+                ComponentOp::RevokeAffordance {
+                    subject: Ref::Existing(clockwork.reeve),
+                    affordance: speak,
+                },
+            ]),
+        );
+        assert_eq!(error, vec![Mismatch::WouldLeaveSubjectMute { operation: 2 }]);
+    }
+
+    /// PA.f35, MuE: the resolver's `Retire` arm inserts the subject into its
+    /// own-patch `retired` candidate set, so a second `Retire` of the same
+    /// subject in one patch is caught as a no-op rather than silently
+    /// re-resolving.
+    #[test]
+    fn retiring_the_same_subject_twice_in_one_patch_is_a_noop_the_second_time() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf35DoubleRetire");
+        let before = kernel.snapshot().unwrap();
+        let error = reject_owner(
+            &mut kernel,
+            &before,
+            operations(vec![
+                ComponentOp::Retire { subject: Ref::Existing(clockwork.reeve) },
+                ComponentOp::Retire { subject: Ref::Existing(clockwork.reeve) },
+            ]),
+        );
+        assert_eq!(error, vec![Mismatch::NoOperationEffect { operation: 1 }]);
+    }
 }
