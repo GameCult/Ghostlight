@@ -2178,10 +2178,18 @@ fn candidate_effective_authority(
     holder: &Key<SubjectId>,
     authority: &BTreeMap<Key<SubjectId>, BTreeSet<GrantKey>>,
     selection: &BTreeMap<(Key<SubjectId>, OfficeName), OfficeCandidate>,
+    retired: &BTreeSet<Key<SubjectId>>,
 ) -> BTreeSet<GrantKey> {
     let mut effective = authority.get(holder).cloned().unwrap_or_default();
     for ((institution, _), office) in selection {
         if office.incumbent.as_ref() != Some(holder) {
+            continue;
+        }
+        // A retired institution lends nothing, the same predicate
+        // `delegated_authority` reads canonically: `Retire` does not vacate
+        // offices, so the resolver and the kernel must not disagree about
+        // whether a dead institution's grants still reach its office-holders.
+        if retired.contains(institution) {
             continue;
         }
         for grant in authority.get(institution).into_iter().flatten() {
@@ -2836,6 +2844,7 @@ fn graph_overlaps(
     authority: &BTreeMap<Key<SubjectId>, BTreeSet<GrantKey>>,
     selection: &BTreeMap<(Key<SubjectId>, OfficeName), OfficeCandidate>,
     containers: &BTreeMap<Key<EntityId>, Key<EntityId>>,
+    retired: &BTreeSet<Key<SubjectId>>,
 ) -> bool {
     let holders: BTreeSet<&Key<SubjectId>> = authority
         .keys()
@@ -2846,8 +2855,9 @@ fn graph_overlaps(
         )
         .collect();
     holders.into_iter().any(|holder| {
-        let effective: Vec<GrantKey> = candidate_effective_authority(holder, authority, selection)
-            .into_iter()
+        let effective: Vec<GrantKey> =
+            candidate_effective_authority(holder, authority, selection, retired)
+                .into_iter()
             .collect();
         effective.iter().enumerate().any(|(index, one)| {
             effective[index + 1..].iter().any(|other| {
@@ -3821,6 +3831,7 @@ pub(super) fn resolve_patch(
                             &subject_key,
                             &authority,
                             &selection,
+                            &retired,
                         )),
                         &route.access,
                         *destination,
@@ -4887,7 +4898,7 @@ pub(super) fn resolve_patch(
             ComponentOp::GrantAuthority { .. }
                 | ComponentOp::OpenOffice { .. }
                 | ComponentOp::InstallIncumbent { .. }
-        ) && graph_overlaps(&authority, &selection, &containers)
+        ) && graph_overlaps(&authority, &selection, &containers, &retired)
         {
             mismatches.push(Mismatch::OverlappingJurisdiction {
                 operation: position,
@@ -7692,8 +7703,9 @@ mod catalog_tests {
 mod tests {
     use super::*;
     use crate::tests::{
-        FIXTURE_ENTITIES, activate, admit_topology, auth_principal, command, creation, owner,
-        human_principal, reject_owner, speak_entry, submit_owner,
+        ADMIT_KIND, FIXTURE_ENTITIES, LEVY_KIND, activate, admit_topology, authority_kind,
+        auth_principal, civic_world, command, creation, grant_to, human_principal, office,
+        over_place, owner, reject_owner, speak_entry, submit_owner,
     };
     use crate::{
         CallerId, CommandBody, CommandId, KernelError, SubmitReceipt, WorldKernel, WorldPhase,
@@ -8615,6 +8627,98 @@ mod tests {
                 place: topology.yard
             })
         );
+    }
+
+    /// PA.f48: `candidate_effective_authority` is the resolver's twin of
+    /// `delegated_authority`, and must share its predicate for "is this
+    /// institution live". Retiring the lending institution and granting the
+    /// same ground directly to its former office-holder, in one patch, must
+    /// not be read as an overlap with a lend the retirement already killed.
+    #[test]
+    fn a_grant_after_retiring_the_lending_institution_is_admitted() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = draft_world(directory.path());
+        let (_, civic, before) = civic_world(&mut kernel);
+
+        // The office lends levy over the whole hall; grant the reeve levy
+        // directly over the chamber the hall contains, so a resolver that
+        // still counted the dead lend would see two distinct, overlapping
+        // `GrantKey`s (not one collapsed duplicate) and refuse.
+        let receipt = submit_owner(
+            &mut kernel,
+            &before,
+            admit(operations_of(vec![
+                ComponentOp::Retire {
+                    subject: Ref::Existing(civic.treasury),
+                },
+                grant_to(civic.reeve, LEVY_KIND, over_place(civic.chamber)),
+            ])),
+        );
+        assert!(
+            matches!(receipt, SubmitReceipt::Applied(_)),
+            "a dead institution's lend must not collide with a fresh direct grant over the same ground"
+        );
+    }
+
+    /// PA.f48: a `Relocate` through a restricted route open only through a
+    /// dead institution's delegated authority is refused by the resolver
+    /// itself, as an ordinary `RouteAccessRestricted` mismatch — not
+    /// admitted by the resolver and then blown up as a `KernelError::Invariant`
+    /// when canonical apply recomputes the same authority, correctly finds it
+    /// gone, and refuses the already-applied `Retire`'s sibling operation.
+    #[test]
+    fn a_relocate_relying_only_on_a_retiring_institutions_authority_is_refused_by_the_resolver() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = draft_world(directory.path());
+        let (topology, civic, before) = civic_world(&mut kernel);
+
+        // `topology.walker` already exists and already stands at `yard`, so
+        // this delegation patch is operations-only: no declaration, no
+        // `AnswerRequired` elaboration boundary to clear.
+        let delegated = submit_owner(
+            &mut kernel,
+            &before,
+            admit(operations_of(vec![
+                grant_to(civic.treasury, ADMIT_KIND, over_place(civic.chamber)),
+                ComponentOp::OpenOffice {
+                    institution: Ref::Existing(civic.treasury),
+                    office: office("portal"),
+                    delegated: BTreeSet::from([authority_kind(ADMIT_KIND)]),
+                },
+                ComponentOp::InstallIncumbent {
+                    institution: Ref::Existing(civic.treasury),
+                    office: office("portal"),
+                    incumbent: Ref::Existing(topology.walker),
+                },
+            ])),
+        );
+        assert!(
+            matches!(delegated, SubmitReceipt::Applied(_)),
+            "expected the delegation patch to apply, got {delegated:?}"
+        );
+        let after_delegation = kernel.snapshot().unwrap();
+
+        let commits_before = kernel.journal.commit_count();
+        let mismatches = reject_owner(
+            &mut kernel,
+            &after_delegation,
+            admit(operations_of(vec![
+                ComponentOp::Retire {
+                    subject: Ref::Existing(civic.treasury),
+                },
+                ComponentOp::Relocate {
+                    subject: Ref::Existing(topology.walker),
+                    via: Ref::Existing(civic.postern),
+                },
+            ])),
+        );
+        assert_eq!(
+            mismatches,
+            vec![Mismatch::RouteAccessRestricted { operation: 1 }],
+            "the resolver must refuse the dead institution's lend itself, not let apply blow up"
+        );
+        assert_eq!(kernel.journal.commit_count(), commits_before);
+        assert_eq!(kernel.snapshot().unwrap(), after_delegation);
     }
 
     #[test]
