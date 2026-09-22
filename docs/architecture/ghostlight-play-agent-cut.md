@@ -2632,6 +2632,94 @@ Interpreter, the elaborator sweep and lenses.
       reordered dispatch lists. Dispatch is inference only, so no kernel
       command id exists to compare.
   - Dungeon bin 78 → 98, lib 621 → 622, persona-projection 26 → 30.
+- **Soul on 8a-fix2** (Opus, 2026-09-22, against `935c9d0`, Windows).
+  Dungeon bin 98, lib 622 and persona-projection 30, all as reported.
+  - Held:
+    - S6.
+    - The ledger persists, reloads, and evicts at exactly the 65th turn.
+    - Stale-answer keys are not recorded.
+    - A mismatched answer is refused.
+    - The 24 tools are pinned.
+    - PA.f90's requirement.
+    - `.take(1)`.
+    - PA.f96: the Persona's act is keyed by its own actor-call slot.
+    - Names stay within 58 characters, and no handle can collide with a
+      tool name.
+  - The recurring shape: Hands mutated the helper or the in-memory record,
+    not the rule at the layer it protects. Four persist-before-submit
+    deletions, `turn_id = hash(key)`, `answers: None` accepted, retry
+    disposition, three close-with-fault sites, and the collision check's
+    wiring all survived.
+  - Triage: PA.f98 to PA.f111 are fix, in 8a-fix3. PA.f112 goes to 8b.
+- **PA.f98 (8a-fix2, high, fix):** `dispatch` by the id `table_view` prints
+  dispatches nobody, silently. `parse_dispatch` now compares against the
+  8-hex handle, and it drops anything unknown.
+  - **Ruling (Self, under the standing go):**
+    - `dispatch` takes subject ids exactly as `table_view` prints them.
+      The 8-hex handle exists only as the actor tool prefix.
+    - Each actor tool's description names its subject's label and full id.
+    - An id that names no dispatchable subject is refused in the tool
+      result, by the text given. Nothing is dropped silently.
+- **PA.f99 (8a-fix2 gap, medium, fix):** no test shows that a body is
+  persisted before submission. Deleting any of the three persists, or
+  moving one after `submit_patch`, passes. **Fix:** for each of the
+  authoring, actor and advance-time paths, a test where the store is
+  reopened at the moment of submission (a port or submit hook that
+  snapshots the on-disk store) and holds the body.
+- **PA.f100 (8a-fix2 gap, medium, fix):** `turn_id = hash(key)` survives.
+  **Fix:** a test that the same key used for two turns yields different
+  `turn_id`s. The ledger must be cleared between them, through the window
+  or a helper.
+- **PA.f101 (8a-fix2 gap, medium, fix):** a test that `answers: None` is
+  refused while a question is open.
+- **PA.f102 (8a-fix2 gap, medium, fix):** tests that `RecoveryRequired`
+  makes exactly one inference call, that a persistent `Retryable` fault
+  exhausts the budget and then closes, and that the budget holds. The
+  production delay function gets a unit test for its bound and cap.
+- **PA.f103 (8a-fix2 gap, medium, fix):**
+  - Test each close-with-fault site: snapshot failure, narrate failure
+    after `end_turn`, and narrate failure at the budget. Soul's probe was
+    `end_turn` with a Persona script that yields no narration.
+  - Document that store or persist errors cannot be recorded in the turn
+    and propagate.
+- **PA.f104 (pre-existing, medium, fix):** the first pass and a resume
+  disagree. `dispatched` is read once per round, so
+  `[dispatch(Mara), mara__speak]` is refused on the first pass and applied
+  on resume. That breaks PA.f66c's ruling.
+  - **Fix:** an actor call is valid if, and only if, its subject was
+    dispatched, with prose recorded, by an earlier call in call order,
+    including an earlier call in the same round. Both paths use that one
+    derivation.
+  - Test the same round on the first pass and on resume.
+- **PA.f105 (8a-fix2 gap, low-medium, fix):** the collision check's wiring
+  is untested, although Hands called that infeasible. `SubjectId` is
+  `serde(transparent)`, so a test can deserialize a colliding id into a
+  snapshot. **Fix:**
+  - A wiring test through `round_tools`.
+  - The resume path runs the same check.
+- **PA.f106 (8a-fix2, low, fix in its owner):** `locate` is quadratic (32k
+  characters takes 2.2 s). **Fix:** test the span at each word boundary
+  that UAX #29 already yields (`starts_with`, with an end-boundary
+  lookup), and drop the repeated `find`. That is linear in the boundaries
+  times the span length.
+- **PA.f107 (8a-fix2 gap, low, fix):** a multibyte test (Soul's
+  `"xéé éé éé"`) that kills byte stepping.
+- **PA.f108 (pre-existing, low, fix):** empty text when no turn is open
+  opens a turn with empty prose. **Fix:** refused. A new turn needs
+  non-empty text.
+- **PA.f109 (8a-fix2, low, fix):** `ClosedTurnKeys.turn_id` is written but
+  never read, and a replay returns a bare `Ok(())`. **Fix:** a replay
+  returns a typed `Replayed { turn_id }`, so the ruling's "returns that
+  turn" is true and the field has its reader.
+- **PA.f110 (8a-fix2 gap, low, fix):** `.rev().take(1)` survives. **Fix:**
+  put the existing-subject write in a middle op, not the last one.
+- **PA.f111 (8a-fix2, low, fix):** stale docs:
+  - `PLAY_INSTRUCTIONS` says each round is a fresh `table_view`, which
+    contradicts S6;
+  - `locate`'s doc reads as history;
+  - some docs refer to removed `serde(default)` attributes.
+- **PA.f112 (8b):** the key check and the open run under two separate lock
+  acquisitions. 8b's per-world mutex covers both.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
