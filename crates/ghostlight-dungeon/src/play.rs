@@ -239,6 +239,17 @@ struct PlayTurn {
     calls: Vec<CallRecord>,
     persona_turns: Vec<(SubjectId, PersonaTurn)>,
     question: Option<String>,
+    /// PA.f161: the world's own `eve::surface_version` at the instant this
+    /// question opened (`execute_round`'s `ASK_PLAYER_TOOL` arm), set and
+    /// cleared alongside `question` — never re-derived from whatever the
+    /// world's current revision happens to be when a later request arrives.
+    /// This is what lets an answer be refused as stale by "older than the
+    /// version the question first appeared on" rather than by "not exactly
+    /// today's version," the comparison PA.f161 replaces. No
+    /// `#[serde(default)]`, matching `question`'s own row-schema neighbors
+    /// above (PA.f95): the store has never been deployed, so no row anywhere
+    /// is missing it.
+    question_surface_version: Option<u64>,
     refusal: Option<String>,
     narration: Option<String>,
     /// Set when the turn closed on a fault rather than the player's own
@@ -325,15 +336,19 @@ impl PlayTurn {
     }
 }
 
-/// `turn.open_question_id()` paired with the question's own text (PA.f134):
-/// `None` whenever `open_question_id` is, since `turn.question` is only ever
-/// set alongside it (`execute_round`'s `ASK_PLAYER_TOOL` arm sets both in the
-/// same assignment, and `answer_turn` clears both together).
+/// `turn.open_question_id()` paired with the question's own text and the
+/// surface version it opened on (PA.f134/PA.f161): `None` whenever
+/// `open_question_id` is, since `turn.question` and
+/// `turn.question_surface_version` are only ever set alongside it
+/// (`execute_round`'s `ASK_PLAYER_TOOL` arm sets all three in the same
+/// round, and `answer_turn` clears `question`/`question_surface_version`
+/// together).
 fn open_question_of(turn: &PlayTurn) -> Option<OpenQuestion> {
     let id = turn.open_question_id()?;
     Some(OpenQuestion {
         id,
         text: turn.question.clone().unwrap_or_default(),
+        surface_version: turn.question_surface_version.unwrap_or(0),
     })
 }
 
@@ -621,6 +636,10 @@ pub(crate) enum PlayError {
 pub(crate) struct OpenQuestion {
     pub(crate) id: QuestionId,
     pub(crate) text: String,
+    /// PA.f161: `eve::surface_version` at the moment this question opened —
+    /// the value `runtime.rs`'s `world.play` arm compares an answer's own
+    /// `routeHint.sourceVersion` against, refusing anything older.
+    pub(crate) surface_version: u64,
 }
 
 /// One `run` call's own outcome (PA.f109): `Replayed` names the turn a
@@ -678,12 +697,12 @@ pub(crate) struct PlayTurnView {
     pub(crate) question: Option<OpenQuestion>,
     pub(crate) narration: Option<String>,
     pub(crate) refusal: Option<String>,
-    /// The play row's own monotonic counter (Cut 9), read straight off the
-    /// store: `eve::authenticated_surface` folds it into `surface_version`
-    /// alongside `world.revision`, so a change this view alone carries —
-    /// a fresh refusal, a newly open question, a closed turn's narration,
-    /// none of which necessarily move the world's own revision — still moves
-    /// the surface version and wakes the SSE path.
+    /// The play row's own monotonic counter, read straight off the store.
+    /// `eve::authenticated_wake_version` folds it with `surface_version` to
+    /// wake the SSE path on a play-row-only change (a fresh refusal, a newly
+    /// open question, a closed turn's narration) that moves nothing on the
+    /// world itself. It is never folded into the surface document's own
+    /// `version` field, which names `surface_version` alone.
     pub(crate) revision: u64,
 }
 
@@ -924,6 +943,7 @@ impl PlayTable {
                             question: open_question.map(|id| OpenQuestion {
                                 id,
                                 text: existing.question.clone().unwrap_or_default(),
+                                surface_version: existing.question_surface_version.unwrap_or(0),
                             }),
                         });
                     }
@@ -1087,6 +1107,7 @@ impl PlayTable {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -1106,6 +1127,7 @@ impl PlayTable {
             }
         }
         turn.question = None;
+        turn.question_surface_version = None;
         turn.state = PlayTurnState::Running;
         turn
     }
@@ -1218,7 +1240,7 @@ impl PlayTable {
     /// field itself stays ordinary and always compiled so production and
     /// test run the identical `retry_delay`/`backoff_delay` code path.
     #[cfg(test)]
-    fn set_retry_delay_base_ms(&self, base_ms: u64) {
+    pub(crate) fn set_retry_delay_base_ms(&self, base_ms: u64) {
         self.retry_delay_base_ms.store(base_ms, Ordering::Relaxed);
     }
 
@@ -1403,6 +1425,12 @@ impl PlayTable {
                     None,
                 );
                 turn.question = Some(question);
+                // PA.f161: the world's own surface version at the instant
+                // this question opens, so a later answer is judged against
+                // the version the question actually first appeared on, never
+                // whatever the world's version happens to be when the
+                // answer arrives.
+                turn.question_surface_version = Some(crate::eve::surface_version(Some(&snapshot)));
                 turn.state = PlayTurnState::AwaitingPlayer;
                 return Ok(RoundOutcome::AwaitingPlayer);
             }
@@ -2487,7 +2515,7 @@ fn derived_command_id(turn_id: &str, round: usize, slot: usize) -> CommandId {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use ghostlight::{
         AffordanceId, CreateWorldIntent, InferenceFault, Lens, LensWeights, PreparedInference,
@@ -2605,7 +2633,7 @@ mod tests {
         assert!(!PLAY_TOOLS.contains(&"admit"), "admit is not a play tool");
     }
 
-    fn test_turn_id(n: u128) -> String {
+    pub(crate) fn test_turn_id(n: u128) -> String {
         uuid::Uuid::from_u128(n).to_string()
     }
 
@@ -2613,13 +2641,18 @@ mod tests {
         Utc::now() + chrono::Duration::hours(4)
     }
 
-    struct ScriptedPort {
+    /// PA.f161: widened to `pub(crate)` (test-only, behind `#[cfg(test)]`)
+    /// so `runtime.rs`'s own test module can script a deterministic
+    /// `ask_player` question through the real HTTP route — the only way to
+    /// exercise `world.play`'s own staleness comparison against a question
+    /// that actually opened, rather than one hand-built.
+    pub(crate) struct ScriptedPort {
         queue: StdMutex<VecDeque<Result<InferenceOutput, String>>>,
         seen: StdMutex<Vec<InferenceRequest>>,
     }
 
     impl ScriptedPort {
-        fn new(outputs: Vec<InferenceOutput>) -> Arc<Self> {
+        pub(crate) fn new(outputs: Vec<InferenceOutput>) -> Arc<Self> {
             Arc::new(Self {
                 queue: StdMutex::new(outputs.into_iter().map(Ok).collect()),
                 seen: StdMutex::new(Vec::new()),
@@ -2702,15 +2735,15 @@ mod tests {
         }
     }
 
-    fn output(receipt: &str, events: Vec<InferenceEvent>) -> InferenceOutput {
+    pub(crate) fn output(receipt: &str, events: Vec<InferenceEvent>) -> InferenceOutput {
         InferenceOutput::new(events, receipt.to_owned())
     }
 
-    fn text_event(text: &str) -> InferenceEvent {
+    pub(crate) fn text_event(text: &str) -> InferenceEvent {
         InferenceEvent::Text(text.to_owned())
     }
 
-    fn call_event(call_id: &str, name: &str, arguments: serde_json::Value) -> InferenceEvent {
+    pub(crate) fn call_event(call_id: &str, name: &str, arguments: serde_json::Value) -> InferenceEvent {
         InferenceEvent::ToolCall {
             call_id: call_id.to_owned(),
             name: name.to_owned(),
@@ -3065,12 +3098,12 @@ mod tests {
     /// deleted the card's own rendered id control (the lowering had no way
     /// to carry it without leaking it); `runtime.rs::execute_world`'s
     /// `world.play` arm is the one production caller that resolves this id
-    /// now, the same way this test does. Also proves the ruling's own
-    /// `playRevision` claim: the world commits nothing across this whole
-    /// exchange (`ask_player`/`end_turn` are conversational, not kernel
-    /// patches), so `world.revision` — and so the document's own `version`
-    /// (Cut 10, PA.f148) — never moves, yet `playRevision` still does,
-    /// because the play row's own `revision` carries it.
+    /// now, the same way this test does. Also proves the play row's own
+    /// revision claim: the world commits nothing across this whole exchange
+    /// (`ask_player`/`end_turn` are conversational, not kernel patches), so
+    /// `world.revision` — and so the surface document's own `version`
+    /// (PA.f148) — never moves, yet `PlayTurnView::revision` still does, on
+    /// both the question opening and the turn closing.
     #[tokio::test]
     async fn a_question_is_answered_through_the_cards_own_binding_and_the_turn_closes_with_narration() {
         let fixture = play_world(None, "player-card-question").await;
@@ -3120,7 +3153,6 @@ mod tests {
             Some(&asked_view),
         )
         .unwrap();
-        let play_revision_before = surface_before["playRevision"].as_u64().unwrap();
 
         let question_row = find_surface_node(&surface_before, "world.play.question")
             .expect("the question row");
@@ -3183,12 +3215,7 @@ mod tests {
         assert_eq!(narration_row["props"]["value"], "The hall falls quiet.");
         assert_eq!(
             surface_before["version"], surface_after["version"],
-            "Cut 10: the document's own version names world.revision alone, and it never moved"
-        );
-        let play_revision_after = surface_after["playRevision"].as_u64().unwrap();
-        assert!(
-            play_revision_after > play_revision_before,
-            "playRevision must move even though world.revision did not: {play_revision_before} -> {play_revision_after}"
+            "the document's own version names world.revision alone, and it never moved"
         );
     }
 
@@ -3220,6 +3247,7 @@ mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -4673,6 +4701,7 @@ mod tests {
             }],
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -4798,6 +4827,7 @@ mod tests {
             }],
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -4876,6 +4906,7 @@ mod tests {
             }],
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -5654,6 +5685,7 @@ mod tests {
             }],
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -6344,6 +6376,7 @@ mod tests {
             // need a `persona_turns` entry here.
             persona_turns: vec![(a, fake_persona_turn("a acted")), (b, fake_persona_turn("b acted"))],
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -6377,6 +6410,7 @@ mod tests {
             }],
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -6551,6 +6585,7 @@ mod tests {
                 // speak call below quotes from.
                 persona_turns: vec![(mara_subject, fake_persona_turn(QUOTE))],
                 question: None,
+                question_surface_version: None,
                 refusal: None,
                 narration: None,
                 fault: None,
@@ -6890,6 +6925,7 @@ mod tests {
             calls: Vec::new(),
             persona_turns: vec![(mara, fake_persona_turn(PROSE))],
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -7225,6 +7261,7 @@ mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -7678,6 +7715,7 @@ mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -7778,6 +7816,7 @@ mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -7827,6 +7866,7 @@ mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -7894,6 +7934,7 @@ mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: Some("The end.".into()),
             fault: None,
@@ -8311,6 +8352,7 @@ mod tests {
                 calls: Vec::new(),
                 persona_turns: Vec::new(),
                 question: None,
+                question_surface_version: None,
                 refusal: None,
                 narration: None,
                 fault: None,
@@ -8938,6 +8980,7 @@ mod tests {
             }],
             persona_turns: vec![(mara, fake_persona_turn(PROSE))],
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -9053,6 +9096,7 @@ mod tests {
             ],
             persona_turns: vec![(mara, fake_persona_turn(PROSE))],
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -9342,6 +9386,7 @@ mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
+            question_surface_version: None,
             refusal: None,
             narration: None,
             fault: None,

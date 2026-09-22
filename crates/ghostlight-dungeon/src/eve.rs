@@ -66,28 +66,20 @@ pub(crate) fn surface_version(snapshot: Option<&WorldSnapshot>) -> u64 {
         .unwrap_or(0)
 }
 
-/// Cut 10 (PA.f148/PA.f160): the wake signal a watching client polls or
-/// subscribes to, never a value a client feeds back as `routeHint.sourceVersion`.
-/// It folds `surface_version` with the play row's own `revision`, when a play
-/// view is available, so a play-row-only change (a fresh refusal, a newly
-/// open question, a closed turn's narration, none of which necessarily commit
-/// anything to the world) still moves it even though `surface_version` alone
-/// would not — the one thing this must do that `surface_version` cannot.
-/// Additive, not paired: both counters only ever grow, so the sum only ever
-/// grows. No play view (no turn has opened yet, or the table is unavailable)
-/// contributes nothing, matching `surface_version`'s own reach when no play
-/// card renders at all.
-///
-/// Cut 9 folded this same sum into the surface document's own `version`
-/// field, which a client echoes straight back as `routeHint.sourceVersion` on
-/// its next command; the kernel's compare-and-swap then derives
-/// `expected_revision = source_version - 1` from it (`runtime.rs`), so a
-/// version that is not exactly `world.revision + 1` poisons every later
-/// command with "expected revision N, current revision M" (Soul's own
-/// probe). This function is now used for the wake signal alone —
-/// `authenticated_surface`'s own document `version` is plain
-/// `surface_version`, and the play row's revision travels beside it as its
-/// own `playRevision` field instead of folded in.
+/// The wake signal `publish_projection` sends over the `revisions` broadcast
+/// channel and `/api/eve/events` relays — never a value a client feeds back
+/// as `routeHint.sourceVersion`, and never the surface document's own
+/// `version` field (PA.f148/PA.f160), which names `surface_version` alone so
+/// the kernel's `expected_revision = source_version - 1` derivation in
+/// `runtime.rs` stays sound. It folds `surface_version` with the play row's
+/// own `revision`, when a play view is available, so a play-row-only change
+/// (a fresh refusal, a newly open question, a closed turn's narration, none
+/// of which necessarily commit anything to the world) still wakes a watching
+/// client even though `surface_version` alone would not move. Additive, not
+/// paired: both counters only ever grow, so the sum only ever grows. No play
+/// view (no turn has opened yet, or the table is unavailable) contributes
+/// nothing, matching `surface_version`'s own reach when no play card renders
+/// at all.
 pub(crate) fn authenticated_wake_version(
     snapshot: Option<&WorldSnapshot>,
     play: Option<&PlayTurnView>,
@@ -114,7 +106,6 @@ pub(crate) fn mesh_surface(snapshot: Option<&WorldSnapshot>) -> Value {
 fn anonymous_surface_at(version: u64) -> Value {
     surface_document(
         version,
-        0,
         "Ghostlight Dungeon",
         vec![
             json!({
@@ -213,24 +204,21 @@ fn jurisdiction_label(world: &WorldSnapshot, jurisdiction: JurisdictionKey) -> S
 }
 
 /// `play` arrives beside the snapshot rather than inside it: `WorldSnapshot`
-/// carries no play-turn state of its own. Cut 9 deleted the speak-affordance
-/// operation, the story card, and this function's own operator-feed
-/// parameter together — the play card below reads `play` alone, never the
-/// operator's own unscoped log of every committed event (still a library
-/// read, just no longer one this function takes): invariant 8's projection,
-/// question, and refusal, nothing else.
+/// carries no play-turn state of its own. The play card below reads `play`
+/// alone, never the operator's own unscoped log of every committed event:
+/// invariant 8's projection, question, and refusal, nothing else.
 pub(crate) fn authenticated_surface(
     account: &str,
     snapshot: Option<&WorldSnapshot>,
     play: Option<&PlayTurnView>,
 ) -> anyhow::Result<Value> {
-    // Cut 10 (PA.f148/PA.f160): the document's own `version` names the
-    // world's `surface_version` alone — the one meaning `routeHint.sourceVersion`
-    // and the kernel's compare-and-swap require of it. The play row's own
-    // revision still moves, but travels as its own field beside it
-    // (`play_revision` below), never folded into this one.
+    // The document's own `version` names the world's `surface_version`
+    // alone — the one meaning `routeHint.sourceVersion` and the kernel's
+    // compare-and-swap require of it (PA.f148/PA.f160). The play row's own
+    // revision moves independently of it and is never folded in; it has no
+    // wire reader of its own (PA.f165) and stays internal to
+    // `eve::authenticated_wake_version`'s SSE wake computation.
     let version = surface_version(snapshot);
-    let play_revision = play.map_or(0, |view| view.revision);
     let mut children = vec![json!({
         "id":"ghostlight.identity",
         "kind":"heimdall.identity",
@@ -269,7 +257,11 @@ pub(crate) fn authenticated_surface(
                 json!({
                     "id":"world.create.brief",
                     "kind":"control.input.textarea",
-                    "props":{"label":"Brief","rows":2,"placeholder":"One sentence of what this world is for"},
+                    // PA.f164: `brief` is documented "required, may be empty"
+                    // (`CreatePayload::brief`), the same deliberate-empty
+                    // shape as `targets`/`jurisdictions` below — an authored
+                    // `value` so a form left untouched here still submits.
+                    "props":{"label":"Brief","rows":2,"value":"","placeholder":"One sentence of what this world is for"},
                     "stateBindings":[local_draft("brief", "string")],
                     "children":[]
                 }),
@@ -297,14 +289,22 @@ pub(crate) fn authenticated_surface(
                 json!({
                     "id":"world.create.targets",
                     "kind":"control.input.textarea",
-                    "props":{"label":"Scale target","rows":2,"placeholder":"{\"person\": 12, \"institution\": 3}"},
+                    // PA.f164: an authored `value`, not only a `placeholder` —
+                    // `findAuthoredBindingValue` (the vendored lowering) only
+                    // ever captures a control's `value`, never its
+                    // `placeholder`, so a form submitted without editing this
+                    // field would otherwise be refused as missing. `{}` is a
+                    // legitimate `targets` (a world with no scale target is a
+                    // deliberate choice, `CreatePayload`'s own doc comment).
+                    "props":{"label":"Scale target","rows":2,"value":"{}","placeholder":"{\"person\": 12, \"institution\": 3}"},
                     "stateBindings":[local_draft("targets", "string")],
                     "children":[]
                 }),
                 json!({
                     "id":"world.create.jurisdictions",
                     "kind":"control.input.textarea",
-                    "props":{"label":"Jurisdiction roots","rows":3,"placeholder":"[{\"handle\":\"low_sere\",\"label\":\"The Low Sere\",\"permille\":700}]"},
+                    // PA.f164: same gap, `[]` is a legitimate empty root list.
+                    "props":{"label":"Jurisdiction roots","rows":3,"value":"[]","placeholder":"[{\"handle\":\"low_sere\",\"label\":\"The Low Sere\",\"permille\":700}]"},
                     "stateBindings":[local_draft("jurisdictions", "string")],
                     "children":[]
                 }),
@@ -539,7 +539,6 @@ pub(crate) fn authenticated_surface(
     ));
     Ok(surface_document(
         version,
-        play_revision,
         snapshot
             .map(|world| world.title.as_str())
             .unwrap_or("Ghostlight Dungeon"),
@@ -631,7 +630,6 @@ pub(crate) fn command_result(
 
 fn surface_document(
     version: u64,
-    play_revision: u64,
     title: &str,
     children: Vec<Value>,
     commands: Vec<Value>,
@@ -642,12 +640,11 @@ fn surface_document(
         "providerId":PROVIDER_ID,
         "providerKind":"narrative.simulation",
         "title":title,
+        // The one meaning `routeHint.sourceVersion` and the kernel's
+        // compare-and-swap require of it (PA.f148/PA.f160): `surface_version`
+        // alone. The play row's own revision has no wire reader (PA.f165)
+        // and is never carried here.
         "version":version,
-        // Cut 10 (PA.f148): the play row's own revision, beside `version`
-        // rather than folded into it — one meaning per field. A client
-        // watches both to know a play-row-only change happened; only
-        // `version` is ever fed back as `routeHint.sourceVersion`.
-        "playRevision":play_revision,
         "updatedAtUtc":Utc::now().to_rfc3339(),
         "surface":{
             "id":SURFACE_ID,
@@ -688,26 +685,25 @@ fn command_descriptor(command: &str, schema: &str, bindings: &[&str], authority:
 
 /// A `captureBindings` entry the vendored browser lowering
 /// (`@gamecult/eve-browser-lowering`, `EveStateBindingDescriptor`) actually
-/// resolves (Cut 10, PA.f149). Soul's own probe found `world.create`'s
-/// buttons submitting `{"bindings":{}}` for every field: the old shape here
-/// (`{"scope":"local-draft","key":key,"type":value_type}`) named none of the
-/// fields `findAuthoredBindingValue`/`editableBindingContext` read
-/// (`bindingName`, `pointerId`, `accessMode`), so the lowering fell back to
-/// the control's own node id as the binding name (`world.create.title`,
-/// never `title`), which never matches a `captureBindings` entry naming the
-/// field alone.
+/// resolves, field-for-field the same shape its own test suite
+/// (`test/host-isolation.test.mjs`) builds for its own `composer.message`
+/// local-draft binding: `targetProp`, `pointerId`, `sourceId`, `schemaId`,
+/// `routeKind`, `bindingName`, `valueKind`, `accessMode`, `authority`.
 ///
-/// This is the vendored package's own working shape — its test suite
-/// (`test/host-isolation.test.mjs`) builds exactly this fixture, under a
-/// `ghostlight.play` surface id, for its own `composer.message` local-draft
-/// binding — copied field-for-field rather than invented: `targetProp`,
-/// `pointerId`, `sourceId`, `schemaId`, `routeKind`, `bindingName`,
-/// `valueKind`, `accessMode`, `authority`. `bindingName` is the one field
-/// that actually has to equal `key`, since `key` is also the exact string
-/// Dungeon's own `captureBindings` array and `command_descriptor` advertise;
-/// the rest of the descriptor's fields carry no runtime behavior in the
-/// current lowering (grep confirms `valueKind` is read nowhere), but are
-/// still worth stating correctly rather than leaving absent.
+/// Two fields are load-bearing. `bindingName` must equal `key`, since `key`
+/// is also the exact string Dungeon's own `captureBindings` array and
+/// `command_descriptor` advertise — `findAuthoredBindingValue` and
+/// `editableBindingContext` both match a binding by this field (falling back
+/// to `pointerId`, then the control's own node id, only when it is absent).
+/// `accessMode` must stay `"local-draft"`: `editableBindingContext`
+/// (`src/index.ts:2198`) defaults an absent `accessMode` to `"read"` whenever
+/// a binding is present at all, and a `"read"` control is disabled
+/// (`:2205`) — an editable field with no `accessMode` here would render
+/// disabled, not merely miscaptured. The remaining fields
+/// (`targetProp`, `pointerId`, `sourceId`, `schemaId`, `routeKind`,
+/// `valueKind`, `authority`) carry no runtime behavior in the current
+/// lowering (grep confirms `valueKind` is read nowhere), but are still worth
+/// stating correctly rather than leaving absent.
 ///
 /// `value_kind` must be one of the lowering's own `valueKind` union
 /// (`"string" | "number" | "boolean" | "choice" | "string-list"`); Dungeon's

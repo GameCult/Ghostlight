@@ -1,0 +1,131 @@
+{
+  "schema": "ghostlight.eve_client_bridge_fixture.v1",
+  "steps": [
+    {
+      "intent": {
+        "clientId": "eve.bridge.test",
+        "commandBoundary": "ghostlight.eve.commands",
+        "issuedAt": "2026-09-22T23:30:03.348Z",
+        "operation": {
+          "idempotencyKey": "0af70fc4-d2bf-4f9b-9914-696a27580065",
+          "operationId": "world.create",
+          "routeHint": {
+            "sourceVersion": 0,
+            "transport": "https-json"
+          },
+          "schemaId": "ghostlight.world_create.v4"
+        },
+        "payload": {
+          "bindings": {
+            "brief": "A world captured for the committed Eve client bridge fixture.",
+            "jurisdictions": "[]",
+            "lens_weights": "{\"patina\":1,\"charter\":1,\"ledger\":1,\"hearth\":1,\"tangle\":1,\"veil\":1,\"ember\":1,\"numen\":1}",
+            "subject_label": "The Fixture Operator",
+            "targets": "{}",
+            "title": "Bridge Fixture World"
+          }
+        },
+        "providerId": "gamecult.ghostlight.dungeon",
+        "receiptSchema": "gamecult.eve.command_result.v1",
+        "schema": "gamecult.eve.command_invocation.v1",
+        "surfaceId": "ghostlight.play"
+      },
+      "label": "world.create"
+    },
+    {
+      "intent": {
+        "clientId": "eve.bridge.test",
+        "commandBoundary": "ghostlight.eve.commands",
+        "issuedAt": "2026-09-22T23:30:05.143Z",
+        "operation": {
+          "idempotencyKey": "99503a87-9e15-45b7-8776-765a8dc4216b",
+          "operationId": "world.approve",
+          "routeHint": {
+            "sourceVersion": 1,
+            "transport": "https-json"
+          },
+          "schemaId": "ghostlight.world_approve.v0"
+        },
+        "payload": {},
+        "providerId": "gamecult.ghostlight.dungeon",
+        "receiptSchema": "gamecult.eve.command_result.v1",
+        "schema": "gamecult.eve.command_invocation.v1",
+        "surfaceId": "ghostlight.play"
+      },
+      "label": "world.approve"
+    },
+    {
+      "intent": {
+        "clientId": "eve.bridge.test",
+        "commandBoundary": "ghostlight.eve.commands",
+        "issuedAt": "2026-09-22T23:30:07.195Z",
+        "operation": {
+          "idempotencyKey": "1d6a441e-f173-41af-a798-a9123039d5e0",
+          "operationId": "world.seed",
+          "routeHint": {
+            "sourceVersion": 2,
+            "transport": "https-json"
+          },
+          "schemaId": "ghostlight.world_seed.v1"
+        },
+        "payload": {
+          "bindings": {}
+        },
+        "providerId": "gamecult.ghostlight.dungeon",
+        "receiptSchema": "gamecult.eve.command_result.v1",
+        "schema": "gamecult.eve.command_invocation.v1",
+        "surfaceId": "ghostlight.play"
+      },
+      "label": "world.seed"
+    },
+    {
+      "intent": {
+        "clientId": "eve.bridge.test",
+        "commandBoundary": "ghostlight.eve.commands",
+        "issuedAt": "2026-09-22T23:30:09.010Z",
+        "operation": {
+          "idempotencyKey": "20d01b36-cdfa-4e59-b5f3-31be54d94bc6",
+          "operationId": "world.activate",
+          "routeHint": {
+            "sourceVersion": 2,
+            "transport": "https-json"
+          },
+          "schemaId": "ghostlight.world_activate.v0"
+        },
+        "payload": {},
+        "providerId": "gamecult.ghostlight.dungeon",
+        "receiptSchema": "gamecult.eve.command_result.v1",
+        "schema": "gamecult.eve.command_invocation.v1",
+        "surfaceId": "ghostlight.play"
+      },
+      "label": "world.activate"
+    },
+    {
+      "intent": {
+        "clientId": "eve.bridge.test",
+        "commandBoundary": "ghostlight.eve.commands",
+        "issuedAt": "2026-09-22T23:30:11.040Z",
+        "operation": {
+          "idempotencyKey": "2301df6e-397b-4d5b-afa3-ef965e57b49a",
+          "operationId": "world.play",
+          "routeHint": {
+            "sourceVersion": 3,
+            "transport": "https-json"
+          },
+          "schemaId": "ghostlight.world_play.v0"
+        },
+        "payload": {
+          "bindings": {
+            "text": "The new owner looks around."
+          }
+        },
+        "providerId": "gamecult.ghostlight.dungeon",
+        "receiptSchema": "gamecult.eve.command_result.v1",
+        "schema": "gamecult.eve.command_invocation.v1",
+        "surfaceId": "ghostlight.play"
+      },
+      "label": "world.play"
+    }
+  ],
+  "vendorEveSubmoduleRevision": "672c0c1e9fc828b63752345385727b06c50491d0"
+}
