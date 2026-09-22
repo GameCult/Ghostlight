@@ -3314,5 +3314,31 @@ between them.
   commit does not deny the next world command, an SSE test that a play-row
   change wakes the client, a test that no id appears in anything the player
   is served, and a denied-with-reason test for each admission refusal.
-- **Landed:** —
+- **Landed (Hands, Sonnet, 2026-09-23):** `d9f0159` (the bridge) and
+  `43b6af6` (`eve.rs`, `play.rs`, `runtime.rs`).
+  - The binding shape was **found, not invented**: the vendor's own
+    `host-isolation.test.mjs` builds a `local-draft` descriptor under a
+    surface id, and `eve::local_draft` now copies it field for field.
+    Proven with the bridge first: the old shape gave `{"bindings":{}}`,
+    the new one carries the value.
+  - `tools/eve_client_bridge.mjs` (110 lines) renders a surface with jsdom,
+    types into controls by node id, clicks, and captures the intents the
+    real lowering builds. The new
+    `world_create_seed_activate_and_play_round_trip_through_the_real_client`
+    drives create, approve, seed, activate and play through `api_router`.
+  - **`world.create` had no control for `brief`**, a required field its own
+    bindings advertised. No client could ever have created a world. Found
+    by the bridge, fixed here.
+  - JSON-typed fields only ever arrive as text, because the lowering has no
+    JSON control; `deserialize_json_capture` accepts either. Hands flags
+    this as reaching past the envelope into payload shape.
+  - **Coverage gap, reported:** the stale-`sourceVersion` refusal and the
+    round trip's answer leg have no test at the `runtime.rs` layer, because
+    reaching `AwaitingPlayer` needs an inference backend and the scripted
+    port is private to `play.rs`'s test module. The mechanism is pinned one
+    layer down instead. Hands would not widen that visibility unasked.
+  - Dungeon bin 139 → 145. Net +1055/-204 plus the bridge.
+  - **Hands reported no mutations for this cut.** Soul checks each rule's
+    call site itself.
+
 
