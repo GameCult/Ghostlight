@@ -101,7 +101,10 @@ Persona changes.
    Persona's input, so a secret in the agent's context cannot reach a Persona
    except through world state that subject holds. The one input every
    subject shares is the owner's world brief. It is world-public framing,
-   and the owner keeps secrets out of it (cut map PA.f45).
+   and the owner keeps secrets out of it (cut map PA.f45). The agent never
+   rewrites an existing character's persona material; it authors material
+   only for characters it declares. A character's feelings follow from what
+   it perceives (cut map PA.f61).
 3. **An actor's act goes through that actor's affordance.** An act attributed
    to a subject, whether a Persona or the player, commits only as that
    subject's `ExerciseDecision`, with preconditions checked and the outcome
