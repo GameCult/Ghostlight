@@ -25,13 +25,13 @@ use anyhow::{Context, bail};
 use chrono::Utc;
 use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use ghostlight::{
-    CommandBody, CommandId, ControllerError, ControllerMode, ControllerPort, DecisionInvocation,
-    DecisionOpportunity, InferenceEvent, InferenceFault, InferenceFaultDisposition, InferenceOutput,
-    InferencePort, InferenceRequest, KernelError, MailboxError, PersonaLane, PlayPort,
-    PrincipalCommandIntent, Statement, SubjectId, TickMinutes, VerifiedPrincipalEvidence,
-    WorldMailbox, WorldPatch, WorldSnapshot, actor_tools, authoring_tools, decode_actor_call,
-    decode_authoring_call, decode_authoring_calls, describe_refusal, id_text, id_text_matches,
-    table_view,
+    AffordanceId, CommandBody, CommandId, ControllerError, ControllerMode, ControllerPort,
+    DecisionInvocation, DecisionOpportunity, InferenceEvent, InferenceFault,
+    InferenceFaultDisposition, InferenceOutput, InferencePort, InferenceRequest, KernelError,
+    MailboxError, PersonaLane, PlayPort, PrincipalCommandIntent, Statement, SubjectId,
+    TickMinutes, VerifiedPrincipalEvidence, WorldMailbox, WorldPatch, WorldSnapshot, actor_tools,
+    authoring_tools, decode_actor_call, decode_authoring_call, decode_authoring_calls,
+    describe_refusal, describe_refusal_to_actor, id_text, id_text_matches, table_view,
 };
 use ghostlight_persona_projection::{PersonaTurn, SourceSpan};
 use codex_connector::{CodexInputItem, CodexToolDefinition};
@@ -599,11 +599,28 @@ enum RoundOutcome {
 pub(crate) struct PlayTable {
     play: PlayPort,
     world: WorldMailbox,
-    personas: PersonaLane,
+    /// `Arc`, not owned (PA.f13/P8.5): a round's own dispatched Personas run
+    /// concurrently, each in its own spawned task under a permit drawn from
+    /// `permits`, so every concurrent call needs its own handle to the same
+    /// lane rather than a borrow of one `self`.
+    personas: Arc<PersonaLane>,
     inference: Arc<dyn InferencePort>,
     model: String,
+    /// The shared controller/Persona concurrency pool (PA.f13, P8.5):
+    /// `execute_dispatch` and `close_turn`'s own narration draw from the
+    /// exact same `Arc<Semaphore>` `runtime.rs` hands `AppState`'s
+    /// `controller_permits` — the one pool `runtime_readiness`'s
+    /// `controllerStatus` reads — never a second pool this table mints for
+    /// itself.
     permits: Arc<Semaphore>,
     store: Mutex<PlayTurnStore>,
+    /// One turn at a time for this table (PA.f68/PA.f112): held for the
+    /// whole body of `run`, so the key check and the turn open happen under
+    /// one acquisition and two concurrent `run` calls can never interleave.
+    /// This table is the one owner of one world's play authority, so this is
+    /// "one running turn per world" exactly as `AppState.play` holds one
+    /// `Arc<PlayTable>` per world this process owns.
+    run_lock: Mutex<()>,
     poisoned: AtomicBool,
     /// `retry_delay`'s own base, in milliseconds (PA.f122): an ordinary
     /// field, always compiled, defaulting to `RETRY_DELAY_BASE_MS` — the
@@ -625,6 +642,9 @@ pub(crate) struct PlayTable {
     /// production call installs one.
     #[cfg(test)]
     before_submit_hook: std::sync::Mutex<Option<Box<dyn Fn(Option<PlayTurn>) + Send + Sync>>>,
+    /// PA.f127/PA.f133's own test seam: see `fetch_round_snapshot`.
+    #[cfg(test)]
+    forced_round_snapshot: std::sync::Mutex<Option<WorldSnapshot>>,
 }
 
 impl PlayTable {
@@ -641,15 +661,18 @@ impl PlayTable {
         Ok(Self {
             play,
             world,
-            personas,
+            personas: Arc::new(personas),
             inference,
             model,
             permits,
             store: Mutex::new(store),
+            run_lock: Mutex::new(()),
             poisoned: AtomicBool::new(false),
             retry_delay_base_ms: std::sync::atomic::AtomicU64::new(RETRY_DELAY_BASE_MS),
             #[cfg(test)]
             before_submit_hook: std::sync::Mutex::new(None),
+            #[cfg(test)]
+            forced_round_snapshot: std::sync::Mutex::new(None),
         })
     }
 
@@ -701,6 +724,13 @@ impl PlayTable {
         if self.poisoned.load(Ordering::SeqCst) {
             return Err(PlayError::Poisoned);
         }
+        // PA.f68/PA.f112: held for this whole call, so the replay/key check
+        // above and the turn open below happen under one acquisition and two
+        // concurrent `run` calls for this table can never interleave — the
+        // second one always observes the first one's own already-open (or
+        // already-closed) turn, never a stale `None`/`Closed` read racing a
+        // still-in-flight `open_new_turn`.
+        let _run_guard = self.run_lock.lock().await;
         let PlayRequest { text, answers } = request;
         let (stored, replayed_turn_id) = {
             let store = self.store.lock().await;
@@ -896,7 +926,7 @@ impl PlayTable {
     /// disposition does not retry, or that exhausted its bounded retry
     /// budget.
     async fn infer_round(&self, turn: &PlayTurn, round: usize) -> Result<InferenceOutput, String> {
-        let snapshot = self.play.snapshot().await.map_err(|error| error.to_string())?;
+        let snapshot = self.round_snapshot().await?;
         let dispatched = turn.dispatched_subjects();
         let tools = self.round_tools(&snapshot, &dispatched)?;
         let conversation = rebuild_conversation(turn, round);
@@ -975,6 +1005,46 @@ impl PlayTable {
         self.retry_delay_base_ms.store(base_ms, Ordering::Relaxed);
     }
 
+    /// The one owner of round entry (PA.f127/PA.f133): fetches the live
+    /// snapshot and runs the handle-collision check exactly once, for
+    /// whichever caller is opening this round — `infer_round`, before
+    /// deciding the round's own tools, and `execute_round`, before resolving
+    /// a resumed round's already-decided calls. Both used to fetch their own
+    /// snapshot and run `collision_refusal` independently, which is two
+    /// owners for one rule; this is the one.
+    async fn round_snapshot(&self) -> Result<WorldSnapshot, String> {
+        let snapshot = self.fetch_round_snapshot().await?;
+        if let Some(refusal) = collision_refusal(&snapshot) {
+            return Err(refusal);
+        }
+        Ok(snapshot)
+    }
+
+    /// The live fetch `round_snapshot` checks. Test-only: a forced snapshot,
+    /// when set through `force_round_snapshot`, stands in for the kernel's
+    /// own — the one seam this crate has for driving a *genuine*, real-id
+    /// handle collision through `round_snapshot` itself, matching
+    /// `before_submit_hook`'s and `set_retry_delay_base_ms`'s own shape. No
+    /// production call site ever sets it.
+    #[cfg(test)]
+    async fn fetch_round_snapshot(&self) -> Result<WorldSnapshot, String> {
+        if let Some(forced) = self.forced_round_snapshot.lock().unwrap().clone() {
+            return Ok(forced);
+        }
+        self.play.snapshot().await.map_err(|error| error.to_string())
+    }
+
+    #[cfg(not(test))]
+    async fn fetch_round_snapshot(&self) -> Result<WorldSnapshot, String> {
+        self.play.snapshot().await.map_err(|error| error.to_string())
+    }
+
+    /// Test-only: see `fetch_round_snapshot`. No production call site exists.
+    #[cfg(test)]
+    fn force_round_snapshot(&self, snapshot: WorldSnapshot) {
+        *self.forced_round_snapshot.lock().unwrap() = Some(snapshot);
+    }
+
     fn round_tools(
         &self,
         snapshot: &WorldSnapshot,
@@ -982,15 +1052,6 @@ impl PlayTable {
     ) -> Result<Vec<CodexToolDefinition>, String> {
         let mut tools = authoring_tools(PLAY_TOOLS).map_err(|error| error.to_string())?;
         tools.extend(control_tools());
-        // PA.f97, PA.f118: a handle collision anywhere in the snapshot's own
-        // subjects is a turn fault — `parse_dispatch` and `resolve_handle`
-        // both match by handle against every subject the snapshot carries,
-        // not only the ones this round happens to offer tools for. Shared
-        // with `execute_round`'s own resume-path check through
-        // `collision_refusal`, the one owner of the rule.
-        if let Some(refusal) = collision_refusal(snapshot) {
-            return Err(refusal);
-        }
         let Some(player) = player_subject(snapshot) else {
             return Ok(tools);
         };
@@ -1013,37 +1074,26 @@ impl PlayTable {
         principal: &VerifiedPrincipalEvidence,
     ) -> Result<RoundOutcome, PlayError> {
         let output = turn.rounds[round].clone();
-        // PA.f103, PA.f118: this door's own `close_with_fault` still calls
-        // `persist` under the hood, so a store/persist failure right here has
-        // no lower layer left to record it in — it propagates through the `?`
-        // on `close_with_fault`'s own `Result` instead of being written into
-        // the turn, which is exactly the failure that would need writing.
-        // `self.play.snapshot()` failing here *is* covered, by
-        // `a_snapshot_failure_mid_round_closes_with_the_fault_recorded`
-        // below: the fixture keeps `WorldFixture`'s own mailbox owner task
-        // instead of discarding it, then `.abort()`s it, which drops the
-        // owner's own channel receiver and makes every later mailbox call
-        // resolve `MailboxError::Unavailable` deterministically.
-        let snapshot = match self.play.snapshot().await {
+        // PA.f103, PA.f118, PA.f127/PA.f133: this door's own `close_with_fault`
+        // still calls `persist` under the hood, so a failure right here has no
+        // lower layer left to record it in — it propagates through the `?` on
+        // `close_with_fault`'s own `Result` instead of being written into the
+        // turn, which is exactly the failure that would need writing.
+        // `round_snapshot` failing here *is* covered, by
+        // `a_snapshot_failure_mid_round_closes_with_the_fault_recorded` below
+        // (a live fetch failure) and by the forced-collision tests below (the
+        // handle-collision refusal): a round resumed after a crash executes
+        // its already-decided calls through this door directly, never through
+        // `round_tools` at all, so the same one owner both a fresh round and a
+        // resumed one share must run here too, rather than resolving calls
+        // against a handle that no longer names one subject unambiguously.
+        let snapshot = match self.round_snapshot().await {
             Ok(snapshot) => snapshot,
-            Err(error) => {
-                self.close_with_fault(turn, error.to_string()).await?;
+            Err(detail) => {
+                self.close_with_fault(turn, detail).await?;
                 return Ok(RoundOutcome::Closed);
             }
         };
-        // PA.f105, PA.f118: the same handle-collision check `round_tools`
-        // runs before inference must also run here — a round resumed after a
-        // crash executes its already-decided calls through this door
-        // directly, never through `round_tools` at all, so a collision that
-        // appeared in the snapshot since the round was first inferred must
-        // still refuse the whole round as a turn fault rather than resolving
-        // calls against a handle that no longer names one subject
-        // unambiguously. Shared with `round_tools` through
-        // `collision_refusal`, the one owner of the rule.
-        if let Some(detail) = collision_refusal(&snapshot) {
-            self.close_with_fault(turn, detail).await?;
-            return Ok(RoundOutcome::Closed);
-        }
         let player = player_subject(&snapshot);
 
         // Slotted, unresolved tool calls only: `slot` must still count a
@@ -1461,16 +1511,32 @@ impl PlayTable {
         match submission {
             Ok(_) => Ok((RoundOutcome::Continue, "applied".to_owned())),
             Err(MailboxError::Kernel(KernelError::ActionRejected(mismatches))) => {
-                // `entry`, `invocation`, and a run's site map are not
-                // threaded through this call site yet; Cut 8b is the one
-                // that wires this refusal path to the new parameters (and,
-                // per PA.f57, to `describe_refusal_to_actor` for what the
-                // player specifically sees). Passing `None` for all three
-                // keeps this call's behaviour exactly what it was.
-                let text =
-                    describe_refusal(snapshot, None, None, None, &KernelError::ActionRejected(mismatches));
+                let error = KernelError::ActionRejected(mismatches);
+                // The entry the invocation actually named: found on the live
+                // snapshot alone, never from anything the caller supplied,
+                // matching `subject_opportunity`'s own rule that a consumer's
+                // claimed affordance is never trusted back.
+                let entry = snapshot
+                    .affordances
+                    .iter()
+                    .find(|candidate| candidate.id == invocation.affordance);
+                // The agent's own surface: full detail, for the play agent to
+                // reason with.
+                let text = describe_refusal(snapshot, entry, Some(&invocation), None, &error);
                 if actor.is_player {
-                    turn.refusal = Some(text.clone());
+                    // Invariant 8: the player sees only the actor form —
+                    // `describe_refusal_to_actor` names bare role names, never
+                    // an id, a resolved label, or a fact's statement. A
+                    // missing `entry` (which decode_actor_call's own success
+                    // should make impossible) falls back to the same bare
+                    // "refused" `describe_refusal_to_actor` itself uses for
+                    // every non-`ActionRejected` error, rather than leaking
+                    // the agent-facing text.
+                    let actor_text = match entry {
+                        Some(entry) => describe_refusal_to_actor(entry, &error),
+                        None => "refused".to_owned(),
+                    };
+                    turn.refusal = Some(actor_text);
                 }
                 Ok((RoundOutcome::Continue, format!("refused: {text}")))
             }
@@ -1493,8 +1559,38 @@ impl PlayTable {
         // after a crash — only a subject already durable *before* this
         // invocation began can be that.
         let already_durable: Vec<SubjectId> = turn.persona_turns.iter().map(|(id, _)| *id).collect();
-        let mut summary = Vec::new();
-        for subject in subjects {
+        // Indexed by the subject's own position in `subjects` (not the order
+        // any of this resolves in): every subject gets exactly one summary
+        // line, and the joined summary must read in the call's own JSON
+        // order whether that subject's line was decided synchronously below
+        // or by a concurrently dispatched Persona turn later.
+        let mut summary_slots: Vec<Option<String>> = vec![None; subjects.len()];
+        let finished_summary = |slots: Vec<Option<String>>| slots.into_iter().flatten().collect::<Vec<_>>().join("; ");
+
+        /// One subject this call still needs a fresh Persona turn for,
+        /// carrying everything `personas.turn` and its own summary line
+        /// need — captured now, at the same point the old sequential loop
+        /// captured them, so concurrent dispatch changes nothing about
+        /// *which* snapshot or opportunity a subject's turn runs against.
+        struct Pending {
+            index: usize,
+            subject: SubjectId,
+            command_id: CommandId,
+            opportunity: DecisionOpportunity,
+            snapshot: WorldSnapshot,
+        }
+        let mut pending: Vec<Pending> = Vec::new();
+        // PA.f124: the same subject named twice in *this* call's own subject
+        // list is a collision even though neither occurrence has landed in
+        // `turn.persona_turns` yet — concurrent dispatch means both
+        // occurrences are seen before either one's Persona turn has run, so
+        // `turn.persona_turns` alone can no longer tell them apart the way
+        // the old strictly-sequential loop could (a first occurrence used to
+        // land in `turn.persona_turns` before the second was even read).
+        // This is the within-call twin of that same check.
+        let mut claimed_this_call: Vec<SubjectId> = Vec::new();
+
+        for (index, subject) in subjects.iter().enumerate() {
             if let Some(prose) = turn
                 .persona_turns
                 .iter()
@@ -1515,18 +1611,27 @@ impl PlayTable {
                         Ok(snapshot) => snapshot,
                         Err(error) => {
                             self.close_with_fault(turn, error.to_string()).await?;
-                            return Ok((RoundOutcome::Closed, summary.join("; ")));
+                            return Ok((RoundOutcome::Closed, finished_summary(summary_slots)));
                         }
                     };
                     let label = subject_label(&snapshot, *subject);
-                    summary.push(format!("{label}: {prose}"));
+                    summary_slots[index] = Some(format!("{label}: {prose}"));
                 } else {
                     // PA.f124: printed through the library's own `id_text`,
                     // the same printer `table_view` and `dispatch`'s own
                     // matching use — not a fifth hand-spelled debug-paren
                     // strip.
-                    summary.push(format!("{} already acted", id_text(*subject)));
+                    summary_slots[index] = Some(format!("{} already acted", id_text(*subject)));
                 }
+                continue;
+            }
+            if claimed_this_call.contains(subject) {
+                // PA.f124: a repeat within this same call's own list, ahead
+                // of its own first occurrence's Persona turn actually
+                // resolving — the same "already acted" text the sequential
+                // loop gave a repeat once its first occurrence had already
+                // landed in `turn.persona_turns`.
+                summary_slots[index] = Some(format!("{} already acted", id_text(*subject)));
                 continue;
             }
             let snapshot = match self.play.snapshot().await {
@@ -1536,7 +1641,7 @@ impl PlayTable {
                     // closes the turn with the fault recorded, rather than
                     // leaving it `Running` behind a `?`.
                     self.close_with_fault(turn, error.to_string()).await?;
-                    return Ok((RoundOutcome::Closed, summary.join("; ")));
+                    return Ok((RoundOutcome::Closed, finished_summary(summary_slots)));
                 }
             };
             let Some(opportunity) = snapshot
@@ -1548,34 +1653,70 @@ impl PlayTable {
                 })
                 .cloned()
             else {
-                summary.push(format!("{} holds no live Persona opportunity", id_text(*subject)));
+                summary_slots[index] = Some(format!("{} holds no live Persona opportunity", id_text(*subject)));
                 continue;
             };
-            let permit = self
-                .permits
-                .clone()
-                .acquire_owned()
-                .await
-                .expect("permit semaphore is never closed");
             // Derived from the dispatch call's own slot and the subject, not
             // from the subject's position in this call's own JSON array
             // (PA.f66d): two subjects named by one dispatch call, or the
             // same subject named by two dispatch calls in one round, must
             // never collide, in whatever order either call lists them.
             let command_id = dispatch_command_id(&turn.turn_id, round, call_slot, *subject);
-            let result = self.personas.turn(command_id, &opportunity).await;
-            drop(permit);
+            claimed_this_call.push(*subject);
+            pending.push(Pending {
+                index,
+                subject: *subject,
+                command_id,
+                opportunity,
+                snapshot,
+            });
+        }
+
+        // The round's own freshly dispatched Personas run concurrently
+        // (PA.f13, P8.5): each spawned task draws its own permit from the
+        // shared `controller_permits` pool before it runs `personas.turn`,
+        // so the pool's own size bounds how many run cognition at once, not
+        // this call's own subject count. Spawned, not merely joined, so
+        // Tokio actually schedules every pending subject's turn as soon as
+        // its permit is free rather than only interleaving at await points
+        // inside one task.
+        let mut handles = Vec::with_capacity(pending.len());
+        for entry in &pending {
+            let personas = self.personas.clone();
+            let permits = self.permits.clone();
+            let command_id = entry.command_id;
+            let opportunity = entry.opportunity.clone();
+            handles.push(tokio::spawn(async move {
+                let permit = permits
+                    .acquire_owned()
+                    .await
+                    .expect("permit semaphore is never closed");
+                let result = personas.turn(command_id, &opportunity).await;
+                drop(permit);
+                result
+            }));
+        }
+        let mut results = Vec::with_capacity(handles.len());
+        for handle in handles {
+            results.push(
+                handle
+                    .await
+                    .expect("a dispatched Persona's own turn task never panics"),
+            );
+        }
+
+        for (entry, result) in pending.into_iter().zip(results) {
             match result {
                 Ok(persona_turn) => {
-                    let label = subject_label(&snapshot, *subject);
+                    let label = subject_label(&entry.snapshot, entry.subject);
                     // PA.f64: the dispatched Persona's own prose reaches the
                     // agent as this call's own tool result, not a bare
                     // "acted" acknowledgement — `rebuild_conversation` is
                     // already generic over every call's recorded `result`,
                     // so recording the prose here is the whole fix.
                     let prose = persona_turn.source_prose().to_owned();
-                    summary.push(format!("{label}: {prose}"));
-                    turn.persona_turns.push((*subject, persona_turn));
+                    summary_slots[entry.index] = Some(format!("{label}: {prose}"));
+                    turn.persona_turns.push((entry.subject, persona_turn));
                     // PA.f123: `execute_dispatch` was the only call kind that
                     // did not persist at its own site — every other tool
                     // call's own door (`commit_authoring_run`,
@@ -1590,17 +1731,21 @@ impl PlayTable {
                     // on resume, and an actor call already checked against
                     // the recorded prose would be checked against the new
                     // (possibly different) prose instead — persisting as
-                    // soon as the prose is recorded closes that window.
+                    // soon as each subject's own prose is recorded closes
+                    // that window. Persisted here, sequentially, after every
+                    // concurrent turn has already resolved, so two subjects'
+                    // own persists of the same turn row never race each
+                    // other's `compare_and_swap_batch`.
                     self.persist(turn).await?;
                     self.fire_before_submit_hook().await;
                 }
                 Err(error) => {
-                    let label = subject_label(&snapshot, *subject);
-                    summary.push(format!("{label} could not act: {error}"));
+                    let label = subject_label(&entry.snapshot, entry.subject);
+                    summary_slots[entry.index] = Some(format!("{label} could not act: {error}"));
                 }
             }
         }
-        Ok((RoundOutcome::Continue, summary.join("; ")))
+        Ok((RoundOutcome::Continue, finished_summary(summary_slots)))
     }
 
     /// Narrates the turn's own close to the player. Takes no snapshot or
@@ -1628,7 +1773,20 @@ impl PlayTable {
             return Ok(String::new());
         };
         let command_id = derived_command_id(&turn.turn_id, turn.rounds.len(), usize::MAX);
-        Ok(self.personas.narrate(command_id, &opportunity).await?)
+        // Narration is cognition over the same shared pool a dispatched
+        // Persona's own turn draws from (PA.f13, P8.5): the turn's own close
+        // must queue behind an exhausted pool exactly like a dispatch would,
+        // rather than running unmetered because it happens to be the one
+        // Persona-lane call outside `execute_dispatch`.
+        let permit = self
+            .permits
+            .clone()
+            .acquire_owned()
+            .await
+            .expect("permit semaphore is never closed");
+        let narration = self.personas.narrate(command_id, &opportunity).await;
+        drop(permit);
+        Ok(narration?)
     }
 }
 
@@ -2742,19 +2900,273 @@ mod tests {
         );
     }
 
-    // `a_refused_player_act_sets_the_refusal_line` (PA-Q8) is not covered by
-    // a scripted-port test in this cut: genesis's `WorldMailbox::create`
-    // grants only the kernel's own zero-role `speak` affordance
-    // (`kernel_speak_grant`/`kernel_speak_entry` in `patch.rs`), whose sole
-    // precondition — `CanBroadcast(Colocated)` — is satisfied even by a
-    // subject alone in a room, and `declare_affordance` (the only door to a
-    // custom precondition) is not in `PLAY_TOOLS`. Forcing a genuine
-    // `ActionRejected` therefore needs either a `PLAY_TOOLS` affordance with
-    // a real precondition or a second world fixture this cut does not build.
-    // The wiring itself (`execute_actor_call`'s `ActionRejected` arm setting
-    // `turn.refusal` from `describe_refusal`) is a few lines, directly
-    // inspectable, and shares its code path with every other refusal this
-    // module's other tests already exercise.
+    /// A second world fixture, owed since 8a (PA-Q8): genesis's own
+    /// `WorldMailbox::create` grants only the kernel's own zero-role `speak`
+    /// affordance, whose sole precondition — `CanBroadcast(Colocated)` — is
+    /// satisfied even by a subject alone in a room, and `declare_affordance`
+    /// (the only door to a custom precondition) is not in `PLAY_TOOLS`, so
+    /// the play agent itself can never author one. This fixture instead
+    /// declares one directly on `fixture.world`, through
+    /// `decode_authoring_call` and `CommandBody::AdmitPatch`, while the world
+    /// is still in Draft — exactly the door genesis's own authoring root
+    /// uses, never anything `PLAY_TOOLS` gates. The affordance's one
+    /// precondition, `holds`, is bound to a resource role the player is
+    /// never granted any of, so any attempt against it is refused
+    /// deterministically, with no movement, authority, or standing setup
+    /// needed.
+    async fn play_world_with_precondition_affordance(account_hash: &str) -> (WorldFixture, AffordanceId) {
+        let directory = tempfile::tempdir().unwrap();
+        let (world, owner) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let principal = VerifiedPrincipalEvidence::new(account_hash, far_future());
+        let receipt = world
+            .create(
+                CreateWorldIntent {
+                    id: CommandId::new(),
+                    title: "Fixture World".into(),
+                    brief: "A small table with one guarded affordance.".into(),
+                    human_subject_label: "Player".into(),
+                    narrative_persona_label: None,
+                    operational_agent_label: None,
+                    targets: BTreeMap::new(),
+                    jurisdictions: Vec::new(),
+                    lens_weights: LensWeights::new(BTreeMap::from([(Lens::Hearth, 1)])),
+                },
+                &principal,
+            )
+            .await
+            .unwrap();
+        let snapshot = world.snapshot().await.unwrap();
+        let player = player_id(&snapshot);
+
+        let resource_patch = decode_authoring_call(
+            "declare_resource",
+            &serde_json::json!({"handle": "guarded_resource", "label": "Guarded Resource"}).to_string(),
+        )
+        .unwrap();
+        world
+            .submit_principal(
+                PrincipalCommandIntent {
+                    id: CommandId::new(),
+                    world_id: receipt.world_id,
+                    expected_revision: snapshot.revision,
+                    body: CommandBody::AdmitPatch {
+                        answers: None,
+                        patch: resource_patch,
+                    },
+                },
+                &principal,
+            )
+            .await
+            .unwrap();
+
+        let snapshot = world.snapshot().await.unwrap();
+        let affordance_patch = decode_authoring_call(
+            "declare_affordance",
+            &serde_json::json!({
+                "handle": "guarded_act",
+                "kind": "guarded_act",
+                "roles": [
+                    {"role": "target", "kind": {"namespace": "entity", "kind": "resource"}},
+                ],
+                "preconditions": [
+                    {"precondition": "holds", "resource": "target", "at_least": 999_999},
+                ],
+                "effect_slots": [
+                    {
+                        "op_kind": {"op": "consume"},
+                        "roles": ["actor", "target"],
+                        "bounds": {"bound": "quantity", "max": 1},
+                    },
+                ],
+                "outcome_bands": [{"weight": 1, "effects": []}],
+                "carries_speech": false,
+            })
+            .to_string(),
+        )
+        .unwrap();
+        world
+            .submit_principal(
+                PrincipalCommandIntent {
+                    id: CommandId::new(),
+                    world_id: receipt.world_id,
+                    expected_revision: snapshot.revision,
+                    body: CommandBody::AdmitPatch {
+                        answers: None,
+                        patch: affordance_patch,
+                    },
+                },
+                &principal,
+            )
+            .await
+            .unwrap();
+
+        let snapshot = world.snapshot().await.unwrap();
+        let affordance_id = snapshot
+            .affordances
+            .iter()
+            .find(|entry| entry.entry.kind.0 == "guarded_act")
+            .unwrap()
+            .id;
+        let grant_patch = decode_authoring_call(
+            "grant_affordance",
+            &serde_json::json!({
+                "subject": {"ref": "existing", "value": subject_id_text(&snapshot, player)},
+                "affordance": {"ref": "existing", "value": affordance_id_text(&snapshot, affordance_id)},
+            })
+            .to_string(),
+        )
+        .unwrap();
+        world
+            .submit_principal(
+                PrincipalCommandIntent {
+                    id: CommandId::new(),
+                    world_id: receipt.world_id,
+                    expected_revision: snapshot.revision,
+                    body: CommandBody::AdmitPatch {
+                        answers: None,
+                        patch: grant_patch,
+                    },
+                },
+                &principal,
+            )
+            .await
+            .unwrap();
+
+        let snapshot = world.snapshot().await.unwrap();
+        world
+            .submit_principal(
+                PrincipalCommandIntent {
+                    id: CommandId::new(),
+                    world_id: receipt.world_id,
+                    expected_revision: snapshot.revision,
+                    body: CommandBody::ApproveDraft,
+                },
+                &principal,
+            )
+            .await
+            .unwrap();
+        let snapshot = world.snapshot().await.unwrap();
+        world
+            .submit_principal(
+                PrincipalCommandIntent {
+                    id: CommandId::new(),
+                    world_id: receipt.world_id,
+                    expected_revision: snapshot.revision,
+                    body: CommandBody::ActivateWorld,
+                },
+                &principal,
+            )
+            .await
+            .unwrap();
+
+        (
+            WorldFixture {
+                _directory: directory,
+                world,
+                principal,
+                owner,
+            },
+            affordance_id,
+        )
+    }
+
+    /// The canonical id text for an affordance, read out of a real
+    /// `table_view` render, on the same precedent `subject_id_text` already
+    /// uses for a subject: never a test-local copy of the printer.
+    fn affordance_id_text(snapshot: &WorldSnapshot, id: AffordanceId) -> String {
+        let entry = snapshot.affordances.iter().find(|entry| entry.id == id).unwrap();
+        let view = table_view(snapshot);
+        let marker = format!("{} [", entry.entry.kind.0);
+        let start = view
+            .find(&marker)
+            .unwrap_or_else(|| panic!("{} not found in table_view: {view}", entry.entry.kind.0))
+            + marker.len();
+        let end = view[start..]
+            .find(']')
+            .unwrap_or_else(|| panic!("unterminated id bracket after {} in table_view", entry.entry.kind.0));
+        view[start..start + end].to_owned()
+    }
+
+    /// The canonical id text for a declared resource, by its own label, read
+    /// out of `table_view`'s own `Resources:` section — `resources` itself is
+    /// `pub(crate)` inside `ghostlight`, so this crate has no field to read
+    /// it from directly.
+    fn resource_id_text(snapshot: &WorldSnapshot, label: &str) -> String {
+        let view = table_view(snapshot);
+        let section = view
+            .find("\n  Resources:")
+            .map_or(view.as_str(), |at| &view[at..]);
+        let marker = format!(" {label} [");
+        let start = section
+            .find(&marker)
+            .unwrap_or_else(|| panic!("{label} not found in table_view's Resources section: {view}"))
+            + marker.len();
+        let end = section[start..]
+            .find(']')
+            .unwrap_or_else(|| panic!("unterminated id bracket after {label} in table_view"));
+        section[start..start + end].to_owned()
+    }
+
+    /// PA-Q8, owed since 8a: `execute_actor_call`'s `ActionRejected` arm sets
+    /// `turn.refusal` to the *actor* form (invariant 8) — bare role names,
+    /// no id, no resolved label, no fact statement — never the agent-facing
+    /// `describe_refusal` text the tool call's own result still carries.
+    #[tokio::test]
+    async fn a_refused_player_act_sets_the_refusal_line() {
+        let (fixture, _affordance_id) = play_world_with_precondition_affordance("player-refusal-line").await;
+        let directory = tempfile::tempdir().unwrap();
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let player = player_id(&snapshot);
+        let handle = handle_for(player);
+        let resource_id = resource_id_text(&snapshot, "Guarded Resource");
+
+        let round = output(
+            "r0",
+            vec![call_event(
+                "c0",
+                &format!("{handle}{HANDLE_SEPARATOR}guarded_act"),
+                serde_json::json!({
+                    "target": resource_id,
+                    "slot_0_qty": 1,
+                }),
+            )],
+        );
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![round]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+        table
+            .run(&fixture.principal, test_turn_id(881), "I try the guarded act.".into())
+            .await
+            .unwrap();
+
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        let refusal = turn
+            .refusal
+            .as_deref()
+            .expect("a refused player act must set the actor-facing refusal line");
+        assert!(
+            !refusal.contains(&id_text(player)),
+            "the actor-facing refusal must carry no id: {refusal}"
+        );
+        assert!(
+            !refusal.to_lowercase().contains("guarded_resource") && !refusal.to_lowercase().contains("guarded resource"),
+            "the actor-facing refusal must not resolve or name the role's target: {refusal}"
+        );
+    }
 
     #[tokio::test]
     async fn a_mint_and_a_ruled_fact_commit_as_play() {
@@ -3869,45 +4281,21 @@ mod tests {
         );
     }
 
-    /// PA.f118, PA.f119: `round_tools`' own handle-collision check and
-    /// `execute_round`'s resume-path copy now share one owner,
-    /// `collision_refusal`, deleting either call site is a real regression.
-    /// `execute_round`'s own copy cannot be reached with a *genuine*
-    /// two-real-subject collision the way
-    /// `round_tools_refuses_a_genuine_handle_collision_between_two_real_subjects`
-    /// reaches `round_tools`': that test forges a colliding id by
-    /// deserializing crafted text into a real `SubjectId` and splicing it
-    /// into a *local* snapshot copy, which works only because `round_tools`
-    /// takes the snapshot as a caller-supplied argument. `execute_round`
-    /// takes no snapshot argument — it always re-fetches a fresh one from
-    /// the live kernel through `self.play.snapshot()` — and `SubjectId` is
-    /// only ever minted as a random `Uuid::new_v4()` (`lib.rs`), with no
-    /// public door to make the kernel commit two subjects whose first 8 hex
-    /// digits collide. A source-presence check, the same shape
-    /// `soul_exactly_one_production_site_mints_play_port` above already
-    /// uses for a structural invariant behaviour cannot observe directly,
-    /// stands in until a real seam exists to inject a forged snapshot into
-    /// `execute_round`. Mutation: deleting either call site drops the count
-    /// below 2, failing this.
-    #[test]
-    fn soul_execute_round_and_round_tools_share_the_collision_refusal_call() {
-        let mut call_sites = 0;
-        for (path, source) in production_sources() {
-            if !path.to_string_lossy().ends_with("play.rs") {
-                continue;
-            }
-            for line in source.lines() {
-                if line.trim_start().starts_with("fn collision_refusal") {
-                    continue;
-                }
-                call_sites += line.matches("collision_refusal(").count();
-            }
-        }
-        assert_eq!(
-            call_sites, 2,
-            "round_tools and execute_round must each call collision_refusal exactly once"
-        );
-    }
+    // The old `soul_execute_round_and_round_tools_share_the_collision_refusal_call`
+    // structural test (PA.f118/PA.f119) counted `collision_refusal(` call
+    // sites in `play.rs` and pinned it at 2, standing in for behaviour it had
+    // no seam to observe directly. PA.f127/PA.f133 collapsed the duplicate
+    // fetch-and-check `infer_round` and `execute_round` each ran into one
+    // shared owner, `round_snapshot` (which itself now calls
+    // `collision_refusal` exactly once), so that count is 1 by design and the
+    // structural test is gone. `fetch_round_snapshot`'s own test seam
+    // (`force_round_snapshot`) now drives a genuine, real-id collision
+    // through `round_snapshot` directly — see
+    // `a_forced_handle_collision_refuses_the_round_through_round_snapshot`
+    // below — which is real behavioural coverage neither `infer_round` nor
+    // `execute_round` could get independently before this cut, and it covers
+    // both callers at once because there is only one implementation left to
+    // call.
 
     #[tokio::test]
     async fn restart_equivalence_of_the_agent_input() {
@@ -7270,11 +7658,12 @@ mod tests {
     /// hex group spliced in, then deserializing that text back into a real
     /// `SubjectId` through the one door this crate has for constructing one
     /// at all: `serde_json`. No kernel-level backdoor is needed; this was
-    /// wrongly reported infeasible in the prior pass. `round_tools` is
-    /// called directly with the mutated snapshot, exactly as `infer_round`
-    /// calls it before every round's own inference.
+    /// wrongly reported infeasible in the prior pass. `collision_refusal` is
+    /// called directly with the mutated snapshot: since PA.f127/PA.f133
+    /// collapsed the check out of `round_tools` and into `round_snapshot`,
+    /// this is the pure rule `round_snapshot` itself calls, not a copy of it.
     #[tokio::test]
-    async fn round_tools_refuses_a_genuine_handle_collision_between_two_real_subjects() {
+    async fn a_genuine_handle_collision_between_two_real_subjects_is_refused() {
         let fixture = play_world(Some("Mara"), "player-real-handle-collision").await;
         let mut snapshot = fixture.world.snapshot().await.unwrap();
         let player = player_id(&snapshot);
@@ -7296,6 +7685,38 @@ mod tests {
         assert_ne!(colliding_id, snapshot.subjects[persona_index].id, "the forged id must be a distinct subject");
         snapshot.subjects[persona_index].id = colliding_id;
 
+        let error = collision_refusal(&snapshot).expect("a genuine collision is detected");
+        assert!(error.contains("share the handle"), "{error}");
+    }
+
+    /// PA.f127/PA.f133: `round_snapshot` is the one owner both `infer_round`
+    /// and `execute_round` call for a round's own snapshot and collision
+    /// check. `fetch_round_snapshot`'s test seam (`force_round_snapshot`)
+    /// stands in for the kernel fetch with the same genuine, spliced-real-id
+    /// collision the test above drives through the pure rule directly —
+    /// this drives it through the *production async door itself*, the one
+    /// both callers share, so a mutation of the `collision_refusal` call
+    /// inside `round_snapshot` (`.filter(|_| false)`) fails this rather than
+    /// only a copy of the check. Because `infer_round` and `execute_round`
+    /// now call the identical function, this one test covers both: there is
+    /// no second implementation left for either to diverge into.
+    #[tokio::test]
+    async fn a_forced_handle_collision_refuses_the_round_through_round_snapshot() {
+        let fixture = play_world(Some("Mara"), "player-forced-handle-collision").await;
+        let mut snapshot = fixture.world.snapshot().await.unwrap();
+        let player = player_id(&snapshot);
+        let persona_index = snapshot
+            .subjects
+            .iter()
+            .position(|row| row.controller_mode == Some(ControllerMode::NarrativePersona))
+            .unwrap();
+        let player_text = subject_id_text(&snapshot, player);
+        let persona_text = subject_id_text(&snapshot, snapshot.subjects[persona_index].id);
+        let colliding_text = format!("{}{}", &player_text[..8], &persona_text[8..]);
+        let colliding_id: SubjectId =
+            serde_json::from_value(serde_json::Value::String(colliding_text)).expect("a valid uuid deserializes");
+        snapshot.subjects[persona_index].id = colliding_id;
+
         let directory = tempfile::tempdir().unwrap();
         let personas = PersonaLane::new(
             ControllerPort::new(fixture.world.clone()),
@@ -7313,24 +7734,159 @@ mod tests {
             directory.path().join("play-turn-v1.cc"),
         )
         .unwrap();
+        table.force_round_snapshot(snapshot);
 
-        let error = table.round_tools(&snapshot, &[]).unwrap_err();
+        let error = table.round_snapshot().await.unwrap_err();
         assert!(error.contains("share the handle"), "{error}");
     }
 
-    // PA.f105: the resume path through `execute_round` runs the identical
-    // `find_handle_collision` check over the identical
-    // `snapshot.subjects.iter().map(|row| (handle_for(row.id), row.id))`
-    // source `round_tools` uses (see the doc comment on that call site).
-    // Forcing a live collision through `execute_round` itself would need
-    // the *kernel's* own snapshot to already carry one, and the kernel
-    // mints every `SubjectId` internally — no fixture here has a way to
-    // hand it a forged one the way `round_tools` above can be called
-    // directly with a mutated snapshot value. This is reported, not
-    // covered by its own live-collision test, on the same precedent
-    // `a_refused_player_act_sets_the_refusal_line`'s own doc comment
-    // already uses for a structurally identical gap: the wiring is a few
-    // lines, directly inspectable, and shares its exact code path —
-    // `find_handle_collision`, `handle_for`, the same error text — with the
-    // `round_tools` call site the test above does cover for real.
+    /// PA.f68/PA.f112: `run_lock` is held for the whole body of `run`, so the
+    /// replay check and the turn open happen under one acquisition. Two
+    /// concurrent `run` calls carrying the *same* idempotency key — the
+    /// shape a genuine client retry racing itself takes — must give exactly
+    /// one turn: the first to actually acquire the lock opens and runs it,
+    /// and the second, once it acquires the lock in turn, finds that key
+    /// already applied and replays rather than opening a second turn under
+    /// the same key. Mutation: removing `run_lock`'s acquisition reopens the
+    /// race this asserts against, and (depending on scheduling) can make
+    /// both calls see no turn for the key and each open their own.
+    #[tokio::test]
+    async fn two_concurrent_world_play_calls_for_one_world_give_one_turn() {
+        let fixture = play_world(None, "player-one-turn-per-world").await;
+        let directory = tempfile::tempdir().unwrap();
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![output(
+                "proj-race",
+                vec![text_event("The race settles.")],
+            )]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = Arc::new(
+            PlayTable::new(
+                fixture.world.clone(),
+                personas,
+                ScriptedPort::new(vec![output(
+                    "r0",
+                    vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))],
+                )]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(2)),
+                directory.path().join("play-turn-v1.cc"),
+            )
+            .unwrap(),
+        );
+
+        let key = test_turn_id(919);
+        let first = {
+            let table = table.clone();
+            let principal = fixture.principal.clone();
+            let key = key.clone();
+            tokio::spawn(async move { table.run(&principal, key, "Who goes there?".into()).await })
+        };
+        let second = {
+            let table = table.clone();
+            let principal = fixture.principal.clone();
+            let key = key.clone();
+            tokio::spawn(async move { table.run(&principal, key, "Who goes there?".into()).await })
+        };
+        let (first_outcome, second_outcome) = tokio::join!(first, second);
+        let first_outcome = first_outcome.unwrap().unwrap();
+        let second_outcome = second_outcome.unwrap().unwrap();
+
+        // Exactly one of the two actually ran a turn and the other replayed
+        // it, in either order — `run_lock` decides which one wins the race,
+        // not this test.
+        let (ran, replayed) = match (first_outcome, second_outcome) {
+            (RunOutcome::Ran, RunOutcome::Replayed { turn_id }) => (true, Some(turn_id)),
+            (RunOutcome::Replayed { turn_id }, RunOutcome::Ran) => (true, Some(turn_id)),
+            other => panic!("expected exactly one Ran and one Replayed of the same turn: {other:?}"),
+        };
+        assert!(ran);
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        assert_eq!(
+            replayed.as_deref(),
+            Some(turn.turn_id.as_str()),
+            "the replayed outcome must name the one turn the race actually opened"
+        );
+        assert_eq!(
+            turn.applied_keys.iter().filter(|applied| **applied == key).count(),
+            1,
+            "the race's shared key must be recorded on the turn exactly once, never once per racer"
+        );
+    }
+
+    /// PA.f68/PA.f112: `run_lock` lives on `PlayTable`, one per world in
+    /// production (`AppState.play` holds one `Arc<PlayTable>` for the one
+    /// world this process owns) — so two *different* worlds' own tables never
+    /// share a lock and never block each other. Two fresh turns, one per
+    /// table, run concurrently and each resolves on its own, with distinct
+    /// turn ids.
+    #[tokio::test]
+    async fn two_worlds_own_play_tables_run_independently() {
+        let fixture_a = play_world(None, "player-world-a").await;
+        let fixture_b = play_world(None, "player-world-b").await;
+        let directory_a = tempfile::tempdir().unwrap();
+        let directory_b = tempfile::tempdir().unwrap();
+
+        let build_table = |fixture: &WorldFixture, directory: &tempfile::TempDir| {
+            let personas = PersonaLane::new(
+                ControllerPort::new(fixture.world.clone()),
+                ScriptedPort::new(vec![output("proj", vec![text_event("Settled.")])]),
+                "gpt-5.6-sol".into(),
+                "gpt-5.6-sol".into(),
+            )
+            .unwrap();
+            PlayTable::new(
+                fixture.world.clone(),
+                personas,
+                ScriptedPort::new(vec![output(
+                    "r0",
+                    vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))],
+                )]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(2)),
+                directory.path().join("play-turn-v1.cc"),
+            )
+            .unwrap()
+        };
+        let table_a = Arc::new(build_table(&fixture_a, &directory_a));
+        let table_b = Arc::new(build_table(&fixture_b, &directory_b));
+
+        let run_a = {
+            let table_a = table_a.clone();
+            let principal = fixture_a.principal.clone();
+            tokio::spawn(async move {
+                table_a
+                    .run(&principal, test_turn_id(931), "Hello from world A.".into())
+                    .await
+            })
+        };
+        let run_b = {
+            let table_b = table_b.clone();
+            let principal = fixture_b.principal.clone();
+            tokio::spawn(async move {
+                table_b
+                    .run(&principal, test_turn_id(932), "Hello from world B.".into())
+                    .await
+            })
+        };
+        let (outcome_a, outcome_b) = tokio::time::timeout(Duration::from_secs(5), async {
+            tokio::join!(run_a, run_b)
+        })
+        .await
+        .expect("two worlds' own tables must not block on each other's run_lock");
+        assert!(matches!(outcome_a.unwrap().unwrap(), RunOutcome::Ran));
+        assert!(matches!(outcome_b.unwrap().unwrap(), RunOutcome::Ran));
+
+        let turn_a = table_a.store.lock().await.current().cloned().unwrap();
+        let turn_b = table_b.store.lock().await.current().cloned().unwrap();
+        assert_ne!(
+            turn_a.turn_id, turn_b.turn_id,
+            "each world's own table opened its own turn"
+        );
+    }
 }
