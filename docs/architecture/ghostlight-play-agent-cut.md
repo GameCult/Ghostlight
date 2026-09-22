@@ -1321,7 +1321,20 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   - Correction to the spec: M6.2's rationale ("the subject's own spoken
     row") is impossible, because `fan_out` excludes the speaker from its own
     telling. The `>` boundary is pinned by a constructed case instead.
-- **Verdicts:** pending Soul.
+- **Verdicts** (Soul, Opus, 2026-09-22, against `c4334cc`, Windows):
+
+  | Promise | Verdict | Note |
+  |---|---|---|
+  | P6.1 | HOLDS | Probed: the full Persona request carries only instructions, the brief, identity and prose. Mara's Projector request carries no ids, digests, other subjects' knowledge or Vault text. The assembled request is untested (PA.f42); the brief is world-public (PA.f45) |
+  | P6.2 | HOLDS | Derived from events and replay-deterministic. Rows with no `minted_at` are never new (PA.f44) |
+  | P6.3 | HOLDS | By code and probe; no committed test (PA.f43) |
+
+  M6.1–M6.3, MB and MD were killed. MA (`turn` accepts `OperationalAgent`),
+  MC (the typed view in the Projector guidance) and ME (`select_fresh`
+  instead of `select_one`) survived.
+- **Soul findings, triaged:** PA.f41–PA.f44 and PA.f46 are fix, in batch 6
+  after batch 5. PA.f45 is settled by a target wording change. The
+  idempotency note is carried into Cut 8.
 
 ## Cut 7. The table vocabulary and the inference seams (library)
 
@@ -1840,6 +1853,61 @@ Interpreter, the elaborator sweep and lenses.
   passes `verify_state_shape`, while `verify_history` still refuses it.
   **Fix:** route the test through `verify_history` and rename it for what it
   pins.
+- **PA.f41 (introduced by Cut 6, medium, fix):** `turn` records the
+  caller's copy of the opportunity. `select_one` (`controllers.rs:1278-1289`)
+  matches subject, mode, controller, scope and digest, then returns the
+  caller's copy, and the `PersonaTurnBinding` is built from it
+  (`:4264-4276`). Soul's forged opportunity (a new `world_id`, `revision`
+  999999, and empty `affordance_ids`) produced a turn whose receipt-valid
+  binding carried the forged world and revision. Nothing reaches either
+  prompt. **Fix:** refuse unless the caller's opportunity equals the
+  snapshot's issued opportunity exactly. The binding is then built from the
+  kernel's copy.
+- **PA.f42 (introduced by Cut 6, medium, fix):** no test inspects the
+  assembled Projector request. MC (the full typed view put into the
+  Projector guidance) survived. **Fix:** a test over the request that
+  `build_projector_invocation` assembles, asserting that no subject,
+  controller or world id, scope or state digest, or revision appears.
+- **PA.f43 (introduced by Cut 6, low-medium, fix):** three paths are
+  untested:
+  - `turn` refusing an operational subject (MA survived);
+  - `turn` refusing a stale scope digest (ME survived; the code refuses it);
+  - `narrate`'s success path, whose request must carry only the player's
+    own slice (P6.3).
+
+  **Fix:** a test for each.
+- **PA.f44 (introduced by Cut 6, medium, fix):** the marker is `minted_at >
+  last_acted_at`, so a row with no `minted_at` is never new. That covers a
+  fact witnessed through a patch, one seeded into knowledge, and every fact
+  the play agent rules into a subject's knowledge. A Persona would never
+  notice "the door bursts open".
+  - **Ruling (Self, under the standing go; supersedes PA-Q2's defaulted "no
+    new state"):** each knowledge row records the revision at which the
+    subject acquired it (`acquired_at`, written when the row is written,
+    replay-deterministic). The marker is `acquired_at > last_acted_at`.
+  - It rides `consumer.v6`, because no v6 store exists anywhere yet.
+  - A decline pushes no `DecisionEvent` and does not move the marker. That
+    is accepted: the agent reads the table, not the marker.
+- **PA.f45 (pre-existing, low, settled by wording):** the owner's world
+  `brief` goes verbatim into every Projector and Persona prompt, and Cut 7
+  puts it in the agent's view.
+  - **Ruling (Self, under the standing go):** the brief is the owner's
+    world-public framing, not a secret channel. Invariant 2 in the target
+    names it as the one input shared by every subject. The owner is
+    responsible for keeping secrets out of it.
+- **PA.f46 (introduced by Cut 6, low, fix):** duplication.
+  - `PersonaLane::prepare`, `infer` and `select` repeat `ControllerRunner`'s
+    versions line for line.
+  - The 13-line `PersonaTurnBinding` construction (`:4264`) copies
+    `run_persona`'s (`:3681`).
+  - The checkpoint integrity check (`:895-913`) rebuilds the Persona request
+    outside `build_persona_invocation`.
+
+  **Fix:** one copy of each, used by both the runner and the lane. The
+  checkpoint check calls the one builder.
+- **Carried into Cut 8:** a repeated `turn` with the same `command_id` is
+  not idempotent, and `PersonaLane` has no guard. Cut 8 derives a fresh
+  `command_id` for every Persona turn from `(turn_id, round, call_index)`.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
