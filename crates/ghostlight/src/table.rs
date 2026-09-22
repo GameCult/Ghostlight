@@ -1585,8 +1585,11 @@ mod tests {
         assert_eq!(error, TableError::UnknownAuthoringTool("not_a_tool".to_owned()));
     }
 
-    /// Mutation M7.2: if `authoring_tools` stopped refusing an unknown name,
-    /// this assertion is the one that would no longer hold.
+    /// Mutation M7.2 (PA.f59: the doc here previously described the
+    /// unknown-name refusal above, not this test): if `authoring_tools`
+    /// silently dropped a known `PATCH_TOOLS` name instead of admitting it,
+    /// `tools.len()` would fall short of `names.len()` and this assertion is
+    /// the one that would catch it.
     #[test]
     fn authoring_tools_admits_every_known_name() {
         let names: Vec<&str> = PATCH_TOOLS.iter().map(|entry| entry.name).collect();
@@ -1683,30 +1686,53 @@ mod tests {
         assert!(error.contains("declare_place"), "{error}");
     }
 
-    /// Rule: the elaborator's own decode and the table's decode agree, because
-    /// the elaborator's arm now calls the table's function rather than
+    /// Rule (PA.f59): the elaborator's own decode and the table's decode
+    /// agree over the *whole* catalog, not just `open_route` — for every
+    /// non-session `PATCH_TOOLS` entry's own generated example, the
+    /// elaboration path (`apply_tool_call`) and the table path
+    /// (`decode_authoring_call`) produce the whole same `WorldPatch`,
+    /// because the elaborator's arm calls the table's function rather than
     /// carrying a second copy.
     #[test]
-    fn the_elaborator_and_the_table_share_one_decoder() {
-        let arguments = serde_json::json!({
-            "route": {"ref": "draft", "value": "route"}
-        })
-        .to_string();
-        let mut draft = WorldPatch::default();
-        let mut gaps = Vec::new();
-        let mut submitted = false;
-        crate::elaboration::apply_tool_call(
-            "open_route",
-            &arguments,
-            &mut draft,
-            &mut gaps,
-            &mut submitted,
-        );
-        let table_patch = decode_authoring_call("open_route", &arguments)
-            .expect("open_route decodes through the table too");
-        assert!(gaps.is_empty());
-        assert_eq!(draft.operations, table_patch.operations);
-        assert!(draft.declarations.is_empty() && table_patch.declarations.is_empty());
+    fn the_elaborator_and_the_table_agree_over_every_tool() {
+        for entry in PATCH_TOOLS {
+            if matches!(entry.shape, PatchToolShape::Session) {
+                continue;
+            }
+            let mut object = serde_json::Map::new();
+            for field in entry.fields {
+                object.insert(field.name.to_owned(), patch::field_example(field.kind));
+            }
+            let arguments = Value::Object(object).to_string();
+            let mut draft = WorldPatch::default();
+            let mut gaps = Vec::new();
+            let mut submitted = false;
+            crate::elaboration::apply_tool_call(
+                entry.name,
+                &arguments,
+                &mut draft,
+                &mut gaps,
+                &mut submitted,
+            );
+            let table_patch = decode_authoring_call(entry.name, &arguments)
+                .unwrap_or_else(|error| panic!("{} did not decode through the table: {error}", entry.name));
+            assert!(gaps.is_empty(), "{}: the elaborator recorded a gap: {gaps:?}", entry.name);
+            assert_eq!(
+                draft.declarations, table_patch.declarations,
+                "{}: the elaborator's and the table's declarations disagree",
+                entry.name
+            );
+            assert_eq!(
+                draft.operations, table_patch.operations,
+                "{}: the elaborator's and the table's operations disagree",
+                entry.name
+            );
+            assert_eq!(
+                draft.evidence, table_patch.evidence,
+                "{}: the elaborator's and the table's evidence disagree",
+                entry.name
+            );
+        }
     }
 
     /// Rule: an actor tool call decodes against the subject's own currently
@@ -1979,6 +2005,38 @@ mod tests {
         );
         assert!(text.starts_with("call #1:"), "{text}");
         assert!(!text.contains("tool call"), "{text}");
+    }
+
+    /// Rule (PA.f59, mutation X6): a declaration site and an operation site
+    /// never trade wording. `EmptyHandle`'s `position` names a declaration;
+    /// `SubjectNotAtOrigin`'s `operation` names an operation; with no batch
+    /// map in hand, each must keep its own word ("declaration"/"operation"),
+    /// never the other's.
+    #[test]
+    fn describe_refusal_never_swaps_declaration_and_operation_site_wording() {
+        let fixture = play_fixture();
+        let declaration_text = describe_refusal(
+            &fixture.snapshot,
+            None,
+            None,
+            None,
+            &KernelError::PatchRejected(vec![Mismatch::EmptyHandle { position: 3 }]),
+        );
+        assert!(
+            declaration_text.starts_with("declaration tool call #3:"),
+            "{declaration_text}"
+        );
+        let operation_text = describe_refusal(
+            &fixture.snapshot,
+            None,
+            None,
+            None,
+            &KernelError::PatchRejected(vec![Mismatch::SubjectNotAtOrigin { operation: 3 }]),
+        );
+        assert!(
+            operation_text.starts_with("operation tool call #3:"),
+            "{operation_text}"
+        );
     }
 
     /// Rule (PA.f56): `ActionRejected` renders the failed precondition's own

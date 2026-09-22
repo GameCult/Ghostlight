@@ -7279,8 +7279,11 @@ mod catalog_tests {
             .iter()
             .filter(|entry| matches!(entry.shape, PatchToolShape::Declare { .. }))
             .map(|entry| {
-                let declaration: Declaration =
-                    serde_json::from_value(arguments_for(entry)).expect("the entry decodes");
+                let arguments = arguments_for(entry).to_string();
+                let mut patch = crate::table::decode_authoring_call(entry.name, &arguments)
+                    .expect("the entry decodes");
+                assert_eq!(patch.declarations.len(), 1, "{} decoded other than one item", entry.name);
+                let declaration = patch.declarations.remove(0);
                 assert!(
                     tool_names(&declaration).contains(&entry.name),
                     "{} decoded a declaration its own exhaustive match does not name",
@@ -7337,8 +7340,11 @@ mod catalog_tests {
             .iter()
             .filter(|entry| matches!(entry.shape, PatchToolShape::Operate { .. }))
             .map(|entry| {
-                let operation: ComponentOp =
-                    serde_json::from_value(arguments_for(entry)).expect("the entry decodes");
+                let arguments = arguments_for(entry).to_string();
+                let mut patch = crate::table::decode_authoring_call(entry.name, &arguments)
+                    .expect("the entry decodes");
+                assert_eq!(patch.operations.len(), 1, "{} decoded other than one item", entry.name);
+                let operation = patch.operations.remove(0);
                 assert_eq!(tool_name(&operation), entry.name);
                 operation
             })
@@ -7607,28 +7613,17 @@ mod catalog_tests {
         serde_json::from_str(&definition.parameters_json).expect("an emitted schema is JSON")
     }
 
-    fn decodes(
-        entry: &PatchTool,
-        mut arguments: serde_json::Map<String, Value>,
-    ) -> Result<(), String> {
-        match entry.shape {
-            PatchToolShape::Declare { variant, fixed } => {
-                arguments.insert("type".into(), Value::String(variant.into()));
-                for (key, value) in fixed {
-                    arguments.insert((*key).into(), Value::String((*value).into()));
-                }
-                serde_json::from_value::<Declaration>(Value::Object(arguments))
-                    .map(|_| ())
-                    .map_err(|error| error.to_string())
-            }
-            PatchToolShape::Operate { variant } => {
-                arguments.insert("op".into(), Value::String(variant.into()));
-                serde_json::from_value::<ComponentOp>(Value::Object(arguments))
-                    .map(|_| ())
-                    .map_err(|error| error.to_string())
-            }
-            PatchToolShape::Session => Ok(()),
+    /// Routed through the one decoder (PA.f59): this used to carry its own
+    /// copy of the tag-injection-then-deserialize logic `decode_authoring_call`
+    /// already owns. `Session` still decodes no patch item and is left to its
+    /// own trivial `Ok`, exactly as `decode_authoring_call` itself refuses it
+    /// rather than accepting it as a no-op.
+    fn decodes(entry: &PatchTool, arguments: serde_json::Map<String, Value>) -> Result<(), String> {
+        if matches!(entry.shape, PatchToolShape::Session) {
+            return Ok(());
         }
+        let arguments = Value::Object(arguments).to_string();
+        crate::table::decode_authoring_call(entry.name, &arguments).map(|_| ())
     }
 
     /// The direction a model actually travels: it reads the emitted schema and
