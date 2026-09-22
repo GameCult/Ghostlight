@@ -531,6 +531,7 @@ pub(crate) fn operation_schema(operation: &str) -> Option<&'static str> {
         "world.advance_time" => "ghostlight.world_advance_time.v0",
         "world.seed" => "ghostlight.world_seed.v1",
         "world.speak" => "ghostlight.world_speak.v0",
+        "world.play" => "ghostlight.world_play.v0",
         _ => return None,
     })
 }
@@ -699,6 +700,29 @@ mod tests {
             json!({"text":"hello","opportunity":{},"affordance_id":"bound"}),
         );
         assert!(validate_invocation(&bound, "https-json").is_ok());
+    }
+
+    /// Cut 8b's own schema test, beside `world.speak`'s: `world.play` is
+    /// advertised, an invocation whose payload matches it validates, and a
+    /// payload that tries to claim authority is refused the same way
+    /// `payload_cannot_claim_authority` refuses one for `world.speak`.
+    #[test]
+    fn world_play_is_advertised_and_payload_cannot_claim_authority() {
+        assert_eq!(operation_schema("world.play"), Some("ghostlight.world_play.v0"));
+
+        let bound = invocation(
+            "world.play",
+            "ghostlight.world_play.v0",
+            json!({"text":"I look around.", "answers": null}),
+        );
+        assert!(validate_invocation(&bound, "https-json").is_ok());
+
+        let forged = invocation(
+            "world.play",
+            "ghostlight.world_play.v0",
+            json!({"text":"I look around.", "answers": null, "caller":"owner"}),
+        );
+        assert!(validate_invocation(&forged, "https-json").is_err());
     }
 
     #[test]

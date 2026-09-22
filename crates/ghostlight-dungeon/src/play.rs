@@ -25,13 +25,13 @@ use anyhow::{Context, bail};
 use chrono::Utc;
 use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use ghostlight::{
-    AffordanceId, CommandBody, CommandId, ControllerError, ControllerMode, ControllerPort,
-    DecisionInvocation, DecisionOpportunity, InferenceEvent, InferenceFault,
-    InferenceFaultDisposition, InferenceOutput, InferencePort, InferenceRequest, KernelError,
-    MailboxError, PersonaLane, PlayPort, PrincipalCommandIntent, Statement, SubjectId,
-    TickMinutes, VerifiedPrincipalEvidence, WorldMailbox, WorldPatch, WorldSnapshot, actor_tools,
-    authoring_tools, decode_actor_call, decode_authoring_call, decode_authoring_calls,
-    describe_refusal, describe_refusal_to_actor, id_text, id_text_matches, table_view,
+    CommandBody, CommandId, ControllerError, ControllerMode, ControllerPort, DecisionInvocation,
+    DecisionOpportunity, InferenceEvent, InferenceFault, InferenceFaultDisposition,
+    InferenceOutput, InferencePort, InferenceRequest, KernelError, MailboxError, PersonaLane,
+    PlayPort, PrincipalCommandIntent, Statement, SubjectId, TickMinutes, VerifiedPrincipalEvidence,
+    WorldMailbox, WorldPatch, WorldSnapshot, actor_tools, authoring_tools, decode_actor_call,
+    decode_authoring_calls, describe_refusal, describe_refusal_to_actor, id_text, id_text_matches,
+    table_view,
 };
 use ghostlight_persona_projection::{PersonaTurn, SourceSpan};
 use codex_connector::{CodexInputItem, CodexToolDefinition};
@@ -2220,7 +2220,8 @@ fn derived_command_id(turn_id: &str, round: usize, slot: usize) -> CommandId {
 mod tests {
     use super::*;
     use ghostlight::{
-        CreateWorldIntent, InferenceFault, Lens, LensWeights, PreparedInference,
+        AffordanceId, CreateWorldIntent, InferenceFault, Lens, LensWeights, PreparedInference,
+        decode_authoring_call,
     };
     use ghostlight_persona_projection::PersonaTurnBinding;
     use std::{

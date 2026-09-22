@@ -9,16 +9,17 @@ use crate::{
         TARGET as GHOSTLIGHT_TARGET,
     },
     mesh::{self, MeshPublisher, MeshRuntimeIdentity},
+    play::{PlayRequest, PlayTable, QuestionId},
 };
 use ghostlight::{
     AffordanceId, CONSUMER_BODY_LIMIT, CommandBody, CommandId, ConnectorBinding, ConsumerPort,
-    ConsumerRegistry, ControllerModels, ControllerRunner, ControllerWorkCustody,
+    ConsumerRegistry, ControllerModels, ControllerPort, ControllerRunner, ControllerWorkCustody,
     CreateJurisdictionIntent, CreateWorldIntent, DEFAULT_LOCAL_MODEL_PREFIX,
     DEFAULT_SDK_MODEL_PREFIX, DecisionInvocation, DecisionOpportunity, KernelError, Lens,
-    LensWeights, LocalBinding, MailboxError, PrincipalCommandIntent, PrincipalId, SdkBinding,
-    SeedOutcome, SeedPort, Statement, SubjectKind, SubmitReceipt, TickMinutes, VaultEvidenceSource,
-    VerifiedPrincipalEvidence, WorldMailbox, WorldPhase, WorldSnapshot, open_controller_work,
-    open_inference,
+    LensWeights, LocalBinding, MailboxError, PersonaLane, PrincipalCommandIntent, PrincipalId,
+    SdkBinding, SeedOutcome, SeedPort, Statement, SubjectKind, SubmitReceipt, TickMinutes,
+    VaultEvidenceSource, VerifiedPrincipalEvidence, WorldMailbox, WorldPhase, WorldSnapshot,
+    open_controller_work, open_inference,
 };
 use anyhow::{Context, bail, ensure};
 use axum::{
@@ -72,8 +73,18 @@ struct AppState {
     /// The one cognition organ, shared. The owner's seeding and the readiness
     /// custody probe use it; nothing in this process runs it on its own.
     controllers: Option<Arc<ControllerRunner>>,
-    /// The controller concurrency pool, sized to the connector's quota. Nothing
-    /// draws from it yet; `runtime_readiness` reads it.
+    /// The play table (Cut 8b): one operational model running a role-playing
+    /// game over this process's own world, minted alongside `controllers`
+    /// from the same opened inference organ. `None` exactly when
+    /// `controllers` is `None` — the play lane has no cognition of its own to
+    /// fall back to.
+    play: Option<Arc<PlayTable>>,
+    /// The controller/Persona concurrency pool, sized to the connector's
+    /// quota. `execute_dispatch` and `close_turn`'s own narration (Cut 8b)
+    /// draw permits from this exact pool, so `runtime_readiness`'s
+    /// `controllerStatus` "active" arm — unreachable in production before
+    /// this cut, since nothing drew from the pool — now reflects live
+    /// Persona cognition, not only the test route's own forced exhaustion.
     controller_permits: Arc<Semaphore>,
     sessions: Arc<Mutex<AppSessionOwner>>,
     heimdall: Arc<HeimdallClient>,
@@ -161,6 +172,18 @@ struct SpeakPayload {
     affordance_id: AffordanceId,
 }
 
+/// `world.play`'s own payload (Cut 8b): the player's prose, plus `answers`
+/// naming the question this request answers (PA.f84) — `None` for the plain
+/// opening/continue shape. Follows `ghostlight.world_speak.v0`'s own field
+/// pattern above.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PlayPayload {
+    text: String,
+    #[serde(default)]
+    answers: Option<QuestionId>,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct AdvanceTimePayload {
@@ -243,14 +266,36 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         .map(|bindings| bindings.connector)
         .map(Ok)
         .unwrap_or_else(configured_connector_endpoint)?;
-    let controllers = match open_controller(&world, &service_root, &runtime_id, connector_endpoint)
-    {
-        Ok(runner) => Some(runner),
-        Err(error) => {
-            tracing::warn!(%error, "controller cognition is unavailable; world authority remains online");
-            None
-        }
-    };
+    let controller_permits = Arc::new(Semaphore::new(configured_controller_concurrency()));
+    let (controllers, play) =
+        match open_controller(&world, &service_root, &runtime_id, connector_endpoint) {
+            Ok(OpenedControllers {
+                runner,
+                inference,
+                models,
+                play_model,
+            }) => {
+                let play = match open_play(
+                    &world,
+                    &service_root,
+                    inference,
+                    &models,
+                    play_model,
+                    controller_permits.clone(),
+                ) {
+                    Ok(table) => Some(Arc::new(table)),
+                    Err(error) => {
+                        tracing::warn!(%error, "the play table is unavailable; world authority remains online");
+                        None
+                    }
+                };
+                (Some(runner), play)
+            }
+            Err(error) => {
+                tracing::warn!(%error, "controller cognition is unavailable; world authority remains online");
+                (None, None)
+            }
+        };
     require_no_runtime_custody_failure(&mut fatal_events)?;
     let wrapping_key = std::env::var_os("GHOSTLIGHT_SESSION_WRAPPING_KEY_FILE")
         .map(PathBuf::from)
@@ -285,7 +330,8 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         consumers,
         world,
         controllers: controllers.map(Arc::new),
-        controller_permits: Arc::new(Semaphore::new(configured_controller_concurrency())),
+        play,
+        controller_permits,
         sessions: Arc::new(Mutex::new(sessions)),
         heimdall,
         mesh,
@@ -355,12 +401,22 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
     }
 }
 
+/// What `open_controller` opens: the controller organ itself, plus the same
+/// opened inference organ and model set the play table (Cut 8b) shares
+/// rather than opening its own second connection to the same transports.
+struct OpenedControllers {
+    runner: ControllerRunner,
+    inference: Arc<dyn ghostlight::InferencePort>,
+    models: ControllerModels,
+    play_model: String,
+}
+
 fn open_controller(
     world: &WorldMailbox,
     service_root: &std::path::Path,
     runtime_id: &str,
     endpoint: SocketAddr,
-) -> anyhow::Result<ControllerRunner> {
+) -> anyhow::Result<OpenedControllers> {
     let models = ControllerModels {
         projector: std::env::var("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL")
             .unwrap_or_else(|_| "gpt-5.6-luna".into()),
@@ -373,6 +429,13 @@ fn open_controller(
         elaborator: std::env::var("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL")
             .unwrap_or_else(|_| "gpt-5.6-terra".into()),
     };
+    // The play table's own model (Cut 8b), read beside its four siblings and
+    // handed into the same `open_inference` call below — exactly as the
+    // sibling models are handled — so the one opened organ validates and
+    // routes it too, rather than a second `open_inference` connecting to the
+    // same transports again for the play lane alone.
+    let play_model =
+        std::env::var("GHOSTLIGHT_PLAY_MODEL").unwrap_or_else(|_| "gpt-5.6-terra".into());
     let connector = std::env::var_os("GHOSTLIGHT_CONTROLLER_CREDENTIAL")
         .map(PathBuf::from)
         .map(|key_path| ConnectorBinding {
@@ -405,9 +468,47 @@ fn open_controller(
         }),
         Err(_) => None,
     };
-    let inference = open_inference(connector, sdk, local, &models.each())?;
+    let mut all_models: Vec<&str> = models.each().to_vec();
+    all_models.push(&play_model);
+    let inference = open_inference(connector, sdk, local, &all_models)?;
     let work = open_controller_work(service_root.join("controller-work.cc"))?;
-    ControllerRunner::open(world.clone(), inference, work, models).map_err(Into::into)
+    let runner = ControllerRunner::open(world.clone(), inference.clone(), work, models.clone())?;
+    Ok(OpenedControllers {
+        runner,
+        inference,
+        models,
+        play_model,
+    })
+}
+
+/// Opens the play table (Cut 8b) around the same inference organ and world
+/// owner `open_controller` already opened, plus its own store row and
+/// concurrency pool. `permits` is the exact `Arc<Semaphore>` `AppState` hands
+/// out as `controller_permits`: `execute_dispatch` and `close_turn`'s own
+/// narration draw from it, so the one pool `runtime_readiness` reads is the
+/// one play cognition actually contends for (PA.f13, P8.5).
+fn open_play(
+    world: &WorldMailbox,
+    service_root: &std::path::Path,
+    inference: Arc<dyn ghostlight::InferencePort>,
+    models: &ControllerModels,
+    play_model: String,
+    permits: Arc<Semaphore>,
+) -> anyhow::Result<PlayTable> {
+    let personas = PersonaLane::new(
+        ControllerPort::new(world.clone()),
+        inference.clone(),
+        models.projector.clone(),
+        models.persona.clone(),
+    )?;
+    PlayTable::new(
+        world.clone(),
+        personas,
+        inference,
+        play_model,
+        permits,
+        service_root.join("play-turn-v1.cc"),
+    )
 }
 
 fn open_mesh(
@@ -1042,6 +1143,43 @@ async fn execute_world(
             "stateDigest":receipt.resulting_state_digest,
             "commitDigest":receipt.commit_digest
         }));
+    }
+    if invocation.operation.operation_id == "world.play" {
+        // A play turn is not one kernel command: `PlayTable::run` submits as
+        // many as its own round loop decides, and a round can spend a real
+        // inference budget before any of them commit. Routed to the table in
+        // a spawned task, exactly as the map calls for, rather than held
+        // open behind this request — the caller polls the world/story
+        // surface for what the turn actually did, the same way it already
+        // observes any other committed consequence.
+        let payload: PlayPayload = serde_json::from_value(invocation.payload.clone())
+            .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+        let table = state
+            .play
+            .clone()
+            .ok_or_else(|| RuntimeCommandError::Payload("the play table is unavailable".into()))?;
+        let key = invocation
+            .operation
+            .idempotency_key
+            .clone()
+            .unwrap_or_default();
+        let principal = verified_principal.clone();
+        tokio::spawn(async move {
+            if let Err(error) = table
+                .run(
+                    &principal,
+                    key,
+                    PlayRequest {
+                        text: payload.text,
+                        answers: payload.answers,
+                    },
+                )
+                .await
+            {
+                tracing::warn!(%error, "a play turn ended in error");
+            }
+        });
+        return Ok(json!({"kind":"accepted"}));
     }
 
     let snapshot = current_world(state)
@@ -1798,7 +1936,24 @@ mod tests {
         };
         let inference = open_inference(Some(connector), None, None, &models.each()).unwrap();
         let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
-        let controllers = ControllerRunner::open(world.clone(), inference, work, models).unwrap();
+        let controllers =
+            ControllerRunner::open(world.clone(), inference.clone(), work, models.clone()).unwrap();
+        let personas = PersonaLane::new(
+            ControllerPort::new(world.clone()),
+            inference.clone(),
+            models.projector.clone(),
+            models.persona.clone(),
+        )
+        .unwrap();
+        let play = PlayTable::new(
+            world.clone(),
+            personas,
+            inference,
+            models.operational_agent.clone(),
+            Arc::new(Semaphore::new(TEST_CONTROLLER_CONCURRENCY)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
         let mesh = MeshPublisher::open(
             directory.path().join("mesh.cc"),
             None,
@@ -1813,6 +1968,7 @@ mod tests {
             consumers: Arc::new(ConsumerRegistry::empty()),
             world,
             controllers: Some(Arc::new(controllers)),
+            play: Some(Arc::new(play)),
             controller_permits: Arc::new(Semaphore::new(TEST_CONTROLLER_CONCURRENCY)),
             sessions: Arc::new(Mutex::new(sessions)),
             heimdall: Arc::new(HeimdallClient::fixture()),
@@ -2164,6 +2320,95 @@ mod tests {
         let (world, log) = current_operator_view(&fixture.state).await.unwrap();
         assert!(world.is_some());
         assert_eq!(log.len(), 1);
+    }
+
+    /// Cut 8b's own routing test: `world.play` reaches the play table and
+    /// returns `accepted` — the request routes and returns before the turn
+    /// itself resolves, exactly as the spawned-task shape calls for. The
+    /// fixture's own play table shares the fixture's unreachable test
+    /// inference organ (`127.0.0.1:9`), so the spawned turn will itself fail
+    /// once it actually tries to infer; that failure is expected and is not
+    /// this test's concern; only the HTTP response this route hands back
+    /// before that happens is.
+    #[tokio::test]
+    async fn world_play_reaches_the_play_table_and_is_accepted() {
+        let fixture = fixture().await;
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({
+                    "title":"Play Routing World",
+                    "brief":"",
+                    "subject_label":"Operator",
+                    "targets":{},
+                    "jurisdictions":[],
+                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
+                }),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(created["state"], "accepted");
+
+        let played = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                1,
+                json!({"text":"I look around."}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(played["state"], "accepted");
+    }
+
+    /// Same route, with `state.play` unavailable (mirrors `controllers:
+    /// None` elsewhere in this suite): refused, not a panic or a hang.
+    #[tokio::test]
+    async fn world_play_without_a_play_table_is_denied() {
+        let mut fixture = fixture().await;
+        fixture.state.play = None;
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({
+                    "title":"No Play World",
+                    "brief":"",
+                    "subject_label":"Operator",
+                    "targets":{},
+                    "jurisdictions":[],
+                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
+                }),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(created["state"], "accepted");
+
+        let played = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                1,
+                json!({"text":"I look around."}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(played["state"], "denied");
     }
 
     #[tokio::test]
