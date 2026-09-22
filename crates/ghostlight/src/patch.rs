@@ -1247,6 +1247,28 @@ pub struct WorldPatch {
     pub(crate) evidence: Vec<EvidenceRef>,
 }
 
+impl WorldPatch {
+    /// Whether any `SetPersonaMaterial` operation in this patch targets a
+    /// subject the patch does not itself declare — an existing, canonical
+    /// subject (`Ref::Existing`) rather than a draft handle this same patch's
+    /// own declarations introduced (`Ref::Draft`). `WorldPatch`'s fields are
+    /// `pub(crate)`, so a consumer that must refuse this shape (PA.f61: the
+    /// play agent may author a brand-new Persona's material, but never
+    /// rewrite an existing one's) reads it through this query rather than
+    /// parsing the patch's own JSON to decide.
+    pub fn sets_persona_of_existing_subject(&self) -> bool {
+        self.operations.iter().any(|operation| {
+            matches!(
+                operation,
+                ComponentOp::SetPersonaMaterial {
+                    subject: Ref::Existing(_),
+                    ..
+                }
+            )
+        })
+    }
+}
+
 /// The one byte bound on a `WorldPatch` frame from any external source, and
 /// the three item bounds on a `WorldPatch` as a value. One owner, two
 /// consumers: the consumer ingress decodes against them through
@@ -7710,6 +7732,43 @@ mod tests {
     use crate::{
         CallerId, CommandBody, CommandId, KernelError, SubmitReceipt, WorldKernel, WorldPhase,
     };
+
+    /// Owner: `WorldPatch::sets_persona_of_existing_subject`. Consumer:
+    /// `ghostlight-dungeon`'s play agent (PA.f61), which refuses a
+    /// `set_persona_material` run whose patch answers true here, since
+    /// `WorldPatch`'s own fields are `pub(crate)` and Dungeon may not parse
+    /// its JSON to decide the question itself.
+    #[test]
+    fn sets_persona_of_existing_subject_reads_the_subject_refs_own_shape() {
+        let empty = WorldPatch::default();
+        assert!(!empty.sets_persona_of_existing_subject());
+
+        let existing = WorldPatch {
+            declarations: Vec::new(),
+            operations: vec![ComponentOp::SetPersonaMaterial {
+                subject: Ref::Existing(SubjectId::issue()),
+                values: Vec::new(),
+                voice: Statement::new("flat and even").unwrap(),
+                memories: Vec::new(),
+                reads: Vec::new(),
+            }],
+            evidence: Vec::new(),
+        };
+        assert!(existing.sets_persona_of_existing_subject());
+
+        let draft = WorldPatch {
+            declarations: Vec::new(),
+            operations: vec![ComponentOp::SetPersonaMaterial {
+                subject: Ref::Draft(DraftHandle::new("npc")),
+                values: Vec::new(),
+                voice: Statement::new("flat and even").unwrap(),
+                memories: Vec::new(),
+                reads: Vec::new(),
+            }],
+            evidence: Vec::new(),
+        };
+        assert!(!draft.sets_persona_of_existing_subject());
+    }
 
     fn entity(handle: &str, label: &str, kind: EntityKind) -> Declaration {
         Declaration::Entity(EntityDeclaration {
