@@ -7770,14 +7770,15 @@ mod tests {
         assert!(!draft.sets_persona_of_existing_subject());
     }
 
-    /// PA.f92: a single-op fixture only ever exercises `operations[0]`, so a
-    /// `.take(1)` mutation on the scan inside `sets_persona_of_existing_subject`
-    /// would still pass every test above. Here op 0 is a harmless `Relocate`
-    /// with no bearing on personas at all, and the persona write to an
-    /// existing subject arrives only in op 1 — a query that stopped after the
-    /// first operation would miss it and wrongly report `false`.
+    /// PA.f92/PA.f110: a fixture whose persona write sits at either end of
+    /// `operations` only ever exercises `.take(1)` (op 0) or `.rev().take(1)`
+    /// (the last op) — the prior version of this test put the write last,
+    /// so `.rev().take(1)` would still find it and pass undetected. Here the
+    /// persona write to an existing subject sits strictly in the *middle*,
+    /// with a harmless `Relocate` both before and after it: only a scan over
+    /// every operation, in either direction, reports `true`.
     #[test]
-    fn sets_persona_of_existing_subject_scans_every_operation_not_just_the_first() {
+    fn sets_persona_of_existing_subject_scans_every_operation_not_just_an_end() {
         let patch = WorldPatch {
             declarations: Vec::new(),
             operations: vec![
@@ -7792,9 +7793,17 @@ mod tests {
                     memories: Vec::new(),
                     reads: Vec::new(),
                 },
+                ComponentOp::Relocate {
+                    subject: Ref::Draft(DraftHandle::new("wanderer")),
+                    via: Ref::Draft(DraftHandle::new("second-path")),
+                },
             ],
             evidence: Vec::new(),
         };
+        // Op 0 and the last op (index 2) are both the harmless `Relocate`;
+        // only op 1, strictly in the middle, is the persona write. A
+        // `.take(1)` mutation sees only op 0; a `.rev().take(1)` mutation
+        // sees only op 2. Both would report `false` here.
         assert!(patch.sets_persona_of_existing_subject());
     }
 

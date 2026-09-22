@@ -372,48 +372,47 @@ impl SourceSpan {
     /// a first occurrence that fails either edge is skipped in favor of a
     /// later one.
     ///
-    /// PA.f89: `str::match_indices` only ever reports non-overlapping
-    /// matches, so a candidate whose start lies inside an earlier, rejected
-    /// candidate's own span is never even offered — `locate("Juno no no",
-    /// "no no")` used to return `None`, because the boundary-valid match at
-    /// byte 5 overlaps the boundary-invalid one `match_indices` yields first
-    /// at byte 2. The search below finds a candidate the same way, but on a
-    /// rejection resumes the scan one *char* past that candidate's own start
-    /// (never past its end), so an overlapping later candidate is still
-    /// reachable. A span made only of whitespace or punctuation is unaffected:
-    /// it is still accepted whenever its own edges land on a word boundary,
-    /// exactly as before.
+    /// A valid span's own start and end are both boundary offsets, by
+    /// definition, so the search below tests `quote` at each boundary
+    /// `unicode-segmentation` already produced for `source` (`source.len()`
+    /// included as the final one), in order, rather than searching for raw
+    /// substring occurrences and then filtering: one linear pass over the
+    /// boundary list, each step a single `starts_with` bounded by `quote`'s
+    /// own length, with no repeated `find` over a shrinking haystack (PA.f106
+    /// — the repeated-`find` shape below this comment used to cost 2.2s over
+    /// a 32k-char source in a debug build; see `locate_completes_over_a_long_source`
+    /// for the regression guard). This also finds an overlapping later
+    /// candidate whenever an earlier boundary-aligned candidate is rejected
+    /// (PA.f89): `locate("Juno no no", "no no")` returns the boundary-valid
+    /// match at byte 5, because boundary offset 5 is tested on its own,
+    /// independent of whatever byte 2 (not itself a boundary here) would
+    /// have matched. A span made only of whitespace or punctuation is
+    /// unaffected: it is still accepted whenever its own edges land on a
+    /// word boundary.
     pub fn locate(source: &str, quote: &str) -> Option<Self> {
         if quote.is_empty() {
             return None;
         }
-        let mut boundaries: std::collections::HashSet<usize> = source
-            .split_word_bound_indices()
-            .map(|(byte, _)| byte)
-            .collect();
-        boundaries.insert(source.len());
-        let mut search_from = 0usize;
-        loop {
-            let haystack = source.get(search_from..)?;
-            let relative_start = haystack.find(quote)?;
-            let start_byte = search_from + relative_start;
+        let mut boundaries: Vec<usize> = source.split_word_bound_indices().map(|(byte, _)| byte).collect();
+        boundaries.push(source.len());
+        let boundary_set: std::collections::HashSet<usize> = boundaries.iter().copied().collect();
+        for start_byte in boundaries {
+            let Some(candidate) = source.get(start_byte..) else {
+                continue;
+            };
+            if !candidate.starts_with(quote) {
+                continue;
+            }
             let end_byte = start_byte + quote.len();
-            if boundaries.contains(&start_byte) && boundaries.contains(&end_byte) {
+            if boundary_set.contains(&end_byte) {
                 return Some(Self {
                     start_byte,
                     end_byte,
                     verbatim: quote.to_owned(),
                 });
             }
-            // Resume one char past this candidate's own start, not past its
-            // end, so a later candidate overlapping this one is still found.
-            let mut chars = source[start_byte..].char_indices();
-            chars.next();
-            search_from = match chars.next() {
-                Some((offset, _)) => start_byte + offset,
-                None => return None,
-            };
         }
+        None
     }
 
     pub fn whole(source: &str) -> Self {
@@ -925,6 +924,45 @@ mod tests {
         let source = "Wait... now";
         let located = SourceSpan::locate(source, "...").expect("a punctuation-only quote locates");
         assert_eq!(located.verbatim(), "...");
+    }
+
+    /// PA.f107 (Soul's own multibyte case): a raw substring match for
+    /// "éé éé" starts mid-word at byte 1, right after the 1-byte "x" in
+    /// "xéé éé éé" (each "é" is 2 UTF-8 bytes) — boundary-invalid, since
+    /// byte 1 sits inside the word "xéé". The boundary-valid occurrence,
+    /// starting after the leading space, must still be found. The
+    /// equivalent mutation to the boundary-driven rewrite is iterating raw
+    /// byte offsets instead of `unicode-segmentation`'s own boundary list:
+    /// over this source that either finds the wrong (mid-word) span or
+    /// panics slicing a non-char-boundary byte offset, since "é" is
+    /// multibyte and not every raw byte offset is even a valid `&str` slice
+    /// point.
+    #[test]
+    fn a_multibyte_overlapping_candidate_is_found_after_a_rejected_mid_word_one() {
+        let source = "xéé éé éé";
+        let located = SourceSpan::locate(source, "éé éé").expect("the boundary-valid occurrence locates");
+        assert_eq!(located.end_byte(), source.len());
+        assert_eq!(located.verbatim(), "éé éé");
+        assert_ne!(located.start_byte(), 1, "the mid-word candidate right after the leading x must be rejected");
+    }
+
+    /// PA.f106: a regression guard against the quadratic shape the overlap
+    /// fix used to have — a repeated `find` over a shrinking haystack,
+    /// advancing by one char per rejected candidate. A 64k-char run of one
+    /// letter is one single UAX #29 word (boundaries only at its two outer
+    /// edges), so a repeated-`find` search rejects and re-searches almost
+    /// every one of its interior positions — the same shape that took 2.2s
+    /// in a debug build at 32k chars before this rewrite. No timing
+    /// assertion: the point is that this test *completes* promptly under
+    /// `cargo test`, not a wall-clock threshold that would flake under load.
+    #[test]
+    fn locate_completes_over_a_long_source() {
+        let source = "a".repeat(64_000);
+        assert_eq!(
+            SourceSpan::locate(&source, "aa"),
+            None,
+            "no interior boundary exists inside one 64k-char word"
+        );
     }
 
     #[test]
