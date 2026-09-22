@@ -2200,6 +2200,74 @@ mod tests {
         );
     }
 
+    /// PA.f12: the dropped `no_proposal_projection_carries_the_canonical_world_commit`
+    /// was the only test of `submit_receipt`'s `applied` / `already_applied`
+    /// kinds and revision. This is the fix, through the real Dungeon path
+    /// rather than calling `submit_receipt` directly: one principal command,
+    /// submitted twice under the same idempotency key, must come back
+    /// `applied` and then `already_applied`, both naming the same revision.
+    #[tokio::test]
+    async fn a_principal_command_resubmitted_under_its_own_key_returns_applied_then_already_applied()
+     {
+        let fixture = fixture().await;
+        post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({
+                    "title":"Retry Receipt World",
+                    "brief":"",
+                    "subject_label":"Operator",
+                    "targets":{},
+                    "jurisdictions":[],
+                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
+                }),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.approve",
+                "ghostlight.world_approve.v0",
+                1,
+                json!({}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.activate",
+                "ghostlight.world_activate.v0",
+                2,
+                json!({}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        let id = uuid::Uuid::new_v4().to_string();
+        let command = invocation(
+            "world.advance_time",
+            "ghostlight.world_advance_time.v0",
+            3,
+            json!({"minutes": 5}),
+            &id,
+        );
+        let first = post(&fixture.state, &fixture.cookie, command.clone()).await;
+        let second = post(&fixture.state, &fixture.cookie, command).await;
+        assert_eq!(first["receipt"]["kind"], "applied");
+        assert_eq!(second["receipt"]["kind"], "already_applied");
+        assert_eq!(first["receipt"]["revision"], second["receipt"]["revision"]);
+    }
+
     #[tokio::test]
     async fn logout_retry_clears_a_revoked_cookie_without_reauthentication() {
         let fixture = fixture().await;
@@ -2351,6 +2419,81 @@ mod tests {
                 assert!(
                     line.trim_start().starts_with("///") || line.trim_start().starts_with("//"),
                     "runtime.rs names an ANTHROPIC variable outside a comment: {line}"
+                );
+            }
+        }
+    }
+
+    /// Every `.rs` file under this crate's `src`, with each file's own
+    /// `#[cfg(test)] mod tests { .. }` block excluded the way
+    /// `soul_no_credential_name_appears_in_the_runtimes_own_source` excludes
+    /// its own: a test module may name what production must not. Unlike that
+    /// scan, PA.f11 must reach every file in the crate, not just this one,
+    /// because a forbidden writer could return in `eve.rs`, `mesh.rs`, or
+    /// anywhere else Dungeon owns.
+    fn dungeon_non_test_source() -> Vec<(PathBuf, String)> {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut files = Vec::new();
+        let mut pending = vec![root];
+        while let Some(directory) = pending.pop() {
+            for entry in std::fs::read_dir(&directory).expect("dungeon src directory reads") {
+                let entry = entry.expect("dungeon src directory entry reads");
+                let path = entry.path();
+                if path.is_dir() {
+                    pending.push(path);
+                    continue;
+                }
+                if path.extension().and_then(|extension| extension.to_str()) == Some("rs") {
+                    files.push(path);
+                }
+            }
+        }
+        files
+            .into_iter()
+            .map(|path| {
+                let source = std::fs::read_to_string(&path)
+                    .expect("dungeon source file reads")
+                    .replace("\r\n", "\n");
+                // The earliest test-module marker in the file, mirroring the
+                // one runtime.rs's own scan splits on; a file with neither
+                // marker (for example main.rs) has no test module, so its
+                // whole source is production.
+                let production = ["\n#[cfg(test)]\nmod tests {", "\n#[cfg(test)]\npub(crate) mod tests {"]
+                    .into_iter()
+                    .filter_map(|marker| source.split_once(marker).map(|(before, _)| before.len()))
+                    .min()
+                    .map(|len| source[..len].to_owned())
+                    .unwrap_or(source);
+                (path, production)
+            })
+            .collect()
+    }
+
+    /// PA.f11: P1.1 and P1.2 promise that no Dungeon code path submits a clock
+    /// tick or runs a Persona, operational or elaboration lane outside a
+    /// turn. Neither promise had a test; Soul re-added a 30-second
+    /// `submit_clock` loop and a spawned `sweep` and both passed 46/46. This
+    /// is the fix: a source-scan test on the precedent below, banning the
+    /// deleted forbidden writers' own names from every file Dungeon owns.
+    /// `PersonaLane` (Cut 8) is deliberately not named here: dispatching a
+    /// Persona through it is the owner this cut clears the ground for, not a
+    /// forbidden writer.
+    #[test]
+    fn soul_no_forbidden_writer_name_appears_in_dungeons_own_source() {
+        let needles = [
+            "submit_clock(",
+            ".elaborator(",
+            "run_narrative(",
+            "run_operational(",
+            "run_cell(",
+            "ElaborationRunner",
+        ];
+        for (path, production) in dungeon_non_test_source() {
+            for needle in needles {
+                assert!(
+                    !production.contains(needle),
+                    "{} names {needle}",
+                    path.display()
                 );
             }
         }
