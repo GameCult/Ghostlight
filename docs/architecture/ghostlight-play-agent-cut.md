@@ -886,7 +886,22 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   - Hands caught its own draft falling back to the connector on a claimed but
     unconfigured prefix. The existing `soul_routing_refuses_rather_than_falling_back`
     test and `an_unroutable_model_fails_at_open` caught it.
-- **Verdicts:** pending Soul.
+- **Verdicts** (Soul, 2026-09-22, against `182f803`, Windows):
+
+  | Promise | Verdict | Note |
+  |---|---|---|
+  | P2.1 | HOLDS | M2.2 killed |
+  | P2.2 | FALSIFIED | PA.f16: an `HTTP_PROXY` variable sent the whole request to a proxy, plus `proxy-authorization` from the proxy URL. PA.f17: a 307 re-POSTed the body to another port |
+  | P2.3 | HOLDS | An empty prefix is accepted (PA.f19) |
+  | Invariant 7 | HOLDS | |
+
+  Soul's own mutations S1 and S7 were killed. S2 (the tools array sent
+  empty), S3 (the model prefix not stripped), S4 (the foreign-caller gate
+  removed) and S6 (`response_id` dropped from the receipt) survived; see
+  PA.f22.
+- **Soul findings, triaged:** PA.f16 to PA.f20 and PA.f22 are fix, as one
+  batch after Cut 3 lands, because they touch files Cut 3 is editing. PA.f21
+  is recorded.
 
 ## Cut 3. The play authority, `Ruled` facts and `Mint` (kernel), schema `consumer.v6`
 
