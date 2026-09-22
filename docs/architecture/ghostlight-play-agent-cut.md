@@ -1213,7 +1213,12 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     never an audience, and replay reproduces it (invariant 6).
   - P4.2 Retirement erases no history.
   - P4.3 Only the owner and `Play` retire.
-- **Landed:** —
+- **Landed:** `3725ba8` (Hands, Sonnet, 2026-09-22). Lib census 502 -> 513 across
+  Cuts 4 and 5; catalog (7, 32, 41); fixture additive only. `verify_state_shape`
+  needed no new arm. The loosening of M4.2 (`expected_caller` still `Some` for
+  `Retired`) survived: `mode()` gates first. The loosening of M4.3 (confine
+  only elaborators) survived: no consumer-authored `Retire` test. See PA.f30.
+- **Verdicts:** pending Soul.
 
 ## Cut 5. Granting and revoking affordances (kernel)
 
@@ -1234,7 +1239,10 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   fails. M5.2 drop the confinement clause: the elaborator test fails.
 - **Promises:** P5.1 Grants change only through owner, seed-in-Draft or
   `Play`. P5.2 No subject with a controller is left with no grant.
-- **Landed:** —
+- **Landed:** `732b1d3` (Hands, Sonnet, 2026-09-22). Catalog (7, 34, 43). The
+  loosening of M5.1 (allow a Human's last revoke) survived, and so did the
+  loosening of M5.2 (confine only elaborators). See PA.f30.
+- **Verdicts:** pending Soul.
 
 ## Cut 6. The Persona lane and the recency marker (library)
 
@@ -1654,6 +1662,15 @@ Interpreter, the elaborator sweep and lenses.
     `external_admission.rs`. Its receipt outcome is `pub(crate)`, so the
     refusal is tested inside the crate through the document decode path
     (`admit_document`), not only through the fixture caller.
+- **PA.f30 (introduced by Cuts 4-5, low, fix):** three loosening mutations
+  survived. Each needs a test:
+  - a consumer-authored `Retire`, `GrantAffordance` and `RevokeAffordance`
+    refused by `confine_to_ground` (M4.3 and M5.2, loosened to confine only
+    elaborators);
+  - the last revoke from a `Human`-controlled subject refused (M5.1
+    loosened);
+  - a direct pin that `expected_caller()` is `None` for `Retired` (M4.2
+    loosened).
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
