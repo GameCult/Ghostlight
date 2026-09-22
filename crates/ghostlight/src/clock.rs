@@ -7,7 +7,7 @@
 //! the span.
 
 use super::patch::{Commitment, CommitmentKey, CommitmentKind, DependencyTarget, MAX_ROUTE_COST};
-use super::{PressureMagnitude, PressureSource, SubjectId, WorldState, action};
+use super::{PressureMagnitude, PressureSource, SubjectId, WorldState, action, is_retired};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -103,6 +103,13 @@ pub(super) fn derive_motion(state: &WorldState, to: FictionalMinutes) -> Motion 
     let mut pressed: BTreeMap<(SubjectId, PressureSource), u32> = BTreeMap::new();
 
     for (subject, held) in &state.commitments {
+        // A retired subject cannot act, and neither fulfilling a routine nor
+        // pressing an obligation or goal is anything but that subject acting:
+        // its commitments stay in history, un-discharged and un-deleted, but
+        // the clock stops moving them the moment they are its.
+        if is_retired(state, *subject) {
+            continue;
+        }
         for (key, commitment) in held {
             if commitment.due > to {
                 continue;
@@ -134,6 +141,9 @@ pub(super) fn derive_motion(state: &WorldState, to: FictionalMinutes) -> Motion 
     }
 
     for (subject, targets) in &state.dependencies {
+        if is_retired(state, *subject) {
+            continue;
+        }
         for target in targets {
             if dependency_unavailable(state, *subject, *target) {
                 let source = PressureSource::Dependency(*target);

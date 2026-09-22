@@ -3464,6 +3464,13 @@ fn delegated_authority(
     let mut held: BTreeMap<SubjectId, BTreeMap<OfficeName, BTreeSet<AuthorityGrant>>> =
         BTreeMap::new();
     for (institution, offices) in &state.selection {
+        // A retired institution lends nothing: `Retire` does not vacate
+        // offices, so the incumbency stays on record, but a dissolved
+        // institution's grants stop reaching its office-holders here, the one
+        // site that turns an office into effective authority.
+        if is_retired(state, *institution) {
+            continue;
+        }
         for (name, office) in offices {
             if office.incumbent != Some(subject_id) {
                 continue;
@@ -8513,6 +8520,49 @@ mod tests {
             ),
             vec![Mismatch::RouteAccessRestricted { operation: 1 }],
             "the key covers the door, but the door's far side is still a draft"
+        );
+    }
+
+    /// PA.f38: a retired institution lends nothing. `Retire` does not vacate
+    /// the office the reeve holds — the incumbency stays on the ledger — but
+    /// `delegated_authority` stops reading a dissolved institution's grants,
+    /// the one site that turns an office into effective authority.
+    #[test]
+    fn a_retired_institution_lends_no_authority_to_its_office_holder() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = crate::custody_tests::custody_kernel(directory.path(), "RetiredLends");
+        let (_, civic, before) = civic_world(&mut kernel);
+        let over_hall = AuthorityGrant {
+            kind: authority_kind(LEVY_KIND),
+            over: AuthorityTarget::PlaceSubtree(civic.hall),
+        };
+        assert!(
+            subject_authority(&kernel.state, civic.reeve).contains(&over_hall),
+            "the reeve holds levy only through the warden office before retirement"
+        );
+
+        submit_owner(
+            &mut kernel,
+            &before,
+            operations(vec![ComponentOp::Retire {
+                subject: Ref::Existing(civic.treasury),
+            }]),
+        );
+
+        let warden = kernel
+            .state
+            .selection
+            .get(&civic.treasury)
+            .and_then(|offices| offices.get(&office(WARDEN_OFFICE)))
+            .expect("retire did not vacate the office");
+        assert_eq!(
+            warden.incumbent,
+            Some(civic.reeve),
+            "the reeve still holds the office after the institution retires"
+        );
+        assert!(
+            !subject_authority(&kernel.state, civic.reeve).contains(&over_hall),
+            "a retired institution still lent authority through its office"
         );
     }
 }
@@ -18178,5 +18228,194 @@ mod clock_tests {
             ]),
         );
         assert_eq!(error, vec![Mismatch::NoOperationEffect { operation: 1 }]);
+    }
+
+    // ---- Retirement fix batch (PA.f36-PA.f38) ------------------------------
+
+    /// PA.f36: the resolver refuses a genesis patch that declares a
+    /// Human-controlled subject and retires it in the same patch. The
+    /// resolver's `humans` candidate set tracks a freshly declared human the
+    /// same way `mirrors` tracks a freshly declared mirror, so this is caught
+    /// before `open_owner` ever commits an empty `world.cc` for a human who
+    /// never approved anything.
+    #[test]
+    fn genesis_cannot_declare_and_retire_the_human_in_one_patch() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut genesis = creation(CommandId::new(), "PAf36GenesisRetire");
+        genesis.patch.operations.push(ComponentOp::Retire {
+            subject: Ref::Draft(DraftHandle::new("human")),
+        });
+        let Err(error) = WorldKernel::create(
+            directory.path().join("world.cc"),
+            genesis,
+            &auth_principal(owner()),
+        ) else {
+            panic!("genesis admitted a patch that declares and retires the human");
+        };
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::RetiresAnApprover { operation: 0 })),
+            "{error:?}"
+        );
+    }
+
+    /// PA.f36: pins the apply-time re-check directly, beside the resolver's
+    /// refusal above, since resolution is speculative and this arm is the
+    /// actual commit. If the resolver's `humans` tracking were ever disabled
+    /// or bypassed, this is the arm that must still refuse removing a Draft
+    /// approver.
+    #[test]
+    fn apply_refuses_removing_a_draft_approver_directly() {
+        let directory = tempfile::tempdir().unwrap();
+        let kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "PAf36ApplyArm"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let human = human_subject(&kernel.snapshot().unwrap());
+        let mut state = kernel.state.clone();
+        assert!(
+            matches!(
+                apply_operation(&mut state, &ResolvedOp::Retire { subject: human }, &[])
+                    .unwrap_err(),
+                KernelError::Invariant(message)
+                    if message == "retire operation would remove a Draft approver"
+            ),
+            "the apply-time arm no longer refuses removing the Draft human"
+        );
+    }
+
+    /// PA.f37: a retired subject cannot become a promisor. `CreateCommitment`
+    /// refuses it with `RetiredSubjectActed`, the same mismatch a retired
+    /// office incumbent draws.
+    #[test]
+    fn a_retired_subject_cannot_be_a_promisor() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf37Promisor");
+        owner_retires(&mut kernel, clockwork.farmer).expect("retire");
+        let before = kernel.snapshot().unwrap();
+        let error = reject_owner(
+            &mut kernel,
+            &before,
+            operations(vec![ComponentOp::CreateCommitment {
+                subject: Ref::Existing(clockwork.farmer),
+                counterparty: None,
+                kind: CommitmentKind::Obligation,
+                due: FictionalMinutes(LATE_DUE + 1),
+                period: None,
+                checks: Vec::new(),
+                statement: Statement::new("What was promised, as the promisor would say it.")
+                    .unwrap(),
+            }]),
+        );
+        assert_eq!(error, vec![Mismatch::RetiredSubjectActed { operation: 0 }]);
+    }
+
+    /// PA.f37: once a subject is retired, the clock stops moving what it
+    /// holds — its routine no longer rolls and its obligation no longer
+    /// presses — while a live subject's goal and dependency still move on the
+    /// same tick. Nothing is discharged or deleted; the retired subject's
+    /// commitments stay on record, un-fulfilled and un-pressed, exactly as
+    /// they were the moment it retired.
+    #[test]
+    fn after_retirement_a_tick_moves_none_of_the_retired_subjects_commitments() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf37Frozen");
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::CloseRoute {
+                route: Ref::Existing(clockwork.gate),
+            }]),
+        );
+        owner_retires(&mut kernel, clockwork.farmer).expect("retire the farmer");
+        let routine_before = due(&kernel, clockwork.farmer, clockwork.routine);
+        let dependency_source = PressureSource::Dependency(DependencyTarget::Route(clockwork.gate));
+
+        tick(&mut kernel, ROUTINE_DUE as u32 + LATE_DUE as u32).expect("the tick commits");
+
+        assert_eq!(
+            due(&kernel, clockwork.farmer, clockwork.routine),
+            routine_before,
+            "a retired subject's routine still rolled"
+        );
+        assert_eq!(
+            pressure(
+                &kernel,
+                clockwork.farmer,
+                PressureSource::Commitment {
+                    subject: clockwork.farmer,
+                    key: clockwork.obligation,
+                }
+            ),
+            0,
+            "a retired subject's obligation still pressed"
+        );
+        assert_eq!(
+            pressure(
+                &kernel,
+                clockwork.reeve,
+                PressureSource::Commitment {
+                    subject: clockwork.reeve,
+                    key: clockwork.goal,
+                }
+            ),
+            1,
+            "the live subject's goal did not press"
+        );
+        assert_eq!(
+            pressure(&kernel, clockwork.reeve, dependency_source),
+            1,
+            "the live subject's dependency did not press"
+        );
+
+        assert!(
+            kernel.state.commitments[&clockwork.farmer].contains_key(&clockwork.routine),
+            "the frozen routine was discharged or deleted rather than left as history"
+        );
+        assert!(
+            kernel.state.commitments[&clockwork.farmer].contains_key(&clockwork.obligation),
+            "the frozen obligation was discharged or deleted rather than left as history"
+        );
+    }
+
+    /// PA.f37: the freeze survives a full reopen-and-replay, the same way
+    /// every other retirement effect in this batch does.
+    #[test]
+    fn a_retired_subjects_frozen_commitments_survive_reopen_and_replay() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (world_id, farmer, routine, obligation) = {
+            let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf37Replay");
+            owner_retires(&mut kernel, clockwork.farmer).expect("retire the farmer");
+            tick(&mut kernel, ROUTINE_DUE as u32 + LATE_DUE as u32).expect("the tick commits");
+            (
+                kernel.state.world_id,
+                clockwork.farmer,
+                clockwork.routine,
+                clockwork.obligation,
+            )
+        };
+        let reopened = WorldKernel::open(&path, world_id).expect("the store replays");
+        assert_eq!(
+            due(&reopened, farmer, routine),
+            FictionalMinutes(ROUTINE_DUE),
+            "the routine rolled somewhere along the replayed path"
+        );
+        assert_eq!(
+            pressure(
+                &reopened,
+                farmer,
+                PressureSource::Commitment {
+                    subject: farmer,
+                    key: obligation,
+                }
+            ),
+            0,
+            "the obligation pressed somewhere along the replayed path"
+        );
     }
 }

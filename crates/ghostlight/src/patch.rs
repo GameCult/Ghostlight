@@ -3292,6 +3292,18 @@ pub(super) fn resolve_patch(
         })
         .map(|(scope, _)| Key::Existing(scope.subject_id))
         .collect();
+    // Tracked the same way as `mirrors`: seeded from the committed human
+    // controller, extended below for a subject this same patch declares as
+    // `NewController::Human`. `Retire` refuses a Draft-phase approver out of
+    // this set instead of relying solely on the apply-time re-check, which
+    // otherwise only catches a genesis patch that declares and retires the
+    // human in the same breath after `open_owner` has already committed.
+    let mut humans: BTreeSet<Key<SubjectId>> = state
+        .controller_assignments
+        .iter()
+        .filter(|(_, assignment)| assignment.human_principal().is_some())
+        .map(|(scope, _)| Key::Existing(scope.subject_id))
+        .collect();
     let mut affordance_holdings: BTreeMap<Key<SubjectId>, BTreeSet<Key<AffordanceId>>> = state
         .affordance_grants
         .iter()
@@ -3508,6 +3520,9 @@ pub(super) fn resolve_patch(
                 if matches!(subject.controller, NewController::External { .. }) {
                     mirrors.insert(Key::Draft(subject.handle.clone()));
                 }
+                if matches!(subject.controller, NewController::Human { .. }) {
+                    humans.insert(Key::Draft(subject.handle.clone()));
+                }
                 if let Some(reference) = &subject.position
                     && let Some(place) = resolve_entity(
                         Site::Declaration(subject.handle.clone()),
@@ -3643,6 +3658,15 @@ pub(super) fn resolve_patch(
                 let Some(subject_key) = subject_key else {
                     continue;
                 };
+                // A retired subject cannot act, and making a promise is
+                // acting: refused here the same way `RetiredSubjectActed`
+                // refuses a retired office incumbent below.
+                if retired.contains(&subject_key) {
+                    mismatches.push(Mismatch::RetiredSubjectActed {
+                        operation: position,
+                    });
+                    continue;
+                }
                 if let Some(counterparty_key) = &counterparty_key {
                     match counterparty_key {
                         None => continue,
@@ -3835,13 +3859,12 @@ pub(super) fn resolve_patch(
                 // owner could otherwise retire the human, approve alone, and
                 // activate. Once the world is Active, approvals are frozen
                 // history judged by replay, and the human's subject may die.
-                if state.phase == super::WorldPhase::Draft
-                    && let Key::Existing(existing_id) = &subject_key
-                    && state
-                        .controller_assignments
-                        .get(&super::DecisionScope { subject_id: *existing_id })
-                        .is_some_and(|assignment| assignment.human_principal().is_some())
-                {
+                // `humans` tracks a subject declared as `NewController::Human`
+                // in this same patch exactly as `mirrors` tracks a freshly
+                // declared mirror, so a genesis patch that declares and
+                // retires the human in one breath is refused here rather than
+                // only by the apply-time re-check after admission.
+                if state.phase == super::WorldPhase::Draft && humans.contains(&subject_key) {
                     mismatches.push(Mismatch::RetiresAnApprover {
                         operation: position,
                     });
