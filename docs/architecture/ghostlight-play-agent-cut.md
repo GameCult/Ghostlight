@@ -2842,6 +2842,65 @@ Interpreter, the elaborator sweep and lenses.
       hook at the dispatch site instead.
   - Dungeon bin 113 → 122, lib 622, persona-projection 32 → 35. The
     retry-budget test now takes about 36 s of real time.
+- **Soul on 8a-fix4** (Opus, 2026-09-22, against `647917d`, Windows).
+  Dungeon bin 122, lib 622 and persona-projection 35, all as reported.
+  - Held: PA.f113 (`id_text_matches` is the printer's literal inverse, and
+    the dispatch test reads a real render), PA.f114 through
+    `execute_dispatch`, PA.f115 in all three directions, PA.f118's two
+    snapshot sites, PA.f122, PA.f124, and PA.f120/f121 against an
+    independent oracle over 13 sources x 29 quotes. No earlier ruling
+    regressed.
+  - The 36 s retry test was my misreading: that figure was the mutant's
+    time in Hands' report. The test sets the base to zero and runs in
+    0.40 s, and the whole binary in 6 s. The shape is already the one I
+    was going to ask for.
+  - The pass added about 1,000 lines, of which 61 are production code.
+  - **Verdict: not ready for 8b.** PA.f125 blocks.
+  - Triage: PA.f125, PA.f126, PA.f128 to PA.f133 are fix, in 8a-fix5.
+    PA.f127 is folded into 8b's round entry.
+- **PA.f125 (8a-fix4, high, fix, blocker):** PA.f123's persist made a worse
+  window. `execute_dispatch` persists at `play.rs:1520`, but the
+  `Dispatch` call record is written afterwards by `execute_round`. A crash
+  in between leaves `persona_turns` durable with no dispatch record. On
+  resume the dispatch re-runs, the "already acted" guard fires, and the
+  prose is lost, which breaks PA.f64. `dispatched_subjects` then offers
+  that Persona's actor tools while `span_is_exact` checks against prose the
+  agent never saw, so every speak for it is refused for the rest of the
+  turn. **Fix:** the `Dispatch` body is recorded before `execute_dispatch`
+  runs, or the partial result is recorded inside it, and then persisted.
+- **PA.f126 (8a-fix4, medium, fix):** PA.f123's test doesn't guard it.
+  Deleting both the persist and the hook fire leaves the suite green,
+  because `execute_actor_call`'s own persist writes `persona_turns`
+  anyway. **Fix:** assert that the resumed tool result still carries the
+  prose.
+- **PA.f127 (pre-existing, medium, fold into 8b):** the resume path's
+  collision rule has no behavioural guard.
+  `collision_refusal(..).filter(|_| false)` keeps the suite green, because
+  the source-presence test guards a string. **Ruling (Self, under the
+  standing go):** 8b gives round entry one `round_snapshot()` owner that
+  both `infer_round` and `execute_round` call. That collapses the two
+  sites and deletes the grep test.
+- **PA.f128 (8a-fix4, low, fix):** the ledger test rules out `front()` but
+  not `back()`: at the moment K2 is retried it sits at the back. Only a
+  second test catches that. **Fix:** close a further turn, so the matched
+  entry is neither end.
+- **PA.f129 (pre-existing, low, fix):** `handle_for` still carries its own
+  paren strip, so PA.f113's "no copies remain" is not true. **Fix:** derive
+  the handle from `id_text`.
+- **PA.f130 (8a-fix4, low, fix):** `PlayError::NoPlayerOpportunity` has no
+  producer and is kept alive by a narrow allow. **Fix:** delete the
+  variant, or raise it where it belongs.
+- **PA.f131 (8a-fix4, trivial, fix):** the allow on `WorldFixture::owner`
+  is unnecessary.
+- **PA.f132 (8a-fix4, low, fix):** `locate`'s "real bound" prose overstates
+  the first-byte check, which is a constant factor. The guard test's quote
+  shares no first byte with the source, so `starts_with` never runs.
+  **Fix:** correct the prose, and use a shared-prefix quote in the guard.
+  Soul measured 0.18 s for the guard shape and 0.50 s for a shared-prefix
+  shape, with no blow-up at prose sizes.
+- **PA.f133 (8a-fix4, low, recorded then folded):** "only a source-presence
+  test is possible" describes a choice, not a constraint. PA.f127's
+  `round_snapshot()` owner is the answer.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
