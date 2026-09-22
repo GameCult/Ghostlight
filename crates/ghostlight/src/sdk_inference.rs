@@ -716,6 +716,10 @@ pub(super) struct RoutedInferencePort {
     connector: Option<Arc<dyn InferencePort>>,
     sdk: Option<Arc<dyn InferencePort>>,
     sdk_model_prefix: String,
+    /// The local port's own claimed prefix, carried beside it rather than in a
+    /// third bare `String` field, so `route` can compare its length against
+    /// the SDK's claim without a third parallel field to keep in sync.
+    local: Option<(String, Arc<dyn InferencePort>)>,
 }
 
 impl RoutedInferencePort {
@@ -723,22 +727,47 @@ impl RoutedInferencePort {
         connector: Option<Arc<dyn InferencePort>>,
         sdk: Option<Arc<dyn InferencePort>>,
         sdk_model_prefix: impl Into<String>,
+        local: Option<(String, Arc<dyn InferencePort>)>,
     ) -> Self {
         Self {
             connector,
             sdk,
             sdk_model_prefix: sdk_model_prefix.into(),
+            local,
         }
     }
 
-    /// The model name carries the transport. A prefixed model that no SDK port
-    /// claims routes nowhere rather than falling back: a fallback is what would
-    /// make a typo in a model environment variable silent.
+    /// The model name carries the transport. A prefixed model that no
+    /// configured port claims routes nowhere rather than falling back: a
+    /// fallback is what would make a typo in a model environment variable
+    /// silent. When more than one prefix matches, the longest claim wins, so a
+    /// local prefix that extends the SDK's own (`claude-local/` beside
+    /// `claude`) is unambiguous without either operator having to avoid the
+    /// other's namespace.
     pub(super) fn route(&self, model: &str) -> Option<&Arc<dyn InferencePort>> {
-        if model.starts_with(&self.sdk_model_prefix) {
-            self.sdk.as_ref()
-        } else {
-            self.connector.as_ref()
+        // A prefix claims the model whether or not its port is configured: a
+        // claimed-but-unconfigured prefix refuses rather than falling back to
+        // the connector, which is what keeps a typo'd model prefix loud
+        // instead of silently reaching the wrong backend.
+        let local_claim = self
+            .local
+            .as_ref()
+            .filter(|(prefix, _)| model.starts_with(prefix.as_str()))
+            .map(|(prefix, port)| (prefix.len(), port));
+        let sdk_claim = model
+            .starts_with(&self.sdk_model_prefix)
+            .then_some(self.sdk_model_prefix.len());
+        match (local_claim, sdk_claim) {
+            (Some((local_len, local_port)), Some(sdk_len)) => {
+                if local_len >= sdk_len {
+                    Some(local_port)
+                } else {
+                    self.sdk.as_ref()
+                }
+            }
+            (Some((_, local_port)), None) => Some(local_port),
+            (None, Some(_)) => self.sdk.as_ref(),
+            (None, None) => self.connector.as_ref(),
         }
     }
 }
@@ -1309,14 +1338,19 @@ mod tests {
             Some(Arc::clone(&connector)),
             Some(Arc::clone(&sdk)),
             DEFAULT_SDK_MODEL_PREFIX,
+            None,
         );
         assert!(Arc::ptr_eq(routed.route("claude-opus-5").unwrap(), &sdk));
         assert!(Arc::ptr_eq(
             routed.route("gpt-5.6-terra").unwrap(),
             &connector
         ));
-        let moved =
-            RoutedInferencePort::new(Some(Arc::clone(&connector)), Some(Arc::clone(&sdk)), "gpt-");
+        let moved = RoutedInferencePort::new(
+            Some(Arc::clone(&connector)),
+            Some(Arc::clone(&sdk)),
+            "gpt-",
+            None,
+        );
         assert!(Arc::ptr_eq(moved.route("gpt-5.6-terra").unwrap(), &sdk));
         assert!(Arc::ptr_eq(
             moved.route("claude-opus-5").unwrap(),
@@ -1354,11 +1388,11 @@ mod tests {
         };
 
         assert!(matches!(
-            open_inference(None, Some(sdk()), &models("gpt-5.6-terra")),
+            open_inference(None, Some(sdk()), None, &models("gpt-5.6-terra").each()),
             Err(ControllerOpenError::UnroutableModel { .. })
         ));
         assert!(matches!(
-            open_inference(Some(connector()), None, &models("claude-opus-5")),
+            open_inference(Some(connector()), None, None, &models("claude-opus-5").each()),
             Err(ControllerOpenError::UnroutableModel { .. })
         ));
         assert!(matches!(
@@ -1369,12 +1403,13 @@ mod tests {
                     caller_runtime_id: TEST_RUNTIME.into(),
                     model_prefix: DEFAULT_SDK_MODEL_PREFIX.into(),
                 }),
-                &models(TEST_MODEL),
+                None,
+                &models(TEST_MODEL).each(),
             ),
             Err(ControllerOpenError::SdkSidecarMissing { .. })
         ));
         assert!(
-            open_inference(Some(connector()), Some(sdk()), &models(TEST_MODEL)).is_ok(),
+            open_inference(Some(connector()), Some(sdk()), None, &models(TEST_MODEL).each()).is_ok(),
             "a configuration where every model routes did not open"
         );
     }
@@ -1768,6 +1803,7 @@ mod tests {
             )) as Arc<dyn InferencePort>),
             None,
             DEFAULT_SDK_MODEL_PREFIX,
+            None,
         );
         assert!(connector_only.route(TEST_MODEL).is_none());
         let prepared =
@@ -1798,7 +1834,8 @@ mod tests {
                     caller_runtime_id: TEST_RUNTIME.into(),
                     model_prefix: DEFAULT_SDK_MODEL_PREFIX.into(),
                 }),
-                &models(TEST_MODEL),
+                None,
+                &models(TEST_MODEL).each(),
             )
             .is_ok()
         );

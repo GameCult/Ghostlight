@@ -63,6 +63,7 @@ mod cover;
 mod elaboration;
 mod journal;
 mod lens;
+mod local_inference;
 mod mailbox;
 mod patch;
 mod sdk_inference;
@@ -92,6 +93,7 @@ pub use elaboration::{
     EvidenceReceipt, EvidenceSource, SeedCheckpoint, SeedOutcome, SeedRunner, select_row,
 };
 pub use lens::{Lens, LensWeights};
+pub use local_inference::{DEFAULT_LOCAL_MODEL_PREFIX, LocalBinding};
 pub(crate) use mailbox::ElaborationPort;
 pub use mailbox::{ConsumerPort, ControllerPort, MailboxError, SeedPort, WorldMailbox};
 pub use patch::{

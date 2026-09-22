@@ -666,6 +666,7 @@ dependencies = [
  "codex-connector",
  "cultcache-rs",
  "ghostlight-persona-projection",
+ "reqwest",
  "rmp-serde",
  "serde",
  "serde_bytes",

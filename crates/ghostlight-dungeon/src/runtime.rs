@@ -13,11 +13,12 @@ use crate::{
 use ghostlight::{
     AffordanceId, CONSUMER_BODY_LIMIT, CommandBody, CommandId, ConnectorBinding, ConsumerPort,
     ConsumerRegistry, ControllerModels, ControllerRunner, ControllerWorkCustody,
-    CreateJurisdictionIntent, CreateWorldIntent, DEFAULT_SDK_MODEL_PREFIX, DecisionInvocation,
-    DecisionOpportunity, KernelError, Lens, LensWeights, MailboxError, PrincipalCommandIntent,
-    PrincipalId, SdkBinding, SeedOutcome, SeedPort, Statement, SubjectKind, SubmitReceipt,
-    TickMinutes, VaultEvidenceSource, VerifiedPrincipalEvidence, WorldMailbox, WorldPhase,
-    WorldSnapshot, open_controller_work, open_inference,
+    CreateJurisdictionIntent, CreateWorldIntent, DEFAULT_LOCAL_MODEL_PREFIX,
+    DEFAULT_SDK_MODEL_PREFIX, DecisionInvocation, DecisionOpportunity, KernelError, Lens,
+    LensWeights, LocalBinding, MailboxError, PrincipalCommandIntent, PrincipalId, SdkBinding,
+    SeedOutcome, SeedPort, Statement, SubjectKind, SubmitReceipt, TickMinutes, VaultEvidenceSource,
+    VerifiedPrincipalEvidence, WorldMailbox, WorldPhase, WorldSnapshot, open_controller_work,
+    open_inference,
 };
 use anyhow::{Context, bail, ensure};
 use axum::{
@@ -390,7 +391,21 @@ fn open_controller(
             model_prefix: std::env::var("GHOSTLIGHT_SDK_MODEL_PREFIX")
                 .unwrap_or_else(|_| DEFAULT_SDK_MODEL_PREFIX.into()),
         });
-    let inference = open_inference(connector, sdk, &models)?;
+    // Ghostlight reads no credential for this transport either: a loopback
+    // local model server needs none, and `open_inference` refuses anything
+    // else at open.
+    let local = match std::env::var("GHOSTLIGHT_LOCAL_ENDPOINT") {
+        Ok(value) => Some(LocalBinding {
+            endpoint: value.parse().with_context(|| {
+                format!("GHOSTLIGHT_LOCAL_ENDPOINT `{value}` is not a socket address")
+            })?,
+            model_prefix: std::env::var("GHOSTLIGHT_LOCAL_MODEL_PREFIX")
+                .unwrap_or_else(|_| DEFAULT_LOCAL_MODEL_PREFIX.into()),
+            caller_runtime_id: runtime_id.to_owned(),
+        }),
+        Err(_) => None,
+    };
+    let inference = open_inference(connector, sdk, local, &models.each())?;
     let work = open_controller_work(service_root.join("controller-work.cc"))?;
     ControllerRunner::open(world.clone(), inference, work, models).map_err(Into::into)
 }
@@ -1781,7 +1796,7 @@ mod tests {
             key_path: controller_key,
             caller_runtime_id: "ghostlight-runtime-test".into(),
         };
-        let inference = open_inference(Some(connector), None, &models).unwrap();
+        let inference = open_inference(Some(connector), None, None, &models.each()).unwrap();
         let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
         let controllers = ControllerRunner::open(world.clone(), inference, work, models).unwrap();
         let mesh = MeshPublisher::open(

@@ -10,6 +10,7 @@ chrono.workspace = true
 codex-connector.workspace = true
 cultcache-rs.workspace = true
 ghostlight-persona-projection = { path = "../ghostlight-persona-projection" }
+reqwest.workspace = true
 rmp-serde.workspace = true
 serde.workspace = true
 serde_bytes = "0.11"

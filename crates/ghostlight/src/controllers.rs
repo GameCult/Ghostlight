@@ -11,6 +11,7 @@ use super::elaboration::{
     NullEvidenceSource, SeedCheckpoint, SeedRunner, valid_elaboration_progression,
     valid_seed_progression,
 };
+use super::local_inference::{LocalBinding, open_local_port};
 use super::sdk_inference::{
     ChildProcessLink, DEFAULT_SDK_MODEL_PREFIX, RoutedInferencePort, SdkBinding, SdkInferencePort,
 };
@@ -2293,14 +2294,16 @@ pub struct ControllerModels {
 impl ControllerModels {
     /// Every model a configured backend must claim, in one place, so the
     /// open-time routing check and the canonical-identifier gate read the same
-    /// list.
-    pub(crate) fn each(&self) -> [&String; 5] {
+    /// list. `pub` so a caller can extend it with a model this struct does not
+    /// carry (the play lane's model, Cut 8) before passing the combined slice
+    /// to `open_inference`.
+    pub fn each(&self) -> [&str; 5] {
         [
-            &self.projector,
-            &self.persona,
-            &self.interpreter,
-            &self.operational_agent,
-            &self.elaborator,
+            self.projector.as_str(),
+            self.persona.as_str(),
+            self.interpreter.as_str(),
+            self.operational_agent.as_str(),
+            self.elaborator.as_str(),
         ]
     }
 
@@ -2321,6 +2324,10 @@ pub enum ControllerOpenError {
     UnroutableModel { model: String },
     #[error("the SDK sidecar entry `{path}` is not a file")]
     SdkSidecarMissing { path: String },
+    #[error("the local inference endpoint `{endpoint}` is not loopback")]
+    LocalEndpointNotLoopback { endpoint: SocketAddr },
+    #[error("the local and SDK inference transports both claim model prefix `{prefix}`")]
+    SharedModelPrefix { prefix: String },
 }
 
 /// Everything the CodexConnector transport needs to open, gathered so
@@ -2332,11 +2339,15 @@ pub struct ConnectorBinding {
 }
 
 /// Builds the one port every lane shares. A lane whose model no configured
-/// backend claims fails here, at open, rather than at its first tick.
+/// backend claims fails here, at open, rather than at its first tick. `models`
+/// is every model that must route, not just `ControllerModels`'s own fields,
+/// so a caller can pass `&models.each()` extended with a model that struct
+/// does not carry (the play lane's, Cut 8).
 pub fn open_inference(
     connector: Option<ConnectorBinding>,
     sdk: Option<SdkBinding>,
-    models: &ControllerModels,
+    local: Option<LocalBinding>,
+    models: &[&str],
 ) -> Result<Arc<dyn InferencePort>, ControllerOpenError> {
     let connector: Option<Arc<dyn InferencePort>> = match connector {
         Some(binding) => Some(Arc::new(CodexConnectorInferencePort::from_secret_file(
@@ -2362,11 +2373,34 @@ pub fn open_inference(
         }
         None => None,
     };
-    let routed = RoutedInferencePort::new(connector, sdk, sdk_model_prefix);
-    for model in models.each() {
+    // Ghostlight never holds a credential for this transport: a loopback
+    // local model server needs none, and refusing anything else here is what
+    // keeps that true by construction rather than by convention.
+    let local: Option<(String, Arc<dyn InferencePort>)> = match local {
+        Some(binding) => {
+            if !binding.endpoint.ip().is_loopback() {
+                return Err(ControllerOpenError::LocalEndpointNotLoopback {
+                    endpoint: binding.endpoint,
+                });
+            }
+            let prefix = binding.model_prefix.clone();
+            Some((prefix, open_local_port(binding)))
+        }
+        None => None,
+    };
+    if let Some((prefix, _)) = &local
+        && sdk.is_some()
+        && *prefix == sdk_model_prefix
+    {
+        return Err(ControllerOpenError::SharedModelPrefix {
+            prefix: prefix.clone(),
+        });
+    }
+    let routed = RoutedInferencePort::new(connector, sdk, sdk_model_prefix, local);
+    for &model in models {
         if routed.route(model).is_none() {
             return Err(ControllerOpenError::UnroutableModel {
-                model: model.clone(),
+                model: model.to_owned(),
             });
         }
     }
@@ -9224,7 +9258,8 @@ mod tests {
                 caller_runtime_id: runtime_id,
             }),
             None,
-            &models,
+            None,
+            &models.each(),
         )
         .unwrap();
         let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
