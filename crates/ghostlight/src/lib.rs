@@ -1365,6 +1365,8 @@ fn prepare_creation(
         Some(&input.lens_weights),
     )
     .map_err(KernelError::PatchRejected)?;
+    require_ruler(&CallerId::Principal(input.owner.clone()), &resolved)
+        .map_err(KernelError::PatchRejected)?;
     Ok(PreparedCreation {
         world_id,
         owner: input.owner.clone(),
@@ -1908,6 +1910,11 @@ impl WorldState {
                 "genesis effect does not derive from its creation command".into(),
             ));
         }
+        require_ruler(&CallerId::Principal(command.owner.clone()), resolved).map_err(|_| {
+            KernelError::Invariant(
+                "genesis effect rules or mints without the play authority".into(),
+            )
+        })?;
         admit_resolved(&mut state, resolved)?;
         state.state_digest = state_digest(&state)?;
         Ok(state)
@@ -5546,7 +5553,7 @@ mod tests {
     pub(crate) const TITHE_RECEIPT: &str = "receipt:rhythm-tithe-census";
     pub(crate) const OPENING_BALANCE: u64 = 7;
 
-    fn resource(handle: &str, label: &str) -> Declaration {
+    pub(crate) fn resource(handle: &str, label: &str) -> Declaration {
         Declaration::Entity(EntityDeclaration {
             handle: DraftHandle::new(handle),
             label: label.into(),
@@ -14688,6 +14695,134 @@ mod clock_tests {
         weights.insert(Lens::Veil, 1);
         input.lens_weights = LensWeights::new(weights);
         WorldKernel::create(&path, input, &auth_principal(owner())).expect("one nonzero weight");
+    }
+
+    // ---- PA.f26: the genesis lane obeys `require_ruler` too ------------
+
+    /// PA.f26: `prepare_creation` and `WorldState::genesis` both call
+    /// `require_ruler` exactly where every other admission lane does. A
+    /// creation patch that carries a `Ruled` fact is refused before a world
+    /// is ever written.
+    #[test]
+    fn a_genesis_patch_carrying_a_ruled_fact_is_refused() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let mut input = creation(CommandId::new(), "RuledGenesis");
+        input
+            .patch
+            .declarations
+            .push(Declaration::Fact(FactDeclaration {
+                handle: DraftHandle::new("rule"),
+                label: "The Ruling".into(),
+                statement: Statement::new("Stated by the table.").unwrap(),
+                standing: FactStandingRef::Ruled,
+            }));
+        let Err(error) = WorldKernel::create(&path, input, &auth_principal(owner())) else {
+            panic!("a genesis patch carrying a Ruled fact was admitted");
+        };
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::RuledWithoutAuthority {
+                    site: patch::Site::Declaration(DraftHandle::new("rule")),
+                })),
+            "{error:?}"
+        );
+        assert!(!path.exists(), "a refused genesis wrote a world file");
+    }
+
+    /// PA.f26, the `Mint` half: a creation patch that carries a `Mint` is
+    /// refused the same way.
+    #[test]
+    fn a_genesis_patch_carrying_a_mint_is_refused() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let mut input = creation(CommandId::new(), "MintGenesis");
+        input
+            .patch
+            .declarations
+            .push(super::tests::resource("loot", "Roadside Loot"));
+        input.patch.operations.push(ComponentOp::Mint {
+            holder: Ref::Draft(DraftHandle::new("human")),
+            resource: Ref::Draft(DraftHandle::new("loot")),
+            qty: Quantity(4),
+        });
+        let Err(error) = WorldKernel::create(&path, input, &auth_principal(owner())) else {
+            panic!("a genesis patch carrying a Mint was admitted");
+        };
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::RuledWithoutAuthority {
+                    site: patch::Site::Operation(0),
+                })),
+            "{error:?}"
+        );
+        assert!(!path.exists(), "a refused genesis wrote a world file");
+    }
+
+    /// PA.f26: `WorldState::genesis` re-decides `require_ruler` on its own
+    /// terms, independent of `prepare_creation` — that is what protects
+    /// journal replay of a stored genesis commit, not only a freshly
+    /// admitted one. Called directly, bypassing `prepare_creation` entirely,
+    /// so this cannot be satisfied by `prepare_creation`'s own check.
+    #[test]
+    fn genesis_itself_refuses_a_ruled_fact_and_a_mint() {
+        let world_id = WorldId::issue();
+        let mut input = creation(CommandId::new(), "GenesisRuleDirect");
+        input
+            .patch
+            .declarations
+            .push(Declaration::Fact(FactDeclaration {
+                handle: DraftHandle::new("rule"),
+                label: "The Ruling".into(),
+                statement: Statement::new("Stated by the table.").unwrap(),
+                standing: FactStandingRef::Ruled,
+            }));
+        let title = normalize_title(&input.title).unwrap();
+        let resolved = patch::resolve_patch(
+            &WorldState::empty(world_id, input.owner.clone(), title.clone()),
+            input.id,
+            &input.patch,
+            Some(&input.scale_intent),
+            Some(&input.lens_weights),
+        )
+        .expect("the resolver is actor-blind and accepts a Ruled fact");
+        let effect = WorldEffect::WorldCreated {
+            owner: input.owner.clone(),
+            title,
+            brief: input.brief.clone(),
+            resolved,
+        };
+        let error = WorldState::genesis(world_id, &input, &effect).unwrap_err();
+        assert!(matches!(error, KernelError::Invariant(_)), "{error:?}");
+
+        let world_id = WorldId::issue();
+        let mut input = creation(CommandId::new(), "GenesisMintDirect");
+        input
+            .patch
+            .declarations
+            .push(super::tests::resource("loot", "Roadside Loot"));
+        input.patch.operations.push(ComponentOp::Mint {
+            holder: Ref::Draft(DraftHandle::new("human")),
+            resource: Ref::Draft(DraftHandle::new("loot")),
+            qty: Quantity(4),
+        });
+        let title = normalize_title(&input.title).unwrap();
+        let resolved = patch::resolve_patch(
+            &WorldState::empty(world_id, input.owner.clone(), title.clone()),
+            input.id,
+            &input.patch,
+            Some(&input.scale_intent),
+            Some(&input.lens_weights),
+        )
+        .expect("the resolver is actor-blind and accepts a Mint");
+        let effect = WorldEffect::WorldCreated {
+            owner: input.owner.clone(),
+            title,
+            brief: input.brief.clone(),
+            resolved,
+        };
+        let error = WorldState::genesis(world_id, &input, &effect).unwrap_err();
+        assert!(matches!(error, KernelError::Invariant(_)), "{error:?}");
     }
 
     /// Soul falsification, the lens twin of the scale intent's write-once
