@@ -696,6 +696,7 @@ dependencies = [
  "cultmesh-rs",
  "cultnet-rs",
  "ghostlight",
+ "ghostlight-persona-projection",
  "hmac",
  "jsonwebtoken",
  "libc",
