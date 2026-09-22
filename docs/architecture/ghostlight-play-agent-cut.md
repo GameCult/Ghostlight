@@ -2720,6 +2720,26 @@ Interpreter, the elaborator sweep and lenses.
   - some docs refer to removed `serde(default)` attributes.
 - **PA.f112 (8b):** the key check and the open run under two separate lock
   acquisitions. 8b's per-world mutex covers both.
+- **Play loop fix 8a-fix3 landed (Hands, Sonnet, 2026-09-22):** `d28912c`
+  (library: PA.f106, PA.f107, PA.f110) and `754c7fe` (Dungeon: PA.f98 to
+  PA.f109, PA.f111).
+  - `dispatch` takes printed ids and refuses unknown ones by name.
+  - Actor tool descriptions carry the subject's label and id, added in
+    `play.rs` (`annotate_actor_tools`).
+  - Validity of `dispatched` follows call order.
+  - `locate` walks the word boundaries, about 4x faster (64k: 38.7 → 9.1
+    ms).
+  - A replay returns `RunOutcome` with the turn id. Empty text opening a
+    turn is refused.
+  - Seam for PA.f99: a `#[cfg(test)]` `before_submit_hook` on `PlayTable`
+    that reads the store's own redb handle. A second open of the file is
+    impossible, because the store takes an exclusive owner lock.
+  - Mutations hit production call sites this time, including all six
+    persist mutations. Hands found that the budget test tracked the
+    mutated constant, and pinned a literal instead.
+  - Untested, reported: the snapshot-failure close site, and the resume
+    path's collision check. Neither has an injection point.
+  - Dungeon bin 98 → 113, lib 622, persona-projection 30 → 32.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
