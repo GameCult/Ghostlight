@@ -3272,6 +3272,33 @@ Interpreter, the elaborator sweep and lenses.
   but it loosens the payload for every caller, including CultMesh, to buy
   something only the browser needed. It must not become the reason
   structured controls never arrive.
+- **Cut 11 landed (Hands, Sonnet, 2026-09-23):** `4155823` in Ghostlight,
+  and `42a477d` in `gamecult-ops` (the runbook's dev job).
+  - PA.f161: `OpenQuestion` carries `surface_version`, set from
+    `eve::surface_version` when the question opens and cleared when it is
+    answered. The route compares only against that. `ScriptedPort` and its
+    helpers widened to `pub(crate)` for tests, as authorised.
+  - PA.f162: `crates/ghostlight-dungeon/src/fixtures/eve_client_bridge_intents.json`
+    holds the real intents, stamped with the vendor revision
+    `672c0c1e9fc8…`. The gate test replays it with no node. The
+    regeneration test diffs live against committed (ignoring the key and
+    the timestamp), checks the stamp against `git -C vendor/eve rev-parse
+    HEAD`, and prints `SKIPPED` with its reason when the bridge is absent.
+  - Hands proved the clean-checkout claim: it renamed every
+    `node_modules` in the tree, stripped `node` from `PATH`, and ran the
+    compiled binary. The gate test passes; the regeneration test skips
+    aloud.
+  - PA.f163 to PA.f168 are done. `playRevision` is deleted: no production
+    or client reader existed. The scar-tour comments are cut.
+  - Mutations, all killed: both directions of the staleness comparison,
+    the spawned publish, the authored `value`s, the sibling refusal, and
+    two mutations of the fixture itself.
+  - **Discrepancy, reported:** PA.f167's `accessMode` fix has no test.
+    The bridge sets values through jsdom and dispatches events directly,
+    so it bypasses the `disabled` attribute a real browser would render.
+    Hands said so rather than faking the coverage.
+  - Dungeon bin 145 → 151. Net: one fixture, six tests, one field on a
+    never-deployed row, one dead wire field removed.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
