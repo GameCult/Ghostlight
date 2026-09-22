@@ -340,6 +340,29 @@ impl PersonaTurn {
     }
 }
 
+/// Whether `byte` is a valid left edge for a quoted span: the start of
+/// `source`, or the character immediately before it is not
+/// Unicode-alphanumeric. `byte` must itself be a valid char boundary, which
+/// every caller here gets for free from `match_indices`.
+fn starts_on_word_boundary(source: &str, byte: usize) -> bool {
+    byte == 0
+        || !source[..byte]
+            .chars()
+            .next_back()
+            .is_some_and(char::is_alphanumeric)
+}
+
+/// The mirror of [`starts_on_word_boundary`] for the right edge: the end of
+/// `source`, or the character immediately after it is not
+/// Unicode-alphanumeric.
+fn ends_on_word_boundary(source: &str, byte: usize) -> bool {
+    byte == source.len()
+        || !source[byte..]
+            .chars()
+            .next()
+            .is_some_and(char::is_alphanumeric)
+}
+
 /// An exact UTF-8 byte range in the preserved Persona source prose.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct SourceSpan {
@@ -360,18 +383,30 @@ impl SourceSpan {
         })
     }
 
-    /// The first exact occurrence of `quote` in `source`. The model quotes
-    /// words; the harness counts bytes. A model that counts bytes itself cut
-    /// three of eight utterances mid-word on the first Claude road run.
+    /// The first occurrence of `quote` in `source` that lands on a word
+    /// boundary at both ends. The model quotes words; the harness counts
+    /// bytes. A model that counts bytes itself cut three of eight utterances
+    /// mid-word on the first Claude road run — and a raw substring `find`
+    /// has the same defect the other way: "I can" is a byte-exact match
+    /// inside "I cannot go", but it is not the word the model claims to be
+    /// quoting. Each end must be the edge of `source` or sit next to a
+    /// non-alphanumeric (Unicode-aware) character; a first occurrence that
+    /// fails either edge is skipped in favor of a later one.
     pub fn locate(source: &str, quote: &str) -> Option<Self> {
         if quote.is_empty() {
             return None;
         }
-        source.find(quote).map(|start_byte| Self {
-            start_byte,
-            end_byte: start_byte + quote.len(),
-            verbatim: quote.to_owned(),
-        })
+        source
+            .match_indices(quote)
+            .find(|(start_byte, matched)| {
+                starts_on_word_boundary(source, *start_byte)
+                    && ends_on_word_boundary(source, start_byte + matched.len())
+            })
+            .map(|(start_byte, matched)| Self {
+                start_byte,
+                end_byte: start_byte + matched.len(),
+                verbatim: matched.to_owned(),
+            })
     }
 
     pub fn whole(source: &str) -> Self {
@@ -716,6 +751,56 @@ mod tests {
         assert!(!prompt.contains("world:test"));
         assert!(!prompt.contains("controller:mara"));
         assert!(!prompt.contains("sha256:"));
+    }
+
+    /// PA.f67: `SourceSpan::locate` used a raw substring `find`, so "I can"
+    /// was accepted as a span of "I cannot go" — a byte-exact match that is
+    /// not the word the model claims to quote. A located span must land on a
+    /// word boundary at both ends.
+    #[test]
+    fn a_mid_word_quote_is_refused() {
+        assert_eq!(SourceSpan::locate("I cannot go", "I can"), None);
+    }
+
+    #[test]
+    fn a_whole_word_quote_is_accepted() {
+        let source = "I cannot go";
+        let located = SourceSpan::locate(source, "I cannot").expect("a whole-word quote locates");
+        assert_eq!(located.start_byte(), 0);
+        assert_eq!(located.end_byte(), "I cannot".len());
+        assert_eq!(located.verbatim(), "I cannot");
+    }
+
+    #[test]
+    fn a_span_equal_to_the_whole_source_is_accepted() {
+        let source = "I cannot go";
+        let located = SourceSpan::locate(source, source).expect("the whole source locates");
+        assert_eq!(located.start_byte(), 0);
+        assert_eq!(located.end_byte(), source.len());
+    }
+
+    /// The first occurrence of "cat" sits inside "subcat" — preceded by an
+    /// alphanumeric character on the left, so it fails only the start-edge
+    /// check. The second, standalone "cat" is boundary-valid on both edges
+    /// and is what `locate` must return.
+    #[test]
+    fn a_later_boundary_valid_occurrence_is_found_after_an_invalid_first() {
+        let source = "The subcat and the cat both purred.";
+        let located = SourceSpan::locate(source, "cat").expect("the standalone word locates");
+        let expected_start = source.rfind("cat").unwrap();
+        assert_eq!(located.start_byte(), expected_start);
+        assert_eq!(located.verbatim(), "cat");
+    }
+
+    /// Punctuation at a span's edges is not alphanumeric, so it is a valid
+    /// boundary on either side without needing whitespace.
+    #[test]
+    fn a_span_with_punctuation_at_its_edges_is_handled() {
+        let source = "She said, \"Wait for the bell,\" and left.";
+        let located =
+            SourceSpan::locate(source, "Wait for the bell").expect("a comma-bounded quote locates");
+        assert_eq!(located.verbatim(), "Wait for the bell");
+        assert!(located.is_exact_in(source));
     }
 
     #[test]
