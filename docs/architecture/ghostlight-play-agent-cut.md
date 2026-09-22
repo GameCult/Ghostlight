@@ -1749,6 +1749,15 @@ Interpreter, the elaborator sweep and lenses.
 
   Soul's probes in `scratchpad/soul_probe.rs` kill all but MuE. **Fix:** add
   the probes as tests, and add one that kills MuE.
+- **Fix batch 3 landed (Hands, Sonnet, 2026-09-22):** `c8b9aad` (PA.f26,
+  genesis gated in `prepare_creation` and in `WorldState::genesis`),
+  `c97fad2` (the PA.f27, PA.f29 and PA.f30 tests), and `6e7c73b` (PA.f23,
+  PA.f24). Lib 513 → 525. No test found a production bug. PA.f30a's
+  loosening (confine only elaborators) cannot be killed from the consumer
+  side: a mirror cannot be granted (`GrantsOutsideControl`) or retired
+  (`RetiresAMirror`), and a consumer's ground holds only mirrors. So its
+  refusal is structural twice over, and the test documents this. Soul
+  checks this batch together with the PA.f31–f35 batch.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
