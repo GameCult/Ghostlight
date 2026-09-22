@@ -1466,6 +1466,32 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     M8.2 rebuild `opening_prompt` on resume: the question-across-restart test
     fails on a moved snapshot. M8.3 rebuild the body from a fresh snapshot on
     resume: the resume test fails (`CommandIdConflict`).
+- **Carried in from findings** (Self, under the standing go, 2026-09-22):
+  - **PA.f14, quarantine:** there is no world-level quarantine at the play
+    table. A Persona dispatch or play-lane inference error is handled by its
+    disposition:
+    - `Retryable` is retried inside the round budget.
+    - `RecoveryRequired` or `IntegrityViolation` from inference becomes that
+      tool call's recorded result for the agent, for example "Mara could not
+      act: <reason>", and the turn continues.
+    - A kernel `Invariant` from any commit closes the turn with the fault
+      recorded, and the table refuses further turns for that world until the
+      daemon restarts.
+
+    Reason: a local model's malformed reply is routine, and quarantining the
+    world on it would end play. `ControllerError::requires_quarantine` stays
+    unread in Dungeon.
+  - **PA.f13, the permit barrier:** Persona dispatch draws from
+    `controller_permits` again (P8.5). The route-observation test's permit
+    barrier must then guard something real, or it is deleted in 8b.
+    Readiness's `"active"` arm becomes reachable again.
+  - **The Persona turn's command id:** each Persona `turn` gets a fresh
+    `command_id`, derived from `(turn_id, round, call_index)`. `PersonaLane`
+    is not idempotent for a repeated id (Cut 6 Soul).
+  - **The split:** Hands runs 8a and 8b as separate passes, to fit one
+    worker's context. 8a is `play.rs`, with the store, `PLAY_TOOLS`, the
+    loop and the scripted-port tests. 8b is the `AppState` wiring,
+    `GHOSTLIGHT_PLAY_MODEL`, `world.play` routing and the Eve schema.
 - **Promises:** P8.1–P8.4 invariants 1, 3, 4 and restart survival as pinned
   above; P8.5 Persona dispatch draws only from `controller_permits`.
 - **Landed:** —
