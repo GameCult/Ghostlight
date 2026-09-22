@@ -2,7 +2,7 @@
 
 use crate::mesh::{COMMAND_BOUNDARY, COMMAND_RESULT_SCHEMA, PROVIDER_ID, SURFACE_ID};
 use crate::play::PlayTurnView;
-use ghostlight::{JurisdictionKey, OperatorEvent, WorldPhase, WorldSnapshot};
+use ghostlight::{JurisdictionKey, WorldPhase, WorldSnapshot};
 use anyhow::{Context, bail};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -198,17 +198,16 @@ fn jurisdiction_label(world: &WorldSnapshot, jurisdiction: JurisdictionKey) -> S
     }
 }
 
-/// `operator_log` and `play` both arrive beside the snapshot rather than
-/// inside it: the story feed is the human operator's surface, and no
-/// subject-facing lane may reach an unscoped event log. Cut 9's own play card
-/// below reads `play` alone, never `operator_log` — invariant 8's projection,
-/// question, and refusal, nothing else. `operator_log` still feeds
-/// `world.story`/`world.speak` below; Cut 9's own deletion commit removes
-/// this parameter along with them.
+/// `play` arrives beside the snapshot rather than inside it: `WorldSnapshot`
+/// carries no play-turn state of its own. Cut 9 deleted the speak-affordance
+/// operation, the story card, and this function's own operator-feed
+/// parameter together — the play card below reads `play` alone, never the
+/// operator's own unscoped log of every committed event (still a library
+/// read, just no longer one this function takes): invariant 8's projection,
+/// question, and refusal, nothing else.
 pub(crate) fn authenticated_surface(
     account: &str,
     snapshot: Option<&WorldSnapshot>,
-    operator_log: &[OperatorEvent],
     play: Option<&PlayTurnView>,
 ) -> anyhow::Result<Value> {
     let version = authenticated_surface_version(snapshot, play);
@@ -407,79 +406,13 @@ pub(crate) fn authenticated_surface(
                             "WorldMailbox",
                         ));
                     }
-                    let story = operator_log
-                        .iter()
-                        .filter_map(|event| {
-                            event.speech.as_ref().map(|text| {
-                                json!({
-                                    "id":format!("world.event.{}", event.revision),
-                                    "kind":"text",
-                                    "props":{"value":text.as_str()},
-                                    "children":[]
-                                })
-                            })
-                        })
-                        .collect::<Vec<_>>();
-                    children.push(json!({
-                        "id":"world.story",
-                        "kind":"card",
-                        "props":{"title":"Story"},
-                        "children":story
-                    }));
-
-                    let principal = ghostlight::PrincipalId::new(account);
-                    let opportunity = world.opportunities.iter().find_map(|opportunity| {
-                        world.subjects.iter().find_map(|subject| {
-                            // The catalog entry is found by kind name among the
-                            // subject's granted entries: the control is a
-                            // projection of state, not a second vocabulary.
-                            let affordance_id = world
-                                .affordances
-                                .iter()
-                                .find(|entry| {
-                                    entry.entry.kind.0 == "speak"
-                                        && subject.affordances.contains(&entry.id)
-                                })
-                                .map(|entry| entry.id)?;
-                            (subject.id == opportunity.scope.subject_id
-                                && subject.human_controller.as_ref() == Some(&principal)
-                                && opportunity.affordance_ids.contains(&affordance_id))
-                            .then_some((opportunity, affordance_id))
-                        })
-                    });
-                    if let Some((opportunity, affordance_id)) = opportunity {
-                        children.extend([
-                            json!({
-                                "id":"world.speak.text",
-                                "kind":"control.input.textarea",
-                                "props":{"label":"Say something","rows":3,"placeholder":"Your exact words"},
-                                "stateBindings":[local_draft("text", "string")],
-                                "children":[]
-                            }),
-                            command_button(
-                                "world.speak",
-                                "Speak",
-                                "world.speak",
-                                json!({"opportunity":opportunity,"affordance_id":affordance_id}),
-                                &["text"],
-                            ),
-                        ]);
-                        commands.push(command_descriptor(
-                            "world.speak",
-                            "ghostlight.world_speak.v0",
-                            &["text", "opportunity", "affordance_id"],
-                            "WorldMailbox",
-                        ));
-                    }
-
                     // Cut 9: the play card. Invariant 8 — the player sees a
                     // projection, the question, and the refusal of their own
                     // act, nothing else — so this reads `play` alone, never
-                    // `operator_log`: no id, no other subject's state, no
-                    // speech the player did not perceive. Always rendered in
-                    // Active (matching `world.story`'s own always-rendered
-                    // shape above), with empty rows before any turn has ever
-                    // opened.
+                    // the operator's own unscoped event log: no id, no other
+                    // subject's state, no speech the player did not perceive.
+                    // Always rendered in Active, with empty rows before any
+                    // turn has ever opened.
                     let mut play_rows = Vec::new();
                     if let Some(narration) = play.and_then(|view| view.narration.as_deref()) {
                         play_rows.push(json!({
@@ -636,7 +569,6 @@ pub(crate) fn operation_schema(operation: &str) -> Option<&'static str> {
         "world.activate" => "ghostlight.world_activate.v0",
         "world.advance_time" => "ghostlight.world_advance_time.v0",
         "world.seed" => "ghostlight.world_seed.v1",
-        "world.speak" => "ghostlight.world_speak.v0",
         "world.play" => "ghostlight.world_play.v0",
         _ => return None,
     })
@@ -761,7 +693,7 @@ mod tests {
 
     #[test]
     fn empty_authenticated_surface_has_create_without_session_zero() {
-        let surface = authenticated_surface("sha256:owner", None, &[], None).unwrap();
+        let surface = authenticated_surface("sha256:owner", None, None).unwrap();
         let encoded = serde_json::to_string(&surface).unwrap();
         assert!(encoded.contains("world.create"));
         assert!(encoded.contains("narrative_persona_label"));
@@ -792,38 +724,15 @@ mod tests {
         assert!(decoded.iter().all(|(_, weight)| weight == 1));
     }
 
+    /// `world.play`'s own operation id resolves to its schema through
+    /// `operation_schema`, so an invocation whose payload matches it
+    /// validates, and a payload that tries to claim authority is refused —
+    /// the same claim this test once made for the now-deleted speak
+    /// operation, PA.f146's own precedent (Cut 8b's schema existed here
+    /// before Cut 9 published `world.play`'s own descriptor and button,
+    /// below).
     #[test]
     fn payload_cannot_claim_authority() {
-        let forged = invocation(
-            "world.speak",
-            "ghostlight.world_speak.v0",
-            json!({"text":"hello","caller":"owner"}),
-        );
-        assert!(validate_invocation(&forged, "https-json").is_err());
-        let bound = invocation(
-            "world.speak",
-            "ghostlight.world_speak.v0",
-            json!({"text":"hello","opportunity":{},"affordance_id":"bound"}),
-        );
-        assert!(validate_invocation(&bound, "https-json").is_ok());
-    }
-
-    /// Cut 8b's own schema test, beside `world.speak`'s: `world.play`'s
-    /// operation id resolves to its schema through `operation_schema`, so an
-    /// invocation whose payload matches it validates, and a payload that
-    /// tries to claim authority is refused the same way
-    /// `payload_cannot_claim_authority` refuses one for `world.speak`.
-    ///
-    /// PA.f146: this is *not* the same claim as `world.speak`'s own —
-    /// `world.speak` also has a `command_descriptor` pushed into the Eve
-    /// command surface (`operation_schema`'s only caller besides this
-    /// validation path); `world.play` does not, anywhere, so it advertises
-    /// no button and no descriptor at all yet. `operation_schema` alone lets
-    /// a caller who already knows to call `world.play` validate and reach
-    /// `dispatch_world`; it does not make the operation discoverable. Cut 9
-    /// is what publishes the descriptor.
-    #[test]
-    fn world_play_operation_schema_validates_though_not_yet_advertised() {
         assert_eq!(operation_schema("world.play"), Some("ghostlight.world_play.v0"));
 
         let bound = invocation(
@@ -844,9 +753,9 @@ mod tests {
     #[test]
     fn invocation_metadata_rejects_legacy_authority_extensions() {
         let exact = invocation(
-            "world.speak",
-            "ghostlight.world_speak.v0",
-            json!({"text":"hello","opportunity":{},"affordance_id":"bound"}),
+            "world.play",
+            "ghostlight.world_play.v0",
+            json!({"text":"I look around.", "answers": null}),
         );
         let mut outer = serde_json::to_value(&exact).unwrap();
         outer["callerId"] = json!("legacy-owner");
@@ -862,5 +771,6 @@ mod tests {
         assert!(operation_schema("session_zero.begin").is_none());
         assert!(operation_schema("world.assess").is_none());
         assert!(operation_schema("governance.time.propose").is_none());
+        assert!(operation_schema("world.speak").is_none());
     }
 }

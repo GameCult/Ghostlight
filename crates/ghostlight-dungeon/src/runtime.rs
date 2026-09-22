@@ -12,12 +12,12 @@ use crate::{
     play::{PlayRequest, PlayTable, PlayTurnView, QuestionId},
 };
 use ghostlight::{
-    AffordanceId, CONSUMER_BODY_LIMIT, CommandBody, CommandId, ConnectorBinding, ConsumerPort,
+    CONSUMER_BODY_LIMIT, CommandBody, CommandId, ConnectorBinding, ConsumerPort,
     ConsumerRegistry, ControllerModels, ControllerPort, ControllerRunner, ControllerWorkCustody,
     CreateJurisdictionIntent, CreateWorldIntent, DEFAULT_LOCAL_MODEL_PREFIX,
-    DEFAULT_SDK_MODEL_PREFIX, DecisionInvocation, DecisionOpportunity, KernelError, Lens,
+    DEFAULT_SDK_MODEL_PREFIX, KernelError, Lens,
     LensWeights, LocalBinding, MailboxError, PersonaLane, PrincipalCommandIntent, PrincipalId,
-    SdkBinding, SeedOutcome, SeedPort, Statement, SubjectKind, SubmitReceipt, TickMinutes,
+    SdkBinding, SeedOutcome, SeedPort, SubjectKind, SubmitReceipt, TickMinutes,
     VaultEvidenceSource, VerifiedPrincipalEvidence, WorldMailbox, WorldPhase, WorldSnapshot,
     open_controller_work, open_inference,
 };
@@ -164,14 +164,6 @@ fn is_handle_shape(value: &str) -> bool {
     value.len() <= 48
         && chars.next().is_some_and(|first| first.is_ascii_lowercase())
         && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '-')
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct SpeakPayload {
-    text: String,
-    opportunity: DecisionOpportunity,
-    affordance_id: AffordanceId,
 }
 
 /// `world.play`'s own payload (Cut 8b): the player's prose, plus `answers`
@@ -694,16 +686,13 @@ async fn eve_surface(
         return Json(eve::anonymous_surface()).into_response();
     };
     let play_view = current_play_view(&state).await;
-    match current_operator_view(&state)
-        .await
-        .and_then(|(snapshot, log)| {
-            eve::authenticated_surface(
-                principal.account_subject_hash(),
-                snapshot.as_ref(),
-                &log,
-                play_view.as_ref(),
-            )
-        }) {
+    match current_world(&state).await.and_then(|snapshot| {
+        eve::authenticated_surface(
+            principal.account_subject_hash(),
+            snapshot.as_ref(),
+            play_view.as_ref(),
+        )
+    }) {
         Ok(surface) => Json(surface).into_response(),
         Err(error) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -1214,25 +1203,6 @@ async fn execute_world(
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
             CommandBody::ActivateWorld
         }
-        "world.speak" => {
-            let payload: SpeakPayload = serde_json::from_value(invocation.payload.clone())
-                .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
-            // `world.speak` stays an ingress for the Speak entry specifically.
-            // A generic `world.act` is only useful beside per-affordance Eve
-            // controls derived from the catalog, and that is a projection pass.
-            CommandBody::ExerciseDecision {
-                opportunity: payload.opportunity,
-                invocation: DecisionInvocation {
-                    affordance: payload.affordance_id,
-                    bindings: Vec::new(),
-                    proposed: Vec::new(),
-                    speech: Some(Statement::new(payload.text).ok_or_else(|| {
-                        RuntimeCommandError::Payload("spoken text is not canonical".into())
-                    })?),
-                    display: None,
-                },
-            }
-        }
         "world.advance_time" => {
             let payload: AdvanceTimePayload = serde_json::from_value(invocation.payload.clone())
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
@@ -1326,21 +1296,6 @@ async fn current_world(state: &AppState) -> anyhow::Result<Option<WorldSnapshot>
 /// card degrades to its own empty shape either way.
 async fn current_play_view(state: &AppState) -> Option<PlayTurnView> {
     state.play.as_ref()?.current_turn_view().await
-}
-
-/// The two halves of the operator surface, fetched together: the projection of
-/// world state, and the story feed the human reads. The feed is deliberately not
-/// a snapshot field, so no controller lane can reach it.
-async fn current_operator_view(
-    state: &AppState,
-) -> anyhow::Result<(Option<WorldSnapshot>, Vec<ghostlight::OperatorEvent>)> {
-    let snapshot = current_world(state).await?;
-    let log = match state.world.operator_log().await {
-        Ok(log) => log,
-        Err(MailboxError::Kernel(KernelError::WorldNotCreated)) => Vec::new(),
-        Err(error) => return Err(error.into()),
-    };
-    Ok((snapshot, log))
 }
 
 async fn publish_projection(state: &AppState) -> anyhow::Result<u64> {
@@ -2341,36 +2296,40 @@ mod tests {
         .await;
         assert_eq!(activated["sourceVersion"], 3);
 
-        let world = current_world(&fixture.state).await.unwrap().unwrap();
-        let opportunity = world.opportunities[0].clone();
-        let affordance = *world
-            .affordances
-            .iter()
-            .find(|entry| {
-                entry.entry.kind.0 == "speak" && world.subjects[0].affordances.contains(&entry.id)
-            })
-            .map(|entry| &entry.id)
-            .unwrap();
-        let spoken = post(
+        let played = post(
             &fixture.state,
             &fixture.cookie,
             invocation(
-                "world.speak",
-                "ghostlight.world_speak.v0",
+                "world.play",
+                "ghostlight.world_play.v0",
                 3,
-                json!({
-                    "text":"The new owner speaks.",
-                    "opportunity":opportunity,
-                    "affordance_id":affordance
-                }),
+                json!({"text":"The new owner looks around."}),
                 &uuid::Uuid::new_v4().to_string(),
             ),
         )
         .await;
-        assert_eq!(spoken["sourceVersion"], 4);
-        let (world, log) = current_operator_view(&fixture.state).await.unwrap();
-        assert!(world.is_some());
-        assert_eq!(log.len(), 1);
+        assert_eq!(played["state"], "accepted");
+
+        // PA.f138: this leg observes the play table itself, not merely the
+        // accepted response — a route that spawned the task and handed back
+        // the same JSON without ever calling `table.run` would still pass
+        // the assertion above, so `world_play_reaches_the_play_table_and_is_
+        // accepted`'s own poll is what actually proves the turn opened.
+        let table = fixture.state.play.clone().unwrap();
+        let observed = tokio::time::timeout(Duration::from_secs(5), async move {
+            loop {
+                if table.current_turn_view().await.is_some() {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await;
+        assert!(
+            observed.is_ok(),
+            "world.play must actually reach PlayTable::run, recording a turn row, not just return \
+             the same accepted JSON on its own"
+        );
     }
 
     /// Cut 8b's own routing test: `world.play` reaches the play table and
@@ -3075,7 +3034,7 @@ mod tests {
             .account_subject_hash()
             .to_owned();
         let stranger = "someone-else";
-        let mut surfaces = vec![eve::authenticated_surface(&owner, None, &[], None).unwrap()];
+        let mut surfaces = vec![eve::authenticated_surface(&owner, None, None).unwrap()];
         two_cell_world(
             &fixture.state,
             &fixture.cookie,
@@ -3090,7 +3049,7 @@ mod tests {
         let draft = fixture.state.world.snapshot().await.unwrap();
         assert_eq!(draft.phase, WorldPhase::Draft);
         for account in [owner.as_str(), stranger] {
-            surfaces.push(eve::authenticated_surface(account, Some(&draft), &[], None).unwrap());
+            surfaces.push(eve::authenticated_surface(account, Some(&draft), None).unwrap());
         }
         for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
             let snapshot = fixture.state.world.snapshot().await.unwrap();
@@ -3122,12 +3081,13 @@ mod tests {
         let play_view = current_play_view(&fixture.state).await;
         for account in [owner.as_str(), stranger] {
             surfaces.push(
-                eve::authenticated_surface(account, Some(&active), &[], play_view.as_ref()).unwrap(),
+                eve::authenticated_surface(account, Some(&active), play_view.as_ref()).unwrap(),
             );
         }
         surfaces.push(eve::anonymous_surface());
 
         let mut seen = 0usize;
+        let mut saw_world_play = false;
         for surface in &surfaces {
             let mut buttons = Vec::new();
             surface_buttons(&surface["surface"]["root"], &mut buttons);
@@ -3137,6 +3097,7 @@ mod tests {
                     eve::operation_schema(command).is_some(),
                     "the panel emits {command}, which Ghostlight does not advertise"
                 );
+                saw_world_play |= command == "world.play";
                 seen += 1;
             }
             for descriptor in surface["commands"].as_array().unwrap() {
@@ -3149,6 +3110,9 @@ mod tests {
             }
         }
         assert!(seen > 5, "the walk found almost nothing to check");
+        // Cut 9: the play card's own button is now part of this walk — it
+        // was not, before Cut 9 published its descriptor (PA.f146).
+        assert!(saw_world_play, "the panel must emit world.play in Active");
     }
 
     /// Spec test 12. Seeding is the owner's lane and Draft's lane, and both
@@ -3277,13 +3241,7 @@ mod tests {
         )
         .await;
         let draft = fixture.state.world.snapshot().await.unwrap();
-        let surface = eve::authenticated_surface(
-            &owner,
-            Some(&draft),
-            &[],
-            None,
-        )
-        .unwrap();
+        let surface = eve::authenticated_surface(&owner, Some(&draft), None).unwrap();
         let encoded = serde_json::to_string(&surface).unwrap();
         let card = surface["surface"]["root"]["children"]
             .as_array()

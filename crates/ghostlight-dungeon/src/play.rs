@@ -2813,17 +2813,15 @@ mod tests {
     }
 
     /// Cut 9's own card test: the player's own already-committed speech is
-    /// durable in `state.world.operator_log()` — the operator's surface, per
-    /// its own doc comment, which "no subject-facing lane may reach" — while
-    /// the turn's own narration is a *different*, player-facing channel the
-    /// play table produces. `eve::authenticated_surface`'s play card must
-    /// show the narration and never the operator log's own text, proving
-    /// invariant 8's "nothing else": the player sees a projection, the
-    /// question, and the refusal of their own act, never an unscoped event
-    /// log. Mutation M9.1: render `operator_log` into the card (as
-    /// `world.story` still does elsewhere on this same surface, pending Cut
-    /// 9's own deletion commit) — this test must fail if the *play card*
-    /// itself ever does the same.
+    /// durable in the world owner's own unscoped operator log — the
+    /// operator's surface, per that library method's own doc comment, which
+    /// "no subject-facing lane may reach" — while the turn's own narration is
+    /// a *different*, player-facing channel the play table produces.
+    /// `eve::authenticated_surface`'s play card must show the narration and
+    /// never the operator feed's own text, proving invariant 8's "nothing
+    /// else": the player sees a projection, the question, and the refusal of
+    /// their own act, never an unscoped event log. Mutation M9.1: render that
+    /// feed into the card — this test must fail if the play card ever does.
     #[tokio::test]
     async fn the_play_surface_shows_only_the_projection() {
         let fixture = play_world(None, "player-projection-only").await;
@@ -2872,8 +2870,8 @@ mod tests {
             )
             .await
             .unwrap();
-        let operator_log = fixture.world.operator_log().await.unwrap();
-        assert_eq!(operator_log.len(), 1, "the committed speech must be durable in the operator log");
+        let durable_log = fixture.world.operator_log().await.unwrap();
+        assert_eq!(durable_log.len(), 1, "the committed speech must be durable in the world owner's own feed");
 
         let end = output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
         let personas = PersonaLane::new(
@@ -2901,19 +2899,13 @@ mod tests {
         assert_eq!(view.narration.as_deref(), Some("The room settles into quiet."));
 
         let world = fixture.world.snapshot().await.unwrap();
-        // The *real* operator log, with the leaking text durably in it, so a
-        // mutation that renders `operator_log` into the play card genuinely
-        // has something to leak here — `world.story` (pending Cut 9's own
-        // deletion commit) legitimately still renders this same text
-        // elsewhere on the surface, so the negative assertion below is
-        // scoped to the play card's own subtree, not the whole page.
-        let surface = crate::eve::authenticated_surface(
-            "player-projection-only",
-            Some(&world),
-            &operator_log,
-            Some(&view),
-        )
-        .unwrap();
+        // `authenticated_surface` takes no operator feed at all any more
+        // (Cut 9's own deletion commit removed that parameter along with the
+        // card that once read it) — the leaking text above is durable and
+        // real, and this call has structurally no way to reach it.
+        let surface =
+            crate::eve::authenticated_surface("player-projection-only", Some(&world), Some(&view))
+                .unwrap();
         let play_card = find_surface_node(&surface, "world.play.card").expect("the play card");
         let play_card_encoded = serde_json::to_string(play_card).unwrap();
         assert!(
@@ -2994,7 +2986,6 @@ mod tests {
         let surface_before = crate::eve::authenticated_surface(
             "player-card-question",
             Some(&world_before),
-            &[],
             Some(&asked_view),
         )
         .unwrap();
@@ -3047,7 +3038,6 @@ mod tests {
         let surface_after = crate::eve::authenticated_surface(
             "player-card-question",
             Some(&world_after),
-            &[],
             Some(&closed_view),
         )
         .unwrap();
