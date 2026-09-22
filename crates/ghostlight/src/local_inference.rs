@@ -9,8 +9,9 @@
 //! flight through the same port at once.
 
 use super::controllers::{
-    InferenceEvent, InferenceFault, InferenceOutput, InferencePort, InferenceRequest,
-    PreparedInference, REQUEST_EXPIRY, RESPONSE_TIMEOUT, unix_ms,
+    ControllerOpenError, InferenceEvent, InferenceFault, InferenceOutput, InferencePort,
+    InferenceRequest, PreparedInference, REQUEST_EXPIRY, RESPONSE_TIMEOUT, call_id_is_valid,
+    tool_name_is_valid, unix_ms,
 };
 use async_trait::async_trait;
 use codex_connector::CodexInputItem;
@@ -57,6 +58,10 @@ struct LocalInferenceReceipt {
 /// integrity violation, not a best-effort read.
 #[derive(Debug, Deserialize)]
 struct LocalChatResponse {
+    /// Used only for receipt bookkeeping (`response_id`), so an absent id is
+    /// tolerated rather than an integrity violation; a missing or duplicate
+    /// tool call id, which the tool loop must correlate against, still is.
+    #[serde(default)]
     id: String,
     choices: Vec<LocalChatChoice>,
     #[serde(default)]
@@ -74,8 +79,23 @@ struct LocalChatChoice {
 struct LocalChatMessage {
     #[serde(default)]
     content: Option<String>,
-    #[serde(default)]
+    /// An absent `tool_calls` field already decodes to the empty vec through
+    /// `#[serde(default)]`; `null_as_default` additionally covers an explicit
+    /// `"tool_calls": null`, which `#[serde(default)]` alone does not, since
+    /// `default` only fires when the key is missing, not when it is present
+    /// and null.
+    #[serde(default, deserialize_with = "null_as_default")]
     tool_calls: Vec<LocalChatToolCall>,
+}
+
+/// Treats a present-but-null field the same as an absent one. Paired with
+/// `#[serde(default)]`, which covers only the absent case on its own.
+fn null_as_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Default + Deserialize<'de>,
+{
+    Ok(Option::deserialize(deserializer)?.unwrap_or_default())
 }
 
 #[derive(Debug, Deserialize)]
@@ -98,20 +118,6 @@ struct LocalChatUsage {
     completion_tokens: u64,
 }
 
-/// A call id the connector's own validators would refuse cannot be persisted,
-/// same rule the SDK port applies to its sidecar's reports.
-fn call_id_is_valid(call_id: &str) -> bool {
-    !call_id.is_empty() && call_id.len() <= 64 && call_id.is_ascii()
-}
-
-fn tool_name_is_valid(name: &str) -> bool {
-    !name.is_empty()
-        && name.len() <= 64
-        && name
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
-}
-
 /// The local OpenAI-compatible backend behind Ghostlight's inference seam.
 /// Unlike the SDK port, it runs no query loop: one prepared request lowers to
 /// one HTTP call, and any tool call in the reply comes back inert for Rust's
@@ -125,14 +131,23 @@ pub(super) struct LocalInferencePort {
 }
 
 impl LocalInferencePort {
-    /// The client is built with `.no_proxy()` so an environment proxy
-    /// variable can never carry this request, or a `proxy-authorization`
-    /// header derived from a proxy URL's userinfo, off this loopback
-    /// endpoint (PA.f16); and with redirects disabled, so a 3xx reply cannot
-    /// re-POST the request's contents to a second endpoint this port never
-    /// opened (PA.f17).
-    fn new(endpoint: SocketAddr, prefix: impl Into<String>, caller_runtime_id: impl Into<String>) -> Self {
-        Self {
+    /// The loopback check happens here, in the constructor, so a non-loopback
+    /// endpoint cannot reach this port through any path that builds one —
+    /// not only the one `open_inference` exercises today. The client is
+    /// built with `.no_proxy()` so an environment proxy variable can never
+    /// carry this request, or a `proxy-authorization` header derived from a
+    /// proxy URL's userinfo, off this loopback endpoint; and with redirects
+    /// disabled, so a 3xx reply cannot re-POST the request's contents to a
+    /// second endpoint this port never opened.
+    fn new(
+        endpoint: SocketAddr,
+        prefix: impl Into<String>,
+        caller_runtime_id: impl Into<String>,
+    ) -> Result<Self, ControllerOpenError> {
+        if !endpoint.ip().is_loopback() {
+            return Err(ControllerOpenError::LocalEndpointNotLoopback { endpoint });
+        }
+        Ok(Self {
             client: reqwest::Client::builder()
                 .no_proxy()
                 .redirect(reqwest::redirect::Policy::none())
@@ -142,7 +157,7 @@ impl LocalInferencePort {
             endpoint,
             prefix: prefix.into(),
             caller_runtime_id: caller_runtime_id.into(),
-        }
+        })
     }
 
     async fn send(&self, body: Value) -> Result<LocalChatResponse, InferenceFault> {
@@ -231,9 +246,11 @@ fn lower_request(prepared: &PreparedInference, prefix: &str) -> Result<Value, In
     let mut body = json!({
         "model": model,
         "messages": messages,
-        "tools": tools,
-        "parallel_tool_calls": request.parallel_tool_calls,
     });
+    if !tools.is_empty() {
+        body["tools"] = json!(tools);
+        body["parallel_tool_calls"] = json!(request.parallel_tool_calls);
+    }
     if let Some(max_tokens) = request.max_output_tokens {
         body["max_tokens"] = json!(max_tokens);
     }
@@ -263,6 +280,7 @@ fn assemble_output(
     {
         events.push(InferenceEvent::Text(content));
     }
+    let mut seen_call_ids = std::collections::HashSet::new();
     for call in choice.message.tool_calls {
         if !call_id_is_valid(&call.id) || !tool_name_is_valid(&call.function.name) {
             return Err(InferenceFault::integrity_violation(
@@ -272,6 +290,11 @@ fn assemble_output(
         if !request.tools.iter().any(|tool| tool.name == call.function.name) {
             return Err(InferenceFault::integrity_violation(
                 "the local inference endpoint called a tool this request did not offer",
+            ));
+        }
+        if !seen_call_ids.insert(call.id.clone()) {
+            return Err(InferenceFault::integrity_violation(
+                "the local inference endpoint reported the same call id twice",
             ));
         }
         events.push(InferenceEvent::ToolCall {
@@ -336,24 +359,23 @@ impl InferencePort for LocalInferencePort {
     }
 }
 
-/// Builds the local port from its binding. The caller validates the endpoint
-/// is loopback before this is reached: this constructor does no validation of
-/// its own, so it cannot silently open a non-loopback port through a path
-/// that skips the check `open_inference` runs.
-pub(super) fn open_local_port(binding: LocalBinding) -> Arc<dyn InferencePort> {
-    Arc::new(LocalInferencePort::new(
+/// Builds the local port from its binding. The loopback check lives in
+/// `LocalInferencePort::new` itself, so it holds by construction for every
+/// caller of this function, not only `open_inference`.
+pub(super) fn open_local_port(
+    binding: LocalBinding,
+) -> Result<Arc<dyn InferencePort>, ControllerOpenError> {
+    Ok(Arc::new(LocalInferencePort::new(
         binding.endpoint,
         binding.model_prefix,
         binding.caller_runtime_id,
-    ))
+    )?))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::controllers::{
-        ControllerOpenError, InferencePurpose, RequestShape, open_inference, tool_request,
-    };
+    use crate::controllers::{InferencePurpose, RequestShape, open_inference, tool_request};
     use crate::elaboration::{ElaborationLoopEvaluation, SEED_ROUND_BUDGET, evaluate_elaboration_loop};
     use crate::patch::{RECORD_GAP_PATCH_TOOL, SUBMIT_PATCH_TOOL, patch_tools};
     use crate::sdk_inference::{DEFAULT_SDK_MODEL_PREFIX, RoutedInferencePort, SdkBinding};
@@ -506,37 +528,32 @@ mod tests {
         addr
     }
 
-    fn tool_call_reply(id: &str, name: &str, arguments: &str) -> String {
+    /// One or more tool calls in one reply. Folded from the former
+    /// single-call and two-call variants so there is one shape to keep
+    /// consistent (PA.f20).
+    fn tool_call_reply(calls: &[(&str, &str, &str)]) -> String {
+        let id = if calls.len() == 1 {
+            format!("resp-{}", calls[0].0)
+        } else {
+            "resp-double".to_owned()
+        };
+        let tool_calls: Vec<Value> = calls
+            .iter()
+            .map(|(call_id, name, arguments)| {
+                json!({
+                    "id": call_id,
+                    "type": "function",
+                    "function": {"name": name, "arguments": arguments},
+                })
+            })
+            .collect();
         json!({
-            "id": format!("resp-{id}"),
+            "id": id,
             "choices": [{
                 "message": {
                     "role": "assistant",
                     "content": Value::Null,
-                    "tool_calls": [{
-                        "id": id,
-                        "type": "function",
-                        "function": {"name": name, "arguments": arguments},
-                    }],
-                },
-                "finish_reason": "tool_calls",
-            }],
-            "usage": {"prompt_tokens": 10, "completion_tokens": 5},
-        })
-        .to_string()
-    }
-
-    fn two_tool_call_reply(first: (&str, &str, &str), second: (&str, &str, &str)) -> String {
-        json!({
-            "id": "resp-double",
-            "choices": [{
-                "message": {
-                    "role": "assistant",
-                    "content": Value::Null,
-                    "tool_calls": [
-                        {"id": first.0, "type": "function", "function": {"name": first.1, "arguments": first.2}},
-                        {"id": second.0, "type": "function", "function": {"name": second.1, "arguments": second.2}},
-                    ],
+                    "tool_calls": tool_calls,
                 },
                 "finish_reason": "tool_calls",
             }],
@@ -546,8 +563,12 @@ mod tests {
     }
 
     fn text_reply(text: &str) -> String {
+        text_reply_with_id("resp-text", text)
+    }
+
+    fn text_reply_with_id(id: &str, text: &str) -> String {
         json!({
-            "id": "resp-text",
+            "id": id,
             "choices": [{
                 "message": {"role": "assistant", "content": text, "tool_calls": []},
                 "finish_reason": "stop",
@@ -581,6 +602,7 @@ mod tests {
             .lock()
             .expect("the client-build lock is never poisoned");
         LocalInferencePort::new(endpoint, DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME)
+            .expect("a loopback endpoint opens")
     }
 
     /// Spec test: pins invariant 7. Two rounds through the real seed
@@ -593,12 +615,12 @@ mod tests {
         let responder = ScriptedResponder::start(vec![
             (
                 200,
-                two_tool_call_reply(
+                tool_call_reply(&[
                     ("call-0", RECORD_GAP_PATCH_TOOL, r#"{"detail":"no route"}"#),
                     ("call-1", RECORD_GAP_PATCH_TOOL, r#"{"detail":"still missing"}"#),
-                ),
+                ]),
             ),
-            (200, tool_call_reply("call-2", SUBMIT_PATCH_TOOL, "{}")),
+            (200, tool_call_reply(&[("call-2", SUBMIT_PATCH_TOOL, "{}")])),
         ])
         .await;
         let port = port(responder.endpoint());
@@ -754,7 +776,7 @@ mod tests {
     #[tokio::test]
     async fn a_call_to_an_unoffered_tool_is_an_integrity_violation() {
         let responder =
-            ScriptedResponder::start(vec![(200, tool_call_reply("call-0", "speek", "{}"))]).await;
+            ScriptedResponder::start(vec![(200, tool_call_reply(&[("call-0", "speek", "{}")]))]).await;
         let port = port(responder.endpoint());
         let request = tool_request(
             CommandId::new(),
@@ -941,7 +963,7 @@ mod tests {
                 std::env::remove_var("HTTP_PROXY");
                 std::env::remove_var("http_proxy");
             }
-            built
+            built.expect("a loopback endpoint opens")
         };
 
         let request = tool_request(
@@ -1012,6 +1034,344 @@ mod tests {
         assert!(
             redirect_target.bodies().is_empty(),
             "the redirect target received a request"
+        );
+    }
+
+    /// Spec test (PA.f18). An explicit `"tool_calls": null` decodes as no
+    /// calls, the same as an absent field, instead of failing to decode into
+    /// an integrity violation.
+    #[test]
+    fn a_null_tool_calls_field_decodes_as_no_calls() {
+        let raw = json!({
+            "id": "resp-null",
+            "choices": [{
+                "message": {"role": "assistant", "content": "ok", "tool_calls": Value::Null},
+                "finish_reason": "stop",
+            }],
+        })
+        .to_string();
+        let response: LocalChatResponse =
+            serde_json::from_str(&raw).expect("a null tool_calls field decodes");
+        assert!(response.choices[0].message.tool_calls.is_empty());
+    }
+
+    /// Spec test (PA.f18). An absent `tool_calls` field decodes the same way
+    /// as an explicit null.
+    #[test]
+    fn an_absent_tool_calls_field_decodes_as_no_calls() {
+        let raw = json!({
+            "id": "resp-absent",
+            "choices": [{
+                "message": {"role": "assistant", "content": "ok"},
+                "finish_reason": "stop",
+            }],
+        })
+        .to_string();
+        let response: LocalChatResponse =
+            serde_json::from_str(&raw).expect("an absent tool_calls field decodes");
+        assert!(response.choices[0].message.tool_calls.is_empty());
+    }
+
+    /// Spec test (PA.f18). An absent top-level `id` decodes to the empty
+    /// string. It is used only for receipt bookkeeping, so a local server
+    /// that omits it should not quarantine the lane.
+    #[test]
+    fn an_absent_response_id_decodes_as_empty() {
+        let raw = json!({
+            "choices": [{
+                "message": {"role": "assistant", "content": "ok", "tool_calls": []},
+                "finish_reason": "stop",
+            }],
+        })
+        .to_string();
+        let response: LocalChatResponse =
+            serde_json::from_str(&raw).expect("an absent id decodes");
+        assert_eq!(response.id, "");
+    }
+
+    /// Spec test (PA.f19). Open refuses an empty local model prefix: an empty
+    /// prefix matches every model and would silently take the local port's
+    /// lanes.
+    #[test]
+    fn an_empty_local_model_prefix_is_refused_at_open() {
+        let error = open_inference(
+            None,
+            None,
+            Some(LocalBinding {
+                endpoint: "127.0.0.1:1".parse().unwrap(),
+                model_prefix: String::new(),
+                caller_runtime_id: TEST_RUNTIME.into(),
+            }),
+            &[TEST_MODEL],
+        )
+        .err()
+        .expect("an empty local model prefix opened");
+        assert!(matches!(
+            error,
+            ControllerOpenError::EmptyModelPrefix { transport: "local" }
+        ));
+    }
+
+    /// Spec test (PA.f19). Open refuses an empty SDK model prefix for the
+    /// same reason.
+    #[test]
+    fn an_empty_sdk_model_prefix_is_refused_at_open() {
+        let directory = tempfile::tempdir().unwrap();
+        let sdk_entry = directory.path().join("main.js");
+        std::fs::write(&sdk_entry, "// sidecar").unwrap();
+        let error = open_inference(
+            None,
+            Some(SdkBinding {
+                sidecar_entry: sdk_entry,
+                caller_runtime_id: TEST_RUNTIME.into(),
+                model_prefix: String::new(),
+            }),
+            None,
+            &[TEST_MODEL],
+        )
+        .err()
+        .expect("an empty SDK model prefix opened");
+        assert!(matches!(
+            error,
+            ControllerOpenError::EmptyModelPrefix { transport: "SDK" }
+        ));
+    }
+
+    /// Spec test (PA.f19). Duplicate call ids in one reply pass neither the
+    /// port's own validators nor the evaluator's; the port refuses them
+    /// itself, as an integrity violation, rather than letting the evaluator
+    /// see two calls it cannot tell apart.
+    #[tokio::test]
+    async fn duplicate_call_ids_in_one_reply_are_an_integrity_violation() {
+        let responder = ScriptedResponder::start(vec![(
+            200,
+            tool_call_reply(&[
+                ("call-0", RECORD_GAP_PATCH_TOOL, r#"{"detail":"first"}"#),
+                ("call-0", RECORD_GAP_PATCH_TOOL, r#"{"detail":"second"}"#),
+            ]),
+        )])
+        .await;
+        let port = port(responder.endpoint());
+        let request = tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Elaboration,
+            TEST_MODEL,
+            "Author the shortfall.",
+            vec![CodexInputItem::UserText {
+                text: "Author the shortfall.".into(),
+            }],
+            patch_tools(),
+            seed_shape(),
+        )
+        .expect("the request builds");
+        let prepared = port.prepare(request).expect("the port prepares");
+        let fault = port
+            .infer(prepared)
+            .await
+            .expect_err("a duplicate call id produced an output");
+        assert!(fault.integrity_was_violated(), "{fault:?}");
+    }
+
+    /// Spec test (PA.f20). A request offering no tools omits `tools` and
+    /// `parallel_tool_calls` from the lowered body instead of sending an
+    /// empty array.
+    #[tokio::test]
+    async fn a_request_with_no_tools_omits_tools_and_parallel_tool_calls() {
+        let responder = ScriptedResponder::start(vec![(200, text_reply("ok"))]).await;
+        let port = port(responder.endpoint());
+        let request = tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Persona,
+            TEST_MODEL,
+            "Respond only in natural prose.",
+            vec![CodexInputItem::UserText {
+                text: "Say something true.".into(),
+            }],
+            Vec::<CodexToolDefinition>::new(),
+            RequestShape {
+                max_output_tokens: 1_200,
+                parallel_tool_calls: false,
+            },
+        )
+        .expect("the request builds");
+        let prepared = port.prepare(request).expect("the port prepares");
+        let _ = port.infer(prepared).await.expect("the port infers");
+
+        let sent: Value = serde_json::from_str(&responder.bodies()[0]).expect("the body is JSON");
+        let object = sent.as_object().expect("the body is a JSON object");
+        assert!(!object.contains_key("tools"), "{sent}");
+        assert!(!object.contains_key("parallel_tool_calls"), "{sent}");
+    }
+
+    /// Spec test (PA.f22, Soul's S2). The tool declarations offered actually
+    /// reach the request body; a lowering that always sent an empty `tools`
+    /// array would pass every other test in this module.
+    #[tokio::test]
+    async fn offered_tools_are_declared_in_the_request_body() {
+        let responder = ScriptedResponder::start(vec![(200, text_reply("ok"))]).await;
+        let port = port(responder.endpoint());
+        let request = tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Elaboration,
+            TEST_MODEL,
+            "Author the shortfall.",
+            vec![CodexInputItem::UserText {
+                text: "Author the shortfall.".into(),
+            }],
+            patch_tools(),
+            seed_shape(),
+        )
+        .expect("the request builds");
+        let prepared = port.prepare(request).expect("the port prepares");
+        let _ = port.infer(prepared).await.expect("the port infers");
+
+        let sent: Value = serde_json::from_str(&responder.bodies()[0]).expect("the body is JSON");
+        let tools = sent["tools"].as_array().expect("tools is an array");
+        assert_eq!(tools.len(), patch_tools().len(), "{sent}");
+        let names: Vec<&str> = tools
+            .iter()
+            .map(|tool| tool["function"]["name"].as_str().expect("a tool name"))
+            .collect();
+        assert!(names.contains(&RECORD_GAP_PATCH_TOOL), "{names:?}");
+        assert!(names.contains(&SUBMIT_PATCH_TOOL), "{names:?}");
+    }
+
+    /// Spec test (PA.f22, Soul's S3). The model prefix is stripped before the
+    /// request is sent.
+    #[tokio::test]
+    async fn the_model_prefix_is_stripped_in_the_request_body() {
+        let responder = ScriptedResponder::start(vec![(200, text_reply("ok"))]).await;
+        let port = port(responder.endpoint());
+        let request = tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Persona,
+            TEST_MODEL,
+            "Respond only in natural prose.",
+            vec![CodexInputItem::UserText {
+                text: "Say something true.".into(),
+            }],
+            Vec::<CodexToolDefinition>::new(),
+            RequestShape {
+                max_output_tokens: 1_200,
+                parallel_tool_calls: false,
+            },
+        )
+        .expect("the request builds");
+        let prepared = port.prepare(request).expect("the port prepares");
+        let _ = port.infer(prepared).await.expect("the port infers");
+
+        let sent: Value = serde_json::from_str(&responder.bodies()[0]).expect("the body is JSON");
+        assert_eq!(
+            sent["model"],
+            TEST_MODEL.strip_prefix(DEFAULT_LOCAL_MODEL_PREFIX).unwrap()
+        );
+    }
+
+    /// Spec test (PA.f22, Soul's S4). The foreign-caller gate in `infer`
+    /// refuses a persisted invocation stamped with a different runtime
+    /// identity than the one this port was configured with.
+    #[tokio::test]
+    async fn infer_refuses_a_foreign_caller() {
+        let responder = ScriptedResponder::start(vec![(200, text_reply("ok"))]).await;
+        let port = port(responder.endpoint());
+        let request = tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Persona,
+            TEST_MODEL,
+            "Respond only in natural prose.",
+            vec![CodexInputItem::UserText {
+                text: "Say something true.".into(),
+            }],
+            Vec::<CodexToolDefinition>::new(),
+            RequestShape {
+                max_output_tokens: 1_200,
+                parallel_tool_calls: false,
+            },
+        )
+        .expect("the request builds");
+        let mut prepared = port.prepare(request).expect("the port prepares");
+        prepared.invocation.caller_runtime_id = "someone-elses-runtime".into();
+        let fault = port
+            .infer(prepared)
+            .await
+            .expect_err("a foreign caller's invocation produced an output");
+        assert!(fault.integrity_was_violated(), "{fault:?}");
+        assert!(responder.bodies().is_empty(), "a foreign invocation reached the endpoint");
+    }
+
+    /// Spec test (PA.f22, Soul's S4). The expiry gate in `infer` refuses a
+    /// persisted invocation whose expiry has already passed.
+    #[tokio::test]
+    async fn infer_refuses_an_expired_invocation() {
+        let responder = ScriptedResponder::start(vec![(200, text_reply("ok"))]).await;
+        let port = port(responder.endpoint());
+        let request = tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Persona,
+            TEST_MODEL,
+            "Respond only in natural prose.",
+            vec![CodexInputItem::UserText {
+                text: "Say something true.".into(),
+            }],
+            Vec::<CodexToolDefinition>::new(),
+            RequestShape {
+                max_output_tokens: 1_200,
+                parallel_tool_calls: false,
+            },
+        )
+        .expect("the request builds");
+        let mut prepared = port.prepare(request).expect("the port prepares");
+        prepared.invocation.expires_at_unix_ms = 1;
+        let fault = port
+            .infer(prepared)
+            .await
+            .expect_err("an expired invocation produced an output");
+        assert!(!fault.integrity_was_violated(), "{fault:?}");
+        assert!(responder.bodies().is_empty(), "an expired invocation reached the endpoint");
+    }
+
+    /// Spec test (PA.f22, Soul's S6). The receipt digest changes when the
+    /// reply's `response_id` changes and nothing else does.
+    #[tokio::test]
+    async fn the_receipt_digest_changes_with_the_response_id() {
+        let request = tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Persona,
+            TEST_MODEL,
+            "Respond only in natural prose.",
+            vec![CodexInputItem::UserText {
+                text: "Say something true.".into(),
+            }],
+            Vec::<CodexToolDefinition>::new(),
+            RequestShape {
+                max_output_tokens: 1_200,
+                parallel_tool_calls: false,
+            },
+        )
+        .expect("the request builds");
+
+        let first_responder =
+            ScriptedResponder::start(vec![(200, text_reply_with_id("resp-aaa", "ok"))]).await;
+        let first_port = port(first_responder.endpoint());
+        let first_prepared = first_port.prepare(request.clone()).expect("the port prepares");
+        let first_output = first_port.infer(first_prepared).await.expect("the port infers");
+
+        let second_responder =
+            ScriptedResponder::start(vec![(200, text_reply_with_id("resp-bbb", "ok"))]).await;
+        let second_port = port(second_responder.endpoint());
+        let second_prepared = second_port.prepare(request).expect("the port prepares");
+        let second_output = second_port.infer(second_prepared).await.expect("the port infers");
+
+        assert_ne!(
+            first_output.receipt_digest, second_output.receipt_digest,
+            "a changed response_id did not change the receipt digest"
         );
     }
 }

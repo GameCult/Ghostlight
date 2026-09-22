@@ -242,6 +242,22 @@ impl InferenceFault {
     }
 }
 
+/// A call id the connector's own validators would refuse cannot be persisted:
+/// the evaluator rebuilds these into `CodexInputItem`s that `validate()` will
+/// see again. Both the local and SDK ports police a provider reply against
+/// this one rule, so there is one copy rather than two that can drift.
+pub(super) fn call_id_is_valid(call_id: &str) -> bool {
+    !call_id.is_empty() && call_id.len() <= 64 && call_id.is_ascii()
+}
+
+pub(super) fn tool_name_is_valid(name: &str) -> bool {
+    !name.is_empty()
+        && name.len() <= 64
+        && name
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+}
+
 /// One lane's own answer to "what does this tool call return", lent to the
 /// inference port for exactly one query. A port that runs the tool loop needs a
 /// real result before the model will take another turn, and the only correct
@@ -2328,6 +2344,8 @@ pub enum ControllerOpenError {
     LocalEndpointNotLoopback { endpoint: SocketAddr },
     #[error("the local and SDK inference transports both claim model prefix `{prefix}`")]
     SharedModelPrefix { prefix: String },
+    #[error("the {transport} inference transport's model prefix must not be empty")]
+    EmptyModelPrefix { transport: &'static str },
 }
 
 /// Everything the CodexConnector transport needs to open, gathered so
@@ -2365,6 +2383,9 @@ pub fn open_inference(
                     path: binding.sidecar_entry.display().to_string(),
                 });
             }
+            if binding.model_prefix.is_empty() {
+                return Err(ControllerOpenError::EmptyModelPrefix { transport: "SDK" });
+            }
             sdk_model_prefix = binding.model_prefix;
             Some(Arc::new(SdkInferencePort::new(
                 Arc::new(ChildProcessLink::new(binding.sidecar_entry)),
@@ -2374,17 +2395,16 @@ pub fn open_inference(
         None => None,
     };
     // Ghostlight never holds a credential for this transport: a loopback
-    // local model server needs none, and refusing anything else here is what
-    // keeps that true by construction rather than by convention.
+    // local model server needs none, and `open_local_port` refuses anything
+    // else by construction, inside the port's own constructor, rather than by
+    // convention in this caller.
     let local: Option<(String, Arc<dyn InferencePort>)> = match local {
         Some(binding) => {
-            if !binding.endpoint.ip().is_loopback() {
-                return Err(ControllerOpenError::LocalEndpointNotLoopback {
-                    endpoint: binding.endpoint,
-                });
+            if binding.model_prefix.is_empty() {
+                return Err(ControllerOpenError::EmptyModelPrefix { transport: "local" });
             }
             let prefix = binding.model_prefix.clone();
-            Some((prefix, open_local_port(binding)))
+            Some((prefix, open_local_port(binding)?))
         }
         None => None,
     };

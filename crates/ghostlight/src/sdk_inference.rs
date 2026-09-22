@@ -8,8 +8,8 @@
 
 use super::controllers::{
     InferenceEvent, InferenceFault, InferenceOutput, InferencePort, InferenceRequest,
-    PreparedInference, REQUEST_EXPIRY, RESPONSE_TIMEOUT, ToolResultOracle,
-    unix_ms,
+    PreparedInference, REQUEST_EXPIRY, RESPONSE_TIMEOUT, ToolResultOracle, call_id_is_valid,
+    tool_name_is_valid, unix_ms,
 };
 use async_trait::async_trait;
 use codex_connector::CodexInputItem;
@@ -571,21 +571,6 @@ pub(super) fn lower_query(
         max_output_tokens: request.max_output_tokens,
         turn_cap,
     })
-}
-
-/// A call id the connector's own validators would refuse cannot be persisted:
-/// the evaluator rebuilds these into `CodexInputItem`s that `validate()` will
-/// see again.
-fn call_id_is_valid(call_id: &str) -> bool {
-    !call_id.is_empty() && call_id.len() <= 64 && call_id.is_ascii()
-}
-
-fn tool_name_is_valid(name: &str) -> bool {
-    !name.is_empty()
-        && name.len() <= 64
-        && name
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
 }
 
 fn assemble_output(
