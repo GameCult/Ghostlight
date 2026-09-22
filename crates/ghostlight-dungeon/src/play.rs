@@ -1449,7 +1449,10 @@ impl PlayTable {
         let mut summary = Vec::new();
         for subject in subjects {
             if turn.persona_turns.iter().any(|(id, _)| id == subject) {
-                summary.push(format!("{subject:?} already acted"));
+                // PA.f124: printed through the library's own `id_text`, the
+                // same printer `table_view` and `dispatch`'s own matching
+                // use — not a fifth hand-spelled debug-paren strip.
+                summary.push(format!("{} already acted", id_text(*subject)));
                 continue;
             }
             let snapshot = match self.play.snapshot().await {
@@ -1471,7 +1474,7 @@ impl PlayTable {
                 })
                 .cloned()
             else {
-                summary.push(format!("{subject:?} holds no live Persona opportunity"));
+                summary.push(format!("{} holds no live Persona opportunity", id_text(*subject)));
                 continue;
             };
             let permit = self
@@ -2976,6 +2979,76 @@ mod tests {
             .and_then(|call| call.result.clone())
             .unwrap();
         assert!(dispatch_result.contains("Mara nods once."), "{dispatch_result}");
+    }
+
+    /// PA.f124: `execute_dispatch`'s own summaries print a subject through
+    /// the library's `id_text` — the same printer `table_view` and
+    /// `dispatch`'s own matching use — never `{subject:?}`'s raw
+    /// `SubjectId(...)` debug wrapper, a fifth hand-spelled id spelling.
+    /// Dispatching the same subject twice in one call reaches the
+    /// `"already acted"` branch, the one call site printing a subject
+    /// without a `snapshot` (`subject_label`) to fall back on. Mutation:
+    /// reverting either print in `execute_dispatch` to `{subject:?}` fails
+    /// this.
+    #[tokio::test]
+    async fn dispatch_summaries_print_the_subject_through_id_text_not_debug() {
+        let fixture = play_world(Some("Mara"), "player-dispatch-id-text-summary").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let mara = persona_id(&snapshot);
+        let mara_text = subject_id_text(&snapshot, mara);
+        let round = output(
+            "r0",
+            vec![
+                call_event(
+                    "c0",
+                    DISPATCH_TOOL,
+                    serde_json::json!({"subjects": [mara_text.clone(), mara_text.clone()]}),
+                ),
+                call_event("c1", END_TURN_TOOL, serde_json::json!({})),
+            ],
+        );
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![
+                output("proj-mara", vec![text_event("Mara considers the player.")]),
+                output("persona-mara", vec![text_event("Mara nods once.")]),
+                output("proj-narrate", vec![text_event("Quiet.")]),
+            ]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![round]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+        table
+            .run(&fixture.principal, test_turn_id(922), "Who's there?".into())
+            .await
+            .unwrap();
+
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        let dispatch_result = turn
+            .calls
+            .iter()
+            .find(|call| call.round == 0 && call.slot == 0)
+            .and_then(|call| call.result.clone())
+            .unwrap();
+        assert!(
+            dispatch_result.contains(&format!("{mara_text} already acted")),
+            "the repeated subject must be named by id_text's own spelling, not SubjectId(...) debug: {dispatch_result}"
+        );
+        assert!(
+            !dispatch_result.contains("SubjectId("),
+            "the debug wrapper must never leak into a dispatch summary: {dispatch_result}"
+        );
     }
 
     /// PA.f98: an id naming no dispatchable subject is refused in the tool
