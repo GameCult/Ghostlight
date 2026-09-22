@@ -2327,6 +2327,28 @@ Interpreter, the elaborator sweep and lenses.
     `graph_overlaps`.
   - Lib 597 → 603. persona-projection 13 → 18.
   - From here on, builds run one at a time on the workstation.
+- **Library fix batch 7c landed (Hands, Sonnet, 2026-09-22):** `dc43be5`
+  (PA.f71, PA.f72), `6d68974` (PA.f73, PA.f74) and `e383cde` (PA.f75).
+  - PA.f71: `decode_actor_call` refuses a name that doesn't carry a
+    non-empty prefix. The bare-kind fallback is gone.
+  - PA.f72: `precondition_roles` keeps the channel role of `CanBroadcast`
+    and `CanReach` through a new `audience_role`. A roleless precondition
+    gets its own plain wording in `describe_refusal_to_actor`.
+  - PA.f73: `describe_refusal` has dedicated arms for `UnresolvedDraft`
+    (handle and expected kind) and for `DuplicateHandle` (both calls).
+    `EmptyEvidence` maps to its call through the new
+    `DecodedBatch::evidence_calls`.
+  - PA.f74: `table_view` prints authority grants, offices and forums, and
+    names the commitment kind. Occupant and known-by labels carry ids.
+    Persona values and memories keep their stored order.
+  - PA.f75: section-scoped assertions (`view_section`, `subject_row`) and an
+    exact `command/index` pairing. `PLAY_TOOLS` is cut to the 24 tools, and
+    channel printing has its own assertion. Adds the fact-secrecy test that
+    PA.f57 lacked. The "every other error" test covers all 31 `KernelError`
+    variants; the finding's count of 33 was wrong.
+  - Every named mutation was killed and then restored. Hands also found and
+    fixed a scoping bug in its own `subject_row` helper before committing.
+  - Lib 603 → 618.
 - **Soul on library fix batch 7a** (Opus, 2026-09-22, against `2035fe8`,
   Windows).
   - Verdicts:
