@@ -892,12 +892,6 @@ impl NarrativeCheckpoint {
                 else {
                     return false;
                 };
-                let prompt = build_persona_prompt(&PersonaPrompt {
-                    identity,
-                    lived_stream: &lived_stream,
-                    domain_guidance: guidance,
-                    word_budget: PERSONA_WORD_BUDGET,
-                });
                 base_checkpoint_is_valid(
                     identity,
                     typed_view,
@@ -906,10 +900,19 @@ impl NarrativeCheckpoint {
                     ControllerMode::NarrativePersona,
                 ) && canonical_model(interpreter_model)
                     && canonical_model(&invocation.invocation.request.model)
-                    && persona_request(*command_id, &invocation.invocation.request.model, prompt)
-                        .is_ok_and(|expected| {
-                            prepared_matches_request(invocation, &expected, *command_id, 0)
-                        })
+                    // PA.f46: the same builder `build_persona_invocation`
+                    // prepares a live request with, not a second copy of the
+                    // prompt construction.
+                    && persona_inference_request(
+                        *command_id,
+                        &invocation.invocation.request.model,
+                        identity,
+                        &lived_stream,
+                        guidance,
+                    )
+                    .is_ok_and(|expected| {
+                        prepared_matches_request(invocation, &expected, *command_id, 0)
+                    })
                     && persona_request_shape_is_valid(invocation)
             }
             Self::InterpreterInFlight {
@@ -1265,6 +1268,73 @@ pub struct OperationalCapture {
     pub proposal: Option<DecisionInvocation>,
     pub needs: Vec<ControllerNeed>,
     pub inference_receipts: Vec<String>,
+}
+
+/// The `InferencePort::prepare` call, wrapped once. `ControllerRunner` and
+/// `PersonaLane` both open one `Arc<dyn InferencePort>` and both call this
+/// rather than repeating the error mapping (PA.f46).
+fn prepare_inference(
+    inference: &Arc<dyn InferencePort>,
+    request: InferenceRequest,
+) -> Result<PreparedInference, ControllerError> {
+    let purpose = request.purpose;
+    inference
+        .prepare(request)
+        .map_err(|source| ControllerError::Inference { purpose, source })
+}
+
+/// The `InferencePort::infer` call, wrapped once. Same reason as
+/// `prepare_inference` (PA.f46).
+async fn run_inference(
+    inference: &Arc<dyn InferencePort>,
+    request: PreparedInference,
+) -> Result<InferenceOutput, ControllerError> {
+    let purpose = request.purpose;
+    inference
+        .infer(request)
+        .await
+        .map_err(|source| ControllerError::Inference { purpose, source })
+}
+
+/// The snapshot half of selection, shared by `ControllerRunner::select` and
+/// `PersonaLane::select` (PA.f46). They part ways over what each does with
+/// `exact_opportunity` against the snapshot returned: `ControllerRunner`
+/// binds one run's own copy (`select_one`) so it can persist and resubmit it
+/// unchanged; `PersonaLane` holds no persisted run to preserve and instead
+/// refuses a caller's opportunity that does not match the kernel's own
+/// exactly (PA.f41).
+async fn snapshot_for_selection(
+    mailbox: &ControllerPort,
+) -> Result<WorldSnapshot, ControllerError> {
+    mailbox.snapshot().await.map_err(ControllerError::Snapshot)
+}
+
+/// The one place a `PersonaTurn` is built from a bound opportunity and a pair
+/// of inference receipts (PA.f46). `ControllerRunner::run_persona` and
+/// `PersonaLane::turn` both call it: a freshly recorded turn always binds the
+/// exact opportunity it ran under and carries no `interrupted_from` — only
+/// `interrupted` renews a binding after a scope moves between the turn and
+/// its commit, and that renewal builds its own `PersonaTurnBinding` because it
+/// carries a real prior binding and a fresh opportunity, not this pair.
+fn record_persona_turn(
+    opportunity: &DecisionOpportunity,
+    projector_receipt_digest: String,
+    persona_inference_receipt_digest: String,
+    prose: String,
+) -> Result<PersonaTurn, ControllerError> {
+    Ok(PersonaTurn::record(
+        PersonaTurnBinding {
+            world_id: encoded_id(&opportunity.world_id)?,
+            controller_id: encoded_id(&opportunity.controller_id)?,
+            opportunity_digest: opportunity.digest()?,
+            world_revision: opportunity.revision,
+            scope_digest: opportunity.scope_digest.as_str().to_owned(),
+            projector_receipt_digest,
+            persona_inference_receipt_digest,
+            interrupted_from: None,
+        },
+        prose,
+    ))
 }
 
 /// One opportunity's selection against one snapshot.
@@ -3509,29 +3579,18 @@ impl ControllerRunner {
     }
 
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, ControllerError> {
-        let purpose = request.purpose;
-        self.inference
-            .prepare(request)
-            .map_err(|source| ControllerError::Inference { purpose, source })
+        prepare_inference(&self.inference, request)
     }
 
     async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, ControllerError> {
-        let purpose = request.purpose;
-        self.inference
-            .infer(request)
-            .await
-            .map_err(|source| ControllerError::Inference { purpose, source })
+        run_inference(&self.inference, request).await
     }
 
     async fn select(
         &self,
         exact_opportunity: &DecisionOpportunity,
     ) -> Result<SelectedDecision, ControllerError> {
-        let snapshot = self
-            .mailbox
-            .snapshot()
-            .await
-            .map_err(ControllerError::Snapshot)?;
+        let snapshot = snapshot_for_selection(&self.mailbox).await?;
         select_one(&snapshot, exact_opportunity)
     }
 
@@ -3678,19 +3737,7 @@ impl ControllerRunner {
                 None => return Err(error),
             },
         };
-        let turn = PersonaTurn::record(
-            PersonaTurnBinding {
-                world_id: encoded_id(&opportunity.world_id)?,
-                controller_id: encoded_id(&opportunity.controller_id)?,
-                opportunity_digest: opportunity.digest()?,
-                world_revision: opportunity.revision,
-                scope_digest: opportunity.scope_digest.as_str().to_owned(),
-                projector_receipt_digest: projector_receipt,
-                persona_inference_receipt_digest: persona.1,
-                interrupted_from: None,
-            },
-            persona.0,
-        );
+        let turn = record_persona_turn(&opportunity, projector_receipt, persona.1, persona.0)?;
         let interpreter_prompt = build_interpreter_prompt(&InterpreterPrompt {
             identity: &identity,
             typed_context: &typed_view,
@@ -4197,30 +4244,33 @@ impl PersonaLane {
     }
 
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, ControllerError> {
-        let purpose = request.purpose;
-        self.inference
-            .prepare(request)
-            .map_err(|source| ControllerError::Inference { purpose, source })
+        prepare_inference(&self.inference, request)
     }
 
     async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, ControllerError> {
-        let purpose = request.purpose;
-        self.inference
-            .infer(request)
-            .await
-            .map_err(|source| ControllerError::Inference { purpose, source })
+        run_inference(&self.inference, request).await
     }
 
+    /// PA.f41: refuses unless the caller's opportunity equals the snapshot's
+    /// own issued copy exactly — world id, revision, affordance ids, digest,
+    /// all of it — and returns the kernel's copy. `select_one` (shared with
+    /// `ControllerRunner` above) deliberately substitutes the caller's own
+    /// bound value into the result so a persisted run can resubmit the exact
+    /// opportunity it bound; this lane persists no run to resubmit, so that
+    /// substitution would instead let a caller-forged opportunity — a fresh
+    /// world id, a bogus revision, a narrowed affordance list — pass through
+    /// unexamined the moment `select_scope` matched it on scope and digest
+    /// alone, and land in the `PersonaTurnBinding` `turn` records.
     async fn select(
         &self,
         exact_opportunity: &DecisionOpportunity,
     ) -> Result<SelectedDecision, ControllerError> {
-        let snapshot = self
-            .mailbox
-            .snapshot()
-            .await
-            .map_err(ControllerError::Snapshot)?;
-        select_one(&snapshot, exact_opportunity)
+        let snapshot = snapshot_for_selection(&self.mailbox).await?;
+        let selected = select_scope(&snapshot, exact_opportunity, true)?;
+        if selected.opportunity != *exact_opportunity {
+            return Err(ControllerError::OpportunityMismatch);
+        }
+        Ok(selected)
     }
 
     /// Projector then Persona over one selected subject. The Persona's input
@@ -4261,19 +4311,16 @@ impl PersonaLane {
         let persona_output = self.infer(persona_invocation).await?;
         let (persona_prose, persona_receipt) =
             persona_output.prose_only(InferencePurpose::Persona)?;
-        Ok(PersonaTurn::record(
-            PersonaTurnBinding {
-                world_id: encoded_id(&opportunity.world_id)?,
-                controller_id: encoded_id(&opportunity.controller_id)?,
-                opportunity_digest: opportunity.digest()?,
-                world_revision: opportunity.revision,
-                scope_digest: opportunity.scope_digest.as_str().to_owned(),
-                projector_receipt_digest: projector_receipt,
-                persona_inference_receipt_digest: persona_receipt,
-                interrupted_from: None,
-            },
+        // The kernel's own copy, not the caller's `opportunity` parameter
+        // (PA.f41): `select` above already proved the two equal, but the
+        // binding is built from `selected.opportunity` so a divergent future
+        // `select` cannot silently let a caller's forged fields back in here.
+        record_persona_turn(
+            &selected.opportunity,
+            projector_receipt,
+            persona_receipt,
             persona_prose,
-        ))
+        )
     }
 
     /// The player's own view: the same Projector `turn` runs, over the
@@ -6162,13 +6209,34 @@ fn build_projector_invocation(
     })
 }
 
-/// The one builder of a Persona request. Its only input is the Projector's own
-/// prose (`lived_stream`) plus the identity and guidance already carried out of
-/// `build_projector_invocation`: no structured state, no subject id, no scope
-/// digest, no revision, no typed-view key ever reaches this function, so none
-/// can reach the prompt it builds (Cut 6, P6.1, invariant 2). `run_projector`
-/// and `PersonaLane::turn` both build the Persona request through this
-/// function.
+/// The Persona request these inputs build, unprepared. Its only input is the
+/// Projector's own prose (`lived_stream`) plus the identity and guidance
+/// already carried out of `build_projector_invocation`: no structured state,
+/// no subject id, no scope digest, no revision, no typed-view key ever
+/// reaches this function, so none can reach the prompt it builds (Cut 6,
+/// P6.1, invariant 2). `build_persona_invocation` prepares a live one from
+/// this; the `NarrativeCheckpoint::Persona` integrity check calls this same
+/// function, unprepared, to prove a persisted invocation matches what it
+/// would have built (PA.f46) — it used to rebuild the prompt itself, a second
+/// copy of exactly this construction.
+fn persona_inference_request(
+    command_id: CommandId,
+    model: &str,
+    identity: &str,
+    lived_stream: &str,
+    guidance: &str,
+) -> Result<InferenceRequest, ControllerError> {
+    let persona_prompt = build_persona_prompt(&PersonaPrompt {
+        identity,
+        lived_stream,
+        domain_guidance: guidance,
+        word_budget: PERSONA_WORD_BUDGET,
+    });
+    persona_request(command_id, model, persona_prompt)
+}
+
+/// The one builder of a *live* Persona request. `run_projector` and
+/// `PersonaLane::turn` both build the Persona request through this function.
 fn build_persona_invocation(
     prepare: impl Fn(InferenceRequest) -> Result<PreparedInference, ControllerError>,
     command_id: CommandId,
@@ -6177,13 +6245,13 @@ fn build_persona_invocation(
     lived_stream: &str,
     guidance: &str,
 ) -> Result<PreparedInference, ControllerError> {
-    let persona_prompt = build_persona_prompt(&PersonaPrompt {
+    prepare(persona_inference_request(
+        command_id,
+        model,
         identity,
         lived_stream,
-        domain_guidance: guidance,
-        word_budget: PERSONA_WORD_BUDGET,
-    });
-    prepare(persona_request(command_id, model, persona_prompt)?)
+        guidance,
+    )?)
 }
 
 fn projector_request(
@@ -7765,6 +7833,104 @@ mod tests {
             .await
             .unwrap_err();
         assert!(matches!(narrate_error, ControllerError::NoOpportunity { .. }));
+    }
+
+    /// PA.f41: `select_one` (shared with `ControllerRunner`) matches on scope
+    /// and scope digest alone, then substitutes the caller's own copy of the
+    /// opportunity into its result — correct for a persisted run resubmitting
+    /// itself, wrong for a lane with no persisted run to preserve. A caller
+    /// that forges the world id past that match must be refused before any
+    /// inference runs, and the binding `turn` records must never carry it.
+    #[tokio::test]
+    async fn a_persona_lane_refuses_a_forged_world_id() {
+        let (_directory, mailbox, _task, snapshot, mara, _secret, _heard) =
+            persona_lane_world().await;
+        let opportunity = opportunity_for(&snapshot, mara);
+        let mut forged = opportunity.clone();
+        forged.world_id = WorldId::issue();
+
+        let port = ControllerPort::new(mailbox.clone());
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(Vec::new()),
+        });
+        let lane = PersonaLane::new(
+            port,
+            capturing.clone(),
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+
+        let error = lane.turn(CommandId::new(), &forged).await.unwrap_err();
+        assert!(matches!(error, ControllerError::OpportunityMismatch));
+        assert!(
+            capturing.prepared.lock().unwrap().is_empty(),
+            "a forged world id reached inference"
+        );
+    }
+
+    /// PA.f41, same mechanism: a forged revision (well past the world's real
+    /// one) must be refused rather than land in the `PersonaTurnBinding`.
+    #[tokio::test]
+    async fn a_persona_lane_refuses_a_forged_revision() {
+        let (_directory, mailbox, _task, snapshot, mara, _secret, _heard) =
+            persona_lane_world().await;
+        let opportunity = opportunity_for(&snapshot, mara);
+        let mut forged = opportunity.clone();
+        forged.revision = 999_999;
+
+        let port = ControllerPort::new(mailbox.clone());
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(Vec::new()),
+        });
+        let lane = PersonaLane::new(
+            port,
+            capturing.clone(),
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+
+        let error = lane.turn(CommandId::new(), &forged).await.unwrap_err();
+        assert!(matches!(error, ControllerError::OpportunityMismatch));
+        assert!(
+            capturing.prepared.lock().unwrap().is_empty(),
+            "a forged revision reached inference"
+        );
+    }
+
+    /// PA.f41, same mechanism: a forged (emptied) `affordance_ids` must be
+    /// refused rather than land in the `PersonaTurnBinding` — the field
+    /// `select_scope`'s scope-and-digest match never inspects.
+    #[tokio::test]
+    async fn a_persona_lane_refuses_forged_affordance_ids() {
+        let (_directory, mailbox, _task, snapshot, mara, _secret, _heard) =
+            persona_lane_world().await;
+        let opportunity = opportunity_for(&snapshot, mara);
+        let mut forged = opportunity.clone();
+        forged.affordance_ids = Vec::new();
+
+        let port = ControllerPort::new(mailbox.clone());
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(Vec::new()),
+        });
+        let lane = PersonaLane::new(
+            port,
+            capturing.clone(),
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+
+        let error = lane.turn(CommandId::new(), &forged).await.unwrap_err();
+        assert!(matches!(error, ControllerError::OpportunityMismatch));
+        assert!(
+            capturing.prepared.lock().unwrap().is_empty(),
+            "forged affordance ids reached inference"
+        );
     }
 
     /// PA-Q2's default plus Cut 6: the stimulus is exactly Cut 0's capture
