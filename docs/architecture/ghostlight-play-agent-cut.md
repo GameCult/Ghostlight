@@ -1628,6 +1628,38 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   only `table_view` renders it, and `table_view` is the agent's omniscient
   view. The card shows the world summary's safe fields plus the turn view's
   narration, question and refusal. No operator log, no facts, no ids.
+- **Landed (Hands, Sonnet, 2026-09-22):** `322bdf6` (the card and the row's
+  revision) and `f1732c0` (the deletion).
+  - `eve::authenticated_surface` takes a `PlayTurnView`, read in
+    `runtime.rs`'s `current_play_view` through
+    `PlayTable::current_turn_view()`. Nothing outside the table touches the
+    row.
+  - The card shows the world summary's safe fields plus the view's
+    narration, question and refusal.
+  - `authenticated_surface_version(snapshot, play)` adds the play row's
+    revision to the world's, so it moves when either does. The
+    world-only `surface_version` still serves mesh, readiness and
+    broadcast.
+  - M9.1 (render the operator log into the card) and the revision
+    mutation (increment only when `calls` grows) were both killed.
+  - Deleted: `SpeakPayload`, the `world.speak` arm, the story card, the
+    speak control, `"world.speak"` from `operation_schema`, and
+    `current_operator_view` entirely. `authenticated_surface` lost its
+    `operator_log` parameter, and `world.summary` no longer counts
+    committed events, which was the same log read and a leak of its own.
+  - Dungeon bin 137 → 139. Net +571/-250.
+  - **Discrepancy, reported not resolved:** the negative grep is 2, not 0.
+    Both hits are tests: the assertion that the `world.speak` operation id
+    is gone, and the `operator_log()` call that produces the durable text
+    `the_play_surface_shows_only_the_projection` proves the card cannot
+    reach. `operator_log` stays in the library by the cut's own wording.
+    **Accepted (Self):** obfuscating them to satisfy a literal grep would
+    trade real coverage for a number.
+  - **Inference to check in the playtest:** `world.play.answers` is a bound
+    `control.input.text` over a `"json"` draft carrying the `QuestionId`,
+    following how `lens_weights` and `jurisdictions` encode such a field.
+    No CultUI DSL doc exists in the repo for a hidden bound field, so this
+    is the most literal reading, flagged in the code.
 - **Promises:** P9.1 Nothing shown is world truth unless committed, except the
   question and the refusal of the player's own act (invariant 8 with Q13 A).
 - **Landed:** —
