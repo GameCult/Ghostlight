@@ -1979,7 +1979,11 @@ impl WorldState {
                 "genesis effect rules or mints without the play authority".into(),
             )
         })?;
-        admit_resolved(&mut state, resolved)?;
+        // Genesis resolves to revision 0 itself: `state.revision` never
+        // advances past 0 for the creating commit (`resulting_revision: 0`),
+        // unlike every later commit, which resolves to `state.revision + 1`.
+        let genesis_revision = state.revision;
+        admit_resolved(&mut state, resolved, genesis_revision)?;
         state.state_digest = state_digest(&state)?;
         Ok(state)
     }
@@ -1989,7 +1993,11 @@ impl WorldState {
 /// through it in one fixed order — entities, routes, subjects, operations — so a
 /// patch may relocate along a route it declares. It re-derives every structural
 /// claim from `state`, so an effect that skipped resolution dies here.
-fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<(), KernelError> {
+fn admit_resolved(
+    state: &mut WorldState,
+    resolved: &ResolvedPatch,
+    resolves_to: u64,
+) -> Result<(), KernelError> {
     if resolved.declares_nothing() && resolved.operations.is_empty() {
         return Err(KernelError::Invariant(
             "admitted patch carries no canonical change".into(),
@@ -2211,7 +2219,7 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
     if let Some(weights) = &resolved.lens_weights {
         state.lens_weights = weights.clone();
     }
-    apply_operations(state, &resolved.operations, &resolved.evidence)
+    apply_operations(state, &resolved.operations, &resolved.evidence, resolves_to)
 }
 
 /// The component writer for every lane: snapshot the before-totals for every
@@ -2228,6 +2236,7 @@ fn apply_operations(
     state: &mut WorldState,
     operations: &[ResolvedOp],
     evidence: &[EvidenceRef],
+    resolves_to: u64,
 ) -> Result<(), KernelError> {
     let mut deltas: BTreeMap<EntityId, LedgerDelta> = BTreeMap::new();
     for operation in operations {
@@ -2236,7 +2245,7 @@ fn apply_operations(
         }
     }
     for operation in operations {
-        apply_operation(state, operation, evidence)?;
+        apply_operation(state, operation, evidence, resolves_to)?;
         match operation {
             ResolvedOp::Transform {
                 from_resource,
@@ -2367,6 +2376,7 @@ fn apply_operation(
     state: &mut WorldState,
     operation: &ResolvedOp,
     evidence: &[EvidenceRef],
+    resolves_to: u64,
 ) -> Result<(), KernelError> {
     let insufficient = || KernelError::Invariant("holder does not hold enough".into());
     let overflow = || KernelError::Invariant("holding would overflow".into());
@@ -2798,12 +2808,13 @@ fn apply_operation(
             }
             // Matches `DecisionEvent.revision` and the `minted_at` scan built
             // from it (`action::exercise`, `snapshot`): both name the revision
-            // this commit resolves to, one past `state.revision` here, which
-            // still holds the *previous* revision until `submit` bumps it.
-            let acquired_at = state
-                .revision
-                .checked_add(1)
-                .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))?;
+            // this commit resolves to. `resolves_to` is `state.revision` itself
+            // at genesis, which never advances past 0, and `state.revision + 1`
+            // everywhere else, since `state` still holds the *previous*
+            // revision until `submit` bumps it. One value, one caller-computed
+            // source, so a genesis-seeded row cannot land one revision ahead of
+            // the state it was written into.
+            let acquired_at = resolves_to;
             let entry = Knowledge {
                 confidence: *confidence,
                 source,
@@ -2847,12 +2858,11 @@ fn apply_operation(
             // An empty fan-out is legal: the delta of a telling is a property of
             // the world — an empty room, a silenced channel — not a defect in
             // the proposal. Speaking alone commits the claim and lands nothing.
-            // `acquired_at` matches `minted_at`: one past `state.revision`, the
-            // revision this commit resolves to (PA.f44).
-            let acquired_at = state
-                .revision
-                .checked_add(1)
-                .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))?;
+            // `acquired_at` matches `minted_at` (PA.f44): both name the
+            // revision this commit resolves to, `resolves_to` (PA.f49) —
+            // `state.revision` itself at genesis, `state.revision + 1`
+            // otherwise.
+            let acquired_at = resolves_to;
             for listener in fan_out(state, *speaker, *fact, to) {
                 state.knowledge.entry(listener).or_default().insert(
                     *fact,
@@ -2885,10 +2895,13 @@ fn apply_operation(
                     "an actor displays from no place".into(),
                 ));
             }
-            let acquired_at = state
-                .revision
-                .checked_add(1)
-                .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))?;
+            // The revision the caller's own commit resolves to: `state.revision`
+            // itself at genesis, which never advances past 0, and
+            // `state.revision + 1` everywhere else, since `state` still holds
+            // the *previous* revision until `submit` bumps it. One value, one
+            // caller-computed source, so a genesis-seeded row cannot land one
+            // revision ahead of the state it was written into.
+            let acquired_at = resolves_to;
             for viewer in fan_out(state, *actor, *fact, &room) {
                 state.knowledge.entry(viewer).or_default().insert(
                     *fact,
@@ -2926,10 +2939,13 @@ fn apply_operation(
                     "a witness reaches nobody who does not already hold the fact".into(),
                 ));
             }
-            let acquired_at = state
-                .revision
-                .checked_add(1)
-                .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))?;
+            // The revision the caller's own commit resolves to: `state.revision`
+            // itself at genesis, which never advances past 0, and
+            // `state.revision + 1` everywhere else, since `state` still holds
+            // the *previous* revision until `submit` bumps it. One value, one
+            // caller-computed source, so a genesis-seeded row cannot land one
+            // revision ahead of the state it was written into.
+            let acquired_at = resolves_to;
             for witness in recipients {
                 state.knowledge.entry(witness).or_default().insert(
                     *fact,
@@ -5131,6 +5147,17 @@ fn validate_assignment(value: &ControllerAssignment) -> Result<(), KernelError> 
     Ok(())
 }
 
+/// The revision a non-genesis commit resolves to: one past `state.revision`,
+/// which still holds the *previous* revision here, since `submit` only bumps
+/// it after `apply_effect` returns. Genesis is not a caller: it resolves to
+/// `state.revision` itself and computes that directly (PA.f49).
+fn resolution_revision(state: &WorldState) -> Result<u64, KernelError> {
+    state
+        .revision
+        .checked_add(1)
+        .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))
+}
+
 /// `command_id` is the band draw's only per-command term, so the arm that
 /// re-derives an exercised decision needs the same one `reduce` drew from.
 fn apply_effect(
@@ -5191,7 +5218,8 @@ fn apply_effect(
                 }
                 _ => 0,
             };
-            admit_resolved(state, resolved)?;
+            let resolves_to = resolution_revision(state)?;
+            admit_resolved(state, resolved, resolves_to)?;
             // What makes "a commit clears exactly the boundary it answers"
             // structural rather than hoped for. "Nothing else clears one" is
             // true by construction: boundaries are derived and no writer
@@ -5263,7 +5291,8 @@ fn apply_effect(
             }
             state.events.push(event.clone());
             if !event.effects.is_empty() {
-                apply_operations(state, &event.effects, &[])?;
+                let resolves_to = resolution_revision(state)?;
+                apply_operations(state, &event.effects, &[], resolves_to)?;
             }
             state
                 .last_opportunity_at
@@ -11736,6 +11765,7 @@ mod witness_tests {
                 confidence: Confidence::Certain,
             },
             &[],
+            state_revision + 1,
         )
         .expect("the witness lands");
         assert_eq!(state.knowledge[&world.villager][&world.asteroid], held);
@@ -11758,6 +11788,7 @@ mod witness_tests {
         let directory = tempfile::tempdir().unwrap();
         let (mut kernel, world, active) = nesting_kernel(directory.path(), "Nobody");
         let forged = |place: EntityId, state: &WorldState| {
+            let resolves_to = state.revision + 1;
             let mut state = state.clone();
             apply_operation(
                 &mut state,
@@ -11767,6 +11798,7 @@ mod witness_tests {
                     confidence: Confidence::Certain,
                 },
                 &[],
+                resolves_to,
             )
             .unwrap_err()
         };
@@ -11821,6 +11853,7 @@ mod witness_tests {
         // A forged effect naming a place that is not one, or no live fact, is
         // refused by the arm's own kind check before any of that.
         let mut state = kernel.state.clone();
+        let resolves_to = state.revision + 1;
         assert!(matches!(
             apply_operation(
                 &mut state,
@@ -11830,6 +11863,7 @@ mod witness_tests {
                     confidence: Confidence::Certain,
                 },
                 &[],
+                resolves_to,
             )
             .unwrap_err(),
             KernelError::Invariant(message) if message == "a witness names no live fact or place"
@@ -11889,6 +11923,7 @@ mod witness_tests {
             vec![Mismatch::NoOperationEffect { operation: 0 }]
         );
         let mut state = kernel.state.clone();
+        let resolves_to = state.revision + 1;
         assert!(matches!(
             apply_operations(
                 &mut state,
@@ -11898,6 +11933,7 @@ mod witness_tests {
                     confidence: Confidence::Certain,
                 }],
                 &[],
+                resolves_to,
             )
             .unwrap_err(),
             KernelError::Invariant(message)
@@ -12271,6 +12307,106 @@ mod witness_tests {
         );
     }
 
+    /// PA.f49: `acquired_at` stamps the revision the write's own commit
+    /// resolves to on every path, genesis included. Genesis resolves to
+    /// revision 0 itself — `state.revision` never advances past 0 for the
+    /// creating commit — so a fact a genesis patch both declares and grants
+    /// knowledge of lands at `acquired_at: 0`, not one revision ahead of the
+    /// state it was written into.
+    #[test]
+    fn a_genesis_seeded_knowledge_row_is_acquired_at_revision_zero() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let mut creation = creation(CommandId::new(), "PAf49Genesis");
+        creation.patch.declarations.push(Declaration::Fact(FactDeclaration {
+            handle: DraftHandle::new("founding"),
+            label: "The Founding Ruling".into(),
+            statement: Statement::new("Stated by the table.").unwrap(),
+            standing: FactStandingRef::Claimed {
+                by: Ref::Draft(DraftHandle::new("human")),
+            },
+        }));
+        creation.patch.operations.push(ComponentOp::AcquireKnowledge {
+            subject: Ref::Draft(DraftHandle::new("human")),
+            fact: Ref::Draft(DraftHandle::new("founding")),
+            source: AuthoredSource::Witnessed,
+            confidence: Confidence::Certain,
+        });
+        let (kernel, _) = WorldKernel::create(&path, creation, &auth_principal(owner())).unwrap();
+        assert_eq!(kernel.state.revision, 0);
+        let human = *kernel
+            .state
+            .subjects
+            .iter()
+            .find(|(_, subject)| subject.label == "The Human")
+            .expect("genesis admits the declared human")
+            .0;
+        let fact = *kernel
+            .state
+            .facts
+            .iter()
+            .find(|(_, record)| record.statement.as_str() == "Stated by the table.")
+            .expect("genesis admits the declared fact")
+            .0;
+        assert_eq!(
+            kernel.state.knowledge[&human][&fact].acquired_at,
+            0,
+            "a genesis-seeded row landed one revision ahead of the state it was written into"
+        );
+        assert!(journal::verify_state_shape(&kernel.state).is_ok());
+    }
+
+    /// PA.f49: every commit after genesis still stamps the revision it
+    /// resolves to, one past the state it was applied against.
+    #[test]
+    fn a_later_commits_knowledge_row_is_acquired_at_that_commits_revision() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "PAf49Later");
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::AcquireKnowledge {
+                subject: Ref::Existing(world.villager),
+                fact: Ref::Existing(world.asteroid),
+                source: AuthoredSource::Witnessed,
+                confidence: Confidence::Certain,
+            }]),
+        );
+        assert_eq!(kernel.state.revision, active.revision + 1);
+        assert_eq!(
+            kernel.state.knowledge[&world.villager][&world.asteroid].acquired_at,
+            active.revision + 1
+        );
+    }
+
+    /// PA.f49: the shape check refuses a knowledge row forged ahead of the
+    /// world's own revision — the check `verify_state_shape` gained alongside
+    /// the genesis fix, so a corrupt or forged `acquired_at` cannot pass
+    /// replay silently.
+    #[test]
+    fn a_shape_check_refuses_a_knowledge_row_forged_ahead_of_the_world_revision() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, world, active) = nesting_kernel(directory.path(), "PAf49Shape");
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![witness(
+                world.asteroid,
+                world.region,
+                Confidence::Certain,
+            )]),
+        );
+        assert!(journal::verify_state_shape(&kernel.state).is_ok());
+        let mut forged = kernel.state.clone();
+        let entry = forged
+            .knowledge
+            .get_mut(&world.villager)
+            .and_then(|held| held.get_mut(&world.asteroid))
+            .expect("the witness landed on the villager");
+        entry.acquired_at = forged.revision + 1;
+        assert!(journal::verify_state_shape(&forged).is_err());
+    }
+
     /// The two callers of the shared owners answer the same question. A
     /// `Reach::Place` channel's fan-out and a witness over the same place select
     /// the same subjects over the same state, so "under a place" and "already a
@@ -12387,6 +12523,7 @@ mod witness_tests {
                 confidence: Confidence::Certain,
             },
             &[],
+            adrift_revision + 1,
         )
         .expect("the hemisphere still reaches the standers");
         assert!(
@@ -18417,10 +18554,16 @@ mod clock_tests {
         .0;
         let human = human_subject(&kernel.snapshot().unwrap());
         let mut state = kernel.state.clone();
+        let resolves_to = state.revision + 1;
         assert!(
             matches!(
-                apply_operation(&mut state, &ResolvedOp::Retire { subject: human }, &[])
-                    .unwrap_err(),
+                apply_operation(
+                    &mut state,
+                    &ResolvedOp::Retire { subject: human },
+                    &[],
+                    resolves_to
+                )
+                .unwrap_err(),
                 KernelError::Invariant(message)
                     if message == "retire operation would remove a Draft approver"
             ),

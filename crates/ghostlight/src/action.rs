@@ -2523,8 +2523,10 @@ mod tests {
             },
         );
         let mut refused = forged.clone();
-        let error = crate::apply_operations(&mut refused, std::slice::from_ref(&step), &[])
-            .unwrap_err();
+        let resolves_to = refused.revision + 1;
+        let error =
+            crate::apply_operations(&mut refused, std::slice::from_ref(&step), &[], resolves_to)
+                .unwrap_err();
         assert!(matches!(error, KernelError::Invariant(_)));
 
         let mut admitted = forged;
@@ -2535,7 +2537,8 @@ mod tests {
                 over: crate::AuthorityTarget::PlaceSubtree(bench.civic.hall),
             }]),
         );
-        crate::apply_operations(&mut admitted, std::slice::from_ref(&step), &[])
+        let resolves_to = admitted.revision + 1;
+        crate::apply_operations(&mut admitted, std::slice::from_ref(&step), &[], resolves_to)
             .expect("the named key opens the door at the component writer too");
         assert_eq!(admitted.positions[&walker].place, bench.civic.chamber);
     }

@@ -645,13 +645,16 @@ pub(super) fn verify_state_shape(state: &WorldState) -> Result<(), JournalError>
         }
     }
     for (subject_id, held) in &state.knowledge {
-        let entry_is_live = |entry: &super::Knowledge| match entry.source {
-            super::KnowledgeSource::Told { by, via } => {
-                state.subjects.contains_key(&by)
-                    && via.is_none_or(|channel| state.channels.contains_key(&channel))
-            }
-            super::KnowledgeSource::Seen { by } => state.subjects.contains_key(&by),
-            super::KnowledgeSource::Witnessed | super::KnowledgeSource::Evidenced => true,
+        let entry_is_live = |entry: &super::Knowledge| {
+            entry.acquired_at <= state.revision
+                && match entry.source {
+                    super::KnowledgeSource::Told { by, via } => {
+                        state.subjects.contains_key(&by)
+                            && via.is_none_or(|channel| state.channels.contains_key(&channel))
+                    }
+                    super::KnowledgeSource::Seen { by } => state.subjects.contains_key(&by),
+                    super::KnowledgeSource::Witnessed | super::KnowledgeSource::Evidenced => true,
+                }
         };
         if !state.subjects.contains_key(subject_id)
             || held.is_empty()
@@ -660,7 +663,8 @@ pub(super) fn verify_state_shape(state: &WorldState) -> Result<(), JournalError>
                 .any(|(fact, entry)| !state.facts.contains_key(fact) || !entry_is_live(entry))
         {
             return Err(JournalError::Corrupt(
-                "knowledge does not name a canonical subject, fact, and source".into(),
+                "knowledge does not name a canonical subject, fact, and source, or was acquired ahead of the world's revision"
+                    .into(),
             ));
         }
     }
