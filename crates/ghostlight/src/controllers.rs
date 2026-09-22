@@ -7408,6 +7408,451 @@ mod tests {
         (directory, mailbox, task, snapshot, mara, secret, heard)
     }
 
+    /// A world with all three controller modes PA.f42 and PA.f43 need: a
+    /// Human subject and a NarrativePersona subject share the commons, and an
+    /// OperationalAgent subject stands alone in the vault holding a secret it
+    /// never tells. The Persona speaks a heard line to the commons — the
+    /// Human subject hears it, the vaulted subject does not — so the Human's
+    /// own slice holds exactly the heard line and never the vaulted secret.
+    /// Returns the mailbox, its owning task, a snapshot taken after the
+    /// speech, the Human subject's id, the Operational subject's id, the
+    /// heard text, and the secret the Human must never see.
+    async fn mixed_controller_world() -> (
+        tempfile::TempDir,
+        WorldMailbox,
+        tokio::task::JoinHandle<()>,
+        WorldSnapshot,
+        SubjectId,
+        SubjectId,
+        String,
+        String,
+    ) {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("owner");
+        let human_principal = PrincipalId::new("human-player");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        mailbox
+            .create_fixture(
+                CreateWorld {
+                    lens_weights: crate::tests::stock_weights(),
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Mixed Controller Fixture".into(),
+                    brief: "Speak plainly.".into(),
+                    patch: WorldPatch {
+                        declarations: vec![
+                            Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("commons"),
+                                label: "The Commons".into(),
+                                kind: EntityKind::Place,
+                                container: None,
+                            }),
+                            Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("vault"),
+                                label: "The Vault".into(),
+                                kind: EntityKind::Place,
+                                container: None,
+                            }),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("speaker"),
+                                label: "Iris in the tollhouse".into(),
+                                kind: SubjectKind::Person,
+                                controller: NewController::NarrativePersona,
+                                affordances: kernel_speak_grant(),
+                                position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                            }),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("human"),
+                                label: "The Player at the rain gate".into(),
+                                kind: SubjectKind::Person,
+                                controller: NewController::Human {
+                                    principal: human_principal.clone(),
+                                },
+                                affordances: kernel_speak_grant(),
+                                position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                            }),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("operational"),
+                                label: "The Vault Ledger".into(),
+                                kind: SubjectKind::Institution,
+                                controller: NewController::OperationalAgent,
+                                affordances: kernel_speak_grant(),
+                                position: Some(Ref::Draft(DraftHandle::new("vault"))),
+                            }),
+                        ],
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
+                    scale_intent: WorldScaleIntentRef::default(),
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        // Every required approver — the owner, and a Human subject's own
+        // principal — must approve the draft before it activates.
+        let human_authenticated = AuthenticatedCaller::fixture(CallerId::Principal(
+            human_principal.clone(),
+        ));
+        mailbox
+            .submit_fixture(
+                CommandEnvelope {
+                    id: CommandId::new(),
+                    world_id: snapshot.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(owner.clone()),
+                    body: CommandBody::ApproveDraft,
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        snapshot = mailbox.snapshot().await.unwrap();
+        mailbox
+            .submit_fixture(
+                CommandEnvelope {
+                    id: CommandId::new(),
+                    world_id: snapshot.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(human_principal.clone()),
+                    body: CommandBody::ApproveDraft,
+                },
+                &human_authenticated,
+            )
+            .await
+            .unwrap();
+        snapshot = mailbox.snapshot().await.unwrap();
+        mailbox
+            .submit_fixture(
+                CommandEnvelope {
+                    id: CommandId::new(),
+                    world_id: snapshot.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(owner.clone()),
+                    body: CommandBody::ActivateWorld,
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        snapshot = mailbox.snapshot().await.unwrap();
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        fn who(snapshot: &WorldSnapshot, label: &str) -> SubjectId {
+            snapshot
+                .subjects
+                .iter()
+                .find(|subject| subject.label == label)
+                .expect("the declared subject")
+                .id
+        }
+        let speaker = who(&snapshot, "Iris in the tollhouse");
+        let human = who(&snapshot, "The Player at the rain gate");
+        let operational = who(&snapshot, "The Vault Ledger");
+
+        let speak_id = crate::tests::affordance_named(&snapshot, "speak");
+        let port = ControllerPort::new(mailbox.clone());
+
+        // The vaulted subject speaks alone: nobody stands in the vault beside
+        // it, so `Communicate`'s fan-out (which excludes the speaker) lands
+        // the claim on no one. The secret text exists as an asserted claim
+        // and in no subject's knowledge — the same shape
+        // `persona_lane_world` gives Otho's secret — so it can never appear
+        // in the Human's own slice.
+        let secret = "The ledger balance is short by one crown.".to_string();
+        let operational_opportunity = opportunity_for(&snapshot, operational);
+        port.submit_controller(
+            CommandId::new(),
+            &operational_opportunity,
+            DecisionInvocation {
+                affordance: speak_id,
+                bindings: Vec::new(),
+                proposed: Vec::new(),
+                speech: Some(Statement::new(secret.as_str()).unwrap()),
+                display: None,
+            },
+        )
+        .await
+        .unwrap();
+        snapshot = mailbox.snapshot().await.unwrap();
+
+        // The speaker speaks in the commons: the Human hears it, the vaulted
+        // subject does not.
+        let heard = "The lower hinge is flooding.".to_string();
+        let speaker_opportunity = opportunity_for(&snapshot, speaker);
+        port.submit_controller(
+            CommandId::new(),
+            &speaker_opportunity,
+            DecisionInvocation {
+                affordance: speak_id,
+                bindings: Vec::new(),
+                proposed: Vec::new(),
+                speech: Some(Statement::new(heard.as_str()).unwrap()),
+                display: None,
+            },
+        )
+        .await
+        .unwrap();
+        snapshot = mailbox.snapshot().await.unwrap();
+
+        (
+            directory, mailbox, task, snapshot, human, operational, heard, secret,
+        )
+    }
+
+    /// PA.f42: no prior test inspected the assembled *Projector* request
+    /// itself — the existing leak tests cover the Persona request `turn`
+    /// builds from the Projector's prose, not the Projector request `turn`
+    /// and `narrate` both build from `SelectedDecision` through the one
+    /// shared `build_projector_invocation`. Kills the mutation that put the
+    /// full typed view into the Projector's guidance instead of the world's
+    /// brief: a typed view carries exactly the identifiers this asserts are
+    /// absent.
+    #[tokio::test]
+    async fn the_projector_request_carries_no_structured_state_through_turn_or_narrate() {
+        let (_directory, mailbox, _task, snapshot, mara, _secret, _heard) =
+            persona_lane_world().await;
+        let narrative_opportunity = opportunity_for(&snapshot, mara);
+        let subject_id = encoded_id(&mara).unwrap();
+        let controller_id = encoded_id(&narrative_opportunity.controller_id).unwrap();
+        let world_id = encoded_id(&narrative_opportunity.world_id).unwrap();
+        let revision = narrative_opportunity.revision.to_string();
+        let forbidden = [
+            subject_id.as_str(),
+            controller_id.as_str(),
+            world_id.as_str(),
+            narrative_opportunity.scope_digest.as_str(),
+            snapshot.state_digest.as_str(),
+            revision.as_str(),
+        ];
+
+        // Through `turn`.
+        let port = ControllerPort::new(mailbox.clone());
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(vec![
+                output(
+                    vec![InferenceEvent::Text("Iris says the hinge is flooding.".into())],
+                    "projector",
+                ),
+                output(vec![InferenceEvent::Text("I take that in.".into())], "persona"),
+            ]),
+        });
+        let lane = PersonaLane::new(
+            port,
+            capturing.clone(),
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+        lane.turn(CommandId::new(), &narrative_opportunity)
+            .await
+            .unwrap();
+        let projector_text = {
+            let prepared = capturing.prepared.lock().unwrap();
+            assert_eq!(prepared.len(), 2);
+            request_text(&prepared[0])
+        };
+        for leak in forbidden {
+            assert!(
+                !projector_text.contains(leak),
+                "turn's Projector request leaked `{leak}`"
+            );
+        }
+
+        // Through `narrate`, over a real Human subject.
+        let (_directory, mailbox, _task, snapshot, human, _operational, _heard, _secret) =
+            mixed_controller_world().await;
+        let human_opportunity = opportunity_for(&snapshot, human);
+        let subject_id = encoded_id(&human).unwrap();
+        let controller_id = encoded_id(&human_opportunity.controller_id).unwrap();
+        let world_id = encoded_id(&human_opportunity.world_id).unwrap();
+        let revision = human_opportunity.revision.to_string();
+        let forbidden = [
+            subject_id.as_str(),
+            controller_id.as_str(),
+            world_id.as_str(),
+            human_opportunity.scope_digest.as_str(),
+            snapshot.state_digest.as_str(),
+            revision.as_str(),
+        ];
+        let port = ControllerPort::new(mailbox.clone());
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(vec![output(
+                vec![InferenceEvent::Text("Iris says the hinge is flooding.".into())],
+                "projector",
+            )]),
+        });
+        let lane = PersonaLane::new(
+            port,
+            capturing.clone(),
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+        lane.narrate(CommandId::new(), &human_opportunity)
+            .await
+            .unwrap();
+        let narrate_projector_text = {
+            let prepared = capturing.prepared.lock().unwrap();
+            assert_eq!(prepared.len(), 1);
+            request_text(&prepared[0])
+        };
+        for leak in forbidden {
+            assert!(
+                !narrate_projector_text.contains(leak),
+                "narrate's Projector request leaked `{leak}`"
+            );
+        }
+    }
+
+    /// PA.f43 (mutation MA): `turn` refuses an `OperationalAgent` opportunity
+    /// before any inference runs, exactly as it refuses `Human`.
+    #[tokio::test]
+    async fn turn_refuses_an_operational_agent() {
+        let (_directory, mailbox, _task, snapshot, _human, operational, _heard, _secret) =
+            mixed_controller_world().await;
+        let opportunity = opportunity_for(&snapshot, operational);
+        let port = ControllerPort::new(mailbox.clone());
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(Vec::new()),
+        });
+        let lane = PersonaLane::new(
+            port,
+            capturing.clone(),
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+
+        let error = lane.turn(CommandId::new(), &opportunity).await.unwrap_err();
+        assert!(matches!(
+            error,
+            ControllerError::NoOpportunity {
+                expected: ControllerMode::NarrativePersona
+            }
+        ));
+        assert!(
+            capturing.prepared.lock().unwrap().is_empty(),
+            "an OperationalAgent opportunity reached inference"
+        );
+    }
+
+    /// PA.f43 (mutation ME): a scope digest that has moved since the
+    /// opportunity was issued is refused. `PersonaLane::select` always
+    /// requires the digest (`select_scope(.., true)`, the `select_one` half
+    /// of the shared matcher); `select_fresh`'s looser half — scope alone,
+    /// no digest — exists for `ControllerRunner::interrupted`'s own renewal,
+    /// never for a fresh `turn`.
+    #[tokio::test]
+    async fn turn_refuses_a_stale_scope_digest() {
+        let (_directory, mailbox, _task, snapshot, mara, _secret, _heard) =
+            persona_lane_world().await;
+        let stale_opportunity = opportunity_for(&snapshot, mara);
+
+        // A second line lands after the opportunity above was captured: the
+        // subject's own known-fact keys move, so its scope digest moves too.
+        let owner = PrincipalId::new("owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let speak_id = crate::tests::affordance_named(&snapshot, "speak");
+        let port = ControllerPort::new(mailbox.clone());
+        let _ = &authenticated;
+        let iris = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.label == "Iris in the tollhouse")
+            .unwrap()
+            .id;
+        let iris_opportunity = opportunity_for(&snapshot, iris);
+        port.submit_controller(
+            CommandId::new(),
+            &iris_opportunity,
+            DecisionInvocation {
+                affordance: speak_id,
+                bindings: Vec::new(),
+                proposed: Vec::new(),
+                speech: Some(Statement::new("A second line, after the binding.").unwrap()),
+                display: None,
+            },
+        )
+        .await
+        .unwrap();
+
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(Vec::new()),
+        });
+        let lane = PersonaLane::new(
+            ControllerPort::new(mailbox.clone()),
+            capturing.clone(),
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+        let error = lane
+            .turn(CommandId::new(), &stale_opportunity)
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            ControllerError::NoOpportunity {
+                expected: ControllerMode::NarrativePersona
+            }
+        ));
+        assert!(
+            capturing.prepared.lock().unwrap().is_empty(),
+            "a stale scope digest reached inference"
+        );
+    }
+
+    /// PA.f43: `narrate`'s success path for a real Human subject. Its
+    /// Projector request carries only the player's own slice: no other
+    /// subject's knowledge (the vaulted subject's own secret text), no
+    /// absent subject (the vaulted subject's label), and — the request the
+    /// player never sees a Persona stage at all (Q11, P6.3).
+    #[tokio::test]
+    async fn narrate_succeeds_for_a_human_subject_with_only_its_own_slice() {
+        let (_directory, mailbox, _task, snapshot, human, _operational, heard, secret) =
+            mixed_controller_world().await;
+        let opportunity = opportunity_for(&snapshot, human);
+        let port = ControllerPort::new(mailbox.clone());
+        let projector_prose = "Iris says the hinge is flooding.";
+        let capturing = Arc::new(CapturingPort {
+            prepared: Mutex::new(Vec::new()),
+            outputs: Mutex::new(vec![output(
+                vec![InferenceEvent::Text(projector_prose.into())],
+                "projector",
+            )]),
+        });
+        let lane = PersonaLane::new(
+            port,
+            capturing.clone(),
+            "projector-model".into(),
+            "persona-model".into(),
+        )
+        .unwrap();
+
+        let narrated = lane.narrate(CommandId::new(), &opportunity).await.unwrap();
+        assert_eq!(narrated, projector_prose);
+
+        let prepared = capturing.prepared.lock().unwrap();
+        assert_eq!(prepared.len(), 1, "narrate runs the Projector and stops");
+        let projector_text = request_text(&prepared[0]);
+        assert!(
+            projector_text.contains(heard.as_str()),
+            "the Human's own heard line is missing from its own slice"
+        );
+        for absent in [secret.as_str(), "The Vault Ledger"] {
+            assert!(
+                !projector_text.contains(absent),
+                "narrate's Projector request carried `{absent}`, outside the player's own slice"
+            );
+        }
+    }
+
     /// Verification (invariant 2, P6.1): the Persona's only input is the
     /// Projector's own prose. None of the subject's ids, the scope digest, the
     /// revision, or the typed view's own structural keys ever reach it, and
