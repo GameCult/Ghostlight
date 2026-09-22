@@ -3,7 +3,6 @@ mod eve;
 mod heimdall;
 mod idunn_health;
 mod mesh;
-#[allow(dead_code)]
 mod play;
 mod runtime;
 

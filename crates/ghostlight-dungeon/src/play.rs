@@ -328,10 +328,6 @@ struct ClosedTurnKeys {
 }
 
 impl KeyLedger {
-    fn contains(&self, key: &str) -> bool {
-        self.closed.iter().any(|entry| entry.keys.iter().any(|existing| existing == key))
-    }
-
     /// The `turn_id` of the closed turn `key` was applied to, if it is still
     /// within the window (PA.f109): `ClosedTurnKeys::turn_id` is written on
     /// every archive but was never read anywhere until this — a replay
@@ -529,6 +525,7 @@ pub(crate) enum PlayError {
     #[error("play store error: {0}")]
     Store(#[from] anyhow::Error),
     #[error("no live human opportunity for the player")]
+    #[allow(dead_code)] // PA.f117: no production site raises this yet; reported, not wired here.
     NoPlayerOpportunity,
     #[error("an empty or whitespace-only answer is refused")]
     EmptyAnswer,
@@ -2191,39 +2188,6 @@ mod tests {
         }
     }
 
-    fn persona_model() -> Arc<dyn InferencePort> {
-        ScriptedPort::new(Vec::new())
-    }
-
-    struct TableFixture {
-        table: PlayTable,
-        _directory: tempfile::TempDir,
-    }
-
-    fn table_with(world: &WorldMailbox, play_port: Arc<dyn InferencePort>) -> TableFixture {
-        let directory = tempfile::tempdir().unwrap();
-        let personas = PersonaLane::new(
-            ControllerPort::new(world.clone()),
-            persona_model(),
-            "gpt-5.6-sol".into(),
-            "gpt-5.6-sol".into(),
-        )
-        .unwrap();
-        let table = PlayTable::new(
-            world.clone(),
-            personas,
-            play_port,
-            "gpt-5.6-terra".into(),
-            Arc::new(Semaphore::new(2)),
-            directory.path().join("play-turn-v1.cc"),
-        )
-        .unwrap();
-        TableFixture {
-            table,
-            _directory: directory,
-        }
-    }
-
     fn player_id(snapshot: &WorldSnapshot) -> SubjectId {
         player_subject(snapshot).unwrap().id
     }
@@ -2525,6 +2489,132 @@ mod tests {
             .and_then(|call| call.result.clone())
             .unwrap();
         assert!(result.contains("not an exact quote"), "{result}");
+    }
+
+    /// PA.f115 (invariant 4): `span_is_exact`'s own
+    /// `.filter(|(id, _)| *id == actor.subject)` restricts a Persona's
+    /// sources to turns recorded *for that subject*; deleting it would let
+    /// one dispatched Persona speak another's prose verbatim, uncaught, by
+    /// pooling every dispatched Persona's recorded turns as a shared source
+    /// list. Mara and Borin are dispatched together; Mara's own `speak` call
+    /// quotes Borin's own recorded turn prose exactly and must still be
+    /// refused as not her own exact quote. Mutation: delete the filter in
+    /// `span_is_exact` (`play.rs`) and this must fail.
+    #[tokio::test]
+    async fn a_persona_cannot_speak_another_dispatched_personas_exact_quote() {
+        let fixture = play_world(Some("Mara"), "player-persona-cross-quote").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let mara = persona_id(&snapshot);
+        let affordance_id = bracketed_id_after(&table_view(&snapshot), "speak [");
+
+        // A second Persona subject, declared through the play table's own
+        // authoring door — the same mechanism
+        // `dispatch_order_never_changes_the_request_id_a_subject_gets` uses.
+        let declare = output(
+            "r0",
+            vec![
+                call_event(
+                    "c0",
+                    "declare_subject",
+                    serde_json::json!({
+                        "handle": "borin",
+                        "label": "Borin",
+                        "kind": "person",
+                        "controller": {"type": "narrative_persona"},
+                        "affordances": [{"ref": "existing", "value": affordance_id}],
+                        "position": null,
+                    }),
+                ),
+                call_event("c1", END_TURN_TOOL, serde_json::json!({})),
+            ],
+        );
+        let directory = tempfile::tempdir().unwrap();
+        {
+            let personas = PersonaLane::new(
+                ControllerPort::new(fixture.world.clone()),
+                ScriptedPort::new(vec![output("proj-declare", vec![text_event("Quiet.")])]),
+                "gpt-5.6-sol".into(),
+                "gpt-5.6-sol".into(),
+            )
+            .unwrap();
+            let table = PlayTable::new(
+                fixture.world.clone(),
+                personas,
+                ScriptedPort::new(vec![declare]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(2)),
+                directory.path().join("declare-turn-v1.cc"),
+            )
+            .unwrap();
+            table
+                .run(&fixture.principal, test_turn_id(760), "Introduce Borin.".into())
+                .await
+                .unwrap();
+        }
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let borin = snapshot.subjects.iter().find(|row| row.label == "Borin").unwrap().id;
+        let mara_handle = handle_for(mara);
+        let mara_text = subject_id_text(&snapshot, mara);
+        let borin_text = subject_id_text(&snapshot, borin);
+
+        let dispatch_round = output(
+            "r0",
+            vec![call_event(
+                "c0",
+                DISPATCH_TOOL,
+                serde_json::json!({"subjects": [mara_text, borin_text]}),
+            )],
+        );
+        let speak_round = output(
+            "r1",
+            vec![
+                call_event(
+                    "c1",
+                    &format!("{mara_handle}{HANDLE_SEPARATOR}speak"),
+                    serde_json::json!({"text": "Borin says hello to the player."}),
+                ),
+                call_event("c2", END_TURN_TOOL, serde_json::json!({})),
+            ],
+        );
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![
+                output("proj-mara", vec![text_event("Mara considers the player.")]),
+                output("persona-mara", vec![text_event("Mara nods once.")]),
+                output("proj-borin", vec![text_event("Borin waits his turn.")]),
+                output("persona-borin", vec![text_event("Borin says hello to the player.")]),
+                output("proj-narrate", vec![text_event("The room settles.")]),
+            ]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![dispatch_round, speak_round]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+        table
+            .run(&fixture.principal, test_turn_id(761), "Who's there?".into())
+            .await
+            .unwrap();
+
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        let result = turn
+            .calls
+            .iter()
+            .find(|call| call.round == 1 && call.slot == 0)
+            .and_then(|call| call.result.clone())
+            .unwrap();
+        assert!(
+            result.contains("not an exact quote"),
+            "Mara speaking Borin's own exact prose must still be refused: {result}"
+        );
     }
 
     // `a_refused_player_act_sets_the_refusal_line` (PA-Q8) is not covered by
@@ -5378,16 +5468,22 @@ mod tests {
         );
     }
 
-    /// PA.f83: K1 opens and closes a turn; K2 opens and closes a second
-    /// turn; a retry of K1 is a no-op recognized through the store's own
-    /// `KeyLedger` — zero inference calls, and it does not open a third
-    /// turn.
+    /// PA.f83, PA.f116: K1, K2 and K3 each open and close their own turn in
+    /// order; opening K3 archives *both* K1 and K2 into the store's own
+    /// `KeyLedger`, so a retry of K2 — the archived entry in the *middle*,
+    /// not the ledger's front (oldest) entry — must still name K2's own
+    /// `turn_id`. With only two closed turns the retried key's own entry
+    /// happened to sit at the ledger's front regardless of whether
+    /// `turn_id_for` actually searched or just returned the front entry, so
+    /// that shape passed without exercising the search at all; a third
+    /// closed turn is needed to tell the two apart. Mutation:
+    /// `KeyLedger::turn_id_for` returning `self.closed.front()`'s id on any
+    /// match must fail this.
     #[tokio::test]
     async fn a_retried_key_from_a_turn_before_the_most_recent_is_a_no_op() {
         let fixture = play_world(None, "player-ledger-retry").await;
         let directory = tempfile::tempdir().unwrap();
         let store_path = directory.path().join("play-turn-v1.cc");
-        let end = || output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
         fn personas(world: &WorldMailbox, proj: &'static str) -> PersonaLane {
             PersonaLane::new(
                 ControllerPort::new(world.clone()),
@@ -5397,49 +5493,50 @@ mod tests {
             )
             .unwrap()
         }
+        async fn run_and_close(
+            fixture: &WorldFixture,
+            store_path: &Path,
+            proj: &'static str,
+            key: String,
+            text: &str,
+        ) -> String {
+            let end = output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
+            let table = PlayTable::new(
+                fixture.world.clone(),
+                personas(&fixture.world, proj),
+                ScriptedPort::new(vec![end]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(2)),
+                store_path,
+            )
+            .unwrap();
+            table.run(&fixture.principal, key, text.into()).await.unwrap();
+            drop(table);
+            PlayTurnStore::open(store_path).unwrap().current().unwrap().turn_id.clone()
+        }
 
         let k1 = test_turn_id(610);
-        {
-            let table = PlayTable::new(
-                fixture.world.clone(),
-                personas(&fixture.world, "proj-k1"),
-                ScriptedPort::new(vec![end()]),
-                "gpt-5.6-terra".into(),
-                Arc::new(Semaphore::new(2)),
-                &store_path,
-            )
-            .unwrap();
-            table.run(&fixture.principal, k1.clone(), "K1.".into()).await.unwrap();
-        }
-        let turn1_id = PlayTurnStore::open(&store_path).unwrap().current().unwrap().turn_id.clone();
+        let turn1_id = run_and_close(&fixture, &store_path, "proj-k1", k1, "K1.").await;
         let k2 = test_turn_id(611);
-        {
-            let table = PlayTable::new(
-                fixture.world.clone(),
-                personas(&fixture.world, "proj-k2"),
-                ScriptedPort::new(vec![end()]),
-                "gpt-5.6-terra".into(),
-                Arc::new(Semaphore::new(2)),
-                &store_path,
-            )
-            .unwrap();
-            table.run(&fixture.principal, k2.clone(), "K2.".into()).await.unwrap();
-        }
-        let turn2_id = PlayTurnStore::open(&store_path).unwrap().current().unwrap().turn_id.clone();
+        let turn2_id = run_and_close(&fixture, &store_path, "proj-k2", k2.clone(), "K2.").await;
+        assert_ne!(turn1_id, turn2_id);
+        let k3 = test_turn_id(612);
+        let turn3_id = run_and_close(&fixture, &store_path, "proj-k3", k3, "K3.").await;
+        assert_ne!(turn2_id, turn3_id);
 
-        // A retry of K1: an empty scripted port means any inference attempt
+        // A retry of K2: an empty scripted port means any inference attempt
         // fails loudly, so this stays a genuine "zero inference calls" check.
         let port = ScriptedPort::new(vec![]);
         let table = PlayTable::new(
             fixture.world.clone(),
-            personas(&fixture.world, "proj-k1-retry"),
+            personas(&fixture.world, "proj-k2-retry"),
             port.clone(),
             "gpt-5.6-terra".into(),
             Arc::new(Semaphore::new(2)),
             &store_path,
         )
         .unwrap();
-        let outcome = table.run(&fixture.principal, k1, "K1.".into()).await.unwrap();
+        let outcome = table.run(&fixture.principal, k2, "K2.".into()).await.unwrap();
 
         assert_eq!(
             port.seen_requests().len(),
@@ -5448,23 +5545,24 @@ mod tests {
         );
         let stored = table.store.lock().await;
         let turn = stored.current().unwrap();
-        assert_eq!(turn.turn_id, turn2_id, "the retry must not open a third turn");
+        assert_eq!(turn.turn_id, turn3_id, "the retry must not open a fourth turn");
         // PA.f109: the replay's own outcome names the turn it replayed —
-        // K1's own turn, not K2's, the store's current one — reading
-        // `ClosedTurnKeys::turn_id` for the first time anywhere in
-        // production.
+        // K2's own turn, neither K1's (the ledger's front entry) nor K3's
+        // (the store's current one).
         assert_eq!(
             outcome,
-            RunOutcome::Replayed { turn_id: turn1_id },
-            "a replayed key's own outcome must name the turn it originally opened"
+            RunOutcome::Replayed { turn_id: turn2_id },
+            "a replayed key's own outcome must name the turn it originally opened, not the ledger's front entry"
         );
     }
 
-    /// PA.f83: the ledger keeps a closed turn's own keys only while it
-    /// remains among the most recent `KEY_LEDGER_WINDOW` closed turns; one
-    /// more closed turn past the window evicts the oldest one's keys. A
+    /// PA.f83, PA.f117: the ledger keeps a closed turn's own keys only while
+    /// it remains among the most recent `KEY_LEDGER_WINDOW` closed turns;
+    /// one more closed turn past the window evicts the oldest one's keys. A
     /// small helper against the pure `KeyLedger` value directly, so this
-    /// does not run 65 real turns.
+    /// does not run 65 real turns. Reached through `turn_id_for` — `contains`
+    /// had no production caller left after PA.f109's `turn_id_for` replaced
+    /// it and is deleted.
     #[test]
     fn the_ledger_forgets_a_closed_turns_keys_past_the_window() {
         let mut ledger = KeyLedger::default();
@@ -5472,15 +5570,20 @@ mod tests {
         for index in 0..KEY_LEDGER_WINDOW - 1 {
             ledger.push_closed(format!("turn-{index}"), vec![format!("key-{index}")]);
         }
-        assert!(
-            ledger.contains("oldest-key"),
+        assert_eq!(
+            ledger.turn_id_for("oldest-key"),
+            Some("oldest-turn".to_owned()),
             "the oldest turn's own key must still be known while it is within the window"
         );
         // The 65th closed turn: exactly one past the window, evicting the
         // oldest.
         ledger.push_closed("one-too-many".into(), vec!["newest-key".into()]);
-        assert!(!ledger.contains("oldest-key"), "a key older than the window must be forgotten");
-        assert!(ledger.contains("newest-key"));
+        assert_eq!(
+            ledger.turn_id_for("oldest-key"),
+            None,
+            "a key older than the window must be forgotten"
+        );
+        assert_eq!(ledger.turn_id_for("newest-key"), Some("one-too-many".to_owned()));
     }
 
     /// PA.f84 probe: K1 opens the turn and asks Q1; K2 answers Q1 and the
