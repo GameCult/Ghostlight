@@ -2192,6 +2192,26 @@ Interpreter, the elaborator sweep and lenses.
   every fault up to the round budget. **Fix:** a public read-only
   `disposition()` returning the existing three-way value, with no
   constructor widening.
+- **Library fix batch 7a landed (Hands, Sonnet, 2026-09-22):** `8de082a`
+  (PA.f53, PA.f47), `71a5c81` (PA.f54, PA.f55, PA.f58), `1847974` (PA.f56,
+  PA.f57, PA.f60) and `2035fe8` (PA.f59). Lib 582 → 597.
+  - `WorldSnapshot` gains `channels` and `facts`, the omniscient fact list.
+    `SubjectSnapshot` gains `dependencies`. `table_view` prints channels,
+    commitments, pressures, persona material, dependencies and every fact
+    with its standing, in plain words.
+  - `FactStandingView::Ruled` is printed by the table. The typed view still
+    renders it as `canonical`.
+  - `decode_authoring_calls` returns a `DecodedBatch` with `site_calls`.
+    `decode_actor_call` takes the same prefix as `actor_tools`, which emits
+    granted entries only.
+  - `describe_refusal` is for the agent; `describe_refusal_to_actor` is the
+    narrow form.
+  - `InferenceFault::disposition()` is public.
+  - The shared-decoder test now compares every tool as whole patches.
+  - `play.rs` changed call shape only (an empty prefix; the agent-facing
+    refusal). 8b switches both.
+  - Discrepancy: `relocate` takes a route, not a place, so the batch test
+    references a draft place from `declare_route` instead.
 - **PA.f61 (introduced by the PA-Q7 list, high, fix):** two tools on the
   ruled `PLAY_TOOLS` list break ruled invariants in substance.
   - `communicate` never checks the speaker against the caller
