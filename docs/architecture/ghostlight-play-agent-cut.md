@@ -1309,7 +1309,19 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   - P6.2 The marker is derived from the journal's events and stores nothing.
   - P6.3 The player's narration is the same Projector over the player's slice
     (Q11).
-- **Landed:** —
+- **Landed:** `c4334cc` (Hands, Sonnet, 2026-09-22). `controllers.rs` +1011/−31,
+  `lib.rs` +21/−1. Lib 542 → 549 (548 run, 1 ignored).
+  - The Projector and Persona builders are extracted into
+    `build_projector_invocation` and `build_persona_invocation`, which the
+    narrative lane and `PersonaLane` share.
+  - `turn` and `narrate` also refuse a retired subject.
+  - The stimulus equals Cut 0's capture plus one `"new"` per row. A row
+    with no `minted_at` is never new.
+  - M6.1–M6.3 were killed.
+  - Correction to the spec: M6.2's rationale ("the subject's own spoken
+    row") is impossible, because `fan_out` excludes the speaker from its own
+    telling. The `>` boundary is pinned by a constructed case instead.
+- **Verdicts:** pending Soul.
 
 ## Cut 7. The table vocabulary and the inference seams (library)
 
