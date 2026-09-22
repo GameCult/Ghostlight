@@ -1581,6 +1581,8 @@ mod tests {
     /// The names Dungeon is expected to pin in Cut 8 (PA-Q7 B). The library
     /// itself hard-codes none of them; this list exists only to drive this
     /// test.
+    // PA.f75: `communicate` was removed from `PLAY_TOOLS`; Dungeon drops it
+    // from its own list too. This is now the complete 24-tool list.
     const PLAY_TOOLS: &[&str] = &[
         "relocate",
         "transfer",
@@ -1588,7 +1590,6 @@ mod tests {
         "mint",
         "bind",
         "release",
-        "communicate",
         "witness",
         "acquire_knowledge",
         "forget",
@@ -2304,6 +2305,13 @@ mod tests {
     /// operation site names its call through `site_calls`.
     #[test]
     fn describe_refusal_maps_empty_evidence_to_its_call() {
+        // PA.f75 (mutation M3): a single-call batch cannot distinguish "maps
+        // to the exact call" from "always maps to call 0" — call 0 is right
+        // either way. `admit` (the only evidence-carrying call) goes second,
+        // behind a `declare_place` that carries none, so the true call index
+        // for its evidence entry is 1.
+        let place = serde_json::json!({"handle": "yard", "label": "The Cavity Yard", "container": null})
+            .to_string();
         let admit = PATCH_TOOLS
             .iter()
             .find(|entry| entry.name == "admit")
@@ -2312,12 +2320,18 @@ mod tests {
         for field in admit.fields {
             object.insert(field.name.to_owned(), patch::field_example(field.kind));
         }
-        let arguments = Value::Object(object).to_string();
-        let batch = decode_authoring_calls(&[("admit", &arguments)]).expect("admit's own example decodes");
+        let admit_arguments = Value::Object(object).to_string();
+        let batch = decode_authoring_calls(&[("declare_place", &place), ("admit", &admit_arguments)])
+            .expect("both calls decode");
         assert_eq!(
             batch.patch.evidence.len(),
             1,
             "admit's own example carries exactly one evidence entry"
+        );
+        assert_eq!(
+            batch.evidence_calls,
+            vec![1],
+            "the evidence entry must be attributed to call #1, not call #0"
         );
         let fixture = play_fixture();
         let text = describe_refusal(
@@ -2327,7 +2341,7 @@ mod tests {
             Some(&batch),
             &KernelError::PatchRejected(vec![Mismatch::EmptyEvidence { position: 0 }]),
         );
-        assert!(text.starts_with("call #0:"), "{text}");
+        assert!(text.starts_with("call #1:"), "{text}");
     }
 
     /// Rule (PA.f59, mutation X6): a declaration site and an operation site
@@ -2548,13 +2562,91 @@ mod tests {
             .iter()
             .find(|entry| holder.affordances.contains(&entry.id) && entry.entry.kind.0 == "carry")
             .expect("the holder holds `carry`");
+        // PA.f75: every `KernelError` variant but `ActionRejected` — all 31
+        // named in `lib.rs`, none skipped — driven through
+        // `describe_refusal_to_actor` (mutation M4: the actor form falling
+        // back to `Display` for one of these, `PatchRejected` most of all,
+        // would dump `Mismatch`/`Debug` internals; a store or journal detail,
+        // a principal id, or a fact never belongs on this surface either).
+        let principal = crate::PrincipalId::new("a principal id nobody outside the kernel should see");
+        let scope = crate::DecisionScope {
+            subject_id: crate::SubjectId::issue(),
+        };
         for error in [
-            KernelError::MissingApprovals(Vec::new()),
+            KernelError::InvalidCommandId,
+            KernelError::EmptyTitle,
+            KernelError::EmptyPrincipal,
+            KernelError::PatchRejected(vec![Mismatch::EmptyHandle { position: 0 }]),
+            KernelError::WorldMismatch,
+            KernelError::AuthenticationMismatch,
+            KernelError::Unauthorized,
+            KernelError::WrongPhase {
+                expected: crate::WorldPhase::Active,
+                actual: crate::WorldPhase::Draft,
+            },
+            KernelError::NotDraftApprover,
+            KernelError::DraftAlreadyApproved,
+            KernelError::MissingApprovals(vec![principal]),
+            KernelError::OpportunityMismatch,
+            KernelError::ScopeChanged {
+                scope,
+                expected: crate::ScopeDigest::fixture("expected digest nobody outside the kernel should see"),
+                actual: crate::ScopeDigest::fixture("actual digest nobody outside the kernel should see"),
+            },
+            KernelError::ControllerMismatch,
+            KernelError::AffordanceDenied,
+            KernelError::RevisionMismatch { expected: 3, actual: 7 },
+            KernelError::CommandIdConflict,
+            KernelError::CreationConflict,
+            KernelError::CreationTargetOccupied,
+            KernelError::WorldNotCreated,
+            KernelError::OpenedWorldMismatch,
+            KernelError::RecoveryRequired {
+                command_id: super::CommandId::new(),
+            },
+            KernelError::OwnershipLost,
+            KernelError::Serialization("a serialization detail nobody outside the kernel should see".into()),
             KernelError::Store("a store detail nobody outside the kernel should see".into()),
             KernelError::CorruptJournal("a journal detail nobody outside the kernel should see".into()),
+            KernelError::Invariant("an invariant detail nobody outside the kernel should see".into()),
+            KernelError::AnswerRequired,
+            KernelError::AnswerNotDerived,
+            KernelError::AnswerNotSatisfied,
         ] {
-            assert_eq!(describe_refusal_to_actor(carry, &error), "refused");
+            let text = describe_refusal_to_actor(carry, &error);
+            assert_eq!(text, "refused", "{error:?} leaked detail to the actor: {text}");
         }
+    }
+
+    /// Rule (PA.f57): a failed precondition over a fact the actor does not
+    /// hold reveals only the bare role name — never that fact's statement,
+    /// its id, or its label — even when a real fact with all three sits
+    /// right there in the snapshot the caller could have (but is not) handed.
+    #[test]
+    fn describe_refusal_to_actor_never_reveals_an_unknown_facts_identity() {
+        let fixture = play_fixture();
+        let holder = fixture
+            .snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == fixture.custody.holder)
+            .expect("the holder is in the snapshot");
+        let fact = fixture
+            .snapshot
+            .facts
+            .iter()
+            .find(|fact| fact.id == fixture.claimed_fact)
+            .expect("the claimed fact is in the snapshot");
+        let entry = affordance_snapshot(vec![patch::Precondition::Knows {
+            fact: patch::Role("secret".into()),
+            at_least: patch::Confidence::Certain,
+        }]);
+        let error = KernelError::ActionRejected(vec![ActionMismatch::FactUnknown { precondition: 0 }]);
+        let text = describe_refusal_to_actor(&entry, &error);
+        assert!(text.contains("`secret`"), "{text}");
+        assert!(!text.contains(fact.statement.as_str()), "{text}");
+        assert!(!text.contains(&id_text(fixture.claimed_fact)), "{text}");
+        assert!(!text.contains(&holder.label), "{text}");
     }
 
     /// Rule: `table_view` prints every id a `PLAY_TOOLS` example takes,
@@ -2574,6 +2666,13 @@ mod tests {
         let fact = fixture.claimed_fact;
         let snapshot = &fixture.snapshot;
         let view = table_view(snapshot);
+        let holder_label = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == custody.holder)
+            .expect("the holder is in the snapshot")
+            .label
+            .clone();
         let mut checked_any = false;
         for name in PLAY_TOOLS {
             let tool = PATCH_TOOLS
@@ -2609,9 +2708,14 @@ mod tests {
                             view.contains(&command),
                             "table_view is missing {name}'s commitment command id {command}"
                         );
+                        // PA.f75 (mutation M8): `contains(&index.to_string())`
+                        // passed trivially at index 0, since "0" occurs in
+                        // nearly every UUID in the view. Check the exact
+                        // `command/index` pairing the Commitments row prints.
+                        let key_text = format!("{command}/{}", fixture.commitment_key.index);
                         assert!(
-                            view.contains(&fixture.commitment_key.index.to_string()),
-                            "table_view is missing {name}'s commitment index"
+                            view.contains(&key_text),
+                            "table_view is missing {name}'s exact commitment key `{key_text}`: {view}"
                         );
                         serde_json::json!({
                             "command": command,
@@ -2621,29 +2725,28 @@ mod tests {
                     patch::PatchFieldKind::Composite(patch::CompositeShape::PressureSourceRef) => {
                         let id = id_text(custody.counterparty);
                         checked_any = true;
+                        // PA.f75 (mutation M5): the id also appears on the
+                        // Subjects line, so a bare `view.contains` passes
+                        // even if the Pressures section itself dropped the
+                        // source entirely. Check the Pressures section text.
                         assert!(
-                            view.contains(&id),
-                            "table_view is missing {name}'s pressure source id {id}"
+                            view_section(&view, "\n  Pressures:").contains(&id),
+                            "table_view's Pressures section is missing {name}'s pressure source id {id}: {view}"
                         );
                         serde_json::json!({"from": "subject", "of": existing_ref_value(&id)})
                     }
                     patch::PatchFieldKind::Composite(patch::CompositeShape::DependencyRef) => {
                         let id = id_text(custody.counterparty);
                         checked_any = true;
+                        // PA.f75 (mutation M6): same reasoning as the
+                        // pressure check above — check the holder's own
+                        // "depends on" field, not the whole view.
+                        let holder_row = subject_row(&view, &holder_label, &id_text(custody.holder));
                         assert!(
-                            view.contains(&id),
-                            "table_view is missing {name}'s dependency target id {id}"
+                            holder_row.contains(&id),
+                            "table_view's holder row is missing {name}'s dependency target id {id}: {holder_row}"
                         );
                         serde_json::json!({"target": "subject", "ref": existing_ref_value(&id)})
-                    }
-                    patch::PatchFieldKind::Composite(patch::CompositeShape::AudienceRef) => {
-                        let id = id_text(fixture.channel);
-                        checked_any = true;
-                        assert!(
-                            view.contains(&id),
-                            "table_view is missing {name}'s audience channel id {id}"
-                        );
-                        serde_json::json!({"channel": existing_ref_value(&id)})
                     }
                     other => patch::field_example(other),
                 };
@@ -2665,6 +2768,51 @@ mod tests {
             view.contains(&id_text(fixture.claimed_fact)),
             "table_view is missing the claimed fact's id"
         );
+
+        // PA.f75: `communicate` — the only `PLAY_TOOLS` entry that ever took
+        // an `AudienceRef` channel id — was removed, which silently dropped
+        // this suite's only coverage of channel printing. Pin it directly:
+        // the fixture's declared channel must appear in the Channels
+        // section itself, not merely somewhere in the whole view.
+        assert!(
+            view_section(&view, "\n  Channels:").contains(&id_text(fixture.channel)),
+            "table_view's Channels section is missing the declared channel's id: {view}"
+        );
+    }
+
+    /// The text of one named section of a `table_view` rendering — from just
+    /// after `header` up to (not including) the next `"\n  "`-indented
+    /// section header. Lets a test assert an id appears in the *right*
+    /// section rather than anywhere in the whole view (PA.f75).
+    fn view_section<'a>(view: &'a str, header: &str) -> &'a str {
+        let start = view
+            .find(header)
+            .unwrap_or_else(|| panic!("`{header}` section is missing from the view: {view}"));
+        let after = &view[start + header.len()..];
+        let end = after.find("\n  ").unwrap_or(after.len());
+        &after[..end]
+    }
+
+    /// The text of one subject's own row — from `"{label} [{id}]"` up to and
+    /// including the closing `");"` — so a test can assert a field belongs
+    /// to that subject specifically (PA.f75), the same slice
+    /// `table_view_prints_only_a_subjects_own_granted_affordances` already
+    /// took inline.
+    fn subject_row<'a>(view: &'a str, label: &str, id: &str) -> &'a str {
+        let marker = format!("{label} [{id}]");
+        // Search only from the Subjects section onward: since PA.f74 put an
+        // id beside every occupant and knower label too, the same marker can
+        // appear earlier, in a place's occupant list or a fact's known-by
+        // list, and matching the first occurrence anywhere would return a
+        // slice spanning unrelated sections.
+        let subjects_start = view.find("\n  Subjects:").unwrap_or(0);
+        let search_area = &view[subjects_start..];
+        let start = search_area
+            .find(&marker)
+            .unwrap_or_else(|| panic!("`{marker}` row is missing from the Subjects section: {view}"));
+        let rest = &search_area[start..];
+        let end = rest.find(");").map_or(rest.len(), |index| index + 2);
+        &rest[..end]
     }
 
     /// Mutation X3: a `Claimed` fact printed as `canonical` instead of
