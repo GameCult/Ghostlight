@@ -1919,6 +1919,20 @@ Interpreter, the elaborator sweep and lenses.
 
   **Fix:** one copy of each, used by both the runner and the lane. The
   checkpoint check calls the one builder.
+- **Fix batch 6 landed (Hands, Sonnet, 2026-09-22):** `14d85da` (PA.f41,
+  PA.f46), `3b1f412` (PA.f44) and `55f8bc6` (PA.f42, PA.f43). Lib 560 → 570.
+  - `PersonaLane::select` refuses unless the caller's opportunity equals the
+    kernel's exactly, and the binding is built from the kernel's copy.
+  - `prepare_inference`, `run_inference`, `snapshot_for_selection` and
+    `record_persona_turn` have one body each. The checkpoint check calls
+    `persona_inference_request`.
+  - `Knowledge.acquired_at` (= `state.revision + 1`) is written by every
+    knowledge writer: `AcquireKnowledge`, `Communicate` fan-out, `Display`
+    fan-out and `Witness`. The marker is `acquired_at > last_acted_at`.
+  - `AcquireKnowledge`'s no-op refusal now compares confidence and source
+    only.
+  - The Cut 0 stimulus's seeded row now reads `new: true`, because its
+    subject never acted.
 - **Carried into Cut 8:** a repeated `turn` with the same `command_id` is
   not idempotent, and `PersonaLane` has no guard. Cut 8 derives a fresh
   `command_id` for every Persona turn from `(turn_id, round, call_index)`.
