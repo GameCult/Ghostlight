@@ -18382,6 +18382,66 @@ mod clock_tests {
         );
     }
 
+    /// PA.f37, the other half: retiring the subject that holds the goal and
+    /// the dependency freezes those instead, while the still-live farmer's
+    /// routine and obligation keep moving. Soul's probe retired a subject
+    /// whose routine rolled and whose goal and dependency kept pressing; this
+    /// pins the dependency loop in `derive_motion` the first test above never
+    /// exercises, since the farmer it retires holds no dependency.
+    #[test]
+    fn after_retirement_a_tick_moves_none_of_the_retired_subjects_goal_or_dependency() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PAf37FrozenDep");
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::CloseRoute {
+                route: Ref::Existing(clockwork.gate),
+            }]),
+        );
+        owner_retires(&mut kernel, clockwork.reeve).expect("retire the reeve");
+        let routine_before = due(&kernel, clockwork.farmer, clockwork.routine);
+        let dependency_source = PressureSource::Dependency(DependencyTarget::Route(clockwork.gate));
+
+        tick(&mut kernel, ROUTINE_DUE as u32 + LATE_DUE as u32).expect("the tick commits");
+
+        assert_eq!(
+            pressure(
+                &kernel,
+                clockwork.reeve,
+                PressureSource::Commitment {
+                    subject: clockwork.reeve,
+                    key: clockwork.goal,
+                }
+            ),
+            0,
+            "a retired subject's goal still pressed"
+        );
+        assert_eq!(
+            pressure(&kernel, clockwork.reeve, dependency_source),
+            0,
+            "a retired subject's dependency still pressed"
+        );
+        assert_ne!(
+            due(&kernel, clockwork.farmer, clockwork.routine),
+            routine_before,
+            "the live subject's routine did not roll"
+        );
+        assert_eq!(
+            pressure(
+                &kernel,
+                clockwork.farmer,
+                PressureSource::Commitment {
+                    subject: clockwork.farmer,
+                    key: clockwork.obligation,
+                }
+            ),
+            1,
+            "the live subject's obligation did not press"
+        );
+    }
+
     /// PA.f37: the freeze survives a full reopen-and-replay, the same way
     /// every other retirement effect in this batch does.
     #[test]
