@@ -12,11 +12,13 @@
 //! round loop alone, so nothing here is reachable from `runtime.rs`.
 
 use std::{
+    collections::VecDeque,
     path::Path,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
     },
+    time::Duration,
 };
 
 use anyhow::{Context, bail};
@@ -24,11 +26,11 @@ use chrono::Utc;
 use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use ghostlight::{
     CommandBody, CommandId, ControllerError, ControllerMode, ControllerPort, DecisionInvocation,
-    DecisionOpportunity, InferenceEvent, InferenceOutput, InferencePort,
-    InferenceRequest, KernelError, MailboxError, PersonaLane, PlayPort, PrincipalCommandIntent,
-    Statement, SubjectId, TickMinutes, VerifiedPrincipalEvidence, WorldMailbox, WorldPatch,
-    WorldSnapshot, actor_tools, authoring_tools, decode_actor_call, decode_authoring_call,
-    decode_authoring_calls, describe_refusal, table_view,
+    DecisionOpportunity, InferenceEvent, InferenceFault, InferenceFaultDisposition, InferenceOutput,
+    InferencePort, InferenceRequest, KernelError, MailboxError, PersonaLane, PlayPort,
+    PrincipalCommandIntent, Statement, SubjectId, TickMinutes, VerifiedPrincipalEvidence,
+    WorldMailbox, WorldPatch, WorldSnapshot, actor_tools, authoring_tools, decode_actor_call,
+    decode_authoring_call, decode_authoring_calls, describe_refusal, table_view,
 };
 use ghostlight_persona_projection::{PersonaTurn, SourceSpan};
 use codex_connector::{CodexInputItem, CodexToolDefinition};
@@ -41,8 +43,8 @@ const STORE_TYPE: &str = "ghostlight.play_turn_store.v1";
 const STORE_SCHEMA: &str = "ghostlight.play_turn_store.v1";
 const STORE_KEY: &str = "primary";
 
-/// The one round budget: exhausting it ends the turn without closing it, so
-/// the next `world.play` resumes it (PA-Q8, Cut 8).
+/// The one round budget: exhausting it closes the turn and narrates, rather
+/// than leaving it `Running` with nothing said (PA-Q8, Cut 8, PA.f66a/PA.f95).
 const ROUND_BUDGET: usize = 12;
 
 /// Bounded so a single round cannot spend the whole response budget one
@@ -50,14 +52,19 @@ const ROUND_BUDGET: usize = 12;
 /// magnitude (`controllers.rs`'s `OperationalAgent` request).
 const PLAY_MAX_OUTPUT_TOKENS: u32 = 8_000;
 
-/// How many inference retries a single round budget cell may absorb before
-/// the loop treats the round as burnt and stops without closing the turn.
-/// Library gap (see module docs at the bottom of this file): `InferenceFault`
-/// carries no public disposition query, so this cut cannot distinguish a
-/// `Retryable` fault from a `RecoveryRequired`/`IntegrityViolation` one at
-/// this call site and retries every fault the same way, bounded by the round
-/// budget rather than by an unbounded retry loop.
+/// How many `Retryable` inference faults one round's own request may absorb
+/// (PA.f94): only `InferenceFaultDisposition::Retryable` retries at all — a
+/// `RecoveryRequired` or `IntegrityViolation` fault closes the turn on its
+/// first occurrence, through `close_with_fault`, since retrying either kind
+/// again cannot succeed differently.
 const ROUND_RETRY_BUDGET: usize = ROUND_BUDGET;
+
+/// The key ledger's own retention window (PA.f83): a request key survives in
+/// the ledger for the most recent 64 closed turns after the one that carried
+/// it, then is forgotten — the store keeps only the current turn's own full
+/// record, so an ancient replay past the window opens a fresh turn rather
+/// than being recognized.
+const KEY_LEDGER_WINDOW: usize = 64;
 
 /// Dungeon's own subset of the library's `PATCH_TOOLS`, named in Cut 8's
 /// table (PA-Q7 B). The library hard-codes none of these; this is policy, and
@@ -128,6 +135,45 @@ enum PlayTurnState {
     Closed,
 }
 
+/// One `run` request. `answers` names the question this request answers, by
+/// the same `QuestionId` an `AwaitingPlayer` turn currently exposes; `None`
+/// is the plain continue/opening shape (PA.f84). `&str`/`String` still
+/// convert directly (`answers: None`), so most call sites are unaffected by
+/// this replacing the bare `text` parameter `run` used to take.
+#[derive(Clone, Debug)]
+pub(crate) struct PlayRequest {
+    pub(crate) text: String,
+    pub(crate) answers: Option<QuestionId>,
+}
+
+impl From<&str> for PlayRequest {
+    fn from(text: &str) -> Self {
+        Self {
+            text: text.to_owned(),
+            answers: None,
+        }
+    }
+}
+
+impl From<String> for PlayRequest {
+    fn from(text: String) -> Self {
+        Self { text, answers: None }
+    }
+}
+
+/// The small typed value one open question is identified by (PA.f84): a
+/// `run` request whose `answers` does not match the turn's own currently
+/// open `QuestionId` is refused as stale rather than being applied to
+/// whatever question happens to be open when the request is finally
+/// processed — a late retry naming an already-answered or already-superseded
+/// question must never land on a different one.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct QuestionId {
+    turn_id: String,
+    round: usize,
+    slot: usize,
+}
+
 /// One tool call's recorded body, persisted before submission (PA-Q8): a
 /// resumed call resubmits this exact value, never a value rebuilt from a
 /// fresh snapshot (mutation M8.3).
@@ -162,15 +208,21 @@ struct CallRecord {
 /// carries forward between turns except world state.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct PlayTurn {
+    /// Minted fresh (`Uuid::new_v4`) when the turn opens (PA.f83): never
+    /// taken from any request key. A request key and a turn's own identity
+    /// are different things — see `applied_keys` below and the store's own
+    /// `KeyLedger` — so a stale retry of the key that opened this turn can
+    /// never reproduce this turn's own command ids by opening a second turn
+    /// under the same id.
     turn_id: String,
-    /// Every request key this turn has already applied, `turn_id` included
-    /// (PA.f62/PA.f63): the turn's own identity is separate from any one
-    /// request's idempotency key. A key already in this list is a replay —
-    /// a no-op returning the turn's current state — whether the turn is
-    /// still open or already closed; a key that is not here either continues
-    /// the open turn (as an answer or a plain continue) or, when there is no
-    /// open turn to continue, opens a fresh one under that key.
-    #[serde(default)]
+    /// Every request key this open turn has already applied (PA.f62/PA.f63):
+    /// a key already here is a replay — a no-op — for as long as this turn
+    /// stays the store's current one. Once the turn closes, this list is
+    /// archived into the store's own `KeyLedger` (PA.f83), which is where a
+    /// replay of one of these keys is recognized after a new turn has opened
+    /// in this one's place. No `#[serde(default)]`: the canonical re-encode
+    /// check in `PlayTurnStore::open` refuses a row missing this field, so a
+    /// default here could never actually apply (PA.f95).
     applied_keys: Vec<String>,
     opening_prompt: String,
     player_prose: Vec<String>,
@@ -181,21 +233,31 @@ struct PlayTurn {
     refusal: Option<String>,
     narration: Option<String>,
     /// Set when the turn closed on a fault rather than the player's own
-    /// consequences settling: an inference exhausted its retry budget
-    /// (PA.f65), or a kernel `Invariant` error poisoned the table (PA.f66b).
-    /// `None` for a turn that closed through `end_turn` or the round budget.
-    #[serde(default)]
+    /// consequences settling: an inference fault that does not retry, an
+    /// inference exhausted its retry budget (PA.f65/PA.f94), a request-build,
+    /// snapshot, or narrate failure after the turn opened (PA.f85/PA.f93), or
+    /// a kernel `Invariant` error poisoned the table (PA.f66b). `None` for a
+    /// turn that closed through `end_turn` or the round budget. No
+    /// `#[serde(default)]`: same reasoning as `applied_keys` above (PA.f95).
     fault: Option<String>,
     state: PlayTurnState,
 }
 
 impl PlayTurn {
+    /// Every subject a dispatch call this turn's own record names has
+    /// *successfully* acted (PA.f90): a dispatch whose Persona turn faulted,
+    /// or found no live opportunity, never produced prose this turn can
+    /// quote, so it does not count as dispatched — offering its actor tools
+    /// next round would let the agent call them with nothing behind them.
+    /// `persona_turns` is the one record of an actually-recorded turn; a
+    /// subject's own presence there, not merely its presence in a
+    /// `Dispatch` call's own subject list, is what this reads.
     fn dispatched_subjects(&self) -> Vec<SubjectId> {
         let mut subjects = Vec::new();
         for call in &self.calls {
             if let Some(RecordedCall::Dispatch(list)) = &call.body {
                 for subject in list {
-                    if !subjects.contains(subject) {
+                    if !subjects.contains(subject) && self.persona_turns.iter().any(|(id, _)| id == subject) {
                         subjects.push(*subject);
                     }
                 }
@@ -215,12 +277,66 @@ impl PlayTurn {
             .iter_mut()
             .find(|call| call.round == round && call.slot == slot)
     }
+
+    /// The currently open question's own `QuestionId`, when the turn is
+    /// `AwaitingPlayer` (PA.f84): derived from the last round's own
+    /// unresolved `ask_player` call, the same slot `find_ask_player_slot`
+    /// locates to record an answer's result.
+    fn open_question_id(&self) -> Option<QuestionId> {
+        if self.state != PlayTurnState::AwaitingPlayer {
+            return None;
+        }
+        let round = self.rounds.len().checked_sub(1)?;
+        let slot = find_ask_player_slot(self, round)?;
+        Some(QuestionId {
+            turn_id: self.turn_id.clone(),
+            round,
+            slot,
+        })
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 struct PlayTurnStoreState {
     schema: String,
     turn: Option<PlayTurn>,
+    /// A closed turn's own applied request keys, kept for `KEY_LEDGER_WINDOW`
+    /// more closed turns after it (PA.f83). No `#[serde(default)]`, matching
+    /// `PlayTurn::applied_keys`/`fault` (PA.f95): `PlayTurnStore::open`'s own
+    /// canonical re-encode check refuses any row missing a declared field
+    /// regardless, so a default here could never actually apply either.
+    ledger: KeyLedger,
+}
+
+/// One closed turn's own applied request keys, oldest closed turn first.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+struct KeyLedger {
+    closed: VecDeque<ClosedTurnKeys>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct ClosedTurnKeys {
+    turn_id: String,
+    keys: Vec<String>,
+}
+
+impl KeyLedger {
+    fn contains(&self, key: &str) -> bool {
+        self.closed.iter().any(|entry| entry.keys.iter().any(|existing| existing == key))
+    }
+
+    /// Archives one turn's own applied keys as it closes out of the store's
+    /// single current-turn row, then evicts down to `KEY_LEDGER_WINDOW`
+    /// closed turns, oldest first.
+    fn push_closed(&mut self, turn_id: String, keys: Vec<String>) {
+        if keys.is_empty() {
+            return;
+        }
+        self.closed.push_back(ClosedTurnKeys { turn_id, keys });
+        while self.closed.len() > KEY_LEDGER_WINDOW {
+            self.closed.pop_front();
+        }
+    }
 }
 
 /// `PlayTurnStore` over `service/play-turn-v1.cc`: one `OwnedRedbMessagePackBackingStore`
@@ -244,6 +360,7 @@ impl PlayTurnStore {
                 let state = PlayTurnStoreState {
                     schema: STORE_SCHEMA.into(),
                     turn: None,
+                    ledger: KeyLedger::default(),
                 };
                 let row = envelope(&state)?;
                 if !store.compare_and_swap_batch(&[], vec![row.clone()])? {
@@ -280,12 +397,53 @@ impl PlayTurnStore {
         self.state.turn.as_ref()
     }
 
+    /// Whether `key` is already known: recorded as an applied key on the
+    /// still-open current turn, or archived in the ledger from one of the
+    /// most recent `KEY_LEDGER_WINDOW` closed turns (PA.f83). Either way,
+    /// `run` treats it as a no-op.
+    fn key_known(&self, key: &str) -> bool {
+        if let Some(turn) = &self.state.turn
+            && turn.applied_keys.iter().any(|existing| existing == key)
+        {
+            return true;
+        }
+        self.state.ledger.contains(key)
+    }
+
+    /// Persists `turn` as an update to the store's own still-open current
+    /// turn: the ledger is carried forward unchanged, because no turn is
+    /// closing out of the row here.
     fn commit(&mut self, turn: PlayTurn) -> anyhow::Result<()> {
         self.ensure_owned()?;
         let next = PlayTurnStoreState {
             schema: STORE_SCHEMA.into(),
             turn: Some(turn),
+            ledger: self.state.ledger.clone(),
         };
+        self.swap_in(next)
+    }
+
+    /// Opens `turn` as the store's new current turn (PA.f83): whatever turn
+    /// currently occupies the row — always `Closed`, by `PlayTable::run`'s
+    /// own invariant that only a closed turn (or no turn) is ever replaced —
+    /// has its own applied keys archived into the ledger first, so a later
+    /// replay of one of them is still recognized after its full record is
+    /// gone.
+    fn open_new_turn(&mut self, turn: PlayTurn) -> anyhow::Result<()> {
+        self.ensure_owned()?;
+        let mut ledger = self.state.ledger.clone();
+        if let Some(previous) = &self.state.turn {
+            ledger.push_closed(previous.turn_id.clone(), previous.applied_keys.clone());
+        }
+        let next = PlayTurnStoreState {
+            schema: STORE_SCHEMA.into(),
+            turn: Some(turn),
+            ledger,
+        };
+        self.swap_in(next)
+    }
+
+    fn swap_in(&mut self, next: PlayTurnStoreState) -> anyhow::Result<()> {
         let next_row = envelope(&next)?;
         let swapped = self
             .store
@@ -333,10 +491,24 @@ pub(crate) enum PlayError {
     Store(#[from] anyhow::Error),
     #[error("no live human opportunity for the player")]
     NoPlayerOpportunity,
-    #[error("inference request could not be built: {0}")]
-    Request(String),
     #[error("an empty or whitespace-only answer is refused")]
     EmptyAnswer,
+    /// PA.f84: `request.answers` did not name the turn's own currently open
+    /// `QuestionId` — either it named a different, no-longer-open question
+    /// (a late retry), or no question is open at all while the turn is
+    /// `AwaitingPlayer`, which cannot actually happen but is refused the
+    /// same way rather than assumed away.
+    #[error("the answer does not name the currently open question; it is refused as stale")]
+    StaleAnswer,
+    /// PA.f84: `request.answers` was given while no question is open at all
+    /// — the turn is `Running`, or there is no open turn to answer.
+    #[error("an answer was given but no question is currently open")]
+    NoQuestionOpen,
+    /// PA.f84: the turn is `Running` and `request.text` is non-empty; only
+    /// an empty continue is accepted while a prior request's own rounds are
+    /// still being resolved.
+    #[error("the turn is still running its own prior request; only an empty continue is accepted")]
+    TurnStillRunning,
 }
 
 /// One outcome of executing a round's already-decided tool calls.
@@ -389,36 +561,82 @@ impl PlayTable {
     }
 
     /// One `world.play` turn. `key` is the caller's own idempotency key
-    /// (PA-Q8, PA.f62/PA.f63): it is not the turn's identity. A key already
-    /// recorded on the stored turn — open or closed — is a replay and is a
-    /// no-op, making zero inference calls. A fresh key reaching an open turn
-    /// continues it (as the player's answer when `AwaitingPlayer`, or a plain
-    /// continue when `Running`, ignoring `text` either way beyond the
-    /// answer). A fresh key reaching no turn, or a closed one, opens a new
-    /// turn under that key (Cut 8a's "one row": only the current turn's own
-    /// record is ever kept, so the closed turn's record is discarded).
+    /// (PA-Q8, PA.f62/PA.f63/PA.f83): it is not the turn's identity — the
+    /// turn mints its own `turn_id` when it opens. A key already known —
+    /// recorded on the currently open turn, or archived in the store's own
+    /// `KeyLedger` from one of the most recent 64 closed turns — is a replay
+    /// and is a no-op, making zero inference calls. A fresh key reaching an
+    /// open turn continues it: as the player's own answer, when it is
+    /// `AwaitingPlayer` and `request.answers` names that turn's own currently
+    /// open question (PA.f84; any other `answers`, or none at all, is
+    /// refused as stale rather than being applied to whatever question
+    /// happens to be open), or as a plain continue when it is `Running` and
+    /// `request.text` is empty (non-empty text is refused: this turn is
+    /// still running its own prior request and drops nothing silently). A
+    /// fresh key reaching no turn, or a closed one, opens a new turn under
+    /// that key (Cut 8a's "one row": only the current turn's own record is
+    /// ever kept, so the closed turn's record is archived into the ledger
+    /// and then discarded).
     pub(crate) async fn run(
         &self,
         principal: &VerifiedPrincipalEvidence,
         key: String,
-        text: String,
+        request: PlayRequest,
     ) -> Result<(), PlayError> {
         if self.poisoned.load(Ordering::SeqCst) {
             return Err(PlayError::Poisoned);
         }
-        let stored = { self.store.lock().await.current().cloned() };
-        let mut turn = match stored {
-            Some(existing) if existing.applied_keys.contains(&key) => return Ok(()),
-            Some(existing) if existing.state == PlayTurnState::AwaitingPlayer && text.trim().is_empty() => {
-                // Refused before anything is recorded (PA.f65): the question
-                // stays open, the key is never marked applied, and nothing
-                // about the stored turn changes.
-                return Err(PlayError::EmptyAnswer);
-            }
-            Some(existing) if existing.state != PlayTurnState::Closed => self.resume_turn(existing, key, text)?,
-            _ => self.begin_turn(key, principal, text).await?,
+        let PlayRequest { text, answers } = request;
+        let (stored, known) = {
+            let store = self.store.lock().await;
+            (store.current().cloned(), store.key_known(&key))
         };
-        self.persist(&turn).await?;
+        if known {
+            return Ok(());
+        }
+
+        let (mut turn, is_new_turn) = match stored {
+            Some(existing) if existing.state == PlayTurnState::AwaitingPlayer => {
+                let open_question = existing.open_question_id();
+                match (answers, open_question) {
+                    (Some(given), Some(open)) if given == open => {
+                        if text.trim().is_empty() {
+                            // Refused before anything is recorded (PA.f65):
+                            // the question stays open, the key is never
+                            // marked applied, and nothing about the stored
+                            // turn changes.
+                            return Err(PlayError::EmptyAnswer);
+                        }
+                        (self.answer_turn(existing, key, text), false)
+                    }
+                    // A missing or mismatched `answers` is refused as stale
+                    // (PA.f84): a late retry naming an old question must
+                    // never land on whatever question happens to be open now.
+                    _ => return Err(PlayError::StaleAnswer),
+                }
+            }
+            Some(existing) if existing.state == PlayTurnState::Running => {
+                if answers.is_some() {
+                    return Err(PlayError::NoQuestionOpen);
+                }
+                if text.trim().is_empty() {
+                    (self.continue_turn(existing, key), false)
+                } else {
+                    return Err(PlayError::TurnStillRunning);
+                }
+            }
+            _ => {
+                if answers.is_some() {
+                    return Err(PlayError::NoQuestionOpen);
+                }
+                (self.begin_turn(key, text).await?, true)
+            }
+        };
+        if is_new_turn {
+            self.store.lock().await.open_new_turn(turn.clone())?;
+        } else {
+            self.persist(&turn).await?;
+        }
 
         loop {
             match turn.state {
@@ -450,12 +668,18 @@ impl PlayTable {
             if turn.rounds.len() >= ROUND_BUDGET {
                 // The round budget is exhausted (PA.f66a): the turn closes
                 // and narrates through the same door `end_turn` uses, rather
-                // than being left open with nothing said.
-                let snapshot = self.play.snapshot().await?;
-                let narration = self.close_turn(&turn, &snapshot, principal).await?;
-                turn.narration = Some(narration);
-                turn.state = PlayTurnState::Closed;
-                self.persist(&turn).await?;
+                // than being left open with nothing said. A snapshot or
+                // narrate failure inside `close_turn` still closes the turn,
+                // with the fault recorded, through `close_with_fault`
+                // (PA.f85/PA.f93).
+                match self.close_turn(&turn).await {
+                    Ok(narration) => {
+                        turn.narration = Some(narration);
+                        turn.state = PlayTurnState::Closed;
+                        self.persist(&turn).await?;
+                    }
+                    Err(error) => self.close_with_fault(&mut turn, error.to_string()).await?,
+                }
                 break;
             }
             let round = turn.rounds.len();
@@ -464,38 +688,33 @@ impl PlayTable {
                     turn.rounds.push(output);
                     self.persist(&turn).await?;
                 }
-                Err(RoundInferError::Exhausted) => {
-                    // PA.f65: an inference that fails beyond its retry
-                    // budget closes the turn with the fault recorded, rather
-                    // than leaving it `Running` with nothing to resume.
-                    turn.state = PlayTurnState::Closed;
-                    turn.fault = Some("inference failed beyond its retry budget".to_owned());
-                    self.persist(&turn).await?;
+                Err(detail) => {
+                    // PA.f85/PA.f93/PA.f94: a request-build failure, an
+                    // inference fault whose own disposition never retries
+                    // (`RecoveryRequired`/`IntegrityViolation`), or a
+                    // `Retryable` fault that exhausted its retry budget, all
+                    // close the turn with the fault recorded through the one
+                    // shared door, rather than leaving it `Running`.
+                    self.close_with_fault(&mut turn, detail).await?;
                     break;
-                }
-                Err(RoundInferError::Request(detail)) => {
-                    return Err(PlayError::Request(detail));
                 }
             }
         }
         Ok(())
     }
 
-    async fn begin_turn(
-        &self,
-        key: String,
-        principal: &VerifiedPrincipalEvidence,
-        text: String,
-    ) -> Result<PlayTurn, PlayError> {
+    /// Opens a fresh turn. Takes no principal (PA.f95: the parameter was
+    /// never read) — the player's own subject is resolved per-round from the
+    /// live snapshot, not from the caller's own evidence.
+    async fn begin_turn(&self, key: String, text: String) -> Result<PlayTurn, PlayError> {
         let snapshot = self.play.snapshot().await?;
         let opening_prompt = format!(
             "{}\n\nThe player writes:\n{}\n",
             table_view(&snapshot),
             text
         );
-        let _ = principal; // the player's own subject is resolved per-round from the live snapshot
         Ok(PlayTurn {
-            turn_id: key.clone(),
+            turn_id: uuid::Uuid::new_v4().to_string(),
             applied_keys: vec![key],
             opening_prompt,
             player_prose: vec![text],
@@ -510,41 +729,57 @@ impl PlayTable {
         })
     }
 
-    fn resume_turn(&self, mut turn: PlayTurn, key: String, text: String) -> Result<PlayTurn, PlayError> {
+    /// Applies the player's own answer to the currently open question,
+    /// already checked by `run` to name that question's own `QuestionId`.
+    fn answer_turn(&self, mut turn: PlayTurn, key: String, text: String) -> PlayTurn {
         turn.applied_keys.push(key);
-        if turn.state == PlayTurnState::AwaitingPlayer {
-            turn.player_prose.push(text.clone());
-            let round = turn.rounds.len().saturating_sub(1);
-            if let Some(slot) = find_ask_player_slot(&turn, round) {
-                if let Some(record) = turn.call_record_mut(round, slot) {
-                    record.result = Some(text);
-                }
+        turn.player_prose.push(text.clone());
+        let round = turn.rounds.len().saturating_sub(1);
+        if let Some(slot) = find_ask_player_slot(&turn, round) {
+            if let Some(record) = turn.call_record_mut(round, slot) {
+                record.result = Some(text);
             }
-            turn.question = None;
-            turn.state = PlayTurnState::Running;
         }
-        Ok(turn)
+        turn.question = None;
+        turn.state = PlayTurnState::Running;
+        turn
     }
 
-    async fn infer_round(
-        &self,
-        turn: &PlayTurn,
-        round: usize,
-    ) -> Result<InferenceOutput, RoundInferError> {
-        let snapshot = self
-            .play
-            .snapshot()
-            .await
-            .map_err(|error| RoundInferError::Request(error.to_string()))?;
-        let dispatched = turn.dispatched_subjects();
-        let tools = self
-            .round_tools(&snapshot, &dispatched)
-            .map_err(RoundInferError::Request)?;
-        let conversation = rebuild_conversation(turn, round);
-        let command_id = CommandId::parse_uuid(&turn.turn_id)
-            .map_err(|error| RoundInferError::Request(error.to_string()))?;
+    /// A plain continue of a `Running` turn under a fresh key: nothing about
+    /// the turn's own record changes beyond the key itself (PA.f84).
+    fn continue_turn(&self, mut turn: PlayTurn, key: String) -> PlayTurn {
+        turn.applied_keys.push(key);
+        turn
+    }
 
-        let mut attempts = 0;
+    /// Closes `turn` with `detail` as its recorded fault and persists it:
+    /// the one door every failure reachable only after a turn has already
+    /// opened goes through (PA.f85/PA.f93) — a request-build failure, a
+    /// snapshot or narrate failure, an inference fault whose disposition
+    /// does not retry or that exhausted its retry budget, or a kernel
+    /// `Invariant` fault. Distinct from poisoning the whole table: that
+    /// stays each caller's own decision (`RoundOutcome::Poisoned`), because
+    /// this helper only ever writes the one turn's own record.
+    async fn close_with_fault(&self, turn: &mut PlayTurn, detail: String) -> Result<(), PlayError> {
+        turn.state = PlayTurnState::Closed;
+        turn.fault = Some(detail);
+        self.persist(turn).await
+    }
+
+    /// Runs one round's own inference to completion, or returns the fault
+    /// detail the caller closes the turn with (PA.f85/PA.f93/PA.f94): a
+    /// request-build failure (the snapshot, `round_tools`, or
+    /// `InferenceRequest::play` itself), or an `InferenceFault` whose own
+    /// disposition does not retry, or that exhausted its bounded retry
+    /// budget.
+    async fn infer_round(&self, turn: &PlayTurn, round: usize) -> Result<InferenceOutput, String> {
+        let snapshot = self.play.snapshot().await.map_err(|error| error.to_string())?;
+        let dispatched = turn.dispatched_subjects();
+        let tools = self.round_tools(&snapshot, &dispatched)?;
+        let conversation = rebuild_conversation(turn, round);
+        let command_id = CommandId::parse_uuid(&turn.turn_id).map_err(|error| error.to_string())?;
+
+        let mut attempt = 0usize;
         loop {
             let request = InferenceRequest::play(
                 command_id,
@@ -555,24 +790,61 @@ impl PlayTable {
                 tools.clone(),
                 PLAY_MAX_OUTPUT_TOKENS,
             )
-            .map_err(|error| RoundInferError::Request(error.to_string()))?;
+            .map_err(|error| error.to_string())?;
             let prepared = match self.inference.prepare(request) {
                 Ok(prepared) => prepared,
-                Err(_fault) if attempts < ROUND_RETRY_BUDGET => {
-                    attempts += 1;
+                Err(fault) => {
+                    self.absorb_or_close(fault, &mut attempt).await?;
                     continue;
                 }
-                Err(_fault) => return Err(RoundInferError::Exhausted),
             };
             match self.inference.infer(prepared).await {
                 Ok(output) => return Ok(output),
-                Err(_fault) if attempts < ROUND_RETRY_BUDGET => {
-                    attempts += 1;
+                Err(fault) => {
+                    self.absorb_or_close(fault, &mut attempt).await?;
                     continue;
                 }
-                Err(_fault) => return Err(RoundInferError::Exhausted),
             }
         }
+    }
+
+    /// One inference fault's own disposition decides its fate (PA.f94): only
+    /// `Retryable` retries at all, bounded by `ROUND_RETRY_BUDGET` and a
+    /// small capped exponential backoff (`retry_delay`, zero under test);
+    /// `RecoveryRequired` and `IntegrityViolation` never retry, closing on
+    /// their first occurrence — retrying either again cannot succeed
+    /// differently. `Ok(())` means the caller's loop should try again;
+    /// `Err(detail)` is the fault's own detail text, to close the turn with.
+    async fn absorb_or_close(&self, fault: InferenceFault, attempt: &mut usize) -> Result<(), String> {
+        match fault.disposition() {
+            InferenceFaultDisposition::Retryable if *attempt < ROUND_RETRY_BUDGET => {
+                let delay = self.retry_delay(*attempt);
+                *attempt += 1;
+                if !delay.is_zero() {
+                    tokio::time::sleep(delay).await;
+                }
+                Ok(())
+            }
+            InferenceFaultDisposition::Retryable
+            | InferenceFaultDisposition::RecoveryRequired
+            | InferenceFaultDisposition::IntegrityViolation => Err(fault.to_string()),
+        }
+    }
+
+    /// A small capped exponential backoff between retries of a `Retryable`
+    /// inference fault. Zero in test builds (PA.f94: tests must not sleep
+    /// for real), so this crate's own `#[cfg(test)]` swap is the whole
+    /// injection seam — no constructor parameter, no trait.
+    #[cfg(not(test))]
+    fn retry_delay(&self, attempt: usize) -> Duration {
+        const BASE: u64 = 100;
+        const CAP: u64 = 5_000;
+        Duration::from_millis(BASE.saturating_mul(1u64 << attempt.min(6)).min(CAP))
+    }
+
+    #[cfg(test)]
+    fn retry_delay(&self, _attempt: usize) -> Duration {
+        Duration::ZERO
     }
 
     fn round_tools(
@@ -582,6 +854,15 @@ impl PlayTable {
     ) -> Result<Vec<CodexToolDefinition>, String> {
         let mut tools = authoring_tools(PLAY_TOOLS).map_err(|error| error.to_string())?;
         tools.extend(control_tools());
+        // PA.f97: a handle collision anywhere in the snapshot's own subjects
+        // is a turn fault — `parse_dispatch` and `resolve_handle` both match
+        // by handle against every subject the snapshot carries, not only the
+        // ones this round happens to offer tools for.
+        if let Some(handle) = find_handle_collision(snapshot.subjects.iter().map(|row| (handle_for(row.id), row.id))) {
+            return Err(format!(
+                "two subjects share the handle `{handle}`; the play table cannot address them safely"
+            ));
+        }
         let Some(player) = player_subject(snapshot) else {
             return Ok(tools);
         };
@@ -600,7 +881,13 @@ impl PlayTable {
         principal: &VerifiedPrincipalEvidence,
     ) -> Result<RoundOutcome, PlayError> {
         let output = turn.rounds[round].clone();
-        let snapshot = self.play.snapshot().await?;
+        let snapshot = match self.play.snapshot().await {
+            Ok(snapshot) => snapshot,
+            Err(error) => {
+                self.close_with_fault(turn, error.to_string()).await?;
+                return Ok(RoundOutcome::Closed);
+            }
+        };
         let dispatched = turn.dispatched_subjects();
         let player = player_subject(&snapshot);
 
@@ -655,9 +942,7 @@ impl PlayTable {
                 if let Some(detail) = fault {
                     // PA.f66b: a kernel `Invariant` fault closes the turn
                     // with the fault recorded, not left `Running`.
-                    turn.state = PlayTurnState::Closed;
-                    turn.fault = Some(detail);
-                    self.persist(turn).await?;
+                    self.close_with_fault(turn, detail).await?;
                     return Ok(RoundOutcome::Poisoned);
                 }
                 continue;
@@ -666,12 +951,21 @@ impl PlayTable {
 
             if name == END_TURN_TOOL {
                 record_call(turn, call_id, round, this_slot, Some(RecordedCall::EndTurn), None);
-                let narration = self.close_turn(turn, &snapshot, principal).await?;
-                if let Some(record) = turn.call_record_mut(round, this_slot) {
-                    record.result = Some("the turn ended".to_owned());
+                match self.close_turn(turn).await {
+                    Ok(narration) => {
+                        if let Some(record) = turn.call_record_mut(round, this_slot) {
+                            record.result = Some("the turn ended".to_owned());
+                        }
+                        turn.narration = Some(narration);
+                        turn.state = PlayTurnState::Closed;
+                    }
+                    Err(error) => {
+                        // PA.f85/PA.f93: a narrate failure still closes the
+                        // turn, with the fault recorded, rather than leaving
+                        // it stuck `Running` behind a `?`.
+                        self.close_with_fault(turn, error.to_string()).await?;
+                    }
                 }
-                turn.narration = Some(narration);
-                turn.state = PlayTurnState::Closed;
                 return Ok(RoundOutcome::Closed);
             }
 
@@ -692,7 +986,7 @@ impl PlayTable {
 
             if name == DISPATCH_TOOL {
                 let subjects = parse_dispatch(arguments, &snapshot);
-                let result = self.execute_dispatch(turn, round, this_slot, &subjects).await?;
+                let (outcome, result) = self.execute_dispatch(turn, round, this_slot, &subjects).await?;
                 record_call(
                     turn,
                     call_id,
@@ -701,6 +995,12 @@ impl PlayTable {
                     Some(RecordedCall::Dispatch(subjects)),
                     Some(result),
                 );
+                if matches!(outcome, RoundOutcome::Closed) {
+                    // PA.f85/PA.f93: `execute_dispatch` already closed the
+                    // turn with its fault recorded, mid-loop; nothing later
+                    // in this round resolves.
+                    return Ok(RoundOutcome::Closed);
+                }
                 continue;
             }
 
@@ -712,9 +1012,7 @@ impl PlayTable {
                 record_call(turn, call_id, round, this_slot, None, Some(result));
                 self.persist(turn).await?;
                 if let Some(detail) = fault {
-                    turn.state = PlayTurnState::Closed;
-                    turn.fault = Some(detail);
-                    self.persist(turn).await?;
+                    self.close_with_fault(turn, detail).await?;
                     return Ok(RoundOutcome::Poisoned);
                 }
                 continue;
@@ -747,9 +1045,7 @@ impl PlayTable {
                 record_call(turn, call_id, round, this_slot, None, Some(result));
                 self.persist(turn).await?;
                 if let Some(detail) = fault {
-                    turn.state = PlayTurnState::Closed;
-                    turn.fault = Some(detail);
-                    self.persist(turn).await?;
+                    self.close_with_fault(turn, detail).await?;
                     return Ok(RoundOutcome::Poisoned);
                 }
                 continue;
@@ -984,14 +1280,23 @@ impl PlayTable {
         round: usize,
         call_slot: usize,
         subjects: &[SubjectId],
-    ) -> Result<String, PlayError> {
+    ) -> Result<(RoundOutcome, String), PlayError> {
         let mut summary = Vec::new();
         for subject in subjects {
             if turn.persona_turns.iter().any(|(id, _)| id == subject) {
                 summary.push(format!("{subject:?} already acted"));
                 continue;
             }
-            let snapshot = self.play.snapshot().await?;
+            let snapshot = match self.play.snapshot().await {
+                Ok(snapshot) => snapshot,
+                Err(error) => {
+                    // PA.f85/PA.f93: a snapshot failure mid-dispatch still
+                    // closes the turn with the fault recorded, rather than
+                    // leaving it `Running` behind a `?`.
+                    self.close_with_fault(turn, error.to_string()).await?;
+                    return Ok((RoundOutcome::Closed, summary.join("; ")));
+                }
+            };
             let Some(opportunity) = snapshot
                 .opportunities
                 .iter()
@@ -1036,15 +1341,15 @@ impl PlayTable {
                 }
             }
         }
-        Ok(summary.join("; "))
+        Ok((RoundOutcome::Continue, summary.join("; ")))
     }
 
-    async fn close_turn(
-        &self,
-        turn: &PlayTurn,
-        _round_snapshot: &WorldSnapshot,
-        _principal: &VerifiedPrincipalEvidence,
-    ) -> Result<String, PlayError> {
+    /// Narrates the turn's own close to the player. Takes no snapshot or
+    /// principal of its own (PA.f95: neither parameter was ever read) —
+    /// it always re-fetches its own fresh snapshot below, since the round's
+    /// own calls may have committed since any snapshot a caller might have
+    /// held.
+    async fn close_turn(&self, turn: &PlayTurn) -> Result<String, PlayError> {
         // A fresh snapshot, not the round's own: this round's calls may have
         // committed since it was taken, and `PersonaLane::narrate` refuses
         // an opportunity that is not the kernel's own currently issued copy.
@@ -1066,11 +1371,6 @@ impl PlayTable {
         let command_id = derived_command_id(&turn.turn_id, turn.rounds.len(), usize::MAX);
         Ok(self.personas.narrate(command_id, &opportunity).await?)
     }
-}
-
-enum RoundInferError {
-    Exhausted,
-    Request(String),
 }
 
 struct Actor {
@@ -1118,15 +1418,47 @@ fn subject_label(snapshot: &WorldSnapshot, subject: SubjectId) -> String {
         .map_or_else(|| "an unknown subject".to_owned(), |row| row.label.clone())
 }
 
-/// The bare id text a subject's handle is built from: the same debug-paren
-/// strip `table.rs`'s own `id_text` uses, so a handle a model copies out of
-/// `table_view`'s bracketed ids names the same subject here.
+/// A subject's own short handle: the first 8 hex digits of its id
+/// (PA.f97). Actor tool names are `<handle>__<kind>`, and a kind may run up
+/// to 48 chars, so the full 36-char uuid text a handle used to carry could
+/// reach 86 chars against a common 64-char function-name limit; 8 hex
+/// digits plus the `__` separator keeps every name well under that limit
+/// (`the_longest_possible_actor_tool_name_is_64_chars_or_fewer`) while still
+/// reading as the same bracketed id prefix `table_view` prints (the same
+/// debug-paren strip `table.rs`'s own `id_text` uses, before truncating).
+/// Collision between two subjects sharing a handle is astronomically
+/// unlikely but not impossible; `round_tools` refuses the whole round as a
+/// turn fault rather than silently addressing the wrong subject
+/// (`find_handle_collision`).
 fn handle_for(id: SubjectId) -> String {
     let text = format!("{id:?}");
-    match (text.find('('), text.rfind(')')) {
-        (Some(open), Some(close)) if open < close => text[open + 1..close].to_owned(),
-        _ => text,
+    let inner = match (text.find('('), text.rfind(')')) {
+        (Some(open), Some(close)) if open < close => &text[open + 1..close],
+        _ => text.as_str(),
+    };
+    inner.chars().filter(char::is_ascii_hexdigit).take(8).collect()
+}
+
+/// The first colliding handle among `handles`, if any (PA.f97): two entries
+/// naming the *same* handle for the *same* subject is not a collision (a
+/// subject may legitimately appear once as the player and, in principle,
+/// once more via `dispatched`); two entries naming the same handle for
+/// *different* subjects is. Pulled apart from `handle_for` itself so the
+/// detection algorithm is directly testable without needing two real
+/// subject ids that actually collide — vanishingly unlikely to construct
+/// from genuine, randomly issued ids, and `SubjectId` mints nothing a
+/// consumer crate can construct by hand.
+fn find_handle_collision(handles: impl Iterator<Item = (String, SubjectId)>) -> Option<String> {
+    let mut seen: std::collections::HashMap<String, SubjectId> = std::collections::HashMap::new();
+    for (handle, subject) in handles {
+        match seen.get(&handle) {
+            Some(existing) if *existing != subject => return Some(handle),
+            _ => {
+                seen.insert(handle, subject);
+            }
+        }
     }
+    None
 }
 
 /// The tool-name prefix one subject's own actor tools carry: exactly what
@@ -1388,6 +1720,7 @@ mod tests {
     use ghostlight::{
         CreateWorldIntent, InferenceFault, Lens, LensWeights, PreparedInference,
     };
+    use ghostlight_persona_projection::PersonaTurnBinding;
     use std::{
         collections::{BTreeMap, VecDeque},
         sync::Mutex as StdMutex,
@@ -1670,6 +2003,18 @@ mod tests {
             .find(|subject| subject.controller_mode == Some(ControllerMode::NarrativePersona))
             .unwrap()
             .id
+    }
+
+    /// A subject's own full canonical id text, exactly as `table_view`
+    /// prints it in brackets — distinct from `handle_for`'s short 8-hex-digit
+    /// actor handle (PA.f97). A `Ref::Existing` JSON value needs the real
+    /// id; only a `<handle>__<kind>` tool name needs the truncated handle.
+    fn subject_id_text(id: SubjectId) -> String {
+        let text = format!("{id:?}");
+        match (text.find('('), text.rfind(')')) {
+            (Some(open), Some(close)) if open < close => text[open + 1..close].to_owned(),
+            _ => text,
+        }
     }
 
     #[tokio::test]
@@ -1986,7 +2331,7 @@ mod tests {
             .and_then(|rest| rest.split(']').next())
             .expect("Gold's bracketed id is printed in table_view")
             .to_owned();
-        let player = handle_for(player_id(&snapshot));
+        let player = subject_id_text(player_id(&snapshot));
 
         {
             let personas = PersonaLane::new(
@@ -2179,7 +2524,7 @@ mod tests {
         let fixture = play_world(None, "player-question").await;
         let directory = tempfile::tempdir().unwrap();
         let store_path = directory.path().join("play-turn-v1.cc");
-        let turn_id = test_turn_id(60);
+        let opening_key = test_turn_id(60);
 
         let ask = output(
             "r0",
@@ -2209,7 +2554,7 @@ mod tests {
             table
                 .run(
                     &fixture.principal,
-                    turn_id.clone(),
+                    opening_key.clone(),
                     "I stand at a crossroads.".into(),
                 )
                 .await
@@ -2237,7 +2582,11 @@ mod tests {
         )
         .unwrap();
 
-        let opening_prompt_before = table.store.lock().await.current().unwrap().opening_prompt.clone();
+        let (opening_prompt_before, turn_id_before, question_id) = {
+            let stored = table.store.lock().await;
+            let turn = stored.current().unwrap();
+            (turn.opening_prompt.clone(), turn.turn_id.clone(), turn.open_question_id().unwrap())
+        };
 
         // World drift between the question and the answer: a real snapshot
         // taken now would print differently. Mutation M8.2 (rebuilding
@@ -2261,7 +2610,14 @@ mod tests {
         // original opening key forward.
         let answer_key = test_turn_id(61);
         table
-            .run(&fixture.principal, answer_key, "left".into())
+            .run(
+                &fixture.principal,
+                answer_key,
+                PlayRequest {
+                    text: "left".into(),
+                    answers: Some(question_id),
+                },
+            )
             .await
             .unwrap();
 
@@ -2271,7 +2627,14 @@ mod tests {
             turn.opening_prompt, opening_prompt_before,
             "opening_prompt must never be rebuilt on resume (mutation M8.2)"
         );
-        assert_eq!(turn.turn_id, turn_id, "the turn's own identity never moves off its opening key");
+        assert_eq!(
+            turn.turn_id, turn_id_before,
+            "the turn's own identity, minted once when it opened, never moves"
+        );
+        assert_ne!(
+            turn.turn_id, opening_key,
+            "turn_id is minted fresh (PA.f83), never taken from the opening request key"
+        );
         assert_eq!(turn.state, PlayTurnState::Closed);
         assert_eq!(
             turn.player_prose,
@@ -2356,7 +2719,7 @@ mod tests {
         table.store.lock().await.commit(crashed_turn).unwrap();
 
         table
-            .run(&fixture.principal, turn_id, String::new())
+            .run(&fixture.principal, turn_id, String::new().into())
             .await
             .unwrap();
 
@@ -2481,7 +2844,7 @@ mod tests {
         table.store.lock().await.commit(crashed_turn).unwrap();
 
         table
-            .run(&fixture.principal, turn_id, String::new())
+            .run(&fixture.principal, turn_id, String::new().into())
             .await
             .unwrap();
 
@@ -2573,10 +2936,46 @@ mod tests {
                 .await
                 .unwrap();
         }
+        // Turn two opens and asks a question, fixing its own `turn_id` in
+        // the store (PA.f83: minted fresh, not derived from the key) before
+        // the backup is taken — a fresh `begin_turn` mints a new random
+        // `turn_id` every time it runs, so two *independent* openings from
+        // the same prior state are no longer expected to produce identical
+        // requests. Resuming one *already-open* turn across a restart still
+        // must, and that is what this test now checks.
+        let (question_id, turn2_id) = {
+            let personas = PersonaLane::new(
+                ControllerPort::new(world.clone()),
+                ScriptedPort::new(vec![]),
+                "gpt-5.6-sol".into(),
+                "gpt-5.6-sol".into(),
+            )
+            .unwrap();
+            let ask = output(
+                "r0",
+                vec![call_event("c0", ASK_PLAYER_TOOL, serde_json::json!({"question": "Which path?"}))],
+            );
+            let table = PlayTable::new(
+                world.clone(),
+                personas,
+                ScriptedPort::new(vec![ask]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(2)),
+                &store_path,
+            )
+            .unwrap();
+            table
+                .run(&principal, test_turn_id(31), "Turn two.".into())
+                .await
+                .unwrap();
+            let stored = table.store.lock().await;
+            let turn = stored.current().unwrap();
+            (turn.open_question_id().unwrap(), turn.turn_id.clone())
+        };
         std::fs::copy(&store_path, &backup_path).unwrap();
-        let turn2_end = || output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
+        let answer_end = || output("r1", vec![call_event("c1", END_TURN_TOOL, serde_json::json!({}))]);
 
-        // Path A: no restart.
+        // Path A: no restart, answer the already-open question directly.
         let request_a = {
             let personas = PersonaLane::new(
                 ControllerPort::new(world.clone()),
@@ -2585,7 +2984,7 @@ mod tests {
                 "gpt-5.6-sol".into(),
             )
             .unwrap();
-            let port = ScriptedPort::new(vec![turn2_end()]);
+            let port = ScriptedPort::new(vec![answer_end()]);
             let table = PlayTable::new(
                 world.clone(),
                 personas,
@@ -2596,14 +2995,21 @@ mod tests {
             )
             .unwrap();
             table
-                .run(&principal, test_turn_id(31), "Turn two.".into())
+                .run(
+                    &principal,
+                    test_turn_id(32),
+                    PlayRequest {
+                        text: "left".into(),
+                        answers: Some(question_id.clone()),
+                    },
+                )
                 .await
                 .unwrap();
             port.seen_requests().into_iter().next().unwrap()
         };
 
         // Restart: drop every live clone of the world mailbox, join its
-        // owner task, restore the store to its post-turn-one state, and
+        // owner task, restore the store to its post-question state, and
         // reopen both.
         std::fs::copy(&backup_path, &store_path).unwrap();
         drop(world);
@@ -2618,7 +3024,7 @@ mod tests {
                 "gpt-5.6-sol".into(),
             )
             .unwrap();
-            let port = ScriptedPort::new(vec![turn2_end()]);
+            let port = ScriptedPort::new(vec![answer_end()]);
             let table = PlayTable::new(
                 world.clone(),
                 personas,
@@ -2629,9 +3035,19 @@ mod tests {
             )
             .unwrap();
             table
-                .run(&principal, test_turn_id(31), "Turn two.".into())
+                .run(
+                    &principal,
+                    test_turn_id(32),
+                    PlayRequest {
+                        text: "left".into(),
+                        answers: Some(question_id.clone()),
+                    },
+                )
                 .await
                 .unwrap();
+            let stored = table.store.lock().await;
+            assert_eq!(stored.current().unwrap().turn_id, turn2_id, "the resumed turn's own id must survive the restart unchanged");
+            drop(stored);
             port.seen_requests().into_iter().next().unwrap()
         };
 
@@ -2656,7 +3072,7 @@ mod tests {
     async fn set_persona_material_on_an_existing_subject_is_refused() {
         let fixture = play_world(None, "player-persona-existing").await;
         let before = fixture.world.snapshot().await.unwrap();
-        let player = handle_for(player_id(&before));
+        let player = subject_id_text(player_id(&before));
         let round = output(
             "r0",
             vec![
@@ -2920,31 +3336,208 @@ mod tests {
         assert_eq!(result0, result1, "every call in a run shares the run's own single outcome");
     }
 
-    /// Pin (PA.f69 S4): `commit_authoring_run` must record the run's decoded
-    /// patch before it ever submits that patch to the kernel. There is no
-    /// seam to interrupt one synchronous call mid-flight the way
-    /// `a_resumed_call_resubmits_its_recorded_body` does for the single-call
-    /// path, so this pins the ordering at the source level: a mutation that
-    /// recorded after submitting would swap these two byte offsets.
-    #[test]
-    fn soul_commit_authoring_run_records_before_it_submits() {
-        let source = std::fs::read_to_string(
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/play.rs"),
+    /// One half of PA.f87's replacement for the old source-text-position
+    /// pin: given a store that already holds a run's own recorded body from
+    /// before a crash (built directly here, the same "crash window" shape
+    /// `a_resumed_call_resubmits_its_recorded_body` uses for a single
+    /// call), resume must resubmit that exact recorded body idempotently —
+    /// one kernel commit, not two. This alone does not prove the record
+    /// happens *before* the submit in a first, non-resumed attempt; see
+    /// `commit_authoring_run_records_the_run_even_when_its_submit_is_refused`
+    /// for that half.
+    #[tokio::test]
+    async fn a_resumed_authoring_run_resubmits_its_recorded_shared_patch() {
+        let fixture = play_world(None, "player-resume-run").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        let turn_id = test_turn_id(52);
+
+        // `PlayTable::new` is the one production door that mints `PlayPort`;
+        // this fixture reuses the table's own `play` field for the
+        // out-of-band pre-crash commit below rather than minting a second
+        // one.
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![output("proj-resume-run", vec![text_event("Still here.")])]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
         )
-        .expect("play.rs reads");
-        let body_start = source
-            .find("async fn commit_authoring_run(")
-            .expect("commit_authoring_run exists");
-        let body = &source[body_start..];
-        let record_at = body
-            .find("Some(RecordedCall::Authoring(decoded.patch.clone())),")
-            .expect("commit_authoring_run records the run's decoded patch");
-        let submit_at = body
-            .find("self.play.submit_patch(command_id, patch).await")
-            .expect("commit_authoring_run submits the patch");
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+
+        let before = fixture.world.snapshot().await.unwrap();
+        let commons_id = bracketed_id_after(&table_view(&before), "The Commons [");
+        let declare_place_args =
+            serde_json::json!({"handle": "cell", "label": "A Narrow Cell", "container": null}).to_string();
+        let declare_route_args = serde_json::json!({
+            "handle": "hall",
+            "label": "The Hall",
+            "from": {"ref": "existing", "value": commons_id},
+            "to": {"ref": "draft", "value": "cell"},
+            "access": {"access": "public"},
+            "cost": 1,
+        })
+        .to_string();
+        let decoded = decode_authoring_calls(&[
+            ("declare_place", declare_place_args.as_str()),
+            ("declare_route", declare_route_args.as_str()),
+        ])
+        .unwrap();
+        let patch = decoded.patch.clone();
+        let command_id = derived_command_id(&turn_id, 0, 0);
+        // The exact crash window this rule protects: the kernel already
+        // committed the run's own shared patch, but the store never
+        // recorded its result.
+        table.play.submit_patch(command_id, patch.clone()).await.unwrap();
+
+        let opening_prompt = format!("{}\n\nThe player writes:\n{}\n", table_view(&before), "Build a hall.");
+        let round = output(
+            "r0",
+            vec![
+                call_event(
+                    "c0",
+                    "declare_place",
+                    serde_json::json!({"handle": "cell", "label": "A Narrow Cell", "container": null}),
+                ),
+                call_event(
+                    "c1",
+                    "declare_route",
+                    serde_json::json!({
+                        "handle": "hall",
+                        "label": "The Hall",
+                        "from": {"ref": "existing", "value": commons_id},
+                        "to": {"ref": "draft", "value": "cell"},
+                        "access": {"access": "public"},
+                        "cost": 1,
+                    }),
+                ),
+                call_event("c2", END_TURN_TOOL, serde_json::json!({})),
+            ],
+        );
+        let crashed_turn = PlayTurn {
+            turn_id: turn_id.clone(),
+            applied_keys: Vec::new(),
+            opening_prompt,
+            player_prose: vec!["Build a hall.".into()],
+            rounds: vec![round],
+            calls: vec![CallRecord {
+                call_id: "c0".into(),
+                round: 0,
+                slot: 0,
+                body: Some(RecordedCall::Authoring(patch)),
+                result: None,
+            }],
+            persona_turns: Vec::new(),
+            question: None,
+            refusal: None,
+            narration: None,
+            fault: None,
+            state: PlayTurnState::Running,
+        };
+        table.store.lock().await.commit(crashed_turn).unwrap();
+
+        table.run(&fixture.principal, turn_id, String::new().into()).await.unwrap();
+
+        let after = fixture.world.snapshot().await.unwrap();
+        // One commit, not two: the world's own revision counter is the
+        // unambiguous signal — `table_view` prints a place's own label a
+        // second time wherever a route mentions it as an endpoint, so a
+        // substring count is not (this mirrors `an_authoring_run_commits_as_one_patch`'s
+        // own revision-based check).
+        assert_eq!(
+            after.revision,
+            before.revision + 1,
+            "the resumed run must resubmit its recorded shared patch idempotently, not double-commit"
+        );
+        let view = table_view(&after);
+        assert!(view.contains("A Narrow Cell"), "{view}");
+        assert!(view.contains("The Hall"), "{view}");
+    }
+
+    /// The other half of PA.f87: `commit_authoring_run` must record the
+    /// run's own decoded patch *before* it ever finds out whether
+    /// `submit_patch` will succeed — not only after a success, and not only
+    /// when a caller happens to resume a pre-crashed turn. Proven with a
+    /// run whose kernel submission is genuinely refused (the same
+    /// `relocate`-to-a-nonexistent-route shape
+    /// `a_refusal_in_a_run_names_the_failing_call_and_nothing_commits`
+    /// uses): the decode itself succeeds, so a correct `commit_authoring_run`
+    /// records the run's own patch regardless of what the kernel later says
+    /// about it. Mutations: delete
+    /// `record_call(..., Some(RecordedCall::Authoring(...)), ...)`, or move
+    /// it inside the `Ok(_receipt) =>` success arm of the `submit_patch`
+    /// match (making the record conditional on success); both leave the
+    /// anchor slot's own `body` unset after this refusal, failing this test.
+    #[tokio::test]
+    async fn commit_authoring_run_records_the_run_even_when_its_submit_is_refused() {
+        let fixture = play_world(None, "player-record-before-refused-submit").await;
+        let before = fixture.world.snapshot().await.unwrap();
+        let player = subject_id_text(player_id(&before));
+
+        let round = output(
+            "r0",
+            vec![
+                call_event(
+                    "c0",
+                    "declare_place",
+                    serde_json::json!({"handle": "cell", "label": "A Narrow Cell", "container": null}),
+                ),
+                call_event(
+                    "c1",
+                    "relocate",
+                    serde_json::json!({
+                        "subject": {"ref": "existing", "value": player},
+                        "via": {"ref": "draft", "value": "no_such_route"},
+                    }),
+                ),
+                call_event("c2", END_TURN_TOOL, serde_json::json!({})),
+            ],
+        );
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![output("proj", vec![text_event("Quiet.")])]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![round]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+        table
+            .run(&fixture.principal, test_turn_id(53), "Build a hall to nowhere.".into())
+            .await
+            .unwrap();
+
+        let after = fixture.world.snapshot().await.unwrap();
+        assert_eq!(after.revision, before.revision, "a refused run must commit nothing to the world");
+
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        let anchor = turn.calls.iter().find(|call| call.round == 0 && call.slot == 0).unwrap();
         assert!(
-            record_at < submit_at,
-            "the recorded body must be persisted before the patch is submitted (PA.f69 S4)"
+            matches!(anchor.body, Some(RecordedCall::Authoring(_))),
+            "the run's own decoded patch must be recorded even though the kernel refused it: {:?}",
+            anchor.body
+        );
+        assert!(
+            anchor.result.as_deref().unwrap_or_default().contains("refused"),
+            "{:?}",
+            anchor.result
         );
     }
 
@@ -3004,6 +3597,7 @@ mod tests {
             round1_request.contains("The bolt is thrown; nobody enters here."),
             "round 1's request must carry Mara's own prose verbatim: {round1_request}"
         );
+        let question_id = table.store.lock().await.current().unwrap().open_question_id().unwrap();
         // Release the store's exclusive custody before reopening it below —
         // the same "restart" precedent `a_question_holds_the_turn_open_across_a_restart`
         // relies on: a fresh `PlayTable` is the only production door onto a
@@ -3033,7 +3627,14 @@ mod tests {
         // Answering the still-open question forces a fresh round to be
         // inferred, rebuilding the conversation from the stored record.
         table2
-            .run(&fixture.principal, test_turn_id(405), "Answer.".into())
+            .run(
+                &fixture.principal,
+                test_turn_id(405),
+                PlayRequest {
+                    text: "Answer.".into(),
+                    answers: Some(question_id),
+                },
+            )
             .await
             .unwrap();
         let seen2 = port2.seen_requests();
@@ -3152,9 +3753,17 @@ mod tests {
             .run(&fixture.principal, turn_id.clone(), "I stand at a crossroads.".into())
             .await
             .unwrap();
+        let question_id = table.store.lock().await.current().unwrap().open_question_id().unwrap();
 
         let error = table
-            .run(&fixture.principal, test_turn_id(411), "   ".into())
+            .run(
+                &fixture.principal,
+                test_turn_id(411),
+                PlayRequest {
+                    text: "   ".into(),
+                    answers: Some(question_id),
+                },
+            )
             .await
             .unwrap_err();
         assert!(matches!(error, PlayError::EmptyAnswer), "{error:?}");
@@ -3290,7 +3899,10 @@ mod tests {
                     result: Some("applied".into()),
                 },
             ],
-            persona_turns: Vec::new(),
+            // PA.f90: a dispatch counts as dispatched only once its Persona
+            // turn actually produced and recorded prose, so both subjects
+            // need a `persona_turns` entry here.
+            persona_turns: vec![(a, fake_persona_turn("a acted")), (b, fake_persona_turn("b acted"))],
             question: None,
             refusal: None,
             narration: None,
@@ -3298,6 +3910,55 @@ mod tests {
             state: PlayTurnState::Running,
         };
         assert_eq!(turn.dispatched_subjects(), vec![a, b]);
+    }
+
+    /// PA.f90: a dispatch whose Persona turn faulted, or found no live
+    /// opportunity, never produced prose — it must not count as dispatched,
+    /// so its actor tools are not offered next round and an actor call for
+    /// it is refused, even though the `Dispatch` call itself recorded
+    /// success.
+    #[tokio::test]
+    async fn a_dispatch_with_no_recorded_persona_turn_does_not_count_as_dispatched() {
+        let fixture = play_world(Some("Mara"), "player-dispatch-no-turn").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let subject = persona_id(&snapshot);
+        let turn = PlayTurn {
+            turn_id: test_turn_id(441),
+            applied_keys: Vec::new(),
+            opening_prompt: String::new(),
+            player_prose: Vec::new(),
+            rounds: Vec::new(),
+            calls: vec![CallRecord {
+                call_id: "c0".into(),
+                round: 0,
+                slot: 0,
+                body: Some(RecordedCall::Dispatch(vec![subject])),
+                result: Some("holds no live Persona opportunity".into()),
+            }],
+            persona_turns: Vec::new(),
+            question: None,
+            refusal: None,
+            narration: None,
+            fault: None,
+            state: PlayTurnState::Running,
+        };
+        assert_eq!(turn.dispatched_subjects(), Vec::new());
+    }
+
+    fn fake_persona_turn(prose: &str) -> PersonaTurn {
+        PersonaTurn::record(
+            PersonaTurnBinding {
+                world_id: "world".into(),
+                controller_id: "controller".into(),
+                opportunity_digest: "opportunity".into(),
+                world_revision: 0,
+                scope_digest: "scope".into(),
+                projector_receipt_digest: "projector".into(),
+                persona_inference_receipt_digest: "persona".into(),
+                interrupted_from: None,
+            },
+            prose,
+        )
     }
 
     /// PA.f66d: the derived command id for one dispatched Persona's own turn
@@ -3380,20 +4041,19 @@ mod tests {
             .run(&fixture.principal, test_turn_id(450), "start".into())
             .await
             .unwrap();
+        let first_question = table.store.lock().await.current().unwrap().open_question_id().unwrap();
         let answer_key = test_turn_id(451);
-        table
-            .run(&fixture.principal, answer_key.clone(), "left".into())
-            .await
-            .unwrap();
+        let answer = || PlayRequest {
+            text: "left".into(),
+            answers: Some(first_question.clone()),
+        };
+        table.run(&fixture.principal, answer_key.clone(), answer()).await.unwrap();
 
         // The inference queue is now exhausted: a broken replay that treats
         // this key as unseen would try to answer round 1's own question and
         // infer a third round, failing loudly. A correct no-op leaves round
         // 1's question exactly as it was.
-        table
-            .run(&fixture.principal, answer_key, "left".into())
-            .await
-            .unwrap();
+        table.run(&fixture.principal, answer_key, answer()).await.unwrap();
 
         let stored = table.store.lock().await;
         let turn = stored.current().unwrap();
@@ -3409,7 +4069,7 @@ mod tests {
         let fixture = play_world(None, "player-replay-closed").await;
         let directory = tempfile::tempdir().unwrap();
         let store_path = directory.path().join("play-turn-v1.cc");
-        let turn_id = test_turn_id(460);
+        let key = test_turn_id(460);
         let end = output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
         let personas = PersonaLane::new(
             ControllerPort::new(fixture.world.clone()),
@@ -3430,13 +4090,13 @@ mod tests {
         )
         .unwrap();
         table
-            .run(&fixture.principal, turn_id.clone(), "Go.".into())
+            .run(&fixture.principal, key.clone(), "Go.".into())
             .await
             .unwrap();
         assert_eq!(port.seen_requests().len(), 1);
 
         table
-            .run(&fixture.principal, turn_id.clone(), "Go.".into())
+            .run(&fixture.principal, key.clone(), "Go.".into())
             .await
             .unwrap();
 
@@ -3447,7 +4107,7 @@ mod tests {
         );
         let stored = table.store.lock().await;
         let turn = stored.current().unwrap();
-        assert_eq!(turn.turn_id, turn_id);
+        assert!(turn.applied_keys.contains(&key));
         assert_eq!(turn.state, PlayTurnState::Closed);
     }
 
@@ -3512,7 +4172,10 @@ mod tests {
 
         let stored = table.store.lock().await;
         let turn = stored.current().unwrap();
-        assert_eq!(turn.turn_id, fresh_key, "a new key after a closed turn must open a fresh turn under that key");
+        assert!(
+            turn.applied_keys.contains(&fresh_key),
+            "a new key after a closed turn must open a fresh turn recording that key"
+        );
         assert!(turn.opening_prompt.contains("UNIQUE_TURN_TWO_PROSE"));
         assert!(
             !turn.opening_prompt.contains("UNIQUE_TURN_ONE_PROSE"),
@@ -3525,5 +4188,1020 @@ mod tests {
             !request_text.contains("UNIQUE_TURN_ONE_PROSE"),
             "the new turn's own request must carry nothing from the closed turn: {request_text}"
         );
+    }
+
+    // --- Fix batch 8a-fix2 (PA.f83-PA.f97) --------------------------------
+
+    /// PA.f83: two consecutive turns mint distinct `turn_id`s (never taken
+    /// from either request key), and their derived command ids never
+    /// collide.
+    #[tokio::test]
+    async fn two_consecutive_turns_mint_distinct_ids_and_non_colliding_command_ids() {
+        let fixture = play_world(None, "player-distinct-turn-ids").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+
+        let personas1 = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![output("proj-1", vec![text_event("Fine.")])]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let end1 = output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas1,
+            ScriptedPort::new(vec![end1]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+        table.run(&fixture.principal, test_turn_id(600), "Turn one.".into()).await.unwrap();
+        let turn1_id = table.store.lock().await.current().unwrap().turn_id.clone();
+        drop(table);
+
+        let personas2 = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![output("proj-2", vec![text_event("Fine.")])]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let end2 = output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas2,
+            ScriptedPort::new(vec![end2]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+        table.run(&fixture.principal, test_turn_id(601), "Turn two.".into()).await.unwrap();
+        let turn2_id = table.store.lock().await.current().unwrap().turn_id.clone();
+
+        assert_ne!(turn1_id, turn2_id, "each turn mints its own fresh turn_id (PA.f83)");
+        let turn1_command0 = derived_command_id(&turn1_id, 0, 0);
+        let turn2_command0 = derived_command_id(&turn2_id, 0, 0);
+        assert_ne!(
+            format!("{turn1_command0:?}"),
+            format!("{turn2_command0:?}"),
+            "command ids derived from distinct turn_ids must not collide"
+        );
+    }
+
+    /// PA.f83: K1 opens and closes a turn; K2 opens and closes a second
+    /// turn; a retry of K1 is a no-op recognized through the store's own
+    /// `KeyLedger` — zero inference calls, and it does not open a third
+    /// turn.
+    #[tokio::test]
+    async fn a_retried_key_from_a_turn_before_the_most_recent_is_a_no_op() {
+        let fixture = play_world(None, "player-ledger-retry").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        let end = || output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
+        fn personas(world: &WorldMailbox, proj: &'static str) -> PersonaLane {
+            PersonaLane::new(
+                ControllerPort::new(world.clone()),
+                ScriptedPort::new(vec![output(proj, vec![text_event("Fine.")])]),
+                "gpt-5.6-sol".into(),
+                "gpt-5.6-sol".into(),
+            )
+            .unwrap()
+        }
+
+        let k1 = test_turn_id(610);
+        {
+            let table = PlayTable::new(
+                fixture.world.clone(),
+                personas(&fixture.world, "proj-k1"),
+                ScriptedPort::new(vec![end()]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(2)),
+                &store_path,
+            )
+            .unwrap();
+            table.run(&fixture.principal, k1.clone(), "K1.".into()).await.unwrap();
+        }
+        let k2 = test_turn_id(611);
+        {
+            let table = PlayTable::new(
+                fixture.world.clone(),
+                personas(&fixture.world, "proj-k2"),
+                ScriptedPort::new(vec![end()]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(2)),
+                &store_path,
+            )
+            .unwrap();
+            table.run(&fixture.principal, k2.clone(), "K2.".into()).await.unwrap();
+        }
+        let turn2_id = PlayTurnStore::open(&store_path).unwrap().current().unwrap().turn_id.clone();
+
+        // A retry of K1: an empty scripted port means any inference attempt
+        // fails loudly, so this stays a genuine "zero inference calls" check.
+        let port = ScriptedPort::new(vec![]);
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas(&fixture.world, "proj-k1-retry"),
+            port.clone(),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+        table.run(&fixture.principal, k1, "K1.".into()).await.unwrap();
+
+        assert_eq!(
+            port.seen_requests().len(),
+            0,
+            "a retried key already known to the ledger must make zero inference calls"
+        );
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        assert_eq!(turn.turn_id, turn2_id, "the retry must not open a third turn");
+    }
+
+    /// PA.f83: the ledger keeps a closed turn's own keys only while it
+    /// remains among the most recent `KEY_LEDGER_WINDOW` closed turns; one
+    /// more closed turn past the window evicts the oldest one's keys. A
+    /// small helper against the pure `KeyLedger` value directly, so this
+    /// does not run 65 real turns.
+    #[test]
+    fn the_ledger_forgets_a_closed_turns_keys_past_the_window() {
+        let mut ledger = KeyLedger::default();
+        ledger.push_closed("oldest-turn".into(), vec!["oldest-key".into()]);
+        for index in 0..KEY_LEDGER_WINDOW - 1 {
+            ledger.push_closed(format!("turn-{index}"), vec![format!("key-{index}")]);
+        }
+        assert!(
+            ledger.contains("oldest-key"),
+            "the oldest turn's own key must still be known while it is within the window"
+        );
+        // The 65th closed turn: exactly one past the window, evicting the
+        // oldest.
+        ledger.push_closed("one-too-many".into(), vec!["newest-key".into()]);
+        assert!(!ledger.contains("oldest-key"), "a key older than the window must be forgotten");
+        assert!(ledger.contains("newest-key"));
+    }
+
+    /// PA.f84 probe: K1 opens the turn and asks Q1; K2 answers Q1 and the
+    /// next round asks Q2; a retry of K1 is recognized as a replay and is a
+    /// no-op — it does not, and cannot, answer Q2.
+    #[tokio::test]
+    async fn a_retried_opening_key_never_answers_a_later_question() {
+        let fixture = play_world(None, "player-probe-late-retry").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        let ask_one = output(
+            "r0",
+            vec![call_event("c0", ASK_PLAYER_TOOL, serde_json::json!({"question": "Which way?"}))],
+        );
+        let ask_two = output(
+            "r1",
+            vec![call_event("c1", ASK_PLAYER_TOOL, serde_json::json!({"question": "Are you sure?"}))],
+        );
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let port = ScriptedPort::new(vec![ask_one, ask_two]);
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            port.clone(),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+
+        let k1 = test_turn_id(630);
+        // K1 closes: the turn is now `AwaitingPlayer` on Q1.
+        table.run(&fixture.principal, k1.clone(), "start".into()).await.unwrap();
+        let q1 = table.store.lock().await.current().unwrap().open_question_id().unwrap();
+        let k2 = test_turn_id(631);
+        // K2 asks a question: it answers Q1, and the next round asks Q2.
+        table
+            .run(
+                &fixture.principal,
+                k2,
+                PlayRequest {
+                    text: "left".into(),
+                    answers: Some(q1),
+                },
+            )
+            .await
+            .unwrap();
+        assert_eq!(table.store.lock().await.current().unwrap().question.as_deref(), Some("Are you sure?"));
+        let seen_before_retry = port.seen_requests().len();
+
+        // K1 is retried: it opened the turn and is already known, so this is
+        // a no-op.
+        table.run(&fixture.principal, k1, "left".into()).await.unwrap();
+
+        assert_eq!(
+            port.seen_requests().len(),
+            seen_before_retry,
+            "a retried key must make zero new inference calls"
+        );
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        assert_eq!(turn.state, PlayTurnState::AwaitingPlayer);
+        assert_eq!(turn.question.as_deref(), Some("Are you sure?"), "K1's own retry must not answer Q2");
+    }
+
+    /// PA.f84: an answer naming a different, no-longer-open question is
+    /// refused as stale rather than being applied to whatever question is
+    /// open now.
+    #[tokio::test]
+    async fn an_answer_naming_a_different_question_is_refused_as_stale() {
+        let fixture = play_world(None, "player-stale-answer").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        let ask_one = output(
+            "r0",
+            vec![call_event("c0", ASK_PLAYER_TOOL, serde_json::json!({"question": "Which way?"}))],
+        );
+        let ask_two = output(
+            "r1",
+            vec![call_event("c1", ASK_PLAYER_TOOL, serde_json::json!({"question": "Are you sure?"}))],
+        );
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![ask_one, ask_two]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+
+        table.run(&fixture.principal, test_turn_id(620), "start".into()).await.unwrap();
+        let stale_question = table.store.lock().await.current().unwrap().open_question_id().unwrap();
+        table
+            .run(
+                &fixture.principal,
+                test_turn_id(621),
+                PlayRequest {
+                    text: "left".into(),
+                    answers: Some(stale_question.clone()),
+                },
+            )
+            .await
+            .unwrap();
+
+        // Q2 is now open; a fresh key answering with Q1's own (now stale)
+        // question id must be refused, not silently applied to Q2.
+        let error = table
+            .run(
+                &fixture.principal,
+                test_turn_id(622),
+                PlayRequest {
+                    text: "sure".into(),
+                    answers: Some(stale_question),
+                },
+            )
+            .await
+            .unwrap_err();
+        assert!(matches!(error, PlayError::StaleAnswer), "{error:?}");
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        assert_eq!(
+            turn.question.as_deref(),
+            Some("Are you sure?"),
+            "the stale answer must not touch the currently open question"
+        );
+        assert!(
+            !turn.applied_keys.contains(&test_turn_id(622)),
+            "a refused stale answer's key must never be marked applied"
+        );
+    }
+
+    /// PA.f84: `answers` given while the turn is `Running` (no question
+    /// open at all) is refused.
+    #[tokio::test]
+    async fn an_answer_while_the_turn_is_running_is_refused() {
+        let fixture = play_world(None, "player-answers-while-running").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        let turn_id = test_turn_id(640);
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+        // A turn caught mid-loop, `Running`, between rounds — the exact
+        // shape a real crash could leave persisted (`run` itself persists
+        // right after each round with `RoundOutcome::Continue`, before its
+        // own loop condition re-checks `turn.state`).
+        let running_turn = PlayTurn {
+            turn_id: turn_id.clone(),
+            applied_keys: vec![test_turn_id(639)],
+            opening_prompt: "opening".into(),
+            player_prose: vec!["hello".into()],
+            rounds: Vec::new(),
+            calls: Vec::new(),
+            persona_turns: Vec::new(),
+            question: None,
+            refusal: None,
+            narration: None,
+            fault: None,
+            state: PlayTurnState::Running,
+        };
+        table.store.lock().await.commit(running_turn).unwrap();
+
+        let bogus_question = QuestionId {
+            turn_id,
+            round: 0,
+            slot: 0,
+        };
+        let error = table
+            .run(
+                &fixture.principal,
+                test_turn_id(641),
+                PlayRequest {
+                    text: String::new(),
+                    answers: Some(bogus_question),
+                },
+            )
+            .await
+            .unwrap_err();
+        assert!(matches!(error, PlayError::NoQuestionOpen), "{error:?}");
+    }
+
+    /// PA.f84: `answers` given when there is no open turn at all is refused.
+    #[tokio::test]
+    async fn an_answer_with_no_open_turn_at_all_is_refused() {
+        let fixture = play_world(None, "player-answers-no-turn").await;
+        let directory = tempfile::tempdir().unwrap();
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+        let bogus_question = QuestionId {
+            turn_id: "nonexistent".into(),
+            round: 0,
+            slot: 0,
+        };
+        let error = table
+            .run(
+                &fixture.principal,
+                test_turn_id(650),
+                PlayRequest {
+                    text: "hi".into(),
+                    answers: Some(bogus_question),
+                },
+            )
+            .await
+            .unwrap_err();
+        assert!(matches!(error, PlayError::NoQuestionOpen), "{error:?}");
+    }
+
+    /// PA.f84: while the turn is `Running`, non-empty text is refused
+    /// rather than dropped silently — the turn is still resolving its own
+    /// prior request's rounds.
+    #[tokio::test]
+    async fn nonempty_text_while_the_turn_is_running_is_refused() {
+        let fixture = play_world(None, "player-turn-still-running").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        let turn_id = test_turn_id(660);
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+        let running_turn = PlayTurn {
+            turn_id: turn_id.clone(),
+            applied_keys: vec![test_turn_id(659)],
+            opening_prompt: "opening".into(),
+            player_prose: vec!["hello".into()],
+            rounds: Vec::new(),
+            calls: Vec::new(),
+            persona_turns: Vec::new(),
+            question: None,
+            refusal: None,
+            narration: None,
+            fault: None,
+            state: PlayTurnState::Running,
+        };
+        table.store.lock().await.commit(running_turn).unwrap();
+
+        let error = table.run(&fixture.principal, test_turn_id(661), "more text".into()).await.unwrap_err();
+        assert!(matches!(error, PlayError::TurnStillRunning), "{error:?}");
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        assert_eq!(turn.state, PlayTurnState::Running);
+        assert!(!turn.applied_keys.contains(&test_turn_id(661)));
+    }
+
+    /// PA.f84: while the turn is `Running`, empty text continues it.
+    #[tokio::test]
+    async fn empty_text_while_the_turn_is_running_continues_it() {
+        let fixture = play_world(None, "player-turn-continues").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        let turn_id = test_turn_id(670);
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![output("proj", vec![text_event("Fine.")])]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let end = output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![end]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let running_turn = PlayTurn {
+            turn_id: turn_id.clone(),
+            applied_keys: vec![test_turn_id(669)],
+            opening_prompt: format!("{}\n\nThe player writes:\n{}\n", table_view(&snapshot), "hi"),
+            player_prose: vec!["hi".into()],
+            rounds: Vec::new(),
+            calls: Vec::new(),
+            persona_turns: Vec::new(),
+            question: None,
+            refusal: None,
+            narration: None,
+            fault: None,
+            state: PlayTurnState::Running,
+        };
+        table.store.lock().await.commit(running_turn).unwrap();
+
+        table.run(&fixture.principal, test_turn_id(671), String::new().into()).await.unwrap();
+
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        assert_eq!(turn.state, PlayTurnState::Closed);
+        assert!(turn.applied_keys.contains(&test_turn_id(671)));
+    }
+
+    struct DispositionPort {
+        queue: StdMutex<VecDeque<Result<InferenceOutput, InferenceFault>>>,
+        calls: StdMutex<usize>,
+    }
+
+    impl DispositionPort {
+        fn new(items: Vec<Result<InferenceOutput, InferenceFault>>) -> Arc<Self> {
+            Arc::new(Self {
+                queue: StdMutex::new(items.into_iter().collect()),
+                calls: StdMutex::new(0),
+            })
+        }
+
+        fn call_count(&self) -> usize {
+            *self.calls.lock().unwrap()
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl InferencePort for DispositionPort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            PreparedInference::prepare("play-test-runtime", far_future_unix_ms(), request)
+        }
+
+        async fn infer(&self, _prepared: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
+            *self.calls.lock().unwrap() += 1;
+            match self.queue.lock().unwrap().pop_front() {
+                Some(item) => item,
+                None => Err(InferenceFault::recovery_required("disposition port exhausted")),
+            }
+        }
+    }
+
+    /// PA.f85/PA.f93/PA.f94: an `IntegrityViolation` fault never retries —
+    /// exactly one inference call — and closes the turn with the fault
+    /// recorded through `close_with_fault`, rather than being left
+    /// `Running`. The next request then opens a fresh turn.
+    #[tokio::test]
+    async fn an_integrity_violation_makes_one_call_then_closes_and_the_next_request_opens_a_fresh_turn() {
+        let fixture = play_world(None, "player-integrity-violation").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let port = DispositionPort::new(vec![Err(InferenceFault::integrity_violation("bad tool schema"))]);
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            port.clone(),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+
+        table.run(&fixture.principal, test_turn_id(680), "Hello?".into()).await.unwrap();
+
+        assert_eq!(port.call_count(), 1, "an IntegrityViolation must not retry");
+        let closed_turn_id = {
+            let stored = table.store.lock().await;
+            let turn = stored.current().unwrap();
+            assert_eq!(turn.state, PlayTurnState::Closed);
+            assert!(turn.fault.as_deref().unwrap().contains("bad tool schema"), "{:?}", turn.fault);
+            turn.turn_id.clone()
+        };
+        // Release the store's exclusive custody before reopening it below —
+        // the same "restart" precedent `a_question_holds_the_turn_open_across_a_restart`
+        // relies on.
+        drop(table);
+
+        // The next request opens a fresh turn rather than resuming the
+        // fault-closed one.
+        let personas2 = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![output("proj-after", vec![text_event("Fine.")])]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let end = output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
+        let table2 = PlayTable::new(
+            fixture.world.clone(),
+            personas2,
+            ScriptedPort::new(vec![end]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+        table2.run(&fixture.principal, test_turn_id(681), "Try again.".into()).await.unwrap();
+        let stored = table2.store.lock().await;
+        let turn = stored.current().unwrap();
+        assert_ne!(turn.turn_id, closed_turn_id, "the next request must open a fresh turn, not resume the fault-closed one");
+        assert_eq!(turn.state, PlayTurnState::Closed);
+        assert!(turn.fault.is_none());
+    }
+
+    /// PA.f94: a `Retryable` fault retries and, on success, the turn
+    /// proceeds normally.
+    #[tokio::test]
+    async fn a_retryable_fault_followed_by_success_succeeds() {
+        let fixture = play_world(None, "player-retry-success").await;
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![output("proj", vec![text_event("Fine.")])]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let end = output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
+        let port = DispositionPort::new(vec![Err(InferenceFault::retryable("transient")), Ok(end)]);
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            port.clone(),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+
+        table.run(&fixture.principal, test_turn_id(682), "Hello?".into()).await.unwrap();
+
+        assert_eq!(port.call_count(), 2, "a Retryable fault must retry once, then succeed");
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        assert_eq!(turn.state, PlayTurnState::Closed);
+        assert!(turn.fault.is_none());
+    }
+
+    /// PA.f86 (S6): a resumed round's opening conversation item must be the
+    /// turn's own recorded `opening_prompt`, never a `table_view` of a
+    /// fresh snapshot taken at resume time — the world may have drifted (a
+    /// patch committed between rounds) by then. Mutation: rebuilding
+    /// `conversation[0]` from `table_view(&fresh_snapshot)` in
+    /// `rebuild_conversation`/`infer_round` fails this.
+    #[tokio::test]
+    async fn a_resumed_rounds_opening_item_is_the_recorded_prompt_not_a_fresh_view() {
+        let fixture = play_world(None, "player-s6-fresh-view").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        let ask = output(
+            "r0",
+            vec![call_event("c0", ASK_PLAYER_TOOL, serde_json::json!({"question": "Which way?"}))],
+        );
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![ask]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+        table
+            .run(&fixture.principal, test_turn_id(510), "I stand at a crossroads.".into())
+            .await
+            .unwrap();
+        let (opening_prompt, question_id) = {
+            let stored = table.store.lock().await;
+            let turn = stored.current().unwrap();
+            (turn.opening_prompt.clone(), turn.open_question_id().unwrap())
+        };
+        drop(table);
+
+        // World drift between the question and the answer.
+        let personas2 = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![output("proj", vec![text_event("You choose left.")])]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let end = output("r1", vec![call_event("c1", END_TURN_TOOL, serde_json::json!({}))]);
+        let port = ScriptedPort::new(vec![end]);
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas2,
+            port.clone(),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+        table
+            .play
+            .submit_patch(
+                CommandId::new(),
+                decode_authoring_call(
+                    "declare_resource",
+                    &serde_json::json!({"handle": "silver", "label": "Silver"}).to_string(),
+                )
+                .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        table
+            .run(
+                &fixture.principal,
+                test_turn_id(511),
+                PlayRequest {
+                    text: "left".into(),
+                    answers: Some(question_id),
+                },
+            )
+            .await
+            .unwrap();
+
+        let seen = port.seen_requests();
+        let request_text = format!("{:?}", seen.first().unwrap());
+        // `request_text` is `Debug`-formatted, so a literal newline inside
+        // the recorded `opening_prompt` prints as the two characters `\n`;
+        // match that same escaping rather than the raw string.
+        let opening_prompt_escaped = opening_prompt.replace('\n', "\\n");
+        assert!(
+            request_text.contains(&opening_prompt_escaped),
+            "the resumed round's opening item must be the recorded opening_prompt: {request_text}"
+        );
+        assert!(
+            !request_text.contains("Silver"),
+            "a fresh table_view would leak the mid-turn patch into the opening item: {request_text}"
+        );
+    }
+
+    /// PA.f88: Dungeon's own `PLAY_TOOLS` is the single policy owner of
+    /// what the play agent may call (the library's own copy in
+    /// `ghostlight::table` is its test fixture only) — pinned here at its
+    /// exact 24-tool contents, `communicate` excluded (PA.f75). Mutation:
+    /// re-adding `communicate`.
+    #[test]
+    fn play_tools_is_pinned_to_its_exact_contents_with_no_communicate() {
+        const EXPECTED: &[&str] = &[
+            "relocate",
+            "transfer",
+            "consume",
+            "mint",
+            "bind",
+            "release",
+            "witness",
+            "acquire_knowledge",
+            "forget",
+            "create_commitment",
+            "discharge_commitment",
+            "advance_pressure",
+            "reduce_pressure",
+            "open_route",
+            "close_route",
+            "declare_place",
+            "declare_route",
+            "declare_resource",
+            "declare_fact",
+            "declare_subject",
+            "set_persona_material",
+            "retire",
+            "grant_affordance",
+            "revoke_affordance",
+        ];
+        assert_eq!(PLAY_TOOLS, EXPECTED);
+        assert_eq!(PLAY_TOOLS.len(), 24);
+        assert!(!PLAY_TOOLS.contains(&"communicate"));
+    }
+
+    /// The `request_id` an `InferenceRequest` `Debug`-prints, extracted so
+    /// two requests can be compared on that field alone — it is the one
+    /// place `dispatch_command_id`'s own output value actually reaches
+    /// something this test can observe from outside `execute_dispatch`.
+    fn request_id_of(request: &InferenceRequest) -> String {
+        let text = format!("{request:?}");
+        let key = "request_id: \"";
+        let start = text.find(key).expect("a request carries its own request_id") + key.len();
+        let end = start + text[start..].find('"').expect("the request_id value is a quoted string");
+        text[start..end].to_owned()
+    }
+
+    /// PA.f96: replaces the old test that called `dispatch_command_id_for_handle`
+    /// directly by observing the *actual* production path instead. Two
+    /// Persona subjects are dispatched together under one shared `turn_id`,
+    /// once as `[Mara, Borin]` and once as `[Borin, Mara]`. Each dispatched
+    /// subject's own inference `request_id` carries `dispatch_command_id`'s
+    /// own output — the same value `execute_dispatch` itself derives and
+    /// hands to `personas.turn` — so comparing Mara's own `request_id`
+    /// across the two orders observes whether that id actually depended on
+    /// her position in the JSON list, without recomputing the hash
+    /// ourselves. Mutation: hashing the subject's list position (`position`)
+    /// instead of the subject itself at the `execute_dispatch` call site
+    /// changes Mara's own `request_id` between the two runs, failing this.
+    #[tokio::test]
+    async fn dispatch_order_never_changes_the_request_id_a_subject_gets() {
+        let fixture = play_world(Some("Mara"), "player-dispatch-order-ids").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let mara = persona_id(&snapshot);
+        let affordance_id = bracketed_id_after(&table_view(&snapshot), "speak [");
+
+        // A second Persona subject, declared through the play table's own
+        // authoring door — the same mechanism
+        // `set_persona_material_on_a_same_run_declared_subject_commits` uses.
+        let declare = output(
+            "r0",
+            vec![
+                call_event(
+                    "c0",
+                    "declare_subject",
+                    serde_json::json!({
+                        "handle": "borin",
+                        "label": "Borin",
+                        "kind": "person",
+                        "controller": {"type": "narrative_persona"},
+                        "affordances": [{"ref": "existing", "value": affordance_id}],
+                        "position": null,
+                    }),
+                ),
+                call_event("c1", END_TURN_TOOL, serde_json::json!({})),
+            ],
+        );
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        {
+            let personas = PersonaLane::new(
+                ControllerPort::new(fixture.world.clone()),
+                ScriptedPort::new(vec![output("proj-declare", vec![text_event("Quiet.")])]),
+                "gpt-5.6-sol".into(),
+                "gpt-5.6-sol".into(),
+            )
+            .unwrap();
+            let table = PlayTable::new(
+                fixture.world.clone(),
+                personas,
+                ScriptedPort::new(vec![declare]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(2)),
+                &store_path,
+            )
+            .unwrap();
+            table.run(&fixture.principal, test_turn_id(690), "Introduce Borin.".into()).await.unwrap();
+        }
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let borin = snapshot.subjects.iter().find(|row| row.label == "Borin").unwrap().id;
+
+        // One turn_id shared by both orders: `dispatch_command_id` derives
+        // from `(turn_id, round, slot, subject)`, so holding turn_id, round,
+        // and slot fixed isolates subject-vs-position as the only variable.
+        let shared_turn_id = test_turn_id(691);
+
+        async fn dispatch_pair(
+            world: &WorldMailbox,
+            turn_id: &str,
+            order: [SubjectId; 2],
+        ) -> (PlayTurn, Arc<ScriptedPort>) {
+            let port = ScriptedPort::new(vec![
+                output("proj-0", vec![text_event("considers.")]),
+                output("persona-0", vec![text_event("speaks first.")]),
+                output("proj-1", vec![text_event("waits.")]),
+                output("persona-1", vec![text_event("speaks second.")]),
+            ]);
+            let personas = PersonaLane::new(
+                ControllerPort::new(world.clone()),
+                port.clone(),
+                "gpt-5.6-sol".into(),
+                "gpt-5.6-sol".into(),
+            )
+            .unwrap();
+            let directory = tempfile::tempdir().unwrap();
+            let table = PlayTable::new(
+                world.clone(),
+                personas,
+                ScriptedPort::new(vec![]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(2)),
+                directory.path().join("play-turn-v1.cc"),
+            )
+            .unwrap();
+            let mut turn = PlayTurn {
+                turn_id: turn_id.to_owned(),
+                applied_keys: Vec::new(),
+                opening_prompt: String::new(),
+                player_prose: Vec::new(),
+                rounds: Vec::new(),
+                calls: Vec::new(),
+                persona_turns: Vec::new(),
+                question: None,
+                refusal: None,
+                narration: None,
+                fault: None,
+                state: PlayTurnState::Running,
+            };
+            let (outcome, summary) = table.execute_dispatch(&mut turn, 0, 0, &order).await.unwrap();
+            assert!(matches!(outcome, RoundOutcome::Continue), "dispatch must not fault: {summary}");
+            assert!(!summary.contains("could not act"), "{summary}");
+            (turn, port)
+        }
+
+        let (forward, forward_port) = dispatch_pair(&fixture.world, &shared_turn_id, [mara, borin]).await;
+        let (reverse, reverse_port) = dispatch_pair(&fixture.world, &shared_turn_id, [borin, mara]).await;
+
+        for (label, turn, subject) in [
+            ("forward", &forward, mara),
+            ("forward", &forward, borin),
+            ("reverse", &reverse, mara),
+            ("reverse", &reverse, borin),
+        ] {
+            assert!(
+                turn.persona_turns.iter().any(|(id, _)| *id == subject),
+                "{label} dispatch must have recorded a Persona turn for the subject"
+            );
+        }
+
+        // Forward dispatched [Mara, Borin]: Mara's own Projector request is
+        // seen first (index 0); reverse dispatched [Borin, Mara]: Mara's own
+        // is seen third (index 2), after Borin's own pair.
+        let forward_seen = forward_port.seen_requests();
+        let reverse_seen = reverse_port.seen_requests();
+        let mara_request_id_at_position_0 = request_id_of(&forward_seen[0]);
+        let mara_request_id_at_position_1 = request_id_of(&reverse_seen[2]);
+        assert_eq!(
+            mara_request_id_at_position_0, mara_request_id_at_position_1,
+            "Mara's own request id must depend only on (turn_id, round, slot, subject), never her position in the dispatch list"
+        );
+        let borin_request_id_at_position_1 = request_id_of(&forward_seen[2]);
+        let borin_request_id_at_position_0 = request_id_of(&reverse_seen[0]);
+        assert_eq!(
+            borin_request_id_at_position_1, borin_request_id_at_position_0,
+            "Borin's own request id must depend only on (turn_id, round, slot, subject), never his position in the dispatch list"
+        );
+        assert_ne!(
+            mara_request_id_at_position_0, borin_request_id_at_position_0,
+            "two distinct subjects dispatched together must not share a request id"
+        );
+    }
+
+    // --- PA.f97: short handles and collision detection --------------------
+
+    /// The longest possible actor tool name (`<8-hex-handle>__<48-char kind>`)
+    /// stays well under a common 64-char function-name limit.
+    #[tokio::test]
+    async fn the_longest_possible_actor_tool_name_is_64_chars_or_fewer() {
+        let fixture = play_world(Some("Mara"), "player-handle-length").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let prefix = actor_prefix(player_id(&snapshot));
+        assert!(prefix.len() <= 10, "the handle prefix must be short: {prefix}");
+        let longest_kind = "x".repeat(48);
+        let name = format!("{prefix}{longest_kind}");
+        assert!(name.len() <= 64, "an actor tool name of {} chars exceeds a common 64-char limit: {name}", name.len());
+    }
+
+    /// The player's and a Persona's own short handles round-trip through
+    /// `resolve_handle` unchanged.
+    #[tokio::test]
+    async fn player_and_persona_handles_round_trip() {
+        let fixture = play_world(Some("Mara"), "player-handle-roundtrip").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let player = player_id(&snapshot);
+        let persona = persona_id(&snapshot);
+        assert_eq!(handle_for(player).len(), 8);
+        assert_eq!(handle_for(persona).len(), 8);
+        assert_ne!(handle_for(player), handle_for(persona));
+
+        let player_row = SubjectRow { id: player };
+        let resolved_player = resolve_handle(&handle_for(player), Some(&player_row), &[persona]);
+        let resolved = resolved_player.expect("the player's own handle resolves");
+        assert_eq!(resolved.subject, player);
+        assert!(resolved.is_player);
+
+        let resolved_persona = resolve_handle(&handle_for(persona), Some(&player_row), &[persona]);
+        let resolved = resolved_persona.expect("the dispatched Persona's own handle resolves");
+        assert_eq!(resolved.subject, persona);
+        assert!(!resolved.is_player);
+    }
+
+    /// PA.f97: two distinct subjects sharing one handle is a collision;
+    /// `find_handle_collision` is the pure function `round_tools` calls to
+    /// refuse the whole round as a turn fault. `SubjectId` mints nothing a
+    /// consumer crate can construct by hand and two real, randomly issued
+    /// ids cannot feasibly be forced to collide, so this drives the
+    /// detection algorithm directly with two real (distinct) subject ids
+    /// under a shared, hand-assigned handle string, rather than attempting
+    /// to force a genuine 8-hex-digit collision through a fixture — which
+    /// is the infeasible half of this rule's own test list; reported here
+    /// rather than faked.
+    #[tokio::test]
+    async fn a_handle_collision_between_distinct_subjects_is_detected() {
+        let fixture = play_world(Some("Mara"), "player-handle-collision").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let a = player_id(&snapshot);
+        let b = persona_id(&snapshot);
+        let collision =
+            find_handle_collision(vec![("SAME1234".to_owned(), a), ("SAME1234".to_owned(), b)].into_iter());
+        assert_eq!(collision.as_deref(), Some("SAME1234"));
+    }
+
+    /// The same subject appearing twice under its own handle (a subject
+    /// that could in principle be named more than once) is not a collision.
+    #[tokio::test]
+    async fn the_same_subject_listed_twice_under_one_handle_is_not_a_collision() {
+        let fixture = play_world(None, "player-handle-no-collision").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let a = player_id(&snapshot);
+        let collision = find_handle_collision(vec![(handle_for(a), a), (handle_for(a), a)].into_iter());
+        assert_eq!(collision, None);
     }
 }
