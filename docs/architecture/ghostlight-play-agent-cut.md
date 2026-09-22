@@ -1771,6 +1771,63 @@ Interpreter, the elaborator sweep and lenses.
   - A retired holder's holdings still transfer (tested).
   - MuA to MuE are killed by named tests. Soul checks fix batches 3 and 4
     together.
+- **Soul on fix batches 3 and 4** (Opus, 2026-09-22, against `e18aa03`,
+  Windows):
+  - Verdicts: P4.1, P4.2, P4.3, P5.1, P5.2 and P3.2 **HOLD**. P3.2 now holds
+    across genesis as well: `require_ruler` runs in `prepare_creation`,
+    `WorldState::genesis`, `reduce` and `apply_effect`.
+  - PA.f31's premise is confirmed. `WorldState` is decoded only in `recover`
+    (followed by `verify_history`) and in `commit` (on a row already
+    verified).
+  - After an Active retire of the human, the Eve surface shows no Speak
+    control, and a stale `world.speak` is refused with `OpportunityMismatch`.
+    Nothing panics.
+  - Findings PA.f36 to PA.f40 below. All are fix, in batch 5, after Cut 6
+    lands.
+- **PA.f36 (pre-existing in fix batch 4, low, fix):** `RetiresAnApprover`
+  checks only `Key::Existing` (`patch.rs:3838`). A genesis patch that
+  declares a human and retires it is admitted by the resolver. Only the
+  `Human if Draft` arm in `apply` (`lib.rs:3000`) stops it, as an
+  `Invariant`, after `open_owner` has left an empty `world.cc`. Soul
+  disabled that arm and the whole suite passed, with the human never
+  approving. Dungeon can't reach this path; the kernel API can. **Fix:** the
+  resolver tracks declared humans the way it tracks `mirrors`, plus a test.
+- **PA.f37 (pre-existing since Cut 4, low-medium, fix):** a retired subject
+  still acts through the clock and commitments.
+  - `CreateCommitment` admits a retired promisor (`patch.rs:3581`).
+  - The tick (`clock.rs:101`) never checks retirement. In Soul's probe a
+    retired reeve's routine rolled from `due 10` to `due 20`, and its goal
+    and `Bind` dependencies kept raising pressure.
+  - **Ruling (Self, under the standing go):** "a retired subject cannot act"
+    covers its commitments. `CreateCommitment` refuses a retired promisor,
+    and `derive_motion` skips commitments, goals and dependencies whose
+    subject is retired. Nothing is discharged or deleted; they stay as
+    history. This supersedes PA.f4's "acceptable".
+- **PA.f38 (pre-existing since Cut 4, low, fix):** `delegated_authority`
+  (`lib.rs:3455`) reads a retired institution's grants, so a live
+  office-holder keeps a dissolved institution's authority.
+  - **Ruling (Self, under the standing go, smallest option):** a retired
+    institution lends nothing. Retire does not vacate offices; a retired
+    incumbent is inert, and the play authority can vacate its seat.
+  - `GrantAuthority`, `OpenForum` and `SetController` on a retired subject
+    stay accepted as inert holdings.
+- **PA.f39 (introduced by fix batch 4, low, fix):** test gaps. Each surviving
+  mutation needs a test that fails under it:
+  - M2: narrowing the `AcquireKnowledge` retired check to
+    `source != Evidenced`.
+  - M6: letting `is_retired` also match `ExternallyControlled`, which would
+    silently drop mirrors from `Reach::Subjects` audiences.
+  - M9: disabling the Draft-only approval shape clause
+    (`journal.rs:885`), which is defence in depth.
+  - Also add Soul's probe S2: `CanReach` to a placeless target reachable only
+    through a `Reach::Subjects` channel.
+- **PA.f40 (introduced by fix batch 4, low, fix):** the forged "mirror acted"
+  test at `consumer.rs:1946-1958` claims the shape check refuses it on a
+  controller-id mismatch, but that clause is gone. It now passes only
+  through the speech-claim clause, so a forged mirror event without speech
+  passes `verify_state_shape`, while `verify_history` still refuses it.
+  **Fix:** route the test through `verify_history` and rename it for what it
+  pins.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
