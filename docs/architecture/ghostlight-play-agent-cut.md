@@ -1853,6 +1853,20 @@ Interpreter, the elaborator sweep and lenses.
   passes `verify_state_shape`, while `verify_history` still refuses it.
   **Fix:** route the test through `verify_history` and rename it for what it
   pins.
+- **Fix batch 5 landed (Hands, Sonnet, 2026-09-22):** `bc1852d`, `33fc9c6`
+  and `662a51f`. Lib 549 → 560 (559 pass, 1 ignored).
+  - PA.f36: the resolver tracks declared humans alongside `mirrors`, and a
+    test pins the apply arm directly.
+  - PA.f37: a retired promisor is refused, and `derive_motion` skips a
+    retired subject's commitments and dependencies. A second test was added
+    after a mutation showed the dependency loop was unexercised.
+  - PA.f38: `delegated_authority` skips a retired institution's offices.
+  - PA.f39: four tests.
+  - PA.f40: the forged-mirror test is renamed and now goes through
+    `verify_history` (made `pub(super)`, with a test-only `commits` accessor).
+    Its mutations are caught by the digest-chain backstop rather than the
+    effect-equality clause alone, as Hands reported.
+  - Soul checks batches 5 and 6 together.
 - **PA.f41 (introduced by Cut 6, medium, fix):** `turn` records the
   caller's copy of the opportunity. `select_one` (`controllers.rs:1278-1289`)
   matches subject, mode, controller, scope and digest, then returns the
