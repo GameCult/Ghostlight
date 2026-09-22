@@ -2995,6 +2995,37 @@ fn apply_operation(
             state.positions.remove(subject);
             state.affordance_grants.remove(&scope);
         }
+        ResolvedOp::GrantAffordance { subject, affordance }
+        | ResolvedOp::RevokeAffordance { subject, affordance } => {
+            let granting = matches!(operation, ResolvedOp::GrantAffordance { .. });
+            let scope = DecisionScope {
+                subject_id: *subject,
+            };
+            let assignment = state.controller_assignments.get(&scope).ok_or_else(unknown)?;
+            if assignment.mode().is_none() || !state.affordance_catalog.contains_key(affordance) {
+                return Err(unknown());
+            }
+            let granted = state
+                .affordance_grants
+                .get_mut(&scope)
+                .ok_or_else(unknown)?;
+            let held = granted.contains(affordance);
+            if held == granting {
+                return Err(KernelError::Invariant(
+                    "affordance grant operation changes nothing".into(),
+                ));
+            }
+            if granting {
+                granted.insert(*affordance);
+            } else {
+                if granted.len() == 1 {
+                    return Err(KernelError::Invariant(
+                        "revoke would leave a controlled subject with no affordance".into(),
+                    ));
+                }
+                granted.remove(affordance);
+            }
+        }
     }
     Ok(())
 }
@@ -4625,12 +4656,17 @@ fn confine_to_ground(
     }
     for (index, operation) in resolved.operations.iter().enumerate() {
         let site = Site::Operation(index);
-        // Retirement is authority over the subject's standing, not structure
-        // over ground: a confined author is refused whatever place the
-        // subject stands under, exactly as `require_ruler` refuses a `Ruled`
-        // fact or a `Mint` outright. The owner is unconfined and never
-        // reaches this clause.
-        if matches!(operation, ResolvedOp::Retire { .. }) {
+        // Retirement and an affordance grant are authority over the subject's
+        // standing, not structure over ground: a confined author is refused
+        // whatever place the subject stands under, exactly as `require_ruler`
+        // refuses a `Ruled` fact or a `Mint` outright. The owner is unconfined
+        // and never reaches this clause.
+        if matches!(
+            operation,
+            ResolvedOp::Retire { .. }
+                | ResolvedOp::GrantAffordance { .. }
+                | ResolvedOp::RevokeAffordance { .. }
+        ) {
             mismatches.push(Mismatch::OutsideJurisdiction { site: site.clone() });
             continue;
         }
@@ -4851,12 +4887,14 @@ fn operation_ground(
             }
             (subjects, places(named), routes)
         }
-        // Confinement never reaches this through the ordinary ground check:
-        // `confine_to_ground` refuses `Retire` unconditionally for every
-        // confined author before this function is called for it. The
-        // subject is named here so the match stays total and correct if
-        // that clause is ever bypassed.
-        ResolvedOp::Retire { subject } => (vec![*subject], Vec::new(), Vec::new()),
+        // Confinement never reaches these through the ordinary ground check:
+        // `confine_to_ground` refuses `Retire`, `GrantAffordance`, and
+        // `RevokeAffordance` unconditionally for every confined author before
+        // this function is called for them. The subject is named here so the
+        // match stays total and correct if that clause is ever bypassed.
+        ResolvedOp::Retire { subject }
+        | ResolvedOp::GrantAffordance { subject, .. }
+        | ResolvedOp::RevokeAffordance { subject, .. } => (vec![*subject], Vec::new(), Vec::new()),
     }
 }
 
@@ -16732,6 +16770,246 @@ mod clock_tests {
                 .find(|subject| subject.id == clockwork.farmer)
                 .unwrap()
                 .retired
+        );
+    }
+
+    // ---- Cut 5: granting and revoking affordances ---------------------
+
+    fn wave_affordance() -> Declaration {
+        Declaration::Affordance(AffordanceDeclaration {
+            handle: DraftHandle::new("wave"),
+            kind: AffordanceKindName("wave".into()),
+            roles: vec![RoleSpec {
+                role: Role("target".into()),
+                kind: RefKind::Subject(None),
+            }],
+            preconditions: Vec::new(),
+            effect_slots: vec![EffectSlot {
+                op_kind: ComponentOpKind::AdvancePressure {
+                    by: PressureMagnitude(1),
+                },
+                roles: vec![Role("target".into())],
+                bounds: Bounds::None,
+            }],
+            outcome_bands: vec![OutcomeBand {
+                weight: 1,
+                effects: vec![0],
+            }],
+            carries_speech: false,
+        })
+    }
+
+    /// P5.1: the seed lane is the owner in Draft, and it grants the player a
+    /// verb the same way any owner-authored `GrantAffordance` does.
+    #[test]
+    fn the_seed_grants_the_player_a_verb_in_draft() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "SeedGrantsDraft"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let before = kernel.snapshot().unwrap();
+        let commons = before.places[0].id;
+        let speak = super::tests::speak_entry(&kernel);
+        submit_owner(
+            &mut kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![
+                        wave_affordance(),
+                        Declaration::Subject(SubjectDeclaration {
+                            handle: DraftHandle::new("player"),
+                            label: "The Player".into(),
+                            kind: SubjectKind::Person,
+                            controller: NewController::NarrativePersona,
+                            affordances: BTreeSet::from([speak]),
+                            position: Some(Ref::Existing(commons)),
+                        }),
+                    ],
+                    operations: vec![ComponentOp::GrantAffordance {
+                        subject: Ref::Draft(DraftHandle::new("player")),
+                        affordance: Ref::Draft(DraftHandle::new("wave")),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        let snapshot = kernel.snapshot().unwrap();
+        let player = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.label == "The Player")
+            .expect("the declared player");
+        assert_eq!(player.affordances.len(), 2);
+    }
+
+    /// P5.1, and the scope digest half of Q10's design: a grant and a revoke
+    /// in Active both move the scope digest, so a stale opportunity is
+    /// `ScopeChanged` rather than silently honoured.
+    #[test]
+    fn the_play_authority_grants_and_revokes_in_active() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, active) =
+            clock_kernel(directory.path(), "PlayGrantRevoke");
+        let stale = opportunity_for(&active, clockwork.reeve);
+        submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![wave_affordance()],
+                    operations: vec![ComponentOp::GrantAffordance {
+                        subject: Ref::Existing(clockwork.reeve),
+                        affordance: Ref::Draft(DraftHandle::new("wave")),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .expect("the play authority grants a new verb");
+        let after_grant = kernel.snapshot().unwrap();
+        assert_eq!(
+            after_grant
+                .subjects
+                .iter()
+                .find(|subject| subject.id == clockwork.reeve)
+                .unwrap()
+                .affordances
+                .len(),
+            4
+        );
+        let error = submit_as(
+            &mut kernel,
+            CallerId::Controller(stale.controller_id),
+            CommandBody::DeclineDecision {
+                opportunity: stale.clone(),
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::ScopeChanged { .. }), "{error:?}");
+
+        submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::RevokeAffordance {
+                        subject: Ref::Existing(clockwork.reeve),
+                        affordance: Ref::Existing(clockwork.threaten),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .expect("the play authority revokes a held verb");
+        let after_revoke = kernel.snapshot().unwrap();
+        let reeve = after_revoke
+            .subjects
+            .iter()
+            .find(|subject| subject.id == clockwork.reeve)
+            .unwrap();
+        assert_eq!(reeve.affordances.len(), 3);
+        assert!(!reeve.affordances.contains(&clockwork.threaten));
+    }
+
+    /// P5.2: `derive_opportunities` requires at least one grant; a revoke
+    /// that would leave the reeve mute is refused before it ever reaches
+    /// that invariant.
+    #[test]
+    fn a_revoke_cannot_leave_a_subject_mute() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "RevokeMute");
+        let speak = super::tests::speak_entry(&kernel);
+        for affordance in [clockwork.deliver, clockwork.threaten] {
+            submit_as(
+                &mut kernel,
+                play_caller(),
+                CommandBody::AdmitPatch {
+                    answers: None,
+                    patch: WorldPatch {
+                        declarations: Vec::new(),
+                        operations: vec![ComponentOp::RevokeAffordance {
+                            subject: Ref::Existing(clockwork.reeve),
+                            affordance: Ref::Existing(affordance),
+                        }],
+                        evidence: Vec::new(),
+                    },
+                },
+            )
+            .expect("the play authority revokes down toward one verb");
+        }
+        let Ref::Existing(speak_id) = speak else {
+            panic!("speak is a standing affordance");
+        };
+        let error = submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::RevokeAffordance {
+                        subject: Ref::Existing(clockwork.reeve),
+                        affordance: Ref::Existing(speak_id),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::WouldLeaveSubjectMute { operation: 0 })),
+            "{error:?}"
+        );
+    }
+
+    /// P5.1: `confine_to_ground` refuses `GrantAffordance` for a confined
+    /// author unconditionally, even for a subject this same patch declares
+    /// and places inside the elaborator's own jurisdiction.
+    #[test]
+    fn an_elaborator_cannot_grant() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "GrantElaborator");
+        let speak = super::tests::speak_entry(&kernel);
+        let answered = dead_end_boundary(&kernel);
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered)),
+                patch: WorldPatch {
+                    declarations: vec![Declaration::Subject(SubjectDeclaration {
+                        handle: DraftHandle::new("stray"),
+                        label: "The Roadside Stray".into(),
+                        kind: SubjectKind::Person,
+                        controller: NewController::NarrativePersona,
+                        affordances: BTreeSet::from([speak]),
+                        position: Some(Ref::Existing(clockwork.dead_end)),
+                    })],
+                    operations: vec![ComponentOp::GrantAffordance {
+                        subject: Ref::Draft(DraftHandle::new("stray")),
+                        affordance: Ref::Existing(clockwork.threaten),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::OutsideJurisdiction {
+                    site: Site::Operation(0)
+                })),
+            "{error:?}"
         );
     }
 }

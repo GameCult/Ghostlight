@@ -1207,6 +1207,20 @@ pub(crate) enum ComponentOp {
     Retire {
         subject: Ref<SubjectId>,
     },
+    /// Grants one more standing catalog entry to an existing subject. Only the
+    /// owner (including the seed lane, the owner in Draft) and `Play` may
+    /// write it: a grant is authority, not structure, so a confined author is
+    /// refused whatever ground the subject stands on.
+    GrantAffordance {
+        subject: Ref<SubjectId>,
+        affordance: Ref<AffordanceId>,
+    },
+    /// Revokes a grant. Refused if it would leave a controlled subject with
+    /// none: `derive_opportunities` requires at least one.
+    RevokeAffordance {
+        subject: Ref<SubjectId>,
+        affordance: Ref<AffordanceId>,
+    },
 }
 
 /// What an Active `AdmitPatch` answers. Draft answers nothing; Active must
@@ -1586,6 +1600,18 @@ pub enum Mismatch {
     RetiresAMirror {
         operation: usize,
     },
+    /// `GrantAffordance` or `RevokeAffordance` named a retired or an
+    /// `ExternallyControlled` subject: neither holds a grant this patch may
+    /// touch.
+    GrantsOutsideControl {
+        operation: usize,
+    },
+    /// A `RevokeAffordance` that would leave a controlled subject with no
+    /// affordance at all. `derive_opportunities` requires at least one; a
+    /// subject is never left mute.
+    WouldLeaveSubjectMute {
+        operation: usize,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -1882,6 +1908,14 @@ pub(crate) enum ResolvedOp {
     },
     Retire {
         subject: SubjectId,
+    },
+    GrantAffordance {
+        subject: SubjectId,
+        affordance: AffordanceId,
+    },
+    RevokeAffordance {
+        subject: SubjectId,
+        affordance: AffordanceId,
     },
 }
 
@@ -4209,6 +4243,61 @@ pub(super) fn resolve_patch(
                     }
                 }
             }
+            ComponentOp::GrantAffordance { subject, affordance }
+            | ComponentOp::RevokeAffordance { subject, affordance } => {
+                let granting = matches!(operation, ComponentOp::GrantAffordance { .. });
+                let subject_key = resolve_subject(
+                    Site::Operation(position),
+                    subject,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let affordance_key = resolve_affordance(
+                    Site::Operation(position),
+                    affordance,
+                    &index,
+                    &state.affordance_catalog,
+                    &mut mismatches,
+                );
+                let (Some(subject_key), Some(affordance_key)) = (subject_key, affordance_key)
+                else {
+                    continue;
+                };
+                // A grant is authority over the catalog, not structure over
+                // ground: retirement and a mirror both hold no grant a patch
+                // may touch, whatever confinement later decides.
+                if retired.contains(&subject_key) || mirrors.contains(&subject_key) {
+                    mismatches.push(Mismatch::GrantsOutsideControl {
+                        operation: position,
+                    });
+                    continue;
+                }
+                let held = affordance_holdings
+                    .get(&subject_key)
+                    .is_some_and(|granted| granted.contains(&affordance_key));
+                if held == granting {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                    continue;
+                }
+                if granting {
+                    affordance_holdings
+                        .entry(subject_key)
+                        .or_default()
+                        .insert(affordance_key);
+                } else {
+                    let granted = affordance_holdings.entry(subject_key).or_default();
+                    if granted.len() == 1 {
+                        mismatches.push(Mismatch::WouldLeaveSubjectMute {
+                            operation: position,
+                        });
+                        continue;
+                    }
+                    granted.remove(&affordance_key);
+                }
+            }
             ComponentOp::OpenOffice {
                 institution,
                 office,
@@ -5238,6 +5327,20 @@ pub(super) fn resolve_patch(
             },
             ComponentOp::Retire { subject } => ResolvedOp::Retire {
                 subject: subject_id_of(&key_of(subject)),
+            },
+            ComponentOp::GrantAffordance {
+                subject,
+                affordance,
+            } => ResolvedOp::GrantAffordance {
+                subject: subject_id_of(&key_of(subject)),
+                affordance: affordance_id_of(&key_of(affordance)),
+            },
+            ComponentOp::RevokeAffordance {
+                subject,
+                affordance,
+            } => ResolvedOp::RevokeAffordance {
+                subject: subject_id_of(&key_of(subject)),
+                affordance: affordance_id_of(&key_of(affordance)),
             },
             ComponentOp::Relocate { subject, via } => ResolvedOp::Relocate {
                 subject_id: subject_id_of(&key_of(subject)),
@@ -6283,6 +6386,28 @@ pub(crate) const PATCH_TOOLS: &[PatchTool] = &[
         shape: PatchToolShape::Operate { variant: "retire" },
     },
     PatchTool {
+        name: "grant_affordance",
+        description: "Grant a subject one more affordance from the standing catalog. Only the owner and the play table may grant.",
+        fields: &[
+            field("subject", PatchFieldKind::Reference("subject")),
+            field("affordance", PatchFieldKind::Reference("affordance")),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "grant_affordance",
+        },
+    },
+    PatchTool {
+        name: "revoke_affordance",
+        description: "Revoke one of a subject's affordances. Refused if it would leave the subject with none. Only the owner and the play table may revoke.",
+        fields: &[
+            field("subject", PatchFieldKind::Reference("subject")),
+            field("affordance", PatchFieldKind::Reference("affordance")),
+        ],
+        shape: PatchToolShape::Operate {
+            variant: "revoke_affordance",
+        },
+    },
+    PatchTool {
         name: RECORD_GAP_PATCH_TOOL,
         description: "Record something the world needs that this vocabulary cannot say. It changes nothing.",
         fields: &[field(
@@ -7023,7 +7148,7 @@ mod catalog_tests {
             .iter()
             .filter(|entry| matches!(entry.shape, PatchToolShape::Operate { .. }))
             .count();
-        assert_eq!((declarations, operations, PATCH_TOOLS.len()), (7, 32, 41));
+        assert_eq!((declarations, operations, PATCH_TOOLS.len()), (7, 34, 43));
 
         // Every declaration variant the vocabulary owns is reachable, and the
         // two payload-carrying entity kinds are not exposed as an `Entity`
@@ -7119,6 +7244,8 @@ mod catalog_tests {
                 ComponentOp::ReducePressure { .. } => "reduce_pressure",
                 ComponentOp::ResolvePressure { .. } => "resolve_pressure",
                 ComponentOp::Retire { .. } => "retire",
+                ComponentOp::GrantAffordance { .. } => "grant_affordance",
+                ComponentOp::RevokeAffordance { .. } => "revoke_affordance",
             }
         }
         PATCH_TOOLS
@@ -7170,7 +7297,7 @@ mod catalog_tests {
             .count();
         assert_eq!(
             (declare_tools, operate_tools, PATCH_TOOLS.len()),
-            (7, 32, 41)
+            (7, 34, 43)
         );
 
         let declarations = every_declaration();
