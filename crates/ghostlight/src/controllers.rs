@@ -4852,9 +4852,15 @@ impl SelectedDecision {
                 };
                 // The recency marker: strictly after the subject's own last
                 // exercised decision, so a subject that never acted
-                // (`last_acted_at` is `None`) sees every minted row as new,
+                // (`last_acted_at` is `None`) sees every row it holds as new,
                 // and the subject's own acting revision is not itself new.
-                let new = entry.minted_at > self.subject.last_acted_at;
+                // `acquired_at` is written by every knowledge writer (PA.f44),
+                // unlike `minted_at`, which a patch, a seed, or a ruling never
+                // sets, so this marker sees rows those writers land too.
+                let new = match self.subject.last_acted_at {
+                    None => true,
+                    Some(acted_at) => entry.acquired_at > acted_at,
+                };
                 json!({
                     "how": how,
                     "by": by,
@@ -7003,6 +7009,7 @@ mod tests {
                         via: None,
                     },
                     minted_at: Some(40),
+                    acquired_at: 40,
                 },
                 // Mara also saw Iris do something. The row is Iris's own
                 // sentence, marked as seen and never as said.
@@ -7013,6 +7020,7 @@ mod tests {
                     confidence: Confidence::Believed,
                     source: KnowledgeSource::Seen { by: speaker_id },
                     minted_at: Some(41),
+                    acquired_at: 41,
                 },
             ],
             commitments: Vec::new(),
@@ -7042,6 +7050,7 @@ mod tests {
                 confidence: Confidence::Certain,
                 source: KnowledgeSource::Witnessed,
                 minted_at: None,
+                acquired_at: 0,
             }],
             commitments: Vec::new(),
             pressures: Vec::new(),
@@ -7616,6 +7625,7 @@ mod tests {
                 confidence: Confidence::Believed,
                 source: KnowledgeSource::Witnessed,
                 minted_at: Some(1),
+                acquired_at: 1,
             },
             KnowledgeSnapshot {
                 fact: EntityId::issue(),
@@ -7624,6 +7634,7 @@ mod tests {
                 confidence: Confidence::Believed,
                 source: KnowledgeSource::Witnessed,
                 minted_at: Some(2),
+                acquired_at: 2,
             },
             KnowledgeSnapshot {
                 fact: EntityId::issue(),
@@ -7632,6 +7643,7 @@ mod tests {
                 confidence: Confidence::Believed,
                 source: KnowledgeSource::Witnessed,
                 minted_at: Some(3),
+                acquired_at: 3,
             },
         ];
         let boundary_selected = SelectedDecision {
@@ -7730,6 +7742,242 @@ mod tests {
         for row in rows {
             assert_eq!(row["new"], Value::Bool(true));
         }
+    }
+
+    /// PA.f44: a row `AcquireKnowledge` lands — a patch, not a minting speech
+    /// or display act — after the subject's own last act is new. Before
+    /// PA.f44 this row carried no `minted_at` at all, so the old marker
+    /// (`minted_at > last_acted_at`, `None` never beats `Some`) could never
+    /// flag it, whatever revision it actually landed on.
+    #[test]
+    fn a_row_acquired_by_a_patch_after_the_last_act_is_new() {
+        use crate::tests::{
+            FLOOD_STATEMENT, auth_principal, command, operations, opportunity_for, owner,
+            speech_world, submit_owner,
+        };
+        use crate::{
+            AuthenticatedCaller, AuthoredSource, DecisionInvocation, Ref, Role, RoleBinding,
+            Statement, SubmitReceipt, Target, WorldKernel,
+        };
+
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            crate::tests::creation(CommandId::new(), "PatchAfterAct"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, active) = speech_world(&mut kernel);
+
+        // The listener acts once, so it carries a `last_acted_at`.
+        let opportunity = opportunity_for(&active, speech.listener);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        let receipt = kernel
+            .submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        opportunity,
+                        invocation: DecisionInvocation {
+                            affordance: speech.whisper,
+                            bindings: vec![RoleBinding {
+                                role: Role("target".into()),
+                                target: Target::Subject(speech.speaker),
+                            }],
+                            proposed: Vec::new(),
+                            speech: Some(Statement::new("I have something to say.").unwrap()),
+                            display: None,
+                        },
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .expect("the whisper commits");
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+        let after_act = kernel.snapshot().unwrap();
+
+        // A patch, after the act, lands a row the listener never spoke or
+        // saw: the sole scenario PA.f44 exists for.
+        submit_owner(
+            &mut kernel,
+            &after_act,
+            operations(vec![crate::patch::ComponentOp::AcquireKnowledge {
+                subject: Ref::Existing(speech.listener),
+                fact: Ref::Existing(speech.flood),
+                source: AuthoredSource::Witnessed,
+                confidence: Confidence::Believed,
+            }]),
+        );
+        let after_patch = kernel.snapshot().unwrap();
+
+        let subject = after_patch
+            .subjects
+            .iter()
+            .find(|subject| subject.id == speech.listener)
+            .unwrap()
+            .clone();
+        assert!(subject.last_acted_at.is_some());
+        let row = subject
+            .knowledge
+            .iter()
+            .find(|row| row.fact == speech.flood)
+            .expect("the patch landed the row");
+        assert_eq!(row.minted_at, None, "a patch mints no event");
+        let opportunity = opportunity_for(&after_patch, speech.listener);
+        let granted: Vec<AffordanceSnapshot> = after_patch
+            .affordances
+            .iter()
+            .filter(|entry| subject.affordances.contains(&entry.id))
+            .cloned()
+            .collect();
+        let selected = SelectedDecision {
+            snapshot: after_patch,
+            subject,
+            opportunity,
+            granted,
+        };
+        let rendered = selected
+            .projector_knowledge()
+            .into_iter()
+            .find(|row| row["text"] == Value::String(FLOOD_STATEMENT.into()))
+            .expect("the flood row is rendered");
+        assert_eq!(rendered["new"], Value::Bool(true));
+    }
+
+    /// PA.f44's other boundary: a row `AcquireKnowledge` lands *before* the
+    /// subject's own last act is not new, exactly as a row minted by an act
+    /// before it is not.
+    #[test]
+    fn a_row_acquired_by_a_patch_before_the_last_act_is_not_new() {
+        use crate::tests::{
+            FLOOD_STATEMENT, auth_principal, command, operations, opportunity_for, owner,
+            speech_world, submit_owner,
+        };
+        use crate::{
+            AuthenticatedCaller, AuthoredSource, DecisionInvocation, Ref, Role, RoleBinding,
+            Statement, SubmitReceipt, Target, WorldKernel,
+        };
+
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            crate::tests::creation(CommandId::new(), "PatchBeforeAct"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, active) = speech_world(&mut kernel);
+
+        // The patch lands first, before the listener has ever acted.
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![crate::patch::ComponentOp::AcquireKnowledge {
+                subject: Ref::Existing(speech.listener),
+                fact: Ref::Existing(speech.flood),
+                source: AuthoredSource::Witnessed,
+                confidence: Confidence::Believed,
+            }]),
+        );
+        let after_patch = kernel.snapshot().unwrap();
+
+        // Now the listener acts, so its `last_acted_at` moves past the patch.
+        let opportunity = opportunity_for(&after_patch, speech.listener);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        let receipt = kernel
+            .submit(
+                command(
+                    &after_patch,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        opportunity,
+                        invocation: DecisionInvocation {
+                            affordance: speech.whisper,
+                            bindings: vec![RoleBinding {
+                                role: Role("target".into()),
+                                target: Target::Subject(speech.speaker),
+                            }],
+                            proposed: Vec::new(),
+                            speech: Some(Statement::new("I have something to say.").unwrap()),
+                            display: None,
+                        },
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .expect("the whisper commits");
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+        let after_act = kernel.snapshot().unwrap();
+
+        let subject = after_act
+            .subjects
+            .iter()
+            .find(|subject| subject.id == speech.listener)
+            .unwrap()
+            .clone();
+        assert!(subject.last_acted_at.is_some());
+        let opportunity = opportunity_for(&after_act, speech.listener);
+        let granted: Vec<AffordanceSnapshot> = after_act
+            .affordances
+            .iter()
+            .filter(|entry| subject.affordances.contains(&entry.id))
+            .cloned()
+            .collect();
+        let selected = SelectedDecision {
+            snapshot: after_act,
+            subject,
+            opportunity,
+            granted,
+        };
+        let rendered = selected
+            .projector_knowledge()
+            .into_iter()
+            .find(|row| row["text"] == Value::String(FLOOD_STATEMENT.into()))
+            .expect("the flood row is rendered");
+        assert_eq!(rendered["new"], Value::Bool(false));
+    }
+
+    /// PA.f44: `acquired_at` is real committed state, not a snapshot-only
+    /// derivation, so it must survive a journal reopen exactly as
+    /// `minted_at`'s source events do.
+    #[test]
+    fn the_acquisition_revision_survives_replay() {
+        use crate::tests::{auth_principal, operations, owner, speech_world};
+        use crate::{AuthoredSource, Ref, WorldKernel};
+
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            crate::tests::creation(CommandId::new(), "AcquisitionReplay"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, active) = speech_world(&mut kernel);
+        crate::tests::submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![crate::patch::ComponentOp::AcquireKnowledge {
+                subject: Ref::Existing(speech.listener),
+                fact: Ref::Existing(speech.flood),
+                source: AuthoredSource::Witnessed,
+                confidence: Confidence::Believed,
+            }]),
+        );
+        let acquired_at = kernel.state.knowledge[&speech.listener][&speech.flood].acquired_at;
+        let world_id = kernel.state.world_id;
+        drop(kernel);
+
+        let reopened =
+            WorldKernel::open(directory.path().join("world.cc"), world_id).expect("it replays");
+        assert_eq!(
+            reopened.state.knowledge[&speech.listener][&speech.flood].acquired_at,
+            acquired_at
+        );
     }
 
     /// Verification: `turn` refuses any mode but `NarrativePersona`, and
@@ -7936,9 +8184,14 @@ mod tests {
     /// PA-Q2's default plus Cut 6: the stimulus is exactly Cut 0's capture
     /// (session scratchpad `play-cut0/base-stimulus.txt`: one `Told` row, one
     /// `Seen` row, one held fact with no author) with exactly one `"new"`
-    /// field added per row. This subject never acted, so both minted rows are
-    /// new; the third row was never minted by an event at all (no
-    /// `minted_at`), so it carries no arrival time to compare and is not new.
+    /// field added per row. This subject never acted (`last_acted_at` is
+    /// `None`), so every row it holds is new (PA.f44) — including the third,
+    /// which carries no `minted_at` at all (no minting event ever asserted
+    /// it) but still carries `acquired_at`, the field every knowledge writer
+    /// sets. Before PA.f44 that row read `"new": false`: a row with no
+    /// `minted_at` could never be new, which is exactly the bug — a fact
+    /// landed by a patch, a seed, or a ruling would never surface to a
+    /// Persona as new.
     #[test]
     fn the_stimulus_equals_cut_zeros_capture_plus_the_marker() {
         let subject_id = SubjectId::issue();
@@ -7979,6 +8232,7 @@ mod tests {
                         via: None,
                     },
                     minted_at: Some(1),
+                    acquired_at: 1,
                 },
                 KnowledgeSnapshot {
                     fact: EntityId::issue(),
@@ -7987,6 +8241,7 @@ mod tests {
                     confidence: Confidence::Believed,
                     source: KnowledgeSource::Seen { by: speaker_id },
                     minted_at: Some(2),
+                    acquired_at: 2,
                 },
                 KnowledgeSnapshot {
                     fact: EntityId::issue(),
@@ -7995,6 +8250,9 @@ mod tests {
                     confidence: Confidence::Certain,
                     source: KnowledgeSource::Witnessed,
                     minted_at: None,
+                    // No minting event ever asserted this row (declaration-time
+                    // seeding, PA.f44) but it still carries `acquired_at`.
+                    acquired_at: 0,
                 },
             ],
             commitments: Vec::new(),
@@ -8073,7 +8331,7 @@ mod tests {
                 "by": null,
                 "certainty": "certain",
                 "how": "known",
-                "new": false,
+                "new": true,
                 "text": "The rain gate sticks in the cold."
             }
         ]))

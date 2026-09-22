@@ -417,6 +417,12 @@ pub(crate) enum KnowledgeSource {
 pub(crate) struct Knowledge {
     pub(crate) confidence: Confidence,
     pub(crate) source: KnowledgeSource,
+    /// The revision at which this subject acquired this row: witnessed,
+    /// told, shown, or seeded by an author. Written by every writer of this
+    /// map (PA.f44), so the Projector's recency marker can tell a row minted
+    /// with no `minted_at` — a patch, a seed, a ruled fact — from one the
+    /// subject already held before its last act.
+    pub(crate) acquired_at: u64,
 }
 
 /// The source an author may write. `Told` is unrepresentable here: only

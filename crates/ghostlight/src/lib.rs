@@ -1074,6 +1074,10 @@ pub(crate) struct KnowledgeSnapshot {
     /// The revision of the act that minted this claim, spoken or displayed,
     /// when some committed event asserted it.
     pub(crate) minted_at: Option<u64>,
+    /// The revision at which this subject acquired this row, from `Knowledge`
+    /// directly: always present, unlike `minted_at`, so the recency marker can
+    /// see a row a patch, a seed, or a ruling landed with no minting event.
+    pub(crate) acquired_at: u64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -2718,23 +2722,38 @@ fn apply_operation(
                     "knowledge operation names no live subject, or evidences a claim".into(),
                 ));
             }
-            let entry = Knowledge {
-                confidence: *confidence,
-                source: match source {
-                    AuthoredSource::Witnessed => KnowledgeSource::Witnessed,
-                    AuthoredSource::Evidenced => KnowledgeSource::Evidenced,
-                },
+            let source = match source {
+                AuthoredSource::Witnessed => KnowledgeSource::Witnessed,
+                AuthoredSource::Evidenced => KnowledgeSource::Evidenced,
             };
+            // Compared on `confidence` and `source` alone: `acquired_at` is
+            // this write's own revision, not part of what the author asserts,
+            // so a re-assertion identical in everything the author controls
+            // still refuses as a no-op even though it would land a later
+            // `acquired_at`.
             if state
                 .knowledge
                 .get(subject)
                 .and_then(|held| held.get(fact))
-                .is_some_and(|held| *held == entry)
+                .is_some_and(|held| held.confidence == *confidence && held.source == source)
             {
                 return Err(KernelError::Invariant(
                     "knowledge operation changes nothing".into(),
                 ));
             }
+            // Matches `DecisionEvent.revision` and the `minted_at` scan built
+            // from it (`action::exercise`, `snapshot`): both name the revision
+            // this commit resolves to, one past `state.revision` here, which
+            // still holds the *previous* revision until `submit` bumps it.
+            let acquired_at = state
+                .revision
+                .checked_add(1)
+                .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))?;
+            let entry = Knowledge {
+                confidence: *confidence,
+                source,
+                acquired_at,
+            };
             state
                 .knowledge
                 .entry(*subject)
@@ -2773,6 +2792,12 @@ fn apply_operation(
             // An empty fan-out is legal: the delta of a telling is a property of
             // the world — an empty room, a silenced channel — not a defect in
             // the proposal. Speaking alone commits the claim and lands nothing.
+            // `acquired_at` matches `minted_at`: one past `state.revision`, the
+            // revision this commit resolves to (PA.f44).
+            let acquired_at = state
+                .revision
+                .checked_add(1)
+                .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))?;
             for listener in fan_out(state, *speaker, *fact, to) {
                 state.knowledge.entry(listener).or_default().insert(
                     *fact,
@@ -2782,6 +2807,7 @@ fn apply_operation(
                             by: *speaker,
                             via: to.channel(),
                         },
+                        acquired_at,
                     },
                 );
             }
@@ -2804,12 +2830,17 @@ fn apply_operation(
                     "an actor displays from no place".into(),
                 ));
             }
+            let acquired_at = state
+                .revision
+                .checked_add(1)
+                .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))?;
             for viewer in fan_out(state, *actor, *fact, &room) {
                 state.knowledge.entry(viewer).or_default().insert(
                     *fact,
                     Knowledge {
                         confidence: Confidence::Believed,
                         source: KnowledgeSource::Seen { by: *actor },
+                        acquired_at,
                     },
                 );
             }
@@ -2840,12 +2871,17 @@ fn apply_operation(
                     "a witness reaches nobody who does not already hold the fact".into(),
                 ));
             }
+            let acquired_at = state
+                .revision
+                .checked_add(1)
+                .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))?;
             for witness in recipients {
                 state.knowledge.entry(witness).or_default().insert(
                     *fact,
                     Knowledge {
                         confidence: *confidence,
                         source: KnowledgeSource::Witnessed,
+                        acquired_at,
                     },
                 );
             }
@@ -3845,6 +3881,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                         confidence: held.confidence,
                         source: held.source,
                         minted_at: minted_at.get(fact).copied(),
+                        acquired_at: held.acquired_at,
                     })
                 })
                 .collect::<Result<Vec<_>, KernelError>>()?;
@@ -9752,6 +9789,7 @@ mod knowledge_tests {
                     by: speech.speaker,
                     via: None,
                 },
+                acquired_at: active.revision + 1,
             })
         );
         // The yard is inside the hall, but a voice fills a room and not the
@@ -9922,6 +9960,7 @@ mod knowledge_tests {
             Some(Knowledge {
                 confidence: Confidence::Believed,
                 source: KnowledgeSource::Seen { by: speech.speaker },
+                acquired_at: active.revision + 1,
             })
         );
         for blind in [speech.bystander, speech.stranger, speech.speaker] {
@@ -10260,6 +10299,7 @@ mod knowledge_tests {
                     by: speech.speaker,
                     via: Some(speech.horn),
                 },
+                acquired_at: active.revision + 1,
             })
         );
     }
@@ -10779,6 +10819,7 @@ mod soul_knowledge_tests {
                     by: speech.speaker,
                     via: Some(speech.horn),
                 },
+                acquired_at: active.revision + 1,
             })
         );
         // The controller gains no knowledge of its own claim: it is outside
@@ -11051,6 +11092,7 @@ mod soul_knowledge_tests {
                     by: speech.speaker,
                     via: None,
                 },
+                acquired_at: active.revision + 1,
             })
         );
     }
@@ -11504,10 +11546,11 @@ mod witness_tests {
             .copied()
     }
 
-    fn seen(confidence: Confidence) -> Option<Knowledge> {
+    fn seen(confidence: Confidence, acquired_at: u64) -> Option<Knowledge> {
         Some(Knowledge {
             confidence,
             source: KnowledgeSource::Witnessed,
+            acquired_at,
         })
     }
 
@@ -11528,11 +11571,11 @@ mod witness_tests {
         );
         assert_eq!(
             knows(&kernel, world.villager, world.asteroid),
-            seen(Confidence::Believed)
+            seen(Confidence::Believed, active.revision + 1)
         );
         assert_eq!(
             knows(&kernel, world.neighbour, world.asteroid),
-            seen(Confidence::Believed)
+            seen(Confidence::Believed, active.revision + 1)
         );
         assert_eq!(knows(&kernel, world.coaster, world.asteroid), None);
         assert_eq!(knows(&kernel, world.drifter, world.asteroid), None);
@@ -11555,7 +11598,7 @@ mod witness_tests {
         ] {
             assert_eq!(
                 knows(&kernel, subject, world.moon),
-                seen(Confidence::Certain)
+                seen(Confidence::Certain, after.revision + 1)
             );
         }
 
@@ -11586,8 +11629,10 @@ mod witness_tests {
                 by: world.coaster,
                 via: None,
             },
+            acquired_at: 0,
         };
         let mut state = kernel.state.clone();
+        let state_revision = state.revision;
         state
             .knowledge
             .entry(world.villager)
@@ -11609,6 +11654,7 @@ mod witness_tests {
             Knowledge {
                 confidence: Confidence::Certain,
                 source: KnowledgeSource::Witnessed,
+                acquired_at: state_revision + 1,
             }
         );
     }
@@ -11738,7 +11784,7 @@ mod witness_tests {
         );
         assert_eq!(
             knows(&kernel, world.coaster, world.asteroid),
-            seen(Confidence::Certain)
+            seen(Confidence::Certain, seeded.revision + 1)
         );
 
         // The inverse: the coast's only stander leaves before the witness, so
@@ -11831,6 +11877,7 @@ mod witness_tests {
                 site: Site::Operation(0)
             }]
         );
+        let before_admit = kernel.state.revision;
         let admitted = submit(&mut kernel, world.village);
         assert!(
             matches!(admitted, Ok(SubmitReceipt::Applied(_))),
@@ -11838,7 +11885,7 @@ mod witness_tests {
         );
         assert_eq!(
             knows(&kernel, world.villager, world.asteroid),
-            seen(Confidence::Believed)
+            seen(Confidence::Believed, before_admit + 1)
         );
     }
 
@@ -12080,11 +12127,11 @@ mod witness_tests {
         );
         assert_eq!(
             knows(&kernel, world.villager, world.asteroid),
-            seen(Confidence::Believed)
+            seen(Confidence::Believed, active.revision + 1)
         );
         assert_eq!(
             knows(&kernel, world.neighbour, world.asteroid),
-            seen(Confidence::Believed)
+            seen(Confidence::Believed, active.revision + 1)
         );
         assert_eq!(knows(&kernel, world.coaster, world.asteroid), None);
 
@@ -12130,7 +12177,7 @@ mod witness_tests {
         assert_eq!(reopened.state, committed);
         assert_eq!(
             knows(&reopened, world.villager, world.asteroid),
-            seen(Confidence::Certain)
+            seen(Confidence::Certain, active.revision + 1)
         );
     }
 
@@ -12152,6 +12199,7 @@ mod witness_tests {
             Knowledge {
                 confidence: Confidence::Doubted,
                 source: KnowledgeSource::Witnessed,
+                acquired_at: 0,
             },
         );
         for root in [world.hemisphere, world.region, world.village, world.coast] {
@@ -12227,6 +12275,7 @@ mod witness_tests {
         // reach it. Presence is read from `positions` alone: there is no second
         // notion of being somewhere for a placeless subject to fall back on.
         let mut adrift = kernel.state.clone();
+        let adrift_revision = adrift.revision;
         adrift.positions.remove(&world.drifter);
         for root in [
             world.hemisphere,
@@ -12263,6 +12312,7 @@ mod witness_tests {
                 Knowledge {
                     confidence: Confidence::Certain,
                     source: KnowledgeSource::Witnessed,
+                    acquired_at: adrift_revision + 1,
                 }
             );
         }
@@ -12364,6 +12414,7 @@ mod witness_tests {
         // Declared and placed under the witnessed place: the resolver's
         // candidate map carries the draft position, and the apply pass derives
         // the same subject from live state.
+        let before_arrival = kernel.state.revision;
         let receipt = arrival(
             &mut kernel,
             "arrival",
@@ -12383,17 +12434,17 @@ mod witness_tests {
             .0;
         assert_eq!(
             knows(&kernel, arrived, world.asteroid),
-            seen(Confidence::Certain)
+            seen(Confidence::Certain, before_arrival + 1)
         );
-        // The standers who already held it kept their own rows, so the landing
-        // was exactly the draft subject.
+        // The standers who already held it kept their own rows, from the
+        // earlier witness, and this landing did not touch them.
         assert_eq!(
             knows(&kernel, world.villager, world.asteroid),
-            seen(Confidence::Believed)
+            seen(Confidence::Believed, active.revision + 1)
         );
         assert_eq!(
             knows(&kernel, world.neighbour, world.asteroid),
-            seen(Confidence::Believed)
+            seen(Confidence::Believed, active.revision + 1)
         );
     }
 
@@ -12445,12 +12496,12 @@ mod witness_tests {
         assert!(matches!(receipt, SubmitReceipt::Applied(_)), "{receipt:?}");
         assert_eq!(
             knows(&kernel, world.villager, world.asteroid),
-            seen(Confidence::Certain),
+            seen(Confidence::Certain, seeded.revision + 1),
             "the forgotten subject was not re-reached"
         );
         assert_eq!(
             knows(&kernel, world.neighbour, world.asteroid),
-            seen(Confidence::Believed),
+            seen(Confidence::Believed, active.revision + 1),
             "a holder the patch did not touch was overwritten"
         );
     }
