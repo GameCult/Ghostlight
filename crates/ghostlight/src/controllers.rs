@@ -108,6 +108,10 @@ pub enum InferencePurpose {
     /// shape a cell needs do not leak into the singleton path.
     GroupedAgent,
     Elaboration,
+    /// Dungeon's play agent: one model reading the whole world under `Play`
+    /// authority. Distinct from every other purpose so its request identity
+    /// can never collide with a controller lane's.
+    Play,
 }
 
 /// One exact provider request. Keeping the native request visible at this seam
@@ -6605,7 +6609,11 @@ fn role_description(kind: RefKind) -> &'static str {
 /// A catalog tool call lowered to an invocation. A property that will not parse
 /// becomes a `ControllerNeed` through the existing accumulator, never a kernel
 /// round trip.
-fn decode_catalog_call(
+///
+/// `pub(super)` rather than private: the table module reuses this exact
+/// decoder for the play agent's own actor tools (`decode_actor_call`), so
+/// there remains one decoder for one catalog rather than a second copy.
+pub(super) fn decode_catalog_call(
     entry: &AffordanceSnapshot,
     arguments: &str,
 ) -> Result<DecisionInvocation, String> {
@@ -6742,6 +6750,7 @@ fn purpose_name(purpose: InferencePurpose) -> &'static str {
         InferencePurpose::OperationalAgent => "operational",
         InferencePurpose::GroupedAgent => "grouped",
         InferencePurpose::Elaboration => "elaboration",
+        InferencePurpose::Play => "play",
     }
 }
 

@@ -67,6 +67,7 @@ mod local_inference;
 mod mailbox;
 mod patch;
 mod sdk_inference;
+mod table;
 mod tool_schema;
 mod vault;
 
@@ -119,6 +120,7 @@ pub(crate) use patch::{
     EffectSlot, OutcomeBand, Precondition, RoleSpec,
 };
 pub use sdk_inference::{DEFAULT_SDK_MODEL_PREFIX, SdkBinding};
+pub use table::{TableError, actor_tools, authoring_tools, decode_actor_call, decode_authoring_call, describe_refusal, table_view};
 pub use vault::{VaultError, VaultEvidenceSource};
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
 

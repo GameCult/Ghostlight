@@ -18,13 +18,17 @@ use super::controllers::{
 };
 #[cfg(test)]
 use super::patch::RECORD_GAP_PATCH_TOOL;
+#[cfg(test)]
+use super::patch::FactStandingRef;
 use super::lens::{self, Lens};
-use super::patch::{self, ComponentOp, FactStandingRef};
+use super::patch::{self};
 use super::patch::{
     PATCH_TOOLS, PatchToolShape, SUBMIT_PATCH_TOOL, patch_tool_signatures, patch_tools,
 };
+#[cfg(test)]
+use super::Declaration;
 use super::{
-    BoundaryDigest, CausalBoundary, CommandId, Declaration, ElaborationPort, EntityId, EvidenceRef,
+    BoundaryDigest, CausalBoundary, CommandId, ElaborationPort, EntityId, EvidenceRef,
     JurisdictionKey, KernelError, MailboxError, Mismatch, PatchAnswer, ScaleDeficitRow, SeedPort,
     SubjectId, SubjectKind, WorldId, WorldPatch, WorldPhase, WorldSnapshot,
 };
@@ -1079,7 +1083,7 @@ fn render_clock(snapshot: &WorldSnapshot) -> String {
     )
 }
 
-fn render_jurisdiction(snapshot: &WorldSnapshot, jurisdiction: JurisdictionKey) -> String {
+pub(super) fn render_jurisdiction(snapshot: &WorldSnapshot, jurisdiction: JurisdictionKey) -> String {
     match jurisdiction {
         JurisdictionKey::PlaceSubtree(root) => snapshot
             .places
@@ -1322,7 +1326,7 @@ impl ToolResultOracle for ElaborationOracle {
     }
 }
 
-fn apply_tool_call(
+pub(super) fn apply_tool_call(
     name: &str,
     arguments: &str,
     draft: &mut WorldPatch,
@@ -1372,51 +1376,34 @@ fn apply_tool_call(
                 "no detail was given; recorded as a gap, nothing captured".into()
             }
         },
-        PatchToolShape::Declare { variant, fixed } => {
-            let mut value = fields;
-            value.insert("type".into(), Value::String(variant.into()));
-            for (key, fixed_value) in fixed {
-                value.insert((*key).into(), Value::String((*fixed_value).into()));
+        // `decode_authoring_call` is this arm's own decode, factored into the
+        // table module so it has one owner: the same call is what
+        // `table::decode_authoring_call` hands any consumer-neutral caller.
+        // The reason a failure goes back to the model: a bare "recorded as a
+        // gap" taught it nothing, and on the road it re-sent an empty
+        // controller six times and submitted.
+        PatchToolShape::Declare { .. } => match super::table::decode_authoring_call(name, arguments) {
+            Ok(one_item) => {
+                draft.declarations.extend(one_item.declarations);
+                draft.evidence.extend(one_item.evidence);
+                "declaration captured".into()
             }
-            match serde_json::from_value::<Declaration>(Value::Object(value)) {
-                Ok(declaration) => {
-                    if let Declaration::Fact(fact) = &declaration
-                        && let FactStandingRef::Canonical { evidence } = &fact.standing
-                    {
-                        draft.evidence.push(evidence.clone());
-                    }
-                    draft.declarations.push(declaration);
-                    "declaration captured".into()
-                }
-                // The reason goes back to the model: a bare "recorded as a
-                // gap" taught it nothing, and on the road it re-sent an empty
-                // controller six times and submitted.
-                Err(error) => {
-                    gaps.push(tool_decode_need(name, arguments, &error.to_string()));
-                    format!("arguments did not decode ({error}); recorded as a gap, nothing captured")
-                }
+            Err(error) => {
+                gaps.push(tool_decode_need(name, arguments, &error));
+                format!("arguments did not decode ({error}); recorded as a gap, nothing captured")
             }
-        }
-        PatchToolShape::Operate { variant } => {
-            let mut value = fields;
-            value.insert("op".into(), Value::String(variant.into()));
-            match serde_json::from_value::<ComponentOp>(Value::Object(value)) {
-                Ok(operation) => {
-                    if let ComponentOp::Admit { evidence, .. } = &operation {
-                        draft.evidence.push(evidence.clone());
-                    }
-                    draft.operations.push(operation);
-                    "operation captured".into()
-                }
-                // The reason goes back to the model: a bare "recorded as a
-                // gap" taught it nothing, and on the road it re-sent an empty
-                // controller six times and submitted.
-                Err(error) => {
-                    gaps.push(tool_decode_need(name, arguments, &error.to_string()));
-                    format!("arguments did not decode ({error}); recorded as a gap, nothing captured")
-                }
+        },
+        PatchToolShape::Operate { .. } => match super::table::decode_authoring_call(name, arguments) {
+            Ok(one_item) => {
+                draft.operations.extend(one_item.operations);
+                draft.evidence.extend(one_item.evidence);
+                "operation captured".into()
             }
-        }
+            Err(error) => {
+                gaps.push(tool_decode_need(name, arguments, &error));
+                format!("arguments did not decode ({error}); recorded as a gap, nothing captured")
+            }
+        },
     }
 }
 
@@ -2128,7 +2115,7 @@ fn build_seed_prompt(
         JurisdictionKey::PlaceSubtree(root) => format!(
             "Placement: every subject you author must stand at {} [{}] or at a place you declare inside it; a subject standing anywhere else does not count toward this shortfall.\n",
             render_jurisdiction(snapshot, session.jurisdiction),
-            id_text(root)
+            super::table::id_text(root)
         ),
         JurisdictionKey::Uncovered => {
             "Placement: every subject you author must stand at a place no declared root covers.\n".to_owned()
@@ -2141,158 +2128,18 @@ fn build_seed_prompt(
     prompt.push_str(
         "\nA subject qualifies only when it has a controller, at least one affordance grant, and holds a goal commitment. Declare people, institutions, and populations who want something; give each a controller, grants, a position, and a goal. Give them the rest of a life: routines and obligations that recur, counterparties, channels they speak on and who controls them, authority and the offices that lend it, holdings and the dependencies those holdings serve, routes between the places they move through. A goal that nobody can hold the subject to is allowed and expected; the world's elaborator answers that gap later, so do not write it into a promise.\nEvery promise states what is promised, in the promisor's own words. Every person carries material (set_persona_material): a voice, two or three values, a few memories, and a read of each counterparty, all distinct from every other person's; without it the person has no inner life to speak from.\nYou may not declare a human-controlled subject: only the world's first person is human, and that was genesis.\n\n",
     );
-    prompt.push_str(&render_world_structure(snapshot));
+    prompt.push_str(&super::table::render_world_structure(snapshot));
     prompt.push('\n');
     prompt_body(&mut prompt, receipts);
     prompt
 }
 
-fn render_kind(kind: SubjectKind) -> &'static str {
+pub(super) fn render_kind(kind: SubjectKind) -> &'static str {
     match kind {
         SubjectKind::Person => "persons",
         SubjectKind::Institution => "institutions",
         SubjectKind::Population => "populations",
     }
-}
-
-/// The world the session is authoring into, rendered from snapshot fields that
-/// already exist. A renderer beside `render_jurisdiction` and `render_answer`,
-/// and seed-only: widening the Active elaborator's prompt is a behaviour change
-/// to a working lane and belongs to whoever measures it.
-/// The canonical id as the patch vocabulary spells it: the bare UUID text,
-/// without the typed wrapper's name.
-fn id_text(id: impl std::fmt::Debug) -> String {
-    let text = format!("{id:?}");
-    match (text.find('('), text.rfind(')')) {
-        (Some(open), Some(close)) if open < close => text[open + 1..close].to_owned(),
-        _ => text,
-    }
-}
-
-fn render_world_structure(snapshot: &WorldSnapshot) -> String {
-    let place_label = |id: EntityId| {
-        snapshot
-            .places
-            .iter()
-            .find(|entry| entry.id == id)
-            .map_or_else(
-                || "an unnamed place".to_owned(),
-                |entry| entry.label.clone(),
-            )
-    };
-    // Ids are printed beside labels because a patch names an existing thing
-    // by its canonical id and nothing else; a model that sees only labels
-    // can only guess, and the first live seed session guessed six times.
-    let mut out = String::from(
-        "Standing structure (reference an existing thing by the id in brackets, \
-         exactly as printed; reference a thing declared in this patch by its handle):\n",
-    );
-    out.push_str("  Places:");
-    if snapshot.places.is_empty() {
-        out.push_str(" none");
-    }
-    for place in &snapshot.places {
-        match place.container {
-            Some(container) => {
-                out.push_str(&format!(
-                    " {} [{}] (in {});",
-                    place.label,
-                    id_text(place.id),
-                    place_label(container)
-                ));
-            }
-            None => out.push_str(&format!(" {} [{}];", place.label, id_text(place.id))),
-        }
-    }
-    out.push_str("\n  Routes:");
-    if snapshot.routes.is_empty() {
-        out.push_str(" none");
-    }
-    for route in &snapshot.routes {
-        out.push_str(&format!(
-            " {} [{}]: {} -> {}, {:?}, {};",
-            route.label,
-            id_text(route.id),
-            place_label(route.from),
-            place_label(route.to),
-            route.access,
-            if route.open { "open" } else { "closed" }
-        ));
-    }
-    out.push_str("\n  Subjects:");
-    if snapshot.subjects.is_empty() {
-        out.push_str(" none");
-    }
-    for subject in &snapshot.subjects {
-        out.push_str(&format!(
-            " {} [{}] ({:?}, {}, in {}, grants: {}, {});",
-            subject.label,
-            id_text(subject.id),
-            subject.kind,
-            subject
-                .controller_mode
-                .map_or_else(|| "external".to_owned(), |mode| format!("{mode:?}")),
-            subject
-                .position
-                .map_or_else(|| "nowhere".to_owned(), place_label),
-            subject.affordances.len(),
-            if subject.qualified {
-                "counts"
-            } else {
-                "does not count"
-            }
-        ));
-    }
-    out.push_str("\n  Affordances:");
-    if snapshot.affordances.is_empty() {
-        out.push_str(" none");
-    }
-    for affordance in &snapshot.affordances {
-        out.push_str(&format!(
-            " {} [{}], roles: {}, {};",
-            affordance.entry.kind.0,
-            id_text(affordance.id),
-            if affordance.entry.roles.is_empty() {
-                "none".to_owned()
-            } else {
-                affordance
-                    .entry
-                    .roles
-                    .iter()
-                    .map(|role| role.role.0.clone())
-                    .collect::<Vec<_>>()
-                    .join("/")
-            },
-            if affordance.entry.carries_speech {
-                "speech"
-            } else {
-                "silent"
-            }
-        ));
-    }
-    out.push_str("\n  Resources:");
-    if snapshot.resources.is_empty() {
-        out.push_str(" none");
-    }
-    for resource in &snapshot.resources {
-        out.push_str(&format!(" {};", resource.label));
-    }
-    out.push_str("\n  Shortfall rows:");
-    if snapshot.scale_deficit.is_empty() {
-        out.push_str(" none");
-    }
-    for row in &snapshot.scale_deficit {
-        out.push_str(&format!(
-            " {} {}: target {}, qualified {}, short {};",
-            render_jurisdiction(snapshot, row.jurisdiction),
-            render_kind(row.kind),
-            row.target,
-            row.qualified,
-            row.deficit
-        ));
-    }
-    out.push('\n');
-    out
 }
 
 #[cfg(test)]
