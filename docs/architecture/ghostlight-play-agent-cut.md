@@ -2310,6 +2310,81 @@ Interpreter, the elaborator sweep and lenses.
 - **PA.f70 (info):** Dungeon cannot submit the player's act under Play,
   because `PlayPort` has no door for `ExerciseDecision`. This holds by
   construction.
+- **Soul on library fix batch 7a** (Opus, 2026-09-22, against `2035fe8`,
+  Windows).
+  - Verdicts:
+    - **P7.1: FALSIFIED (low)**, by PA.f71.
+    - **P7.2: HOLDS.** A run of calls commits as one patch from outside the
+      crate.
+    - **Invariant 2: HOLDS.** Only `table.rs` reads `WorldSnapshot.facts`
+      and `.channels`, both `pub(crate)`. Rendered subject surfaces carry no
+      unheld fact and no `ruled`.
+    - **Invariant 8: HOLDS** for `describe_refusal_to_actor`, across every
+      `ActionMismatch` and the sampled `KernelError`s.
+    - **PA.f47's split: HOLDS.**
+  - Other checks that held:
+    - Commitment keys parse back exactly.
+    - The view is byte-deterministic.
+    - A one-call batch equals `decode_authoring_call` for every tool.
+  - PA.f71–PA.f75 are fix, in library batch 7c after 7b. PA.f76 is
+    recorded.
+- **PA.f71 (introduced by 7a, low, fix):** `decode_actor_call` falls back to
+  the bare name when the prefix does not match (`table.rs:237`,
+  `strip_prefix(..).unwrap_or(kind)`). So a name `actor_tools` never emits
+  still decodes. **Fix:** with a non-empty prefix, a name that does not
+  carry it is refused.
+- **PA.f72 (introduced by 7a, low, fix):** `precondition_roles`
+  (`table.rs:336-348`) garbles preconditions that bind no role. `NoStanding`,
+  `NoAudience` and an out-of-range index all print "a precondition over role
+  a precondition with no role, which you bound yourself". It also drops the
+  channel role of `CanBroadcast { via: Channel }` and of `CanReach`'s `via`.
+  **Fix:** plain wording for roleless preconditions, the channel role read
+  in both refusal forms, and a test for each.
+- **PA.f73 (introduced by 7a, low-medium, fix):** the agent-facing
+  `describe_refusal` loses detail on its generic path (`table.rs:592-610`).
+  - `UnresolvedDraft` drops the handle and the expected kind.
+  - A `DuplicateHandle` split across two calls names neither call
+    unambiguously.
+  - `EmptyEvidence` is never mapped to a call.
+
+  **Fix:** each names its handle and kind, and its call through the batch
+  map.
+- **PA.f74 (introduced by 7a, low-medium, fix):** the table prints no
+  authority grants, offices, forums, authority-kind names or grievance
+  kinds. `create_commitment`'s `authorized` and `has_standing` checks need
+  them, and so does a new route's `restricted.requires`. The commitment
+  kind is still Rust `Debug` (`table.rs:1270`), and occupants and "known
+  by" are labels only. **Fix:**
+  - Print authority, offices and forums with their ids and kinds.
+  - Print the commitment kind in plain words.
+  - Print ids beside labels in the occupant and "known by" lists.
+  - Keep persona memories and values in their stored order.
+- **PA.f75 (introduced by 7a, medium, fix):** tests don't guard the claims
+  they name.
+  - In `table_view_prints_every_id_the_tools_take`, the pressure and
+    dependency checks pass trivially: the id is printed on the Subjects
+    line, and `contains("0")` always matches.
+  - The test's list still holds `communicate`, so channel printing loses its
+    only check once PA.f61 lands. Pin channels directly.
+  - PA.f57's required test is not written: a precondition over an unheld
+    fact must reveal neither its statement nor its id.
+  - The "every other error" test covers 3 of 33 `KernelError` variants.
+  - Soul's M3 (a batch site mapped to call 0), M4 (the actor form falling
+    back to `Display`), M5 (pressures dropped), M6 (dependencies dropped)
+    and M8 (a commitment index off by one) survived. Each gets a test that
+    kills it.
+- **PA.f76 (introduced by 7a, low, recorded):** PA.f58's "text on a silent
+  entry" refusal sits in the shared `decode_catalog_call`, so the offline
+  operational and grouped lanes are stricter too. A stray `text` there is
+  now a recorded need, not a captured proposal. Strictness is correct for
+  every lane, and no pre-v17 checkpoint exists to diverge. `display: null`
+  is refused.
+- **Carried into 8b (invariant 8):** the actor refusal uses bare role names
+  and no snapshot, so it cannot leak a label. That is safer than the
+  "you are not at the cellar" example: a label resolved against the whole
+  world could name a place the player never perceived. If 8b adds labels,
+  they resolve only against what the subject perceives. `play.rs` switches
+  the refusal line to the actor form.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
