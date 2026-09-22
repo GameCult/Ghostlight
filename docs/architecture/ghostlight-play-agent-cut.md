@@ -876,7 +876,17 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     existing evaluator with calls returned inert (invariant 7).
   - P2.2 The port refuses non-loopback endpoints and sends no credential.
   - P2.3 Each lane routes by its model name to exactly one port.
-- **Landed:** —
+- **Landed:** `182f803` (Hands, Sonnet, 2026-09-22).
+  - Lines: +985 / −34. `local_inference.rs` is 860 lines, the scripted HTTP
+    responder and its tests included, against an estimate of ~180 plus tests.
+  - Lib census: 466 → 473 (472 pass, 1 ignored). A seventh test pins M2.3's
+    fault dispositions, which the list of six did not cover.
+  - The lock gained one line; `reqwest 0.12.28` was already resolved with the
+    same features.
+  - Hands caught its own draft falling back to the connector on a claimed but
+    unconfigured prefix. The existing `soul_routing_refuses_rather_than_falling_back`
+    test and `an_unroutable_model_fails_at_open` caught it.
+- **Verdicts:** pending Soul.
 
 ## Cut 3. The play authority, `Ruled` facts and `Mint` (kernel), schema `consumer.v6`
 
