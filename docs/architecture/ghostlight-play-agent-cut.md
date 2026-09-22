@@ -2740,6 +2740,80 @@ Interpreter, the elaborator sweep and lenses.
   - Untested, reported: the snapshot-failure close site, and the resume
     path's collision check. Neither has an injection point.
   - Dungeon bin 98 → 113, lib 622, persona-projection 30 → 32.
+- **Soul on 8a-fix3** (Opus, 2026-09-22, against `3b156c0`, Windows).
+  Dungeon bin 113, lib 622 and persona-projection 32, all as reported.
+  - Held: PA.f99 at all three doors (the hook reads committed state, since
+    the observation flips at each door), PA.f100, PA.f101, PA.f102,
+    PA.f103's narrate site, PA.f104, PA.f106, PA.f107, PA.f108, PA.f110,
+    PA.f111, PA.f61, PA.f54, S1, S2, and the dispatch parser's own
+    strictness (brackets, padding, case, duplicates, the player's own id,
+    and a subject with no live opportunity).
+  - Triage: PA.f113 to PA.f124 are fix, in 8a-fix4.
+- **PA.f113 (8a-fix3, high, fix):** nothing ties `dispatch` to what
+  `table_view` prints. The id spelling has four copies, because the
+  library's `id_text` is `pub(super)`. Changing what `table_view` prints
+  passes all 735 tests while every dispatch an agent could make is
+  refused.
+  - **Ruling (Self, under the standing go):** the library owns the id
+    spelling. `table.rs` exposes the one printer and its parser publicly,
+    `table_view` prints through it, and Dungeon's `full_id_text` and the
+    test copy are deleted. The dispatch test reads the id out of a real
+    `table_view` (`bracketed_id_after`, which the file already has).
+- **PA.f114 (8a-fix3, medium, fix):** `parse_dispatch` drops non-string
+  entries, a malformed body and a missing `subjects` key in silence, which
+  is what `PLAY_INSTRUCTIONS` promises it will not do. **Fix:** each is
+  refused, quoting what was given.
+- **PA.f115 (pre-existing, medium, fix):** deleting `span_is_exact`'s
+  `actor.subject` filter passes everything, so one Persona could speak
+  another's prose verbatim. That is invariant 4. **Fix:** a test with two
+  dispatched Personas.
+- **PA.f116 (8a-fix3, medium, fix):** PA.f109's assertion passes
+  trivially, because the ledger holds one archived entry. **Fix:** a third
+  closed turn, so the matched entry is not the front one.
+- **PA.f117 (8a-fix3, low-medium, fix):** `KeyLedger::contains` lost its
+  production caller and survives only through the eviction test. **Fix:**
+  delete it and test eviction through `turn_id_for`. Also narrow
+  `#[allow(dead_code)]` on `mod play` in `main.rs` so it stops hiding the
+  whole module; 8b wires the module and removes it.
+- **PA.f118 (8a-fix3, low-medium, fix):** the resume path's collision check
+  duplicates `round_tools`' check verbatim, which is two owners for one
+  rule, and deleting it changes nothing. **Fix:** one helper called at both
+  sites, reached by a test through PA.f119's trigger.
+- **PA.f119 (8a-fix3, low, fix):** the in-code claim that a snapshot
+  failure cannot be forced is false. `play_world` discards `WorldMailbox`'s
+  `JoinHandle` as `_owner`; keeping it and calling `.abort()` makes
+  `snapshot()` fail deterministically. **Fix:** keep the handle in the
+  fixture, test both snapshot-failure sites, and delete the claim.
+- **PA.f120 (8a-fix3, low, fix in its owner):** `locate` is O(boundaries x
+  quote), not linear: 528k against a 264k quote takes 1.73 s in debug. The
+  new guard uses a single-word source, which has two boundaries, so it
+  guards nothing.
+  - **Fix:**
+    - Compare the first byte before `starts_with`.
+    - Keep the boundaries in one sorted `Vec` and binary-search the end,
+      instead of allocating a `HashSet` per call.
+    - The guard test uses a many-boundary source with a long quote.
+    - The doc states the real bound and drops the stale reference to the
+      "repeated-find shape below".
+  - The bound is accepted: a quote is a span of the prose that was just
+    produced.
+- **PA.f121 (pre-existing, low, fix):** two `locate` rules have no test.
+  Reversing the boundary walk returns the last candidate rather than the
+  leftmost, and removing the empty-quote guard locates `0..0`.
+- **PA.f122 (8a-fix3, low, fix):** `skip_retry_delay_in_test` is a `cfg`
+  switch, so production's `retry_delay` path is never the tested one.
+  **Fix:** the delay becomes an ordinary field with a production default
+  that tests set to zero, so both run the same code.
+  `before_submit_hook` stays `#[cfg(test)]`, with a comment saying why.
+- **PA.f123 (pre-existing, low, fix):** `execute_dispatch` is the only call
+  kind that does not persist at its own site, so a crash re-infers Persona
+  prose, and an actor call already checked against the old prose would be
+  checked against new prose on resume. **Fix:** persist the recorded prose
+  as soon as a Persona turn produces it. `PersonaLane::turn` writes
+  nothing, so PA.f99's three submit doors stay the right set.
+- **PA.f124 (8a-fix3, very low, fix):** `execute_dispatch`'s summaries
+  print `{subject:?}`, a fifth id spelling. **Fix:** print through the
+  library's printer.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
