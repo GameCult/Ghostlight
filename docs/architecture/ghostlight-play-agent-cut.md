@@ -1137,7 +1137,30 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     - The external consumer-document `Mint` refusal was not written, because
       the receipt's outcome is `pub(crate)`. The consumer row of
       `no_one_else_may_mint` covers the refusal internally.
-- **Verdicts:** pending Soul.
+- **Verdicts** (Soul, Opus, 2026-09-22, against `4c4973b`, Windows; the
+  first attempt died on a server error):
+
+  | Promise | Verdict | Note |
+  |---|---|---|
+  | P3.1 | HOLDS | M3.1 killed |
+  | P3.2 | HOLDS in code; UNPROVEN by tests | Genesis ungated (PA.f26). Owner at apply, op index > 0 and a second fact untested (PA.f27) |
+  | P3.3 | HOLDS | By diff inspection; the four-caller table is missing (PA.f29) |
+  | P3.4 | HOLDS | Soul's Projector probe: a witnessed ruled fact renders `known`, `by: null`; the non-witness does not see it |
+  | P3.5 | HOLDS | Overflow at `u64::MAX` refused, zero refused, u128 world totals, replay equal |
+  | P3.6 | HOLDS | MS5 killed |
+
+  Soul's mutations:
+
+  - MS1 (Draft pass), MS5 and MS6 (exempt elaborators) were killed.
+  - MS2 (exempt `Principal` at apply) and MS3 (first op only) survived
+    Hands' suite; Soul's probes kill them.
+  - MS4 (first ruled fact only) survived every test.
+
+  `require_ruler` is load-bearing for confined authors too. Under MS6 an
+  elaborator's `Mint` passes, because confinement has no `Mint` veto.
+- **Soul findings, triaged:** PA.f26, PA.f27 and PA.f29 are fix, as one
+  batch after Cuts 4–5 land, together with PA.f23 and PA.f24. PA.f28 is
+  defaulted and recorded.
 
 ## Cut 4. Retirement (kernel)
 
@@ -1593,6 +1616,44 @@ Interpreter, the elaborator sweep and lenses.
   variables with no drop guard. A panic between them would leak the
   variable into the rest of the test binary and poison `client_build_lock`.
   Nothing between them can panic today.
+- **PA.f26 (introduced by Cut 3, low, fix):** the genesis lane never runs
+  `require_ruler`. `prepare_creation` (`lib.rs:1347`) and
+  `WorldState::genesis` (`lib.rs:1885-1898`) admit the creation patch without
+  it. Soul created a world whose genesis patch held a `Ruled` fact, and it
+  replayed. Production can't reach this today, because
+  `mailbox.rs:160-195` builds genesis from labels only. The fix: call
+  `require_ruler` with the owner as caller in both places, and add a test
+  that fails under their removal. After the fix, every lane that admits a
+  patch shares the one author rule.
+- **PA.f27 (introduced by Cut 3, medium, fix):** test gaps in the author
+  rule. Each needs a test:
+  - the owner at apply time (MS2 survived: a forged owner `PatchAdmitted`
+    carrying a `Ruled` fact);
+  - a `Mint` at op index > 0 (MS3 survived);
+  - a patch with two `Ruled` facts where only the second is checked (MS4
+    survived every test).
+- **PA.f28 (introduced by Cut 3, medium, defaulted and recorded):** `PlayPort::new(WorldMailbox)`
+  and `submit_patch` are `pub`, so `PlayPort` is sealed by convention (one
+  construction site in Dungeon), not by type. Soul raised it for the
+  operator. Self defaulted it under the standing go. This is the recorded
+  rule on proportionate forks: a fork that guards only against the project's
+  own code gets a default and a follow-up. The reasoning:
+  - Holding a `WorldMailbox` already means being the consumer that runs the
+    world.
+  - L0's sealing ruling concerns forgeries from untrusted input, and no
+    untrusted input reaches `PlayPort`. `CallerId` and `SystemCapability`
+    are private, and inside `src` only `mailbox.rs` builds `Play`.
+
+  Follow-up: if a second consumer shares a process with Dungeon, `PlayPort`
+  gets a constructor gated by the consumer.
+- **PA.f29 (introduced by Cut 3, low, fix):** two promised tests are
+  missing.
+  - `the_evidence_gate_is_unchanged_for_every_author` covers `Play` only, not
+    the four other callers the spec lists.
+  - The external consumer-document `Mint` refusal is absent from
+    `external_admission.rs`. Its receipt outcome is `pub(crate)`, so the
+    refusal is tested inside the crate through the document decode path
+    (`admit_document`), not only through the fixture caller.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
