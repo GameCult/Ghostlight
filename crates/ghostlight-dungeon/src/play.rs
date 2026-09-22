@@ -958,14 +958,14 @@ impl PlayTable {
     ) -> Result<Vec<CodexToolDefinition>, String> {
         let mut tools = authoring_tools(PLAY_TOOLS).map_err(|error| error.to_string())?;
         tools.extend(control_tools());
-        // PA.f97: a handle collision anywhere in the snapshot's own subjects
-        // is a turn fault — `parse_dispatch` and `resolve_handle` both match
-        // by handle against every subject the snapshot carries, not only the
-        // ones this round happens to offer tools for.
-        if let Some(handle) = find_handle_collision(snapshot.subjects.iter().map(|row| (handle_for(row.id), row.id))) {
-            return Err(format!(
-                "two subjects share the handle `{handle}`; the play table cannot address them safely"
-            ));
+        // PA.f97, PA.f118: a handle collision anywhere in the snapshot's own
+        // subjects is a turn fault — `parse_dispatch` and `resolve_handle`
+        // both match by handle against every subject the snapshot carries,
+        // not only the ones this round happens to offer tools for. Shared
+        // with `execute_round`'s own resume-path check through
+        // `collision_refusal`, the one owner of the rule.
+        if let Some(refusal) = collision_refusal(snapshot) {
+            return Err(refusal);
         }
         let Some(player) = player_subject(snapshot) else {
             return Ok(tools);
@@ -989,18 +989,17 @@ impl PlayTable {
         principal: &VerifiedPrincipalEvidence,
     ) -> Result<RoundOutcome, PlayError> {
         let output = turn.rounds[round].clone();
-        // PA.f103: this door's own `close_with_fault` still calls `persist`
-        // under the hood, so a store/persist failure right here has no lower
-        // layer left to record it in — it propagates through the `?` on
-        // `close_with_fault`'s own `Result` instead of being written into
+        // PA.f103, PA.f118: this door's own `close_with_fault` still calls
+        // `persist` under the hood, so a store/persist failure right here has
+        // no lower layer left to record it in — it propagates through the `?`
+        // on `close_with_fault`'s own `Result` instead of being written into
         // the turn, which is exactly the failure that would need writing.
-        // No deterministic, in-process way to force `self.play.snapshot()`
-        // itself to fail exists in this crate's own test harness — it fails
-        // only when the world mailbox's own background actor is gone, which
-        // no fixture here tears down independently of the `WorldMailbox` the
-        // whole test depends on — so this site is reported, not covered by
-        // a test, and stays on this one shared helper rather than growing
-        // its own bespoke handling.
+        // `self.play.snapshot()` failing here *is* covered, by
+        // `a_snapshot_failure_mid_round_closes_with_the_fault_recorded`
+        // below: the fixture keeps `WorldFixture`'s own mailbox owner task
+        // instead of discarding it, then `.abort()`s it, which drops the
+        // owner's own channel receiver and makes every later mailbox call
+        // resolve `MailboxError::Unavailable` deterministically.
         let snapshot = match self.play.snapshot().await {
             Ok(snapshot) => snapshot,
             Err(error) => {
@@ -1008,19 +1007,16 @@ impl PlayTable {
                 return Ok(RoundOutcome::Closed);
             }
         };
-        // PA.f105: the same handle-collision check `round_tools` runs before
-        // inference must also run here — a round resumed after a crash
-        // executes its already-decided calls through this door directly,
-        // never through `round_tools` at all, so a collision that appeared
-        // in the snapshot since the round was first inferred must still
-        // refuse the whole round as a turn fault rather than resolving calls
-        // against a handle that no longer names one subject unambiguously.
-        if let Some(handle) =
-            find_handle_collision(snapshot.subjects.iter().map(|row| (handle_for(row.id), row.id)))
-        {
-            let detail = format!(
-                "two subjects share the handle `{handle}`; the play table cannot address them safely"
-            );
+        // PA.f105, PA.f118: the same handle-collision check `round_tools`
+        // runs before inference must also run here — a round resumed after a
+        // crash executes its already-decided calls through this door
+        // directly, never through `round_tools` at all, so a collision that
+        // appeared in the snapshot since the round was first inferred must
+        // still refuse the whole round as a turn fault rather than resolving
+        // calls against a handle that no longer names one subject
+        // unambiguously. Shared with `round_tools` through
+        // `collision_refusal`, the one owner of the rule.
+        if let Some(detail) = collision_refusal(&snapshot) {
             self.close_with_fault(turn, detail).await?;
             return Ok(RoundOutcome::Closed);
         }
@@ -1641,6 +1637,20 @@ fn find_handle_collision(handles: impl Iterator<Item = (String, SubjectId)>) -> 
     None
 }
 
+/// The one collision-refusal rule `round_tools` (before inference offers
+/// tools) and `execute_round` (resuming an already-decided round, which
+/// never calls `round_tools` at all) both must enforce (PA.f97, PA.f105,
+/// PA.f118): a handle collision anywhere in the snapshot's own subjects,
+/// found by `find_handle_collision` over every subject the snapshot
+/// carries, is a turn fault regardless of which subjects this round happens
+/// to offer tools for. One shared owner so the two sites cannot drift the
+/// way a verbatim copy invites.
+fn collision_refusal(snapshot: &WorldSnapshot) -> Option<String> {
+    find_handle_collision(snapshot.subjects.iter().map(|row| (handle_for(row.id), row.id))).map(|handle| {
+        format!("two subjects share the handle `{handle}`; the play table cannot address them safely")
+    })
+}
+
 /// The tool-name prefix one subject's own actor tools carry: exactly what
 /// `round_tools` hands `actor_tools` to generate them, and what
 /// `execute_actor_call` hands `decode_actor_call` to parse them back — one
@@ -1954,6 +1964,7 @@ mod tests {
         collections::{BTreeMap, VecDeque},
         sync::Mutex as StdMutex,
     };
+    use tokio::task::JoinHandle;
 
     /// Every `.rs` file under `src`, with everything a `#[cfg(test)]` item
     /// removed, the same extent-by-indent scan `app_session.rs`'s own
@@ -2126,6 +2137,15 @@ mod tests {
         _directory: tempfile::TempDir,
         world: WorldMailbox,
         principal: VerifiedPrincipalEvidence,
+        /// The mailbox's own background owner task (PA.f118): kept, not
+        /// discarded, so a test that needs `self.play.snapshot()` (or any
+        /// other mailbox call) to fail deterministically can `.abort()` it —
+        /// aborting drops the task's own channel receiver, so every request
+        /// already queued or sent afterward resolves `MailboxError::Unavailable`
+        /// rather than hanging or silently succeeding. Unused by a test that
+        /// never aborts it, which is most of them.
+        #[allow(dead_code)]
+        owner: JoinHandle<()>,
     }
 
     /// A genesis world, activated: one Human "first-person" subject and,
@@ -2136,7 +2156,7 @@ mod tests {
     /// private typed vocabulary.
     async fn play_world(persona_label: Option<&str>, account_hash: &str) -> WorldFixture {
         let directory = tempfile::tempdir().unwrap();
-        let (world, _owner) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let (world, owner) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
         let principal = VerifiedPrincipalEvidence::new(account_hash, far_future());
         let receipt = world
             .create(
@@ -2185,6 +2205,7 @@ mod tests {
             _directory: directory,
             world,
             principal,
+            owner,
         }
     }
 
@@ -3433,6 +3454,285 @@ mod tests {
             .and_then(|call| call.result.clone())
             .unwrap();
         assert_eq!(result, "applied", "a resubmitted actor call must resolve to AlreadyApplied, not a fresh refusal: {result}");
+    }
+
+    /// PA.f118: `execute_round`'s own `self.play.snapshot()` failing was
+    /// reported as untested because no fixture tore the world mailbox down
+    /// independently of the `WorldMailbox` the whole test depends on —
+    /// false: `WorldFixture` keeps its own mailbox owner task rather than
+    /// discarding it, and `.abort()`ing it drops the owner's own channel
+    /// receiver, so the very next mailbox call resolves
+    /// `MailboxError::Unavailable` deterministically. A round is left
+    /// unresolved as if the process had crashed mid-round; resuming it with
+    /// the mailbox owner aborted must close the turn with the fault
+    /// recorded rather than propagate the error out of `run` unhandled.
+    /// Mutation: turning the match arm back into a bare
+    /// `self.play.snapshot().await?` makes `run` return `Err` instead of
+    /// `Ok` with the fault recorded, failing this.
+    #[tokio::test]
+    async fn a_snapshot_failure_mid_round_closes_with_the_fault_recorded() {
+        let fixture = play_world(None, "player-round-snapshot-fault").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        let turn_id = test_turn_id(910);
+
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+
+        let call_id = "c0".to_owned();
+        let round = output("r0", vec![call_event(&call_id, END_TURN_TOOL, serde_json::json!({}))]);
+        let crashed_turn = PlayTurn {
+            turn_id: turn_id.clone(),
+            applied_keys: Vec::new(),
+            opening_prompt: "Opening.".into(),
+            player_prose: vec!["Who's there?".into()],
+            rounds: vec![round],
+            calls: vec![CallRecord {
+                call_id,
+                round: 0,
+                slot: 0,
+                body: None,
+                result: None,
+            }],
+            persona_turns: Vec::new(),
+            question: None,
+            refusal: None,
+            narration: None,
+            fault: None,
+            state: PlayTurnState::Running,
+        };
+        table.store.lock().await.commit(crashed_turn).unwrap();
+
+        // The very next mailbox call — the `self.play.snapshot()`
+        // `execute_round` makes to resolve the unresolved round above —
+        // fails deterministically once the owner task is gone.
+        fixture.owner.abort();
+
+        let outcome = table.run(&fixture.principal, turn_id, String::new().into()).await.unwrap();
+        assert_eq!(outcome, RunOutcome::Ran);
+
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        assert!(
+            turn.fault.is_some(),
+            "a snapshot failure mid-round must close the turn with the fault recorded, not propagate: {:?}",
+            turn.fault
+        );
+        assert_eq!(turn.state, PlayTurnState::Closed);
+    }
+
+    /// A persona port wrapping `ScriptedPort` that aborts a world mailbox's
+    /// own owner task the moment its *first* `infer` call completes (PA.f118,
+    /// PA.f119): aborting only ever kills *future* mailbox calls — the
+    /// persona lane's own inference calls never touch `self.play` at all —
+    /// so a first dispatched subject's own Persona turn (two `infer` calls,
+    /// projector then persona) still finishes normally, and only a *second*
+    /// dispatched subject's own `execute_dispatch`-internal
+    /// `self.play.snapshot()` call, made after the first subject's turn
+    /// completes, is guaranteed to observe the aborted owner. Gives
+    /// deterministic, in-process control over exactly when the mailbox goes
+    /// down mid-dispatch, without timing races.
+    struct AbortAfterFirstPort {
+        inner: Arc<ScriptedPort>,
+        owner: StdMutex<Option<JoinHandle<()>>>,
+    }
+
+    impl AbortAfterFirstPort {
+        fn new(inner: Arc<ScriptedPort>, owner: JoinHandle<()>) -> Arc<Self> {
+            Arc::new(Self {
+                inner,
+                owner: StdMutex::new(Some(owner)),
+            })
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl InferencePort for AbortAfterFirstPort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            self.inner.prepare(request)
+        }
+
+        async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
+            let result = self.inner.infer(request).await;
+            if let Some(owner) = self.owner.lock().unwrap().take() {
+                owner.abort();
+            }
+            result
+        }
+    }
+
+    /// PA.f118, PA.f119: the same failure as
+    /// `a_snapshot_failure_mid_round_closes_with_the_fault_recorded`, at
+    /// `execute_dispatch`'s own separate `self.play.snapshot()` call site.
+    /// Mara and Borin are dispatched together in one call; the persona port
+    /// aborts the world mailbox's own owner task right after Mara's first
+    /// inference call, so her own dispatch still completes, and Borin's own
+    /// `execute_dispatch`-internal snapshot then fails deterministically.
+    /// Mutation: turning that match arm back into a bare
+    /// `self.play.snapshot().await?` makes `run` return `Err` instead of
+    /// `Ok` with the fault recorded and Mara's own successful dispatch
+    /// discarded, failing this.
+    #[tokio::test]
+    async fn a_snapshot_failure_mid_dispatch_closes_with_the_fault_recorded() {
+        let fixture = play_world(Some("Mara"), "player-dispatch-snapshot-fault").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let mara = persona_id(&snapshot);
+        let affordance_id = bracketed_id_after(&table_view(&snapshot), "speak [");
+
+        // A second Persona subject, declared through the play table's own
+        // authoring door — the same mechanism
+        // `a_persona_cannot_speak_another_dispatched_personas_exact_quote` uses.
+        let declare = output(
+            "r0",
+            vec![
+                call_event(
+                    "c0",
+                    "declare_subject",
+                    serde_json::json!({
+                        "handle": "borin",
+                        "label": "Borin",
+                        "kind": "person",
+                        "controller": {"type": "narrative_persona"},
+                        "affordances": [{"ref": "existing", "value": affordance_id}],
+                        "position": null,
+                    }),
+                ),
+                call_event("c1", END_TURN_TOOL, serde_json::json!({})),
+            ],
+        );
+        let directory = tempfile::tempdir().unwrap();
+        {
+            let personas = PersonaLane::new(
+                ControllerPort::new(fixture.world.clone()),
+                ScriptedPort::new(vec![output("proj-declare", vec![text_event("Quiet.")])]),
+                "gpt-5.6-sol".into(),
+                "gpt-5.6-sol".into(),
+            )
+            .unwrap();
+            let table = PlayTable::new(
+                fixture.world.clone(),
+                personas,
+                ScriptedPort::new(vec![declare]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(2)),
+                directory.path().join("declare-turn-v1.cc"),
+            )
+            .unwrap();
+            table
+                .run(&fixture.principal, test_turn_id(913), "Introduce Borin.".into())
+                .await
+                .unwrap();
+        }
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let borin = snapshot.subjects.iter().find(|row| row.label == "Borin").unwrap().id;
+        let mara_text = subject_id_text(&snapshot, mara);
+        let borin_text = subject_id_text(&snapshot, borin);
+
+        let dispatch_round = output(
+            "r0",
+            vec![call_event(
+                "c0",
+                DISPATCH_TOOL,
+                serde_json::json!({"subjects": [mara_text, borin_text]}),
+            )],
+        );
+        let scripted = ScriptedPort::new(vec![
+            output("proj-mara", vec![text_event("Mara considers the player.")]),
+            output("persona-mara", vec![text_event("Mara nods once.")]),
+        ]);
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            AbortAfterFirstPort::new(scripted, fixture.owner),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![dispatch_round]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+
+        let outcome = table
+            .run(&fixture.principal, test_turn_id(914), "Who's there?".into())
+            .await
+            .unwrap();
+        assert_eq!(outcome, RunOutcome::Ran);
+
+        let stored = table.store.lock().await;
+        let turn = stored.current().unwrap();
+        assert!(
+            turn.fault.is_some(),
+            "a snapshot failure mid-dispatch must close the turn with the fault recorded, not propagate: {:?}",
+            turn.fault
+        );
+        assert_eq!(turn.state, PlayTurnState::Closed);
+        assert!(
+            turn.persona_turns.iter().any(|(id, _)| *id == mara),
+            "Mara's own dispatch, already snapshot-successful before the abort, must still be recorded"
+        );
+        assert!(
+            !turn.persona_turns.iter().any(|(id, _)| *id == borin),
+            "Borin's own dispatch must never have started"
+        );
+    }
+
+    /// PA.f118, PA.f119: `round_tools`' own handle-collision check and
+    /// `execute_round`'s resume-path copy now share one owner,
+    /// `collision_refusal`, deleting either call site is a real regression.
+    /// `execute_round`'s own copy cannot be reached with a *genuine*
+    /// two-real-subject collision the way
+    /// `round_tools_refuses_a_genuine_handle_collision_between_two_real_subjects`
+    /// reaches `round_tools`': that test forges a colliding id by
+    /// deserializing crafted text into a real `SubjectId` and splicing it
+    /// into a *local* snapshot copy, which works only because `round_tools`
+    /// takes the snapshot as a caller-supplied argument. `execute_round`
+    /// takes no snapshot argument — it always re-fetches a fresh one from
+    /// the live kernel through `self.play.snapshot()` — and `SubjectId` is
+    /// only ever minted as a random `Uuid::new_v4()` (`lib.rs`), with no
+    /// public door to make the kernel commit two subjects whose first 8 hex
+    /// digits collide. A source-presence check, the same shape
+    /// `soul_exactly_one_production_site_mints_play_port` above already
+    /// uses for a structural invariant behaviour cannot observe directly,
+    /// stands in until a real seam exists to inject a forged snapshot into
+    /// `execute_round`. Mutation: deleting either call site drops the count
+    /// below 2, failing this.
+    #[test]
+    fn soul_execute_round_and_round_tools_share_the_collision_refusal_call() {
+        let mut call_sites = 0;
+        for (path, source) in production_sources() {
+            if !path.to_string_lossy().ends_with("play.rs") {
+                continue;
+            }
+            for line in source.lines() {
+                if line.trim_start().starts_with("fn collision_refusal") {
+                    continue;
+                }
+                call_sites += line.matches("collision_refusal(").count();
+            }
+        }
+        assert_eq!(
+            call_sites, 2,
+            "round_tools and execute_round must each call collision_refusal exactly once"
+        );
     }
 
     #[tokio::test]
