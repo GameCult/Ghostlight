@@ -1600,6 +1600,34 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   - **PA.f138.** The rewritten HTTP journey test observes the play table,
     not just an `accepted` response. A `world.play` that never reaches the
     table must fail it.
+- **Fork raised by Hands and ruled (Self, under the standing go,
+  2026-09-22): the play row's counter.** The cut asked
+  `surface_version` to move with "the row's own counter", and the row has
+  none. Hands checked whether one could be derived from existing fields and
+  found that it cannot: a refusal sets `turn.refusal` after that call's
+  record already exists, so `calls.len()`, `rounds.len()`,
+  `question.is_some()` and `narration.is_some()` are all unchanged on
+  exactly the write invariant 8 cares most about.
+  - `PlayTurnStoreState` carries a persisted `revision: u64`, incremented
+    once per committed write in `PlayTurnStore::commit`.
+  - It never resets, not on a new turn and not on a restart. An
+    in-memory counter is refused: it would reset on restart, and an SSE
+    client that reconnects would see the version go backwards and miss a
+    change.
+  - `PlayTurnView` carries it, so `eve.rs` reads it through
+    `current_turn_view()` and nothing outside `PlayTable` touches the row.
+  - `surface_version` moves when either the world's revision or the play
+    row's moves.
+  - The store has never been deployed, so no row lacks the field. It stays
+    `play-turn-v1`, the field is declared with no `#[serde(default)]`, and
+    the canonical re-encode check stays strict (PA.f95).
+  - The test is the case that drove the fork: a refusal must move the
+    revision and the surface version even though nothing else about the
+    row changes.
+- **The card's projection.** `WorldSnapshot.facts` is `pub(crate)` so that
+  only `table_view` renders it, and `table_view` is the agent's omniscient
+  view. The card shows the world summary's safe fields plus the turn view's
+  narration, question and refusal. No operator log, no facts, no ids.
 - **Promises:** P9.1 Nothing shown is world truth unless committed, except the
   question and the refusal of the player's own act (invariant 8 with Q13 A).
 - **Landed:** —
