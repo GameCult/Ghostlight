@@ -1094,7 +1094,27 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     is `Canonical`, and the Projector renders it as known.
   - P3.5 Minted quantity balances the ledger, and replay reproduces it.
   - P3.6 `Play` cannot act in Draft, approve, activate, exercise or decline.
-- **Landed:** —
+- **Landed:** `4c4973b` (Hands, Sonnet, 2026-09-22). It was amended and
+  force-pushed over its own first push `9fbdde8`, and no other commit was
+  lost. Future Hands briefs forbid amending and force-pushing.
+  - Lines: +993 / −19.
+  - Census: lib 473 → 488 (487 pass, 1 ignored); external_admission 12 → 13;
+    doc 10; Dungeon bin 48.
+  - The regenerated fixture is the only fixture change.
+  - M3.1–M3.9 were all killed, and two needed test corrections:
+    - M3.5: `confine_to_ground`'s redundant `Ruled` arm masked a dropped
+      apply-time `require_ruler` for a `Ruled` fact. The test forges a `Mint`
+      effect instead.
+    - M3.9: `require_owner` independently refuses `Play` activation, so the
+      pipeline could not observe the mutation. A unit assertion on
+      `require_system_capability` was added.
+  - Not done as specified:
+    - The Projector-stimulus half of P3.4 is untested; only the snapshot's
+      `Canonical` view is asserted.
+    - The external consumer-document `Mint` refusal was not written, because
+      the receipt's outcome is `pub(crate)`. The consumer row of
+      `no_one_else_may_mint` covers the refusal internally.
+- **Verdicts:** pending Soul.
 
 ## Cut 4. Retirement (kernel)
 
