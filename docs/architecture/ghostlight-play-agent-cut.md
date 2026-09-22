@@ -1476,6 +1476,49 @@ Interpreter, the elaborator sweep and lenses.
   - `docs/architecture/ghostlight-stock-lenses.md:61` (Dungeon's elaboration
     pool).
   - The handoff line about concurrent elaboration under Dungeon's ceiling.
+- **PA.f16 (introduced by Cut 2, high, fix):** `local_inference.rs:130-133`.
+  `reqwest::Client::builder()` keeps the environment proxy. With `HTTP_PROXY`
+  set, the whole request went to the proxy, and a proxy URL carrying userinfo
+  added `proxy-authorization`: a credential, from the environment, sent by
+  Ghostlight. The fix is `.no_proxy()`, plus a test that sets a proxy variable
+  and asserts that the endpoint is hit directly.
+- **PA.f17 (introduced by Cut 2, medium, fix):** redirects are followed and
+  the body is re-POSTed; Soul's probe saw a 307 carry the prompt to another
+  port. The fix is `redirect::Policy::none()`, with a 3xx as a fault, and a
+  test.
+- **PA.f18 (introduced by Cut 2, medium, fix):** `local_inference.rs:77-78`.
+  An explicit `"tool_calls": null` fails to decode and becomes
+  `IntegrityViolation`, which quarantines the lane. A missing `id` does the
+  same. The fix is to accept null and absent for both, where the reply's
+  shape allows it.
+- **PA.f19 (introduced by Cut 2, low-medium, fix):** an empty local or SDK
+  prefix matches every model and silently takes the connector's lanes. Open
+  must refuse an empty prefix. Duplicate call ids in one reply pass the port
+  and the evaluator. Because the port owns the reply's integrity, the port
+  refuses them as `integrity_violation`. The SDK and connector ports are
+  outside this fix, as recorded under PA.f21.
+- **PA.f20 (introduced by Cut 2, low, fix):** duplication and placement.
+  - `local_inference.rs:103-113` copies `call_id_is_valid` and
+    `tool_name_is_valid` from `sdk_inference.rs:579-590`; hoist one copy.
+  - Fold `two_tool_call_reply` into `tool_call_reply`.
+  - The loopback check lives in `open_local_port`, not in the port's
+    constructor, and the constructor's doc claims the opposite. Move the check
+    into the constructor so it holds by construction.
+  - A request with no tools must omit `tools` and `parallel_tool_calls`
+    instead of sending an empty array.
+- **PA.f21 (introduced by Cut 2, low, recorded):**
+  - The receipt binds identity, `response_id`, finish reason and usage, not
+    the returned events. That is the SDK receipt's shape, as specified.
+  - `provider_request_sha256` hashes the prepared request, not the lowered
+    body that is actually sent.
+  - Duplicate call ids are unchecked in the SDK and connector ports.
+- **PA.f22 (introduced by Cut 2, low, fix):** tests are missing for
+  lowering. Each of the following survived a mutation, and each gets a test
+  that fails under it:
+  - the tool declarations sent (S2);
+  - the stripped `model` (S3);
+  - the foreign-caller and expiry gates in `infer` (S4);
+  - the receipt digest, which must change with `response_id` (S6).
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
