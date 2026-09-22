@@ -647,6 +647,27 @@ pub(crate) enum RunOutcome {
     },
 }
 
+/// `PlayTable::admit`'s own outcome (Cut 10, PA.f153/PA.f154): a replay is
+/// fully decided already — no round ever runs, so nothing is ever spawned
+/// for it — while `Spawn` carries the built, already-persisted turn a caller
+/// hands to `execute` in a background task.
+pub(crate) enum Admission {
+    Replayed {
+        turn_id: String,
+        question: Option<OpenQuestion>,
+    },
+    Spawn(Admitted),
+}
+
+/// An admitted turn, ready for `PlayTable::execute` (Cut 10). Carries the
+/// table's own `run_lock` guard (owned, not borrowed — see `run_lock`'s own
+/// doc comment) so the lock stays held from admission through the end of
+/// execution even when the two happen in different tasks.
+pub(crate) struct Admitted {
+    turn: PlayTurn,
+    _run_guard: tokio::sync::OwnedMutexGuard<()>,
+}
+
 /// The current turn's own player-facing state (PA.f134), read through
 /// `PlayTable::current_turn_view` — see its own doc comment for why this
 /// exists beside `RunOutcome`.
@@ -705,7 +726,12 @@ pub(crate) struct PlayTable {
     /// This table is the one owner of one world's play authority, so this is
     /// "one running turn per world" exactly as `AppState.play` holds one
     /// `Arc<PlayTable>` per world this process owns.
-    run_lock: Mutex<()>,
+    /// `Arc`-wrapped since Cut 10 (PA.f153/PA.f154): `admit` takes an owned
+    /// guard (`try_lock_owned`) so it can hand the guard into a spawned task
+    /// alongside the turn it built, rather than holding a borrowed guard for
+    /// a call that must return to its own caller before the turn's round loop
+    /// finishes.
+    run_lock: Arc<Mutex<()>>,
     poisoned: AtomicBool,
     /// `retry_delay`'s own base, in milliseconds (PA.f122): an ordinary
     /// field, always compiled, defaulting to `RETRY_DELAY_BASE_MS` — the
@@ -751,7 +777,7 @@ impl PlayTable {
             model,
             permits,
             store: Mutex::new(store),
-            run_lock: Mutex::new(()),
+            run_lock: Arc::new(Mutex::new(())),
             poisoned: AtomicBool::new(false),
             retry_delay_base_ms: std::sync::atomic::AtomicU64::new(RETRY_DELAY_BASE_MS),
             #[cfg(test)]
@@ -806,26 +832,45 @@ impl PlayTable {
         key: String,
         request: PlayRequest,
     ) -> Result<RunOutcome, PlayError> {
+        match self.admit(key, request).await? {
+            Admission::Replayed { turn_id, question } => Ok(RunOutcome::Replayed { turn_id, question }),
+            Admission::Spawn(admitted) => self.execute(admitted, principal).await,
+        }
+    }
+
+    /// Cut 10 (PA.f153/PA.f154): the synchronous half of `run` — replay
+    /// detection, the stale-answer/empty-answer/no-question-open/
+    /// turn-still-running/empty-opening refusals, and building (and
+    /// persisting) the turn a fresh request continues or opens. None of this
+    /// spends an inference budget, so `runtime.rs::execute_world`'s
+    /// `world.play` route now awaits this directly and answers `denied` with
+    /// the reason on `Err`, instead of discarding every refusal inside a
+    /// spawned task that had already answered `accepted`. Only
+    /// `Admission::Spawn`'s own turn actually runs a round loop, and only
+    /// that is spawned, via `execute`.
+    pub(crate) async fn admit(&self, key: String, request: PlayRequest) -> Result<Admission, PlayError> {
         if self.poisoned.load(Ordering::SeqCst) {
             return Err(PlayError::Poisoned);
         }
-        // PA.f68/PA.f112: held for this whole call, so the replay/key check
-        // above and the turn open below happen under one acquisition and two
-        // concurrent `run` calls for this table can never interleave — the
-        // second one always observes the first one's own already-open (or
-        // already-closed) turn, never a stale `None`/`Closed` read racing a
-        // still-in-flight `open_new_turn`.
+        // PA.f68/PA.f112: held from here through the end of `execute`, so
+        // the replay/key check below and the turn open happen under one
+        // acquisition and two concurrent `admit` calls for this table can
+        // never interleave — the second one always observes the first one's
+        // own already-open (or already-closed) turn, never a stale
+        // `None`/`Closed` read racing a still-in-flight `open_new_turn`.
         //
-        // PA.f142: `try_lock`, not `lock().await` — a `world.play` route
-        // spawns this call in a task and returns before it resolves, so a
-        // second request arriving while a turn's own round loop is still
-        // running (up to `ROUND_BUDGET` rounds of inference) must be refused
-        // at once, not queued behind it with no bound and no signal. A
-        // request that finds the lock free — including an answer to a
-        // question a prior call already left open and returned from — is
-        // never affected: nothing holds this lock between one `run` call
-        // returning and the next one starting.
-        let Ok(_run_guard) = self.run_lock.try_lock() else {
+        // PA.f142: `try_lock_owned`, not `lock_owned().await` — a
+        // `world.play` route spawns the turn's own execution in a task and
+        // returns before it resolves, so a second request arriving while a
+        // turn's own round loop is still running (up to `ROUND_BUDGET`
+        // rounds of inference) must be refused at once, not queued behind it
+        // with no bound and no signal. A request that finds the lock free —
+        // including an answer to a question a prior call already left open
+        // and returned from — is never affected: nothing holds this lock
+        // between one turn's own execution finishing and the next admission
+        // starting. Owned (Cut 10), not borrowed, so the guard can move into
+        // the spawned task alongside the turn `admit` built.
+        let Ok(run_guard) = Arc::clone(&self.run_lock).try_lock_owned() else {
             return Err(PlayError::TurnStillRunning);
         };
         let PlayRequest { text, answers } = request;
@@ -842,10 +887,10 @@ impl PlayTable {
                 .as_ref()
                 .filter(|current| current.turn_id == turn_id && current.state == PlayTurnState::AwaitingPlayer)
                 .and_then(open_question_of);
-            return Ok(RunOutcome::Replayed { turn_id, question });
+            return Ok(Admission::Replayed { turn_id, question });
         }
 
-        let (mut turn, is_new_turn) = match stored {
+        let (turn, is_new_turn) = match stored {
             Some(existing) if existing.state == PlayTurnState::AwaitingPlayer => {
                 let open_question = existing.open_question_id();
                 match (answers, open_question.clone()) {
@@ -914,7 +959,20 @@ impl PlayTable {
         } else {
             self.persist(&turn).await?;
         }
+        Ok(Admission::Spawn(Admitted { turn, _run_guard: run_guard }))
+    }
 
+    /// Cut 10 (PA.f153/PA.f154): the round loop `run` used to run inline —
+    /// the part that can spend a real inference budget across up to
+    /// `ROUND_BUDGET` rounds. `runtime.rs::execute_world`'s `world.play`
+    /// route spawns this, never `admit`, so an admission refusal is never
+    /// silently swallowed behind an already-sent `accepted` response.
+    pub(crate) async fn execute(
+        &self,
+        admitted: Admitted,
+        principal: &VerifiedPrincipalEvidence,
+    ) -> Result<RunOutcome, PlayError> {
+        let Admitted { mut turn, _run_guard } = admitted;
         loop {
             match turn.state {
                 PlayTurnState::AwaitingPlayer | PlayTurnState::Closed => break,
@@ -949,7 +1007,7 @@ impl PlayTable {
                 // narrate failure inside `close_turn` still closes the turn,
                 // with the fault recorded, through `close_with_fault`
                 // (PA.f85/PA.f93).
-                match self.close_turn(&turn).await {
+                match self.close_turn(&turn, principal).await {
                     Ok(narration) => {
                         turn.narration = Some(narration);
                         turn.state = PlayTurnState::Closed;
@@ -960,7 +1018,7 @@ impl PlayTable {
                 break;
             }
             let round = turn.rounds.len();
-            match self.infer_round(&turn, round).await {
+            match self.infer_round(&turn, round, principal).await {
                 Ok(output) => {
                     turn.rounds.push(output);
                     self.persist(&turn).await?;
@@ -1079,10 +1137,15 @@ impl PlayTable {
     /// `InferenceRequest::play` itself), or an `InferenceFault` whose own
     /// disposition does not retry, or that exhausted its bounded retry
     /// budget.
-    async fn infer_round(&self, turn: &PlayTurn, round: usize) -> Result<InferenceOutput, String> {
+    async fn infer_round(
+        &self,
+        turn: &PlayTurn,
+        round: usize,
+        principal: &VerifiedPrincipalEvidence,
+    ) -> Result<InferenceOutput, String> {
         let snapshot = self.round_snapshot().await?;
         let dispatched = turn.dispatched_subjects();
-        let tools = self.round_tools(&snapshot, &dispatched)?;
+        let tools = self.round_tools(&snapshot, &dispatched, principal)?;
         let conversation = rebuild_conversation(turn, round);
         let command_id = CommandId::parse_uuid(&turn.turn_id).map_err(|error| error.to_string())?;
 
@@ -1203,10 +1266,11 @@ impl PlayTable {
         &self,
         snapshot: &WorldSnapshot,
         dispatched: &[SubjectId],
+        principal: &VerifiedPrincipalEvidence,
     ) -> Result<Vec<CodexToolDefinition>, String> {
         let mut tools = authoring_tools(PLAY_TOOLS).map_err(|error| error.to_string())?;
         tools.extend(control_tools());
-        let Some(player) = player_subject(snapshot) else {
+        let Some(player) = player_subject(snapshot, principal) else {
             return Ok(tools);
         };
         let mut player_tools = actor_tools(&actor_prefix(player.id), snapshot, player.id);
@@ -1248,7 +1312,7 @@ impl PlayTable {
                 return Ok(RoundOutcome::Closed);
             }
         };
-        let player = player_subject(&snapshot);
+        let player = player_subject(&snapshot, principal);
 
         // Slotted, unresolved tool calls only: `slot` must still count a
         // call this loop skips as already resolved, so slot numbering never
@@ -1310,7 +1374,7 @@ impl PlayTable {
 
             if name == END_TURN_TOOL {
                 record_call(turn, call_id, round, this_slot, Some(RecordedCall::EndTurn), None);
-                match self.close_turn(turn).await {
+                match self.close_turn(turn, principal).await {
                     Ok(narration) => {
                         if let Some(record) = turn.call_record_mut(round, this_slot) {
                             record.result = Some("the turn ended".to_owned());
@@ -1936,17 +2000,23 @@ impl PlayTable {
         Ok((RoundOutcome::Continue, finished_summary(summary_slots)))
     }
 
-    /// Narrates the turn's own close to the player. Takes no snapshot or
-    /// principal of its own (PA.f95: neither parameter was ever read) —
-    /// it always re-fetches its own fresh snapshot below, since the round's
-    /// own calls may have committed since any snapshot a caller might have
-    /// held.
-    async fn close_turn(&self, turn: &PlayTurn) -> Result<String, PlayError> {
+    /// Narrates the turn's own close to the player. Takes no snapshot of its
+    /// own (PA.f95: it was never read) — it always re-fetches its own fresh
+    /// snapshot below, since the round's own calls may have committed since
+    /// any snapshot a caller might have held. Cut 10 (PA.f159) added
+    /// `principal` back: `player_subject` now resolves the player by whose
+    /// principal is actually running this turn, not merely "the" human
+    /// subject in the snapshot.
+    async fn close_turn(
+        &self,
+        turn: &PlayTurn,
+        principal: &VerifiedPrincipalEvidence,
+    ) -> Result<String, PlayError> {
         // A fresh snapshot, not the round's own: this round's calls may have
         // committed since it was taken, and `PersonaLane::narrate` refuses
         // an opportunity that is not the kernel's own currently issued copy.
         let snapshot = self.play.snapshot().await?;
-        let Some(player) = player_subject(&snapshot) else {
+        let Some(player) = player_subject(&snapshot, principal) else {
             return Ok(String::new());
         };
         let Some(opportunity) = snapshot
@@ -2007,11 +2077,23 @@ struct SubjectRow {
     id: SubjectId,
 }
 
-fn player_subject(snapshot: &WorldSnapshot) -> Option<SubjectRow> {
+/// Cut 10 (PA.f159): the subject *this principal's own turn* acts as, not
+/// merely "the" human-controlled subject in the world. `WorldSnapshot`
+/// already carries `human_controller: Option<PrincipalId>` on every
+/// `SubjectSnapshot` (the library's own field, no library change needed);
+/// this was the one production reader still ignoring it, matching by
+/// `controller_mode` alone — correct only by accident, in the one-human-
+/// subject worlds every fixture happens to build, and wrong the moment a
+/// world has more than one.
+fn player_subject(snapshot: &WorldSnapshot, principal: &VerifiedPrincipalEvidence) -> Option<SubjectRow> {
+    let owner = ghostlight::PrincipalId::new(principal.account_subject_hash());
     snapshot
         .subjects
         .iter()
-        .find(|subject| subject.controller_mode == Some(ControllerMode::Human))
+        .find(|subject| {
+            subject.controller_mode == Some(ControllerMode::Human)
+                && subject.human_controller.as_ref() == Some(&owner)
+        })
         .map(|subject| SubjectRow { id: subject.id })
 }
 
@@ -2711,8 +2793,44 @@ mod tests {
         }
     }
 
+    /// PA.f159: `player_subject` must resolve the acting subject by *whose*
+    /// principal is calling, not merely by finding a `ControllerMode::Human`
+    /// subject at all. A mutation reverting the added
+    /// `human_controller.as_ref() == Some(&owner)` clause — leaving only the
+    /// old `controller_mode == Some(Human)` check — would still find the
+    /// fixture's own human subject here even though the calling principal is
+    /// a stranger to this world entirely, so this fails under exactly that
+    /// mutation.
+    #[tokio::test]
+    async fn the_player_subject_follows_the_calling_principal() {
+        let fixture = play_world(None, "the-real-owner").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        assert!(
+            player_subject(&snapshot, &fixture.principal).is_some(),
+            "the world's own owner/player principal must resolve to the human subject"
+        );
+        let stranger = VerifiedPrincipalEvidence::new("a-stranger-principal", far_future());
+        assert!(
+            player_subject(&snapshot, &stranger).is_none(),
+            "a principal that does not control any subject here must resolve to none, even though a \
+             ControllerMode::Human subject exists in this world"
+        );
+    }
+
+    /// Test fixtures build exactly one human-controlled subject, so this
+    /// stays the older, principal-blind lookup deliberately (Cut 10,
+    /// PA.f159) rather than threading a principal through the 20-odd call
+    /// sites below: it is testing "which subject is the fixture's own
+    /// player", not the production selection rule `player_subject` now
+    /// enforces (that rule has its own direct coverage in
+    /// `the_player_subject_follows_the_calling_principal` below).
     fn player_id(snapshot: &WorldSnapshot) -> SubjectId {
-        player_subject(snapshot).unwrap().id
+        snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.controller_mode == Some(ControllerMode::Human))
+            .expect("a play fixture's own single human subject")
+            .id
     }
 
     fn persona_id(snapshot: &WorldSnapshot) -> SubjectId {
@@ -2820,8 +2938,18 @@ mod tests {
     /// `eve::authenticated_surface`'s play card must show the narration and
     /// never the operator feed's own text, proving invariant 8's "nothing
     /// else": the player sees a projection, the question, and the refusal of
-    /// their own act, never an unscoped event log. Mutation M9.1: render that
-    /// feed into the card — this test must fail if the play card ever does.
+    /// their own act, never an unscoped event log.
+    ///
+    /// Mutation M9.1 named "render that feed into the card" as the mutant
+    /// this test kills. It is retired, not re-aimed (Cut 10, PA.f155): Cut 9
+    /// had already deleted the operator-feed parameter `authenticated_surface`
+    /// once took, so a mutation that "renders the feed into the card" cannot
+    /// be expressed as a code change against the current signature — there is
+    /// no parameter left to wire in. The test's own assertions below (the
+    /// card renders narration/question/refusal and nothing else) remain a
+    /// live defense of invariant 8 against whatever *can* still leak — most
+    /// concretely, a future call site that starts threading operator-log text
+    /// through `narration`/`refusal` themselves.
     #[tokio::test]
     async fn the_play_surface_shows_only_the_projection() {
         let fixture = play_world(None, "player-projection-only").await;
@@ -2915,10 +3043,9 @@ mod tests {
         assert!(
             !play_card_encoded.contains("A voice the play table never narrated."),
             "the play card must never render the operator log's own speech, even though it is durably \
-             committed and `world.story` still legitimately shows it elsewhere on this surface pending \
-             Cut 9's own deletion commit: {play_card_encoded}"
+             committed to the world owner's own unscoped operator log: {play_card_encoded}"
         );
-        // Every other `world.play.*` node too — the answers/text controls
+        // Every other `world.play.*` node too — the text control and the
         // and the button — not only the card itself.
         for id in ["world.play.answers", "world.play.text", "world.play"] {
             if let Some(node) = find_surface_node(&surface, id) {
@@ -2931,15 +3058,19 @@ mod tests {
         }
     }
 
-    /// PA.f134's own end-to-end proof, and the fork Self ruled on: answering
-    /// *through the card's own rendered `world.play.answers` binding* — the
-    /// id the surface actually emitted, never one this test built — resumes
-    /// the turn, and the closed turn's narration is then visible through the
-    /// same card. Also proves the ruling's own `surface_version` claim: the
-    /// world commits nothing across this whole exchange (`ask_player`/
-    /// `end_turn` are conversational, not kernel patches), so
-    /// `world.revision` never moves, yet `authenticated_surface_version`
-    /// still does, because the play row's own `revision` carries it.
+    /// PA.f134's own end-to-end proof: answering *through the turn view's own
+    /// `question.id`* — the id `current_turn_view` actually exposes, never
+    /// one this test built — resumes the turn, and the closed turn's
+    /// narration is then visible through the same card. Cut 10 (PA.f151)
+    /// deleted the card's own rendered id control (the lowering had no way
+    /// to carry it without leaking it); `runtime.rs::execute_world`'s
+    /// `world.play` arm is the one production caller that resolves this id
+    /// now, the same way this test does. Also proves the ruling's own
+    /// `playRevision` claim: the world commits nothing across this whole
+    /// exchange (`ask_player`/`end_turn` are conversational, not kernel
+    /// patches), so `world.revision` — and so the document's own `version`
+    /// (Cut 10, PA.f148) — never moves, yet `playRevision` still does,
+    /// because the play row's own `revision` carries it.
     #[tokio::test]
     async fn a_question_is_answered_through_the_cards_own_binding_and_the_turn_closes_with_narration() {
         let fixture = play_world(None, "player-card-question").await;
@@ -2989,22 +3120,19 @@ mod tests {
             Some(&asked_view),
         )
         .unwrap();
-        let version_before = surface_before["version"].as_u64().unwrap();
+        let play_revision_before = surface_before["playRevision"].as_u64().unwrap();
 
         let question_row = find_surface_node(&surface_before, "world.play.question")
             .expect("the question row");
         assert_eq!(question_row["props"]["value"], "Which way?");
-        let answers_control =
-            find_surface_node(&surface_before, "world.play.answers").expect("the answers control");
-        let raw_answers = answers_control["props"]["value"]
-            .as_str()
-            .expect("the answers control carries the open question's id as a JSON string");
-        // The exact value `serde_json::to_string` would encode `OpenQuestion.id`
-        // as (`eve.rs`'s own construction); decoded back here into the same
-        // private `QuestionId` type, since this test lives in `play`'s own
-        // module and never touches its fields directly either way.
-        let answers: QuestionId =
-            serde_json::from_str(raw_answers).expect("the rendered answers id decodes");
+        assert!(
+            find_surface_node(&surface_before, "world.play.answers").is_none(),
+            "Cut 10 deleted the id-carrying control; nothing on the surface names the question"
+        );
+        // The exact id `current_turn_view` exposes — the one a production
+        // caller (`runtime.rs::execute_world`) resolves server-side now,
+        // never a value the player's own client supplies.
+        let answers: QuestionId = asked_view.question.as_ref().unwrap().id.clone();
 
         table
             .run(
@@ -3045,13 +3173,22 @@ mod tests {
             find_surface_node(&surface_after, "world.play.question").is_none(),
             "no question is open any more; the card must not still show one"
         );
+        // PA.f159: the subject census is gone from `world.summary` — phase
+        // and clock stay, but who else is in the world is not the player's
+        // own projection.
+        let summary = find_surface_node(&surface_after, "world.summary").expect("the summary card");
+        assert_eq!(summary["children"], serde_json::json!([]));
         let narration_row = find_surface_node(&surface_after, "world.play.narration")
             .expect("the narration row");
         assert_eq!(narration_row["props"]["value"], "The hall falls quiet.");
-        let version_after = surface_after["version"].as_u64().unwrap();
+        assert_eq!(
+            surface_before["version"], surface_after["version"],
+            "Cut 10: the document's own version names world.revision alone, and it never moved"
+        );
+        let play_revision_after = surface_after["playRevision"].as_u64().unwrap();
         assert!(
-            version_after > version_before,
-            "surface_version must move even though world.revision did not: {version_before} -> {version_after}"
+            play_revision_after > play_revision_before,
+            "playRevision must move even though world.revision did not: {play_revision_before} -> {play_revision_after}"
         );
     }
 
@@ -4341,6 +4478,13 @@ mod tests {
                 serde_json::json!({"question": "Which way?"}),
             )],
         );
+        // PA.f155/PA.f156: the row's own revision counter must survive the
+        // restart exactly, neither reset nor re-derived from anything but
+        // what was last durably committed — checked at three points below:
+        // right after the question opens, right after the fresh table
+        // reopens the same store (nothing committed yet, so unchanged), and
+        // once more after the answer closes the turn (moved again).
+        let revision_before_restart;
         {
             let personas = PersonaLane::new(
                 ControllerPort::new(fixture.world.clone()),
@@ -4366,6 +4510,7 @@ mod tests {
                 )
                 .await
                 .unwrap();
+            revision_before_restart = table.current_turn_view().await.unwrap().revision;
         }
         // "Restart": a fresh `PlayTable` reopening the same store path.
         // `PlayTable::new` is the one production door that mints `PlayPort`;
@@ -4388,6 +4533,10 @@ mod tests {
             &store_path,
         )
         .unwrap();
+        assert_eq!(
+            table.current_turn_view().await.unwrap().revision, revision_before_restart,
+            "reopening the store must read the same revision back, not reset or recompute it"
+        );
 
         let (opening_prompt_before, turn_id_before, question_id) = {
             let stored = table.store.lock().await;
@@ -4448,6 +4597,12 @@ mod tests {
             vec!["I stand at a crossroads.".to_owned(), "left".to_owned()]
         );
         assert!(turn.narration.is_some());
+        drop(stored);
+        let revision_after_close = table.current_turn_view().await.unwrap().revision;
+        assert!(
+            revision_after_close > revision_before_restart,
+            "the row's own revision must move again once the answer closes the turn: {revision_before_restart} -> {revision_after_close}"
+        );
     }
 
     #[tokio::test]

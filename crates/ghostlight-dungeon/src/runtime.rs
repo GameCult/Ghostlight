@@ -9,7 +9,7 @@ use crate::{
         TARGET as GHOSTLIGHT_TARGET,
     },
     mesh::{self, MeshPublisher, MeshRuntimeIdentity},
-    play::{PlayRequest, PlayTable, PlayTurnView, QuestionId},
+    play::{Admission, PlayRequest, PlayTable, PlayTurnState, PlayTurnView},
 };
 use ghostlight::{
     CONSUMER_BODY_LIMIT, CommandBody, CommandId, ConnectorBinding, ConsumerPort,
@@ -119,16 +119,62 @@ struct CreatePayload {
     /// be empty: a world with no target is a deliberate choice, not a default
     /// that arrives because nobody said anything. A payload that omits it is
     /// refused, which is what `world_create.v4` means.
+    #[serde(deserialize_with = "deserialize_json_capture")]
     targets: BTreeMap<SubjectKind, u32>,
     /// The jurisdiction roots, declared by genesis beside the commons because
     /// `resolve_patch` only resolves roots the same patch declares. A duplicate
     /// handle and a permille sum over 1000 are refused by the resolver, not
     /// pre-checked here: a pre-check would be a second reducer.
+    #[serde(deserialize_with = "deserialize_json_capture")]
     jurisdictions: Vec<CreateJurisdiction>,
     /// Required, and must draw: a payload that omits it is refused, which is
     /// what `world_create.v4` means. An unknown lens name is refused by
     /// deserialization before any handler runs.
+    #[serde(deserialize_with = "deserialize_json_capture")]
     lens_weights: LensWeights,
+}
+
+/// Cut 10 (PA.f149): the vendored Eve browser lowering's own
+/// `createEveCommandIntent` (`vendor/eve/packages/eve-browser-lowering`)
+/// sends every captured `captureBindings` value enveloped under
+/// `payload.bindings` — the documented shape (Eve's own
+/// `docs/surface-contract-v1.md`: "Operations declare captureBindings and
+/// receive those values under payload.bindings"), confirmed by driving the
+/// real lowering over a real Dungeon surface (`tools/eve_client_bridge.mjs`).
+/// Dungeon's own payload structs are flat. Rather than teach every payload
+/// struct the envelope, this unwraps it once, so a real client's payload
+/// deserializes exactly like the flat, hand-built payloads the existing
+/// tests already send. A payload with no `bindings` object (no
+/// `captureBindings` advertised at all, e.g. `world.approve`/
+/// `world.activate`, whose actions capture nothing) passes through
+/// unchanged — `commandPayload` on the lowering's own side never sets
+/// `bindings` when `captureBindings` is empty.
+fn unwrap_bindings(payload: &Value) -> &Value {
+    payload
+        .as_object()
+        .and_then(|object| object.get("bindings"))
+        .filter(|bindings| bindings.is_object())
+        .unwrap_or(payload)
+}
+
+/// Cut 10 (PA.f149): every one of these three fields is edited in a plain
+/// `control.input.textarea` — the vendored Eve browser lowering has no
+/// JSON-typed control — so a real client always captures the field as the
+/// JS string the textarea holds (Dungeon's own `eve::local_draft` calls
+/// these fields' `valueKind` `"string"` for exactly this reason), never a
+/// parsed object or array. A hand-built payload (existing tests) may still
+/// supply the already-parsed value directly. This accepts either: a JSON
+/// string is parsed as JSON text; anything else is deserialized as the typed
+/// value directly.
+fn deserialize_json_capture<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: serde::de::DeserializeOwned,
+{
+    match Value::deserialize(deserializer)? {
+        Value::String(text) => serde_json::from_str(&text).map_err(serde::de::Error::custom),
+        other => serde_json::from_value(other).map_err(serde::de::Error::custom),
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -166,16 +212,19 @@ fn is_handle_shape(value: &str) -> bool {
         && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '-')
 }
 
-/// `world.play`'s own payload (Cut 8b): the player's prose, plus `answers`
-/// naming the question this request answers (PA.f84) — `None` for the plain
-/// opening/continue shape. Follows `ghostlight.world_speak.v0`'s own field
-/// pattern above.
+/// `world.play`'s own payload (Cut 8b): the player's prose alone. Cut 10
+/// (PA.f151) deleted the client-supplied `answers` field: the vendored Eve
+/// browser lowering has no authored, non-editable binding value (`hidden` is
+/// not a prop any renderer reads), so the id-carrying control it used to
+/// name would have rendered as a plain, visible, editable text box holding
+/// the raw `QuestionId` — a leak, and once editable, a forgeable one. The
+/// server resolves the currently open question itself now
+/// (`execute_world`'s `world.play` arm), refusing a stale
+/// `routeHint.sourceVersion` instead of trusting a client-named id.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct PlayPayload {
     text: String,
-    #[serde(default)]
-    answers: Option<QuestionId>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -740,7 +789,7 @@ async fn eve_command(
 }
 
 async fn begin_authentication(state: &AppState, invocation: EveCommandInvocation) -> Response {
-    if let Err(error) = serde_json::from_value::<EmptyPayload>(invocation.payload.clone()) {
+    if let Err(error) = serde_json::from_value::<EmptyPayload>(unwrap_bindings(&invocation.payload).clone()) {
         return Json(eve::command_result(
             &invocation,
             "denied",
@@ -808,7 +857,7 @@ async fn begin_authentication(state: &AppState, invocation: EveCommandInvocation
 }
 
 async fn complete_authentication(state: &AppState, invocation: EveCommandInvocation) -> Response {
-    let payload = match serde_json::from_value::<CompleteAuthPayload>(invocation.payload.clone()) {
+    let payload = match serde_json::from_value::<CompleteAuthPayload>(unwrap_bindings(&invocation.payload).clone()) {
         Ok(payload) => payload,
         Err(error) => {
             return Json(eve::command_result(
@@ -952,7 +1001,7 @@ async fn logout(
     state: &AppState,
     invocation: EveCommandInvocation,
 ) -> Response {
-    if let Err(error) = serde_json::from_value::<EmptyPayload>(invocation.payload.clone()) {
+    if let Err(error) = serde_json::from_value::<EmptyPayload>(unwrap_bindings(&invocation.payload).clone()) {
         return Json(eve::command_result(
             &invocation,
             "denied",
@@ -1091,7 +1140,7 @@ async fn execute_world(
             .unwrap_or(""),
     )?;
     if invocation.operation.operation_id == "world.create" {
-        let payload: CreatePayload = serde_json::from_value(invocation.payload.clone())
+        let payload: CreatePayload = serde_json::from_value(unwrap_bindings(&invocation.payload).clone())
             .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
         if let Some(root) = payload
             .jurisdictions
@@ -1138,19 +1187,61 @@ async fn execute_world(
         }));
     }
     if invocation.operation.operation_id == "world.play" {
-        // A play turn is not one kernel command: `PlayTable::run` submits as
-        // many as its own round loop decides, and a round can spend a real
-        // inference budget before any of them commit. Routed to the table in
-        // a spawned task, exactly as the map calls for, rather than held
-        // open behind this request — the caller polls the world/story
-        // surface for what the turn actually did, the same way it already
-        // observes any other committed consequence.
-        let payload: PlayPayload = serde_json::from_value(invocation.payload.clone())
+        // Cut 10 (PA.f152): owner-gated, like `world.advance_time` and
+        // `world.seed` below — `eve::authenticated_surface` already hides
+        // the card and the button from anyone else, but the route is the
+        // actual authority boundary.
+        let snapshot = current_world(state)
+            .await
+            .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?
+            .ok_or_else(|| RuntimeCommandError::Payload("world has not been created".into()))?;
+        if snapshot.owner != PrincipalId::new(verified_principal.account_subject_hash()) {
+            return Err(RuntimeCommandError::Payload(
+                "only the world's owner may play".into(),
+            ));
+        }
+        let payload: PlayPayload = serde_json::from_value(unwrap_bindings(&invocation.payload).clone())
             .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
         let table = state
             .play
             .clone()
             .ok_or_else(|| RuntimeCommandError::Payload("the play table is unavailable".into()))?;
+        // Cut 10 (PA.f151): the server resolves the open question itself —
+        // the client no longer supplies one at all. No question open: this
+        // is a plain continue/opening, `answers: None`. A question open: the
+        // caller must be answering it, and PA.f84's own guarantee (an answer
+        // cannot land on a question the player never saw) is upheld by
+        // refusing a `routeHint.sourceVersion` that predates the surface
+        // version the question first appeared on — the exact
+        // `authenticated_wake_version` this command's own snapshot and play
+        // view compute right now, monotonic, so any version at or after the
+        // question's own first appearance is at least this value once it has
+        // been reached, and the client always echoes back the most recent
+        // `version`/`playRevision` pair it was actually served.
+        let view = table.current_turn_view().await;
+        // PA.f155: `PlayTurnView::state` is the actual rule this branches
+        // on — the turn is currently waiting on the player — rather than
+        // `question.is_some()` standing in for it; `question` is set
+        // whenever the state is, so this and `question.is_some()` can never
+        // disagree, but the state is the thing the rule is actually about.
+        let is_awaiting_player = view
+            .as_ref()
+            .is_some_and(|view| view.state == PlayTurnState::AwaitingPlayer);
+        let answers = match view.as_ref().and_then(|view| view.question.as_ref()).filter(|_| is_awaiting_player) {
+            None => None,
+            Some(question) => {
+                let served = eve::authenticated_wake_version(Some(&snapshot), view.as_ref());
+                let source_version = invocation.operation.route_hint.source_version.unwrap_or(0);
+                if source_version < served {
+                    return Err(RuntimeCommandError::Payload(format!(
+                        "the answer is stale: it names a surface older than the one the question \
+                         \"{}\" first appeared on",
+                        question.text
+                    )));
+                }
+                Some(question.id.clone())
+            }
+        };
         // PA.f147 (reported, not fixed — see Hands' own report): the
         // unconditional `command_id = CommandId::parse_uuid(...)?` at the
         // top of this function already refuses a missing or non-uuid key
@@ -1161,20 +1252,42 @@ async fn execute_world(
         // only if it could be shown to matter; it could not, so it was not
         // kept as unreachable code.
         let key = invocation.operation.idempotency_key.clone().unwrap_or_default();
+        // Cut 10 (PA.f153/PA.f154): `admit` runs synchronously, here, so a
+        // replayed key, a stale/empty answer, a busy table, and a poisoned
+        // table all answer `denied` with the reason, instead of being
+        // decided inside a spawned task whose result nothing ever read. Only
+        // the turn's own round loop — the part that can spend a real
+        // inference budget — is spawned.
+        let admission = table
+            .admit(key, PlayRequest { text: payload.text, answers })
+            .await
+            .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+        let admitted = match admission {
+            Admission::Replayed { .. } => {
+                return Ok(json!({"kind":"accepted","outcome":"replayed"}));
+            }
+            Admission::Spawn(admitted) => admitted,
+        };
         let principal = verified_principal.clone();
+        let spawned_state = state.clone();
         tokio::spawn(async move {
-            if let Err(error) = table
-                .run(
-                    &principal,
-                    key,
-                    PlayRequest {
-                        text: payload.text,
-                        answers: payload.answers,
-                    },
-                )
-                .await
-            {
-                tracing::warn!(%error, "a play turn ended in error");
+            if let Err(error) = table.execute(admitted, &principal).await {
+                // PA.f155: `PlayTurnView::turn_id` names which turn faulted,
+                // for an operator reading this log against the store — the
+                // one production reader it had none of before.
+                let turn_id = table.current_turn_view().await.map(|view| view.turn_id);
+                tracing::warn!(%error, ?turn_id, "a play turn ended in error");
+            }
+            // Cut 10 (PA.f150): a play-row-only change (a fresh refusal, a
+            // newly open question, a closed turn's narration) commits
+            // nothing to the world, so nothing on the `eve_command` Ok arm's
+            // own `publish_projection` call (`dispatch_world`) would ever
+            // fire for it — that call only runs for this same command's own
+            // immediate `accepted` response, sent before this turn's own
+            // execution even started. This is the turn's own commit,
+            // published on the same door.
+            if let Err(error) = publish_projection(&spawned_state).await {
+                tracing::warn!(%error, "play turn projection publish failed");
             }
         });
         return Ok(json!({"kind":"accepted"}));
@@ -1194,17 +1307,17 @@ async fn execute_world(
     })?;
     let body = match invocation.operation.operation_id.as_str() {
         "world.approve" => {
-            serde_json::from_value::<EmptyPayload>(invocation.payload.clone())
+            serde_json::from_value::<EmptyPayload>(unwrap_bindings(&invocation.payload).clone())
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
             CommandBody::ApproveDraft
         }
         "world.activate" => {
-            serde_json::from_value::<EmptyPayload>(invocation.payload.clone())
+            serde_json::from_value::<EmptyPayload>(unwrap_bindings(&invocation.payload).clone())
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
             CommandBody::ActivateWorld
         }
         "world.advance_time" => {
-            let payload: AdvanceTimePayload = serde_json::from_value(invocation.payload.clone())
+            let payload: AdvanceTimePayload = serde_json::from_value(unwrap_bindings(&invocation.payload).clone())
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
             CommandBody::AdvanceTime {
                 minutes: TickMinutes::new(payload.minutes).ok_or_else(|| {
@@ -1216,7 +1329,7 @@ async fn execute_world(
         // through its own port, as the owner, and the receipt reports what one
         // session did rather than what one command committed.
         "world.seed" => {
-            let payload: SeedPayload = serde_json::from_value(invocation.payload.clone())
+            let payload: SeedPayload = serde_json::from_value(unwrap_bindings(&invocation.payload).clone())
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
             let outcome = seed_once(state, verified_principal, &snapshot, payload).await?;
             let after = current_world(state)
@@ -1300,8 +1413,22 @@ async fn current_play_view(state: &AppState) -> Option<PlayTurnView> {
 
 async fn publish_projection(state: &AppState) -> anyhow::Result<u64> {
     let snapshot = current_world(state).await?;
+    // Cut 10 (PA.f148/PA.f150): `version` is the one meaning a caller ever
+    // feeds back as `routeHint.sourceVersion` — this function's own return
+    // value, used by `dispatch_world` as `command_result.sourceVersion` — so
+    // it stays plain `surface_version`, never folded with the play row's own
+    // revision. The SSE broadcast below is a different field with a
+    // different job (wake a watching client up; it is never echoed back),
+    // so it carries `authenticated_wake_version` instead, the one value that
+    // also moves on a play-row-only change — this is the fix for PA.f150:
+    // before Cut 10, this function was the *only* production caller of
+    // `publish_projection`/its SSE send outside `eve_command`'s own Ok arm,
+    // and a play commit never reached either, so nothing ever woke a
+    // watching client up for a fresh question, narration, or refusal.
     let version = eve::surface_version(snapshot.as_ref());
-    let _ = state.revisions.send(version);
+    let play_view = current_play_view(state).await;
+    let wake_version = eve::authenticated_wake_version(snapshot.as_ref(), play_view.as_ref());
+    let _ = state.revisions.send(wake_version);
     if let Some(mesh) = state.mesh.clone() {
         let _projection = tokio::task::spawn_blocking(move || {
             if let Err(error) = mesh.publish(snapshot.as_ref()) {
@@ -2244,6 +2371,175 @@ mod tests {
         serde_json::from_slice(&bytes).unwrap()
     }
 
+    async fn get(state: &AppState, cookie: &str, path: &str) -> Value {
+        let response = api_router(state.clone())
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri(path)
+                    .header(header::COOKIE, format!("{COOKIE_NAME}={cookie}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        serde_json::from_slice(&bytes).unwrap()
+    }
+
+    /// Cut 10 (PA.f149): drives the real vendored Eve browser lowering
+    /// (`vendor/eve/packages/eve-browser-lowering`, submodule pin unmoved)
+    /// over a surface document this process actually served, through
+    /// `tools/eve_client_bridge.mjs`. `steps` is the bridge's own
+    /// `{"set":{node_id:text}}`/`{"click":node_id}` step list; returns the
+    /// command intent(s) the click(s) produced, in order, exactly as a real
+    /// client would build and send them — never a hand-built payload
+    /// asserting its own shape is correct.
+    fn client_intents(surface: &Value, provider: &Value, steps: Value) -> Vec<Value> {
+        let bridge = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("..")
+            .join("tools")
+            .join("eve_client_bridge.mjs");
+        let input = serde_json::to_vec(&json!({
+            "surface": surface,
+            "provider": provider,
+            "steps": steps,
+        }))
+        .unwrap();
+        let mut child = std::process::Command::new("node")
+            .arg(&bridge)
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .expect("node must be on PATH to run the client bridge");
+        {
+            use std::io::Write;
+            child.stdin.take().unwrap().write_all(&input).unwrap();
+        }
+        let output = child.wait_with_output().unwrap();
+        assert!(
+            output.status.success(),
+            "eve_client_bridge.mjs failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        String::from_utf8(output.stdout)
+            .unwrap()
+            .lines()
+            .filter(|line| !line.trim().is_empty())
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect()
+    }
+
+    /// PA.f149's own end-to-end proof: `world.create`, `world.approve`,
+    /// `world.seed`, and `world.activate` intents, built by the real
+    /// vendored lowering over surfaces this process actually served, and
+    /// posted through `api_router` — every one of them accepted. Before
+    /// this cut, every one of them submitted `{"bindings":{}}` (wrong
+    /// binding names) and, even with the names fixed, `{"payload":
+    /// {"bindings":{...}}}` (the envelope) against Dungeon's flat payload
+    /// structs — either alone was enough to refuse every field as missing.
+    ///
+    /// `world.play` is included through "the route accepts it and the turn
+    /// reaches the play table" (the same proof
+    /// `world_play_reaches_the_play_table_and_is_accepted` already gives
+    /// hand-built payloads, given here to the real client's own payload
+    /// instead). This fixture's inference organ is an unreachable test
+    /// address (`127.0.0.1:9`, see `fixture()`), so the turn it opens can
+    /// never actually reach `AwaitingPlayer` here to prove the "answer" leg
+    /// through this same harness — that would need a scripted inference
+    /// port, which lives only inside `play.rs`'s own private test module
+    /// (`ScriptedPort`) and is not reachable from here. PA.f151's own
+    /// server-resolved-answer mechanism has its own direct proof instead, at
+    /// the play-table layer:
+    /// `play::tests::a_question_is_answered_through_the_cards_own_binding_and_the_turn_closes_with_narration`.
+    #[tokio::test]
+    async fn world_create_seed_activate_and_play_round_trip_through_the_real_client() {
+        let fixture = fixture().await;
+        let provider = get(&fixture.state, &fixture.cookie, "/api/eve/provider").await;
+
+        let empty_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let create_intents = client_intents(
+            &empty_surface,
+            &provider,
+            json!([
+                {"set": {
+                    "world.create.title": "Bridge World",
+                    "world.create.brief": "A world built by the real client bridge.",
+                    "world.create.subject": "The Bridge Operator",
+                    "world.create.targets": "{}",
+                    "world.create.jurisdictions": "[]",
+                    "world.create.lens_weights": "{\"patina\":1,\"charter\":1,\"ledger\":1,\"hearth\":1,\"tangle\":1,\"veil\":1,\"ember\":1,\"numen\":1}"
+                }},
+                {"click": "world.create"}
+            ]),
+        );
+        assert_eq!(create_intents.len(), 1);
+        let created = post(&fixture.state, &fixture.cookie, create_intents.into_iter().next().unwrap()).await;
+        assert_eq!(created["state"], "accepted", "world.create via the real client: {created}");
+
+        let draft_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let approve_intents = client_intents(&draft_surface, &provider, json!([{"click": "world.approve"}]));
+        assert_eq!(approve_intents.len(), 1);
+        let approved = post(&fixture.state, &fixture.cookie, approve_intents.into_iter().next().unwrap()).await;
+        assert_eq!(approved["state"], "accepted", "world.approve via the real client: {approved}");
+
+        let approved_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let seed_intents = client_intents(&approved_surface, &provider, json!([{"click": "world.seed"}]));
+        assert_eq!(seed_intents.len(), 1);
+        let seeded = post(&fixture.state, &fixture.cookie, seed_intents.into_iter().next().unwrap()).await;
+        // No test fixture in this crate configures `GHOSTLIGHT_SEED_VAULT_ROOT`
+        // (`world_seed_is_owner_only_and_draft_only_before_it_spends_anything`
+        // asserts the same denial), so a real vault read is out of reach
+        // here regardless of payload shape. The proof this leg carries is
+        // narrower: the payload itself was accepted and reached the vault
+        // lookup at all — `SeedPayload` has no required field, so
+        // `captureBindings: []` (the click alone) is this operation's own
+        // envelope-only proof — never refused as a payload/binding shape
+        // problem the way every operation was before this cut.
+        assert_eq!(
+            seeded["message"], "invalid command payload: GHOSTLIGHT_SEED_VAULT_ROOT is not configured",
+            "world.seed via the real client must reach the vault lookup, not refuse the payload shape: {seeded}"
+        );
+
+        let seeded_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let activate_intents = client_intents(&seeded_surface, &provider, json!([{"click": "world.activate"}]));
+        assert_eq!(activate_intents.len(), 1);
+        let activated = post(&fixture.state, &fixture.cookie, activate_intents.into_iter().next().unwrap()).await;
+        assert_eq!(activated["state"], "accepted", "world.activate via the real client: {activated}");
+
+        let active_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let play_intents = client_intents(
+            &active_surface,
+            &provider,
+            json!([
+                {"set": {"world.play.text": "The new owner looks around."}},
+                {"click": "world.play"}
+            ]),
+        );
+        assert_eq!(play_intents.len(), 1);
+        let played = post(&fixture.state, &fixture.cookie, play_intents.into_iter().next().unwrap()).await;
+        assert_eq!(played["state"], "accepted", "world.play via the real client: {played}");
+
+        let table = fixture.state.play.clone().unwrap();
+        let observed = tokio::time::timeout(Duration::from_secs(5), async move {
+            loop {
+                if table.current_turn_view().await.is_some() {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await;
+        assert!(
+            observed.is_ok(),
+            "the real client's own world.play intent must reach PlayTable::run and open a turn row"
+        );
+    }
+
     #[tokio::test]
     async fn http_eve_journey_uses_one_world_owner() {
         let fixture = fixture().await;
@@ -2400,6 +2696,328 @@ mod tests {
             observed.is_ok(),
             "the spawned task must actually call table.run, recording a turn row, not just return \
              the same accepted JSON on its own"
+        );
+    }
+
+    /// PA.f148/PA.f160: Soul's own probe — the served document's `version`
+    /// used to fold the play row's own revision in, so a play commit alone
+    /// (no kernel patch) could move `version` to a number `world.revision`
+    /// never reached, and every later command's compare-and-swap derived
+    /// `expected_revision` from it and was permanently denied. This drives
+    /// the exact same shape: open a play turn (it commits nothing to the
+    /// world here — the fixture's own inference organ is unreachable, so it
+    /// faults immediately, which still exercises the row's own revision
+    /// counter the same way a real committed refusal or question would),
+    /// wait for the row to move, then read `sourceVersion` from the actually
+    /// served surface document — as a client does — and submit
+    /// `world.advance_time` against it. It must still be accepted.
+    #[tokio::test]
+    async fn a_play_commit_does_not_poison_the_next_world_commands_compare_and_swap() {
+        let fixture = fixture().await;
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({
+                    "title":"CAS World",
+                    "brief":"",
+                    "subject_label":"Operator",
+                    "targets":{},
+                    "jurisdictions":[],
+                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
+                }),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(created["state"], "accepted");
+        let approved = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.approve", "ghostlight.world_approve.v0", 1, json!({}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(approved["state"], "accepted");
+        let activated = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.activate", "ghostlight.world_activate.v0", 2, json!({}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(activated["state"], "accepted");
+        assert_eq!(activated["sourceVersion"], 3, "world.revision is 3, and nothing has folded anything else into it yet");
+
+        let played = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.play", "ghostlight.world_play.v0", 3, json!({"text":"I look around."}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(played["state"], "accepted");
+
+        let table = fixture.state.play.clone().unwrap();
+        tokio::time::timeout(Duration::from_secs(5), async move {
+            loop {
+                if let Some(view) = table.current_turn_view().await {
+                    if view.revision > 0 {
+                        break;
+                    }
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("the play row's own revision must move once the turn commits its own row");
+
+        // As a client does: read `version` off the actually served document,
+        // never re-derive it from `world.revision` directly.
+        let surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let served_version = surface["version"].as_u64().expect("the surface document names a version");
+        assert_eq!(
+            served_version, 3,
+            "PA.f148: the document's own version must still name world.revision alone, not the play row's \
+             revision folded in — Soul's own probe was a version that did not"
+        );
+
+        let advanced = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.advance_time",
+                "ghostlight.world_advance_time.v0",
+                served_version,
+                json!({"minutes": 5}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(
+            advanced["state"], "accepted",
+            "a play commit must never poison the next world command's compare-and-swap: {advanced}"
+        );
+    }
+
+    /// PA.f150: `publish_projection` used to be called only at startup and
+    /// from `eve_command`'s own Ok arm — which answers a `world.play`
+    /// request before its own turn ever executes — so a play-row-only
+    /// change (a fresh refusal, a newly open question, a closed turn's
+    /// narration, none of which move `world.revision`) never republished at
+    /// all, and a watching client's SSE subscription never woke for it.
+    /// Drives a real play turn to a fault (the fixture's own inference organ
+    /// is unreachable, so this always happens quickly) and asserts the
+    /// `state.revisions` channel — what `/api/eve/events` relays — receives
+    /// a fresh value for it, on the same door `eve_command`'s own commits use.
+    #[tokio::test]
+    async fn a_play_row_only_change_wakes_the_revisions_channel() {
+        let fixture = fixture().await;
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({
+                    "title":"Wake World",
+                    "brief":"",
+                    "subject_label":"Operator",
+                    "targets":{},
+                    "jurisdictions":[],
+                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
+                }),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(created["state"], "accepted");
+        let approved = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.approve", "ghostlight.world_approve.v0", 1, json!({}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(approved["state"], "accepted");
+        let activated = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.activate", "ghostlight.world_activate.v0", 2, json!({}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(activated["state"], "accepted");
+
+        // Subscribed after every world-commit publish above has already
+        // happened, so only the play turn's own publish (or a lagged
+        // catch-up of it) can satisfy this recv.
+        let mut revisions = fixture.state.revisions.subscribe();
+
+        let played = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.play", "ghostlight.world_play.v0", 3, json!({"text":"I look around."}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(played["state"], "accepted");
+
+        let woke = tokio::time::timeout(Duration::from_secs(5), revisions.recv()).await;
+        assert!(
+            woke.is_ok(),
+            "the play turn's own commit must publish a fresh revision to the SSE channel, not only \
+             eve_command's own already-sent accepted response"
+        );
+    }
+
+    /// PA.f153/PA.f154: before this cut, `world.play`'s route spawned
+    /// `PlayTable::run` in a task and answered `{"kind":"accepted"}`
+    /// unconditionally, discarding whatever `run` returned into a log line
+    /// nothing read — a replayed key, a stale/empty answer, a busy table, and
+    /// a poisoned table all looked exactly like success to the caller.
+    /// `admit` now runs synchronously in the route, so an admission refusal
+    /// — here, an empty/whitespace-only opening with no turn currently open
+    /// to continue — reaches the caller as `denied`, with the reason,
+    /// instead.
+    #[tokio::test]
+    async fn an_admission_refusal_reaches_the_caller_as_denied_not_accepted() {
+        let fixture = fixture().await;
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({
+                    "title":"Admission World",
+                    "brief":"",
+                    "subject_label":"Operator",
+                    "targets":{},
+                    "jurisdictions":[],
+                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
+                }),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(created["state"], "accepted");
+        let approved = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.approve", "ghostlight.world_approve.v0", 1, json!({}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(approved["state"], "accepted");
+        let activated = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.activate", "ghostlight.world_activate.v0", 2, json!({}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(activated["state"], "accepted");
+
+        let opened_empty = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.play", "ghostlight.world_play.v0", 3, json!({"text":"   "}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(
+            opened_empty["state"], "denied",
+            "an empty/whitespace-only opening with no turn open must be denied, not accepted: {opened_empty}"
+        );
+        assert!(
+            opened_empty["message"].as_str().unwrap().contains("empty"),
+            "the denial must carry the admission refusal's own reason: {opened_empty}"
+        );
+
+        // No turn was ever admitted, so nothing was ever spawned either.
+        let table = fixture.state.play.clone().unwrap();
+        assert!(
+            table.current_turn_view().await.is_none(),
+            "a denied admission must never open a turn row"
+        );
+    }
+
+    /// PA.f152: `world.play` is owner-gated like `world.advance_time` and
+    /// `world.seed` — both the surface (no card, no controls, no descriptor
+    /// for anyone else) and the route itself, since the surface is only a
+    /// hint a hostile client can ignore.
+    #[tokio::test]
+    async fn world_play_is_owner_gated_on_the_surface_and_the_route() {
+        let fixture = fixture().await;
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({
+                    "title":"Owner-Gated World",
+                    "brief":"",
+                    "subject_label":"Operator",
+                    "targets":{},
+                    "jurisdictions":[],
+                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
+                }),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(created["state"], "accepted");
+        let approved = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.approve", "ghostlight.world_approve.v0", 1, json!({}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(approved["state"], "accepted");
+        let activated = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.activate", "ghostlight.world_activate.v0", 2, json!({}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(activated["state"], "accepted");
+
+        // A stranger's own authenticated session — a different account, so a
+        // different `PrincipalId`, never the world's own owner.
+        let mut sessions = fixture.state.sessions.lock().await;
+        let stranger_cookie = sessions
+            .create_session(heimdall::VerifiedSessionAdmission::fixture(
+                "a-stranger-account",
+                "heimdall-session-stranger",
+                2,
+                Utc::now() + chrono::Duration::hours(1),
+                Utc::now() + chrono::Duration::days(1),
+                "fixture-refresh-stranger",
+            ))
+            .unwrap();
+        drop(sessions);
+
+        let stranger_surface = get(&fixture.state, &stranger_cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let encoded = serde_json::to_string(&stranger_surface).unwrap();
+        assert!(
+            !encoded.contains("world.play"),
+            "a non-owner's own surface must carry no play card, control, or command descriptor: {encoded}"
+        );
+
+        let played = post(
+            &fixture.state,
+            &stranger_cookie,
+            invocation("world.play", "ghostlight.world_play.v0", 3, json!({"text":"I look around."}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(
+            played["state"], "denied",
+            "the route itself must refuse a non-owner's world.play, not only hide the affordance: {played}"
+        );
+
+        let table = fixture.state.play.clone().unwrap();
+        assert!(
+            table.current_turn_view().await.is_none(),
+            "a non-owner's own denied world.play must never open a turn row"
         );
     }
 

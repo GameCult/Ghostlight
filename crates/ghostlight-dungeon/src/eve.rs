@@ -66,16 +66,29 @@ pub(crate) fn surface_version(snapshot: Option<&WorldSnapshot>) -> u64 {
         .unwrap_or(0)
 }
 
-/// The authenticated surface's own version (Cut 9): `surface_version` folded
-/// with the play row's own `revision`, when a play view is available. Additive,
-/// not paired: both counters only ever grow, so the sum only ever grows, and it
-/// moves whenever either one does — a play-row-only change (a fresh refusal, a
-/// newly open question, a closed turn's narration, none of which necessarily
-/// commit anything to the world) moves this even though `surface_version`
-/// alone would not, which is what lets the SSE path wake for it. No play view
-/// (no turn has opened yet, or the table is unavailable) contributes nothing,
-/// matching `surface_version`'s own reach when no play card renders at all.
-pub(crate) fn authenticated_surface_version(
+/// Cut 10 (PA.f148/PA.f160): the wake signal a watching client polls or
+/// subscribes to, never a value a client feeds back as `routeHint.sourceVersion`.
+/// It folds `surface_version` with the play row's own `revision`, when a play
+/// view is available, so a play-row-only change (a fresh refusal, a newly
+/// open question, a closed turn's narration, none of which necessarily commit
+/// anything to the world) still moves it even though `surface_version` alone
+/// would not — the one thing this must do that `surface_version` cannot.
+/// Additive, not paired: both counters only ever grow, so the sum only ever
+/// grows. No play view (no turn has opened yet, or the table is unavailable)
+/// contributes nothing, matching `surface_version`'s own reach when no play
+/// card renders at all.
+///
+/// Cut 9 folded this same sum into the surface document's own `version`
+/// field, which a client echoes straight back as `routeHint.sourceVersion` on
+/// its next command; the kernel's compare-and-swap then derives
+/// `expected_revision = source_version - 1` from it (`runtime.rs`), so a
+/// version that is not exactly `world.revision + 1` poisons every later
+/// command with "expected revision N, current revision M" (Soul's own
+/// probe). This function is now used for the wake signal alone —
+/// `authenticated_surface`'s own document `version` is plain
+/// `surface_version`, and the play row's revision travels beside it as its
+/// own `playRevision` field instead of folded in.
+pub(crate) fn authenticated_wake_version(
     snapshot: Option<&WorldSnapshot>,
     play: Option<&PlayTurnView>,
 ) -> u64 {
@@ -101,6 +114,7 @@ pub(crate) fn mesh_surface(snapshot: Option<&WorldSnapshot>) -> Value {
 fn anonymous_surface_at(version: u64) -> Value {
     surface_document(
         version,
+        0,
         "Ghostlight Dungeon",
         vec![
             json!({
@@ -210,7 +224,13 @@ pub(crate) fn authenticated_surface(
     snapshot: Option<&WorldSnapshot>,
     play: Option<&PlayTurnView>,
 ) -> anyhow::Result<Value> {
-    let version = authenticated_surface_version(snapshot, play);
+    // Cut 10 (PA.f148/PA.f160): the document's own `version` names the
+    // world's `surface_version` alone — the one meaning `routeHint.sourceVersion`
+    // and the kernel's compare-and-swap require of it. The play row's own
+    // revision still moves, but travels as its own field beside it
+    // (`play_revision` below), never folded into this one.
+    let version = surface_version(snapshot);
+    let play_revision = play.map_or(0, |view| view.revision);
     let mut children = vec![json!({
         "id":"ghostlight.identity",
         "kind":"heimdall.identity",
@@ -239,6 +259,20 @@ pub(crate) fn authenticated_surface(
                     "stateBindings":[local_draft("title", "string")],
                     "children":[]
                 }),
+                // Cut 10 (PA.f149): `CREATE_BINDINGS` has always advertised
+                // `brief` — `world_create.v4`'s `CreatePayload.brief` is
+                // required, not `#[serde(default)]` — but no control ever
+                // captured it. Driving `world.create` with the real
+                // vendored lowering surfaced this: nothing the lowering
+                // could ever submit through this form would satisfy
+                // `world_create.v4`, hand-built test payloads notwithstanding.
+                json!({
+                    "id":"world.create.brief",
+                    "kind":"control.input.textarea",
+                    "props":{"label":"Brief","rows":2,"placeholder":"One sentence of what this world is for"},
+                    "stateBindings":[local_draft("brief", "string")],
+                    "children":[]
+                }),
                 json!({
                     "id":"world.create.subject",
                     "kind":"control.input.text",
@@ -264,21 +298,21 @@ pub(crate) fn authenticated_surface(
                     "id":"world.create.targets",
                     "kind":"control.input.textarea",
                     "props":{"label":"Scale target","rows":2,"placeholder":"{\"person\": 12, \"institution\": 3}"},
-                    "stateBindings":[local_draft("targets", "json")],
+                    "stateBindings":[local_draft("targets", "string")],
                     "children":[]
                 }),
                 json!({
                     "id":"world.create.jurisdictions",
                     "kind":"control.input.textarea",
                     "props":{"label":"Jurisdiction roots","rows":3,"placeholder":"[{\"handle\":\"low_sere\",\"label\":\"The Low Sere\",\"permille\":700}]"},
-                    "stateBindings":[local_draft("jurisdictions", "json")],
+                    "stateBindings":[local_draft("jurisdictions", "string")],
                     "children":[]
                 }),
                 json!({
                     "id":"world.create.lens_weights",
                     "kind":"control.input.textarea",
                     "props":{"label":"Lens weights","rows":2,"value":default_lens_weights,"placeholder":default_lens_weights},
-                    "stateBindings":[local_draft("lens_weights", "json")],
+                    "stateBindings":[local_draft("lens_weights", "string")],
                     "children":[]
                 }),
                 command_button(
@@ -297,16 +331,14 @@ pub(crate) fn authenticated_surface(
             ));
         }
         Some(world) => {
+            // Cut 10 (PA.f159): phase and clock stay; the subject census is
+            // gone — nothing about who else is in the world is the player's
+            // own projection, invariant 8's own "nothing else."
             children.push(json!({
                 "id":"world.summary",
                 "kind":"card",
                 "props":{"title":world.title,"subtitle":format!("{:?} · revision {} · minute {}", world.phase, world.revision, world.now.0)},
-                "children":[{
-                    "id":"world.summary.body",
-                    "kind":"text",
-                    "props":{"value":format!("{} subject(s)", world.subjects.len())},
-                    "children":[]
-                }]
+                "children":[]
             }));
             match world.phase {
                 WorldPhase::Draft => {
@@ -406,88 +438,87 @@ pub(crate) fn authenticated_surface(
                             "WorldMailbox",
                         ));
                     }
-                    // Cut 9: the play card. Invariant 8 — the player sees a
-                    // projection, the question, and the refusal of their own
-                    // act, nothing else — so this reads `play` alone, never
-                    // the operator's own unscoped event log: no id, no other
-                    // subject's state, no speech the player did not perceive.
-                    // Always rendered in Active, with empty rows before any
-                    // turn has ever opened.
-                    let mut play_rows = Vec::new();
-                    if let Some(narration) = play.and_then(|view| view.narration.as_deref()) {
-                        play_rows.push(json!({
-                            "id":"world.play.narration",
-                            "kind":"text",
-                            "props":{"value":narration},
-                            "children":[]
+                    // Cut 10 (PA.f152): owner-gated, like `world.advance_time`
+                    // and `world.seed` above — the play card, its controls,
+                    // and the `world.play` descriptor are the owner's own
+                    // play authority over their own world, not a public
+                    // affordance.
+                    if world.owner == ghostlight::PrincipalId::new(account) {
+                        // Cut 9: the play card. Invariant 8 — the player sees
+                        // a projection, the question, and the refusal of
+                        // their own act, nothing else — so this reads `play`
+                        // alone, never the operator's own unscoped event log:
+                        // no id, no other subject's state, no speech the
+                        // player did not perceive. Always rendered here, with
+                        // empty rows before any turn has ever opened.
+                        let mut play_rows = Vec::new();
+                        if let Some(narration) = play.and_then(|view| view.narration.as_deref()) {
+                            play_rows.push(json!({
+                                "id":"world.play.narration",
+                                "kind":"text",
+                                "props":{"value":narration},
+                                "children":[]
+                            }));
+                        }
+                        if let Some(question) = play.and_then(|view| view.question.as_ref()) {
+                            play_rows.push(json!({
+                                "id":"world.play.question",
+                                "kind":"text",
+                                "props":{"value":question.text.as_str()},
+                                "children":[]
+                            }));
+                        }
+                        if let Some(refusal) = play.and_then(|view| view.refusal.as_deref()) {
+                            play_rows.push(json!({
+                                "id":"world.play.refusal",
+                                "kind":"text",
+                                "props":{"value":refusal},
+                                "children":[]
+                            }));
+                        }
+                        children.push(json!({
+                            "id":"world.play.card",
+                            "kind":"card",
+                            "props":{"title":"Play"},
+                            "children":play_rows
                         }));
-                    }
-                    if let Some(question) = play.and_then(|view| view.question.as_ref()) {
-                        play_rows.push(json!({
-                            "id":"world.play.question",
-                            "kind":"text",
-                            "props":{"value":question.text.as_str()},
-                            "children":[]
-                        }));
-                    }
-                    if let Some(refusal) = play.and_then(|view| view.refusal.as_deref()) {
-                        play_rows.push(json!({
-                            "id":"world.play.refusal",
-                            "kind":"text",
-                            "props":{"value":refusal},
-                            "children":[]
-                        }));
-                    }
-                    children.push(json!({
-                        "id":"world.play.card",
-                        "kind":"card",
-                        "props":{"title":"Play"},
-                        "children":play_rows
-                    }));
 
-                    // PA.f134: `answers` carries the exact `QuestionId` the
-                    // card above is showing, JSON-encoded the same way
-                    // `lens_weights`/`jurisdictions`/`targets` already encode
-                    // a `local_draft("…", "json")` field's own default value
-                    // — never a value a caller builds by hand. `None`/absent
-                    // when no question is open, so the control still opens or
-                    // continues a turn with plain text. With only `text`
-                    // bound, an asked question could never be answered
-                    // through this control at all — the world would wedge.
-                    let answers_default = play
-                        .and_then(|view| view.question.as_ref())
-                        .map(|question| serde_json::to_string(&question.id))
-                        .transpose()
-                        .context("the open question's id encodes as JSON")?;
-                    children.extend([
-                        json!({
-                            "id":"world.play.answers",
-                            "kind":"control.input.text",
-                            "props":{"label":"Question id","value":answers_default,"hidden":true},
-                            "stateBindings":[local_draft("answers", "json")],
-                            "children":[]
-                        }),
-                        json!({
-                            "id":"world.play.text",
-                            "kind":"control.input.textarea",
-                            "props":{"label":"What do you do?","rows":3,"placeholder":"Write freely"},
-                            "stateBindings":[local_draft("text", "string")],
-                            "children":[]
-                        }),
-                        command_button(
+                        // Cut 10 (PA.f151): no `answers`/question-id control
+                        // any more. The lowering has no authored, non-editable
+                        // binding value (`hidden` is not a prop any renderer
+                        // reads — Soul's own probe found it rendered as a
+                        // plain, editable, visible text box holding the raw
+                        // id), so the server resolves the open question
+                        // itself instead of trusting a client-supplied id at
+                        // all (`runtime.rs::execute_world`'s `world.play`
+                        // arm). PA.f84's guarantee still holds: a stale
+                        // `routeHint.sourceVersion` — one that predates the
+                        // question the player is answering — is refused
+                        // there, so an answer can never land on a question
+                        // the player never saw.
+                        children.extend([
+                            json!({
+                                "id":"world.play.text",
+                                "kind":"control.input.textarea",
+                                "props":{"label":"What do you do?","rows":3,"placeholder":"Write freely"},
+                                "stateBindings":[local_draft("text", "string")],
+                                "children":[]
+                            }),
+                            command_button(
+                                "world.play",
+                                "Play",
+                                "world.play",
+                                json!({}),
+                                &["text"],
+                            ),
+                        ]);
+                        commands.push(command_descriptor(
                             "world.play",
-                            "Play",
-                            "world.play",
-                            json!({}),
-                            &["text", "answers"],
-                        ),
-                    ]);
-                    commands.push(command_descriptor(
-                        "world.play",
-                        "ghostlight.world_play.v0",
-                        &["text", "answers"],
-                        "PlayTable",
-                    ));
+                            "ghostlight.world_play.v0",
+                            &["text"],
+                            "PlayTable",
+                        ));
+                    }
                 }
             }
         }
@@ -508,6 +539,7 @@ pub(crate) fn authenticated_surface(
     ));
     Ok(surface_document(
         version,
+        play_revision,
         snapshot
             .map(|world| world.title.as_str())
             .unwrap_or("Ghostlight Dungeon"),
@@ -599,6 +631,7 @@ pub(crate) fn command_result(
 
 fn surface_document(
     version: u64,
+    play_revision: u64,
     title: &str,
     children: Vec<Value>,
     commands: Vec<Value>,
@@ -610,6 +643,11 @@ fn surface_document(
         "providerKind":"narrative.simulation",
         "title":title,
         "version":version,
+        // Cut 10 (PA.f148): the play row's own revision, beside `version`
+        // rather than folded into it — one meaning per field. A client
+        // watches both to know a play-row-only change happened; only
+        // `version` is ever fed back as `routeHint.sourceVersion`.
+        "playRevision":play_revision,
         "updatedAtUtc":Utc::now().to_rfc3339(),
         "surface":{
             "id":SURFACE_ID,
@@ -648,8 +686,48 @@ fn command_descriptor(command: &str, schema: &str, bindings: &[&str], authority:
     })
 }
 
-fn local_draft(key: &str, value_type: &str) -> Value {
-    json!({"scope":"local-draft","key":key,"type":value_type})
+/// A `captureBindings` entry the vendored browser lowering
+/// (`@gamecult/eve-browser-lowering`, `EveStateBindingDescriptor`) actually
+/// resolves (Cut 10, PA.f149). Soul's own probe found `world.create`'s
+/// buttons submitting `{"bindings":{}}` for every field: the old shape here
+/// (`{"scope":"local-draft","key":key,"type":value_type}`) named none of the
+/// fields `findAuthoredBindingValue`/`editableBindingContext` read
+/// (`bindingName`, `pointerId`, `accessMode`), so the lowering fell back to
+/// the control's own node id as the binding name (`world.create.title`,
+/// never `title`), which never matches a `captureBindings` entry naming the
+/// field alone.
+///
+/// This is the vendored package's own working shape — its test suite
+/// (`test/host-isolation.test.mjs`) builds exactly this fixture, under a
+/// `ghostlight.play` surface id, for its own `composer.message` local-draft
+/// binding — copied field-for-field rather than invented: `targetProp`,
+/// `pointerId`, `sourceId`, `schemaId`, `routeKind`, `bindingName`,
+/// `valueKind`, `accessMode`, `authority`. `bindingName` is the one field
+/// that actually has to equal `key`, since `key` is also the exact string
+/// Dungeon's own `captureBindings` array and `command_descriptor` advertise;
+/// the rest of the descriptor's fields carry no runtime behavior in the
+/// current lowering (grep confirms `valueKind` is read nowhere), but are
+/// still worth stating correctly rather than leaving absent.
+///
+/// `value_kind` must be one of the lowering's own `valueKind` union
+/// (`"string" | "number" | "boolean" | "choice" | "string-list"`); Dungeon's
+/// own JSON-textarea fields (`targets`, `jurisdictions`, `lens_weights`) are,
+/// client-side, plain text controls like any other — there is no JSON
+/// `valueKind` — so callers pass `"string"` for those too, and the server
+/// side parses the captured text as JSON (`deserialize_json_capture` in
+/// `runtime.rs`).
+fn local_draft(key: &str, value_kind: &str) -> Value {
+    json!({
+        "targetProp":"value",
+        "pointerId":format!("ghostlight.local.{key}"),
+        "sourceId":"eve.browser.local",
+        "schemaId":"gamecult.eve.local_draft.v1",
+        "routeKind":"in-process",
+        "bindingName":key,
+        "valueKind":value_kind,
+        "accessMode":"local-draft",
+        "authority":"eve.browser"
+    })
 }
 
 fn short_principal(principal: &str) -> String {
