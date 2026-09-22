@@ -82,7 +82,8 @@ pub use controllers::{
     CellRun, ConnectorBinding, ControllerError, ControllerModels, ControllerNeed,
     ControllerPendingReason, ControllerRunner, ControllerWork, ControllerWorkCustody,
     ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError, ControllerWorkWrite,
-    GroupedCheckpoint, InferenceEvent, InferenceFault, InferenceOutput, InferencePort,
+    GroupedCheckpoint, InferenceEvent, InferenceFault, InferenceFaultDisposition, InferenceOutput,
+    InferencePort,
     InferencePurpose, InferenceRequest, NarrativeCheckpoint, NarrativeRun, OperationalCheckpoint,
     OperationalRun, PersonaLane, PreparedInference, SubmissionDisposition, ToolResultOracle,
     TracingInferencePort, open_controller_work, open_inference,
@@ -122,7 +123,8 @@ pub(crate) use patch::{
 pub use sdk_inference::{DEFAULT_SDK_MODEL_PREFIX, SdkBinding};
 pub use table::{
     DecodedBatch, PatchSite, TableError, actor_tools, authoring_tools, decode_actor_call,
-    decode_authoring_call, decode_authoring_calls, describe_refusal, table_view,
+    decode_authoring_call, decode_authoring_calls, describe_refusal, describe_refusal_to_actor,
+    table_view,
 };
 pub use vault::{VaultError, VaultEvidenceSource};
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};

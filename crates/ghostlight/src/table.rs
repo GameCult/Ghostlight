@@ -23,8 +23,8 @@ use super::patch::{
 };
 use super::{
     ActionMismatch, AffordanceSnapshot, CommandId, ControllerMode, DecisionInvocation,
-    DecisionOpportunity, EntityId, KernelError, Mismatch, Statement, SubjectId, SubjectKind,
-    WorldPatch, WorldSnapshot,
+    DecisionOpportunity, EntityId, KernelError, Mismatch, RefKind, Statement, SubjectId,
+    SubjectKind, Target, WorldPatch, WorldSnapshot,
 };
 use codex_connector::{CodexInputItem, CodexToolDefinition};
 use serde_json::Value;
@@ -254,28 +254,168 @@ pub fn decode_actor_call(
     Ok((opportunity.clone(), invocation))
 }
 
-/// A commit refusal in words the agent can act on. `ActionRejected` names the
-/// entry precondition, slot, or role that failed; `PatchRejected` names the
-/// tool call — by the handle it declared, or by its position among the
-/// operation calls — that produced the offending item. Every other
-/// `KernelError` has nothing more useful to say than its own `Display`.
-pub fn describe_refusal(snapshot: &WorldSnapshot, error: &KernelError) -> String {
+/// The agent-facing refusal: full detail. `ActionRejected` names the entry
+/// precondition, slot, or role that failed, with the labels of the roles the
+/// actor's own invocation bound when `entry` and `invocation` are given;
+/// `PatchRejected` names the tool call — by the handle it declared, by its
+/// position among the operation calls, or, when `batch` is the
+/// `DecodedBatch` that produced the rejected patch, by the exact call index
+/// `batch`'s own site map attributes it to. Every other `KernelError` has
+/// nothing more useful to say than its own `Display`.
+///
+/// This is the agent's own surface, never the actor's: it names ids,
+/// statements, and other world detail the actor's own attempt did not
+/// reveal. `describe_refusal_to_actor` is the narrow twin that a subject may
+/// see.
+pub fn describe_refusal(
+    snapshot: &WorldSnapshot,
+    entry: Option<&AffordanceSnapshot>,
+    invocation: Option<&DecisionInvocation>,
+    batch: Option<&DecodedBatch>,
+    error: &KernelError,
+) -> String {
     match error {
         KernelError::ActionRejected(mismatches) => mismatches
             .iter()
-            .map(describe_action_mismatch)
+            .map(|mismatch| describe_action_mismatch(mismatch, snapshot, entry, invocation))
             .collect::<Vec<_>>()
             .join("; "),
         KernelError::PatchRejected(mismatches) => mismatches
             .iter()
-            .map(|mismatch| describe_patch_mismatch(snapshot, mismatch))
+            .map(|mismatch| describe_patch_mismatch(snapshot, mismatch, batch))
             .collect::<Vec<_>>()
             .join("; "),
         other => other.to_string(),
     }
 }
 
-fn describe_action_mismatch(mismatch: &ActionMismatch) -> String {
+/// The actor-facing refusal: only what the actor's own attempt already
+/// reveals. For `ActionRejected`, only the failed preconditions, and only by
+/// the bare names of the roles `entry` declares — never a resolved label, an
+/// id, or a fact's statement, all of which the actor's own call did not
+/// hand back to it. Every other `KernelError` — `MissingApprovals`, a store
+/// or journal error, anything else — returns one fixed line that names
+/// nothing, because none of those reveal anything about the actor's own
+/// attempt at all.
+pub fn describe_refusal_to_actor(entry: &AffordanceSnapshot, error: &KernelError) -> String {
+    const REFUSED: &str = "refused";
+    let KernelError::ActionRejected(mismatches) = error else {
+        return REFUSED.to_owned();
+    };
+    let described: Vec<String> = mismatches
+        .iter()
+        .filter_map(|mismatch| describe_action_mismatch_to_actor(mismatch, entry))
+        .collect();
+    if described.is_empty() {
+        REFUSED.to_owned()
+    } else {
+        described.join("; ")
+    }
+}
+
+/// The precondition-numbered `ActionMismatch` variants, alongside the
+/// precondition index each one names into `entry.entry.preconditions`.
+fn precondition_index(mismatch: &ActionMismatch) -> Option<usize> {
+    match mismatch {
+        ActionMismatch::ActorNotPresent { precondition }
+        | ActionMismatch::TargetUnreachable { precondition }
+        | ActionMismatch::InsufficientHolding { precondition }
+        | ActionMismatch::NotAuthorized { precondition }
+        | ActionMismatch::NoStanding { precondition }
+        | ActionMismatch::FactUnknown { precondition }
+        | ActionMismatch::NoAudience { precondition }
+        | ActionMismatch::CannotReach { precondition }
+        | ActionMismatch::NotCommitted { precondition } => Some(*precondition),
+        _ => None,
+    }
+}
+
+/// The role(s) one `Precondition` names, in the order its own fields declare
+/// them. `HasStanding` and `CanBroadcast` name none: a grievance kind and an
+/// audience spec are not roles.
+fn precondition_roles(precondition: &patch::Precondition) -> Vec<patch::Role> {
+    match precondition {
+        patch::Precondition::Present { at } => vec![at.clone()],
+        patch::Precondition::Reachable { to, .. } => vec![to.clone()],
+        patch::Precondition::Holds { resource, .. } => vec![resource.clone()],
+        patch::Precondition::Authorized { over, .. } => vec![over.clone()],
+        patch::Precondition::HasStanding { .. } => Vec::new(),
+        patch::Precondition::Knows { fact, .. } => vec![fact.clone()],
+        patch::Precondition::CanBroadcast { .. } => Vec::new(),
+        patch::Precondition::CanReach { subject, .. } => vec![subject.clone()],
+        patch::Precondition::Committed { to, .. } => vec![to.clone()],
+    }
+}
+
+/// The agent-facing precondition context: for each role the failed
+/// precondition names, the role's own name and the label of what the
+/// actor's invocation actually bound it to (PA.f56 — `ActionRejected` never
+/// read the entry's preconditions before this). `None` when `entry` or
+/// `invocation` is not available to the caller, or the precondition names no
+/// role.
+fn precondition_context(
+    snapshot: &WorldSnapshot,
+    entry: Option<&AffordanceSnapshot>,
+    invocation: Option<&DecisionInvocation>,
+    index: usize,
+) -> Option<String> {
+    let entry = entry?;
+    let invocation = invocation?;
+    let precondition = entry.entry.preconditions.get(index)?;
+    let roles = precondition_roles(precondition);
+    if roles.is_empty() {
+        return None;
+    }
+    let labels: Vec<String> = roles
+        .iter()
+        .filter_map(|role| {
+            let binding = invocation.bindings.iter().find(|binding| binding.role.0 == role.0)?;
+            Some(format!(
+                "role `{}` bound to {}",
+                role.0,
+                describe_target(snapshot, &binding.target)
+            ))
+        })
+        .collect();
+    if labels.is_empty() {
+        None
+    } else {
+        Some(format!(" ({})", labels.join(", ")))
+    }
+}
+
+fn describe_target(snapshot: &WorldSnapshot, target: &Target) -> String {
+    let id = match target {
+        Target::Subject(id) => id_text(*id),
+        Target::Entity(id) => id_text(*id),
+        Target::Edge(id) => id_text(*id),
+    };
+    label_for_any_id(snapshot, &id).unwrap_or_else(|| format!("[{id}]"))
+}
+
+/// A `RefKind` in plain words, not Rust `Debug`.
+fn render_ref_kind(kind: RefKind) -> &'static str {
+    match kind {
+        RefKind::Subject(_) => "subject",
+        RefKind::Entity(super::EntityKind::Place) => "place",
+        RefKind::Entity(super::EntityKind::Resource) => "resource",
+        RefKind::Entity(super::EntityKind::Fact) => "fact",
+        RefKind::Entity(super::EntityKind::Channel) => "channel",
+        RefKind::Edge(_) => "route",
+        RefKind::Affordance => "affordance",
+    }
+}
+
+fn describe_action_mismatch(
+    mismatch: &ActionMismatch,
+    snapshot: &WorldSnapshot,
+    entry: Option<&AffordanceSnapshot>,
+    invocation: Option<&DecisionInvocation>,
+) -> String {
+    let context =
+        |mismatch: &ActionMismatch| precondition_index(mismatch)
+            .and_then(|index| precondition_context(snapshot, entry, invocation, index))
+            .unwrap_or_default();
     match mismatch {
         ActionMismatch::UnboundRole { role } => format!("role `{}` was never bound", role.0),
         ActionMismatch::UnknownRole { role } => {
@@ -292,17 +432,22 @@ fn describe_action_mismatch(mismatch: &ActionMismatch) -> String {
             expected,
             actual,
         } => format!(
-            "role `{}` expected a {expected:?} but was bound to a {actual:?}",
-            role.0
+            "role `{}` expected a {} but was bound to a {}",
+            role.0,
+            render_ref_kind(*expected),
+            render_ref_kind(*actual)
         ),
         ActionMismatch::ActorNotPresent { precondition } => format!(
-            "precondition #{precondition} of the entry failed: the actor was not present"
+            "precondition #{precondition} of the entry failed: the actor was not present{}",
+            context(mismatch)
         ),
         ActionMismatch::TargetUnreachable { precondition } => format!(
-            "precondition #{precondition} of the entry failed: the target is unreachable"
+            "precondition #{precondition} of the entry failed: the target is unreachable{}",
+            context(mismatch)
         ),
         ActionMismatch::InsufficientHolding { precondition } => format!(
-            "precondition #{precondition} of the entry failed: the actor does not hold enough"
+            "precondition #{precondition} of the entry failed: the actor does not hold enough{}",
+            context(mismatch)
         ),
         ActionMismatch::SlotNotProposed { slot } => {
             format!("effect slot #{slot} was not proposed")
@@ -331,10 +476,12 @@ fn describe_action_mismatch(mismatch: &ActionMismatch) -> String {
         ActionMismatch::EmptySpeech => "the proposed utterance is not canonical text".to_owned(),
         ActionMismatch::EmptyDisplay => "the proposed display is not canonical text".to_owned(),
         ActionMismatch::NotAuthorized { precondition } => format!(
-            "precondition #{precondition} of the entry failed: the actor is not authorized over that target"
+            "precondition #{precondition} of the entry failed: the actor is not authorized over that target{}",
+            context(mismatch)
         ),
         ActionMismatch::NoStanding { precondition } => format!(
-            "precondition #{precondition} of the entry failed: no forum's standing reaches the actor"
+            "precondition #{precondition} of the entry failed: no forum's standing reaches the actor{}",
+            context(mismatch)
         ),
         ActionMismatch::ActorRoleBound => {
             "the invocation bound the reserved `actor` role".to_owned()
@@ -343,28 +490,72 @@ fn describe_action_mismatch(mismatch: &ActionMismatch) -> String {
             "effect slot #{slot} would grant authority the actor does not itself hold"
         ),
         ActionMismatch::FactUnknown { precondition } => format!(
-            "precondition #{precondition} of the entry failed: the actor does not hold that fact"
+            "precondition #{precondition} of the entry failed: the actor does not hold that fact{}",
+            context(mismatch)
         ),
         ActionMismatch::NoAudience { precondition } => format!(
-            "precondition #{precondition} of the entry failed: the actor has no audience"
+            "precondition #{precondition} of the entry failed: the actor has no audience{}",
+            context(mismatch)
         ),
         ActionMismatch::CannotReach { precondition } => format!(
-            "precondition #{precondition} of the entry failed: the addressed subject is not in that audience"
+            "precondition #{precondition} of the entry failed: the addressed subject is not in that audience{}",
+            context(mismatch)
         ),
         ActionMismatch::NotCommitted { precondition } => format!(
-            "precondition #{precondition} of the entry failed: the actor holds no such commitment"
+            "precondition #{precondition} of the entry failed: the actor holds no such commitment{}",
+            context(mismatch)
         ),
     }
 }
 
+/// The actor-facing rendering of one `ActionMismatch`: `None` for anything
+/// that is not a failed precondition (a role/slot mismatch names the actor's
+/// own call shape back to it and is not withheld in principle, but PA.f57's
+/// ruling scopes `describe_refusal_to_actor` to failed preconditions alone,
+/// so every other variant is silent here). A precondition's role names are
+/// bare — `entry.entry.preconditions[index]`'s own `Role`s, never resolved
+/// to a label, an id, or a fact's statement: the actor already knows what it
+/// bound there, and nothing else is handed back.
+fn describe_action_mismatch_to_actor(mismatch: &ActionMismatch, entry: &AffordanceSnapshot) -> Option<String> {
+    let index = precondition_index(mismatch)?;
+    let roles = entry
+        .entry
+        .preconditions
+        .get(index)
+        .map(precondition_roles)
+        .unwrap_or_default();
+    let role_text = if roles.is_empty() {
+        "a precondition with no role".to_owned()
+    } else {
+        roles
+            .iter()
+            .map(|role| format!("`{}`", role.0))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    Some(format!(
+        "a precondition over role {role_text}, which you bound yourself, failed"
+    ))
+}
+
 /// A `Mismatch`'s own site, read generically off its serialized shape rather
 /// than through a fifty-arm match: every variant tags its site under one of
-/// `site`, `operation`, `position`, `handle`, or `referent`, and this reads
-/// whichever is present. `site`/`operation`/`position` name the offending
-/// tool call directly, by the handle it declared or by its position among
-/// the operation calls it authored — the one-item-per-call rule
-/// `decode_authoring_call` keeps makes that position the call's own index.
-fn describe_patch_mismatch(snapshot: &WorldSnapshot, mismatch: &Mismatch) -> String {
+/// `site`, `operation`, `position`, `handle`, `resource`, or `referent`, and
+/// this reads whichever is present. `WrongKind` and `CustodyNotConserved`
+/// carry more than a bare site (the kinds compared, or the resource whose
+/// ledger failed to balance) and are rendered fully before the generic
+/// reader ever runs; `EmptyEvidence`'s `position` is an index into the
+/// patch's evidence list, not a declaration index, so it is also rendered
+/// before the generic reader could conflate the two (PA.f56). `site` and
+/// `operation` name the offending tool call by the exact call index
+/// `batch`'s own site map attributes it to, when `batch` is given; falling
+/// back to the raw declaration/operation index otherwise, since that index
+/// is still the best available answer with no batch in hand.
+fn describe_patch_mismatch(
+    snapshot: &WorldSnapshot,
+    mismatch: &Mismatch,
+    batch: Option<&DecodedBatch>,
+) -> String {
     let value = serde_json::to_value(mismatch).unwrap_or(Value::Null);
     let kind = value
         .get("mismatch")
@@ -374,16 +565,42 @@ fn describe_patch_mismatch(snapshot: &WorldSnapshot, mismatch: &Mismatch) -> Str
     let Some(object) = value.as_object() else {
         return kind;
     };
+    if kind == "wrong_kind" {
+        let site = object
+            .get("site")
+            .map(|site| describe_site(site, batch))
+            .unwrap_or_else(|| "an unresolved site".to_owned());
+        let referent = object
+            .get("referent")
+            .map(|referent| describe_ref_name(snapshot, referent))
+            .unwrap_or_else(|| "a reference".to_owned());
+        let expected = render_ref_kind_value(object.get("expected"));
+        let actual = render_ref_kind_value(object.get("actual"));
+        return format!("{site}: `{referent}` names a {actual} but a {expected} was expected");
+    }
+    if kind == "custody_not_conserved" {
+        let resource = object
+            .get("resource")
+            .map(|referent| describe_ref_name(snapshot, referent))
+            .unwrap_or_else(|| "a resource".to_owned());
+        return format!("the candidate ledger does not balance for `{resource}`");
+    }
+    if kind == "empty_evidence" {
+        let position = object.get("position").and_then(Value::as_u64).unwrap_or_default();
+        return format!("evidence item #{position}: an empty or duplicate evidence reference");
+    }
     let site = if let Some(site) = object.get("site") {
-        Some(describe_site(site))
+        Some(describe_site(site, batch))
     } else if let Some(operation) = object.get("operation").and_then(Value::as_u64) {
-        Some(format!("operation tool call #{operation}"))
+        Some(describe_operation_site(operation as usize, batch))
     } else if let Some(position) = object.get("position").and_then(Value::as_u64) {
-        Some(format!("declaration tool call #{position}"))
+        // Only `EmptyHandle` reaches here now: `empty_evidence`'s `position`
+        // returned above, so this index is always a declaration index.
+        Some(describe_declaration_site(position as usize, batch))
     } else if let Some(handle) = object.get("handle").and_then(Value::as_str) {
         Some(format!("the call that declared `{handle}`"))
     } else if let Some(referent) = object.get("referent") {
-        Some(describe_referent(snapshot, referent))
+        Some(describe_referent(referent))
     } else {
         None
     };
@@ -393,7 +610,7 @@ fn describe_patch_mismatch(snapshot: &WorldSnapshot, mismatch: &Mismatch) -> Str
     }
 }
 
-fn describe_site(site: &Value) -> String {
+fn describe_site(site: &Value, batch: Option<&DecodedBatch>) -> String {
     match site.get("site").and_then(Value::as_str) {
         Some("declaration") => {
             let handle = site.get("at").and_then(Value::as_str).unwrap_or("?");
@@ -401,21 +618,68 @@ fn describe_site(site: &Value) -> String {
         }
         Some("operation") => {
             let index = site.get("at").and_then(Value::as_u64).unwrap_or_default();
-            format!("operation tool call #{index}")
+            describe_operation_site(index as usize, batch)
         }
         _ => "an unresolved site".to_owned(),
     }
 }
 
-/// A `referent` is either a bare draft handle (a plain string, quoted as the
-/// call wrote it) or a `RefName` (a tagged `{namespace, ref}`, resolved to
-/// the standing thing's label when the reference is canonical). This is the
-/// one place a `PatchRejected` mismatch's referent is turned into the same
-/// labels `table_view` prints, rather than a second lookup.
-fn describe_referent(snapshot: &WorldSnapshot, referent: &Value) -> String {
-    if let Some(handle) = referent.as_str() {
-        return format!("the reference to `{handle}`");
+/// An operation site, named by the exact call index `batch`'s site map
+/// attributes it to when `batch` is given, or by its raw index into the
+/// patch's own operations otherwise.
+fn describe_operation_site(index: usize, batch: Option<&DecodedBatch>) -> String {
+    match batch.and_then(|batch| batch.site_calls.get(&PatchSite::Operation(index))) {
+        Some(call_index) => format!("call #{call_index}"),
+        None => format!("operation tool call #{index}"),
     }
+}
+
+/// A declaration site, named the same way `describe_operation_site` names an
+/// operation site.
+fn describe_declaration_site(index: usize, batch: Option<&DecodedBatch>) -> String {
+    match batch.and_then(|batch| batch.site_calls.get(&PatchSite::Declaration(index))) {
+        Some(call_index) => format!("call #{call_index}"),
+        None => format!("declaration tool call #{index}"),
+    }
+}
+
+/// A `RefKind` read off its serialized `{"namespace": ..., "kind": ...}`
+/// shape, in the same plain words `render_ref_kind` renders the typed value.
+fn render_ref_kind_value(value: Option<&Value>) -> String {
+    let Some(value) = value else {
+        return "reference".to_owned();
+    };
+    match value.get("namespace").and_then(Value::as_str) {
+        Some("subject") => "subject".to_owned(),
+        Some("entity") => value
+            .get("kind")
+            .and_then(Value::as_str)
+            .unwrap_or("entity")
+            .to_owned(),
+        Some("edge") => "route".to_owned(),
+        Some("affordance") => "affordance".to_owned(),
+        _ => "reference".to_owned(),
+    }
+}
+
+/// A bare draft handle referent (a plain string, quoted as the call wrote
+/// it). `ContainmentCycle` and `RouteSelfLoop` are the only `Mismatch`
+/// variants that reach this path, and both carry a `DraftHandle`, never a
+/// `RefName` — `WrongKind`'s own `RefName` referent is rendered by
+/// `describe_ref_name` instead, from `describe_patch_mismatch`'s dedicated
+/// arm, because `WrongKind` also carries a `site` that the generic reader
+/// would otherwise match first, which made the `RefName` half of this
+/// function unreachable dead code.
+fn describe_referent(referent: &Value) -> String {
+    let handle = referent.as_str().unwrap_or("?");
+    format!("the reference to `{handle}`")
+}
+
+/// A `RefName` referent (a tagged `{namespace, ref}`), resolved to the
+/// standing thing's label when the reference is canonical — the one place a
+/// `WrongKind` mismatch's referent is turned into the same labels
+/// `table_view` prints, rather than a second lookup.
+fn describe_ref_name(snapshot: &WorldSnapshot, referent: &Value) -> String {
     let namespace = referent
         .get("namespace")
         .and_then(Value::as_str)
@@ -1615,7 +1879,7 @@ mod tests {
         let error = KernelError::ActionRejected(vec![ActionMismatch::ActorNotPresent {
             precondition: 2,
         }]);
-        let text = describe_refusal(&snapshot, &error);
+        let text = describe_refusal(&snapshot, None, None, None, &error);
         assert!(text.contains("precondition #2"), "{text}");
         assert!(text.contains("not present"), "{text}");
     }
@@ -1625,7 +1889,183 @@ mod tests {
     fn describe_refusal_falls_back_to_display_for_every_other_error() {
         let snapshot = play_fixture().snapshot;
         let error = KernelError::Unauthorized;
-        assert_eq!(describe_refusal(&snapshot, &error), error.to_string());
+        assert_eq!(describe_refusal(&snapshot, None, None, None, &error), error.to_string());
+    }
+
+    /// Rule (PA.f56): `WrongKind` names both the expected and the actual
+    /// kind, in plain words, not Rust `Debug`.
+    #[test]
+    fn describe_refusal_names_wrong_kinds_expected_and_actual() {
+        let fixture = play_fixture();
+        let mismatch = Mismatch::WrongKind {
+            site: patch::Site::Operation(3),
+            referent: patch::RefName::Subject(patch::Ref::Existing(fixture.custody.holder)),
+            expected: RefKind::Entity(crate::EntityKind::Place),
+            actual: RefKind::Subject(None),
+        };
+        let text = describe_refusal(
+            &fixture.snapshot,
+            None,
+            None,
+            None,
+            &KernelError::PatchRejected(vec![mismatch]),
+        );
+        assert!(text.contains("place"), "{text}");
+        assert!(text.contains("subject"), "{text}");
+        assert!(!text.contains("RefKind") && !text.contains("Entity("), "{text}");
+    }
+
+    /// Rule (PA.f56): `CustodyNotConserved` names the resource whose ledger
+    /// failed to balance.
+    #[test]
+    fn describe_refusal_names_custody_not_conserveds_resource() {
+        let fixture = play_fixture();
+        let mismatch = Mismatch::CustodyNotConserved {
+            resource: patch::RefName::Entity(patch::Ref::Existing(fixture.custody.ingot)),
+        };
+        let text = describe_refusal(
+            &fixture.snapshot,
+            None,
+            None,
+            None,
+            &KernelError::PatchRejected(vec![mismatch]),
+        );
+        let ingot = fixture
+            .snapshot
+            .resources
+            .iter()
+            .find(|resource| resource.id == fixture.custody.ingot)
+            .expect("the ingot is a declared resource");
+        assert!(text.contains(&ingot.label), "{text}");
+    }
+
+    /// Rule (PA.f56): `EmptyEvidence`'s `position` is an evidence-list index,
+    /// never rendered as a declaration site the way `EmptyHandle`'s own
+    /// `position` is — the two must not read as the same thing.
+    #[test]
+    fn describe_refusal_never_conflates_empty_evidence_with_a_declaration_site() {
+        let fixture = play_fixture();
+        let text = describe_refusal(
+            &fixture.snapshot,
+            None,
+            None,
+            None,
+            &KernelError::PatchRejected(vec![Mismatch::EmptyEvidence { position: 4 }]),
+        );
+        assert!(text.contains("evidence"), "{text}");
+        assert!(!text.contains("declaration"), "{text}");
+    }
+
+    /// Rule (PA.f56): when the caller has the `DecodedBatch` that produced
+    /// the rejected patch, a declaration or operation site names the exact
+    /// call index `batch`'s own site map attributes it to, not the raw
+    /// index into the patch's own declarations or operations.
+    #[test]
+    fn describe_refusal_names_the_exact_call_through_a_batch_map() {
+        let place = serde_json::json!({"handle": "yard", "label": "The Cavity Yard", "container": null})
+            .to_string();
+        let another =
+            serde_json::json!({"handle": "hall", "label": "The Long Hall", "container": null})
+                .to_string();
+        let batch = decode_authoring_calls(&[("declare_place", &place), ("declare_place", &another)])
+            .expect("both calls decode");
+        let fixture = play_fixture();
+        let text = describe_refusal(
+            &fixture.snapshot,
+            None,
+            None,
+            Some(&batch),
+            &KernelError::PatchRejected(vec![Mismatch::EmptyHandle { position: 1 }]),
+        );
+        assert!(text.starts_with("call #1:"), "{text}");
+        assert!(!text.contains("tool call"), "{text}");
+    }
+
+    /// Rule (PA.f56): `ActionRejected` renders the failed precondition's own
+    /// role and what the actor's invocation actually bound it to, when
+    /// `entry` and `invocation` are given.
+    #[test]
+    fn describe_refusal_renders_a_preconditions_bound_role() {
+        let fixture = play_fixture();
+        let holder = fixture
+            .snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == fixture.custody.holder)
+            .expect("the holder is in the snapshot");
+        let carry = fixture
+            .snapshot
+            .affordances
+            .iter()
+            .find(|entry| holder.affordances.contains(&entry.id) && entry.entry.kind.0 == "carry")
+            .expect("the holder holds `carry`");
+        let mut object = serde_json::Map::new();
+        for role in &carry.entry.roles {
+            object.insert(role.role.0.clone(), Value::String(id_text(fixture.custody.holder)));
+        }
+        object.insert("slot_0_qty".into(), Value::from(1));
+        let arguments = Value::Object(object).to_string();
+        let (_, invocation) =
+            decode_actor_call(&fixture.snapshot, fixture.custody.holder, "", "carry", &arguments)
+                .expect("carry decodes against the holder's own opportunity");
+        // Precondition #0 on `carry` is `Present { at: place_role() }`.
+        let error = KernelError::ActionRejected(vec![ActionMismatch::ActorNotPresent { precondition: 0 }]);
+        let text = describe_refusal(&fixture.snapshot, Some(carry), Some(&invocation), None, &error);
+        assert!(text.contains("role `place`"), "{text}");
+        assert!(text.contains(&holder.label), "{text}");
+    }
+
+    /// Rule (PA.f57): `describe_refusal_to_actor` reveals the failed
+    /// precondition's role name and nothing else — never a resolved label,
+    /// an id, or a fact's statement. A precondition over a fact the actor
+    /// does not hold must not leak that fact's identity back to it.
+    #[test]
+    fn describe_refusal_to_actor_reveals_only_the_bound_role_name() {
+        let fixture = play_fixture();
+        let holder = fixture
+            .snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == fixture.custody.holder)
+            .expect("the holder is in the snapshot");
+        let carry = fixture
+            .snapshot
+            .affordances
+            .iter()
+            .find(|entry| holder.affordances.contains(&entry.id) && entry.entry.kind.0 == "carry")
+            .expect("the holder holds `carry`");
+        let error = KernelError::ActionRejected(vec![ActionMismatch::InsufficientHolding { precondition: 1 }]);
+        let text = describe_refusal_to_actor(carry, &error);
+        assert!(text.contains("`resource`"), "{text}");
+        assert!(!text.contains(&id_text(fixture.custody.holder)), "{text}");
+        assert!(!text.contains(&holder.label), "{text}");
+    }
+
+    /// Rule (PA.f57): every `KernelError` other than `ActionRejected` —
+    /// `MissingApprovals`, a store or journal error — reveals nothing to the
+    /// actor.
+    #[test]
+    fn describe_refusal_to_actor_reveals_nothing_for_every_other_error() {
+        let fixture = play_fixture();
+        let holder = fixture
+            .snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == fixture.custody.holder)
+            .expect("the holder is in the snapshot");
+        let carry = fixture
+            .snapshot
+            .affordances
+            .iter()
+            .find(|entry| holder.affordances.contains(&entry.id) && entry.entry.kind.0 == "carry")
+            .expect("the holder holds `carry`");
+        for error in [
+            KernelError::MissingApprovals(Vec::new()),
+            KernelError::Store("a store detail nobody outside the kernel should see".into()),
+            KernelError::CorruptJournal("a journal detail nobody outside the kernel should see".into()),
+        ] {
+            assert_eq!(describe_refusal_to_actor(carry, &error), "refused");
+        }
     }
 
     /// Rule: `table_view` prints every id a `PLAY_TOOLS` example takes,

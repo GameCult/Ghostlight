@@ -886,7 +886,14 @@ impl PlayTable {
         match submission {
             Ok(_) => Ok((RoundOutcome::Continue, "applied".to_owned())),
             Err(MailboxError::Kernel(KernelError::ActionRejected(mismatches))) => {
-                let text = describe_refusal(snapshot, &KernelError::ActionRejected(mismatches));
+                // `entry`, `invocation`, and a run's site map are not
+                // threaded through this call site yet; Cut 8b is the one
+                // that wires this refusal path to the new parameters (and,
+                // per PA.f57, to `describe_refusal_to_actor` for what the
+                // player specifically sees). Passing `None` for all three
+                // keeps this call's behaviour exactly what it was.
+                let text =
+                    describe_refusal(snapshot, None, None, None, &KernelError::ActionRejected(mismatches));
                 if actor.is_player {
                     turn.refusal = Some(text.clone());
                 }

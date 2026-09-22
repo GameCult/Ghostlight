@@ -198,8 +198,13 @@ pub struct InferenceFault {
     detail: String,
 }
 
+/// The three-way disposition an `InferenceFault` carries, readable but not
+/// independently constructible: `InferenceFault`'s own named constructors
+/// (`retryable`, `integrity_violation`, `recovery_required`) remain the only
+/// way to produce one, so this being `pub` widens what Dungeon can read, not
+/// what it can author (PA.f60).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum InferenceFaultDisposition {
+pub enum InferenceFaultDisposition {
     Retryable,
     RecoveryRequired,
     IntegrityViolation,
@@ -239,6 +244,14 @@ impl InferenceFault {
 
     pub(super) fn requires_recovery(&self) -> bool {
         self.disposition == InferenceFaultDisposition::RecoveryRequired
+    }
+
+    /// The fault's own disposition, read-only (PA.f60): Dungeon has no
+    /// library-internal access to `requires_recovery`/`integrity_was_violated`
+    /// (both `pub(super)`), so it had no way to read what kind of fault it
+    /// was holding at all.
+    pub fn disposition(&self) -> InferenceFaultDisposition {
+        self.disposition
     }
 
     pub(super) fn integrity_was_violated(&self) -> bool {
@@ -7251,6 +7264,28 @@ mod tests {
             "a ruled fact must render as canonical in the typed view: {typed_view}"
         );
         assert!(!typed_view.contains("\"ruled\""));
+    }
+
+    /// PA.f60: `InferenceFault::disposition` is a public, read-only accessor
+    /// of the fault's existing three-way value — Dungeon has no access to
+    /// the library-internal `requires_recovery`/`integrity_was_violated`
+    /// (both `pub(super)`), so it previously had no way to read a fault's
+    /// disposition at all. Each named constructor still owns its own
+    /// disposition; this adds no new way to construct one.
+    #[test]
+    fn inference_fault_disposition_is_publicly_readable() {
+        assert_eq!(
+            InferenceFault::retryable("transport hiccup").disposition(),
+            InferenceFaultDisposition::Retryable
+        );
+        assert_eq!(
+            InferenceFault::integrity_violation("the provider lied").disposition(),
+            InferenceFaultDisposition::IntegrityViolation
+        );
+        assert_eq!(
+            InferenceFault::recovery_required("this purpose cannot complete").disposition(),
+            InferenceFaultDisposition::RecoveryRequired
+        );
     }
 
     /// Verification 5, second half, over real committed state: a subject
