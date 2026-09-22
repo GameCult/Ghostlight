@@ -581,19 +581,17 @@ boundaries.
 
 ## Verification contract
 
-Focused tests prove the machine under fixture inference ports. The one place
-the road is exercised against a real controller is the local live smoke
-(`notes/local-live-smoke.md`): the production tick driver, cover, Persona
-membrane, operational lane, clock, and elaboration sweep against a
-CodexConnector on a genesis world. Its first run (2026-09-05) proved the path
-end to end and showed that a three-subject, one-room genesis yields thin
-prose; a seed producer is the gap that finding names. Step 8 landed that seed
-producer: `world.create` v2 carries the scale intent at genesis, `world.seed`
-runs one `SeedRunner` session per invocation against a `VaultEvidenceSource`,
-and the extended live smoke seeds a world before it ticks. Creation's current
-payload is `world_create.v4`: title, brief, targets, jurisdiction roots and
-lens weights are required, and Dungeon's create surface offers uniform weights
-as its editable default.
+Focused tests prove the machine under fixture inference ports. No live smoke
+exists: the play agent's Cut 1 (`d69e9d4`) deleted the tick driver, cover and
+Active elaboration sweep it exercised, along with the ignored test itself, to
+clear the ground for the play agent's own owner. `notes/local-live-smoke.md`
+now documents only connector and Claude SDK sidecar bring-up, which the seed
+lane still uses. Exercising the road against a real controller again is the
+play agent's own gate (`ghostlight-play-agent.md`), not this contract.
+`world.create`'s current payload is `world_create.v4`: title, brief, targets,
+jurisdiction roots and lens weights are required, and Dungeon's create surface
+offers uniform weights as its editable default. `world.seed` runs one
+`SeedRunner` session per invocation against a `VaultEvidenceSource`.
 
 Focused tests must prove:
 

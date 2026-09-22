@@ -60,7 +60,9 @@ detail rules", which separates what L1 implemented from what L2 to L4 owe.
    (L1-Q4). Elaboration draws from its own pool, a ceiling
    (`GHOSTLIGHT_ELABORATION_MAX_CONCURRENT`, default 2), separate from the
    simulation budget, and saturating either pool never delays the other.
-   Holds.
+   Dungeon runs no Active elaboration since the play agent's Cut 1
+   (`d69e9d4`) deleted its sweep and pool; the claim stands as a library
+   capability. Holds.
 6. **The lens is recorded and resume reads state.** The drawn lens and its
    instruction text are persisted on the session (`controller_work.v16`,
    L1-Q7). A resumed session keeps both even if the weights or the lens's

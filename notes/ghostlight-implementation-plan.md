@@ -408,10 +408,12 @@ defined by the digest, so a neighbour's act, a clock tick that rolls a
 routine's `due`, an elaborator patch, a consumer document, and a world-scale
 event are one case, indistinguishable at the handler. Schema bumps:
 `controller_work.v11` and `ghostlight.persona_turn_receipt.v3`; prior rows
-are refused, not migrated. Eve reports the interruption through
-`ControllerHttpResult::Interrupted`, which renders as `denied` in the
-command result today; the receipt text carries the subject, both scope
-digests, the persona prose and receipt digest, and the untranslatable gap.
+are refused, not migrated. The kernel's interruption still carries the
+subject, both scope digests, the persona prose and receipt digest, and the
+untranslatable gap; the play agent's Cut 1 (`d69e9d4`) deleted the owner's
+dispatch surface and `ControllerHttpResult::Interrupted` with it, so nothing
+in Dungeon reports an interruption today. Reporting a re-lowered turn to the
+play agent's own turn record is Cut 8's.
 
 Cut line held: no new kernel arm, bundle, or joint command; no second Persona
 turn; no event log reaches a controller; the delta shown to the Interpreter
@@ -424,10 +426,12 @@ What is undone: no road run has exercised the re-lowering against a live
 provider; none exists yet. Closed since landing: fork D's branch was dead by
 construction (grants are insert-only, so a fresh opportunity always carries
 speech) and is deleted; transfer, route-closing, and grant-revocation causes
-are proven anonymous by Soul; a `run_cover_tick` end-to-end carries an
-interruption through a real tick and shows the overtaken turn committing
-nothing; a witness landing mid-turn yields the anonymous knowledge line and
-no overheard row. Still open: the elaborator-patch cause is proven only by
+are proven anonymous by Soul; an end-to-end test carried an interruption
+through a real tick via `run_cover_tick` and showed the overtaken turn
+committing nothing, before the play agent's Cut 1 (`d69e9d4`) deleted
+`run_cover_tick` and the tick driver it drove; a witness landing mid-turn
+yields the anonymous knowledge line and no overheard row. Still open: the
+elaborator-patch cause is proven only by
 the shared code path, not by a fixture that drives the elaborator past its
 answer gate; and whether Eve's command-result vocabulary needs a fourth
 state for an overtaken turn is the Eve owner's question.

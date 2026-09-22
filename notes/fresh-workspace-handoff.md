@@ -221,9 +221,11 @@ transports: the CodexConnector and, per `claude`-prefixed lane model, the
 Node sidecar on the Claude Agent SDK. The Rust decoder is the one validator
 on both; the sidecar hands arguments through unvalidated. The sidecar and
 its receipt shape are a named stopgap, deleted whole when a Messages-API port
-has budget. The SDK transport is proven on the road: seeded runs on
-`claude-sonnet-5` committed ticks end to end (`notes/local-live-smoke.md`,
-"SDK runs, 2026-09-10"). A kernel refusal continues the authoring
+has budget. The SDK transport was proven on the road before the play agent's
+Cut 1 (`d69e9d4`) deleted the tick driver those runs exercised: seeded runs on
+`claude-sonnet-5` committed ticks end to end (evidence ledger; the runbook
+that recorded them, `notes/local-live-smoke.md`, no longer carries that
+narrative). A kernel refusal continues the authoring
 conversation (`Refusal` rows, `controller_work.v16`); the Interpreter cites
 prose by quote (`source_quote`), and a quote not in the prose is a gap. Plan
 step 12 is landed: `PersonaMaterial` is the thirteenth component, a promise
@@ -306,8 +308,10 @@ follow-ups are listed in
 stock lens set, is implemented (`835ea4d..872ba35`; cut map
 `docs/architecture/ghostlight-stock-lenses-cut.md`): lens weights are world
 data the owner replaces with `SetLensWeights`, each elaborator session records
-the lens it drew and that lens's instruction text, and elaboration sessions run
-concurrently under the caller's ceiling.
+the lens it drew and that lens's instruction text, and the library runs a
+caller's elaboration sessions concurrently under that caller's own ceiling.
+Dungeon runs no Active elaboration since the play agent's Cut 1 (`d69e9d4`)
+deleted its sweep and ceiling; nothing in Dungeon calls this path today.
 
 Also owed on the way, found 2026-09-15 by reading source:
 
@@ -317,7 +321,9 @@ Also owed on the way, found 2026-09-15 by reading source:
 - Active elaboration runs with `NullEvidenceSource` (`controllers.rs`), so no
   Vault reaches it. This is L2's subject and is deferred with L2; the play
   path stops elaborating while Active.
-- Ticks run cells in sequence at 15–50 s each; a reply takes minutes.
+- Dungeon runs no tick driver since the play agent's Cut 1 (`d69e9d4`)
+  deleted it; when cells ran, they ran in sequence at 15–50 s each. Cut 8
+  owns Persona dispatch going forward.
 
 The eight titles ship as the library's stock lens set. Their 2026-09 removal
 had no operator decision; the correction record in `state/evidence.jsonl`
@@ -388,7 +394,8 @@ acceptance roots, and local run scaffolding.
 - Consumer contract: `docs/architecture/ghostlight-world-consumer-api.md`
 - Frozen teardown map: `notes/ghostlight-current-system-map.md`
 - Current implementation plan: `notes/ghostlight-implementation-plan.md`
-- Local live smoke runbook: `notes/local-live-smoke.md`
+- Connector and Claude SDK sidecar bring-up (no live smoke exists):
+  `notes/local-live-smoke.md`
 - Human-readable state: `state/map.yaml`
 - Distilled evidence: `state/evidence.jsonl` (full history in
   `state/evidence.archive.jsonl`)
