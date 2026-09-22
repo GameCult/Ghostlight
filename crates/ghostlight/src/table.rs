@@ -89,6 +89,11 @@ pub struct DecodedBatch {
     /// `decode_authoring_calls` was given) that produced that site. A
     /// refusal names its call the same way, through this same index.
     pub site_calls: std::collections::BTreeMap<PatchSite, usize>,
+    /// `evidence_calls[position]` is the index into `calls` that produced
+    /// `patch.evidence[position]`, in the same append order `patch.evidence`
+    /// is built in (PA.f73: an `EmptyEvidence` mismatch's own `position` is
+    /// an index into this same list, and previously had no call to map to).
+    pub evidence_calls: Vec<usize>,
 }
 
 /// One run of authoring calls, decoded to one shared patch (PA.f54): each
@@ -101,6 +106,7 @@ pub struct DecodedBatch {
 pub fn decode_authoring_calls(calls: &[(&str, &str)]) -> Result<DecodedBatch, String> {
     let mut patch = WorldPatch::default();
     let mut site_calls = std::collections::BTreeMap::new();
+    let mut evidence_calls = Vec::new();
     for (call_index, (name, arguments)) in calls.iter().enumerate() {
         let item = decode_one_authoring_call(name, arguments)
             .map_err(|error| format!("call #{call_index} (`{name}`): {error}"))?;
@@ -112,9 +118,16 @@ pub fn decode_authoring_calls(calls: &[(&str, &str)]) -> Result<DecodedBatch, St
             site_calls.insert(PatchSite::Operation(patch.operations.len()), call_index);
             patch.operations.push(operation);
         }
-        patch.evidence.extend(item.evidence);
+        for evidence in item.evidence {
+            evidence_calls.push(call_index);
+            patch.evidence.push(evidence);
+        }
     }
-    Ok(DecodedBatch { patch, site_calls })
+    Ok(DecodedBatch {
+        patch,
+        site_calls,
+        evidence_calls,
+    })
 }
 
 /// The one decode arm both `decode_authoring_call` and `decode_authoring_calls`
@@ -614,7 +627,38 @@ fn describe_patch_mismatch(
     }
     if kind == "empty_evidence" {
         let position = object.get("position").and_then(Value::as_u64).unwrap_or_default();
-        return format!("evidence item #{position}: an empty or duplicate evidence reference");
+        // PA.f73: `evidence_calls[position]` names the exact call that cited
+        // this evidence entry, the same way `site_calls` names a declaration
+        // or operation's call; with no batch in hand there is no call to
+        // name, so this stays the bare evidence-item description.
+        let call = batch
+            .and_then(|batch| batch.evidence_calls.get(position as usize))
+            .map(|call_index| format!("call #{call_index}: "))
+            .unwrap_or_default();
+        return format!("{call}evidence item #{position}: an empty or duplicate evidence reference");
+    }
+    if kind == "unresolved_draft" {
+        // PA.f73: the generic reader below drops `referent` and `expected`
+        // for every kind it does not special-case; `UnresolvedDraft` needs
+        // both — the handle that never resolved, and what it was expected to
+        // resolve to.
+        let site = object
+            .get("site")
+            .map(|site| describe_site(site, batch))
+            .unwrap_or_else(|| "an unresolved site".to_owned());
+        let handle = object.get("referent").and_then(Value::as_str).unwrap_or("?");
+        let expected = render_ref_kind_value(object.get("expected"));
+        return format!("{site}: draft handle `{handle}` was never resolved to a {expected}");
+    }
+    if kind == "duplicate_handle" {
+        // PA.f73: naming only "the call that declared `handle`" is
+        // ambiguous for a handle declared twice — that is exactly what
+        // `DuplicateHandle` reports. Name every call that declared it.
+        let handle = object.get("handle").and_then(Value::as_str).unwrap_or("?");
+        return format!(
+            "duplicate handle `{handle}`, declared by {}",
+            describe_duplicate_handle_sites(handle, batch)
+        );
     }
     let site = if let Some(site) = object.get("site") {
         Some(describe_site(site, batch))
@@ -667,6 +711,39 @@ fn describe_declaration_site(index: usize, batch: Option<&DecodedBatch>) -> Stri
     match batch.and_then(|batch| batch.site_calls.get(&PatchSite::Declaration(index))) {
         Some(call_index) => format!("call #{call_index}"),
         None => format!("declaration tool call #{index}"),
+    }
+}
+
+/// Every call that declared `handle`, unambiguously (PA.f73): a
+/// `DuplicateHandle` mismatch carries only the handle text, not a site, so
+/// naming "the call that declared `handle`" is ambiguous by construction
+/// when the handle was declared twice. With `batch` in hand, every
+/// declaration in `batch.patch.declarations` whose own `handle` field
+/// matches is named by its exact call, through the same site map
+/// `describe_declaration_site` reads. With no batch, this falls back to the
+/// same single-site wording every other handle-only mismatch used before.
+fn describe_duplicate_handle_sites(handle: &str, batch: Option<&DecodedBatch>) -> String {
+    let Some(batch) = batch else {
+        return format!("the call that declared `{handle}`");
+    };
+    let sites: Vec<String> = batch
+        .patch
+        .declarations
+        .iter()
+        .enumerate()
+        .filter(|(_, declaration)| {
+            serde_json::to_value(*declaration)
+                .ok()
+                .and_then(|value| value.get("handle").and_then(Value::as_str).map(str::to_owned))
+                .as_deref()
+                == Some(handle)
+        })
+        .map(|(index, _)| describe_declaration_site(index, Some(batch)))
+        .collect();
+    if sites.is_empty() {
+        format!("the call that declared `{handle}`")
+    } else {
+        sites.join(" and ")
     }
 }
 
@@ -809,6 +886,81 @@ fn render_fact_standing(snapshot: &WorldSnapshot, standing: &super::FactStanding
             format!("claimed by {label}")
         }
     }
+}
+
+/// A `CommitmentKind`, in words rather than `Debug` (PA.f74: this used to
+/// print as `Obligation`, `Routine`, or `Goal`).
+fn render_commitment_kind(kind: patch::CommitmentKind) -> &'static str {
+    match kind {
+        patch::CommitmentKind::Routine => "routine",
+        patch::CommitmentKind::Obligation => "obligation",
+        patch::CommitmentKind::Goal => "goal",
+    }
+}
+
+/// A joined, sorted list, or `"none"` when empty — the same rule
+/// `table_view`'s own `joined` closure applies, factored out so the
+/// authority/office/forum renderers below can share it without capturing
+/// `table_view`'s locals.
+fn joined_sorted(mut items: Vec<String>) -> String {
+    if items.is_empty() {
+        "none".to_owned()
+    } else {
+        items.sort();
+        items.join(", ")
+    }
+}
+
+/// What an `AuthorityTarget` covers, by id and label: a subject, or a
+/// place's whole subtree.
+fn render_authority_target(snapshot: &WorldSnapshot, target: &patch::AuthorityTarget) -> String {
+    match target {
+        patch::AuthorityTarget::Subject(id) => {
+            label_for_any_id(snapshot, &id_text(*id)).unwrap_or_else(|| format!("[{}]", id_text(*id)))
+        }
+        patch::AuthorityTarget::PlaceSubtree(id) => format!(
+            "the subtree of {}",
+            label_for_any_id(snapshot, &id_text(*id)).unwrap_or_else(|| format!("[{}]", id_text(*id)))
+        ),
+    }
+}
+
+/// One authority grant, by its kind name and what it covers — what
+/// `Precondition::Authorized`, `create_commitment`'s own `checks`, and a
+/// restricted route's `AccessKind::Restricted { requires }` all read against
+/// (PA.f74).
+fn render_authority_grant(snapshot: &WorldSnapshot, grant: &patch::AuthorityGrant) -> String {
+    format!("`{}` over {}", grant.kind.0, render_authority_target(snapshot, &grant.over))
+}
+
+/// One office: its canonical name, the institution that constitutes it, its
+/// incumbent (or vacancy), and what it lends — every field `create_commitment`
+/// and `Precondition::Authorized` may resolve through delegation (PA.f74).
+fn render_office(snapshot: &WorldSnapshot, office: &super::OfficeSnapshot) -> String {
+    let institution = label_for_any_id(snapshot, &id_text(office.institution))
+        .unwrap_or_else(|| format!("[{}]", id_text(office.institution)));
+    let incumbent = office.incumbent.map_or_else(
+        || "vacant".to_owned(),
+        |id| label_for_any_id(snapshot, &id_text(id)).unwrap_or_else(|| format!("[{}]", id_text(id))),
+    );
+    let lends = joined_sorted(
+        office
+            .authority
+            .iter()
+            .map(|grant| render_authority_grant(snapshot, grant))
+            .collect(),
+    );
+    format!("`{}` of {institution} (incumbent: {incumbent}, lends: {lends})", office.office.0)
+}
+
+/// One forum: the grievance kind it takes, and who sits it — what
+/// `Precondition::HasStanding` reads against (PA.f74).
+fn render_forum(snapshot: &WorldSnapshot, forum: &super::ForumSnapshot) -> String {
+    format!(
+        "`{}` at {}",
+        forum.grievance.0,
+        label_for_any_id(snapshot, &id_text(forum.forum)).unwrap_or_else(|| format!("[{}]", id_text(forum.forum)))
+    )
 }
 
 /// A dependency target, by the id of the thing depended on, so a call
@@ -1095,14 +1247,7 @@ pub fn table_view(snapshot: &WorldSnapshot) -> String {
                 |entry| entry.label.clone(),
             )
     };
-    let joined = |mut items: Vec<String>| {
-        if items.is_empty() {
-            "none".to_owned()
-        } else {
-            items.sort();
-            items.join(", ")
-        }
-    };
+    let joined = joined_sorted;
 
     let mut out = String::from(
         "Whole-world table (the play agent's own view; reference anything by the id in brackets):\n",
@@ -1113,12 +1258,14 @@ pub fn table_view(snapshot: &WorldSnapshot) -> String {
         out.push_str(" none");
     }
     for place in &snapshot.places {
+        // Id beside label (PA.f74): a bare label list is ambiguous for two
+        // subjects sharing one label.
         let occupants = joined(
             snapshot
                 .subjects
                 .iter()
                 .filter(|subject| subject.position == Some(place.id))
-                .map(|subject| subject.label.clone())
+                .map(|subject| format!("{} [{}]", subject.label, id_text(subject.id)))
                 .collect(),
         );
         match place.container {
@@ -1190,8 +1337,45 @@ pub fn table_view(snapshot: &WorldSnapshot) -> String {
                 .map(|target| render_dependency_target(snapshot, target))
                 .collect(),
         );
+        // PA.f74: a subject's own authority grants, the offices it holds and
+        // grants, and the forums whose standing covers it, with ids and kind
+        // names rather than nothing at all — `create_commitment`'s
+        // `authorized`/`has_standing` checks and a restricted route's
+        // `requires` all name an authority kind or a grievance kind that
+        // only these rows can confirm the subject actually carries.
+        let authority = joined(
+            subject
+                .components
+                .authority
+                .iter()
+                .map(|grant| render_authority_grant(snapshot, grant))
+                .collect(),
+        );
+        let offices_held = joined(
+            subject
+                .offices_held
+                .iter()
+                .map(|office| render_office(snapshot, office))
+                .collect(),
+        );
+        let offices_granted = joined(
+            subject
+                .offices_granted
+                .iter()
+                .map(|office| render_office(snapshot, office))
+                .collect(),
+        );
+        let forums = joined(
+            subject
+                .redress
+                .iter()
+                .map(|forum| render_forum(snapshot, forum))
+                .collect(),
+        );
         out.push_str(&format!(
-            " {} [{}] ({}, {}, in {}, retired: {}, granted: {granted}, holdings: {holdings}, depends on: {dependencies});",
+            " {} [{}] ({}, {}, in {}, retired: {}, granted: {granted}, holdings: {holdings}, \
+              depends on: {dependencies}, authority: {authority}, offices held: {offices_held}, \
+              offices granted: {offices_granted}, forums: {forums});",
             subject.label,
             id_text(subject.id),
             render_subject_kind(subject.kind),
@@ -1268,6 +1452,8 @@ pub fn table_view(snapshot: &WorldSnapshot) -> String {
         out.push_str(" none");
     }
     for fact in &snapshot.facts {
+        // Id beside label (PA.f74): a bare label list is ambiguous for two
+        // subjects sharing one label.
         let knowers = joined(
             fact.known_by
                 .iter()
@@ -1276,7 +1462,10 @@ pub fn table_view(snapshot: &WorldSnapshot) -> String {
                         .subjects
                         .iter()
                         .find(|subject| subject.id == *id)
-                        .map_or_else(|| "an unknown subject".to_owned(), |subject| subject.label.clone())
+                        .map_or_else(
+                            || format!("an unknown subject [{}]", id_text(*id)),
+                            |subject| format!("{} [{}]", subject.label, id_text(*id)),
+                        )
                 })
                 .collect(),
         );
@@ -1294,12 +1483,12 @@ pub fn table_view(snapshot: &WorldSnapshot) -> String {
         for commitment in &subject.commitments {
             any_commitment = true;
             out.push_str(&format!(
-                " {}/{} held by {} [{}]: {:?}{}, due {} minutes{}, past due: {}: \"{}\";",
+                " {}/{} held by {} [{}]: {}{}, due {} minutes{}, past due: {}: \"{}\";",
                 id_text(commitment.key.command),
                 commitment.key.index,
                 subject.label,
                 id_text(subject.id),
-                commitment.kind,
+                render_commitment_kind(commitment.kind),
                 commitment.counterparty.map_or_else(String::new, |id| format!(
                     ", with {}",
                     label_for_any_id(snapshot, &id_text(id))
@@ -1343,14 +1532,17 @@ pub fn table_view(snapshot: &WorldSnapshot) -> String {
             continue;
         };
         any_material = true;
-        let values = joined(material.values.iter().map(|value| value.as_str().to_owned()).collect());
-        let memories = joined(
-            material
-                .memories
-                .iter()
-                .map(|memory| memory.as_str().to_owned())
-                .collect(),
-        );
+        // PA.f74: values and memories are carried in their own authored
+        // order — `joined`'s sort would scramble a voice's actual sequence,
+        // which nothing about their content is meant to re-derive.
+        let values: Vec<String> = material.values.iter().map(|value| value.as_str().to_owned()).collect();
+        let values = if values.is_empty() { "none".to_owned() } else { values.join(", ") };
+        let memories: Vec<String> = material
+            .memories
+            .iter()
+            .map(|memory| memory.as_str().to_owned())
+            .collect();
+        let memories = if memories.is_empty() { "none".to_owned() } else { memories.join(", ") };
         let reads = joined(
             material
                 .reads
@@ -2060,6 +2252,84 @@ mod tests {
         assert!(!text.contains("tool call"), "{text}");
     }
 
+    /// Rule (PA.f73): `UnresolvedDraft` names the handle that never resolved
+    /// and the kind it was expected to resolve to, not just its site.
+    #[test]
+    fn describe_refusal_names_unresolved_drafts_handle_and_expected_kind() {
+        let fixture = play_fixture();
+        let mismatch = Mismatch::UnresolvedDraft {
+            site: patch::Site::Operation(3),
+            referent: patch::DraftHandle::new("missing_place"),
+            expected: RefKind::Entity(crate::EntityKind::Place),
+        };
+        let text = describe_refusal(
+            &fixture.snapshot,
+            None,
+            None,
+            None,
+            &KernelError::PatchRejected(vec![mismatch]),
+        );
+        assert!(text.contains("missing_place"), "{text}");
+        assert!(text.contains("place"), "{text}");
+    }
+
+    /// Rule (PA.f73): a handle declared twice in one run is named by both
+    /// calls that declared it, not by one ambiguous "the call that declared
+    /// `handle`" — the old generic wording could only ever pick one.
+    #[test]
+    fn describe_refusal_names_both_calls_for_a_duplicate_handle() {
+        let first = serde_json::json!({"handle": "yard", "label": "The Cavity Yard", "container": null})
+            .to_string();
+        let second = serde_json::json!({"handle": "yard", "label": "The Second Yard", "container": null})
+            .to_string();
+        let batch = decode_authoring_calls(&[("declare_place", &first), ("declare_place", &second)])
+            .expect("both calls decode; duplicate handles are a commit-time, not decode-time, refusal");
+        let fixture = play_fixture();
+        let text = describe_refusal(
+            &fixture.snapshot,
+            None,
+            None,
+            Some(&batch),
+            &KernelError::PatchRejected(vec![Mismatch::DuplicateHandle {
+                handle: patch::DraftHandle::new("yard"),
+            }]),
+        );
+        assert!(text.contains("call #0"), "{text}");
+        assert!(text.contains("call #1"), "{text}");
+    }
+
+    /// Rule (PA.f73): an `EmptyEvidence` mismatch names the exact call that
+    /// cited the empty or duplicate evidence reference, through
+    /// `DecodedBatch::evidence_calls`, the same way a declaration or
+    /// operation site names its call through `site_calls`.
+    #[test]
+    fn describe_refusal_maps_empty_evidence_to_its_call() {
+        let admit = PATCH_TOOLS
+            .iter()
+            .find(|entry| entry.name == "admit")
+            .expect("admit is a patch tool");
+        let mut object = serde_json::Map::new();
+        for field in admit.fields {
+            object.insert(field.name.to_owned(), patch::field_example(field.kind));
+        }
+        let arguments = Value::Object(object).to_string();
+        let batch = decode_authoring_calls(&[("admit", &arguments)]).expect("admit's own example decodes");
+        assert_eq!(
+            batch.patch.evidence.len(),
+            1,
+            "admit's own example carries exactly one evidence entry"
+        );
+        let fixture = play_fixture();
+        let text = describe_refusal(
+            &fixture.snapshot,
+            None,
+            None,
+            Some(&batch),
+            &KernelError::PatchRejected(vec![Mismatch::EmptyEvidence { position: 0 }]),
+        );
+        assert!(text.starts_with("call #0:"), "{text}");
+    }
+
     /// Rule (PA.f59, mutation X6): a declaration site and an operation site
     /// never trade wording. `EmptyHandle`'s `position` names a declaration;
     /// `SubjectNotAtOrigin`'s `operation` names an operation; with no batch
@@ -2421,24 +2691,27 @@ mod tests {
     }
 
     /// Mutation X4: the "known by" list dropped from a fact's row.
+    /// PA.f74: the known-by entry carries the knower's id beside its label,
+    /// not the label alone — ambiguous for two subjects sharing one label.
     #[test]
     fn table_view_prints_who_knows_a_fact() {
         let fixture = play_fixture();
         let view = table_view(&fixture.snapshot);
-        let holder_label = fixture
+        let holder = fixture
             .snapshot
             .subjects
             .iter()
             .find(|subject| subject.id == fixture.custody.holder)
-            .expect("the holder is in the snapshot")
-            .label
-            .clone();
+            .expect("the holder is in the snapshot");
         assert!(
             view.contains(&format!(
-                "[{}]: claimed by {holder_label}; known by: {holder_label};",
-                id_text(fixture.claimed_fact)
+                "[{}]: claimed by {}; known by: {} [{}];",
+                id_text(fixture.claimed_fact),
+                holder.label,
+                holder.label,
+                id_text(holder.id)
             )),
-            "table_view dropped the claimed fact's known-by list: {view}"
+            "table_view dropped the claimed fact's known-by list, or dropped the knower's id: {view}"
         );
     }
 
@@ -2471,6 +2744,140 @@ mod tests {
             !row[..end].contains(&ungranted.entry.kind.0),
             "table_view granted the holder an affordance it does not hold: {}",
             &row[..end]
+        );
+    }
+
+    /// Rule (PA.f74): `table_view` prints a subject's own authority grants,
+    /// the offices it holds and grants (with incumbent), and the forums
+    /// whose standing covers it (with grievance kind) — what
+    /// `create_commitment`'s `authorized`/`has_standing` checks and a
+    /// restricted route's `requires` all resolve against. Mutation: drop the
+    /// authority section entirely.
+    #[test]
+    fn table_view_prints_authority_grants_offices_and_forums() {
+        let directory = tempfile::tempdir().expect("a temp dir");
+        let mut kernel = crate::WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(super::CommandId::new(), "PlayCivic"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (_, civic, active) = crate::tests::civic_world(&mut kernel);
+        let view = table_view(&active);
+
+        let treasury = active
+            .subjects
+            .iter()
+            .find(|subject| subject.id == civic.treasury)
+            .expect("the treasury is in the snapshot");
+        assert!(!treasury.components.authority.is_empty(), "the treasury holds authority grants");
+        for grant in &treasury.components.authority {
+            assert!(
+                view.contains(&format!("`{}`", grant.kind.0)),
+                "table_view is missing the treasury's authority kind `{}`: {view}",
+                grant.kind.0
+            );
+        }
+        assert!(!treasury.offices_granted.is_empty(), "the treasury constitutes offices");
+        for office in &treasury.offices_granted {
+            assert!(
+                view.contains(&format!("`{}`", office.office.0)),
+                "table_view is missing an office the treasury grants, `{}`: {view}",
+                office.office.0
+            );
+        }
+
+        let reeve = active
+            .subjects
+            .iter()
+            .find(|subject| subject.id == civic.reeve)
+            .expect("the reeve is in the snapshot");
+        assert!(!reeve.offices_held.is_empty(), "the reeve holds an office");
+        for office in &reeve.offices_held {
+            assert!(
+                view.contains(&format!("`{}`", office.office.0)),
+                "table_view is missing an office the reeve holds, `{}`: {view}",
+                office.office.0
+            );
+        }
+
+        let with_redress = active
+            .subjects
+            .iter()
+            .find(|subject| !subject.redress.is_empty())
+            .expect("at least one subject holds standing to a forum");
+        for forum in &with_redress.redress {
+            assert!(
+                view.contains(&format!("`{}`", forum.grievance.0)),
+                "table_view is missing a forum's grievance kind `{}`: {view}",
+                forum.grievance.0
+            );
+        }
+    }
+
+    /// Rule (PA.f74): a commitment's kind prints in plain words, not Rust
+    /// `Debug` (`Obligation`).
+    #[test]
+    fn table_view_prints_the_commitment_kind_in_plain_words() {
+        let fixture = play_fixture();
+        let view = table_view(&fixture.snapshot);
+        assert!(view.contains("obligation"), "{view}");
+        assert!(!view.contains("Obligation"), "{view}");
+    }
+
+    /// Rule (PA.f74): persona values and memories print in the order they
+    /// were authored, not re-sorted the way every other list here is.
+    #[test]
+    fn table_view_keeps_persona_values_and_memories_in_stored_order() {
+        let directory = tempfile::tempdir().expect("a temp dir");
+        let mut kernel = crate::WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(super::CommandId::new(), "PlayPersonaOrder"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let topology = admit_topology(&mut kernel);
+        let custody = admit_custody(&mut kernel, &topology);
+        let before = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &before,
+            crate::CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::SetPersonaMaterial {
+                        subject: patch::Ref::Existing(custody.holder),
+                        values: vec![
+                            Statement::new("zebra caution").unwrap(),
+                            Statement::new("apple pride").unwrap(),
+                        ],
+                        voice: Statement::new("a level, unhurried voice").unwrap(),
+                        memories: vec![
+                            Statement::new("the second memory, nine winters back").unwrap(),
+                            Statement::new("the first memory, before that").unwrap(),
+                        ],
+                        reads: Vec::new(),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        let snapshot = kernel.snapshot().unwrap();
+        let view = table_view(&snapshot);
+        let zebra = view.find("zebra caution").expect("zebra caution is in the view");
+        let apple = view.find("apple pride").expect("apple pride is in the view");
+        assert!(
+            zebra < apple,
+            "table_view sorted persona values instead of keeping stored order: {view}"
+        );
+        let second = view.find("the second memory").expect("the second memory is in the view");
+        let first = view.find("the first memory").expect("the first memory is in the view");
+        assert!(
+            second < first,
+            "table_view sorted persona memories instead of keeping stored order: {view}"
         );
     }
 
