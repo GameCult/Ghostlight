@@ -1047,7 +1047,7 @@ pub struct SubjectSnapshot {
     /// The greatest `DecisionEvent.revision` whose scope is this subject, or
     /// `None` if the subject never acted. Derived from `state.events` alone:
     /// no new state, no schema change. The recency marker `projector_knowledge`
-    /// stamps onto each knowledge row is `minted_at > last_acted_at`.
+    /// stamps onto each knowledge row is `acquired_at > last_acted_at`.
     pub(crate) last_acted_at: Option<u64>,
 }
 

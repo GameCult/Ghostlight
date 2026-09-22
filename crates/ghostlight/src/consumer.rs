@@ -1951,7 +1951,7 @@ mod tests {
         // Re-scope the committed effect onto the mirror and route the
         // forgery through the commit log: replaying the original, unforged
         // command via `reduce` no longer reproduces this effect.
-        let head = kernel.state.clone();
+        let mut head = kernel.state.clone();
         let mut commits = kernel.journal.commits_for_test();
         let exercised = commits
             .values_mut()
@@ -1964,6 +1964,10 @@ mod tests {
             subject_id: mirror.first,
         };
         exercised.digest = commit_digest(exercised).unwrap();
+        // The digest chain must still close, so the effect-equality check —
+        // not the earlier "head does not equal replayed history" digest
+        // mismatch — is the one clause that can refuse this forgery.
+        head.last_commit_digest = Some(exercised.digest.clone());
         assert!(
             super::super::journal::verify_history(&head, &commits).is_err(),
             "a forged history in which the mirror acted replayed"

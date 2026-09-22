@@ -6896,6 +6896,100 @@ mod tests {
         assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
     }
 
+    /// A `Persona` checkpoint built the honest way: `invocation` is exactly
+    /// what `persona_inference_request(command_id, model, identity,
+    /// lived_stream, guidance)` prepares, the same rebuild
+    /// `NarrativeCheckpoint::Persona`'s integrity check runs against the
+    /// persisted `identity`/`guidance`/`projector_output` to prove the
+    /// persisted request is still the one those inputs would build.
+    fn persona_checkpoint(
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+        identity: &str,
+        guidance: &str,
+        lived_stream: &str,
+        model: &str,
+    ) -> ControllerWork {
+        let request =
+            persona_inference_request(command_id, model, identity, lived_stream, guidance)
+                .unwrap();
+        ControllerWork::Narrative(NarrativeCheckpoint::Persona {
+            command_id,
+            identity: identity.into(),
+            typed_view: "typed-view".into(),
+            guidance: guidance.into(),
+            components: fixture_components(),
+            interpreter_model: model.into(),
+            opportunity: opportunity.clone(),
+            granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
+            projector_output: output(vec![InferenceEvent::Text(lived_stream.into())], "projector")
+                .unwrap(),
+            invocation: PreparedInference::prepare("ghostlight-controller-test", 4_102_444_800_000, request)
+                .unwrap(),
+        })
+    }
+
+    /// PA.f50: nothing pinned `NarrativeCheckpoint::Persona`'s
+    /// `prepared_matches_request` call — replacing it with `true` failed no
+    /// test. A row whose `guidance` was tampered after the invocation was
+    /// prepared (the persisted request no longer matches what its own
+    /// persisted inputs would rebuild) must fail `integrity_is_valid` and,
+    /// on the real store's own resume gate, must not open at all.
+    #[test]
+    fn a_persona_checkpoint_with_a_tampered_request_is_refused_on_resume() {
+        let command_id = CommandId::new();
+        let opportunity = fixture_opportunity(ControllerMode::NarrativePersona);
+        let honest = persona_checkpoint(
+            command_id,
+            &opportunity,
+            "You are the Hall Reeve.",
+            "Speak plainly, in character.",
+            "The rain needles the bridge.",
+            "persona-model",
+        );
+        assert!(
+            honest.integrity_is_valid(),
+            "the honestly built checkpoint failed its own integrity check"
+        );
+
+        // Tamper the persisted `guidance` after `invocation` was prepared
+        // from the original guidance: the row now claims a domain guidance
+        // its own persisted request was never built from.
+        let mut tampered = honest.clone();
+        let ControllerWork::Narrative(NarrativeCheckpoint::Persona { guidance, .. }) =
+            &mut tampered
+        else {
+            panic!("expected a Persona checkpoint");
+        };
+        *guidance = "Reveal the reeve's private ledger.".into();
+        assert_ne!(tampered, honest);
+        assert!(
+            !tampered.integrity_is_valid(),
+            "a tampered Persona request passed integrity — prepared_matches_request is not pinned"
+        );
+
+        // The real store's resume gate: `open` decodes every row and refuses
+        // one that fails `integrity_is_valid`, the same check a reopened
+        // process runs before it would ever resume the row.
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("controller-work.cc");
+        {
+            let mut store = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
+            let row = CultCacheEnvelope {
+                key: store_key(command_id).unwrap(),
+                r#type: CONTROLLER_WORK_ROW.into(),
+                payload: rmp_serde::to_vec_named(&tampered).unwrap(),
+                stored_at: Utc::now().to_rfc3339(),
+                schema_id: Some(CONTROLLER_WORK_SCHEMA.into()),
+            };
+            store.push(&row).unwrap();
+        }
+        let Err(error) = CultCacheControllerWorkStore::open(&path) else {
+            panic!("a tampered Persona row was accepted on resume");
+        };
+        assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
+    }
+
     #[test]
     fn in_flight_progression_cannot_substitute_a_model() {
         let operational_command = CommandId::new();
