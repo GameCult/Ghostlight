@@ -1202,6 +1202,11 @@ pub(crate) enum ComponentOp {
         source: PressureSourceRef,
         target: Ref<SubjectId>,
     },
+    /// Ends a subject's turn for good: no opportunity, no position, no
+    /// audience, its history kept. Only the owner and `Play` may write it.
+    Retire {
+        subject: Ref<SubjectId>,
+    },
 }
 
 /// What an Active `AdmitPatch` answers. Draft answers nothing; Active must
@@ -1576,6 +1581,11 @@ pub enum Mismatch {
     RuledWithoutAuthority {
         site: Site,
     },
+    /// `Retire` named an `ExternallyControlled` subject: a mirror is owned by
+    /// another world, so this one cannot retire it.
+    RetiresAMirror {
+        operation: usize,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -1869,6 +1879,9 @@ pub(crate) enum ResolvedOp {
     ResolvePressure {
         source: PressureSource,
         target: SubjectId,
+    },
+    Retire {
+        subject: SubjectId,
     },
 }
 
@@ -3210,6 +3223,37 @@ pub(super) fn resolve_patch(
             )
         })
         .collect();
+    // `Retire` and the affordance grant operations read and write these three
+    // candidates. `retired` and `mirrors` seed from the committed
+    // `ControllerAssignment`, which the resolver otherwise never reads: a
+    // declared subject can only ever be a fresh, unretired controller (or a
+    // freshly declared mirror, added below), so drafts start out of both sets.
+    // `affordance_holdings` seeds from committed `affordance_grants` and is
+    // extended below for a subject this same patch declares.
+    let mut retired: BTreeSet<Key<SubjectId>> = state
+        .controller_assignments
+        .iter()
+        .filter(|(_, assignment)| matches!(assignment, ControllerAssignment::Retired))
+        .map(|(scope, _)| Key::Existing(scope.subject_id))
+        .collect();
+    let mut mirrors: BTreeSet<Key<SubjectId>> = state
+        .controller_assignments
+        .iter()
+        .filter(|(_, assignment)| {
+            matches!(assignment, ControllerAssignment::ExternallyControlled { .. })
+        })
+        .map(|(scope, _)| Key::Existing(scope.subject_id))
+        .collect();
+    let mut affordance_holdings: BTreeMap<Key<SubjectId>, BTreeSet<Key<AffordanceId>>> = state
+        .affordance_grants
+        .iter()
+        .map(|(scope, granted)| {
+            (
+                Key::Existing(scope.subject_id),
+                granted.iter().map(|id| Key::Existing(*id)).collect(),
+            )
+        })
+        .collect();
     let mut channels: BTreeMap<Key<EntityId>, ChannelCandidate> = state
         .channels
         .iter()
@@ -3398,14 +3442,23 @@ pub(super) fn resolve_patch(
                 }
             }
             Declaration::Subject(subject) => {
+                let mut granted = BTreeSet::new();
                 for reference in &subject.affordances {
-                    resolve_affordance(
+                    if let Some(affordance_key) = resolve_affordance(
                         Site::Declaration(subject.handle.clone()),
                         reference,
                         &index,
                         &state.affordance_catalog,
                         &mut mismatches,
-                    );
+                    ) {
+                        granted.insert(affordance_key);
+                    }
+                }
+                if !granted.is_empty() {
+                    affordance_holdings.insert(Key::Draft(subject.handle.clone()), granted);
+                }
+                if matches!(subject.controller, NewController::External { .. }) {
+                    mirrors.insert(Key::Draft(subject.handle.clone()));
                 }
                 if let Some(reference) = &subject.position
                     && let Some(place) = resolve_entity(
@@ -3705,6 +3758,32 @@ pub(super) fn resolve_patch(
                 if admitted {
                     positions.insert(subject_key, route.to);
                 }
+            }
+            ComponentOp::Retire { subject } => {
+                let Some(subject_key) = resolve_subject(
+                    Site::Operation(position),
+                    subject,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                ) else {
+                    continue;
+                };
+                if mirrors.contains(&subject_key) {
+                    mismatches.push(Mismatch::RetiresAMirror {
+                        operation: position,
+                    });
+                    continue;
+                }
+                if retired.contains(&subject_key) {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                    continue;
+                }
+                retired.insert(subject_key.clone());
+                positions.remove(&subject_key);
+                affordance_holdings.remove(&subject_key);
             }
             ComponentOp::OpenRoute { route } | ComponentOp::CloseRoute { route } => {
                 let open = matches!(operation, ComponentOp::OpenRoute { .. });
@@ -5157,6 +5236,9 @@ pub(super) fn resolve_patch(
                 source: pressure_source_of(source),
                 target: subject_id_of(&key_of(target)),
             },
+            ComponentOp::Retire { subject } => ResolvedOp::Retire {
+                subject: subject_id_of(&key_of(subject)),
+            },
             ComponentOp::Relocate { subject, via } => ResolvedOp::Relocate {
                 subject_id: subject_id_of(&key_of(subject)),
                 edge_id: edge_id_of(&key_of(via)),
@@ -6195,6 +6277,12 @@ pub(crate) const PATCH_TOOLS: &[PatchTool] = &[
         },
     },
     PatchTool {
+        name: "retire",
+        description: "Retire a subject for good: no opportunity, no position, no audience, its history kept. Only the owner and the play table may retire.",
+        fields: &[field("subject", PatchFieldKind::Reference("subject"))],
+        shape: PatchToolShape::Operate { variant: "retire" },
+    },
+    PatchTool {
         name: RECORD_GAP_PATCH_TOOL,
         description: "Record something the world needs that this vocabulary cannot say. It changes nothing.",
         fields: &[field(
@@ -6935,7 +7023,7 @@ mod catalog_tests {
             .iter()
             .filter(|entry| matches!(entry.shape, PatchToolShape::Operate { .. }))
             .count();
-        assert_eq!((declarations, operations, PATCH_TOOLS.len()), (7, 31, 40));
+        assert_eq!((declarations, operations, PATCH_TOOLS.len()), (7, 32, 41));
 
         // Every declaration variant the vocabulary owns is reachable, and the
         // two payload-carrying entity kinds are not exposed as an `Entity`
@@ -7030,6 +7118,7 @@ mod catalog_tests {
                 ComponentOp::AdvancePressure { .. } => "advance_pressure",
                 ComponentOp::ReducePressure { .. } => "reduce_pressure",
                 ComponentOp::ResolvePressure { .. } => "resolve_pressure",
+                ComponentOp::Retire { .. } => "retire",
             }
         }
         PATCH_TOOLS
@@ -7081,7 +7170,7 @@ mod catalog_tests {
             .count();
         assert_eq!(
             (declare_tools, operate_tools, PATCH_TOOLS.len()),
-            (7, 31, 40)
+            (7, 32, 41)
         );
 
         let declarations = every_declaration();

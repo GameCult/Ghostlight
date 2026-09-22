@@ -720,6 +720,11 @@ enum ControllerAssignment {
     ExternallyControlled {
         consumer: ConsumerId,
     },
+    /// A subject `Retire` ended for good. Not a second partition:
+    /// `controller_assignments` stays the sole answer to who may call, and
+    /// this is one of its values. It has no controller id, no mode, and no
+    /// caller, so it mints no opportunity and is never an audience.
+    Retired,
 }
 
 impl ControllerAssignment {
@@ -728,7 +733,7 @@ impl ControllerAssignment {
             Self::Human { controller_id, .. }
             | Self::NarrativePersona { controller_id }
             | Self::OperationalAgent { controller_id } => Some(*controller_id),
-            Self::ExternallyControlled { .. } => None,
+            Self::ExternallyControlled { .. } | Self::Retired => None,
         }
     }
 
@@ -737,32 +742,34 @@ impl ControllerAssignment {
             Self::Human { .. } => Some(ControllerMode::Human),
             Self::NarrativePersona { .. } => Some(ControllerMode::NarrativePersona),
             Self::OperationalAgent { .. } => Some(ControllerMode::OperationalAgent),
-            Self::ExternallyControlled { .. } => None,
+            Self::ExternallyControlled { .. } | Self::Retired => None,
         }
     }
 
-    fn expected_caller(&self) -> CallerId {
+    /// `None` for a retired subject: no caller may ever act for it again. A
+    /// mirror still returns `Some`, the one caller that could ever act for
+    /// its scope; the controller lane cannot mint it either, but that caller
+    /// exists and is comparable.
+    fn expected_caller(&self) -> Option<CallerId> {
         match self {
-            Self::Human { principal, .. } => CallerId::Principal(principal.clone()),
+            Self::Human { principal, .. } => Some(CallerId::Principal(principal.clone())),
             Self::NarrativePersona { controller_id } | Self::OperationalAgent { controller_id } => {
-                CallerId::Controller(*controller_id)
+                Some(CallerId::Controller(*controller_id))
             }
-            // The only caller that could ever act for this scope, and the
-            // controller lane cannot mint it.
-            Self::ExternallyControlled { consumer } => {
-                CallerId::System(SystemCapability::Consumer {
-                    consumer: *consumer,
-                })
-            }
+            Self::ExternallyControlled { consumer } => Some(CallerId::System(
+                SystemCapability::Consumer { consumer: *consumer },
+            )),
+            Self::Retired => None,
         }
     }
 
     fn consumer(&self) -> Option<ConsumerId> {
         match self {
             Self::ExternallyControlled { consumer } => Some(*consumer),
-            Self::Human { .. } | Self::NarrativePersona { .. } | Self::OperationalAgent { .. } => {
-                None
-            }
+            Self::Human { .. }
+            | Self::NarrativePersona { .. }
+            | Self::OperationalAgent { .. }
+            | Self::Retired => None,
         }
     }
 
@@ -771,7 +778,8 @@ impl ControllerAssignment {
             Self::Human { principal, .. } => Some(principal),
             Self::NarrativePersona { .. }
             | Self::OperationalAgent { .. }
-            | Self::ExternallyControlled { .. } => None,
+            | Self::ExternallyControlled { .. }
+            | Self::Retired => None,
         }
     }
 }
@@ -982,6 +990,11 @@ pub struct SubjectSnapshot {
     pub human_controller: Option<PrincipalId>,
     pub affordances: BTreeSet<AffordanceId>,
     pub(crate) position: Option<EntityId>,
+    /// Set for a subject `Retire` ended: no opportunity, no position, no
+    /// audience, its history kept. The agent's view and the surface read this
+    /// rather than inferring retirement from an absent position, which a
+    /// merely unplaced live subject also has.
+    pub retired: bool,
     /// Exactly what the scope digest binds for this subject, carried whole
     /// rather than lowered into projections that then have to be diffed back
     /// together: its own position, incident routes, holdings, dependencies,
@@ -1616,7 +1629,7 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
                 .controller_assignments
                 .get(&current.scope)
                 .ok_or(KernelError::OpportunityMismatch)?;
-            if assignment.expected_caller() != command.caller {
+            if assignment.expected_caller().as_ref() != Some(&command.caller) {
                 return Err(KernelError::ControllerMismatch);
             }
             let granted = require_granted(state, &current, invocation.affordance)?;
@@ -1634,7 +1647,7 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
                 .controller_assignments
                 .get(&current.scope)
                 .ok_or(KernelError::OpportunityMismatch)?;
-            if assignment.expected_caller() != command.caller {
+            if assignment.expected_caller().as_ref() != Some(&command.caller) {
                 return Err(KernelError::ControllerMismatch);
             }
             Ok(WorldEffect::DecisionDeclined {
@@ -2956,6 +2969,32 @@ fn apply_operation(
             }
             set_pressure(state, *target, *source, 0);
         }
+        ResolvedOp::Retire { subject } => {
+            let scope = DecisionScope {
+                subject_id: *subject,
+            };
+            let assignment = state.controller_assignments.get(&scope).ok_or_else(unknown)?;
+            match assignment {
+                ControllerAssignment::Retired => {
+                    return Err(KernelError::Invariant(
+                        "retire operation names an already retired subject".into(),
+                    ));
+                }
+                ControllerAssignment::ExternallyControlled { .. } => {
+                    return Err(KernelError::Invariant(
+                        "retire operation names a mirror this world does not own".into(),
+                    ));
+                }
+                ControllerAssignment::Human { .. }
+                | ControllerAssignment::NarrativePersona { .. }
+                | ControllerAssignment::OperationalAgent { .. } => {}
+            }
+            state
+                .controller_assignments
+                .insert(scope, ControllerAssignment::Retired);
+            state.positions.remove(subject);
+            state.affordance_grants.remove(&scope);
+        }
     }
     Ok(())
 }
@@ -3726,6 +3765,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 human_controller: controller.human_principal().cloned(),
                 affordances,
                 position: components.position.map(|position| position.place),
+                retired: matches!(controller, ControllerAssignment::Retired),
                 offices_held,
                 offices_granted,
                 redress,
@@ -4585,6 +4625,15 @@ fn confine_to_ground(
     }
     for (index, operation) in resolved.operations.iter().enumerate() {
         let site = Site::Operation(index);
+        // Retirement is authority over the subject's standing, not structure
+        // over ground: a confined author is refused whatever place the
+        // subject stands under, exactly as `require_ruler` refuses a `Ruled`
+        // fact or a `Mint` outright. The owner is unconfined and never
+        // reaches this clause.
+        if matches!(operation, ResolvedOp::Retire { .. }) {
+            mismatches.push(Mismatch::OutsideJurisdiction { site: site.clone() });
+            continue;
+        }
         let (subjects, places, routes) = operation_ground(operation, &entities);
         for subject in subjects {
             confine_subject(&site, subject, &mut mismatches);
@@ -4802,6 +4851,12 @@ fn operation_ground(
             }
             (subjects, places(named), routes)
         }
+        // Confinement never reaches this through the ordinary ground check:
+        // `confine_to_ground` refuses `Retire` unconditionally for every
+        // confined author before this function is called for it. The
+        // subject is named here so the match stays total and correct if
+        // that clause is ever bypassed.
+        ResolvedOp::Retire { subject } => (vec![*subject], Vec::new(), Vec::new()),
     }
 }
 
@@ -4961,7 +5016,9 @@ fn apply_effect(
                 .ok_or_else(|| {
                     KernelError::Invariant("decision scope lost its controller".into())
                 })?;
-            if state.phase != WorldPhase::Active || caller != &assignment.expected_caller() {
+            if state.phase != WorldPhase::Active
+                || assignment.expected_caller().as_ref() != Some(caller)
+            {
                 return Err(KernelError::Invariant(
                     "decision effect does not match exact opportunity authority".into(),
                 ));
@@ -4992,7 +5049,9 @@ fn apply_effect(
                 .ok_or_else(|| {
                     KernelError::Invariant("decision scope lost its controller".into())
                 })?;
-            if state.phase != WorldPhase::Active || caller != &assignment.expected_caller() {
+            if state.phase != WorldPhase::Active
+                || assignment.expected_caller().as_ref() != Some(caller)
+            {
                 return Err(KernelError::Invariant(
                     "decline effect does not match exact opportunity authority".into(),
                 ));
@@ -16393,5 +16452,286 @@ mod clock_tests {
         let replayed_again =
             WorldKernel::open(&path, world_id).expect("the store replays a second time");
         assert_eq!(replayed_again.snapshot().unwrap(), expected);
+    }
+
+    // ---- Cut 4: retirement -------------------------------------------
+
+    fn retire_patch(subject: SubjectId) -> WorldPatch {
+        WorldPatch {
+            declarations: Vec::new(),
+            operations: vec![ComponentOp::Retire {
+                subject: Ref::Existing(subject),
+            }],
+            evidence: Vec::new(),
+        }
+    }
+
+    /// The owner retires a subject in Active. `retire_patch` declares
+    /// nothing and cites no evidence, so `require_answer`'s `declares` gate
+    /// never opens for it and no answer is needed, exactly as an owner's
+    /// ordinary bare operation needs none.
+    fn owner_retires(kernel: &mut WorldKernel, subject: SubjectId) -> Result<SubmitReceipt, KernelError> {
+        submit_as(
+            kernel,
+            CallerId::Principal(owner()),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: retire_patch(subject),
+            },
+        )
+    }
+
+    /// Declares a mirror bound to a consumer this test invents, at the yard,
+    /// via the owner in Active. Shared by the retirement and grant tests that
+    /// need a subject `mode()` already excludes.
+    fn declare_mirror(kernel: &mut WorldKernel, clockwork: &Clockwork, name: &str) -> SubjectId {
+        let answered = dead_end_boundary(kernel);
+        submit_as(
+            kernel,
+            CallerId::Principal(owner()),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered)),
+                patch: WorldPatch {
+                    declarations: vec![Declaration::Subject(SubjectDeclaration {
+                        handle: DraftHandle::new("mirror"),
+                        label: "The Bound Hold".into(),
+                        kind: SubjectKind::Institution,
+                        controller: NewController::External {
+                            consumer: ConsumerId::of_name(name),
+                        },
+                        affordances: BTreeSet::new(),
+                        // At the dead end, so this declaration also clears
+                        // the boundary its own answer claims: an occupied
+                        // place is no longer unelaborated.
+                        position: Some(Ref::Existing(clockwork.dead_end)),
+                    })],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .expect("the owner declares a mirror in Active");
+        kernel
+            .snapshot()
+            .unwrap()
+            .subjects
+            .iter()
+            .find(|subject| subject.label == "The Bound Hold")
+            .expect("the declared mirror")
+            .id
+    }
+
+    /// P4.1, replay half: reopening the journal reproduces a retirement —
+    /// no opportunity and `retired` both survive the round trip.
+    #[test]
+    fn a_retired_subject_holds_no_opportunity_across_a_replay() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (world_id, reeve) = {
+            let (mut kernel, clockwork, active) = clock_kernel(directory.path(), "RetireReplay");
+            assert!(
+                active
+                    .opportunities
+                    .iter()
+                    .any(|opportunity| opportunity.scope.subject_id == clockwork.reeve),
+                "the reeve holds an opportunity before retirement"
+            );
+            owner_retires(&mut kernel, clockwork.reeve).expect("the owner retires the reeve");
+            (kernel.state.world_id, clockwork.reeve)
+        };
+        let replayed = WorldKernel::open(&path, world_id).expect("the store replays");
+        let snapshot = replayed.snapshot().unwrap();
+        assert!(
+            !snapshot
+                .opportunities
+                .iter()
+                .any(|opportunity| opportunity.scope.subject_id == reeve),
+            "a replayed retired subject holds no opportunity"
+        );
+        let subject = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == reeve)
+            .expect("the retired subject's own row");
+        assert!(subject.retired);
+    }
+
+    /// P4.1: a retired subject's last opportunity is stale, not honoured.
+    #[test]
+    fn a_retired_subject_cannot_act() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, active) = clock_kernel(directory.path(), "RetireCannotAct");
+        let opportunity = opportunity_for(&active, clockwork.reeve);
+        owner_retires(&mut kernel, clockwork.reeve).expect("the owner retires the reeve");
+        let error = submit_as(
+            &mut kernel,
+            CallerId::Controller(opportunity.controller_id),
+            CommandBody::DeclineDecision { opportunity },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::OpportunityMismatch), "{error:?}");
+    }
+
+    /// P4.1: no position, so a witness at the retired subject's former place
+    /// never reaches it, while a still-present subject at the same place
+    /// does.
+    #[test]
+    fn a_retired_subject_hears_nothing() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "RetireHearsNothing");
+        owner_retires(&mut kernel, clockwork.reeve).expect("the owner retires the reeve");
+        let mut patch = ruled_fact_patch("news");
+        patch.operations.push(ComponentOp::Witness {
+            fact: Ref::Draft(DraftHandle::new("news")),
+            place: Ref::Existing(clockwork.yard),
+            confidence: Confidence::Certain,
+        });
+        submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch,
+            },
+        )
+        .expect("the play authority witnesses at the yard");
+        let snapshot = kernel.snapshot().unwrap();
+        let reeve = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == clockwork.reeve)
+            .expect("the retired reeve's own row");
+        assert!(reeve.knowledge.is_empty(), "{:?}", reeve.knowledge);
+        let farmer = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == clockwork.farmer)
+            .expect("the farmer's own row");
+        assert!(!farmer.knowledge.is_empty(), "the farmer still hears it");
+    }
+
+    /// P4.2: events, knowledge, holdings, and commitments all survive
+    /// retirement untouched.
+    #[test]
+    fn a_retired_subject_keeps_its_history() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "RetireKeepsHistory");
+        let before_holdings = kernel.state.holdings.get(&clockwork.farmer).cloned();
+        let before_commitments = kernel.state.commitments.get(&clockwork.farmer).cloned();
+        assert!(before_holdings.is_some());
+        assert!(before_commitments.is_some());
+        owner_retires(&mut kernel, clockwork.farmer).expect("the owner retires the farmer");
+        assert_eq!(
+            kernel.state.holdings.get(&clockwork.farmer).cloned(),
+            before_holdings
+        );
+        assert_eq!(
+            kernel.state.commitments.get(&clockwork.farmer).cloned(),
+            before_commitments
+        );
+        assert!(kernel.state.subjects.contains_key(&clockwork.farmer));
+    }
+
+    /// P4.1: retiring twice is `NoOperationEffect`, not a second retirement.
+    #[test]
+    fn retiring_twice_is_no_effect() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "RetireTwice");
+        owner_retires(&mut kernel, clockwork.reeve).expect("the first retirement commits");
+        let error = owner_retires(&mut kernel, clockwork.reeve).unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::NoOperationEffect { operation: 0 })),
+            "{error:?}"
+        );
+    }
+
+    /// P4.3: a mirror is owned by another world; this one cannot retire it.
+    #[test]
+    fn a_mirror_cannot_be_retired() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "RetireMirror");
+        let mirror = declare_mirror(&mut kernel, &clockwork, "cut4-retire-mirror");
+        let error = owner_retires(&mut kernel, mirror).unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::RetiresAMirror { operation: 0 })),
+            "{error:?}"
+        );
+    }
+
+    /// P4.3: `confine_to_ground` refuses a `Retire` for a confined author
+    /// unconditionally, even for a subject this same patch declares and
+    /// places inside the elaborator's own jurisdiction.
+    #[test]
+    fn an_elaborator_cannot_retire_inside_its_jurisdiction() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "RetireElaborator");
+        let speak = super::tests::speak_entry(&kernel);
+        let answered = dead_end_boundary(&kernel);
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered)),
+                patch: WorldPatch {
+                    declarations: vec![Declaration::Subject(SubjectDeclaration {
+                        handle: DraftHandle::new("stray"),
+                        label: "The Roadside Stray".into(),
+                        kind: SubjectKind::Person,
+                        controller: NewController::NarrativePersona,
+                        affordances: BTreeSet::from([speak]),
+                        position: Some(Ref::Existing(clockwork.dead_end)),
+                    })],
+                    operations: vec![ComponentOp::Retire {
+                        subject: Ref::Draft(DraftHandle::new("stray")),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::OutsideJurisdiction {
+                    site: Site::Operation(0)
+                })),
+            "{error:?}"
+        );
+    }
+
+    /// P4.3: the owner and the play authority are the two callers a
+    /// `Retire` admits.
+    #[test]
+    fn the_owner_and_the_play_authority_may_retire() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "RetireOwnerAndPlay");
+        owner_retires(&mut kernel, clockwork.reeve).expect("the owner retires the reeve");
+        submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: retire_patch(clockwork.farmer),
+            },
+        )
+        .expect("the play authority retires the farmer");
+        let snapshot = kernel.snapshot().unwrap();
+        assert!(
+            snapshot
+                .subjects
+                .iter()
+                .find(|subject| subject.id == clockwork.reeve)
+                .unwrap()
+                .retired
+        );
+        assert!(
+            snapshot
+                .subjects
+                .iter()
+                .find(|subject| subject.id == clockwork.farmer)
+                .unwrap()
+                .retired
+        );
     }
 }

@@ -6717,6 +6717,7 @@ mod tests {
             human_controller: None,
             affordances: BTreeSet::from([speak_affordance]),
             position: None,
+            retired: false,
             components: fixture_components(),
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
@@ -6758,6 +6759,7 @@ mod tests {
             human_controller: None,
             affordances: BTreeSet::new(),
             position: None,
+            retired: false,
             components: fixture_components(),
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
@@ -6984,6 +6986,7 @@ mod tests {
             human_controller: None,
             affordances: BTreeSet::from([speak_affordance]),
             position: Some(yard),
+            retired: false,
             components: ScopeComponents {
                 routes: BTreeMap::from([(first_edge, fixture_route(yard, road))]),
                 ..fixture_components()
@@ -7006,6 +7009,7 @@ mod tests {
             human_controller: None,
             affordances: BTreeSet::new(),
             position: Some(vault),
+            retired: false,
             components: ScopeComponents {
                 routes: BTreeMap::from([(second_edge, fixture_route(road, vault))]),
                 ..fixture_components()
@@ -7452,6 +7456,7 @@ mod tests {
             human_controller: None,
             affordances: BTreeSet::from([speak_affordance]),
             position,
+            retired: false,
             components,
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
