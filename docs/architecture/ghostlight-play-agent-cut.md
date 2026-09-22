@@ -2222,7 +2222,9 @@ Interpreter, the elaborator sweep and lenses.
     character, which the Projector then renders into its input. That
     contradicts "the agent never writes a Persona's input" and the
     no-puppets reason behind invariant 2.
-  - **Ruling (Self, under the standing go; flagged to the operator; this
+  - **Ruling (Self, under the standing go; the operator reviewed it,
+    2026-09-22: "I saw those calls in your traces, I've been watching. No
+    objections"; this
     reverses Self's own 2026-09-22 suggestion that attitude be updated
     through `set_persona_material`):**
     - `communicate` leaves `PLAY_TOOLS`. A world event with no speaker is
