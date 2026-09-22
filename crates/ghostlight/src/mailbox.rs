@@ -648,6 +648,59 @@ impl SeedPort {
     }
 }
 
+/// The play table's one door. Minted only by Dungeon, which constructs one
+/// `PlayPort` in its `AppState`; exclusivity is that single construction site,
+/// pinned by a negative grep, exactly as every other system capability's is.
+/// No session evidence backs it: it is a system capability like the clock,
+/// not a principal, and it carries no expiry to hold.
+#[derive(Clone)]
+pub struct PlayPort {
+    mailbox: WorldMailbox,
+}
+
+impl PlayPort {
+    pub fn new(mailbox: WorldMailbox) -> Self {
+        Self { mailbox }
+    }
+
+    pub async fn snapshot(&self) -> Result<WorldSnapshot, MailboxError> {
+        self.mailbox.snapshot().await
+    }
+
+    pub async fn submit_patch(
+        &self,
+        command_id: CommandId,
+        patch: WorldPatch,
+    ) -> Result<SubmitReceipt, MailboxError> {
+        self.mailbox
+            .submit_stamped(
+                command_id,
+                CallerId::System(SystemCapability::Play),
+                CommandBody::AdmitPatch {
+                    answers: None,
+                    patch,
+                },
+                AuthenticatedCaller::verified_system(SystemCapability::Play),
+            )
+            .await
+    }
+
+    pub async fn advance_time(
+        &self,
+        command_id: CommandId,
+        minutes: TickMinutes,
+    ) -> Result<SubmitReceipt, MailboxError> {
+        self.mailbox
+            .submit_stamped(
+                command_id,
+                CallerId::System(SystemCapability::Play),
+                CommandBody::AdvanceTime { minutes },
+                AuthenticatedCaller::verified_system(SystemCapability::Play),
+            )
+            .await
+    }
+}
+
 /// The consumer ingress's narrowing of the mailbox: one method. The ingress
 /// has no reason to read the world — it selects no answer, pre-validates
 /// nothing, and returns a receipt rather than state — so a snapshot method here

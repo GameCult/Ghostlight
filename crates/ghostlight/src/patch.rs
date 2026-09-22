@@ -300,6 +300,9 @@ pub(crate) enum FactStanding {
     Canonical { evidence: EvidenceRef },
     /// Asserted by a subject. The kernel does not evaluate the assertion.
     Claimed { by: SubjectId },
+    /// Stated by the play table. The kernel does not evaluate it; only `Play`
+    /// may write it.
+    Ruled,
 }
 
 /// The proposal-time twin of [`FactStanding`].
@@ -308,6 +311,7 @@ pub(crate) enum FactStanding {
 pub(crate) enum FactStandingRef {
     Canonical { evidence: EvidenceRef },
     Claimed { by: Ref<SubjectId> },
+    Ruled,
 }
 
 /// One `EntityKind::Fact` row's payload. Write-once: only declaration and
@@ -1058,6 +1062,13 @@ pub(crate) enum ComponentOp {
         qty: Quantity,
         evidence: EvidenceRef,
     },
+    /// Creates quantity with no receipt. Only `Play` may write it; every other
+    /// author creates quantity through `Admit` and its evidence.
+    Mint {
+        holder: Ref<SubjectId>,
+        resource: Ref<EntityId>,
+        qty: Quantity,
+    },
     Bind {
         subject: Ref<SubjectId>,
         target: DependencyRef,
@@ -1560,6 +1571,11 @@ pub enum Mismatch {
     OutsideJurisdiction {
         site: Site,
     },
+    /// A `Ruled` fact or a `Mint` was written by a caller other than the play
+    /// authority.
+    RuledWithoutAuthority {
+        site: Site,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -1723,6 +1739,11 @@ pub(crate) enum ResolvedOp {
         resource: EntityId,
         qty: Quantity,
         evidence: EvidenceRef,
+    },
+    Mint {
+        holder: SubjectId,
+        resource: EntityId,
+        qty: Quantity,
     },
     Bind {
         subject: SubjectId,
@@ -2111,6 +2132,7 @@ fn candidate_effective_authority(
 enum FactCandidate {
     Canonical,
     Claimed(Key<SubjectId>),
+    Ruled,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -3183,6 +3205,7 @@ pub(super) fn resolve_patch(
                 match &record.standing {
                     FactStanding::Canonical { .. } => FactCandidate::Canonical,
                     FactStanding::Claimed { by } => FactCandidate::Claimed(Key::Existing(*by)),
+                    FactStanding::Ruled => FactCandidate::Ruled,
                 },
             )
         })
@@ -3346,6 +3369,7 @@ pub(super) fn resolve_patch(
                         &mut mismatches,
                     )
                     .map(FactCandidate::Claimed),
+                    FactStandingRef::Ruled => Some(FactCandidate::Ruled),
                 };
                 if let Some(standing) = standing {
                     facts.insert(Key::Draft(fact.handle.clone()), standing);
@@ -3957,6 +3981,48 @@ pub(super) fn resolve_patch(
                     continue;
                 };
                 candidate_set(&mut holdings, &holder_key, &resource_key, admitted);
+                deltas.entry(resource_key).or_default().admitted += u128::from(qty.0);
+            }
+            ComponentOp::Mint {
+                holder,
+                resource,
+                qty,
+            } => {
+                let holder_key = resolve_subject(
+                    Site::Operation(position),
+                    holder,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let resource_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Resource,
+                    resource,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                if qty.0 == 0 {
+                    mismatches.push(Mismatch::ZeroQuantity {
+                        operation: position,
+                    });
+                }
+                let (Some(holder_key), Some(resource_key)) = (holder_key, resource_key) else {
+                    continue;
+                };
+                if qty.0 == 0 {
+                    continue;
+                }
+                let Some(minted) =
+                    candidate_held(&holdings, &holder_key, &resource_key).checked_add(qty.0)
+                else {
+                    mismatches.push(Mismatch::QuantityOverflow {
+                        operation: position,
+                    });
+                    continue;
+                };
+                candidate_set(&mut holdings, &holder_key, &resource_key, minted);
                 deltas.entry(resource_key).or_default().admitted += u128::from(qty.0);
             }
             ComponentOp::Bind { subject, target } | ComponentOp::Release { subject, target } => {
@@ -4968,6 +5034,7 @@ pub(super) fn resolve_patch(
                         FactStandingRef::Claimed { by } => FactStanding::Claimed {
                             by: subject_id_of(&key_of(by)),
                         },
+                        FactStandingRef::Ruled => FactStanding::Ruled,
                     },
                 },
             }),
@@ -5145,6 +5212,15 @@ pub(super) fn resolve_patch(
                 resource: entity_id_of(&key_of(resource)),
                 qty: *qty,
                 evidence: evidence.clone(),
+            },
+            ComponentOp::Mint {
+                holder,
+                resource,
+                qty,
+            } => ResolvedOp::Mint {
+                holder: subject_id_of(&key_of(holder)),
+                resource: entity_id_of(&key_of(resource)),
+                qty: *qty,
             },
             ComponentOp::Bind { subject, target } => ResolvedOp::Bind {
                 subject: subject_id_of(&key_of(subject)),
@@ -5692,7 +5768,7 @@ pub(crate) const PATCH_TOOLS: &[PatchTool] = &[
     },
     PatchTool {
         name: "declare_fact",
-        description: "Declare a fact: a short authored name and the statement it carries.",
+        description: "Declare a fact: a short authored name and the statement it carries. Only the play table may rule a fact.",
         fields: &[
             field("handle", PatchFieldKind::Handle),
             field("label", PatchFieldKind::Label),
@@ -5805,6 +5881,16 @@ pub(crate) const PATCH_TOOLS: &[PatchTool] = &[
             field("evidence", PatchFieldKind::Evidence),
         ],
         shape: PatchToolShape::Operate { variant: "admit" },
+    },
+    PatchTool {
+        name: "mint",
+        description: "Create quantity with no receipt. Only the play table may mint.",
+        fields: &[
+            field("holder", PatchFieldKind::Reference("subject")),
+            field("resource", PatchFieldKind::Reference("resource")),
+            field("qty", PatchFieldKind::Quantity),
+        ],
+        shape: PatchToolShape::Operate { variant: "mint" },
     },
     PatchTool {
         name: "bind",
@@ -6278,6 +6364,7 @@ fn composite_schema(shape: CompositeShape) -> Value {
                     )],
                 ),
                 ("claimed", vec![("by".to_owned(), subject_ref_schema())]),
+                ("ruled", vec![]),
             ],
         ),
         CompositeShape::AudienceRef => tool_schema::external_variant(vec![
@@ -6848,7 +6935,7 @@ mod catalog_tests {
             .iter()
             .filter(|entry| matches!(entry.shape, PatchToolShape::Operate { .. }))
             .count();
-        assert_eq!((declarations, operations, PATCH_TOOLS.len()), (7, 30, 39));
+        assert_eq!((declarations, operations, PATCH_TOOLS.len()), (7, 31, 40));
 
         // Every declaration variant the vocabulary owns is reachable, and the
         // two payload-carrying entity kinds are not exposed as an `Entity`
@@ -6920,6 +7007,7 @@ mod catalog_tests {
                 ComponentOp::Transform { .. } => "transform",
                 ComponentOp::Consume { .. } => "consume",
                 ComponentOp::Admit { .. } => "admit",
+                ComponentOp::Mint { .. } => "mint",
                 ComponentOp::Bind { .. } => "bind",
                 ComponentOp::Release { .. } => "release",
                 ComponentOp::GrantAuthority { .. } => "grant_authority",
@@ -6993,7 +7081,7 @@ mod catalog_tests {
             .count();
         assert_eq!(
             (declare_tools, operate_tools, PATCH_TOOLS.len()),
-            (7, 30, 39)
+            (7, 31, 40)
         );
 
         let declarations = every_declaration();

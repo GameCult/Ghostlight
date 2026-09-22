@@ -76,8 +76,8 @@ pub(super) const CELL_TOOL_STEP_BUDGET: usize = 2;
 /// carried by tool identity, never by a model-written argument.
 const HANDLE_SEPARATOR: &str = "__";
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v16";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v16";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v17";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v17";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other

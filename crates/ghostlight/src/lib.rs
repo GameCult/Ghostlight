@@ -95,7 +95,7 @@ pub use elaboration::{
 pub use lens::{Lens, LensWeights};
 pub use local_inference::{DEFAULT_LOCAL_MODEL_PREFIX, LocalBinding};
 pub(crate) use mailbox::ElaborationPort;
-pub use mailbox::{ConsumerPort, ControllerPort, MailboxError, SeedPort, WorldMailbox};
+pub use mailbox::{ConsumerPort, ControllerPort, MailboxError, PlayPort, SeedPort, WorldMailbox};
 pub use patch::{
     CommitmentKey, DraftHandle, JurisdictionKey, Mismatch, PatchAnswer, Ref, RefKind, RefName, Role,
     Site, Statement, WorldPatch,
@@ -173,8 +173,8 @@ impl VerifiedPrincipalEvidence {
     }
 }
 
-pub const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v5";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v5";
+pub const STATE_SCHEMA: &str = "ghostlight.world_state.consumer.v6";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.consumer.v6";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -480,6 +480,10 @@ enum SystemCapability {
     Consumer {
         consumer: ConsumerId,
     },
+    /// The play table. Admitted for unanswered, unconfined Active patches, the
+    /// only author of `Ruled` facts and `Mint`, and for the clock. Minted only
+    /// by `PlayPort`.
+    Play,
 }
 
 /// What a confined patch author may write. `None` from `require_patch_author`
@@ -1664,12 +1668,14 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
             // a jurisdiction complaint about a reference that does not resolve.
             require_answer(
                 state,
+                &command.caller,
                 answers.as_ref(),
                 !(patch.declarations.is_empty() && patch.evidence.is_empty()),
             )?;
             let confinement = require_patch_author(state, &command.caller, answers.as_ref())?;
             let resolved = patch::resolve_patch(state, command.id, patch, None, None)
                 .map_err(KernelError::PatchRejected)?;
+            require_ruler(&command.caller, &resolved).map_err(KernelError::PatchRejected)?;
             if let Some(ground) = confinement {
                 confine_to_ground(state, &resolved, ground).map_err(KernelError::PatchRejected)?;
             }
@@ -1709,8 +1715,11 @@ fn require_system_capability(caller: &CallerId, body: &CommandBody) -> Result<()
     let admitted = matches!(
         (capability, body),
         (SystemCapability::Clock, CommandBody::AdvanceTime { .. })
+            | (SystemCapability::Play, CommandBody::AdvanceTime { .. })
             | (
-                SystemCapability::Elaborator { .. } | SystemCapability::Consumer { .. },
+                SystemCapability::Elaborator { .. }
+                    | SystemCapability::Consumer { .. }
+                    | SystemCapability::Play,
                 CommandBody::AdmitPatch { .. }
             )
     );
@@ -1725,7 +1734,10 @@ fn require_system_capability(caller: &CallerId, body: &CommandBody) -> Result<()
 /// session. Nothing
 /// else may tick.
 fn require_clock_caller(state: &WorldState, caller: &CallerId) -> Result<(), KernelError> {
-    if caller == &CallerId::System(SystemCapability::Clock) {
+    if matches!(
+        caller,
+        CallerId::System(SystemCapability::Clock) | CallerId::System(SystemCapability::Play)
+    ) {
         Ok(())
     } else {
         require_owner(state, caller)
@@ -1741,13 +1753,26 @@ fn require_clock_caller(state: &WorldState, caller: &CallerId) -> Result<(), Ker
 /// jurisdiction whose deficit is nonzero.
 fn require_answer(
     state: &WorldState,
+    caller: &CallerId,
     answers: Option<&PatchAnswer>,
     declares: bool,
 ) -> Result<(), KernelError> {
+    if caller == &CallerId::System(SystemCapability::Play) && state.phase == WorldPhase::Draft {
+        return Err(KernelError::WrongPhase {
+            expected: WorldPhase::Active,
+            actual: state.phase,
+        });
+    }
     match (state.phase, answers) {
         (WorldPhase::Draft, None) => Ok(()),
         (WorldPhase::Draft, Some(_)) => Err(KernelError::AnswerNotDerived),
-        (WorldPhase::Active, None) if declares => Err(KernelError::AnswerRequired),
+        (WorldPhase::Active, None) if declares => {
+            if caller == &CallerId::System(SystemCapability::Play) {
+                Ok(())
+            } else {
+                Err(KernelError::AnswerRequired)
+            }
+        }
         (WorldPhase::Active, None) => Ok(()),
         (WorldPhase::Active, Some(PatchAnswer::Boundary(claimed))) => {
             exact_boundary(state, claimed).map(|_| ())
@@ -2050,6 +2075,7 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
                 !(patch::is_canonical_text(evidence.text()) && resolved.evidence.contains(evidence))
             }
             FactStanding::Claimed { by } => !state.subjects.contains_key(by),
+            FactStanding::Ruled => false,
         };
         if !patch::is_canonical_text(&declared.entity.label)
             || !patch::is_canonical_text(declared.fact.statement.as_str())
@@ -2143,6 +2169,9 @@ fn apply_operations(
             ResolvedOp::Admit { resource, qty, .. } => {
                 deltas.entry(*resource).or_default().admitted += u128::from(qty.0);
             }
+            ResolvedOp::Mint { resource, qty, .. } => {
+                deltas.entry(*resource).or_default().admitted += u128::from(qty.0);
+            }
             _ => {}
         }
     }
@@ -2177,7 +2206,8 @@ fn operation_resources(operation: &ResolvedOp) -> Vec<EntityId> {
     match operation {
         ResolvedOp::Transfer { resource, .. }
         | ResolvedOp::Consume { resource, .. }
-        | ResolvedOp::Admit { resource, .. } => vec![*resource],
+        | ResolvedOp::Admit { resource, .. }
+        | ResolvedOp::Mint { resource, .. } => vec![*resource],
         ResolvedOp::Transform {
             from_resource,
             into_resource,
@@ -2393,6 +2423,22 @@ fn apply_operation(
                 .checked_add(qty.0)
                 .ok_or_else(overflow)?;
             set_held(state, *holder, *resource, admitted);
+        }
+        ResolvedOp::Mint {
+            holder,
+            resource,
+            qty,
+        } => {
+            if !custody_referents_exist(state, *holder, *resource) {
+                return Err(unknown());
+            }
+            if qty.0 == 0 {
+                return Err(zero());
+            }
+            let minted = held(state, *holder, *resource)
+                .checked_add(qty.0)
+                .ok_or_else(overflow)?;
+            set_held(state, *holder, *resource, minted);
         }
         ResolvedOp::Bind { subject, target } | ResolvedOp::Release { subject, target } => {
             let bind = matches!(operation, ResolvedOp::Bind { .. });
@@ -3662,6 +3708,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                         standing: match &record.standing {
                             FactStanding::Canonical { .. } => FactStandingView::Canonical,
                             FactStanding::Claimed { by } => FactStandingView::Claimed { by: *by },
+                            FactStanding::Ruled => FactStandingView::Canonical,
                         },
                         confidence: held.confidence,
                         source: held.source,
@@ -4290,6 +4337,7 @@ fn require_patch_author(
 ) -> Result<Option<PatchGround>, KernelError> {
     match caller {
         CallerId::Principal(principal) if principal == &state.owner => Ok(None),
+        CallerId::System(SystemCapability::Play) => Ok(None),
         CallerId::System(SystemCapability::Elaborator { jurisdiction }) => {
             let answer = answers.ok_or(KernelError::Unauthorized)?;
             let ground = PatchGround::Jurisdiction(*jurisdiction);
@@ -4514,6 +4562,11 @@ fn confine_to_ground(
                     mismatches.push(Mismatch::OutsideJurisdiction { site });
                 }
             }
+            // Redundant with `require_ruler`, which refuses a confined caller's
+            // `Ruled` fact outright; kept so this match stays total.
+            FactStanding::Ruled => {
+                mismatches.push(Mismatch::OutsideJurisdiction { site });
+            }
         }
     }
     for declared in &resolved.channels {
@@ -4551,6 +4604,38 @@ fn confine_to_ground(
     }
     mismatches.sort();
     mismatches.dedup();
+    if mismatches.is_empty() {
+        Ok(())
+    } else {
+        Err(mismatches)
+    }
+}
+
+/// The one author of a `Ruled` fact and a `Mint`. `Ok` when the caller is
+/// `System(Play)`. Otherwise, one `Mismatch::RuledWithoutAuthority` per
+/// `Ruled` fact and per `Mint`, and `Ok` if there are none. Called in
+/// `reduce`'s `AdmitPatch` arm right after `resolve_patch` and before
+/// confinement, and re-decided in `apply_effect`'s `PatchAdmitted` arm. The
+/// resolver stays actor-blind: this runs after resolution, never inside it.
+fn require_ruler(caller: &CallerId, resolved: &ResolvedPatch) -> Result<(), Vec<Mismatch>> {
+    if caller == &CallerId::System(SystemCapability::Play) {
+        return Ok(());
+    }
+    let mut mismatches = Vec::new();
+    for declared in &resolved.facts {
+        if matches!(declared.fact.standing, FactStanding::Ruled) {
+            mismatches.push(Mismatch::RuledWithoutAuthority {
+                site: Site::Declaration(declared.handle.clone()),
+            });
+        }
+    }
+    for (index, operation) in resolved.operations.iter().enumerate() {
+        if matches!(operation, ResolvedOp::Mint { .. }) {
+            mismatches.push(Mismatch::RuledWithoutAuthority {
+                site: Site::Operation(index),
+            });
+        }
+    }
     if mismatches.is_empty() {
         Ok(())
     } else {
@@ -4604,6 +4689,9 @@ fn operation_ground(
             holder, resource, ..
         }
         | ResolvedOp::Admit {
+            holder, resource, ..
+        }
+        | ResolvedOp::Mint {
             holder, resource, ..
         } => (vec![*holder], places(vec![*resource]), Vec::new()),
         ResolvedOp::Bind { subject, target } | ResolvedOp::Release { subject, target } => {
@@ -4774,8 +4862,11 @@ fn apply_effect(
         let admitted = matches!(
             (capability, effect),
             (SystemCapability::Clock, WorldEffect::TimeAdvanced { .. })
+                | (SystemCapability::Play, WorldEffect::TimeAdvanced { .. })
                 | (
-                    SystemCapability::Elaborator { .. } | SystemCapability::Consumer { .. },
+                    SystemCapability::Elaborator { .. }
+                        | SystemCapability::Consumer { .. }
+                        | SystemCapability::Play,
                     WorldEffect::PatchAdmitted { .. }
                 )
         );
@@ -4790,7 +4881,12 @@ fn apply_effect(
             ));
         }
         WorldEffect::PatchAdmitted { answers, resolved } => {
-            require_answer(state, answers.as_ref(), !resolved.declares_nothing())?;
+            require_answer(state, caller, answers.as_ref(), !resolved.declares_nothing())?;
+            require_ruler(caller, resolved).map_err(|_| {
+                KernelError::Invariant(
+                    "admitted patch rules or mints without the play authority".into(),
+                )
+            })?;
             let confinement =
                 require_patch_author(state, caller, answers.as_ref()).map_err(|_| {
                     KernelError::Invariant(
@@ -15829,5 +15925,473 @@ mod clock_tests {
             "{error:?}"
         );
         assert_eq!(kernel.state.revision, revision);
+    }
+
+    // ---- Cut 3: the play authority, `Ruled` facts and `Mint` -----------
+
+    fn play_caller() -> CallerId {
+        CallerId::System(SystemCapability::Play)
+    }
+
+    fn ruled_fact_patch(handle: &str) -> WorldPatch {
+        WorldPatch {
+            declarations: vec![Declaration::Fact(FactDeclaration {
+                handle: DraftHandle::new(handle),
+                label: "The Ruling".into(),
+                statement: Statement::new("Stated by the table.").unwrap(),
+                standing: FactStandingRef::Ruled,
+            })],
+            operations: Vec::new(),
+            evidence: Vec::new(),
+        }
+    }
+
+    fn resource_named(kernel: &WorldKernel, label: &str) -> EntityId {
+        *kernel
+            .state
+            .entities
+            .iter()
+            .find(|(_, record)| record.label == label)
+            .map(|(id, _)| id)
+            .expect("the declared resource")
+    }
+
+    /// Invariant 5, first half, and P3.1: the play authority declares in
+    /// Active with no answer.
+    #[test]
+    fn the_play_authority_declares_in_active_without_an_answer() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PlayDeclares");
+        let receipt = submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: shed_under(clockwork.dead_end, "play-shed"),
+            },
+        )
+        .expect("the play authority declares unanswered in Active");
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+    }
+
+    /// Invariant 5, second half: the elaborator gate is unchanged.
+    #[test]
+    fn an_elaborator_declaration_in_active_without_an_answer_is_still_refused() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "ElaboratorUnanswered");
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: shed_under(clockwork.dead_end, "shed"),
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::AnswerRequired), "{error:?}");
+    }
+
+    /// Invariant 5, second half: the owner's own gate is unchanged too. Only
+    /// `Play` is exempted from `AnswerRequired`.
+    #[test]
+    fn the_owner_still_cannot_declare_unanswered_in_active() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "OwnerUnanswered");
+        let snapshot = kernel.snapshot().unwrap();
+        let error = kernel
+            .submit(
+                command(
+                    &snapshot,
+                    CommandId::new(),
+                    CallerId::Principal(owner()),
+                    CommandBody::AdmitPatch {
+                        answers: None,
+                        patch: shed_under(clockwork.dead_end, "shed"),
+                    },
+                ),
+                &auth_principal(owner()),
+            )
+            .unwrap_err();
+        assert!(matches!(error, KernelError::AnswerRequired), "{error:?}");
+    }
+
+    /// Invariant 5: the play authority reaches the whole world, unconfined to
+    /// a ground. Writing under a place no jurisdiction covers, with no
+    /// answer, is exactly what an elaborator or the owner cannot do.
+    #[test]
+    fn the_play_authority_is_unconfined() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PlayUnconfined");
+        submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: shed_under(clockwork.dead_end, "unconfined-shed"),
+            },
+        )
+        .expect("the play authority is confined to no ground");
+    }
+
+    /// P3.6: the play authority cannot act in Draft.
+    #[test]
+    fn the_play_authority_is_refused_in_draft() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "PlayDraft"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let commons = kernel.snapshot().unwrap().places[0].id;
+        let error = submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: shed_under(commons, "shed"),
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(
+                error,
+                KernelError::WrongPhase {
+                    expected: WorldPhase::Active,
+                    actual: WorldPhase::Draft,
+                }
+            ),
+            "{error:?}"
+        );
+    }
+
+    /// Invariant 5: the play authority advances time, the clock's precedent.
+    #[test]
+    fn the_play_authority_advances_time() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, _clockwork, active) = clock_kernel(directory.path(), "PlayClock");
+        let receipt = submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdvanceTime {
+                minutes: minutes(30),
+            },
+        )
+        .expect("the play authority advances time");
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+        assert!(kernel.state.now > active.now);
+    }
+
+    /// P3.6: the play authority may not approve, activate, exercise, or
+    /// decline. `require_system_capability`, at the top of `reduce`, refuses
+    /// all four before any body-specific arm is read.
+    #[test]
+    fn the_play_authority_cannot_approve_activate_exercise_or_decline() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, active) = clock_kernel(directory.path(), "PlayForbidden");
+        let opportunity = opportunity_for(&active, clockwork.reeve);
+        let forbidden = [
+            CommandBody::ApproveDraft,
+            CommandBody::ActivateWorld,
+            CommandBody::ExerciseDecision {
+                opportunity: opportunity.clone(),
+                invocation: DecisionInvocation {
+                    affordance: clockwork.deliver,
+                    bindings: Vec::new(),
+                    proposed: Vec::new(),
+                    speech: None,
+                    display: None,
+                },
+            },
+            CommandBody::DeclineDecision {
+                opportunity: opportunity.clone(),
+            },
+        ];
+        for body in &forbidden {
+            let error = submit_as(&mut kernel, play_caller(), body.clone()).unwrap_err();
+            assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+        }
+        // The end-to-end check above cannot tell "refused before any
+        // body-specific arm is read" apart from a downstream refusal that
+        // would fail Play just as closed (`require_owner`, for one, refuses
+        // every non-owner caller regardless of what admitted it). Pin
+        // `require_system_capability` directly, so widening its table for
+        // `Play` is caught even though every arm behind it still happens to
+        // refuse `Play` on its own.
+        for body in &forbidden {
+            assert!(
+                matches!(
+                    require_system_capability(&play_caller(), body),
+                    Err(KernelError::Unauthorized)
+                ),
+                "require_system_capability admitted {body:?} for the play authority"
+            );
+        }
+    }
+
+    /// P3.4: a ruled fact is world truth to every subject that knows it.
+    #[test]
+    fn the_play_authority_rules_a_fact_and_a_witness_knows_it_as_canon() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PlayRules");
+        let mut patch = ruled_fact_patch("verdict");
+        patch.operations.push(ComponentOp::AcquireKnowledge {
+            subject: Ref::Existing(clockwork.reeve),
+            fact: Ref::Draft(DraftHandle::new("verdict")),
+            source: AuthoredSource::Witnessed,
+            confidence: Confidence::Certain,
+        });
+        submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch,
+            },
+        )
+        .expect("the play authority rules a fact and grants it as knowledge");
+
+        let fact = *kernel
+            .state
+            .facts
+            .iter()
+            .find(|(_, record)| record.statement.as_str() == "Stated by the table.")
+            .map(|(id, _)| id)
+            .expect("the ruled fact");
+        assert_eq!(kernel.state.facts[&fact].standing, FactStanding::Ruled);
+
+        let snapshot = kernel.snapshot().unwrap();
+        let subject = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == clockwork.reeve)
+            .expect("the reeve's snapshot");
+        let known = subject
+            .knowledge
+            .iter()
+            .find(|held| held.fact == fact)
+            .expect("the reeve knows the ruled fact");
+        assert_eq!(known.standing, FactStandingView::Canonical);
+    }
+
+    /// P3.5: minted quantity balances the ledger, and replay reproduces it.
+    #[test]
+    fn the_play_authority_mints_and_the_ledger_balances() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (world_id, reeve, grain) = {
+            let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PlayMints");
+            let grain = resource_named(&kernel, "Winter Grain");
+            let before = held(&kernel.state, clockwork.reeve, grain);
+            assert_eq!(before, 0);
+            submit_as(
+                &mut kernel,
+                play_caller(),
+                CommandBody::AdmitPatch {
+                    answers: None,
+                    patch: WorldPatch {
+                        declarations: Vec::new(),
+                        operations: vec![ComponentOp::Mint {
+                            holder: Ref::Existing(clockwork.reeve),
+                            resource: Ref::Existing(grain),
+                            qty: Quantity(7),
+                        }],
+                        evidence: Vec::new(),
+                    },
+                },
+            )
+            .expect("the play authority mints");
+            let after = held(&kernel.state, clockwork.reeve, grain);
+            assert_eq!(before + 7, after);
+            (kernel.state.world_id, clockwork.reeve, grain)
+        };
+        let replayed = WorldKernel::open(&path, world_id).expect("the minted store replays");
+        assert_eq!(held(&replayed.state, reeve, grain), 7);
+    }
+
+    /// The evidenced-knowledge clause is unchanged: a receipt cannot vouch for
+    /// an assertion the kernel never evaluated, and a `Ruled` fact is exactly
+    /// such an assertion.
+    #[test]
+    fn a_ruled_fact_cannot_be_known_evidenced() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PlayEvidenced");
+        let mut patch = ruled_fact_patch("verdict");
+        patch.operations.push(ComponentOp::AcquireKnowledge {
+            subject: Ref::Existing(clockwork.reeve),
+            fact: Ref::Draft(DraftHandle::new("verdict")),
+            source: AuthoredSource::Evidenced,
+            confidence: Confidence::Certain,
+        });
+        let error = submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch,
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::EvidencedKnowledgeOfClaim { operation: 0 })),
+            "{error:?}"
+        );
+    }
+
+    /// The evidence gate on `Canonical` facts and `Admit` is byte-for-byte the
+    /// same predicate at the same sites for every author, `Play` included
+    /// (P3.3). `Play` carries no receipts, so its `Admit` is refused like
+    /// anyone's without one.
+    #[test]
+    fn the_evidence_gate_is_unchanged_for_every_author() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PlayEvidenceGate");
+        let grain = resource_named(&kernel, "Winter Grain");
+
+        // Without a receipt: `Play`'s `Admit` is refused exactly as anyone's.
+        let error = submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::Admit {
+                        holder: Ref::Existing(clockwork.reeve),
+                        resource: Ref::Existing(grain),
+                        qty: Quantity(1),
+                        evidence: EvidenceRef::new("vault:uncited"),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::AdmitWithoutEvidence { operation: 0 })),
+            "{error:?}"
+        );
+
+        // With the receipt cited in the same patch, `Play`'s `Admit` is
+        // admitted like anyone unconfined's.
+        submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::Admit {
+                        holder: Ref::Existing(clockwork.reeve),
+                        resource: Ref::Existing(grain),
+                        qty: Quantity(1),
+                        evidence: EvidenceRef::new("vault:cited"),
+                    }],
+                    evidence: vec![EvidenceRef::new("vault:cited")],
+                },
+            },
+        )
+        .expect("an evidenced admit is admitted for the play authority too");
+    }
+
+    /// `reduce` decides and `apply_effect` re-decides: a forged
+    /// `PatchAdmitted` under an elaborator caller, carrying a `Mint` the
+    /// resolver would accept (the resolver is actor-blind) and that fully
+    /// satisfies confinement (the minted subject is declared inside the
+    /// elaborator's own jurisdiction), is still refused at apply. `Mint`
+    /// carries no confinement veto of its own — unlike a `Ruled` fact,
+    /// `confine_to_ground` has no redundant clause for it — so only
+    /// `require_ruler`'s re-decision can be refusing this. Follows
+    /// `apply_effect_re_decides_elaborator_authority`.
+    #[test]
+    fn apply_effect_re_decides_the_ruler() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, clockwork, _) = clock_kernel(directory.path(), "RedecideRulerMint");
+        let answered = dead_end_boundary(&kernel);
+        let speak = super::tests::speak_entry(&kernel);
+        let command_id = CommandId::issue();
+        let patch = WorldPatch {
+            declarations: vec![
+                Declaration::Entity(EntityDeclaration {
+                    handle: DraftHandle::new("loot"),
+                    label: "Roadside Loot".into(),
+                    kind: EntityKind::Resource,
+                    container: None,
+                }),
+                Declaration::Subject(SubjectDeclaration {
+                    handle: DraftHandle::new("finder"),
+                    label: "The Roadside Finder".into(),
+                    kind: SubjectKind::Person,
+                    controller: NewController::NarrativePersona,
+                    affordances: BTreeSet::from([speak]),
+                    position: Some(Ref::Existing(clockwork.dead_end)),
+                }),
+            ],
+            operations: vec![ComponentOp::Mint {
+                holder: Ref::Draft(DraftHandle::new("finder")),
+                resource: Ref::Draft(DraftHandle::new("loot")),
+                qty: Quantity(4),
+            }],
+            evidence: Vec::new(),
+        };
+        let resolved = patch::resolve_patch(&kernel.state, command_id, &patch, None, None)
+            .expect("the patch resolves; the resolver is actor-blind");
+        let effect = WorldEffect::PatchAdmitted {
+            answers: Some(PatchAnswer::Boundary(answered)),
+            resolved,
+        };
+
+        let mut candidate = kernel.state.clone();
+        let error = apply_effect(
+            &mut candidate,
+            command_id,
+            &elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            &effect,
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::Invariant(_)), "{error:?}");
+        assert_eq!(candidate, kernel.state);
+
+        let mut candidate = kernel.state.clone();
+        apply_effect(&mut candidate, command_id, &play_caller(), &effect)
+            .expect("the play authority applies through the same arm");
+        assert_ne!(candidate, kernel.state);
+    }
+
+    /// P3.5, replay half, folded with a ruled fact: reopening the journal
+    /// reproduces both across the digest.
+    #[test]
+    fn a_journal_holding_a_ruled_fact_and_a_mint_replays() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (world_id, expected) = {
+            let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "PlayReplay");
+            let grain = resource_named(&kernel, "Winter Grain");
+            let mut patch = ruled_fact_patch("verdict");
+            patch.operations.push(ComponentOp::Mint {
+                holder: Ref::Existing(clockwork.farmer),
+                resource: Ref::Existing(grain),
+                qty: Quantity(2),
+            });
+            submit_as(
+                &mut kernel,
+                play_caller(),
+                CommandBody::AdmitPatch {
+                    answers: None,
+                    patch,
+                },
+            )
+            .expect("the play authority rules and mints in one patch");
+            (kernel.state.world_id, kernel.snapshot().unwrap())
+        };
+        let replayed = WorldKernel::open(&path, world_id).expect("the store replays");
+        assert_eq!(replayed.snapshot().unwrap(), expected);
+        drop(replayed);
+        let replayed_again =
+            WorldKernel::open(&path, world_id).expect("the store replays a second time");
+        assert_eq!(replayed_again.snapshot().unwrap(), expected);
     }
 }

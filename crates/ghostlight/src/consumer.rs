@@ -2234,7 +2234,7 @@ mod tests {
         assert!(super::super::journal::verify_state_shape(&previous).is_err());
         assert_eq!(
             super::super::STATE_SCHEMA,
-            "ghostlight.world_state.consumer.v5"
+            "ghostlight.world_state.consumer.v6"
         );
     }
 
@@ -2294,5 +2294,225 @@ mod tests {
         let rendered = format!("{document:?}");
         assert!(!rendered.contains(SECRET), "{rendered}");
         assert!(rendered.contains("<redacted>"), "{rendered}");
+    }
+
+    // ---- Cut 3: nobody but the play authority may rule or mint ----------
+
+    fn ruled_patch(handle: &str) -> WorldPatch {
+        WorldPatch {
+            declarations: vec![Declaration::Fact(FactDeclaration {
+                handle: DraftHandle::new(handle),
+                label: "The Ruling".into(),
+                statement: Statement::new("Stated by the table.").unwrap(),
+                standing: FactStandingRef::Ruled,
+            })],
+            operations: Vec::new(),
+            evidence: Vec::new(),
+        }
+    }
+
+    fn mint_patch(mirror: &Mirror) -> WorldPatch {
+        WorldPatch {
+            declarations: Vec::new(),
+            operations: vec![ComponentOp::Mint {
+                holder: Ref::Existing(mirror.first),
+                resource: Ref::Existing(mirror.grain),
+                qty: Quantity(3),
+            }],
+            evidence: Vec::new(),
+        }
+    }
+
+    fn elaborator_over(mirror: &Mirror) -> CallerId {
+        CallerId::System(SystemCapability::Elaborator {
+            jurisdiction: JurisdictionKey::PlaceSubtree(mirror.commons),
+        })
+    }
+
+    /// P3.2: the owner, seed, elaborators and consumers are refused a `Ruled`
+    /// fact both at `reduce` and (transitively, since the mailbox always
+    /// applies through `apply_effect`) at commit. Table-driven over the four
+    /// non-`Play` authors the map names.
+    #[test]
+    fn no_one_else_may_rule_a_fact() {
+        let refused_at_declaration = |error: KernelError, handle: &str| {
+            assert!(
+                matches!(&error, KernelError::PatchRejected(set)
+                    if set.contains(&Mismatch::RuledWithoutAuthority {
+                        site: patch::Site::Declaration(DraftHandle::new(handle)),
+                    })),
+                "{error:?}"
+            );
+        };
+
+        // The owner in Draft: the seed's caller.
+        {
+            let directory = tempfile::tempdir().unwrap();
+            let (mut kernel, _mirror) = draft_kernel(directory.path(), "OwnerDraftRule");
+            let snapshot = kernel.snapshot().unwrap();
+            let error = kernel
+                .submit(
+                    command(
+                        &snapshot,
+                        CommandId::new(),
+                        CallerId::Principal(owner()),
+                        CommandBody::AdmitPatch {
+                            answers: None,
+                            patch: ruled_patch("rule"),
+                        },
+                    ),
+                    &auth_principal(owner()),
+                )
+                .unwrap_err();
+            refused_at_declaration(error, "rule");
+        }
+
+        // The owner in Active, with a real answer.
+        {
+            let directory = tempfile::tempdir().unwrap();
+            let (mut kernel, mirror) = mirror_kernel(directory.path(), "OwnerActiveRule");
+            let answered = missing_structure(&kernel, mirror.first);
+            let snapshot = kernel.snapshot().unwrap();
+            let error = kernel
+                .submit(
+                    command(
+                        &snapshot,
+                        CommandId::new(),
+                        CallerId::Principal(owner()),
+                        CommandBody::AdmitPatch {
+                            answers: Some(PatchAnswer::Boundary(answered)),
+                            patch: ruled_patch("rule"),
+                        },
+                    ),
+                    &auth_principal(owner()),
+                )
+                .unwrap_err();
+            refused_at_declaration(error, "rule");
+        }
+
+        // An elaborator with a valid answer.
+        {
+            let directory = tempfile::tempdir().unwrap();
+            let (mut kernel, mirror) = mirror_kernel(directory.path(), "ElaboratorRule");
+            let answered = missing_structure(&kernel, mirror.first);
+            let error = submit_as(
+                &mut kernel,
+                elaborator_over(&mirror),
+                CommandBody::AdmitPatch {
+                    answers: Some(PatchAnswer::Boundary(answered)),
+                    patch: ruled_patch("rule"),
+                },
+            )
+            .unwrap_err();
+            refused_at_declaration(error, "rule");
+        }
+
+        // A consumer on its own mirror.
+        {
+            let directory = tempfile::tempdir().unwrap();
+            let (mut kernel, mirror) = mirror_kernel(directory.path(), "ConsumerRule");
+            let answered = missing_structure(&kernel, mirror.first);
+            let error = as_consumer(
+                &mut kernel,
+                CommandBody::AdmitPatch {
+                    answers: Some(PatchAnswer::Boundary(answered)),
+                    patch: ruled_patch("rule"),
+                },
+            )
+            .unwrap_err();
+            refused_at_declaration(error, "rule");
+        }
+    }
+
+    /// P3.2's other half: the same four callers may not mint.
+    #[test]
+    fn no_one_else_may_mint() {
+        let refused_at_op_zero = |error: KernelError| {
+            assert!(
+                matches!(&error, KernelError::PatchRejected(set)
+                    if set.contains(&Mismatch::RuledWithoutAuthority {
+                        site: patch::Site::Operation(0),
+                    })),
+                "{error:?}"
+            );
+        };
+
+        // The owner in Draft: the seed's caller.
+        {
+            let directory = tempfile::tempdir().unwrap();
+            let (mut kernel, mirror) = draft_kernel(directory.path(), "OwnerDraftMint");
+            let snapshot = kernel.snapshot().unwrap();
+            let error = kernel
+                .submit(
+                    command(
+                        &snapshot,
+                        CommandId::new(),
+                        CallerId::Principal(owner()),
+                        CommandBody::AdmitPatch {
+                            answers: None,
+                            patch: mint_patch(&mirror),
+                        },
+                    ),
+                    &auth_principal(owner()),
+                )
+                .unwrap_err();
+            refused_at_op_zero(error);
+        }
+
+        // The owner in Active.
+        {
+            let directory = tempfile::tempdir().unwrap();
+            let (mut kernel, mirror) = mirror_kernel(directory.path(), "OwnerActiveMint");
+            let snapshot = kernel.snapshot().unwrap();
+            let error = kernel
+                .submit(
+                    command(
+                        &snapshot,
+                        CommandId::new(),
+                        CallerId::Principal(owner()),
+                        CommandBody::AdmitPatch {
+                            answers: None,
+                            patch: mint_patch(&mirror),
+                        },
+                    ),
+                    &auth_principal(owner()),
+                )
+                .unwrap_err();
+            refused_at_op_zero(error);
+        }
+
+        // An elaborator with a valid answer: `require_patch_author` demands
+        // one for an elaborator whatever the patch declares.
+        {
+            let directory = tempfile::tempdir().unwrap();
+            let (mut kernel, mirror) = mirror_kernel(directory.path(), "ElaboratorMint");
+            let answered = missing_structure(&kernel, mirror.first);
+            let error = submit_as(
+                &mut kernel,
+                elaborator_over(&mirror),
+                CommandBody::AdmitPatch {
+                    answers: Some(PatchAnswer::Boundary(answered)),
+                    patch: mint_patch(&mirror),
+                },
+            )
+            .unwrap_err();
+            refused_at_op_zero(error);
+        }
+
+        // A consumer on its own mirror: an operations-only patch declares
+        // nothing, so no answer is needed to reach `require_ruler`.
+        {
+            let directory = tempfile::tempdir().unwrap();
+            let (mut kernel, mirror) = mirror_kernel(directory.path(), "ConsumerMint");
+            let error = as_consumer(
+                &mut kernel,
+                CommandBody::AdmitPatch {
+                    answers: None,
+                    patch: mint_patch(&mirror),
+                },
+            )
+            .unwrap_err();
+            refused_at_op_zero(error);
+        }
     }
 }

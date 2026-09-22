@@ -19,9 +19,9 @@
 use chrono::{Duration, Utc};
 use ghostlight::{
     CommandBody, CommandId, ControllerMode, ControllerPort, CreateWorldIntent, DecisionInvocation,
-    DecisionOpportunity, KernelError, Lens, LensWeights, MailboxError, Mismatch, PrincipalCommandIntent,
-    Statement, SubjectId, SubmitReceipt, VerifiedPrincipalEvidence, WorldMailbox, WorldPhase,
-    WorldSnapshot,
+    DecisionOpportunity, KernelError, Lens, LensWeights, MailboxError, Mismatch, PlayPort,
+    PrincipalCommandIntent, Statement, SubjectId, SubmitReceipt, VerifiedPrincipalEvidence,
+    WorldMailbox, WorldPatch, WorldPhase, WorldSnapshot,
 };
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
@@ -691,6 +691,50 @@ async fn a_lens_set_spelled_with_or_without_its_zero_weights_commits_nothing() {
     submit(moved.clone()).await.expect("adding weight to numen commits");
     assert_eq!(world.committed().await.0, before.0 + 1);
     assert_eq!(world.snapshot().await.lens_weights, moved);
+}
+
+/// Cut 3: `PlayPort` is the play authority's only door, and it is a public,
+/// externally constructible type — Dungeon mints exactly one of these in its
+/// `AppState`. This is a compile-pass use of the port from outside the crate:
+/// it mints quantity through `Mint`, the spelling only `Play` may write, on a
+/// resource it declares in the same patch, unconfined and with no answer.
+#[tokio::test]
+async fn play_port_is_the_only_play_minter() {
+    let world = World::active().await;
+    let play = PlayPort::new(world.mailbox.clone());
+    let holder = world
+        .snapshot()
+        .await
+        .subjects
+        .first()
+        .expect("genesis declares at least one subject")
+        .id;
+    let patch: WorldPatch = serde_json::from_value(json!({
+        "declarations": [
+            {
+                "type": "entity",
+                "handle": "loot",
+                "label": "Ruled Loot",
+                "kind": "resource",
+                "container": null,
+            },
+        ],
+        "operations": [
+            {
+                "op": "mint",
+                "holder": {"ref": "existing", "value": holder},
+                "resource": {"ref": "draft", "value": "loot"},
+                "qty": 5,
+            },
+        ],
+        "evidence": [],
+    }))
+    .expect("a mint operation, off the wire, decodes into a WorldPatch");
+    let receipt = play
+        .submit_patch(CommandId::new(), patch)
+        .await
+        .expect("the play authority mints with no answer, unconfined");
+    assert!(matches!(receipt, SubmitReceipt::Applied(_)));
 }
 
 /// A lens name the library does not know cannot be decoded into a command

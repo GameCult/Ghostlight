@@ -584,6 +584,7 @@ pub(super) fn verify_state_shape(state: &WorldState) -> Result<(), JournalError>
                 super::patch::is_canonical_text(evidence.text())
             }
             super::FactStanding::Claimed { by } => state.subjects.contains_key(by),
+            super::FactStanding::Ruled => true,
         };
         if !state
             .entities
