@@ -917,7 +917,14 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
   - A request with no tools omits `tools` and `parallel_tool_calls`.
   - Every fix was killed by its own mutation. `local_inference::` went 7 → 21
     tests; lib 488 → 502.
-- **Re-verification of P2.2:** pending Soul.
+- **Re-verification** (Soul, Sonnet, 2026-09-22, against `4ac7b82`): P2.2
+  **HOLDS**. `.no_proxy()` disables environment proxy resolution as a whole,
+  and `Policy::none()` refuses every 3xx. A `SocketAddr` cannot carry
+  userinfo. P2.3 **HOLDS**: a whitespace-only prefix matches no model,
+  because model names are validated whitespace-free. S2, S3, S4 and S6 are
+  now killed. Soul's new mutation N2 (3xx retryable) was killed. N1 (any IPv6
+  address counts as loopback) survived: see PA.f24. Residuals are PA.f23,
+  PA.f24 and PA.f25.
 
 ## Cut 3. The play authority, `Ruled` facts and `Mint` (kernel), schema `consumer.v6`
 
@@ -1570,6 +1577,22 @@ Interpreter, the elaborator sweep and lenses.
   - the stripped `model` (S3);
   - the foreign-caller and expiry gates in `infer` (S4);
   - the receipt digest, which must change with `response_id` (S6).
+- **PA.f23 (introduced by the Cut 2 fix batch, low-medium, fix):**
+  `local_inference.rs:64-65`. The response `id` tolerates absence
+  (`#[serde(default)]`) but not an explicit `null`, which decodes as
+  `integrity_violation` and quarantines the lane. `tool_calls` was fixed for
+  exactly this case with `null_as_default`. The fix is the same treatment
+  for `id`, with a test and a mutation. It rides the next library Hands pass
+  as its own commit.
+- **PA.f24 (pre-existing in Cut 2, low, fix):** no test gives the port an
+  IPv6 endpoint. Mutation N1 survived: it accepts every IPv6 address as
+  loopback. The fix is a test that `[::1]` opens and that a non-loopback
+  IPv6 address such as `[2001:db8::1]` is refused. It rides with PA.f23.
+- **PA.f25 (introduced by the Cut 2 fix batch, low, recorded):**
+  `the_client_never_honors_an_environment_proxy` sets and clears the proxy
+  variables with no drop guard. A panic between them would leak the
+  variable into the rest of the test binary and poison `client_build_lock`.
+  Nothing between them can panic today.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
