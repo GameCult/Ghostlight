@@ -2312,6 +2312,21 @@ Interpreter, the elaborator sweep and lenses.
 - **PA.f70 (info):** Dungeon cannot submit the player's act under Play,
   because `PlayPort` has no door for `ExerciseDecision`. This holds by
   construction.
+- **Kernel fix batch 7b landed (Hands, Sonnet, 2026-09-22; resumed after a
+  workstation reboot):** `1d50509` (PA.f48), `7d59e41` (PA.f49), `56020d4`
+  (PA.f50, PA.f51) and `275b0f2` (PA.f67).
+  - PA.f48: the resolver's `candidate_effective_authority` skips retired
+    institutions through the retired set it already threads. That is the
+    same rule as `delegated_authority`.
+  - PA.f49: the apply path takes an explicit `resolves_to`, so genesis
+    stamps 0. `verify_state_shape` checks `acquired_at <= revision`.
+  - PA.f67: `SourceSpan::locate` requires word boundaries at both ends, and
+    searches on to a later valid occurrence. No existing test relied on a
+    mid-word span.
+  - Every mutation was killed, including a loosening that fixed only
+    `graph_overlaps`.
+  - Lib 597 → 603. persona-projection 13 → 18.
+  - From here on, builds run one at a time on the workstation.
 - **Soul on library fix batch 7a** (Opus, 2026-09-22, against `2035fe8`,
   Windows).
   - Verdicts:
