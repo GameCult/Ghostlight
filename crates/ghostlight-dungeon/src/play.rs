@@ -30,7 +30,8 @@ use ghostlight::{
     InferencePort, InferenceRequest, KernelError, MailboxError, PersonaLane, PlayPort,
     PrincipalCommandIntent, Statement, SubjectId, TickMinutes, VerifiedPrincipalEvidence,
     WorldMailbox, WorldPatch, WorldSnapshot, actor_tools, authoring_tools, decode_actor_call,
-    decode_authoring_call, decode_authoring_calls, describe_refusal, table_view,
+    decode_authoring_call, decode_authoring_calls, describe_refusal, id_text, id_text_matches,
+    table_view,
 };
 use ghostlight_persona_projection::{PersonaTurn, SourceSpan};
 use codex_connector::{CodexInputItem, CodexToolDefinition};
@@ -1122,21 +1123,17 @@ impl PlayTable {
             }
 
             if name == DISPATCH_TOOL {
-                let (subjects, unknown) = parse_dispatch(arguments, &snapshot);
+                let (subjects, refusals) = parse_dispatch(arguments, &snapshot);
                 let (outcome, dispatch_summary) =
                     self.execute_dispatch(turn, round, this_slot, &subjects).await?;
-                // PA.f98: an id naming no dispatchable subject is refused in
-                // the tool result, quoting the text given — never dropped
-                // silently the way matching only the short actor-tool handle
-                // used to drop it.
-                let result = if unknown.is_empty() {
+                // PA.f98, PA.f114: bad input — an unknown id, a non-string
+                // entry, a malformed body, or a missing `subjects` key — is
+                // refused in the tool result, quoting what was given, never
+                // dropped silently.
+                let result = if refusals.is_empty() {
                     dispatch_summary
                 } else {
-                    let refusals = unknown
-                        .iter()
-                        .map(|text| format!("`{text}` names no dispatchable subject"))
-                        .collect::<Vec<_>>()
-                        .join("; ");
+                    let refusals = refusals.join("; ");
                     if dispatch_summary.is_empty() {
                         refusals
                     } else {
@@ -1607,21 +1604,6 @@ fn handle_for(id: SubjectId) -> String {
     inner.chars().filter(char::is_ascii_hexdigit).take(8).collect()
 }
 
-/// A subject's own full canonical id text, exactly as `table_view` prints it
-/// in brackets (PA.f98) — the same debug-paren strip `handle_for` above and
-/// the library's own `table.rs::id_text` both use, without `handle_for`'s
-/// truncation to 8 hex digits. `dispatch` takes exactly this text; the short
-/// handle exists only to keep a generated `<handle>__<kind>` actor-tool name
-/// under a common function-name length limit and is never itself a valid
-/// `dispatch` argument.
-fn full_id_text(id: SubjectId) -> String {
-    let text = format!("{id:?}");
-    match (text.find('('), text.rfind(')')) {
-        (Some(open), Some(close)) if open < close => text[open + 1..close].to_owned(),
-        _ => text,
-    }
-}
-
 /// Appends one actor tool's own acting subject's label and full canonical id
 /// to its description (PA.f98): `dispatch` takes the id exactly as
 /// `table_view` prints it, never the short `<handle>__` prefix these tools'
@@ -1629,10 +1611,12 @@ fn full_id_text(id: SubjectId) -> String {
 /// expects, right where the agent reads it. `actor_tools` (`table.rs`) knows
 /// nothing of a subject's label; annotating here, over the definitions it
 /// already returned, is the smallest fix that does not teach the library
-/// vocabulary a Dungeon-only presentation concern.
+/// vocabulary a Dungeon-only presentation concern. The id itself comes from
+/// the library's own `id_text` (PA.f113) — Dungeon no longer keeps its own
+/// copy of the debug-paren strip `table_view` uses to print it.
 fn annotate_actor_tools(tools: &mut [CodexToolDefinition], snapshot: &WorldSnapshot, subject: SubjectId) {
     let label = subject_label(snapshot, subject);
-    let id = full_id_text(subject);
+    let id = id_text(subject);
     for tool in tools {
         tool.description = format!("{} Acting subject: {label} [{id}].", tool.description);
     }
@@ -1696,29 +1680,59 @@ name carries. An id naming no dispatchable subject is refused, quoting the text 
     ]
 }
 
-/// Resolves `dispatch`'s own `subjects` argument (PA.f98): each entry is the
-/// *full* id `table_view` prints in brackets — the same text `full_id_text`
-/// renders — never the short `<handle>__` actor-tool prefix, which exists
-/// only to keep a generated tool name under a common function-name length
-/// limit and was never meant to be an id a caller supplies back. An entry
-/// that names no subject in `snapshot` is returned in `unknown`, verbatim,
-/// so the caller can refuse it by name instead of dropping it silently.
+/// Resolves `dispatch`'s own `subjects` argument (PA.f98, PA.f114): each
+/// entry is the *full* id `table_view` prints in brackets, matched through
+/// the library's own `id_text_matches` — never the short `<handle>__`
+/// actor-tool prefix, which exists only to keep a generated tool name under a
+/// common function-name length limit and was never meant to be an id a caller
+/// supplies back.
+///
+/// `PLAY_INSTRUCTIONS` promises dispatch refuses bad input rather than
+/// silently doing nothing with it, so every shape of bad input returns a
+/// refusal in `refusals` that quotes what was given, instead of being
+/// dropped: a body that is not valid JSON, a body that is not a JSON object,
+/// a missing `subjects` key, a `subjects` that is not an array, a non-string
+/// entry, and an entry naming no subject in `snapshot`.
 fn parse_dispatch(arguments: &str, snapshot: &WorldSnapshot) -> (Vec<SubjectId>, Vec<String>) {
-    let Ok(Value::Object(fields)) = serde_json::from_str::<Value>(arguments) else {
-        return (Vec::new(), Vec::new());
+    let value = match serde_json::from_str::<Value>(arguments) {
+        Ok(value) => value,
+        Err(_) => {
+            return (
+                Vec::new(),
+                vec![format!("dispatch's arguments are not valid JSON: `{arguments}`")],
+            );
+        }
     };
-    let Some(Value::Array(items)) = fields.get("subjects") else {
-        return (Vec::new(), Vec::new());
+    let Value::Object(fields) = value else {
+        return (
+            Vec::new(),
+            vec![format!("dispatch's arguments are not a JSON object: `{arguments}`")],
+        );
+    };
+    let Some(subjects_value) = fields.get("subjects") else {
+        return (
+            Vec::new(),
+            vec![format!("dispatch's arguments have no `subjects` key: `{arguments}`")],
+        );
+    };
+    let Value::Array(items) = subjects_value else {
+        return (
+            Vec::new(),
+            vec![format!("dispatch's `subjects` is not an array: `{subjects_value}`")],
+        );
     };
     let mut subjects = Vec::new();
-    let mut unknown = Vec::new();
-    for text in items.iter().filter_map(Value::as_str) {
-        match snapshot.subjects.iter().find(|subject| full_id_text(subject.id) == text) {
-            Some(subject) => subjects.push(subject.id),
-            None => unknown.push(text.to_owned()),
+    let mut refusals = Vec::new();
+    for item in items {
+        match item.as_str() {
+            Some(text) => match snapshot.subjects.iter().find(|subject| id_text_matches(subject.id, text)) {
+                Some(subject) => subjects.push(subject.id),
+                None => refusals.push(format!("`{text}` names no dispatchable subject")),
+            },
+            None => refusals.push(format!("`{item}` in `subjects` is not a string")),
         }
     }
-    (subjects, unknown)
+    (subjects, refusals)
 }
 
 fn parse_ask_player(arguments: &str) -> String {
@@ -2223,16 +2237,41 @@ mod tests {
             .id
     }
 
-    /// A subject's own full canonical id text, exactly as `table_view`
-    /// prints it in brackets — distinct from `handle_for`'s short 8-hex-digit
-    /// actor handle (PA.f97). A `Ref::Existing` JSON value needs the real
-    /// id; only a `<handle>__<kind>` tool name needs the truncated handle.
-    fn subject_id_text(id: SubjectId) -> String {
-        let text = format!("{id:?}");
-        match (text.find('('), text.rfind(')')) {
-            (Some(open), Some(close)) if open < close => text[open + 1..close].to_owned(),
-            _ => text,
-        }
+    /// A subject's own full canonical id text, read out of a *real*
+    /// `table_view` render rather than a test-local copy of its printer
+    /// (PA.f113): a change to what `table_view` actually prints must break
+    /// every test that reads an id through this helper, which a fourth
+    /// hand-spelled debug-paren strip could not do — that copy passed every
+    /// dispatch test while `table_view`'s own print regressed and every real
+    /// dispatch an agent could make was refused. Distinct from `handle_for`'s
+    /// short 8-hex-digit actor handle (PA.f97). A `Ref::Existing` JSON value
+    /// needs the real id; only a `<handle>__<kind>` tool name needs the
+    /// truncated handle.
+    fn subject_id_text(snapshot: &WorldSnapshot, id: SubjectId) -> String {
+        let label = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == id)
+            .map_or_else(|| "an unknown subject".to_owned(), |subject| subject.label.clone());
+        let view = table_view(snapshot);
+        // The `Places:` section prints each place's occupants by the same
+        // "label [id]" shape (PA.f74) before the `Subjects:` section proper
+        // renders the subject's own canonical entry — the entry
+        // `PLAY_INSTRUCTIONS` and `dispatch` actually mean. Search only from
+        // the `Subjects:` header so a subject that also occupies a place
+        // does not read its id back out of the wrong section.
+        let subjects_section = view
+            .find("\n  Subjects:")
+            .map_or(view.as_str(), |at| &view[at..]);
+        let marker = format!("{label} [");
+        let start = subjects_section
+            .find(&marker)
+            .unwrap_or_else(|| panic!("{label} not found in table_view's Subjects section: {view}"))
+            + marker.len();
+        let end = subjects_section[start..]
+            .find(']')
+            .unwrap_or_else(|| panic!("unterminated id bracket after {label} in table_view"));
+        subjects_section[start..start + end].to_owned()
     }
 
     #[tokio::test]
@@ -2431,7 +2470,7 @@ mod tests {
         let fixture = play_world(Some("Mara"), "player-persona-paraphrase").await;
         let snapshot = fixture.world.snapshot().await.unwrap();
         let mara = handle_for(persona_id(&snapshot));
-        let mara_id = subject_id_text(persona_id(&snapshot));
+        let mara_id = subject_id_text(&snapshot, persona_id(&snapshot));
         let dispatch_round = output(
             "r0",
             vec![call_event(
@@ -2550,7 +2589,7 @@ mod tests {
             .and_then(|rest| rest.split(']').next())
             .expect("Gold's bracketed id is printed in table_view")
             .to_owned();
-        let player = subject_id_text(player_id(&snapshot));
+        let player = subject_id_text(&snapshot, player_id(&snapshot));
 
         {
             let personas = PersonaLane::new(
@@ -2628,7 +2667,7 @@ mod tests {
     async fn a_persona_fault_becomes_a_tool_result_and_the_turn_continues() {
         let fixture = play_world(Some("Mara"), "player-persona-fault").await;
         let snapshot = fixture.world.snapshot().await.unwrap();
-        let mara = subject_id_text(persona_id(&snapshot));
+        let mara = subject_id_text(&snapshot, persona_id(&snapshot));
         let round = output(
             "r0",
             vec![
@@ -2691,7 +2730,7 @@ mod tests {
     async fn persona_dispatch_draws_only_from_the_permit_pool() {
         let fixture = play_world(Some("Mara"), "player-permits").await;
         let snapshot = fixture.world.snapshot().await.unwrap();
-        let mara = subject_id_text(persona_id(&snapshot));
+        let mara = subject_id_text(&snapshot, persona_id(&snapshot));
         let round = output(
             "r0",
             vec![
@@ -2747,7 +2786,7 @@ mod tests {
     async fn dispatch_by_the_printed_full_id_runs_the_persona() {
         let fixture = play_world(Some("Mara"), "player-dispatch-full-id").await;
         let snapshot = fixture.world.snapshot().await.unwrap();
-        let mara_id = subject_id_text(persona_id(&snapshot));
+        let mara_id = subject_id_text(&snapshot, persona_id(&snapshot));
         let round = output(
             "r0",
             vec![
@@ -2859,7 +2898,7 @@ mod tests {
     async fn a_mixed_dispatch_list_runs_the_valid_id_and_names_the_invalid_one() {
         let fixture = play_world(Some("Mara"), "player-dispatch-mixed").await;
         let snapshot = fixture.world.snapshot().await.unwrap();
-        let mara_id = subject_id_text(persona_id(&snapshot));
+        let mara_id = subject_id_text(&snapshot, persona_id(&snapshot));
         let round = output(
             "r0",
             vec![
@@ -2910,6 +2949,59 @@ mod tests {
             dispatch_result.contains("`not-a-real-id` names no dispatchable subject"),
             "{dispatch_result}"
         );
+    }
+
+    /// PA.f114: `PLAY_INSTRUCTIONS` promises an id naming no dispatchable
+    /// subject is refused, quoting what was given, rather than silently
+    /// doing nothing. `parse_dispatch` used to drop a non-string entry with
+    /// `Value::as_str` filtering it out unseen; it is now refused by name.
+    /// Tested directly against `parse_dispatch`, the exact function the
+    /// dispatch tool call handler runs the arguments through.
+    #[tokio::test]
+    async fn a_non_string_dispatch_entry_is_refused_quoting_it() {
+        let fixture = play_world(Some("Mara"), "player-dispatch-non-string").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let (subjects, refusals) = parse_dispatch(r#"{"subjects": [42, true]}"#, &snapshot);
+        assert!(subjects.is_empty());
+        assert_eq!(
+            refusals,
+            vec![
+                "`42` in `subjects` is not a string".to_owned(),
+                "`true` in `subjects` is not a string".to_owned(),
+            ]
+        );
+    }
+
+    /// PA.f114: a body that isn't valid JSON, and a body whose JSON isn't an
+    /// object, are each refused quoting the text given — not the silent
+    /// empty dispatch `parse_dispatch` used to return for both.
+    #[tokio::test]
+    async fn a_malformed_dispatch_body_is_refused_quoting_it() {
+        let fixture = play_world(Some("Mara"), "player-dispatch-malformed").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+
+        let (subjects, refusals) = parse_dispatch("not json at all", &snapshot);
+        assert!(subjects.is_empty());
+        assert_eq!(refusals.len(), 1, "{refusals:?}");
+        assert!(refusals[0].contains("not valid JSON"), "{refusals:?}");
+        assert!(refusals[0].contains("not json at all"), "{refusals:?}");
+
+        let (subjects, refusals) = parse_dispatch(r#"["a", "b"]"#, &snapshot);
+        assert!(subjects.is_empty());
+        assert_eq!(refusals.len(), 1, "{refusals:?}");
+        assert!(refusals[0].contains("not a JSON object"), "{refusals:?}");
+    }
+
+    /// PA.f114: `dispatch`'s arguments missing the `subjects` key entirely
+    /// are refused rather than read as an empty dispatch list.
+    #[tokio::test]
+    async fn a_dispatch_body_missing_subjects_key_is_refused() {
+        let fixture = play_world(Some("Mara"), "player-dispatch-missing-key").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let (subjects, refusals) = parse_dispatch("{}", &snapshot);
+        assert!(subjects.is_empty());
+        assert_eq!(refusals.len(), 1, "{refusals:?}");
+        assert!(refusals[0].contains("no `subjects` key"), "{refusals:?}");
     }
 
     #[tokio::test]
@@ -3465,7 +3557,7 @@ mod tests {
     async fn set_persona_material_on_an_existing_subject_is_refused() {
         let fixture = play_world(None, "player-persona-existing").await;
         let before = fixture.world.snapshot().await.unwrap();
-        let player = subject_id_text(player_id(&before));
+        let player = subject_id_text(&before, player_id(&before));
         let round = output(
             "r0",
             vec![
@@ -3873,7 +3965,7 @@ mod tests {
     async fn commit_authoring_run_records_the_run_even_when_its_submit_is_refused() {
         let fixture = play_world(None, "player-record-before-refused-submit").await;
         let before = fixture.world.snapshot().await.unwrap();
-        let player = subject_id_text(player_id(&before));
+        let player = subject_id_text(&before, player_id(&before));
 
         let round = output(
             "r0",
@@ -3941,7 +4033,7 @@ mod tests {
     async fn a_dispatched_personas_prose_reaches_the_agents_next_request() {
         let fixture = play_world(Some("Mara"), "player-dispatch-prose").await;
         let snapshot = fixture.world.snapshot().await.unwrap();
-        let mara = subject_id_text(persona_id(&snapshot));
+        let mara = subject_id_text(&snapshot, persona_id(&snapshot));
         let dispatch_round = output(
             "r0",
             vec![call_event(
@@ -4054,7 +4146,7 @@ mod tests {
         let fixture = play_world(Some("Mara"), "player-persona-exact-quote").await;
         let snapshot = fixture.world.snapshot().await.unwrap();
         let mara = handle_for(persona_id(&snapshot));
-        let mara_id = subject_id_text(persona_id(&snapshot));
+        let mara_id = subject_id_text(&snapshot, persona_id(&snapshot));
         let dispatch_round = output(
             "r0",
             vec![call_event(
@@ -4605,7 +4697,7 @@ mod tests {
             let fixture = play_world(Some("Mara"), "player-f104-first-pass").await;
             let snapshot = fixture.world.snapshot().await.unwrap();
             let mara = handle_for(persona_id(&snapshot));
-            let mara_id = subject_id_text(persona_id(&snapshot));
+            let mara_id = subject_id_text(&snapshot, persona_id(&snapshot));
             let round = output(
                 "r0",
                 vec![
@@ -4667,7 +4759,7 @@ mod tests {
                     call_event(
                         "c0",
                         DISPATCH_TOOL,
-                        serde_json::json!({"subjects": [subject_id_text(mara_subject)]}),
+                        serde_json::json!({"subjects": [subject_id_text(&snapshot, mara_subject)]}),
                     ),
                     call_event(
                         "c1",
@@ -6405,8 +6497,8 @@ mod tests {
             .position(|row| row.controller_mode == Some(ControllerMode::NarrativePersona))
             .unwrap();
 
-        let player_text = subject_id_text(player);
-        let persona_text = subject_id_text(snapshot.subjects[persona_index].id);
+        let player_text = subject_id_text(&snapshot, player);
+        let persona_text = subject_id_text(&snapshot, snapshot.subjects[persona_index].id);
         // The player's own first 8-hex-digit group, spliced onto the
         // persona's own remaining groups: a distinct, real, well-formed
         // uuid string that still shares `handle_for`'s whole extent with
