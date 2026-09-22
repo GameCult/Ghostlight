@@ -3128,6 +3128,74 @@ Interpreter, the elaborator sweep and lenses.
     as dead, and the regression test now pins the real one. This is what
     the brief asks for: the mutation, not the diff, decides.
   - Dungeon bin 128 → 137.
+- **Soul on 8b-fix and Cut 9** (Opus, 2026-09-22, against `50cde3f`,
+  Windows). Dungeon bin 139 and lib 622, as reported.
+  - Held: PA.f147's closure (verified independently, mutation and all),
+    PA.f144's two writers, the row's one write door and its unconditional
+    increment, the revision surviving a restart (`2 → 2 → 3`), PA.f142's
+    `try_lock`, PA.f138, the play card's own subtree, and the deletion's
+    completeness.
+  - **Verdict: not ready for the playtest.** Soul drove the vendored
+    browser lowering over the real surface document and found the loop
+    stops at "create a world".
+  - Triage: PA.f148 to PA.f160 are Cut 10, below.
+- **PA.f148 (Cut 9, blocker):** `eve.rs:78-83` folds the play row's
+  revision into the surface document's `version`, and `runtime.rs:1187`
+  reads that number back as `sourceVersion` and derives
+  `expected_revision = source_version - 1` for the kernel's
+  compare-and-swap. One play commit and every later world command is denied
+  for ever ("expected revision 3, current revision 2"). Four things claim
+  to be the surface version and Cut 9 moved one of them. It escaped because
+  the journey test counts `sourceVersion` itself instead of reading the
+  served document: the same test-input defect again, on the exact value the
+  cut changed.
+- **PA.f149 (pre-existing, blocker):** no bound command can round-trip from
+  the real client. Soul drove `@gamecult/eve-browser-lowering` (pin
+  `672c0c1`) over what `authenticated_surface` emits and got
+  `{"bindings":{}}` for `world.play` **and for `world.create`**.
+  - `local_draft` emits `{scope, key, type}`, which
+    `EveStateBindingDescriptor` does not have, so the binding resolves to
+    the name `"world.play.answers"` while `captureBindings` asks for
+    `"answers"`.
+  - Even on a match, the client sends `payload.bindings = {…}`, and
+    Dungeon's payloads are flat `deny_unknown_fields` structs. Nothing
+    unwraps it.
+- **PA.f150 (Cut 9, blocker):** the fold does not wake the SSE path.
+  `publish_projection` sends the unfolded world version and is called only
+  at startup and from the `eve_command` Ok arm, so a play-row-only change
+  (a question, a narration, a refusal) notifies nobody. The browser polls
+  at 0 ms. The DM asks; the client never hears.
+- **PA.f151 (Cut 9, high, invariant 8):** `hidden: true` is not a prop the
+  renderer supports, so the question id renders as a visible, editable text
+  box labelled "Question id" holding a UUID. It leaks an id to the player,
+  and once input works a player could forge one.
+- **PA.f152 (pre-existing, medium):** `world.summary` still renders the
+  phase, revision, minute and a count of subjects to any authenticated
+  account. Cut 9 removed the event count from this same card as a leak;
+  this is the same reasoning left half-applied.
+- **PA.f153 (Cut 8b, high):** the spawned task discards `run`'s result and
+  swallows every `PlayError` into a log, after the route has already
+  answered `accepted`. The errors PA.f134 taught to carry the open question
+  have no caller. `EmptyOpening`, `StaleAnswer`, `NoQuestionOpen`,
+  `TurnStillRunning` and `Poisoned` all look like success to the player.
+- **PA.f154 (8b-fix, medium):** an answer arriving while `run` still holds
+  the lock between breaking its loop and returning gets `TurnStillRunning`,
+  and PA.f153 then discards it. `try_lock` is right; the silent discard is
+  what makes it dangerous.
+- **PA.f155 to PA.f158 (Cut 9, low):** no test pins the revision surviving
+  a restart (the claim is true, proven by probe); M9.1 is no longer a live
+  mutation, since the parameter it needed is gone; stale doc references to
+  the deleted speech path in `runtime.rs:170`, `:1145`, `play.rs:2918` and
+  the target doc; `PlayTurnView::turn_id` and `state` have no production
+  reader.
+- **PA.f159 (Cut 9, medium, plausible):** the play card and its controls
+  are emitted for any authenticated account, unlike the owner-gated
+  `world.advance_time` and `world.seed`, and `begin_turn` resolves the
+  player subject from the snapshot rather than the principal. Two accounts
+  would drive one player.
+- **PA.f160 (Cut 9, low):** the additive fold is monotone only while a play
+  view exists; losing it drops the version by the whole accumulated
+  revision. Subsumed by PA.f148's fix.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
@@ -3189,3 +3257,62 @@ Interpreter, the elaborator sweep and lenses.
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
   in Cut 2.
+
+## Cut 10. The client round trip
+
+Soul's pass on Cut 9 drove the vendored browser lowering over the real
+surface and found that nothing a player types reaches the daemon, that the
+card never wakes, and that one play commit denies every later world command.
+The loop is complete and the client cannot use it. This cut is the seam
+between them.
+
+- **Repo/branch:** from Cut 9. Written by Self under the standing go,
+  2026-09-22, from PA.f148 to PA.f160.
+- **The versions have one owner each (PA.f148, PA.f160).**
+  - The surface document's `version` stays the world's own
+    `surface_version`, because `runtime.rs` derives the kernel's
+    compare-and-swap from it. Nothing else may be folded into it.
+  - The play row's revision travels as its own field beside it, and the
+    client watches both.
+  - The SSE event carries both, and the journey test reads `sourceVersion`
+    from the served document rather than counting.
+- **The client round trip (PA.f149).**
+  - Eve owns the DSL. Dungeon emits what the vendored lowering consumes,
+    and accepts the envelope it sends; the pin does not move for this.
+  - Look for a working consumer in the Eve repo or the vendor's own tests
+    and follow it, rather than inventing a shape.
+  - The proof is one test that builds the intent with the vendored
+    lowering and posts it through `api_router`: create, seed, activate,
+    play, answer. Hand-written payloads prove nothing about a client.
+- **The card wakes (PA.f150).** A committed play row publishes a
+  projection. The spawned turn notifies after each commit, on the same
+  path `eve_command` uses.
+- **The question id never reaches the player (PA.f151).** The renderer has
+  no `hidden`, so the id may not ride in a visible control.
+  - Preferred: the lowering can carry an authored, non-editable binding
+    value. Use it.
+  - If it cannot, the server resolves the open question itself, and stale
+    answers are refused by the `sourceVersion` the client already sends:
+    an answer whose source version predates the question is stale. PA.f84
+    keeps its guarantee either way — an answer cannot land on a question
+    the player never saw.
+- **Play failures reach the player (PA.f153, PA.f154).** `world.play`
+  admits the request synchronously — a replayed key, a stale answer, empty
+  text, a busy turn — and answers `denied` with the reason. Only the turn's
+  execution is spawned. What the spawned turn cannot report, the turn view
+  carries.
+- **Ownership (PA.f152, PA.f159).** The play card, its controls and the
+  `world.play` descriptor are owner-gated like `world.advance_time` and
+  `world.seed`, and the turn's player subject follows the principal.
+  `world.summary` stops rendering the subject census; the phase and the
+  clock stay.
+- **Cleanup (PA.f155 to PA.f158).** Pin the revision across a restart;
+  retire or re-aim `the_play_surface_shows_only_the_projection`, whose
+  mutation is no longer live; delete the stale doc references; give
+  `PlayTurnView::turn_id` and `state` a reader or delete them.
+- **Verification:** the client round trip above, the CAS test that one play
+  commit does not deny the next world command, an SSE test that a play-row
+  change wakes the client, a test that no id appears in anything the player
+  is served, and a denied-with-reason test for each admission refusal.
+- **Landed:** —
+
