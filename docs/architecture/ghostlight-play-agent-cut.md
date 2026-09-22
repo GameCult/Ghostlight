@@ -3049,6 +3049,25 @@ Interpreter, the elaborator sweep and lenses.
   `idempotency_key…unwrap_or_default()`. A caller that skipped validation
   would get key `""`, recorded in `applied_keys`, making every later
   keyless play a silent no-op. **Fix:** refuse a missing key.
+- **Fix batch 8b-fix landed (Hands, Sonnet, 2026-09-22):** `22eb918`.
+  - PA.f134's half: `RunOutcome::Ran` and `Replayed` carry the turn id and
+    the open question, and so do `EmptyAnswer` and `StaleAnswer`. The new
+    `PlayTable::current_turn_view()` is the door Cut 9's card reads, since
+    the route answers before `run` resolves. It is dead code in the
+    non-test binary until Cut 9, as expected.
+  - PA.f136: dispatch resumes from its recorded body. PA.f144: a committed
+    player act clears the refusal line. PA.f142: the route takes the lock
+    without waiting.
+  - PA.f137, PA.f138, PA.f139, PA.f140, PA.f143 and the doc fixes are
+    done. The layout test for the play store is Linux-gated, so it does
+    not run on this workstation.
+  - **PA.f147 is closed, not fixed.** Hands implemented the guard, then
+    mutated it and found it unreachable: `execute_world` parses
+    `idempotency_key.unwrap_or("")` as a `CommandId` before any operation
+    arm, so a missing key is already refused. The local guard was reverted
+    as dead, and the regression test now pins the real one. This is what
+    the brief asks for: the mutation, not the diff, decides.
+  - Dungeon bin 128 → 137.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
