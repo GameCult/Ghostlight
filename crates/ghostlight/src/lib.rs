@@ -1026,6 +1026,12 @@ pub struct SubjectSnapshot {
     /// subject's state, and the actor already sees the commitment that produced
     /// it.
     pub(crate) pressures: Vec<PressureSnapshot>,
+    /// This subject's own dependencies, lowered from `components.dependencies`
+    /// (private to this module) so the play table's omniscient view can print
+    /// what a `release` may name without reaching into `ScopeComponents`
+    /// itself. View-only, covered by no digest of its own: it is already bound
+    /// through `components`.
+    pub(crate) dependencies: Vec<DependencyTarget>,
     /// What the subject carries as lived meaning, if anything was authored.
     pub(crate) material: Option<PersonaMaterial>,
     /// A projection of `qualifies`, not a stored flag and not a second count:
@@ -1086,6 +1092,13 @@ pub(crate) struct KnowledgeSnapshot {
 pub(crate) enum FactStandingView {
     Canonical,
     Claimed { by: SubjectId },
+    /// Stated by the play table. Never produced for a subject-facing knowledge
+    /// row (`snapshot`'s per-subject projection still collapses it into
+    /// `Canonical`, because a subject's own perception cannot tell a ruled
+    /// fact from an ordinarily canonical one); produced only for the
+    /// omniscient `WorldSnapshot::facts` row the play table's own `table_view`
+    /// reads.
+    Ruled,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1140,6 +1153,34 @@ pub(crate) struct RouteSnapshot {
     pub(crate) open: bool,
 }
 
+/// A declared channel, standing rather than per-subject: `ChannelRecord`
+/// carries no label (only `reach` and `controller`), so this is exactly that
+/// record plus the canonical id, an omniscient row for the play table's own
+/// view. No subject-facing surface reads it; a subject sees only the channels
+/// it controls, through its own `components`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ChannelSnapshot {
+    pub(crate) id: EntityId,
+    pub(crate) reach: Reach,
+    pub(crate) controller: Option<SubjectId>,
+}
+
+/// Every fact the world holds, canonical or not, with its real standing —
+/// including `Ruled`, which every subject-facing knowledge row collapses to
+/// `Canonical` — and who currently holds it. Built straight from
+/// `state.facts` and `state.knowledge`, not from any subject's own knowledge
+/// projection, so a fact nobody has been told or shown is still a row here:
+/// `mint`, `transfer`, `witness`, and `acquire_knowledge` all take a fact id,
+/// and the play table's omniscient view must be able to name one nobody
+/// perceives yet.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct FactSnapshot {
+    pub(crate) id: EntityId,
+    pub(crate) statement: Statement,
+    pub(crate) standing: FactStandingView,
+    pub(crate) known_by: Vec<SubjectId>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WorldSnapshot {
     pub world_id: WorldId,
@@ -1155,6 +1196,13 @@ pub struct WorldSnapshot {
     pub places: Vec<PlaceSnapshot>,
     pub(crate) resources: Vec<ResourceSnapshot>,
     pub(crate) routes: Vec<RouteSnapshot>,
+    /// Every declared channel, omniscient: no subject-facing surface reads
+    /// this field. `communicate`'s audience may name one by id.
+    pub(crate) channels: Vec<ChannelSnapshot>,
+    /// Every fact the world holds, omniscient and including facts nobody
+    /// currently perceives: no subject-facing surface reads this field, which
+    /// exists for the play table's own `table_view` alone.
+    pub(crate) facts: Vec<FactSnapshot>,
     /// Already ordered by pressure, then attention debt, then id: one owner, so
     /// an operator interface, the mesh projection, and any future driver read
     /// the same order and
@@ -3915,6 +3963,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                         past_due: commitment.due <= state.now,
                     })
                     .collect(),
+                dependencies: components.dependencies.iter().copied().collect(),
                 components,
                 material: state.persona_material.get(subject_id).cloned(),
                 pressures: state
@@ -3967,6 +4016,38 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
             }
         })
         .collect();
+    let channels = state
+        .channels
+        .iter()
+        .map(|(entity_id, record)| ChannelSnapshot {
+            id: *entity_id,
+            reach: record.reach.clone(),
+            controller: record.controller,
+        })
+        .collect();
+    // Omniscient and independent of any subject's own knowledge projection:
+    // a fact nobody has been told or shown is still a row here, and a
+    // `Ruled` fact keeps its real standing rather than the `Canonical`
+    // collapse every subject-facing knowledge row applies.
+    let facts = state
+        .facts
+        .iter()
+        .map(|(fact_id, record)| FactSnapshot {
+            id: *fact_id,
+            statement: record.statement.clone(),
+            standing: match &record.standing {
+                FactStanding::Canonical { .. } => FactStandingView::Canonical,
+                FactStanding::Claimed { by } => FactStandingView::Claimed { by: *by },
+                FactStanding::Ruled => FactStandingView::Ruled,
+            },
+            known_by: state
+                .knowledge
+                .iter()
+                .filter(|(_, held)| held.contains_key(fact_id))
+                .map(|(subject_id, _)| *subject_id)
+                .collect(),
+        })
+        .collect();
     Ok(WorldSnapshot {
         world_id: state.world_id,
         revision: state.revision,
@@ -3988,6 +4069,8 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
         places,
         resources,
         routes,
+        channels,
+        facts,
         opportunities: order_opportunities(state, derive_opportunities(state)?),
         now: state.now,
         boundaries: derive_boundaries(state)?,

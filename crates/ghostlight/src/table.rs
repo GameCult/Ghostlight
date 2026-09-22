@@ -18,11 +18,13 @@ use super::controllers::{
     RequestShape, tool_request,
 };
 use super::patch::{
-    self, ComponentOp, Declaration, FactStandingRef, PATCH_TOOLS, PatchToolShape,
+    self, AccessKind, ComponentOp, Declaration, DependencyTarget, FactStandingRef, PATCH_TOOLS,
+    PatchToolShape, PressureSource, Reach,
 };
 use super::{
-    ActionMismatch, AffordanceSnapshot, CommandId, DecisionInvocation, DecisionOpportunity,
-    EntityId, KernelError, Mismatch, Statement, SubjectId, WorldPatch, WorldSnapshot,
+    ActionMismatch, AffordanceSnapshot, CommandId, ControllerMode, DecisionInvocation,
+    DecisionOpportunity, EntityId, KernelError, Mismatch, Statement, SubjectId, SubjectKind,
+    WorldPatch, WorldSnapshot,
 };
 use codex_connector::{CodexInputItem, CodexToolDefinition};
 use serde_json::Value;
@@ -399,6 +401,117 @@ fn label_for_any_id(snapshot: &WorldSnapshot, id: &str) -> Option<String> {
         })
 }
 
+/// A route's access, in words rather than `AccessKind`'s `Debug`.
+fn render_access(access: &AccessKind) -> String {
+    match access {
+        AccessKind::Public => "public".to_owned(),
+        AccessKind::Restricted { requires } => format!("restricted, requires `{}`", requires.0),
+    }
+}
+
+/// A subject's kind, in words rather than `SubjectKind`'s `Debug`.
+fn render_subject_kind(kind: SubjectKind) -> &'static str {
+    match kind {
+        SubjectKind::Person => "person",
+        SubjectKind::Institution => "institution",
+        SubjectKind::Population => "population",
+    }
+}
+
+/// A subject's controller mode, in words rather than `ControllerMode`'s
+/// `Debug`.
+fn render_controller_mode(mode: ControllerMode) -> &'static str {
+    match mode {
+        ControllerMode::Human => "human",
+        ControllerMode::NarrativePersona => "narrative persona",
+        ControllerMode::OperationalAgent => "operational agent",
+    }
+}
+
+/// A fact's standing, as the omniscient play table reads it: `Ruled` prints
+/// as `ruled`, not `canonical` — the collapse that every subject-facing
+/// knowledge row applies never reaches this reader.
+fn render_fact_standing(snapshot: &WorldSnapshot, standing: &super::FactStandingView) -> String {
+    match standing {
+        super::FactStandingView::Canonical => "canonical".to_owned(),
+        super::FactStandingView::Ruled => "ruled".to_owned(),
+        super::FactStandingView::Claimed { by } => {
+            let label = snapshot
+                .subjects
+                .iter()
+                .find(|holder| holder.id == *by)
+                .map_or_else(|| "an unknown subject".to_owned(), |holder| holder.label.clone());
+            format!("claimed by {label}")
+        }
+    }
+}
+
+/// A dependency target, by the id of the thing depended on, so a call
+/// composing `bind`/`release`'s `DependencyRef` or reading `advance_pressure`
+/// /`reduce_pressure`'s `PressureSourceRef::Dependency` can name it back.
+fn render_dependency_target(snapshot: &WorldSnapshot, target: &DependencyTarget) -> String {
+    match target {
+        DependencyTarget::Resource(id) => format!(
+            "resource {}",
+            label_for_any_id(snapshot, &id_text(*id)).unwrap_or_else(|| format!("[{}]", id_text(*id)))
+        ),
+        DependencyTarget::Route(id) => format!(
+            "route {}",
+            label_for_any_id(snapshot, &id_text(*id)).unwrap_or_else(|| format!("[{}]", id_text(*id)))
+        ),
+        DependencyTarget::Subject(id) => format!(
+            "subject {}",
+            label_for_any_id(snapshot, &id_text(*id)).unwrap_or_else(|| format!("[{}]", id_text(*id)))
+        ),
+    }
+}
+
+/// A pressure source, in the same shape `advance_pressure`/`reduce_pressure`'s
+/// `PressureSourceRef` composite takes: a commitment names the promisor
+/// subject id and the commitment key; a dependency names its target; a
+/// subject names itself.
+fn render_pressure_source(snapshot: &WorldSnapshot, source: &PressureSource) -> String {
+    match source {
+        PressureSource::Commitment { subject, key } => format!(
+            "commitment {}/{} of {}",
+            id_text(key.command),
+            key.index,
+            label_for_any_id(snapshot, &id_text(*subject))
+                .unwrap_or_else(|| format!("[{}]", id_text(*subject)))
+        ),
+        PressureSource::Dependency(target) => render_dependency_target(snapshot, target),
+        PressureSource::Subject(id) => label_for_any_id(snapshot, &id_text(*id))
+            .unwrap_or_else(|| format!("subject [{}]", id_text(*id))),
+    }
+}
+
+/// A channel's reach, in words: either the exact subjects it carries to, or
+/// the place whose occupants it carries to.
+fn render_reach(snapshot: &WorldSnapshot, reach: &Reach) -> String {
+    match reach {
+        Reach::Subjects(subjects) => {
+            if subjects.is_empty() {
+                "nobody (silenced)".to_owned()
+            } else {
+                let mut labels: Vec<String> = subjects
+                    .iter()
+                    .map(|id| {
+                        label_for_any_id(snapshot, &id_text(*id))
+                            .unwrap_or_else(|| format!("[{}]", id_text(*id)))
+                    })
+                    .collect();
+                labels.sort();
+                labels.join(", ")
+            }
+        }
+        Reach::Place(place) => format!(
+            "everyone in {}",
+            label_for_any_id(snapshot, &id_text(*place))
+                .unwrap_or_else(|| format!("[{}]", id_text(*place)))
+        ),
+    }
+}
+
 impl InferenceRequest {
     /// The play agent's own request shape: `tool_request` under
     /// `InferencePurpose::Play`, with parallel calls on so one round can
@@ -589,20 +702,23 @@ pub(super) fn render_world_structure(snapshot: &WorldSnapshot) -> String {
 /// everything, including standing and secrets no subject-facing surface
 /// shows: standing is printed here and nowhere subject-facing. It grows from
 /// `render_world_structure` in what it covers — every subject's place, mode,
-/// retired flag, granted entry names, and holdings; the places' occupants;
-/// resource ids; every fact with its id, its standing, and who knows it,
-/// because `mint`, `transfer`, `witness`, and `acquire_knowledge` all take
-/// those ids — but is its own renderer, not a wrapper over it, so the seed
-/// prompt's bytes never move when this one changes.
+/// retired flag, granted entry names, holdings, and dependencies; the
+/// places' occupants; every declared channel; every fact the world holds —
+/// including one nobody currently perceives — with its id, its real standing,
+/// and who knows it; every commitment by its key, every pressure row, and
+/// every subject's persona material — because `PLAY_TOOLS` takes all of
+/// those ids. It is its own renderer, not a wrapper over
+/// `render_world_structure`, so the seed prompt's bytes never move when this
+/// one changes.
 ///
-/// `FactStanding::Ruled` collapses to `FactStandingView::Canonical` at
-/// snapshot construction (`lib.rs`, `snapshot`'s knowledge projection): a
-/// subject's own perception cannot tell a ruled fact from an ordinarily
-/// canonical one, and every knowledge row in `WorldSnapshot` is built through
-/// that same projection, including the rows this reads. `table_view` prints
-/// `ruled` facts as `canonical` until that projection carries the real
-/// standing through to an omniscient reader; widening it is a `lib.rs`
-/// change outside this cut's table.rs-and-two-moved-functions scope.
+/// `WorldSnapshot::facts` and `WorldSnapshot::channels` are built straight
+/// from world state in `lib.rs`'s `snapshot`, independent of any subject's
+/// own knowledge projection, so this reader sees a `Ruled` fact as `ruled`
+/// even though `FactStanding::Ruled` still collapses to
+/// `FactStandingView::Canonical` on every subject-facing knowledge row (the
+/// Projector and the typed view): a subject's own perception cannot tell a
+/// ruling from an ordinarily canonical fact, but the play table, which holds
+/// `Play`, can.
 pub fn table_view(snapshot: &WorldSnapshot) -> String {
     let place_label = |id: EntityId| {
         snapshot
@@ -661,12 +777,12 @@ pub fn table_view(snapshot: &WorldSnapshot) -> String {
     }
     for route in &snapshot.routes {
         out.push_str(&format!(
-            " {} [{}]: {} -> {}, {:?}, {};",
+            " {} [{}]: {} -> {}, {}, {};",
             route.label,
             id_text(route.id),
             place_label(route.from),
             place_label(route.to),
-            route.access,
+            render_access(&route.access),
             if route.open { "open" } else { "closed" }
         ));
     }
@@ -702,14 +818,21 @@ pub fn table_view(snapshot: &WorldSnapshot) -> String {
                 })
                 .collect(),
         );
+        let dependencies = joined(
+            subject
+                .dependencies
+                .iter()
+                .map(|target| render_dependency_target(snapshot, target))
+                .collect(),
+        );
         out.push_str(&format!(
-            " {} [{}] ({:?}, {}, in {}, retired: {}, granted: {granted}, holdings: {holdings});",
+            " {} [{}] ({}, {}, in {}, retired: {}, granted: {granted}, holdings: {holdings}, depends on: {dependencies});",
             subject.label,
             id_text(subject.id),
-            subject.kind,
+            render_subject_kind(subject.kind),
             subject
                 .controller_mode
-                .map_or_else(|| "external".to_owned(), |mode| format!("{mode:?}")),
+                .map_or_else(|| "external".to_owned(), |mode| render_controller_mode(mode).to_owned()),
             subject
                 .position
                 .map_or_else(|| "nowhere".to_owned(), place_label),
@@ -753,37 +876,136 @@ pub fn table_view(snapshot: &WorldSnapshot) -> String {
         out.push_str(&format!(" {} [{}];", resource.label, id_text(resource.id)));
     }
 
-    out.push_str("\n  Facts:");
-    let mut facts: std::collections::BTreeMap<EntityId, (String, String, Vec<String>)> =
-        std::collections::BTreeMap::new();
-    for subject in &snapshot.subjects {
-        for row in &subject.knowledge {
-            let entry = facts.entry(row.fact).or_insert_with(|| {
-                let standing = match &row.standing {
-                    super::FactStandingView::Canonical => "canonical".to_owned(),
-                    super::FactStandingView::Claimed { by } => {
-                        let label = snapshot
-                            .subjects
-                            .iter()
-                            .find(|holder| holder.id == *by)
-                            .map_or_else(|| "an unknown subject".to_owned(), |holder| holder.label.clone());
-                        format!("claimed by {label}")
-                    }
-                };
-                (row.statement.as_str().to_owned(), standing, Vec::new())
-            });
-            entry.2.push(subject.label.clone());
-        }
-    }
-    if facts.is_empty() {
+    out.push_str("\n  Channels:");
+    if snapshot.channels.is_empty() {
         out.push_str(" none");
     }
-    for (fact_id, (statement, standing, knowers)) in &facts {
+    for channel in &snapshot.channels {
         out.push_str(&format!(
-            " \"{statement}\" [{}]: {standing}; known by: {};",
-            id_text(*fact_id),
-            joined(knowers.clone())
+            " [{}]: reaches {}, controller: {};",
+            id_text(channel.id),
+            render_reach(snapshot, &channel.reach),
+            channel
+                .controller
+                .map_or_else(|| "none".to_owned(), |id| label_for_any_id(
+                    snapshot,
+                    &id_text(id)
+                )
+                .unwrap_or_else(|| format!("[{}]", id_text(id))))
         ));
+    }
+
+    // Omniscient: every fact the world holds, including one nobody currently
+    // perceives and one whose standing is `ruled` — a fact known only through
+    // a subject's own knowledge rows would miss both.
+    out.push_str("\n  Facts:");
+    if snapshot.facts.is_empty() {
+        out.push_str(" none");
+    }
+    for fact in &snapshot.facts {
+        let knowers = joined(
+            fact.known_by
+                .iter()
+                .map(|id| {
+                    snapshot
+                        .subjects
+                        .iter()
+                        .find(|subject| subject.id == *id)
+                        .map_or_else(|| "an unknown subject".to_owned(), |subject| subject.label.clone())
+                })
+                .collect(),
+        );
+        out.push_str(&format!(
+            " \"{}\" [{}]: {}; known by: {knowers};",
+            fact.statement.as_str(),
+            id_text(fact.id),
+            render_fact_standing(snapshot, &fact.standing)
+        ));
+    }
+
+    out.push_str("\n  Commitments:");
+    let mut any_commitment = false;
+    for subject in &snapshot.subjects {
+        for commitment in &subject.commitments {
+            any_commitment = true;
+            out.push_str(&format!(
+                " {}/{} held by {} [{}]: {:?}{}, due {} minutes{}, past due: {}: \"{}\";",
+                id_text(commitment.key.command),
+                commitment.key.index,
+                subject.label,
+                id_text(subject.id),
+                commitment.kind,
+                commitment.counterparty.map_or_else(String::new, |id| format!(
+                    ", with {}",
+                    label_for_any_id(snapshot, &id_text(id))
+                        .unwrap_or_else(|| format!("[{}]", id_text(id)))
+                )),
+                commitment.due.0,
+                commitment
+                    .period
+                    .map_or_else(String::new, |period| format!(", every {} minutes", period.minutes())),
+                commitment.past_due,
+                commitment.statement.as_str(),
+            ));
+        }
+    }
+    if !any_commitment {
+        out.push_str(" none");
+    }
+
+    out.push_str("\n  Pressures:");
+    let mut any_pressure = false;
+    for subject in &snapshot.subjects {
+        for pressure in &subject.pressures {
+            any_pressure = true;
+            out.push_str(&format!(
+                " {} [{}]: {} from {};",
+                subject.label,
+                id_text(subject.id),
+                pressure.magnitude.0,
+                render_pressure_source(snapshot, &pressure.source)
+            ));
+        }
+    }
+    if !any_pressure {
+        out.push_str(" none");
+    }
+
+    out.push_str("\n  Persona material:");
+    let mut any_material = false;
+    for subject in &snapshot.subjects {
+        let Some(material) = &subject.material else {
+            continue;
+        };
+        any_material = true;
+        let values = joined(material.values.iter().map(|value| value.as_str().to_owned()).collect());
+        let memories = joined(
+            material
+                .memories
+                .iter()
+                .map(|memory| memory.as_str().to_owned())
+                .collect(),
+        );
+        let reads = joined(
+            material
+                .reads
+                .iter()
+                .map(|(id, statement)| {
+                    let label = label_for_any_id(snapshot, &id_text(*id))
+                        .unwrap_or_else(|| format!("[{}]", id_text(*id)));
+                    format!("{label}: {}", statement.as_str())
+                })
+                .collect(),
+        );
+        out.push_str(&format!(
+            " {} [{}]: voice \"{}\"; values: {values}; memories: {memories}; reads: {reads};",
+            subject.label,
+            id_text(subject.id),
+            material.voice.as_str(),
+        ));
+    }
+    if !any_material {
+        out.push_str(" none");
     }
 
     out.push_str(&format!(
@@ -830,12 +1052,25 @@ mod tests {
         "revoke_affordance",
     ];
 
-    /// A small standing world: the shared topology and custody fixtures (three
-    /// places, four routes, four subjects, two resources, one holding), plus
-    /// one fact one subject was given knowledge of. `custody.ingot` is left
-    /// unheld on purpose, so a resource id in the view can only have come from
-    /// the Resources line itself, never a holding.
-    fn play_fixture() -> (Topology, Custody, EntityId, WorldSnapshot) {
+    /// A standing world holding one of every kind `PLAY_TOOLS` may take,
+    /// composite fields included: the shared topology and custody fixtures,
+    /// a claimed fact one subject knows, a ruled fact nobody knows (`Ruled`
+    /// facts require `Play`, so this one is authored after `activate`), a
+    /// declared channel, a commitment, a pressure row, and a dependency.
+    /// `custody.ingot` is left unheld, so a resource id in the view can only
+    /// have come from the Resources line itself, never a holding — the
+    /// dependency instead targets `custody.counterparty`, a subject.
+    struct PlayFixture {
+        topology: Topology,
+        custody: Custody,
+        claimed_fact: EntityId,
+        ruled_fact: EntityId,
+        channel: EntityId,
+        commitment_key: patch::CommitmentKey,
+        snapshot: WorldSnapshot,
+    }
+
+    fn play_fixture() -> PlayFixture {
         let directory = tempfile::tempdir().expect("a temp dir");
         let mut kernel = crate::WorldKernel::create(
             directory.path().join("world.cc"),
@@ -853,35 +1088,126 @@ mod tests {
             crate::CommandBody::AdmitPatch {
                 answers: None,
                 patch: WorldPatch {
-                    declarations: vec![Declaration::Fact(patch::FactDeclaration {
-                        handle: patch::DraftHandle::new("ruling"),
-                        label: "The Ruling".into(),
-                        statement: Statement::new("The gate stands open by decree.").unwrap(),
-                        standing: FactStandingRef::Claimed {
-                            by: patch::Ref::Existing(custody.holder),
+                    declarations: vec![
+                        Declaration::Fact(patch::FactDeclaration {
+                            handle: patch::DraftHandle::new("claimed"),
+                            label: "The Claim".into(),
+                            statement: Statement::new("The gate stands open by decree.").unwrap(),
+                            standing: FactStandingRef::Claimed {
+                                by: patch::Ref::Existing(custody.holder),
+                            },
+                        }),
+                        Declaration::Channel(patch::ChannelDeclaration {
+                            handle: patch::DraftHandle::new("horn"),
+                            label: "The Horn".into(),
+                            reach: patch::ReachRef::Place(patch::Ref::Existing(topology.yard)),
+                            controller: Some(patch::Ref::Existing(custody.holder)),
+                        }),
+                    ],
+                    operations: vec![
+                        ComponentOp::AcquireKnowledge {
+                            subject: patch::Ref::Existing(custody.holder),
+                            fact: patch::Ref::Draft(patch::DraftHandle::new("claimed")),
+                            source: patch::AuthoredSource::Witnessed,
+                            confidence: patch::Confidence::Certain,
                         },
-                    })],
-                    operations: vec![ComponentOp::AcquireKnowledge {
-                        subject: patch::Ref::Existing(custody.holder),
-                        fact: patch::Ref::Draft(patch::DraftHandle::new("ruling")),
-                        source: patch::AuthoredSource::Witnessed,
-                        confidence: patch::Confidence::Certain,
-                    }],
+                        ComponentOp::Bind {
+                            subject: patch::Ref::Existing(custody.holder),
+                            target: patch::DependencyRef::Subject(patch::Ref::Existing(
+                                custody.counterparty,
+                            )),
+                        },
+                        ComponentOp::CreateCommitment {
+                            subject: patch::Ref::Existing(custody.holder),
+                            counterparty: Some(patch::Ref::Existing(custody.counterparty)),
+                            kind: patch::CommitmentKind::Obligation,
+                            due: crate::FictionalMinutes(500),
+                            period: None,
+                            checks: Vec::new(),
+                            statement: Statement::new("A promise both parties will read.").unwrap(),
+                        },
+                        ComponentOp::AdvancePressure {
+                            source: patch::PressureSourceRef::Subject(patch::Ref::Existing(
+                                custody.counterparty,
+                            )),
+                            target: patch::Ref::Existing(custody.holder),
+                            by: patch::PressureMagnitude(3),
+                        },
+                    ],
                     evidence: Vec::new(),
                 },
             },
         );
         let active = activate(&mut kernel);
-        let fact = active
+
+        // `Ruled` requires `Play`, and `Play` may not declare in `Draft`
+        // (`require_answer`), so this lands only after `activate`.
+        let ruled_handle = patch::DraftHandle::new("ruled");
+        kernel
+            .submit(
+                crate::tests::command(
+                    &active,
+                    super::CommandId::new(),
+                    crate::CallerId::System(crate::SystemCapability::Play),
+                    crate::CommandBody::AdmitPatch {
+                        answers: None,
+                        patch: WorldPatch {
+                            declarations: vec![Declaration::Fact(patch::FactDeclaration {
+                                handle: ruled_handle,
+                                label: "The Ruling".into(),
+                                statement: Statement::new("Stated by the table.").unwrap(),
+                                standing: FactStandingRef::Ruled,
+                            })],
+                            operations: Vec::new(),
+                            evidence: Vec::new(),
+                        },
+                    },
+                ),
+                &crate::AuthenticatedCaller::fixture(crate::CallerId::System(
+                    crate::SystemCapability::Play,
+                )),
+            )
+            .expect("the play authority may rule a fact in Active");
+
+        let snapshot = kernel.snapshot().unwrap();
+        let claimed_fact = snapshot
             .subjects
             .iter()
             .find(|subject| subject.id == custody.holder)
             .expect("the holder is in the snapshot")
             .knowledge
             .first()
-            .expect("the holder was granted the ruling")
+            .expect("the holder was granted the claim")
             .fact;
-        (topology, custody, fact, active)
+        let ruled_fact = snapshot
+            .facts
+            .iter()
+            .find(|fact| matches!(fact.standing, crate::FactStandingView::Ruled))
+            .expect("the ruled fact is in the omniscient facts list")
+            .id;
+        let channel = snapshot
+            .channels
+            .first()
+            .expect("the declared channel is in the snapshot")
+            .id;
+        let commitment_key = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == custody.holder)
+            .expect("the holder is in the snapshot")
+            .commitments
+            .first()
+            .expect("the holder holds the created commitment")
+            .key;
+        PlayFixture {
+            topology,
+            custody,
+            claimed_fact,
+            ruled_fact,
+            channel,
+            commitment_key,
+            snapshot,
+        }
     }
 
     fn fixture_id(
@@ -1054,7 +1380,7 @@ mod tests {
     /// dumping the mismatch's raw shape.
     #[test]
     fn describe_refusal_names_the_failed_precondition() {
-        let (.., snapshot) = play_fixture();
+        let snapshot = play_fixture().snapshot;
         let error = KernelError::ActionRejected(vec![ActionMismatch::ActorNotPresent {
             precondition: 2,
         }]);
@@ -1066,19 +1392,28 @@ mod tests {
     /// Every other `KernelError` renders by its own `Display`.
     #[test]
     fn describe_refusal_falls_back_to_display_for_every_other_error() {
-        let (.., snapshot) = play_fixture();
+        let snapshot = play_fixture().snapshot;
         let error = KernelError::Unauthorized;
         assert_eq!(describe_refusal(&snapshot, &error), error.to_string());
     }
 
-    /// Rule: `table_view` prints every id a `PLAY_TOOLS` example takes.
-    /// Mutation M7.3: printing resources by label alone, as the moved
-    /// `render_world_structure` still does, fails this on `mint`'s resource
-    /// id — `custody.ingot` holds nothing, so no other line repeats it.
+    /// Rule: `table_view` prints every id a `PLAY_TOOLS` example takes,
+    /// composite fields included — a commitment key (`discharge_commitment`),
+    /// a pressure source (`advance_pressure`/`reduce_pressure`), a dependency
+    /// target (`bind`/`release`), and a channel-audience id (`communicate`),
+    /// not only the plain `Reference`/`OptionalReference`/`ReferenceSet`
+    /// fields the pre-PA.f53 test covered. Mutation M7.3: printing resources
+    /// by label alone, as the moved `render_world_structure` still does,
+    /// fails this on `mint`'s resource id — `custody.ingot` holds nothing, so
+    /// no other line repeats it.
     #[test]
     fn table_view_prints_every_id_the_tools_take() {
-        let (topology, custody, fact, snapshot) = play_fixture();
-        let view = table_view(&snapshot);
+        let fixture = play_fixture();
+        let topology = &fixture.topology;
+        let custody = &fixture.custody;
+        let fact = fixture.claimed_fact;
+        let snapshot = &fixture.snapshot;
+        let view = table_view(snapshot);
         let mut checked_any = false;
         for name in PLAY_TOOLS {
             let tool = PATCH_TOOLS
@@ -1090,7 +1425,7 @@ mod tests {
                 let value = match field.kind {
                     patch::PatchFieldKind::Reference(referent)
                     | patch::PatchFieldKind::OptionalReference(referent) => {
-                        let id = fixture_id(referent, &topology, &custody, fact, &snapshot);
+                        let id = fixture_id(referent, topology, custody, fact, snapshot);
                         checked_any = true;
                         assert!(
                             view.contains(&id),
@@ -1099,13 +1434,56 @@ mod tests {
                         existing_ref_value(&id)
                     }
                     patch::PatchFieldKind::ReferenceSet(referent) => {
-                        let id = fixture_id(referent, &topology, &custody, fact, &snapshot);
+                        let id = fixture_id(referent, topology, custody, fact, snapshot);
                         checked_any = true;
                         assert!(
                             view.contains(&id),
                             "table_view is missing {name}'s {referent} id {id}"
                         );
                         Value::Array(vec![existing_ref_value(&id)])
+                    }
+                    patch::PatchFieldKind::Composite(patch::CompositeShape::CommitmentKey) => {
+                        let command = id_text(fixture.commitment_key.command);
+                        checked_any = true;
+                        assert!(
+                            view.contains(&command),
+                            "table_view is missing {name}'s commitment command id {command}"
+                        );
+                        assert!(
+                            view.contains(&fixture.commitment_key.index.to_string()),
+                            "table_view is missing {name}'s commitment index"
+                        );
+                        serde_json::json!({
+                            "command": command,
+                            "index": fixture.commitment_key.index,
+                        })
+                    }
+                    patch::PatchFieldKind::Composite(patch::CompositeShape::PressureSourceRef) => {
+                        let id = id_text(custody.counterparty);
+                        checked_any = true;
+                        assert!(
+                            view.contains(&id),
+                            "table_view is missing {name}'s pressure source id {id}"
+                        );
+                        serde_json::json!({"from": "subject", "of": existing_ref_value(&id)})
+                    }
+                    patch::PatchFieldKind::Composite(patch::CompositeShape::DependencyRef) => {
+                        let id = id_text(custody.counterparty);
+                        checked_any = true;
+                        assert!(
+                            view.contains(&id),
+                            "table_view is missing {name}'s dependency target id {id}"
+                        );
+                        serde_json::json!({"target": "subject", "ref": existing_ref_value(&id)})
+                    }
+                    patch::PatchFieldKind::Composite(patch::CompositeShape::AudienceRef) => {
+                        let id = id_text(fixture.channel);
+                        checked_any = true;
+                        assert!(
+                            view.contains(&id),
+                            "table_view is missing {name}'s audience channel id {id}"
+                        );
+                        serde_json::json!({"channel": existing_ref_value(&id)})
                     }
                     other => patch::field_example(other),
                 };
@@ -1116,6 +1494,94 @@ mod tests {
                 .unwrap_or_else(|error| panic!("{name} did not decode its own fixture example: {error}"));
         }
         assert!(checked_any, "no PLAY_TOOLS field referenced a fixture id");
+
+        // The ruled fact prints its real standing, not the `Canonical`
+        // collapse every subject-facing knowledge row applies (PA.f47).
+        assert!(
+            view.contains(&format!("[{}]: ruled;", id_text(fixture.ruled_fact))),
+            "table_view does not print the ruled fact's real standing: {view}"
+        );
+        assert!(
+            view.contains(&id_text(fixture.claimed_fact)),
+            "table_view is missing the claimed fact's id"
+        );
+    }
+
+    /// Mutation X3: a `Claimed` fact printed as `canonical` instead of
+    /// `claimed by <holder>`.
+    #[test]
+    fn table_view_prints_a_claimed_fact_as_claimed_not_canonical() {
+        let fixture = play_fixture();
+        let view = table_view(&fixture.snapshot);
+        let holder_label = fixture
+            .snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == fixture.custody.holder)
+            .expect("the holder is in the snapshot")
+            .label
+            .clone();
+        assert!(
+            view.contains(&format!(
+                "[{}]: claimed by {holder_label};",
+                id_text(fixture.claimed_fact)
+            )),
+            "table_view does not print the claimed fact as claimed by its holder: {view}"
+        );
+    }
+
+    /// Mutation X4: the "known by" list dropped from a fact's row.
+    #[test]
+    fn table_view_prints_who_knows_a_fact() {
+        let fixture = play_fixture();
+        let view = table_view(&fixture.snapshot);
+        let holder_label = fixture
+            .snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == fixture.custody.holder)
+            .expect("the holder is in the snapshot")
+            .label
+            .clone();
+        assert!(
+            view.contains(&format!(
+                "[{}]: claimed by {holder_label}; known by: {holder_label};",
+                id_text(fixture.claimed_fact)
+            )),
+            "table_view dropped the claimed fact's known-by list: {view}"
+        );
+    }
+
+    /// Mutation X1: the granted-affordance filter dropped, so a subject's
+    /// `granted:` list prints every affordance in the world rather than only
+    /// the ones it actually holds.
+    #[test]
+    fn table_view_prints_only_a_subjects_own_granted_affordances() {
+        let fixture = play_fixture();
+        let view = table_view(&fixture.snapshot);
+        let holder = fixture
+            .snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == fixture.custody.holder)
+            .expect("the holder is in the snapshot");
+        let ungranted = fixture
+            .snapshot
+            .affordances
+            .iter()
+            .find(|affordance| !holder.affordances.contains(&affordance.id))
+            .expect("the fixture world declares an affordance the holder was not granted");
+        let subject_line_start = format!("{} [{}]", holder.label, id_text(holder.id));
+        let start = view
+            .find(&subject_line_start)
+            .expect("the holder's row is in the view");
+        let row = &view[start..];
+        let end = row.find(");").map_or(row.len(), |index| index + 1);
+        assert!(
+            !row[..end].contains(&ungranted.entry.kind.0),
+            "table_view granted the holder an affordance it does not hold: {}",
+            &row[..end]
+        );
     }
 
     /// Pin: nothing in `PersonaLane` or the Projector may call `table_view` —

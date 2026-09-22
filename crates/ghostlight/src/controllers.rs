@@ -4926,6 +4926,13 @@ impl SelectedDecision {
                         FactStandingView::Claimed { by } => {
                             json!({"standing": "claimed", "by": by})
                         }
+                        // A ruled fact is never actually stored on a
+                        // subject-facing knowledge row (`snapshot` collapses
+                        // it at construction), but this arm keeps the typed
+                        // view's own promise explicit rather than relying
+                        // only on the upstream collapse: a subject cannot
+                        // tell a ruling from an ordinarily canonical fact.
+                        FactStandingView::Ruled => json!({"standing": "canonical"}),
                     },
                     "confidence": entry.confidence,
                     "source": entry.source,
@@ -7034,6 +7041,7 @@ mod tests {
             ],
             commitments: Vec::new(),
             pressures: Vec::new(),
+            dependencies: Vec::new(),
             qualified: false,
             material: None,
             last_acted_at: None,
@@ -7063,6 +7071,7 @@ mod tests {
             }],
             commitments: Vec::new(),
             pressures: Vec::new(),
+            dependencies: Vec::new(),
             qualified: false,
             material: None,
             last_acted_at: None,
@@ -7083,6 +7092,8 @@ mod tests {
             resources: Vec::new(),
             routes: Vec::new(),
             opportunities: vec![opportunity.clone()],
+            channels: Vec::new(),
+            facts: Vec::new(),
             state_digest: "sha256:projector-must-not-see-this-digest".into(),
             last_commit_digest: Some("sha256:projector-must-not-see-the-commit".into()),
             now: crate::FictionalMinutes::default(),
@@ -7132,6 +7143,97 @@ mod tests {
         assert!(operational_surface.contains("state_digest"));
         assert!(operational_surface.contains("The lower hinge is flooding."));
         assert!(!operational_surface.contains("The tollhouse ledger is short."));
+    }
+
+    /// PA.f47: `FactStandingView::Ruled` renders as `canonical` in the typed
+    /// view, exactly as `Canonical` does — a subject's own perception cannot
+    /// tell a ruling from an ordinarily canonical fact. `snapshot`'s
+    /// per-subject knowledge projection never actually produces `Ruled` (it
+    /// collapses to `Canonical` first), so this row is built directly to
+    /// exercise `typed_knowledge`'s own arm rather than depend on that
+    /// upstream collapse alone.
+    #[test]
+    fn typed_view_renders_a_ruled_fact_as_canonical() {
+        let actor_id = SubjectId::issue();
+        let actor_controller = ControllerId::issue();
+        let speak_affordance = AffordanceId::issue();
+        let opportunity = DecisionOpportunity {
+            world_id: WorldId::issue(),
+            revision: 1,
+            scope_digest: ScopeDigest::fixture("sha256:ruled-typed-view"),
+            scope: DecisionScope {
+                subject_id: actor_id,
+            },
+            controller_id: actor_controller,
+            controller_mode: ControllerMode::NarrativePersona,
+            affordance_ids: vec![speak_affordance],
+        };
+        let actor = SubjectSnapshot {
+            id: actor_id,
+            label: "The Ledger Clerk".into(),
+            kind: SubjectKind::Person,
+            controller_id: Some(actor_controller),
+            controller_mode: Some(ControllerMode::NarrativePersona),
+            human_controller: None,
+            affordances: BTreeSet::from([speak_affordance]),
+            position: None,
+            retired: false,
+            components: fixture_components(),
+            offices_held: Vec::new(),
+            offices_granted: Vec::new(),
+            redress: Vec::new(),
+            knowledge: vec![KnowledgeSnapshot {
+                fact: EntityId::issue(),
+                statement: Statement::new("Stated by the table.").unwrap(),
+                standing: FactStandingView::Ruled,
+                confidence: Confidence::Certain,
+                source: KnowledgeSource::Witnessed,
+                minted_at: None,
+                acquired_at: 0,
+            }],
+            commitments: Vec::new(),
+            pressures: Vec::new(),
+            dependencies: Vec::new(),
+            qualified: false,
+            material: None,
+            last_acted_at: None,
+        };
+        let snapshot = WorldSnapshot {
+            lens_weights: crate::tests::stock_weights(),
+            world_id: opportunity.world_id,
+            revision: opportunity.revision,
+            phase: WorldPhase::Active,
+            owner: PrincipalId::new("ruled-typed-view-owner"),
+            title: "The Rain Gate".into(),
+            brief: String::new(),
+            draft_approvals: BTreeSet::new(),
+            required_approvers: BTreeSet::new(),
+            subjects: vec![actor.clone()],
+            affordances: vec![speak_snapshot(speak_affordance)],
+            places: Vec::new(),
+            resources: Vec::new(),
+            routes: Vec::new(),
+            opportunities: vec![opportunity.clone()],
+            channels: Vec::new(),
+            facts: Vec::new(),
+            state_digest: "sha256:ruled-typed-view".into(),
+            last_commit_digest: None,
+            now: crate::FictionalMinutes::default(),
+            boundaries: Vec::new(),
+            scale_deficit: Vec::new(),
+        };
+        let selected = SelectedDecision {
+            snapshot,
+            subject: actor,
+            opportunity,
+            granted: vec![speak_snapshot(speak_affordance)],
+        };
+        let typed_view = selected.typed_view().unwrap();
+        assert!(
+            typed_view.contains("\"standing\": \"canonical\""),
+            "a ruled fact must render as canonical in the typed view: {typed_view}"
+        );
+        assert!(!typed_view.contains("\"ruled\""));
     }
 
     /// Verification 5, second half, over real committed state: a subject
@@ -8711,6 +8813,7 @@ mod tests {
             ],
             commitments: Vec::new(),
             pressures: Vec::new(),
+            dependencies: Vec::new(),
             qualified: false,
             material: None,
             last_acted_at: None,
@@ -8732,6 +8835,7 @@ mod tests {
             knowledge: Vec::new(),
             commitments: Vec::new(),
             pressures: Vec::new(),
+            dependencies: Vec::new(),
             qualified: false,
             material: None,
             last_acted_at: None,
@@ -8752,6 +8856,8 @@ mod tests {
             resources: Vec::new(),
             routes: Vec::new(),
             opportunities: vec![opportunity.clone()],
+            channels: Vec::new(),
+            facts: Vec::new(),
             state_digest: "sha256:base-stimulus-state".into(),
             last_commit_digest: None,
             now: crate::FictionalMinutes::default(),
@@ -8852,6 +8958,7 @@ mod tests {
             knowledge: Vec::new(),
             commitments: Vec::new(),
             pressures: Vec::new(),
+            dependencies: Vec::new(),
             qualified: false,
             material: None,
             last_acted_at: None,
@@ -8876,6 +8983,7 @@ mod tests {
             knowledge: Vec::new(),
             commitments: Vec::new(),
             pressures: Vec::new(),
+            dependencies: Vec::new(),
             qualified: false,
             material: None,
             last_acted_at: None,
@@ -8917,6 +9025,8 @@ mod tests {
                 named_route(second_edge, "The Vault Stair", road, vault),
             ],
             opportunities: vec![opportunity.clone()],
+            channels: Vec::new(),
+            facts: Vec::new(),
             state_digest: "sha256:state".into(),
             last_commit_digest: None,
             now: crate::FictionalMinutes::default(),
@@ -9321,6 +9431,7 @@ mod tests {
             knowledge: Vec::new(),
             commitments,
             pressures,
+            dependencies: Vec::new(),
             qualified: true,
             material: None,
             last_acted_at: None,
@@ -9430,6 +9541,8 @@ mod tests {
                 open: true,
             }],
             opportunities: vec![opportunity.clone()],
+            channels: Vec::new(),
+            facts: Vec::new(),
             state_digest: "sha256:projector-must-not-see-this-digest".into(),
             last_commit_digest: Some("sha256:projector-must-not-see-the-commit".into()),
             now: FictionalMinutes(60),
