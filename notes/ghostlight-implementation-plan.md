@@ -589,12 +589,10 @@ the lowering:
   the connector's flat per-round cost. This is unmeasured: no live run has
   produced a number to weigh it against.
 
-What is undone: no live run has exercised the SDK port at all — this
-machine has neither a Claude Code CLI on PATH nor a stored credential, so
-the ignored ad-hoc smoke (`notes/local-live-smoke.md`) has never been run
-against it. Everything above the ignored smoke is proven by scripted-link
-unit tests and the checked-in schema/frame fixture pairs, not by a real
-sidecar process talking to a real subscription.
+The SDK port has since carried the road runs recorded in the handoff (runs 8
+to 12, through the sidecar, the only live provider). The ad-hoc smoke that
+drove them was deleted with the tick driver in the play agent's Cut 1
+(`d69e9d4`). No live smoke exists until the play agent's gate.
 
 Exit condition, unchanged from the port's own doc comment: when an
 `ANTHROPIC_API_KEY` and a budget exist, a Messages-API port is a closer
