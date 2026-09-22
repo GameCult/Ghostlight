@@ -125,9 +125,17 @@ pub(super) struct LocalInferencePort {
 }
 
 impl LocalInferencePort {
+    /// The client is built with `.no_proxy()` so an environment proxy
+    /// variable can never carry this request, or a `proxy-authorization`
+    /// header derived from a proxy URL's userinfo, off this loopback
+    /// endpoint (PA.f16); and with redirects disabled, so a 3xx reply cannot
+    /// re-POST the request's contents to a second endpoint this port never
+    /// opened (PA.f17).
     fn new(endpoint: SocketAddr, prefix: impl Into<String>, caller_runtime_id: impl Into<String>) -> Self {
         Self {
             client: reqwest::Client::builder()
+                .no_proxy()
+                .redirect(reqwest::redirect::Policy::none())
                 .timeout(RESPONSE_TIMEOUT)
                 .build()
                 .expect("the local inference HTTP client builds with no custom TLS material"),
@@ -352,7 +360,7 @@ mod tests {
     use crate::CommandId;
     use codex_connector::CodexToolDefinition;
     use std::collections::VecDeque;
-    use std::sync::Mutex;
+    use std::sync::{Mutex, OnceLock};
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::{TcpListener, TcpStream};
 
@@ -466,6 +474,38 @@ mod tests {
         buffer.windows(4).position(|window| window == b"\r\n\r\n")
     }
 
+    /// PA.f17's redirect responder: one accepted connection, answered with a
+    /// 307 pointing at `to`, never the scripted JSON replies `ScriptedResponder`
+    /// plays back. A disabled redirect policy means `reqwest` must never open
+    /// a second connection to `to` to follow it.
+    async fn start_redirecting_to(to: SocketAddr) -> SocketAddr {
+        let listener = TcpListener::bind("127.0.0.1:0").await.expect("loopback binds");
+        let addr = listener.local_addr().expect("a bound listener has a local address");
+        tokio::spawn(async move {
+            let Ok((mut stream, _)) = listener.accept().await else {
+                return;
+            };
+            let mut buffer = Vec::new();
+            let mut chunk = [0_u8; 4096];
+            loop {
+                let read = stream.read(&mut chunk).await.unwrap_or(0);
+                if read == 0 {
+                    return;
+                }
+                buffer.extend_from_slice(&chunk[..read]);
+                if find_double_crlf(&buffer).is_some() {
+                    break;
+                }
+            }
+            let body = format!(
+                "HTTP/1.1 307 Temporary Redirect\r\nlocation: http://{to}/v1/chat/completions\r\ncontent-length: 0\r\nconnection: close\r\n\r\n"
+            );
+            let _ = stream.write_all(body.as_bytes()).await;
+            let _ = stream.shutdown().await;
+        });
+        addr
+    }
+
     fn tool_call_reply(id: &str, name: &str, arguments: &str) -> String {
         json!({
             "id": format!("resp-{id}"),
@@ -524,7 +564,22 @@ mod tests {
         }
     }
 
+    /// PA.f16's proxy test mutates the process-global proxy environment
+    /// around one client build. `HTTP_PROXY` is read by `reqwest` only at
+    /// `Client::build` time, and the only place this module builds a client
+    /// is `LocalInferencePort::new`, so routing every test's construction
+    /// through this one lock is enough to serialize against that test: no
+    /// other client build in this module can land inside the window where
+    /// the proxy variable is set.
+    fn client_build_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
     fn port(endpoint: SocketAddr) -> LocalInferencePort {
+        let _guard = client_build_lock()
+            .lock()
+            .expect("the client-build lock is never poisoned");
         LocalInferencePort::new(endpoint, DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME)
     }
 
@@ -856,5 +911,107 @@ mod tests {
                 "status {status} disposition mismatch: {fault:?}"
             );
         }
+    }
+
+    /// Spec test (PA.f16). `HTTP_PROXY` is process-global and `reqwest`
+    /// resolves it only at `Client::build` time, so this holds
+    /// `client_build_lock` for the whole window from setting the variable to
+    /// building the client to clearing it again — the same lock `port` takes
+    /// for every other client this module builds — rather than adding a new
+    /// dev-dependency to serialize tests.
+    #[tokio::test]
+    async fn the_client_never_honors_an_environment_proxy() {
+        let target = ScriptedResponder::start(vec![(200, text_reply("direct"))]).await;
+        let proxy = ScriptedResponder::start(vec![(200, text_reply("via-proxy"))]).await;
+        let proxy_url = format!("http://{}", proxy.endpoint());
+
+        let port = {
+            let _guard = client_build_lock()
+                .lock()
+                .expect("the client-build lock is never poisoned");
+            // SAFETY: guarded by `client_build_lock` for the entire window
+            // the variable is set, and every other reqwest client build in
+            // this module (`port`) takes the same lock before it builds.
+            unsafe {
+                std::env::set_var("HTTP_PROXY", &proxy_url);
+                std::env::set_var("http_proxy", &proxy_url);
+            }
+            let built = LocalInferencePort::new(target.endpoint(), DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME);
+            unsafe {
+                std::env::remove_var("HTTP_PROXY");
+                std::env::remove_var("http_proxy");
+            }
+            built
+        };
+
+        let request = tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Persona,
+            TEST_MODEL,
+            "Respond only in natural prose.",
+            vec![CodexInputItem::UserText {
+                text: "Say something true.".into(),
+            }],
+            Vec::<CodexToolDefinition>::new(),
+            RequestShape {
+                max_output_tokens: 1_200,
+                parallel_tool_calls: false,
+            },
+        )
+        .expect("the request builds");
+        let prepared = port.prepare(request).expect("the port prepares");
+        let output = port.infer(prepared).await.expect("the port infers");
+        assert_eq!(output.events, vec![InferenceEvent::Text("direct".into())]);
+        assert_eq!(
+            target.bodies().len(),
+            1,
+            "the target endpoint was not hit directly"
+        );
+        assert!(
+            proxy.bodies().is_empty(),
+            "the proxy endpoint received a request"
+        );
+    }
+
+    /// Spec test (PA.f17). A 307 is a fault the redirect target never sees:
+    /// `Policy::none()` means `reqwest` reports the 3xx as this port's own
+    /// response instead of opening a second connection to follow it.
+    #[tokio::test]
+    async fn a_redirect_is_a_fault_and_the_redirect_target_is_never_reached() {
+        let redirect_target = ScriptedResponder::start(vec![(200, text_reply("should never run"))]).await;
+        let redirecting_endpoint = start_redirecting_to(redirect_target.endpoint()).await;
+        let port = port(redirecting_endpoint);
+        let request = tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Persona,
+            TEST_MODEL,
+            "Respond only in natural prose.",
+            vec![CodexInputItem::UserText {
+                text: "Say something true.".into(),
+            }],
+            Vec::<CodexToolDefinition>::new(),
+            RequestShape {
+                max_output_tokens: 1_200,
+                parallel_tool_calls: false,
+            },
+        )
+        .expect("the request builds");
+        let prepared = port.prepare(request).expect("the port prepares");
+        let fault = port
+            .infer(prepared)
+            .await
+            .expect_err("a redirect produced an output");
+        assert!(!fault.integrity_was_violated(), "{fault:?}");
+        assert!(
+            fault.requires_recovery(),
+            "a followed redirect should have been recovery-required, same as any \
+             other unsuccessful status outside 429/503: {fault:?}"
+        );
+        assert!(
+            redirect_target.bodies().is_empty(),
+            "the redirect target received a request"
+        );
     }
 }
