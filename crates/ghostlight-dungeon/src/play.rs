@@ -588,6 +588,13 @@ pub(crate) struct PlayTable {
     permits: Arc<Semaphore>,
     store: Mutex<PlayTurnStore>,
     poisoned: AtomicBool,
+    /// `retry_delay`'s own base, in milliseconds (PA.f122): an ordinary
+    /// field, always compiled, defaulting to `RETRY_DELAY_BASE_MS` — the
+    /// same production base `backoff_delay` always scaled from before this
+    /// field existed. Only a test ever changes it, through
+    /// `set_retry_delay_base_ms`, so a test's own retries settle instantly
+    /// without a `#[cfg(test)]` swap over the delay formula itself.
+    retry_delay_base_ms: std::sync::atomic::AtomicU64,
     /// PA.f99's own test seam: fired immediately before each of the three
     /// doors that submit a call's already-persisted body
     /// (`commit_authoring_run`, `execute_advance_time`, `execute_actor_call`)
@@ -621,6 +628,7 @@ impl PlayTable {
             permits,
             store: Mutex::new(store),
             poisoned: AtomicBool::new(false),
+            retry_delay_base_ms: std::sync::atomic::AtomicU64::new(RETRY_DELAY_BASE_MS),
             #[cfg(test)]
             before_submit_hook: std::sync::Mutex::new(None),
         })
@@ -928,27 +936,24 @@ impl PlayTable {
     }
 
     /// A small capped exponential backoff between retries of a `Retryable`
-    /// inference fault, zero in test builds so a test never actually sleeps
-    /// (PA.f94). PA.f102: the skip is its own small injected decision
-    /// (`skip_retry_delay_in_test`), never a `#[cfg(test)]` swap over the
-    /// formula itself — `backoff_delay` below is a free function, compiled
-    /// and directly unit-testable in every build, production included.
+    /// inference fault (PA.f94). PA.f122: the base is an ordinary field on
+    /// the table, not a `#[cfg(test)]` swap over the formula itself —
+    /// production and test both run `backoff_delay` (below, a free function,
+    /// compiled and directly unit-testable in every build), over the exact
+    /// same code path, differing only in the base a test explicitly sets
+    /// through `set_retry_delay_base_ms` (PA.f94's own zero delay, so a test
+    /// never actually sleeps).
     fn retry_delay(&self, attempt: usize) -> Duration {
-        if self.skip_retry_delay_in_test() {
-            Duration::ZERO
-        } else {
-            backoff_delay(attempt)
-        }
+        backoff_delay(self.retry_delay_base_ms.load(Ordering::Relaxed), attempt)
     }
 
+    /// Sets the base `backoff_delay` scales from. Test-only: no production
+    /// call site exists, matching `set_before_submit_hook`'s own shape — the
+    /// field itself stays ordinary and always compiled so production and
+    /// test run the identical `retry_delay`/`backoff_delay` code path.
     #[cfg(test)]
-    fn skip_retry_delay_in_test(&self) -> bool {
-        true
-    }
-
-    #[cfg(not(test))]
-    fn skip_retry_delay_in_test(&self) -> bool {
-        false
+    fn set_retry_delay_base_ms(&self, base_ms: u64) {
+        self.retry_delay_base_ms.store(base_ms, Ordering::Relaxed);
     }
 
     fn round_tools(
@@ -1784,15 +1789,23 @@ fn dispatch_command_id_for_handle(turn_id: &str, round: usize, call_slot: usize,
     CommandId::parse_uuid(&uuid.to_string()).expect("a formatted uuid always parses")
 }
 
+/// `PlayTable::retry_delay`'s own production base, in milliseconds
+/// (PA.f122): the default `retry_delay_base_ms` starts at, and the value
+/// `backoff_delay`'s own doc-pinned formula (`backoff_delay_grows_then_caps`)
+/// still assumes.
+const RETRY_DELAY_BASE_MS: u64 = 100;
+
 /// `PlayTable::retry_delay`'s own capped exponential backoff formula
-/// (PA.f102): `BASE * 2^attempt` milliseconds, capped at `CAP`, with
-/// `attempt` clamped before the shift so a very large attempt count can
+/// (PA.f102, PA.f122): `base_ms * 2^attempt` milliseconds, capped at `CAP`,
+/// with `attempt` clamped before the shift so a very large attempt count can
 /// never overflow or panic. A free function, always compiled — never hidden
-/// behind `#[cfg(test)]` — so it is directly unit-testable in every build.
-fn backoff_delay(attempt: usize) -> Duration {
-    const BASE: u64 = 100;
+/// behind `#[cfg(test)]` — so it is directly unit-testable in every build,
+/// and `retry_delay` always calls exactly this, over `base_ms` alone,
+/// whether that base is `RETRY_DELAY_BASE_MS` (production) or whatever a
+/// test set it to.
+fn backoff_delay(base_ms: u64, attempt: usize) -> Duration {
     const CAP: u64 = 5_000;
-    Duration::from_millis(BASE.saturating_mul(1u64 << attempt.min(6)).min(CAP))
+    Duration::from_millis(base_ms.saturating_mul(1u64 << attempt.min(6)).min(CAP))
 }
 
 /// A round is incomplete when it holds a tool call this table has not yet
@@ -4774,12 +4787,26 @@ mod tests {
             directory.path().join("play-turn-v1.cc"),
         )
         .unwrap();
+        // PA.f122: production and test run the identical retry_delay code
+        // path — only the base a test explicitly sets differs, so this
+        // test's own dozen-plus retries settle instantly. Mutation:
+        // `retry_delay` ignoring `retry_delay_base_ms` and always scaling
+        // from the production `RETRY_DELAY_BASE_MS` instead pushes the
+        // dozen-plus real sleeps below past 30 real seconds; the bound here
+        // is generously above instant and nowhere near that.
+        table.set_retry_delay_base_ms(0);
+        let started = std::time::Instant::now();
 
         table
             .run(&fixture.principal, test_turn_id(421), "Hello?".into())
             .await
             .unwrap();
 
+        assert!(
+            started.elapsed() < Duration::from_secs(2),
+            "a zero retry_delay_base_ms must make every retry settle instantly, not scale from the production base: {:?}",
+            started.elapsed()
+        );
         let stored = table.store.lock().await;
         let turn = stored.current().unwrap();
         assert_eq!(
@@ -4799,15 +4826,20 @@ mod tests {
     /// `#[cfg(test)]`-hidden zero delay: it grows, and it caps.
     #[test]
     fn backoff_delay_grows_then_caps() {
-        assert_eq!(backoff_delay(0), Duration::from_millis(100));
-        assert_eq!(backoff_delay(1), Duration::from_millis(200));
-        assert_eq!(backoff_delay(2), Duration::from_millis(400));
-        assert_eq!(backoff_delay(5), Duration::from_millis(3_200), "not yet capped");
-        assert_eq!(backoff_delay(6), Duration::from_millis(5_000), "capped");
+        assert_eq!(backoff_delay(RETRY_DELAY_BASE_MS, 0), Duration::from_millis(100));
+        assert_eq!(backoff_delay(RETRY_DELAY_BASE_MS, 1), Duration::from_millis(200));
+        assert_eq!(backoff_delay(RETRY_DELAY_BASE_MS, 2), Duration::from_millis(400));
+        assert_eq!(backoff_delay(RETRY_DELAY_BASE_MS, 5), Duration::from_millis(3_200), "not yet capped");
+        assert_eq!(backoff_delay(RETRY_DELAY_BASE_MS, 6), Duration::from_millis(5_000), "capped");
         assert_eq!(
-            backoff_delay(1_000_000),
+            backoff_delay(RETRY_DELAY_BASE_MS, 1_000_000),
             Duration::from_millis(5_000),
             "a very large attempt count must stay capped, never overflow or panic"
+        );
+        assert_eq!(
+            backoff_delay(0, 6),
+            Duration::ZERO,
+            "a zero base (a test's own setting) must scale to zero at every attempt"
         );
     }
 
@@ -6491,6 +6523,7 @@ mod tests {
             directory.path().join("play-turn-v1.cc"),
         )
         .unwrap();
+        table.set_retry_delay_base_ms(0);
 
         table.run(&fixture.principal, test_turn_id(682), "Hello?".into()).await.unwrap();
 
