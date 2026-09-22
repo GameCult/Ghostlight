@@ -1985,6 +1985,70 @@ Interpreter, the elaborator sweep and lenses.
     standing, and the typed view) renders `Ruled` exactly as `Canonical`, so
     P3.4 is unchanged.
   - The evidenced-knowledge clause keeps reading `FactStanding` itself.
+- **Soul on fix batches 5 and 6** (Opus, 2026-09-22, against `55f8bc6`,
+  Windows).
+  - Verdicts:
+    - **P4.1: FALSIFIED** by PA.f48. The kernel side holds: the clock,
+      commitments and `delegated_authority` all freeze a retired subject.
+    - **P6.1: HOLDS.**
+    - **P6.2: HOLDS**, with the PA.f49 caveat.
+    - **P3.2: UNPROVEN**, because of PA.f50 and PA.f52.
+  - What was checked:
+    - Knowledge rows are written only by `AcquireKnowledge`, `Communicate`,
+      `Display` and `Witness`.
+    - `acquired_at` is covered by the digest, and replay reproduces it.
+    - A repeated hearing does not re-stamp a row. A confidence change does,
+      and Soul judges that correct.
+    - `run_narrative` issues byte-identical requests at `c4334cc` and
+      `55f8bc6`.
+    - `verify_history` and `commits_for_test` cannot be reached from outside
+      the crate.
+  - PA.f48–PA.f51 are fix, in library batch 7 after Cut 8a lands. PA.f52 is
+    recorded.
+- **PA.f48 (introduced by fix batch 5, medium, fix):** PA.f38 fixed only
+  the kernel side. The resolver's `candidate_effective_authority`
+  (`patch.rs:2177`) still counts a retired institution's delegated
+  authority. `graph_overlaps` (`patch.rs:2849`) and `Relocate`'s
+  restricted-route check (`patch.rs:3820`) read it.
+  - Soul's probe: retire the treasury, then grant the reeve levy. The
+    resolver refuses with `OverlappingJurisdiction` against the dead lend.
+  - A restricted route that relies on a dead institution's authority passes
+    the resolver and dies at apply as `Invariant` (read, not probed).
+  - **Fix:** the resolver skips retired institutions exactly as
+    `delegated_authority` does. Tests cover both readers. If the two can
+    share one predicate, they share it; the resolver and the kernel must
+    not have two opinions on who is live.
+- **PA.f49 (introduced by fix batch 6, low, fix):** rows seeded at genesis
+  get `acquired_at = 1`. Genesis applies at `state.revision = 0` and its
+  commit resolves to revision 0, but the stamp is `state.revision + 1`
+  (`lib.rs:2748`). The doc claims the stamp is the resolving commit's
+  revision. **Fix:** stamp the revision the write's own commit resolves to
+  on every path, genesis included. Then add a test, and a shape check
+  `acquired_at <= revision`.
+- **PA.f50 (introduced by fix batch 6, medium, fix):** no test pins the
+  Persona checkpoint request check that PA.f46 rerouted
+  (`controllers.rs:914`, `prepared_matches_request`). Replacing it with
+  `true` fails nothing. **Fix:** a test that tampers with a persisted
+  Persona checkpoint's request and requires refusal on resume.
+- **PA.f51 (introduced by fix batch 5, low, fix):**
+  - `a_forged_mirror_acted_event_is_refused_by_verify_history` still passes
+    with the effect-equality check disabled (`journal.rs:985`). It
+    recomputes the forged commit's digest but leaves the head's
+    `last_commit_digest`, so "head state does not equal replayed history"
+    rejects it first. **Fix:** also point the head at the forged digest, so
+    that only the effect check can refuse it.
+  - The stale doc comment at `lib.rs:1037` still describes the marker as
+    `minted_at`. Update it.
+- **PA.f52 (pre-existing, low, recorded):** `ControllerRunner::run_narrative`
+  (`pub`) still accepts a scope-equal opportunity with a forged revision.
+  `exact_opportunity` accepts any revision up to the current one, and in
+  Soul's probe revision 0 committed with the forged revision in its
+  binding. The runner is off the play path, and its production caller
+  (`run_cell`) passes kernel-derived opportunities. Revisit with the
+  offline machinery.
+  - A Persona turn that goes stale during inference is caught at submit only
+    if the scope digest changed. That is the kernel's rule, and Cut 8
+    submits through it.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
