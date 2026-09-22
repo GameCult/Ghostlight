@@ -1075,12 +1075,28 @@ impl InferenceOutput {
 /// The canonical id as the patch vocabulary spells it: the bare UUID text,
 /// without the typed wrapper's name. Moved here from the seed lane, which
 /// still calls it here; nothing about its behaviour changed with the move.
-pub(super) fn id_text(id: impl std::fmt::Debug) -> String {
+/// `pub`, not `pub(super)` (PA.f113): this is the one place that decides how
+/// an id is spelled — `table_view` prints through it, and Dungeon's
+/// `dispatch` reads an id an agent typed back through `id_text_matches`
+/// below, rather than each consumer keeping its own debug-paren-strip copy.
+/// A copy drifts silently when this printer changes; a shared call site
+/// cannot.
+pub fn id_text(id: impl std::fmt::Debug) -> String {
     let text = format!("{id:?}");
     match (text.find('('), text.rfind(')')) {
         (Some(open), Some(close)) if open < close => text[open + 1..close].to_owned(),
         _ => text,
     }
+}
+
+/// The parser matching `id_text` above (PA.f113): `text` names `id` only
+/// when it is exactly the bytes `id_text(id)` would print — no brackets, no
+/// padding, no case folding, because this is plain string equality against
+/// the printer's own output rather than a second, independently-tolerant
+/// parse. Kept beside the printer so the two cannot drift apart the way
+/// `table_view`'s print and Dungeon's three hand-copied strips once did.
+pub fn id_text_matches(id: impl std::fmt::Debug, text: &str) -> bool {
+    id_text(id) == text
 }
 
 /// The world the seed session is authoring into, rendered from snapshot

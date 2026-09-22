@@ -124,7 +124,7 @@ pub use sdk_inference::{DEFAULT_SDK_MODEL_PREFIX, SdkBinding};
 pub use table::{
     DecodedBatch, PatchSite, TableError, actor_tools, authoring_tools, decode_actor_call,
     decode_authoring_call, decode_authoring_calls, describe_refusal, describe_refusal_to_actor,
-    table_view,
+    id_text, id_text_matches, table_view,
 };
 pub use vault::{VaultError, VaultEvidenceSource};
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
