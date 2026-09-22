@@ -3280,7 +3280,7 @@ fn channel_referents_exist(state: &WorldState, record: &ChannelRecord) -> bool {
 /// of retirement read by anything downstream of it (audience derivation,
 /// preconditions, resolvers): a mirror's assignment is `ExternallyControlled`
 /// and is never retired by this check, only an actual `Retire` sets it.
-fn is_retired(state: &WorldState, subject_id: SubjectId) -> bool {
+pub(crate) fn is_retired(state: &WorldState, subject_id: SubjectId) -> bool {
     matches!(
         state.controller_assignments.get(&DecisionScope { subject_id }),
         Some(ControllerAssignment::Retired)
@@ -5291,8 +5291,10 @@ fn apply_effect(
             }
             state.events.push(event.clone());
             if !event.effects.is_empty() {
-                let resolves_to = resolution_revision(state)?;
-                apply_operations(state, &event.effects, &[], resolves_to)?;
+                // `derived != *event` above already proved `event.revision` is
+                // exactly what `resolution_revision(state)` would compute right
+                // now; read it back rather than computing it a second time.
+                apply_operations(state, &event.effects, &[], event.revision)?;
             }
             state
                 .last_opportunity_at

@@ -240,10 +240,7 @@ pub(super) fn exercise(
         fact
     });
 
-    let revision = state
-        .revision
-        .checked_add(1)
-        .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))?;
+    let revision = super::resolution_revision(state)?;
     Ok(DecisionEvent {
         id: EventId::for_command(command_id),
         revision,

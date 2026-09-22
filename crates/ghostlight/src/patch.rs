@@ -3296,9 +3296,9 @@ pub(super) fn resolve_patch(
     // extended below for a subject this same patch declares.
     let mut retired: BTreeSet<Key<SubjectId>> = state
         .controller_assignments
-        .iter()
-        .filter(|(_, assignment)| matches!(assignment, ControllerAssignment::Retired))
-        .map(|(scope, _)| Key::Existing(scope.subject_id))
+        .keys()
+        .filter(|scope| super::is_retired(state, scope.subject_id))
+        .map(|scope| Key::Existing(scope.subject_id))
         .collect();
     let mut mirrors: BTreeSet<Key<SubjectId>> = state
         .controller_assignments
