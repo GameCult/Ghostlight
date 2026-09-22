@@ -1583,6 +1583,23 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
 - **Operator (the gate, on Raven's machine, local lanes only):** create; seed;
   approve and activate; play the five items; restart mid-session; record
   seconds per turn and the narration call's share of it.
+- **Amended by Soul on Cut 8b (Self, under the standing go, 2026-09-22):**
+  - **PA.f134.** The card binds `["text", "answers"]`, not `["text"]`. It
+    renders the open question's id and text, and binds `answers` from the
+    id it is showing. Without this, `ask_player` wedges the world: nothing
+    else can tell a client the `QuestionId` to answer with.
+  - The card reads the turn row for the turn's state, the open question,
+    the narration and the refusal line. 8b-fix makes `RunOutcome` and a
+    small read on the table carry the same, so nothing but the card reads
+    the store.
+  - **PA.f135, sequencing.** The deletion of `world.speak` and the story
+    card does not land until this cut's own verification shows a turn
+    closing with its narration visible through the new card, and a
+    question answered through the card's own binding. Until then the
+    player has no surface at all.
+  - **PA.f138.** The rewritten HTTP journey test observes the play table,
+    not just an `accepted` response. A `world.play` that never reaches the
+    table must fail it.
 - **Promises:** P9.1 Nothing shown is world truth unless committed, except the
   question and the refusal of the player's own act (invariant 8 with Q13 A).
 - **Landed:** —
