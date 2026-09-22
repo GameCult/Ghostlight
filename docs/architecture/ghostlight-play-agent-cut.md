@@ -1389,7 +1389,18 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     the view.)
 - **Promises:** P7.1 One renderer and one decoder per vocabulary. P7.2 Dungeon
   can run an inference and read its output without widening any kernel type.
-- **Landed:** —
+- **Landed:** `7d40393` (Hands, Sonnet, 2026-09-22), +1180/−190.
+  - `table.rs` is 1132 lines. `render_world_structure` and `id_text` moved
+    there byte for byte, and the seed prompt is unchanged. `table_view` is a
+    separate renderer, so the seed bytes never move when it changes.
+  - `apply_tool_call` now calls `decode_authoring_call`.
+    `decode_catalog_call`, `render_jurisdiction` and `render_kind` are
+    widened to `pub(super)` for reuse.
+  - Lib 570 → 579. M7.1–M7.3 were killed.
+  - Not as specified: `table_view` prints a `Ruled` fact as `canonical`,
+    because `snapshot()` maps `Ruled` to `FactStandingView::Canonical` for
+    every reader (PA.f47).
+- **Verdicts:** pending Soul.
 
 ## Cut 8. The play table and the turn lifecycle (Dungeon)
 
@@ -1962,6 +1973,18 @@ Interpreter, the elaborator sweep and lenses.
 - **Carried into Cut 8:** a repeated `turn` with the same `command_id` is
   not idempotent, and `PersonaLane` has no guard. Cut 8 derives a fresh
   `command_id` for every Persona turn from `(turn_id, round, call_index)`.
+- **PA.f47 (introduced by Cut 3's view mapping, meeting Cut 7, low-medium,
+  fix):** the play agent cannot tell its own rulings from evidenced canon.
+  Cut 3 maps `FactStanding::Ruled` to `FactStandingView::Canonical` in
+  `snapshot()`, so that subjects experience a ruling as world truth (P3.4).
+  But that mapping is shared by every reader, including `table_view`, whose
+  spec prints `ruled`.
+  - **Ruling (Self, under the standing go):** `FactStandingView` gains
+    `Ruled`, and `table_view` prints it.
+  - Every subject-facing rendering (the Projector, which never reads
+    standing, and the typed view) renders `Ruled` exactly as `Canonical`, so
+    P3.4 is unchanged.
+  - The evidenced-knowledge clause keeps reading `FactStanding` itself.
 - **PA.f8 (pre-existing, info):** `PreparedInference::prepare`'s doc says
   consumers may implement ports outside the crate; probe B shows they cannot
   read the request. Cut 2 removes the need for one; the comment is corrected
