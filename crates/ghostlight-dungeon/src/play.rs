@@ -595,14 +595,16 @@ pub(crate) struct PlayTable {
     /// `set_retry_delay_base_ms`, so a test's own retries settle instantly
     /// without a `#[cfg(test)]` swap over the delay formula itself.
     retry_delay_base_ms: std::sync::atomic::AtomicU64,
-    /// PA.f99's own test seam: fired immediately before each of the three
-    /// doors that submit a call's already-persisted body
-    /// (`commit_authoring_run`, `execute_advance_time`, `execute_actor_call`)
-    /// actually submits it. It hands the hook the current turn as a fresh
-    /// `pull_all` against the store's own already-owned redb `Database`
-    /// finds it (`PlayTurnStore::pull_current_from_disk_for_test`) — not the
-    /// store's cached `self.state`, and not a second, independently opened
-    /// store, which CultCache's own single-owner lock refuses outright. No
+    /// PA.f99's own test seam: fired immediately before each of the four
+    /// doors that submit or persist a call's already-recorded state
+    /// (`commit_authoring_run`, `execute_advance_time`, `execute_actor_call`,
+    /// and, since PA.f123, `execute_dispatch` right after each dispatched
+    /// subject's own turn is persisted) moves on. It hands the hook the
+    /// current turn as a fresh `pull_all` against the store's own
+    /// already-owned redb `Database` finds it
+    /// (`PlayTurnStore::pull_current_from_disk_for_test`) — not the store's
+    /// cached `self.state`, and not a second, independently opened store,
+    /// which CultCache's own single-owner lock refuses outright. No
     /// production call installs one.
     #[cfg(test)]
     before_submit_hook: std::sync::Mutex<Option<Box<dyn Fn(Option<PlayTurn>) + Send + Sync>>>,
@@ -1497,6 +1499,23 @@ impl PlayTable {
                     let prose = persona_turn.source_prose().to_owned();
                     summary.push(format!("{label}: {prose}"));
                     turn.persona_turns.push((*subject, persona_turn));
+                    // PA.f123: `execute_dispatch` was the only call kind that
+                    // did not persist at its own site — every other tool
+                    // call's own door (`commit_authoring_run`,
+                    // `execute_advance_time`, `execute_actor_call`) persists
+                    // its own recorded body before submitting, and
+                    // `execute_round`'s per-call loop persists after every
+                    // *other* branch, but a dispatch call's own `continue`
+                    // reached none of that until the round itself finished.
+                    // A crash between two subjects in one dispatch call, or
+                    // between this dispatch call and the round's own later
+                    // persist, would re-infer this subject's Persona prose
+                    // on resume, and an actor call already checked against
+                    // the recorded prose would be checked against the new
+                    // (possibly different) prose instead — persisting as
+                    // soon as the prose is recorded closes that window.
+                    self.persist(turn).await?;
+                    self.fire_before_submit_hook().await;
                 }
                 Err(error) => {
                     let label = subject_label(&snapshot, *subject);
@@ -5435,6 +5454,75 @@ mod tests {
         });
         table
             .run(&fixture.principal, test_turn_id(752), "hold fast".into())
+            .await
+            .unwrap();
+    }
+
+    /// PA.f123: `execute_dispatch` used to be the only call kind that did
+    /// not persist its own recorded body at its own site — every other tool
+    /// call's own door (the two tests just above, plus
+    /// `the_authoring_patch_is_persisted_before_it_is_submitted`) persists
+    /// before submitting; a dispatch call's own `continue` reached none of
+    /// that until the *round's* own later persist. `before_submit_hook`,
+    /// which `execute_dispatch` now also fires right after each dispatched
+    /// subject's own turn is persisted, hands this test the durable turn
+    /// read straight off disk — not the in-memory copy `execute_dispatch`
+    /// already mutated regardless of whether it persisted — so seeing the
+    /// dispatched Persona's own turn already there proves the persist
+    /// itself happened, not merely that the field was set in memory.
+    /// Mutation: deleting `execute_dispatch`'s own
+    /// `self.persist(turn).await?` call (keeping the hook fire) fails this,
+    /// because the hook then reads the stale pre-dispatch turn off disk.
+    #[tokio::test]
+    async fn the_dispatched_personas_own_turn_is_persisted_before_the_next_call_submits() {
+        const PROSE: &str = "Mara nods once.";
+        let fixture = play_world(Some("Mara"), "player-f123-dispatch-persist").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let mara = persona_id(&snapshot);
+        let mara_handle = handle_for(mara);
+        let mara_text = subject_id_text(&snapshot, mara);
+        let round = output(
+            "r0",
+            vec![
+                call_event("c0", DISPATCH_TOOL, serde_json::json!({"subjects": [mara_text]})),
+                call_event(
+                    "c1",
+                    &format!("{mara_handle}{HANDLE_SEPARATOR}speak"),
+                    serde_json::json!({"text": PROSE}),
+                ),
+                call_event("c2", END_TURN_TOOL, serde_json::json!({})),
+            ],
+        );
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![
+                output("proj-mara", vec![text_event("Mara considers.")]),
+                output("persona-mara", vec![text_event(PROSE)]),
+            ]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![round]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+        table.set_before_submit_hook(move |durable_turn| {
+            let turn = durable_turn.expect("a turn is durably on disk at submission time");
+            assert!(
+                turn.persona_turns.iter().any(|(id, _)| *id == mara),
+                "the dispatched Persona's own turn must already be on disk before the next call submits: {:?}",
+                turn.persona_turns
+            );
+        });
+        table
+            .run(&fixture.principal, test_turn_id(920), "Who's there?".into())
             .await
             .unwrap();
     }
