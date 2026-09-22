@@ -9,7 +9,7 @@ use crate::{
         TARGET as GHOSTLIGHT_TARGET,
     },
     mesh::{self, MeshPublisher, MeshRuntimeIdentity},
-    play::{PlayRequest, PlayTable, QuestionId},
+    play::{PlayRequest, PlayTable, PlayTurnView, QuestionId},
 };
 use ghostlight::{
     AffordanceId, CONSUMER_BODY_LIMIT, CommandBody, CommandId, ConnectorBinding, ConsumerPort,
@@ -693,6 +693,7 @@ async fn eve_surface(
     let Some(principal) = authenticated_principal(&headers, &state).await else {
         return Json(eve::anonymous_surface()).into_response();
     };
+    let play_view = current_play_view(&state).await;
     match current_operator_view(&state)
         .await
         .and_then(|(snapshot, log)| {
@@ -700,6 +701,7 @@ async fn eve_surface(
                 principal.account_subject_hash(),
                 snapshot.as_ref(),
                 &log,
+                play_view.as_ref(),
             )
         }) {
         Ok(surface) => Json(surface).into_response(),
@@ -1315,6 +1317,15 @@ async fn current_world(state: &AppState) -> anyhow::Result<Option<WorldSnapshot>
         Err(MailboxError::Kernel(KernelError::WorldNotCreated)) => Ok(None),
         Err(error) => Err(error.into()),
     }
+}
+
+/// The current play turn's own player-facing state (Cut 9), read straight off
+/// `PlayTable::current_turn_view` — `None` when the table is unavailable, and
+/// `None` again when it is available but no turn has ever opened, exactly as
+/// `current_turn_view` itself returns. `eve::authenticated_surface`'s own play
+/// card degrades to its own empty shape either way.
+async fn current_play_view(state: &AppState) -> Option<PlayTurnView> {
+    state.play.as_ref()?.current_turn_view().await
 }
 
 /// The two halves of the operator surface, fetched together: the projection of
@@ -3064,7 +3075,7 @@ mod tests {
             .account_subject_hash()
             .to_owned();
         let stranger = "someone-else";
-        let mut surfaces = vec![eve::authenticated_surface(&owner, None, &[]).unwrap()];
+        let mut surfaces = vec![eve::authenticated_surface(&owner, None, &[], None).unwrap()];
         two_cell_world(
             &fixture.state,
             &fixture.cookie,
@@ -3079,7 +3090,7 @@ mod tests {
         let draft = fixture.state.world.snapshot().await.unwrap();
         assert_eq!(draft.phase, WorldPhase::Draft);
         for account in [owner.as_str(), stranger] {
-            surfaces.push(eve::authenticated_surface(account, Some(&draft), &[]).unwrap());
+            surfaces.push(eve::authenticated_surface(account, Some(&draft), &[], None).unwrap());
         }
         for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
             let snapshot = fixture.state.world.snapshot().await.unwrap();
@@ -3108,8 +3119,11 @@ mod tests {
         }
         let active = fixture.state.world.snapshot().await.unwrap();
         assert_eq!(active.phase, WorldPhase::Active);
+        let play_view = current_play_view(&fixture.state).await;
         for account in [owner.as_str(), stranger] {
-            surfaces.push(eve::authenticated_surface(account, Some(&active), &[]).unwrap());
+            surfaces.push(
+                eve::authenticated_surface(account, Some(&active), &[], play_view.as_ref()).unwrap(),
+            );
         }
         surfaces.push(eve::anonymous_surface());
 
@@ -3267,6 +3281,7 @@ mod tests {
             &owner,
             Some(&draft),
             &[],
+            None,
         )
         .unwrap();
         let encoded = serde_json::to_string(&surface).unwrap();

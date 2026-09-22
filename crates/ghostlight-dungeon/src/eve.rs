@@ -1,6 +1,7 @@
 //! Eve/CultUI projection for the one live world owner.
 
 use crate::mesh::{COMMAND_BOUNDARY, COMMAND_RESULT_SCHEMA, PROVIDER_ID, SURFACE_ID};
+use crate::play::PlayTurnView;
 use ghostlight::{JurisdictionKey, OperatorEvent, WorldPhase, WorldSnapshot};
 use anyhow::{Context, bail};
 use chrono::{DateTime, Utc};
@@ -63,6 +64,22 @@ pub(crate) fn surface_version(snapshot: Option<&WorldSnapshot>) -> u64 {
     snapshot
         .map(|world| world.revision.saturating_add(1))
         .unwrap_or(0)
+}
+
+/// The authenticated surface's own version (Cut 9): `surface_version` folded
+/// with the play row's own `revision`, when a play view is available. Additive,
+/// not paired: both counters only ever grow, so the sum only ever grows, and it
+/// moves whenever either one does — a play-row-only change (a fresh refusal, a
+/// newly open question, a closed turn's narration, none of which necessarily
+/// commit anything to the world) moves this even though `surface_version`
+/// alone would not, which is what lets the SSE path wake for it. No play view
+/// (no turn has opened yet, or the table is unavailable) contributes nothing,
+/// matching `surface_version`'s own reach when no play card renders at all.
+pub(crate) fn authenticated_surface_version(
+    snapshot: Option<&WorldSnapshot>,
+    play: Option<&PlayTurnView>,
+) -> u64 {
+    surface_version(snapshot).saturating_add(play.map_or(0, |view| view.revision))
 }
 
 pub(crate) fn world_state(snapshot: Option<&WorldSnapshot>) -> &'static str {
@@ -181,15 +198,20 @@ fn jurisdiction_label(world: &WorldSnapshot, jurisdiction: JurisdictionKey) -> S
     }
 }
 
-/// `operator_log` arrives beside the snapshot rather than inside it: the story
-/// feed is the human operator's surface, and no subject-facing lane may reach an
-/// unscoped event log.
+/// `operator_log` and `play` both arrive beside the snapshot rather than
+/// inside it: the story feed is the human operator's surface, and no
+/// subject-facing lane may reach an unscoped event log. Cut 9's own play card
+/// below reads `play` alone, never `operator_log` — invariant 8's projection,
+/// question, and refusal, nothing else. `operator_log` still feeds
+/// `world.story`/`world.speak` below; Cut 9's own deletion commit removes
+/// this parameter along with them.
 pub(crate) fn authenticated_surface(
     account: &str,
     snapshot: Option<&WorldSnapshot>,
     operator_log: &[OperatorEvent],
+    play: Option<&PlayTurnView>,
 ) -> anyhow::Result<Value> {
-    let version = surface_version(snapshot);
+    let version = authenticated_surface_version(snapshot, play);
     let mut children = vec![json!({
         "id":"ghostlight.identity",
         "kind":"heimdall.identity",
@@ -283,7 +305,7 @@ pub(crate) fn authenticated_surface(
                 "children":[{
                     "id":"world.summary.body",
                     "kind":"text",
-                    "props":{"value":format!("{} subject(s), {} committed event(s)", world.subjects.len(), operator_log.len())},
+                    "props":{"value":format!("{} subject(s)", world.subjects.len())},
                     "children":[]
                 }]
             }));
@@ -449,6 +471,90 @@ pub(crate) fn authenticated_surface(
                             "WorldMailbox",
                         ));
                     }
+
+                    // Cut 9: the play card. Invariant 8 — the player sees a
+                    // projection, the question, and the refusal of their own
+                    // act, nothing else — so this reads `play` alone, never
+                    // `operator_log`: no id, no other subject's state, no
+                    // speech the player did not perceive. Always rendered in
+                    // Active (matching `world.story`'s own always-rendered
+                    // shape above), with empty rows before any turn has ever
+                    // opened.
+                    let mut play_rows = Vec::new();
+                    if let Some(narration) = play.and_then(|view| view.narration.as_deref()) {
+                        play_rows.push(json!({
+                            "id":"world.play.narration",
+                            "kind":"text",
+                            "props":{"value":narration},
+                            "children":[]
+                        }));
+                    }
+                    if let Some(question) = play.and_then(|view| view.question.as_ref()) {
+                        play_rows.push(json!({
+                            "id":"world.play.question",
+                            "kind":"text",
+                            "props":{"value":question.text.as_str()},
+                            "children":[]
+                        }));
+                    }
+                    if let Some(refusal) = play.and_then(|view| view.refusal.as_deref()) {
+                        play_rows.push(json!({
+                            "id":"world.play.refusal",
+                            "kind":"text",
+                            "props":{"value":refusal},
+                            "children":[]
+                        }));
+                    }
+                    children.push(json!({
+                        "id":"world.play.card",
+                        "kind":"card",
+                        "props":{"title":"Play"},
+                        "children":play_rows
+                    }));
+
+                    // PA.f134: `answers` carries the exact `QuestionId` the
+                    // card above is showing, JSON-encoded the same way
+                    // `lens_weights`/`jurisdictions`/`targets` already encode
+                    // a `local_draft("…", "json")` field's own default value
+                    // — never a value a caller builds by hand. `None`/absent
+                    // when no question is open, so the control still opens or
+                    // continues a turn with plain text. With only `text`
+                    // bound, an asked question could never be answered
+                    // through this control at all — the world would wedge.
+                    let answers_default = play
+                        .and_then(|view| view.question.as_ref())
+                        .map(|question| serde_json::to_string(&question.id))
+                        .transpose()
+                        .context("the open question's id encodes as JSON")?;
+                    children.extend([
+                        json!({
+                            "id":"world.play.answers",
+                            "kind":"control.input.text",
+                            "props":{"label":"Question id","value":answers_default,"hidden":true},
+                            "stateBindings":[local_draft("answers", "json")],
+                            "children":[]
+                        }),
+                        json!({
+                            "id":"world.play.text",
+                            "kind":"control.input.textarea",
+                            "props":{"label":"What do you do?","rows":3,"placeholder":"Write freely"},
+                            "stateBindings":[local_draft("text", "string")],
+                            "children":[]
+                        }),
+                        command_button(
+                            "world.play",
+                            "Play",
+                            "world.play",
+                            json!({}),
+                            &["text", "answers"],
+                        ),
+                    ]);
+                    commands.push(command_descriptor(
+                        "world.play",
+                        "ghostlight.world_play.v0",
+                        &["text", "answers"],
+                        "PlayTable",
+                    ));
                 }
             }
         }
@@ -655,7 +761,7 @@ mod tests {
 
     #[test]
     fn empty_authenticated_surface_has_create_without_session_zero() {
-        let surface = authenticated_surface("sha256:owner", None, &[]).unwrap();
+        let surface = authenticated_surface("sha256:owner", None, &[], None).unwrap();
         let encoded = serde_json::to_string(&surface).unwrap();
         assert!(encoded.contains("world.create"));
         assert!(encoded.contains("narrative_persona_label"));

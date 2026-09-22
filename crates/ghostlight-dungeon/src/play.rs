@@ -347,6 +347,22 @@ struct PlayTurnStoreState {
     /// canonical re-encode check refuses any row missing a declared field
     /// regardless, so a default here could never actually apply either.
     ledger: KeyLedger,
+    /// The row's own monotonic counter (Cut 9): incremented exactly once by
+    /// `swap_in`, the row's one write door, on every committed write —
+    /// `commit`'s own mid-turn updates and `open_new_turn`'s own turn
+    /// replacements alike. It never resets, not on a new turn and not on a
+    /// restart (the store reads it back off disk like every other field), so
+    /// a reconnecting SSE client can never see it go backwards. This is what
+    /// lets `eve::authenticated_surface`'s own `surface_version` move on a
+    /// refusal or a question that commits nothing to the world — the one gap
+    /// a version derived only from already-existing row fields could not
+    /// close, because a refusal updates `turn.refusal` without growing
+    /// `turn.calls` or `turn.rounds` (`execute_actor_call`'s `ActionRejected`
+    /// arm updates an already-recorded call's own result in place). No
+    /// `#[serde(default)]`, matching `ledger` above: the store has never been
+    /// deployed, so no row anywhere is missing it, and the canonical
+    /// re-encode check stays strict (PA.f95).
+    revision: u64,
 }
 
 /// One closed turn's own applied request keys, oldest closed turn first.
@@ -409,6 +425,7 @@ impl PlayTurnStore {
                     schema: STORE_SCHEMA.into(),
                     turn: None,
                     ledger: KeyLedger::default(),
+                    revision: 0,
                 };
                 let row = envelope(&state)?;
                 if !store.compare_and_swap_batch(&[], vec![row.clone()])? {
@@ -484,12 +501,7 @@ impl PlayTurnStore {
     /// closing out of the row here.
     fn commit(&mut self, turn: PlayTurn) -> anyhow::Result<()> {
         self.ensure_owned()?;
-        let next = PlayTurnStoreState {
-            schema: STORE_SCHEMA.into(),
-            turn: Some(turn),
-            ledger: self.state.ledger.clone(),
-        };
-        self.swap_in(next)
+        self.swap_in(Some(turn), self.state.ledger.clone())
     }
 
     /// Opens `turn` as the store's new current turn (PA.f83): whatever turn
@@ -504,15 +516,20 @@ impl PlayTurnStore {
         if let Some(previous) = &self.state.turn {
             ledger.push_closed(previous.turn_id.clone(), previous.applied_keys.clone());
         }
-        let next = PlayTurnStoreState {
-            schema: STORE_SCHEMA.into(),
-            turn: Some(turn),
-            ledger,
-        };
-        self.swap_in(next)
+        self.swap_in(Some(turn), ledger)
     }
 
-    fn swap_in(&mut self, next: PlayTurnStoreState) -> anyhow::Result<()> {
+    /// The row's one write door (Cut 9): every committed write — `commit`'s
+    /// own mid-turn updates and `open_new_turn`'s own turn replacements alike
+    /// — passes through here, and `revision` moves exactly once per call,
+    /// here alone, so no call site can under- or double-count it.
+    fn swap_in(&mut self, turn: Option<PlayTurn>, ledger: KeyLedger) -> anyhow::Result<()> {
+        let next = PlayTurnStoreState {
+            schema: STORE_SCHEMA.into(),
+            turn,
+            ledger,
+            revision: self.state.revision + 1,
+        };
         let next_row = envelope(&next)?;
         let swapped = self
             .store
@@ -640,6 +657,13 @@ pub(crate) struct PlayTurnView {
     pub(crate) question: Option<OpenQuestion>,
     pub(crate) narration: Option<String>,
     pub(crate) refusal: Option<String>,
+    /// The play row's own monotonic counter (Cut 9), read straight off the
+    /// store: `eve::authenticated_surface` folds it into `surface_version`
+    /// alongside `world.revision`, so a change this view alone carries —
+    /// a fresh refusal, a newly open question, a closed turn's narration,
+    /// none of which necessarily move the world's own revision — still moves
+    /// the surface version and wakes the SSE path.
+    pub(crate) revision: u64,
 }
 
 /// One outcome of executing a round's already-decided tool calls.
@@ -982,6 +1006,7 @@ impl PlayTable {
             question: open_question_of(turn),
             narration: turn.narration.clone(),
             refusal: turn.refusal.clone(),
+            revision: store.state.revision,
         })
     }
 
@@ -2769,6 +2794,323 @@ mod tests {
         let stored = table.store.lock().await;
         let turn = stored.current().unwrap();
         assert_eq!(turn.narration.as_deref(), Some("The room settles."));
+    }
+
+    /// Walks a rendered Eve surface for the first node whose own `id` matches
+    /// — the same small recursive search `eve.rs`'s own tests use, copied
+    /// rather than shared because it is test-local on both sides.
+    fn find_surface_node<'a>(node: &'a Value, id: &str) -> Option<&'a Value> {
+        if node["id"] == id {
+            return Some(node);
+        }
+        node.as_object()?
+            .values()
+            .flat_map(|value| match value {
+                Value::Array(items) => items.iter().collect::<Vec<_>>(),
+                other => vec![other],
+            })
+            .find_map(|child| find_surface_node(child, id))
+    }
+
+    /// Cut 9's own card test: the player's own already-committed speech is
+    /// durable in `state.world.operator_log()` — the operator's surface, per
+    /// its own doc comment, which "no subject-facing lane may reach" — while
+    /// the turn's own narration is a *different*, player-facing channel the
+    /// play table produces. `eve::authenticated_surface`'s play card must
+    /// show the narration and never the operator log's own text, proving
+    /// invariant 8's "nothing else": the player sees a projection, the
+    /// question, and the refusal of their own act, never an unscoped event
+    /// log. Mutation M9.1: render `operator_log` into the card (as
+    /// `world.story` still does elsewhere on this same surface, pending Cut
+    /// 9's own deletion commit) — this test must fail if the *play card*
+    /// itself ever does the same.
+    #[tokio::test]
+    async fn the_play_surface_shows_only_the_projection() {
+        let fixture = play_world(None, "player-projection-only").await;
+        let snapshot = fixture.world.snapshot().await.unwrap();
+        let player = player_id(&snapshot);
+        let opportunity = snapshot
+            .opportunities
+            .iter()
+            .find(|opportunity| opportunity.scope.subject_id == player)
+            .cloned()
+            .expect("the player's own speak opportunity");
+        let affordance_id = snapshot
+            .affordances
+            .iter()
+            .find(|entry| {
+                entry.entry.kind.0 == "speak"
+                    && snapshot
+                        .subjects
+                        .iter()
+                        .any(|subject| subject.id == player && subject.affordances.contains(&entry.id))
+            })
+            .map(|entry| entry.id)
+            .expect("the player's own speak affordance");
+        fixture
+            .world
+            .submit_principal(
+                PrincipalCommandIntent {
+                    id: CommandId::new(),
+                    world_id: snapshot.world_id,
+                    expected_revision: snapshot.revision,
+                    body: CommandBody::ExerciseDecision {
+                        opportunity,
+                        invocation: DecisionInvocation {
+                            affordance: affordance_id,
+                            bindings: Vec::new(),
+                            proposed: Vec::new(),
+                            speech: Some(
+                                Statement::new("A voice the play table never narrated.".to_owned())
+                                    .unwrap(),
+                            ),
+                            display: None,
+                        },
+                    },
+                },
+                &fixture.principal,
+            )
+            .await
+            .unwrap();
+        let operator_log = fixture.world.operator_log().await.unwrap();
+        assert_eq!(operator_log.len(), 1, "the committed speech must be durable in the operator log");
+
+        let end = output("r0", vec![call_event("c0", END_TURN_TOOL, serde_json::json!({}))]);
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![output("proj-0", vec![text_event("The room settles into quiet.")])]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![end]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+        table
+            .run(&fixture.principal, test_turn_id(90), "I look around.".into())
+            .await
+            .unwrap();
+        let view = table.current_turn_view().await.unwrap();
+        assert_eq!(view.narration.as_deref(), Some("The room settles into quiet."));
+
+        let world = fixture.world.snapshot().await.unwrap();
+        // The *real* operator log, with the leaking text durably in it, so a
+        // mutation that renders `operator_log` into the play card genuinely
+        // has something to leak here — `world.story` (pending Cut 9's own
+        // deletion commit) legitimately still renders this same text
+        // elsewhere on the surface, so the negative assertion below is
+        // scoped to the play card's own subtree, not the whole page.
+        let surface = crate::eve::authenticated_surface(
+            "player-projection-only",
+            Some(&world),
+            &operator_log,
+            Some(&view),
+        )
+        .unwrap();
+        let play_card = find_surface_node(&surface, "world.play.card").expect("the play card");
+        let play_card_encoded = serde_json::to_string(play_card).unwrap();
+        assert!(
+            play_card_encoded.contains("The room settles into quiet."),
+            "the card must show the turn's own narration: {play_card_encoded}"
+        );
+        assert!(
+            !play_card_encoded.contains("A voice the play table never narrated."),
+            "the play card must never render the operator log's own speech, even though it is durably \
+             committed and `world.story` still legitimately shows it elsewhere on this surface pending \
+             Cut 9's own deletion commit: {play_card_encoded}"
+        );
+        // Every other `world.play.*` node too — the answers/text controls
+        // and the button — not only the card itself.
+        for id in ["world.play.answers", "world.play.text", "world.play"] {
+            if let Some(node) = find_surface_node(&surface, id) {
+                let encoded = serde_json::to_string(node).unwrap();
+                assert!(
+                    !encoded.contains("A voice the play table never narrated."),
+                    "{id} must never carry the operator log's own speech: {encoded}"
+                );
+            }
+        }
+    }
+
+    /// PA.f134's own end-to-end proof, and the fork Self ruled on: answering
+    /// *through the card's own rendered `world.play.answers` binding* — the
+    /// id the surface actually emitted, never one this test built — resumes
+    /// the turn, and the closed turn's narration is then visible through the
+    /// same card. Also proves the ruling's own `surface_version` claim: the
+    /// world commits nothing across this whole exchange (`ask_player`/
+    /// `end_turn` are conversational, not kernel patches), so
+    /// `world.revision` never moves, yet `authenticated_surface_version`
+    /// still does, because the play row's own `revision` carries it.
+    #[tokio::test]
+    async fn a_question_is_answered_through_the_cards_own_binding_and_the_turn_closes_with_narration() {
+        let fixture = play_world(None, "player-card-question").await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+
+        let ask = output(
+            "r0",
+            vec![call_event(
+                "c0",
+                ASK_PLAYER_TOOL,
+                serde_json::json!({"question": "Which way?"}),
+            )],
+        );
+        let end = output("r1", vec![call_event("c1", END_TURN_TOOL, serde_json::json!({}))]);
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![output("proj-0", vec![text_event("The hall falls quiet.")])]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            ScriptedPort::new(vec![ask, end]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            &store_path,
+        )
+        .unwrap();
+
+        table
+            .run(&fixture.principal, test_turn_id(91), "I stand at a crossroads.".into())
+            .await
+            .unwrap();
+        let asked_view = table.current_turn_view().await.unwrap();
+        assert_eq!(
+            asked_view.question.as_ref().map(|question| question.text.as_str()),
+            Some("Which way?")
+        );
+
+        let world_before = fixture.world.snapshot().await.unwrap();
+        let surface_before = crate::eve::authenticated_surface(
+            "player-card-question",
+            Some(&world_before),
+            &[],
+            Some(&asked_view),
+        )
+        .unwrap();
+        let version_before = surface_before["version"].as_u64().unwrap();
+
+        let question_row = find_surface_node(&surface_before, "world.play.question")
+            .expect("the question row");
+        assert_eq!(question_row["props"]["value"], "Which way?");
+        let answers_control =
+            find_surface_node(&surface_before, "world.play.answers").expect("the answers control");
+        let raw_answers = answers_control["props"]["value"]
+            .as_str()
+            .expect("the answers control carries the open question's id as a JSON string");
+        // The exact value `serde_json::to_string` would encode `OpenQuestion.id`
+        // as (`eve.rs`'s own construction); decoded back here into the same
+        // private `QuestionId` type, since this test lives in `play`'s own
+        // module and never touches its fields directly either way.
+        let answers: QuestionId =
+            serde_json::from_str(raw_answers).expect("the rendered answers id decodes");
+
+        table
+            .run(
+                &fixture.principal,
+                test_turn_id(92),
+                PlayRequest {
+                    text: "I go left.".into(),
+                    answers: Some(answers),
+                },
+            )
+            .await
+            .unwrap();
+
+        let closed_view = table.current_turn_view().await.unwrap();
+        assert_eq!(closed_view.state, PlayTurnState::Closed);
+        assert_eq!(closed_view.question, None);
+        assert_eq!(closed_view.narration.as_deref(), Some("The hall falls quiet."));
+        assert!(
+            closed_view.revision > asked_view.revision,
+            "the row's own revision must move again once the turn closes: {} -> {}",
+            asked_view.revision,
+            closed_view.revision
+        );
+
+        let world_after = fixture.world.snapshot().await.unwrap();
+        assert_eq!(
+            world_after.revision, world_before.revision,
+            "asking and answering a question are conversational; neither commits to the world"
+        );
+
+        let surface_after = crate::eve::authenticated_surface(
+            "player-card-question",
+            Some(&world_after),
+            &[],
+            Some(&closed_view),
+        )
+        .unwrap();
+        assert!(
+            find_surface_node(&surface_after, "world.play.question").is_none(),
+            "no question is open any more; the card must not still show one"
+        );
+        let narration_row = find_surface_node(&surface_after, "world.play.narration")
+            .expect("the narration row");
+        assert_eq!(narration_row["props"]["value"], "The hall falls quiet.");
+        let version_after = surface_after["version"].as_u64().unwrap();
+        assert!(
+            version_after > version_before,
+            "surface_version must move even though world.revision did not: {version_before} -> {version_after}"
+        );
+    }
+
+    /// The fork Self ruled on, isolated: a commit that changes only
+    /// `turn.refusal` — exactly the shape `execute_actor_call`'s
+    /// `ActionRejected` arm leaves a row in (the call's own record is
+    /// already persisted before submission, PA-Q8's "body durable before
+    /// effects" order; this second commit carries only the refusal, growing
+    /// neither `calls` nor `rounds`) — must still move the row's own
+    /// `revision`. A counter derived from `calls.len()` or `rounds.len()`
+    /// cannot see this commit at all, which is the exact gap that made a
+    /// persisted counter, not a derived one, the ruled answer.
+    ///
+    /// Mutation: move `PlayTurnStore::swap_in`'s own `revision + 1` onto a
+    /// condition keyed off `turn.calls.len()` growing (or any other derived
+    /// field) instead of firing unconditionally on every commit — this
+    /// commit, which grows nothing, would then leave `revision` exactly
+    /// where it started, failing the assertion below.
+    #[tokio::test]
+    async fn a_commit_changing_only_the_refusal_still_moves_the_rows_own_revision() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut store = PlayTurnStore::open(directory.path().join("play-turn-v1.cc")).unwrap();
+        let base = PlayTurn {
+            turn_id: test_turn_id(9001),
+            applied_keys: vec!["k0".into()],
+            opening_prompt: "opening".into(),
+            player_prose: vec!["I try the act.".into()],
+            rounds: Vec::new(),
+            calls: Vec::new(),
+            persona_turns: Vec::new(),
+            question: None,
+            refusal: None,
+            narration: None,
+            fault: None,
+            state: PlayTurnState::Running,
+        };
+        store.open_new_turn(base.clone()).unwrap();
+        let revision_before = store.state.revision;
+
+        let mut refused = base;
+        refused.refusal = Some("refused".into());
+        store.commit(refused).unwrap();
+        let revision_after = store.state.revision;
+
+        assert!(
+            revision_after > revision_before,
+            "a commit that changes only the refusal line must still move the row's own revision: \
+             {revision_before} -> {revision_after}"
+        );
     }
 
     #[tokio::test]
