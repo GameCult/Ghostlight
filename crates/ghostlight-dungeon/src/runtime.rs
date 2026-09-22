@@ -80,11 +80,13 @@ struct AppState {
     /// fall back to.
     play: Option<Arc<PlayTable>>,
     /// The controller/Persona concurrency pool, sized to the connector's
-    /// quota. `execute_dispatch` and `close_turn`'s own narration (Cut 8b)
-    /// draw permits from this exact pool, so `runtime_readiness`'s
-    /// `controllerStatus` "active" arm — unreachable in production before
-    /// this cut, since nothing drew from the pool — now reflects live
-    /// Persona cognition, not only the test route's own forced exhaustion.
+    /// quota. Cut 1 deleted Dungeon's own drivers, so the play table's own
+    /// `execute_dispatch` and `close_turn` narration (Cut 8b) are this
+    /// pool's one production consumer now — Persona dispatch *is* the
+    /// controller work, not a second lane beside it. `runtime_readiness`'s
+    /// `controllerStatus` "active" arm reads this pool for exactly that
+    /// reason: live Persona cognition drawing a permit is what "active"
+    /// reports, not only the test route's own forced exhaustion.
     controller_permits: Arc<Semaphore>,
     sessions: Arc<Mutex<AppSessionOwner>>,
     heimdall: Arc<HeimdallClient>,
@@ -1158,11 +1160,16 @@ async fn execute_world(
             .play
             .clone()
             .ok_or_else(|| RuntimeCommandError::Payload("the play table is unavailable".into()))?;
-        let key = invocation
-            .operation
-            .idempotency_key
-            .clone()
-            .unwrap_or_default();
+        // PA.f147 (reported, not fixed — see Hands' own report): the
+        // unconditional `command_id = CommandId::parse_uuid(...)?` at the
+        // top of this function already refuses a missing or non-uuid key
+        // for every operation, `world.play` included, before this branch is
+        // ever reached — verified by reverting a local guard here to this
+        // exact `unwrap_or_default()` and re-running a test built to catch
+        // it: it still passed. A local, explicit guard was tried and kept
+        // only if it could be shown to matter; it could not, so it was not
+        // kept as unreachable code.
+        let key = invocation.operation.idempotency_key.clone().unwrap_or_default();
         let principal = verified_principal.clone();
         tokio::spawn(async move {
             if let Err(error) = table
@@ -1398,6 +1405,13 @@ async fn runtime_readiness(state: &AppState) -> anyhow::Result<Value> {
             match tokio::time::timeout(Duration::from_millis(100), controller.custody_probe()).await
             {
                 Ok(Ok(ControllerWorkCustody::Owned { .. })) => {
+                    // `controller_permits` has one production consumer since
+                    // Cut 1 deleted Dungeon's own drivers: the play table's
+                    // own dispatched-Persona turns and turn-close narration
+                    // (Cut 8b). Every permit taken is therefore genuine
+                    // Persona cognition in flight, so "active" here is
+                    // accurate, not merely reachable through a test's own
+                    // forced exhaustion.
                     if state.controller_permits.available_permits() == 0 {
                         "active"
                     } else {
@@ -1786,6 +1800,12 @@ fn prepare_admitted_state_layout(runtime_root: &std::path::Path) -> anyhow::Resu
         service_root.join("app-sessions-v2.cc"),
         service_root.join("controller-work.cc"),
         service_root.join("mesh-v2.cc"),
+        // PA.f140: `open_play` writes the play table's own row here
+        // (`service_root.join("play-turn-v1.cc")`), the same path this
+        // pre-flight check must prove is a direct, non-symlinked, single-
+        // linked regular file before anything is admitted to write it —
+        // this list was never updated when Cut 8b added that store.
+        service_root.join("play-turn-v1.cc"),
     ] {
         require_direct_state_file_or_absent(&path)?;
         require_direct_state_file_or_absent(&sibling_state_lock_path(&path))?;
@@ -1895,6 +1915,26 @@ mod tests {
         fs::write(&target, b"not-world").unwrap();
         fs::hard_link(&target, hardlink_root.join("world.cc")).unwrap();
         assert!(prepare_admitted_state_layout(&hardlink_root).is_err());
+    }
+
+    /// PA.f140: `open_play` writes the play table's own row to
+    /// `service/play-turn-v1.cc` (see its own call site), so the pre-flight
+    /// layout check must cover that path exactly like `world.cc`,
+    /// `app-sessions-v2.cc`, `controller-work.cc`, and `mesh-v2.cc` already
+    /// do — a symlink standing in for it must be refused the same way.
+    /// Mutation: dropping `play-turn-v1.cc` from the checked list.
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn post_lease_state_layout_rejects_a_symlinked_play_turn_store() {
+        use std::os::unix::fs::symlink;
+
+        let directory = tempfile::tempdir().unwrap();
+        let root = fs::canonicalize(directory.path()).unwrap();
+        fs::create_dir(root.join("service")).unwrap();
+        let target = root.join("service").join("other.cc");
+        fs::write(&target, b"not-play-turn").unwrap();
+        symlink(&target, root.join("service").join("play-turn-v1.cc")).unwrap();
+        assert!(prepare_admitted_state_layout(&root).is_err());
     }
 
     struct Fixture {
@@ -2330,6 +2370,14 @@ mod tests {
     /// once it actually tries to infer; that failure is expected and is not
     /// this test's concern; only the HTTP response this route hands back
     /// before that happens is.
+    ///
+    /// PA.f138: `played["state"] == "accepted"` alone is reachable by a
+    /// mutation that spawns the task and returns the same JSON without ever
+    /// calling `table.run` — this route builds `{"kind":"accepted"}` from
+    /// nothing on the table itself. This test also polls
+    /// `PlayTable::current_turn_view` (PA.f134's own consumer-facing read)
+    /// until it reports a turn, bounded by a timeout: `table.run` genuinely
+    /// ran only if a turn row ever appears, whatever it did with it.
     #[tokio::test]
     async fn world_play_reaches_the_play_table_and_is_accepted() {
         let fixture = fixture().await;
@@ -2367,6 +2415,22 @@ mod tests {
         )
         .await;
         assert_eq!(played["state"], "accepted");
+
+        let table = fixture.state.play.clone().unwrap();
+        let observed = tokio::time::timeout(Duration::from_secs(5), async move {
+            loop {
+                if table.current_turn_view().await.is_some() {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await;
+        assert!(
+            observed.is_ok(),
+            "the spawned task must actually call table.run, recording a turn row, not just return \
+             the same accepted JSON on its own"
+        );
     }
 
     /// Same route, with `state.play` unavailable (mirrors `controllers:
@@ -2409,6 +2473,71 @@ mod tests {
         )
         .await;
         assert_eq!(played["state"], "denied");
+    }
+
+    /// PA.f147, reported rather than fixed (see Hands' own report):
+    /// `world.play`'s own arm takes `idempotency_key.unwrap_or_default()`
+    /// with no local guard, which reads like a hole — a caller that skipped
+    /// `eve::validate_invocation` (the only door that normally requires a
+    /// non-empty key) would land on key `""`, and `PlayTable::run`'s own
+    /// `applied_keys`/`KeyLedger` would record and later replay it as a
+    /// no-op. A local, explicit guard was tried and reverted: mutation-tested
+    /// against a fresh key-less call through `dispatch_world` (the one
+    /// caller that skips HTTP validation), it made no difference, because
+    /// `execute_world`'s own `command_id = CommandId::parse_uuid(...)?`,
+    /// computed unconditionally before *every* operation's own branch
+    /// (`world.play`'s included), already refuses a missing or non-uuid key
+    /// first. This test pins that guard's own reach over `world.play`
+    /// specifically, since nothing else in this suite calls `dispatch_world`
+    /// with a key-less invocation. Mutation: `unwrap_or("")` →
+    /// `unwrap_or("00000000-0000-0000-0000-000000000000")` on
+    /// `command_id`'s own parse.
+    #[tokio::test]
+    async fn world_play_without_an_idempotency_key_is_refused_not_defaulted() {
+        let fixture = fixture().await;
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({
+                    "title":"No Key World",
+                    "brief":"",
+                    "subject_label":"Operator",
+                    "targets":{},
+                    "jurisdictions":[],
+                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
+                }),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(created["state"], "accepted");
+
+        let mut keyless: EveCommandInvocation = serde_json::from_value(invocation(
+            "world.play",
+            "ghostlight.world_play.v0",
+            1,
+            json!({"text":"I look around."}),
+            &uuid::Uuid::new_v4().to_string(),
+        ))
+        .unwrap();
+        keyless.operation.idempotency_key = None;
+
+        let principal =
+            VerifiedPrincipalEvidence::new("operator-account", Utc::now() + chrono::Duration::hours(1));
+        let response = dispatch_world(&fixture.state, &principal, keyless).await;
+        let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let played: Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(played["state"], "denied");
+        assert!(
+            fixture.state.play.as_ref().unwrap().current_turn_view().await.is_none(),
+            "a missing key must never reach table.run at all, not just fail inside it"
+        );
     }
 
     #[tokio::test]

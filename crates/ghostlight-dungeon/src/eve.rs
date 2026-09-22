@@ -702,12 +702,22 @@ mod tests {
         assert!(validate_invocation(&bound, "https-json").is_ok());
     }
 
-    /// Cut 8b's own schema test, beside `world.speak`'s: `world.play` is
-    /// advertised, an invocation whose payload matches it validates, and a
-    /// payload that tries to claim authority is refused the same way
+    /// Cut 8b's own schema test, beside `world.speak`'s: `world.play`'s
+    /// operation id resolves to its schema through `operation_schema`, so an
+    /// invocation whose payload matches it validates, and a payload that
+    /// tries to claim authority is refused the same way
     /// `payload_cannot_claim_authority` refuses one for `world.speak`.
+    ///
+    /// PA.f146: this is *not* the same claim as `world.speak`'s own —
+    /// `world.speak` also has a `command_descriptor` pushed into the Eve
+    /// command surface (`operation_schema`'s only caller besides this
+    /// validation path); `world.play` does not, anywhere, so it advertises
+    /// no button and no descriptor at all yet. `operation_schema` alone lets
+    /// a caller who already knows to call `world.play` validate and reach
+    /// `dispatch_world`; it does not make the operation discoverable. Cut 9
+    /// is what publishes the descriptor.
     #[test]
-    fn world_play_is_advertised_and_payload_cannot_claim_authority() {
+    fn world_play_operation_schema_validates_though_not_yet_advertised() {
         assert_eq!(operation_schema("world.play"), Some("ghostlight.world_play.v0"));
 
         let bound = invocation(
