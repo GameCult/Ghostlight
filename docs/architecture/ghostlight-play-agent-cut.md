@@ -2613,6 +2613,25 @@ Interpreter, the elaborator sweep and lenses.
   - `turn.refusal` holds agent-facing detail; 8b gives the player only the
     actor form.
   - Concurrent `run` calls are handled by 8b's per-world mutex.
+- **Play loop fix 8a-fix2 landed (Hands, Sonnet, 2026-09-22):** `3d6a58e`
+  (library: PA.f89, PA.f92, and a note on the PA.f88 fixture) and `74b628d`
+  (Dungeon: PA.f83 to PA.f97 in one commit, one state machine).
+  - `turn_id` is minted per turn. `KeyLedger` spans the open turn and the
+    last 64 closed turns.
+  - `PlayRequest { text, answers: Option<QuestionId> }`, with stale and
+    running refusals typed.
+  - One `close_with_fault`, and `RoundInferError` is deleted. Retries
+    follow disposition, with backoff.
+  - The handle is 8 hex digits. A collision is a turn fault.
+  - Dispatched means "prose recorded". Dungeon's `PLAY_TOOLS` is pinned
+    exactly.
+  - Hands reports two limits:
+    - The handle-collision test drives `find_handle_collision` directly,
+      because `SubjectId` has no public constructor.
+    - PA.f96 compares each Persona's inference `request_id` across
+      reordered dispatch lists. Dispatch is inference only, so no kernel
+      command id exists to compare.
+  - Dungeon bin 78 → 98, lib 621 → 622, persona-projection 26 → 30.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
