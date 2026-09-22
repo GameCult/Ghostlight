@@ -234,7 +234,15 @@ pub fn decode_actor_call(
     kind: &str,
     arguments: &str,
 ) -> Result<(DecisionOpportunity, DecisionInvocation), String> {
-    let kind = kind.strip_prefix(prefix).unwrap_or(kind);
+    // A non-empty prefix must actually be carried: falling back to the bare
+    // name here (PA.f71) let a name `actor_tools` never emits — because it
+    // never printed the prefix `actor_tools` was called with — still decode.
+    let kind = if prefix.is_empty() {
+        kind
+    } else {
+        kind.strip_prefix(prefix)
+            .ok_or_else(|| format!("`{kind}` does not carry the actor prefix `{prefix}`"))?
+    };
     let (opportunity, granted) = subject_opportunity(snapshot, subject)
         .ok_or_else(|| "this subject holds no exact opportunity".to_owned())?;
     let entry = granted
@@ -331,8 +339,11 @@ fn precondition_index(mismatch: &ActionMismatch) -> Option<usize> {
 }
 
 /// The role(s) one `Precondition` names, in the order its own fields declare
-/// them. `HasStanding` and `CanBroadcast` name none: a grievance kind and an
-/// audience spec are not roles.
+/// them. `HasStanding` names none: a grievance kind is not a role.
+/// `CanBroadcast` and `CanReach` name the channel role their `via` binds when
+/// it is `AudienceSpec::Channel` — `AudienceSpec::Colocated` names no role,
+/// since co-location is derived from position, not bound (PA.f72: this used
+/// to drop the channel role of both entirely).
 fn precondition_roles(precondition: &patch::Precondition) -> Vec<patch::Role> {
     match precondition {
         patch::Precondition::Present { at } => vec![at.clone()],
@@ -341,9 +352,22 @@ fn precondition_roles(precondition: &patch::Precondition) -> Vec<patch::Role> {
         patch::Precondition::Authorized { over, .. } => vec![over.clone()],
         patch::Precondition::HasStanding { .. } => Vec::new(),
         patch::Precondition::Knows { fact, .. } => vec![fact.clone()],
-        patch::Precondition::CanBroadcast { .. } => Vec::new(),
-        patch::Precondition::CanReach { subject, .. } => vec![subject.clone()],
+        patch::Precondition::CanBroadcast { via } => audience_role(via),
+        patch::Precondition::CanReach { subject, via } => {
+            let mut roles = vec![subject.clone()];
+            roles.extend(audience_role(via));
+            roles
+        }
         patch::Precondition::Committed { to, .. } => vec![to.clone()],
+    }
+}
+
+/// The role an `AudienceSpec` binds, if any: `Channel` names the role its
+/// invocation must bind a channel to; `Colocated` names none.
+fn audience_role(via: &patch::AudienceSpec) -> Vec<patch::Role> {
+    match via {
+        patch::AudienceSpec::Colocated => Vec::new(),
+        patch::AudienceSpec::Channel(role) => vec![role.clone()],
     }
 }
 
@@ -524,18 +548,21 @@ fn describe_action_mismatch_to_actor(mismatch: &ActionMismatch, entry: &Affordan
         .get(index)
         .map(precondition_roles)
         .unwrap_or_default();
-    let role_text = if roles.is_empty() {
-        "a precondition with no role".to_owned()
+    // A precondition that binds no role (`HasStanding`, `CanBroadcast` over
+    // `Colocated`) or whose index does not resolve gets plain wording of its
+    // own, rather than being spliced into the templated "role `X`" sentence
+    // below — PA.f72's garble read "a precondition over role a precondition
+    // with no role, which you bound yourself, failed".
+    Some(if roles.is_empty() {
+        "a precondition you bound no role for failed".to_owned()
     } else {
-        roles
+        let role_text = roles
             .iter()
             .map(|role| format!("`{}`", role.0))
             .collect::<Vec<_>>()
-            .join(", ")
-    };
-    Some(format!(
-        "a precondition over role {role_text}, which you bound yourself, failed"
-    ))
+            .join(", ");
+        format!("a precondition over role {role_text}, which you bound yourself, failed")
+    })
 }
 
 /// A `Mismatch`'s own site, read generically off its serialized shape rather
@@ -1862,6 +1889,32 @@ mod tests {
         assert!(error.contains("text"), "{error}");
     }
 
+    /// Rule (PA.f71): a non-empty prefix must actually be carried by the
+    /// name. The bare `kind` here (`whisper`, unprefixed) is a granted
+    /// entry's own name, so the old fallback to `kind` on a failed strip
+    /// would let it decode anyway — a name `actor_tools` never emits under
+    /// this prefix must still be refused.
+    #[test]
+    fn decode_actor_call_refuses_a_name_without_the_actor_prefix() {
+        let directory = tempfile::tempdir().expect("a temp dir");
+        let mut kernel = crate::WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(super::CommandId::new(), "PlayActorPrefix"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, active) = speech_world(&mut kernel);
+        let arguments = serde_json::json!({
+            "target": id_text(speech.listener),
+            "text": "a whispered warning",
+        })
+        .to_string();
+        let error = decode_actor_call(&active, speech.speaker, "c0__", "whisper", &arguments).unwrap_err();
+        assert!(error.contains("whisper"), "{error}");
+        assert!(error.contains("c0__"), "{error}");
+    }
+
     /// Mutation M7.1: if `decode_actor_call` used the snapshot's first
     /// opportunity instead of the subject's own, this would no longer hold —
     /// `speech.listener` holds a different, later-ordered opportunity.
@@ -2097,6 +2150,114 @@ mod tests {
         assert!(text.contains("`resource`"), "{text}");
         assert!(!text.contains(&id_text(fixture.custody.holder)), "{text}");
         assert!(!text.contains(&holder.label), "{text}");
+    }
+
+    /// A minimal `AffordanceSnapshot` carrying exactly these preconditions
+    /// and nothing else, for tests that probe `precondition_roles` and the
+    /// two refusal renderers directly rather than through a live kernel.
+    fn affordance_snapshot(preconditions: Vec<patch::Precondition>) -> AffordanceSnapshot {
+        AffordanceSnapshot {
+            id: crate::AffordanceId::issue(),
+            entry: patch::Affordance {
+                kind: patch::AffordanceKindName("probe".to_owned()),
+                roles: Vec::new(),
+                preconditions,
+                effect_slots: Vec::new(),
+                outcome_bands: Vec::new(),
+                carries_speech: false,
+            },
+        }
+    }
+
+    /// Rule (PA.f72): `precondition_roles` reads the channel role a
+    /// `CanBroadcast { via: Channel(role) }` binds, rather than dropping it.
+    #[test]
+    fn precondition_roles_reads_the_broadcast_channel_role() {
+        let role = patch::Role("horn".into());
+        let precondition = patch::Precondition::CanBroadcast {
+            via: patch::AudienceSpec::Channel(role.clone()),
+        };
+        assert_eq!(precondition_roles(&precondition), vec![role]);
+    }
+
+    /// Rule (PA.f72): `precondition_roles` reads `CanReach`'s own `subject`
+    /// role and the channel role its `via` binds, in that order.
+    #[test]
+    fn precondition_roles_reads_the_reach_channel_role_alongside_the_subject_role() {
+        let subject_role = patch::Role("target".into());
+        let channel_role = patch::Role("horn".into());
+        let precondition = patch::Precondition::CanReach {
+            subject: subject_role.clone(),
+            via: patch::AudienceSpec::Channel(channel_role.clone()),
+        };
+        assert_eq!(precondition_roles(&precondition), vec![subject_role, channel_role]);
+    }
+
+    /// Rule (PA.f72): a `Colocated` audience still names no role, for both
+    /// `CanBroadcast` and `CanReach` — only `Channel` names one.
+    #[test]
+    fn precondition_roles_names_no_role_for_a_colocated_audience() {
+        assert!(precondition_roles(&patch::Precondition::CanBroadcast {
+            via: patch::AudienceSpec::Colocated,
+        })
+        .is_empty());
+        assert_eq!(
+            precondition_roles(&patch::Precondition::CanReach {
+                subject: patch::Role("target".into()),
+                via: patch::AudienceSpec::Colocated,
+            }),
+            vec![patch::Role("target".into())]
+        );
+    }
+
+    /// Rule (PA.f72): `describe_refusal_to_actor` uses plain wording for a
+    /// precondition that names no role — `HasStanding` (`NoStanding`) — never
+    /// the garbled "a precondition over role a precondition with no role,
+    /// which you bound yourself" the old text produced.
+    #[test]
+    fn describe_refusal_to_actor_uses_plain_wording_for_no_standing() {
+        let entry = affordance_snapshot(vec![patch::Precondition::HasStanding {
+            grievance: patch::GrievanceKindName("noise".into()),
+        }]);
+        let error = KernelError::ActionRejected(vec![ActionMismatch::NoStanding { precondition: 0 }]);
+        let text = describe_refusal_to_actor(&entry, &error);
+        assert!(!text.contains("a precondition over role"), "{text}");
+        assert!(text.contains("no role"), "{text}");
+    }
+
+    /// Rule (PA.f72): the same plain wording applies to `NoAudience` over a
+    /// `Colocated` audience, which also names no role.
+    #[test]
+    fn describe_refusal_to_actor_uses_plain_wording_for_no_audience_colocated() {
+        let entry = affordance_snapshot(vec![patch::Precondition::CanBroadcast {
+            via: patch::AudienceSpec::Colocated,
+        }]);
+        let error = KernelError::ActionRejected(vec![ActionMismatch::NoAudience { precondition: 0 }]);
+        let text = describe_refusal_to_actor(&entry, &error);
+        assert!(!text.contains("a precondition over role"), "{text}");
+        assert!(text.contains("no role"), "{text}");
+    }
+
+    /// Rule (PA.f72): an out-of-range precondition index also falls back to
+    /// the plain wording rather than the garbled sentence.
+    #[test]
+    fn describe_refusal_to_actor_uses_plain_wording_for_an_out_of_range_precondition() {
+        let entry = affordance_snapshot(Vec::new());
+        let error = KernelError::ActionRejected(vec![ActionMismatch::ActorNotPresent { precondition: 9 }]);
+        let text = describe_refusal_to_actor(&entry, &error);
+        assert!(!text.contains("a precondition over role"), "{text}");
+    }
+
+    /// Rule (PA.f72): `describe_refusal_to_actor` reveals the channel role a
+    /// failed `CanBroadcast` names, now that `precondition_roles` reads it.
+    #[test]
+    fn describe_refusal_to_actor_reveals_the_broadcast_channel_role() {
+        let entry = affordance_snapshot(vec![patch::Precondition::CanBroadcast {
+            via: patch::AudienceSpec::Channel(patch::Role("horn".into())),
+        }]);
+        let error = KernelError::ActionRejected(vec![ActionMismatch::NoAudience { precondition: 0 }]);
+        let text = describe_refusal_to_actor(&entry, &error);
+        assert!(text.contains("`horn`"), "{text}");
     }
 
     /// Rule (PA.f57): every `KernelError` other than `ActionRejected` —
