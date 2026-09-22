@@ -1379,6 +1379,81 @@ mod tests {
         }
     }
 
+    /// PA.f30a: `Retire`, `GrantAffordance` and `RevokeAffordance` are
+    /// authority over a subject's standing, not structure over ground, and a
+    /// consumer names no ground at all: `confine_to_ground` refuses all
+    /// three unconditionally, the same as for an elaborator.
+    ///
+    /// Every subject choice here is also caught by an upstream structural
+    /// gate that runs before `confine_to_ground` ever sees the patch: a
+    /// mirror can never hold a grant at all (`GrantsOutsideControl`) or be
+    /// retired (`RetiresAMirror`), and no non-mirror subject can ever bind
+    /// to a consumer's own ground, so `operation_ground`'s defensive
+    /// fallback refuses every one of these choices on its own. Soul: no
+    /// subject choice exists for a consumer that reaches confine_to_ground's
+    /// unconditional Retire/Grant/Revoke clause without one of those two
+    /// gates already having refused it, so this specific narrowing
+    /// (confining only for an elaborator jurisdiction) is not independently
+    /// killable from the consumer side. Kept because the finding calls for
+    /// it and the refusal itself is real; the redundancy is reported rather
+    /// than silently dropped.
+    #[test]
+    fn a_consumer_cannot_retire_grant_or_revoke() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, mirror) = draft_kernel(directory.path(), "GroundlessAuthority");
+        let speak = speak_entry(&kernel);
+        let convene = Ref::Existing(
+            *kernel
+                .state
+                .affordance_catalog
+                .iter()
+                .find(|(_, entry)| entry.kind.0 == "convene")
+                .map(|(id, _)| id)
+                .expect("the fixture world declares convene"),
+        );
+        // `local` is an ordinary Ghostlight subject, not the consumer's own
+        // mirror. `local` starts holding only `speak`, so `GrantAffordance`
+        // names `convene` (not yet held, so not a no-op grant) before the
+        // owner admits that same grant for real, which leaves `local`
+        // holding two verbs so the later `RevokeAffordance` of `speak`
+        // cannot instead be caught by the unrelated last-verb rule.
+        let retire = as_consumer(
+            &mut kernel,
+            operations(vec![ComponentOp::Retire {
+                subject: Ref::Existing(mirror.local),
+            }]),
+        );
+        assert!(outside(&retire), "{retire:?}");
+
+        let grant = as_consumer(
+            &mut kernel,
+            operations(vec![ComponentOp::GrantAffordance {
+                subject: Ref::Existing(mirror.local),
+                affordance: convene.clone(),
+            }]),
+        );
+        assert!(outside(&grant), "{grant:?}");
+
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::GrantAffordance {
+                subject: Ref::Existing(mirror.local),
+                affordance: convene,
+            }]),
+        );
+
+        let revoke = as_consumer(
+            &mut kernel,
+            operations(vec![ComponentOp::RevokeAffordance {
+                subject: Ref::Existing(mirror.local),
+                affordance: speak,
+            }]),
+        );
+        assert!(outside(&revoke), "{revoke:?}");
+    }
+
     #[test]
     fn a_consumer_admits_and_consumes_inside_its_own_custody() {
         let directory = tempfile::tempdir().unwrap();
@@ -1630,6 +1705,55 @@ mod tests {
         assert_eq!(mailbox.snapshot().await.unwrap().revision, before.revision);
         // The port holds its own clone of the mailbox: the owner task ends
         // when the last sender does.
+        drop(port);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// PA.f29b: a consumer document carrying a `Mint` is refused through the
+    /// real decode path — `admit_document`, past the transport gate and the
+    /// kernel's own `submit`, not only through the in-process `as_consumer`
+    /// fixture caller other tests use.
+    #[tokio::test]
+    async fn a_document_carrying_a_mint_is_refused_through_admit_document() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task, port, mirror, world_id) = mirror_mailbox(directory.path()).await;
+        let before = mailbox.snapshot().await.unwrap();
+        let mint_patch = WorldPatch {
+            declarations: Vec::new(),
+            operations: vec![ComponentOp::Mint {
+                holder: Ref::Existing(mirror.first),
+                resource: Ref::Existing(mirror.grain),
+                qty: Quantity(3),
+            }],
+            evidence: Vec::new(),
+        };
+        let bytes = encode_document(
+            &build_document(
+                world_id,
+                CONSUMER,
+                SECRET,
+                "mint-batch",
+                before.revision,
+                None,
+                &mint_patch,
+            )
+            .unwrap(),
+        )
+        .unwrap();
+
+        let receipt = admit_document(&port, &registry(), &bytes).await;
+        assert!(
+            matches!(&receipt.outcome, ConsumerOutcome::Refused { gate, mismatches }
+                if *gate == ConsumerRefusal::Structural
+                    && mismatches.contains(&Mismatch::RuledWithoutAuthority {
+                        site: patch::Site::Operation(0),
+                    })),
+            "{:?}",
+            receipt.outcome
+        );
+        assert_eq!(mailbox.snapshot().await.unwrap().revision, before.revision);
+
         drop(port);
         drop(mailbox);
         task.await.unwrap();

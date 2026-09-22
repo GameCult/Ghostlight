@@ -16527,6 +16527,333 @@ mod clock_tests {
             },
         )
         .expect("an evidenced admit is admitted for the play authority too");
+
+        // PA.f29a: the owner in Draft — the seed's caller.
+        {
+            let seed_directory = tempfile::tempdir().unwrap();
+            let (mut seed_kernel, _) = WorldKernel::create(
+                seed_directory.path().join("world.cc"),
+                creation(CommandId::new(), "OwnerDraftEvidence"),
+                &auth_principal(owner()),
+            )
+            .expect("a created world");
+            let fact = |evidence: &str| {
+                Declaration::Fact(FactDeclaration {
+                    handle: DraftHandle::new("draft-fact"),
+                    label: "The Draft Count".into(),
+                    statement: Statement::new("The draft is counted.").unwrap(),
+                    standing: FactStandingRef::Canonical {
+                        evidence: EvidenceRef::new(evidence),
+                    },
+                })
+            };
+            let snapshot = seed_kernel.snapshot().unwrap();
+            let uncited = seed_kernel
+                .submit(
+                    command(
+                        &snapshot,
+                        CommandId::new(),
+                        CallerId::Principal(owner()),
+                        CommandBody::AdmitPatch {
+                            answers: None,
+                            patch: WorldPatch {
+                                declarations: vec![fact("vault:draft-uncited")],
+                                operations: Vec::new(),
+                                evidence: Vec::new(),
+                            },
+                        },
+                    ),
+                    &auth_principal(owner()),
+                )
+                .unwrap_err();
+            assert!(
+                matches!(&uncited, KernelError::PatchRejected(set)
+                    if set.contains(&Mismatch::FactWithoutEvidence {
+                        handle: DraftHandle::new("draft-fact"),
+                    })),
+                "{uncited:?}"
+            );
+            let snapshot = seed_kernel.snapshot().unwrap();
+            seed_kernel
+                .submit(
+                    command(
+                        &snapshot,
+                        CommandId::new(),
+                        CallerId::Principal(owner()),
+                        CommandBody::AdmitPatch {
+                            answers: None,
+                            patch: WorldPatch {
+                                declarations: vec![fact("vault:draft-cited")],
+                                operations: Vec::new(),
+                                evidence: vec![EvidenceRef::new("vault:draft-cited")],
+                            },
+                        },
+                    ),
+                    &auth_principal(owner()),
+                )
+                .expect("a cited canonical fact is admitted for the owner in Draft");
+        }
+
+        // PA.f29a: the owner in Active, with a real answer. Its own
+        // `clock_kernel`, so the boundary this answers is not the one the
+        // Play blocks above already left cleared. The cited patch also
+        // seats a fresh occupant at the dead end: what actually clears an
+        // `UnelaboratedDestination` boundary ("a commit clears exactly the
+        // boundary it answers"), so the citation succeeding is not
+        // masked by an `AnswerNotSatisfied` refusal.
+        {
+            let directory = tempfile::tempdir().unwrap();
+            let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "OwnerActiveEvidence");
+            let answered = dead_end_boundary(&kernel);
+            let speak = super::tests::speak_entry(&kernel);
+            let fact = |evidence: &str| {
+                Declaration::Fact(FactDeclaration {
+                    handle: DraftHandle::new("active-fact"),
+                    label: "The Active Count".into(),
+                    statement: Statement::new("The active count stands.").unwrap(),
+                    standing: FactStandingRef::Canonical {
+                        evidence: EvidenceRef::new(evidence),
+                    },
+                })
+            };
+            let error = submit_as(
+                &mut kernel,
+                CallerId::Principal(owner()),
+                CommandBody::AdmitPatch {
+                    answers: Some(PatchAnswer::Boundary(answered.clone())),
+                    patch: WorldPatch {
+                        declarations: vec![fact("vault:active-uncited")],
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
+                },
+            )
+            .unwrap_err();
+            assert!(
+                matches!(&error, KernelError::PatchRejected(set)
+                    if set.contains(&Mismatch::FactWithoutEvidence {
+                        handle: DraftHandle::new("active-fact"),
+                    })),
+                "{error:?}"
+            );
+            submit_as(
+                &mut kernel,
+                CallerId::Principal(owner()),
+                CommandBody::AdmitPatch {
+                    answers: Some(PatchAnswer::Boundary(answered)),
+                    patch: WorldPatch {
+                        declarations: vec![
+                            fact("vault:active-cited"),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("wanderer"),
+                                label: "The Owner's Wanderer".into(),
+                                kind: SubjectKind::Person,
+                                controller: NewController::NarrativePersona,
+                                affordances: BTreeSet::from([speak]),
+                                position: Some(Ref::Existing(clockwork.dead_end)),
+                            }),
+                        ],
+                        operations: Vec::new(),
+                        evidence: vec![EvidenceRef::new("vault:active-cited")],
+                    },
+                },
+            )
+            .expect("a cited canonical fact is admitted for the owner in Active");
+        }
+
+        // PA.f29a: an answered elaborator. Its own `clock_kernel` for the
+        // same reason. The occupant the cited patch seats at the dead end
+        // is inside the elaborator's own `PlaceSubtree` jurisdiction, so
+        // `confine_to_ground` admits it the same as the fact.
+        {
+            let directory = tempfile::tempdir().unwrap();
+            let (mut kernel, clockwork, _) =
+                clock_kernel(directory.path(), "ElaboratorEvidence");
+            let answered = dead_end_boundary(&kernel);
+            let speak = super::tests::speak_entry(&kernel);
+            let caller = elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end));
+            let fact = |evidence: &str| {
+                Declaration::Fact(FactDeclaration {
+                    handle: DraftHandle::new("elaborator-fact"),
+                    label: "The Elaborator Count".into(),
+                    statement: Statement::new("The elaborator count stands.").unwrap(),
+                    standing: FactStandingRef::Canonical {
+                        evidence: EvidenceRef::new(evidence),
+                    },
+                })
+            };
+            let error = submit_as(
+                &mut kernel,
+                caller.clone(),
+                CommandBody::AdmitPatch {
+                    answers: Some(PatchAnswer::Boundary(answered.clone())),
+                    patch: WorldPatch {
+                        declarations: vec![fact("vault:elaborator-uncited")],
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
+                },
+            )
+            .unwrap_err();
+            assert!(
+                matches!(&error, KernelError::PatchRejected(set)
+                    if set.contains(&Mismatch::FactWithoutEvidence {
+                        handle: DraftHandle::new("elaborator-fact"),
+                    })),
+                "{error:?}"
+            );
+            submit_as(
+                &mut kernel,
+                caller,
+                CommandBody::AdmitPatch {
+                    answers: Some(PatchAnswer::Boundary(answered)),
+                    patch: WorldPatch {
+                        declarations: vec![
+                            fact("vault:elaborator-cited"),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("wanderer"),
+                                label: "The Elaborator's Wanderer".into(),
+                                kind: SubjectKind::Person,
+                                controller: NewController::NarrativePersona,
+                                affordances: BTreeSet::from([speak]),
+                                position: Some(Ref::Existing(clockwork.dead_end)),
+                            }),
+                        ],
+                        operations: Vec::new(),
+                        evidence: vec![EvidenceRef::new("vault:elaborator-cited")],
+                    },
+                },
+            )
+            .expect("a cited canonical fact is admitted for an answered elaborator");
+        }
+
+        // PA.f29a: a consumer, on its own mirror. A consumer cannot canonize
+        // (confine_to_ground refuses `Canonical` for consumer ground
+        // outright), so this exercises the same gate through `Admit`
+        // instead. In Draft, where `require_answer` asks nothing of anyone,
+        // so this is the evidence gate alone and not entangled with a
+        // consumer's inability to ever clear a place-shaped boundary (a
+        // consumer touches no place at all).
+        {
+            let directory = tempfile::tempdir().unwrap();
+            let mut kernel = WorldKernel::create(
+                directory.path().join("world.cc"),
+                creation(CommandId::new(), "ConsumerMirrorEvidence"),
+                &auth_principal(owner()),
+            )
+            .expect("a created world")
+            .0;
+            let commons = *kernel
+                .state
+                .entities
+                .iter()
+                .find(|(_, record)| record.label == "The Commons")
+                .expect("the declared commons")
+                .0;
+            let grain = {
+                let snapshot = kernel.snapshot().unwrap();
+                submit_owner(
+                    &mut kernel,
+                    &snapshot,
+                    CommandBody::AdmitPatch {
+                        answers: None,
+                        patch: WorldPatch {
+                            declarations: vec![Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("grain"),
+                                label: "Consumer Grain".into(),
+                                kind: EntityKind::Resource,
+                                container: None,
+                            })],
+                            operations: Vec::new(),
+                            evidence: Vec::new(),
+                        },
+                    },
+                );
+                *kernel
+                    .state
+                    .entities
+                    .iter()
+                    .find(|(_, record)| record.label == "Consumer Grain")
+                    .expect("the declared resource")
+                    .0
+            };
+            let consumer_id = ConsumerId::of_name("clock-mirror-consumer");
+            let snapshot = kernel.snapshot().unwrap();
+            submit_owner(
+                &mut kernel,
+                &snapshot,
+                CommandBody::AdmitPatch {
+                    answers: None,
+                    patch: WorldPatch {
+                        declarations: vec![Declaration::Subject(SubjectDeclaration {
+                            handle: DraftHandle::new("mirror"),
+                            label: "The Clockwork Mirror".into(),
+                            kind: SubjectKind::Institution,
+                            controller: NewController::External {
+                                consumer: consumer_id,
+                            },
+                            affordances: BTreeSet::new(),
+                            position: Some(Ref::Existing(commons)),
+                        })],
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
+                },
+            );
+            let mirror = *kernel
+                .state
+                .subjects
+                .iter()
+                .find(|(_, subject)| subject.label == "The Clockwork Mirror")
+                .expect("the declared mirror")
+                .0;
+            let consumer_caller = CallerId::System(SystemCapability::Consumer {
+                consumer: consumer_id,
+            });
+
+            let error = submit_as(
+                &mut kernel,
+                consumer_caller.clone(),
+                CommandBody::AdmitPatch {
+                    answers: None,
+                    patch: WorldPatch {
+                        declarations: Vec::new(),
+                        operations: vec![ComponentOp::Admit {
+                            holder: Ref::Existing(mirror),
+                            resource: Ref::Existing(grain),
+                            qty: Quantity(1),
+                            evidence: EvidenceRef::new("vault:mirror-uncited"),
+                        }],
+                        evidence: Vec::new(),
+                    },
+                },
+            )
+            .unwrap_err();
+            assert!(
+                matches!(&error, KernelError::PatchRejected(set)
+                    if set.contains(&Mismatch::AdmitWithoutEvidence { operation: 0 })),
+                "{error:?}"
+            );
+
+            submit_as(
+                &mut kernel,
+                consumer_caller,
+                CommandBody::AdmitPatch {
+                    answers: None,
+                    patch: WorldPatch {
+                        declarations: Vec::new(),
+                        operations: vec![ComponentOp::Admit {
+                            holder: Ref::Existing(mirror),
+                            resource: Ref::Existing(grain),
+                            qty: Quantity(1),
+                            evidence: EvidenceRef::new("vault:mirror-cited"),
+                        }],
+                        evidence: vec![EvidenceRef::new("vault:mirror-cited")],
+                    },
+                },
+            )
+            .expect("a cited admit is admitted for a consumer on its own mirror");
+        }
     }
 
     /// `reduce` decides and `apply_effect` re-decides: a forged
@@ -16591,6 +16918,131 @@ mod clock_tests {
         apply_effect(&mut candidate, command_id, &play_caller(), &effect)
             .expect("the play authority applies through the same arm");
         assert_ne!(candidate, kernel.state);
+    }
+
+    /// PA.f27a: the owner is a `CallerId::Principal` like any other, and
+    /// `apply_effect`'s re-decision of `require_ruler` carries no exemption
+    /// for that variant. A forged `PatchAdmitted` under the owner, carrying
+    /// a `Ruled` fact the resolver accepts (actor-blind) and that fully
+    /// satisfies confinement (the owner is unconfined), is still refused at
+    /// apply. Follows `apply_effect_re_decides_the_ruler`.
+    #[test]
+    fn apply_effect_re_decides_the_ruler_for_the_owner_too() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, _, _) = clock_kernel(directory.path(), "RedecideRulerOwner");
+        let answered = dead_end_boundary(&kernel);
+        let command_id = CommandId::issue();
+        let patch = ruled_fact_patch("rule");
+        let resolved = patch::resolve_patch(&kernel.state, command_id, &patch, None, None)
+            .expect("the patch resolves; the resolver is actor-blind");
+        let effect = WorldEffect::PatchAdmitted {
+            answers: Some(PatchAnswer::Boundary(answered)),
+            resolved,
+        };
+
+        let mut candidate = kernel.state.clone();
+        let error = apply_effect(
+            &mut candidate,
+            command_id,
+            &CallerId::Principal(owner()),
+            &effect,
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::Invariant(_)), "{error:?}");
+        assert_eq!(candidate, kernel.state);
+    }
+
+    /// PA.f27b: `require_ruler` walks every operation, not only the first.
+    /// A harmless `Relocate` at index 0 followed by a `Mint` at index 1,
+    /// from a non-`Play` author, is refused at index 1. Kills a scan
+    /// narrowed to `.take(1)`.
+    #[test]
+    fn require_ruler_catches_a_mint_past_the_first_operation() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "RulerScansEveryOp");
+        let grain = resource_named(&kernel, "Winter Grain");
+        let stair = *kernel
+            .state
+            .edges
+            .iter()
+            .find(|(_, record)| record.label() == "The Yard Stair")
+            .expect("the declared route")
+            .0;
+        let snapshot = kernel.snapshot().unwrap();
+        let Err(error) = kernel.submit(
+            command(
+                &snapshot,
+                CommandId::new(),
+                CallerId::Principal(owner()),
+                operations(vec![
+                    ComponentOp::Relocate {
+                        subject: Ref::Existing(clockwork.reeve),
+                        via: Ref::Existing(stair),
+                    },
+                    ComponentOp::Mint {
+                        holder: Ref::Existing(clockwork.reeve),
+                        resource: Ref::Existing(grain),
+                        qty: Quantity(4),
+                    },
+                ]),
+            ),
+            &auth_principal(owner()),
+        ) else {
+            panic!("a non-Play Mint past the first operation was admitted");
+        };
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::RuledWithoutAuthority {
+                    site: patch::Site::Operation(1),
+                })),
+            "{error:?}"
+        );
+    }
+
+    /// PA.f27c: `require_ruler` reports every `Ruled` declaration, not only
+    /// the first. Two `Ruled` facts from a non-`Play` author are both
+    /// reported. Kills a check narrowed to the first ruled fact.
+    #[test]
+    fn require_ruler_reports_every_ruled_fact() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            creation(CommandId::new(), "RulerScansEveryFact"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world");
+        let snapshot = kernel.snapshot().unwrap();
+        let mut patch = ruled_fact_patch("first-rule");
+        patch.declarations.push(Declaration::Fact(FactDeclaration {
+            handle: DraftHandle::new("second-rule"),
+            label: "The Second Ruling".into(),
+            statement: Statement::new("Stated by the table, again.").unwrap(),
+            standing: FactStandingRef::Ruled,
+        }));
+        let Err(error) = kernel.submit(
+            command(
+                &snapshot,
+                CommandId::new(),
+                CallerId::Principal(owner()),
+                CommandBody::AdmitPatch {
+                    answers: None,
+                    patch,
+                },
+            ),
+            &auth_principal(owner()),
+        ) else {
+            panic!("two non-Play Ruled facts were admitted");
+        };
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::RuledWithoutAuthority {
+                    site: patch::Site::Declaration(DraftHandle::new("first-rule")),
+                }) && set.contains(&Mismatch::RuledWithoutAuthority {
+                    site: patch::Site::Declaration(DraftHandle::new("second-rule")),
+                })),
+            "{error:?}"
+        );
     }
 
     /// P3.5, replay half, folded with a ruled fact: reopening the journal
@@ -17105,6 +17557,55 @@ mod clock_tests {
                 if set.contains(&Mismatch::WouldLeaveSubjectMute { operation: 0 })),
             "{error:?}"
         );
+    }
+
+    /// PA.f30b: the last-verb refusal for `RevokeAffordance` (P5.2) holds for
+    /// a `Human`-controlled subject exactly as it does for any other
+    /// controller kind. Kills an exemption that only checks non-`Human`
+    /// subjects.
+    #[test]
+    fn a_revoke_cannot_leave_a_human_subject_mute() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, _, active) = clock_kernel(directory.path(), "RevokeHumanMute");
+        let human = active
+            .subjects
+            .iter()
+            .find(|subject| subject.controller_mode == Some(ControllerMode::Human))
+            .expect("the fixture world declares a human-controlled subject");
+        let speak_affordance = *human
+            .affordances
+            .iter()
+            .next()
+            .expect("the human subject holds at least the kernel speak grant");
+        let error = submit_as(
+            &mut kernel,
+            play_caller(),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::RevokeAffordance {
+                        subject: Ref::Existing(human.id),
+                        affordance: Ref::Existing(speak_affordance),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set.contains(&Mismatch::WouldLeaveSubjectMute { operation: 0 })),
+            "{error:?}"
+        );
+    }
+
+    /// PA.f30c: `ControllerAssignment::Retired.expected_caller()` is `None`
+    /// — a direct unit pin so an accidental `Some` for `Retired` is caught
+    /// here rather than only transitively through a submission test.
+    #[test]
+    fn retired_expects_no_caller() {
+        assert_eq!(ControllerAssignment::Retired.expected_caller(), None);
     }
 
     /// P5.1: `confine_to_ground` refuses `GrantAffordance` for a confined
