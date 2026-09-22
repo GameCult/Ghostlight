@@ -61,7 +61,10 @@ struct LocalChatResponse {
     /// Used only for receipt bookkeeping (`response_id`), so an absent id is
     /// tolerated rather than an integrity violation; a missing or duplicate
     /// tool call id, which the tool loop must correlate against, still is.
-    #[serde(default)]
+    /// `null_as_default` covers an explicit `"id": null` the same way it
+    /// does for `tool_calls`: `#[serde(default)]` alone only fires when the
+    /// key is missing, not when it is present and null.
+    #[serde(default, deserialize_with = "null_as_default")]
     id: String,
     choices: Vec<LocalChatChoice>,
     #[serde(default)]
@@ -772,6 +775,36 @@ mod tests {
         ));
     }
 
+    /// PA.f24: the loopback check is IP-address loopback, not "any IPv6
+    /// address" or "any address that parses." `[::1]` — IPv6 loopback —
+    /// opens, and a routable IPv6 address such as `[2001:db8::1]:8080` (a
+    /// documentation-range address; never loopback) is refused the same
+    /// way a non-loopback IPv4 address is.
+    #[test]
+    fn ipv6_loopback_opens_and_a_non_loopback_ipv6_address_is_refused() {
+        let _guard = client_build_lock()
+            .lock()
+            .expect("the client-build lock is never poisoned");
+        LocalInferencePort::new(
+            "[::1]:1".parse().unwrap(),
+            DEFAULT_LOCAL_MODEL_PREFIX,
+            TEST_RUNTIME,
+        )
+        .expect("the IPv6 loopback address opens");
+
+        let error = LocalInferencePort::new(
+            "[2001:db8::1]:8080".parse().unwrap(),
+            DEFAULT_LOCAL_MODEL_PREFIX,
+            TEST_RUNTIME,
+        )
+        .err()
+        .expect("a non-loopback IPv6 endpoint opened");
+        assert!(matches!(
+            error,
+            ControllerOpenError::LocalEndpointNotLoopback { .. }
+        ));
+    }
+
     /// Spec test.
     #[tokio::test]
     async fn a_call_to_an_unoffered_tool_is_an_integrity_violation() {
@@ -1086,6 +1119,24 @@ mod tests {
         .to_string();
         let response: LocalChatResponse =
             serde_json::from_str(&raw).expect("an absent id decodes");
+        assert_eq!(response.id, "");
+    }
+
+    /// PA.f23: an explicit `"id": null` decodes to the empty string the
+    /// same way an absent `id` does, instead of failing to decode. Mirrors
+    /// `a_null_tool_calls_field_decodes_as_no_calls`.
+    #[test]
+    fn a_null_response_id_decodes_as_empty() {
+        let raw = json!({
+            "id": Value::Null,
+            "choices": [{
+                "message": {"role": "assistant", "content": "ok", "tool_calls": []},
+                "finish_reason": "stop",
+            }],
+        })
+        .to_string();
+        let response: LocalChatResponse =
+            serde_json::from_str(&raw).expect("a null id decodes");
         assert_eq!(response.id, "");
     }
 
