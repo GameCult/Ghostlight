@@ -1571,8 +1571,21 @@ async fn runtime_readiness(state: &AppState) -> anyhow::Result<Value> {
         }
         None => "unavailable",
     };
+    // PA.f172: the play table can fail to open independently of
+    // `controllers` (a `PlayTurnStore` a prior session's row makes unreadable),
+    // and before this the only trace was `tracing::warn!("the play table is
+    // unavailable; world authority remains online")` at startup — visible in
+    // a log an operator has to go looking for, never on the readiness
+    // surface a client or operator actually watches. Same `Option` ->
+    // "ok"/"unavailable" shape as `projectionStatus`/`controllerStatus`
+    // above; this does not invent a new channel.
+    let play_status = match &state.play {
+        Some(_) => "ok",
+        None => "unavailable",
+    };
     health["projectionStatus"] = Value::String(projection_status.into());
     health["controllerStatus"] = Value::String(controller_status.into());
+    health["playStatus"] = Value::String(play_status.into());
     Ok(health)
 }
 
@@ -2179,6 +2192,27 @@ mod tests {
         }
     }
 
+    /// PA.f172: `state.play` being `None` — a play table that failed to
+    /// open, for any reason, `PlayTurnStore::open` returning `Err` among
+    /// them — must be visible on `/health`, the same operator-facing surface
+    /// `projectionStatus`/`controllerStatus` already report through, not
+    /// only in a `tracing::warn!` at startup.
+    ///
+    /// Mutation: delete the `health["playStatus"] = ...` line from
+    /// `runtime_readiness` — `/health`'s own JSON would then carry no
+    /// `playStatus` key at all, and both assertions below would fail.
+    #[tokio::test]
+    async fn health_reports_play_status_from_state_play() {
+        let fixture = fixture().await;
+        let available = get(&fixture.state, &fixture.cookie, "/health").await;
+        assert_eq!(available["playStatus"], "ok", "{available}");
+
+        let mut degraded_state = fixture.state.clone();
+        degraded_state.play = None;
+        let unavailable = get(&degraded_state, &fixture.cookie, "/health").await;
+        assert_eq!(unavailable["playStatus"], "unavailable", "{unavailable}");
+    }
+
     fn route_snapshot_request(
         message_id: &str,
         schema_ids: Option<Vec<String>>,
@@ -2518,6 +2552,16 @@ mod tests {
     /// `play::tests::a_question_is_answered_through_the_cards_own_binding_and_the_turn_closes_with_narration`.
     #[tokio::test]
     async fn world_create_seed_activate_and_play_round_trip_through_the_real_client() {
+        if !eve_client_bridge_is_available() {
+            eprintln!(
+                "SKIPPED world_create_seed_activate_and_play_round_trip_through_the_real_client: \
+                 `node` or the vendored lowering's built `dist/index.js` is not available in this \
+                 environment, so this test did not drive the real Eve client bridge. Run this where \
+                 `node` is on PATH and `vendor/eve/packages/eve-browser-lowering` has been built \
+                 (`npm install && npm run build` in that package) to exercise this check."
+            );
+            return;
+        }
         let fixture = fixture().await;
         let provider = get(&fixture.state, &fixture.cookie, "/api/eve/provider").await;
 
@@ -2853,6 +2897,16 @@ mod tests {
     /// accepted.
     #[tokio::test]
     async fn a_create_form_filled_only_by_its_labelled_identity_fields_is_still_accepted() {
+        if !eve_client_bridge_is_available() {
+            eprintln!(
+                "SKIPPED a_create_form_filled_only_by_its_labelled_identity_fields_is_still_accepted: \
+                 `node` or the vendored lowering's built `dist/index.js` is not available in this \
+                 environment, so this test did not drive the real Eve client bridge. Run this where \
+                 `node` is on PATH and `vendor/eve/packages/eve-browser-lowering` has been built \
+                 (`npm install && npm run build` in that package) to exercise this check."
+            );
+            return;
+        }
         let fixture = fixture().await;
         let provider = get(&fixture.state, &fixture.cookie, "/api/eve/provider").await;
         let empty_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
