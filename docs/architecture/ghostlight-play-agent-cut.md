@@ -3756,6 +3756,34 @@ Interpreter, the elaborator sweep and lenses.
   credential store the Body does not use. The authority and invariant
   section is what the Body honours; the implementation section is a
   roadmap in a spec's grammar and Self reconciles it as such.
+- **Cut 16 landed (Hands, Sonnet, 2026-09-23):** `63964b0`, `d082cd2` and
+  `db4f574`.
+  - PA.f193-A and PA.f193-B: `read_current_schema_row` splits into
+    `CurrentSchemaRowError::{Decode, Other}`, mirroring `upgrade_legacy_row`.
+    Only `Decode` retires; a non-canonical row or an inner-schema mismatch
+    fails the open loudly and **leaves the row untouched**.
+  - PA.f193-C: the check compares `git rev-parse --show-toplevel` against
+    `vendor/eve`'s own canonical path. The new test builds a real
+    `git init` root with a copied `vendor/eve` inside it, proves the naive
+    check false-positives there, then proves the fix refuses it.
+  - Skips are visible: the four bridge tests are `#[ignore]` with a
+    documented `--ignored` opt-in, and their unavailable branch now
+    panics instead of returning quietly. Cost: they no longer run
+    automatically on a capable workstation.
+  - PA.f193-D: `PlayTurnView` gained `run_in_progress`, a non-blocking peek
+    at the run lock, and the hint gates on `Running && !run_in_progress`.
+    Lock contention became its own `TurnBusy` with accurate text, so
+    `TurnStillRunning` is true only where it applies.
+  - The sidecar is JSON with the original bytes in `payload_base64`
+    (`.json`, not `.msgpack`), round-trip tested to the exact bytes.
+    `retired_row_sidecar` scans the directory fresh, so a retirement
+    survives the restart after it.
+  - PA.f188's duplicate is renumbered to PA.f193-D, with a note at each
+    old site.
+  - Every mutation killed. Dungeon bin: **179 passed, 4 ignored**, and 183
+    with `--include-ignored`.
+  - No discrepancies, and no fork: the Body matched the spec at every
+    named site.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
