@@ -3785,6 +3785,76 @@ Interpreter, the elaborator sweep and lenses.
     with `--include-ignored`.
   - No discrepancies, and no fork: the Body matched the spec at every
     named site.
+- **Soul on Cut 16** (Opus, 2026-09-23, against `f5cba20`, Windows). The
+  pipeline's final pass.
+  - **The bar is met once one runbook edit lands.** Nothing in the Body
+    stops a player. The one thing that currently misleads is outside it:
+    the runbook tells an operator a check ran when it did not.
+  - Held: PA.f193-A and PA.f193-B on both split arms, with no third path
+    where a row that decodes is retired; PA.f193-C's `--show-toplevel`
+    comparison, sound against case, separators, symlinks and a git
+    worktree; skips visible as `179 passed; 4 ignored`, with **Idunn's
+    gate unaffected by the ignore itself**; `--include-ignored` failing
+    loudly with remediation text; the sidecar decoded byte-exact outside
+    the process, twice; `playStatus` surviving a restart and ignoring
+    other stores' files; the lock peek being neither racy nor deadlocking,
+    so a healthy turn never shows the hint; invariant 8 intact.
+- **PA.f194-A (PA.f184's arm, medium, owed):** the catch-all arm retires on
+  the **schema string alone**, with no decode attempted. Soul built a
+  canonical, perfectly readable `v4` row holding an open question and its
+  token: `open` succeeds, the sidecar is written, the turn is gone, and
+  the sidecar's `reason` claims the row "could not be read" when nothing
+  read it. The trigger is an Idunn rollback across a schema move. The
+  bytes are preserved and Soul decoded them by hand, so it is recoverable
+  but not automatically.
+  - **The rule is written at the two call sites that already obey it.** It
+    belongs on `retire_unreadable_row` itself, as a precondition: the
+    caller has attempted a decode and it failed.
+- **PA.f194-B (Cut 16, high, operator-facing, owed first):** the runbook's
+  weekly drift check is `#[ignore]`d, so run verbatim it reports
+  `0 passed; 0 failed; 1 ignored`, `ok`, exit 0. It is the only thing that
+  ever checks the fixture is live. Making a silent skip visible in cargo's
+  summary moved the same silent green **up into the runbook**, where it is
+  worse: the old form at least printed a line naming itself. The runbook's
+  description of that behaviour is now false too.
+- **PA.f194-C (Cut 16, medium, owed):** the positive half of the checkout
+  test asserts unconditionally whenever `git` is on PATH, so an
+  uninitialised or copied `vendor/eve` now **fails Idunn's own gate**,
+  which was green before. Whether that fires depends on how Yggdrasil
+  materialises the submodule, which Soul could not check from here.
+- **PA.f194-D (Cut 16, low, owed):** with the hint correctly suppressed
+  during a real round, the card now renders **zero rows** for the whole
+  round. Strictly better than telling the player to do something that
+  would be refused, but the only in-flight signal is gone. The surviving
+  hint's first clause is also false in the one case it appears.
+- **PA.f194-E (Cut 16, trivial, owed):** `PlayTurnStore::retired_sidecar`
+  has no production consumer left, and `retire_unreadable_row`'s doc still
+  advertises it as readiness's path.
+- **Soul's judgement, for the postmortem:**
+  - **What Soul caught that the tests never would: the tests were always
+    about the wrong subject.** Three of the five final findings are not
+    about a Rust function at all, but about what a human is told and by
+    what — a runbook sentence describing a machine that no longer exists,
+    a pasted command printing `ok` for nothing, a `reason` field asserting
+    a read that never happened. No assertion in the repo has those as its
+    subject.
+  - **The shape that kept recurring: a true statement about a narrow
+    mechanism standing in for a false statement about the whole path.**
+    `dist/index.js` exists, therefore the bridge works. `rev-parse` exited
+    zero, therefore this is a checkout. The check failed, therefore the row
+    is unreadable. The schema id is unknown, therefore the row cannot be
+    read. Cargo printed `ok`, therefore the fixture is live. Each local
+    fact is true; each inference is not; and each fix was scoped to the
+    reported instance, leaving the identical inference standing one call
+    site over.
+  - **What a future brief should demand:** when a cut fixes a
+    proxy-for-truth defect, it is not done until every other site drawing a
+    conclusion from the same class of evidence is enumerated and ruled on
+    in writing, including sites outside the repo. **Name the inference, not
+    the line.** And any change to how a test reports — an ignore, a filter,
+    a skip, a guard — is followed by running every command in the owning
+    runbook verbatim and reading what it prints, because that is the one
+    surface a test suite structurally cannot check.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
