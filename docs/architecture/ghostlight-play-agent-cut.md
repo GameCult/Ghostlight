@@ -3947,6 +3947,28 @@ Interpreter, the elaborator sweep and lenses.
     both directions are checked against the other side's own contract.
     Driving the real client proves the request; only validating the response
     proves the answer.
+- **PA.f197 (pre-existing, critical, fixed 2026-09-23, `94ab279`): the next
+  wall, found by the operator on the retry.** Sign-in answered "unknown field
+  `owner`, expected one of `schema`, `boundaryId`, ...". Dungeon decoded
+  Heimdall's published `heimdall.command_boundary.v1` with
+  `deny_unknown_fields` over the seven fields it reads; Heimdall has
+  published `owner`, `lifecycleAuthority`, `healthPublication`,
+  `forbiddenWriters` and `compatibility` since June (`Heimdall` `758892d`),
+  and the strict reader arrived in August (`3411c1c`). Every Heimdall
+  receipt also carries `schema`, which each strict receipt struct denied,
+  so begin, completion and logout would each have failed next. **This
+  sign-in path has never run against real Heimdall.**
+  - Same shape as PA.f196, pointing the other way: a consumer restating a
+    foreign owner's document and refusing the real one. Fixtures were built
+    from Dungeon's own structs, so they could only agree.
+  - **Fix:** Heimdall-owned documents are read tolerantly; only the signed
+    `PrivateEnvelope`, whose shape both sides fix, stays strict. The new test
+    decodes the shapes Heimdall emits; making the boundary strict again
+    reproduces the operator's error. Dungeon bin 183 → 184.
+  - **Not fixed, and not a code defect:** Heimdall's private route is
+    `rudp://127.0.0.1:4101` on Yggdrasil and Dungeon correctly refuses a
+    non-loopback route, so a Dungeon on Raven cannot reach Heimdall at all.
+    The Raven playtest topology cannot sign in without moving one of them.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
