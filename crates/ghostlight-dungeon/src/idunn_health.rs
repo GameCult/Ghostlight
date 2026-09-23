@@ -111,6 +111,16 @@ pub(crate) struct RuntimePresencePublisher {
     dependency_bindings: RuntimeDependencyBindings,
     publisher_sequence: u64,
     active_write_lease_sha256: Option<String>,
+    /// Whether `wait_for_write_lease` requires the lease store to sit under
+    /// a root-controlled directory chain (`acquire_recent`) or accepts a
+    /// test's own tempdir (`acquire_recent_fixture`). Every production
+    /// construction path (`from_environment`) sets this `true`; only the
+    /// test fixture constructor sets it `false`. This is the same choice
+    /// `ProcessWriteLeaseGuard::acquire_inner`'s own `enforce_custody`
+    /// parameter already makes — the publisher just carries which one its
+    /// caller needs instead of `wait_for_write_lease` always picking the
+    /// production path.
+    enforce_custody: bool,
 }
 
 impl RuntimePresencePublisher {
@@ -149,6 +159,7 @@ impl RuntimePresencePublisher {
             provider_signer,
             activation_signer,
             write_lease_path,
+            true,
         )?))
     }
 
@@ -161,6 +172,7 @@ impl RuntimePresencePublisher {
         provider_signer: ServiceIdentitySigner<GameCultProviderHealthIdentity>,
         activation_signer: IdunnRuntimeActivationSigner,
         write_lease_path: PathBuf,
+        enforce_custody: bool,
     ) -> Result<Self> {
         expected.validate()?;
         activation.validate()?;
@@ -243,6 +255,7 @@ impl RuntimePresencePublisher {
             dependency_bindings,
             publisher_sequence: 0,
             active_write_lease_sha256: None,
+            enforce_custody,
         })
     }
 
@@ -286,12 +299,22 @@ impl RuntimePresencePublisher {
             // them by size or by matching the error text.
             if self.write_lease_path.exists() && sibling_lock_path(&self.write_lease_path).exists()
             {
-                match ProcessWriteLeaseGuard::acquire_recent(
-                    self.write_lease_path.clone(),
-                    self.expected.clone(),
-                    self.activation.clone(),
-                    recent_warming_proofs.iter().cloned().collect(),
-                ) {
+                let acquired = if self.enforce_custody {
+                    ProcessWriteLeaseGuard::acquire_recent(
+                        self.write_lease_path.clone(),
+                        self.expected.clone(),
+                        self.activation.clone(),
+                        recent_warming_proofs.iter().cloned().collect(),
+                    )
+                } else {
+                    ProcessWriteLeaseGuard::acquire_recent_fixture(
+                        self.write_lease_path.clone(),
+                        self.expected.clone(),
+                        self.activation.clone(),
+                        recent_warming_proofs.iter().cloned().collect(),
+                    )
+                };
+                match acquired {
                     Ok(guard) => return Ok(guard),
                     Err(error) => last_acquisition_error = Some(error),
                 }
@@ -900,7 +923,13 @@ impl ProcessWriteLeaseGuard {
         )
     }
 
-    #[cfg(test)]
+    /// Not test-gated: `wait_for_write_lease` calls this directly whenever
+    /// its publisher's own `enforce_custody` is `false` (the test fixture
+    /// constructor), the same way it calls `acquire_recent` when `true` (the
+    /// production constructor). A test lease deliberately lives under a
+    /// tempdir, which is never root-controlled, so custody enforcement must
+    /// be off for it — not skipped by `#[cfg(test)]`, which a Linux release
+    /// build does not carry.
     fn acquire_recent_fixture(
         path: PathBuf,
         expected: IdunnExpectedIncarnationRecord,
@@ -1294,6 +1323,14 @@ pub(crate) mod tests {
     }
 
     fn fixture_with_state_contract(root: &Path, state_contract_sha256: &str) -> Result<Fixture> {
+        fixture_with_state_contract_and_custody(root, state_contract_sha256, false)
+    }
+
+    fn fixture_with_state_contract_and_custody(
+        root: &Path,
+        state_contract_sha256: &str,
+        enforce_custody: bool,
+    ) -> Result<Fixture> {
         let provider_path = root.join("provider.cc");
         let provider =
             enroll_service_identity_at::<GameCultProviderHealthIdentity>(&provider_path)?;
@@ -1376,6 +1413,7 @@ pub(crate) mod tests {
             provider_signer,
             activation_signer,
             root.join("write-lease.cc"),
+            enforce_custody,
         )?;
         Ok(Fixture {
             publisher,
@@ -1991,6 +2029,47 @@ pub(crate) mod tests {
             .await?;
         writer.await?;
         assert_eq!(guard.canonical_sha256(), lease_sha256);
+        Ok(())
+    }
+
+    /// Pins the choice `wait_for_write_lease` now makes between
+    /// `acquire_recent` and `acquire_recent_fixture`: a publisher built the
+    /// way `from_environment` (production) builds it — `enforce_custody:
+    /// true` — must still refuse a lease store that sits under a plain
+    /// tempdir, never root-controlled. Proven behaviorally through the real
+    /// `wait_for_write_lease` path, not by reading the private field, so a
+    /// future change that keeps the field but stops honoring it still fails
+    /// this test. Linux-only: custody enforcement is architecturally a
+    /// root-ownership concept (`require_process_write_lease_custody` is a
+    /// deliberate no-op on every other OS, `idunn_health.rs`'s own
+    /// `#[cfg(not(target_os = "linux"))]` fallback), so there is nothing for
+    /// this assertion to observe elsewhere.
+    #[cfg(target_os = "linux")]
+    #[tokio::test]
+    async fn production_custody_choice_rejects_a_lease_under_a_non_root_tempdir() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut fixture =
+            fixture_with_state_contract_and_custody(root.path(), STATE_CONTRACT_SHA256, true)?;
+        let path = root.path().join("write-lease.cc");
+        leave_an_empty_revoked_lease_store(&path)?;
+        let warming = PublishedRuntimePresence {
+            canonical_sha256: digest('9'),
+        };
+        let error = match fixture
+            .publisher
+            .wait_for_write_lease(&warming, Duration::from_millis(600))
+            .await
+        {
+            Ok(_) => panic!(
+                "wait_for_write_lease acquired a lease under a tempdir with custody enforced"
+            ),
+            Err(error) => error,
+        };
+        let chain = format!("{error:#}");
+        assert!(
+            chain.contains("non-root-controlled") || chain.contains("root-owned"),
+            "expected a custody rejection, got `{chain}` — production custody enforcement regressed"
+        );
         Ok(())
     }
 
