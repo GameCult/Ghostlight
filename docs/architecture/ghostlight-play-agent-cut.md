@@ -3409,6 +3409,28 @@ Interpreter, the elaborator sweep and lenses.
   whatever the seed attempt does.
   exercised. It should be attempted alone, first; a failure there says
   nothing about the answer path.
+- **Cut 12 landed (Hands, Sonnet, 2026-09-23):** `7052644` and `241b33e`
+  in Ghostlight, `5e341f8` in `gamecult-ops`.
+  - PA.f169: all three bridge tests are guarded and print `SKIPPED`.
+    Hands verified it the way Idunn would, by rebuilding `PATH` without
+    node: **156 passed, 0 failed**. Removing one guard reproduced Soul's
+    two failures exactly.
+  - PA.f172: `STORE_SCHEMA` is `…play_turn_store.v2`, and a `v1` row is
+    read leniently, upgraded in place and persisted, rather than refused.
+    Hands chose recovery over a politer refusal, because the point was the
+    playtest's own world state. The strict canonical check stays for
+    current rows. A failed play table is now reported as `playStatus` in
+    readiness, not only in a log.
+  - PA.f173, PA.f174 and PA.f175 are done. The bridge now refuses to type
+    into a disabled control, which closes PA.f167's gap.
+  - PA.f171: the runbook gains a live bridge check with its own schedule
+    and owner, and the false "no separate gate step" claim is corrected.
+  - Every rule was mutated at its call site and each mutation killed.
+  - Dungeon bin 151 → 156. Ghostlight +459/-14, `gamecult-ops` +90/-13.
+  - **Hands flagged the overlap itself:** `5b1f55c`'s ruling deletes
+    `question_surface_version`, so the v2 schema and two of this cut's
+    fixes are scoped to be superseded by Cut 13. That is the intended
+    order, and Cut 13's brief carries it.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
