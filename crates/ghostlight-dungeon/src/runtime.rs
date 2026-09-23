@@ -368,14 +368,9 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
     require_current_write_lease(write_lease_guard.as_ref())?;
     let (world, world_owner) = WorldMailbox::open(runtime_root.join("world.cc"))?;
     require_no_runtime_custody_failure(&mut fatal_events)?;
-    let connector_endpoint = dependency_bindings
-        .as_ref()
-        .map(|bindings| bindings.connector)
-        .map(Ok)
-        .unwrap_or_else(configured_connector_endpoint)?;
     let controller_permits = Arc::new(Semaphore::new(configured_controller_concurrency()));
     let (controllers, play) =
-        match open_controller(&world, &service_root, &runtime_id, connector_endpoint) {
+        match open_controller(&world, &service_root, &runtime_id) {
             Ok(OpenedControllers {
                 runner,
                 inference,
@@ -522,7 +517,6 @@ fn open_controller(
     world: &WorldMailbox,
     service_root: &std::path::Path,
     runtime_id: &str,
-    endpoint: SocketAddr,
 ) -> anyhow::Result<OpenedControllers> {
     let models = ControllerModels {
         projector: std::env::var("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL")
@@ -543,13 +537,10 @@ fn open_controller(
     // same transports again for the play lane alone.
     let play_model =
         std::env::var("GHOSTLIGHT_PLAY_MODEL").unwrap_or_else(|_| "gpt-5.6-terra".into());
-    let connector = std::env::var_os("GHOSTLIGHT_CONTROLLER_CREDENTIAL")
-        .map(PathBuf::from)
-        .map(|key_path| ConnectorBinding {
-            endpoint,
-            key_path,
-            caller_runtime_id: runtime_id.to_owned(),
-        });
+    // Dungeon no longer offers the CodexConnector lane: managed admission
+    // reads no connector env and expects no connector dependency (operator
+    // ruling 2026-09-23). The library transport stays for other callers.
+    let connector: Option<ConnectorBinding> = None;
     // Ghostlight reads no credential for this transport. The sidecar inherits
     // the ambient Claude Code login; this process never names, copies, or logs
     // it.
@@ -1992,13 +1983,6 @@ fn candidate_bind() -> anyhow::Result<SocketAddr> {
             return Ok("127.0.0.1:8831".parse()?);
         }
     }
-}
-
-fn configured_connector_endpoint() -> anyhow::Result<SocketAddr> {
-    std::env::var("GHOSTLIGHT_CONTROLLER_CONNECTOR")
-        .unwrap_or_else(|_| "127.0.0.1:4103".into())
-        .parse()
-        .context("GHOSTLIGHT_CONTROLLER_CONNECTOR is not a socket address")
 }
 
 fn configured_odin_endpoint() -> anyhow::Result<SocketAddr> {

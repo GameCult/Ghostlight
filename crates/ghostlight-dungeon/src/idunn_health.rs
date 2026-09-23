@@ -46,7 +46,7 @@ pub const IDUNN_PROCESS_WRITE_LEASE_ENVIRONMENT: &str = "GAMECULT_IDUNN_PROCESS_
 pub(crate) const TARGET: &str = "ghostlight";
 const STATE_SCHEMA_GENERATION: &str = "world-v3";
 const STATE_CONTRACT_SHA256: &str =
-    "sha256-bf6ec06d885a59ddb237c6224d0abb4ccceac8c7ba23761d1326d7f562a4c21e";
+    "sha256-4ac3d4ceabedc48b4fc5a3c143ece00ac495d8d756bdc24f10034bcc1231970f";
 const CULTNET_RUDP_PROTOCOL_ID: &str = "cultnet.transport.rudp.v0";
 const ODIN_CULTMESH_CATALOG_CONNECTION_ID: u32 = 0x0d1d_0002;
 const RUNTIME_PRESENCE_IDENTITY_FD_NAME: &str = "gamecult-runtime-presence-identity";
@@ -54,11 +54,6 @@ const WARMING_HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const MAX_RECENT_WARMING_PROOFS: usize = 64;
 const ODIN_CAPABILITY: (&str, &str, &str) =
     ("odin.verse-rendezvous", "odin.verse-topology.v1", "v1");
-const CONNECTOR_CAPABILITY: (&str, &str, &str) = (
-    "gamecult.codex.subscription-inference",
-    "gamecult.codex.transport_envelope.v2",
-    "v2",
-);
 const HEIMDALL_CAPABILITY: (&str, &str, &str) = (
     "heimdall.command-boundary",
     "heimdall.command_boundary.v1",
@@ -76,7 +71,6 @@ pub(crate) struct HeimdallDependencyBinding {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct RuntimeDependencyBindings {
     pub(crate) odin_rudp: SocketAddr,
-    pub(crate) connector: SocketAddr,
     pub(crate) heimdall: HeimdallDependencyBinding,
 }
 
@@ -121,10 +115,6 @@ impl RuntimePresencePublisher {
             .context("GHOSTLIGHT_ODIN_RUDP is required for runtime presence")?
             .parse()
             .context("GHOSTLIGHT_ODIN_RUDP is not a socket address")?;
-        let connector_endpoint: SocketAddr = std::env::var("GHOSTLIGHT_CONTROLLER_CONNECTOR")
-            .context("GHOSTLIGHT_CONTROLLER_CONNECTOR is required for managed runtime")?
-            .parse()
-            .context("GHOSTLIGHT_CONTROLLER_CONNECTOR is not a socket address")?;
         let write_lease_path = PathBuf::from(
             std::env::var_os(IDUNN_PROCESS_WRITE_LEASE_ENVIRONMENT)
                 .with_context(|| format!("{IDUNN_PROCESS_WRITE_LEASE_ENVIRONMENT} is required"))?,
@@ -138,7 +128,6 @@ impl RuntimePresencePublisher {
             IdunnRuntimeActivationSigner::from_credential_reader(activation_credential)?;
         Ok(Some(Self::new(
             odin_endpoint,
-            connector_endpoint,
             observed_bound_endpoint,
             expected,
             activation,
@@ -151,7 +140,6 @@ impl RuntimePresencePublisher {
     #[allow(clippy::too_many_arguments)]
     fn new(
         odin_endpoint: SocketAddr,
-        connector_endpoint: SocketAddr,
         observed_bound_endpoint: SocketAddr,
         expected: IdunnExpectedIncarnationRecord,
         activation: IdunnRuntimeActivationRecord,
@@ -226,7 +214,7 @@ impl RuntimePresencePublisher {
             );
         }
         let dependency_bindings =
-            runtime_dependency_bindings(&expected, odin_endpoint, connector_endpoint)?;
+            runtime_dependency_bindings(&expected, odin_endpoint)?;
 
         Ok(Self {
             endpoint: odin_endpoint,
@@ -412,15 +400,13 @@ impl RuntimePresencePublisher {
 fn runtime_dependency_bindings(
     expected: &IdunnExpectedIncarnationRecord,
     configured_odin: SocketAddr,
-    configured_connector: SocketAddr,
 ) -> Result<RuntimeDependencyBindings> {
     ensure!(
-        expected.dependencies.len() == 3,
-        "Ghostlight Expected does not carry its exact three dependencies"
+        expected.dependencies.len() == 2,
+        "Ghostlight Expected does not carry its exact two dependencies"
     );
     let odin = required_managed_dependency(expected, "shared-infrastructure", ODIN_CAPABILITY)?;
-    let connector = required_managed_dependency(expected, "private", CONNECTOR_CAPABILITY)?;
-    let heimdall = required_managed_dependency(expected, "required", HEIMDALL_CAPABILITY)?;
+    let heimdall = required_external_dependency(expected, HEIMDALL_CAPABILITY)?;
 
     let odin_endpoint = parse_dependency_socket_endpoint(
         odin.provider_endpoint
@@ -433,18 +419,6 @@ fn runtime_dependency_bindings(
         odin_endpoint == configured_odin,
         "GHOSTLIGHT_ODIN_RUDP differs from Expected Odin"
     );
-    let connector_endpoint = parse_dependency_socket_endpoint(
-        connector
-            .provider_endpoint
-            .as_deref()
-            .context("Expected Connector dependency has no endpoint")?,
-        &["tcp://"],
-        "Connector dependency",
-    )?;
-    ensure!(
-        connector_endpoint == configured_connector,
-        "GHOSTLIGHT_CONTROLLER_CONNECTOR differs from Expected Connector"
-    );
     let heimdall_endpoint = parse_dependency_socket_endpoint(
         heimdall
             .provider_endpoint
@@ -456,7 +430,6 @@ fn runtime_dependency_bindings(
 
     Ok(RuntimeDependencyBindings {
         odin_rudp: odin_endpoint,
-        connector: connector_endpoint,
         heimdall: HeimdallDependencyBinding {
             provider_id: heimdall
                 .provider_id
@@ -488,6 +461,40 @@ fn required_managed_dependency<'a>(
             && dependency.provider_id.is_some()
             && dependency.provider_authority.as_deref() == Some("managed-incarnation")
             && dependency.provider_expected_projection_sha256.is_some(),
+        "Expected dependency {} is unresolved or authority-incoherent",
+        identity.0
+    );
+    Ok(dependency)
+}
+
+/// Heimdall is not an Idunn-managed incarnation (every v2 deploy of it has
+/// failed; it still runs as the legacy `heimdall.service`), so its Expected
+/// dependency can never carry `managed-incarnation` authority. Idunn projects
+/// an operator-declared `[[external_capabilities]]` entry as
+/// `provider_authority = "external-operator-binding"` with no
+/// `provider_expected_projection_sha256` (`deployment_plan.rs`'s
+/// `DependencySelection::expected_projection`) — accept exactly that shape,
+/// never the managed one, for Heimdall alone. Odin stays managed.
+fn required_external_dependency<'a>(
+    expected: &'a IdunnExpectedIncarnationRecord,
+    identity: (&str, &str, &str),
+) -> Result<&'a IdunnExpectedDependency> {
+    let dependency = expected
+        .dependencies
+        .iter()
+        .find(|dependency| {
+            dependency.capability == identity.0
+                && dependency.schema == identity.1
+                && dependency.compatibility == identity.2
+        })
+        .with_context(|| format!("Expected omits dependency {}", identity.0))?;
+    ensure!(
+        dependency.kind == "external-operator-binding"
+            && dependency.startup == "before-promotion"
+            && dependency.minimum_capacity > 0
+            && dependency.provider_id.is_some()
+            && dependency.provider_authority.as_deref() == Some("external-operator-binding")
+            && dependency.provider_expected_projection_sha256.is_none(),
         "Expected dependency {} is unresolved or authority-incoherent",
         identity.0
     );
@@ -1176,6 +1183,32 @@ pub(crate) mod tests {
         }
     }
 
+    /// Exactly what Idunn's `DependencySelection::expected_projection`
+    /// projects for an `[[external_capabilities]]`-declared provider
+    /// (`deployment_plan.rs`): `provider_authority =
+    /// "external-operator-binding"` and no
+    /// `provider_expected_projection_sha256`, unlike a managed dependency.
+    fn external_dependency(
+        capability: &str,
+        schema: &str,
+        compatibility: &str,
+        provider_id: &str,
+        endpoint: &str,
+    ) -> IdunnExpectedDependency {
+        IdunnExpectedDependency {
+            kind: "external-operator-binding".into(),
+            capability: capability.into(),
+            schema: schema.into(),
+            compatibility: compatibility.into(),
+            minimum_capacity: 1,
+            startup: "before-promotion".into(),
+            provider_id: Some(provider_id.into()),
+            provider_authority: Some("external-operator-binding".into()),
+            provider_expected_projection_sha256: None,
+            provider_endpoint: Some(endpoint.into()),
+        }
+    }
+
     fn fixture_with_state_contract(root: &Path, state_contract_sha256: &str) -> Result<Fixture> {
         let provider_path = root.join("provider.cc");
         let provider =
@@ -1219,20 +1252,11 @@ pub(crate) mod tests {
                 },
             ],
             dependencies: vec![
-                managed_dependency(
-                    "private",
-                    CONNECTOR_CAPABILITY.0,
-                    CONNECTOR_CAPABILITY.1,
-                    CONNECTOR_CAPABILITY.2,
-                    "connector-yggdrasil",
-                    "tcp://127.0.0.1:4103",
-                ),
-                managed_dependency(
-                    "required",
+                external_dependency(
                     HEIMDALL_CAPABILITY.0,
                     HEIMDALL_CAPABILITY.1,
                     HEIMDALL_CAPABILITY.2,
-                    "heimdall-yggdrasil",
+                    "yggdrasil-heimdall",
                     "rudp://127.0.0.1:4101",
                 ),
                 managed_dependency(
@@ -1262,7 +1286,6 @@ pub(crate) mod tests {
         )?;
         let publisher = RuntimePresencePublisher::new(
             "127.0.0.1:9".parse()?,
-            "127.0.0.1:4103".parse()?,
             "127.0.0.1:18831".parse()?,
             expected.clone(),
             activation.clone(),
@@ -1584,5 +1607,67 @@ pub(crate) mod tests {
             .is_err()
         );
         Ok(())
+    }
+
+    /// No TOML parser is in this workspace's dependency graph (checked
+    /// `Cargo.lock`), so this pins the exact strings the daemon's own
+    /// constants require rather than parsing the recipe into a struct. It
+    /// still catches the drift class Soul found: the recipe naming a state
+    /// generation, provided schema, slot schema, or dependency shape the
+    /// binary does not actually have (F2). It does not prove field-level
+    /// placement (e.g. that the matched schema line sits under the `world`
+    /// slot and not merely somewhere in the file) the way a real parse would.
+    const RECIPE_TOML: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../deployment/idunn/recipe.toml"
+    ));
+
+    #[test]
+    fn recipe_matches_the_daemon_it_deploys() {
+        assert!(
+            RECIPE_TOML.contains(&format!(
+                "schema_generation = \"{STATE_SCHEMA_GENERATION}\""
+            )),
+            "recipe [state] schema_generation disagrees with the daemon's STATE_SCHEMA_GENERATION"
+        );
+        assert!(
+            RECIPE_TOML.contains(&format!("schema = \"{STATE_SCHEMA}\"")),
+            "recipe does not name STATE_SCHEMA anywhere (world slot / provides)"
+        );
+        assert!(
+            RECIPE_TOML.contains(&format!(
+                "compatibility = \"{}\"",
+                state_schema_compatibility_tag()
+            )),
+            "recipe [[provides]] compatibility disagrees with state_schema_compatibility_tag()"
+        );
+        assert!(
+            RECIPE_TOML.contains(&format!(
+                "schema = \"{}\"",
+                crate::app_session::STORE_SCHEMA
+            )),
+            "recipe app-sessions slot schema disagrees with app_session::STORE_SCHEMA"
+        );
+        assert!(
+            RECIPE_TOML.contains(&format!("schema = \"{}\"", ghostlight::CONTROLLER_WORK_SCHEMA)),
+            "recipe controller-work slot schema disagrees with ghostlight::CONTROLLER_WORK_SCHEMA"
+        );
+        assert!(
+            RECIPE_TOML.contains("schema = \"gamecult.eve.surface.v1\""),
+            "recipe mesh-projection slot schema disagrees with the mesh module's eve surface schema"
+        );
+        assert_eq!(
+            RECIPE_TOML.matches("[[dependencies]]").count(),
+            2,
+            "recipe does not declare Ghostlight's exact two dependencies"
+        );
+        assert!(RECIPE_TOML.contains(&format!("capability = \"{}\"", ODIN_CAPABILITY.0)));
+        assert!(RECIPE_TOML.contains("kind = \"shared-infrastructure\""));
+        assert!(RECIPE_TOML.contains(&format!("capability = \"{}\"", HEIMDALL_CAPABILITY.0)));
+        assert!(RECIPE_TOML.contains("kind = \"external-operator-binding\""));
+        assert!(
+            !RECIPE_TOML.contains("gamecult.codex.subscription-inference"),
+            "recipe still declares the retired CodexConnector dependency"
+        );
     }
 }

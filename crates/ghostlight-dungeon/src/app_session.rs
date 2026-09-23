@@ -16,7 +16,9 @@ use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, path::Path};
 
 const STORE_TYPE: &str = "ghostlight.app_session_store.v2";
-const STORE_SCHEMA: &str = "ghostlight.app_session_store.v2";
+/// `pub(crate)` so the recipe-drift test in `idunn_health.rs` can check the
+/// `app-sessions` state slot's schema against this constant.
+pub(crate) const STORE_SCHEMA: &str = "ghostlight.app_session_store.v2";
 const STORE_KEY: &str = "primary";
 const MAX_SESSION_RECORDS: usize = 1_024;
 

@@ -79,9 +79,10 @@ pub use consumer::{
     CONSUMER_RECEIPT_SCHEMA, ConsumerRegistry, admit_document, encode_receipt,
 };
 pub use controllers::{
-    CellRun, ConnectorBinding, ControllerError, ControllerModels, ControllerNeed,
-    ControllerPendingReason, ControllerRunner, ControllerWork, ControllerWorkCustody,
-    ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError, ControllerWorkWrite,
+    CONTROLLER_WORK_SCHEMA, CellRun, ConnectorBinding, ControllerError, ControllerModels,
+    ControllerNeed, ControllerPendingReason, ControllerRunner, ControllerWork,
+    ControllerWorkCustody, ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError,
+    ControllerWorkWrite,
     GroupedCheckpoint, InferenceEvent, InferenceFault, InferenceFaultDisposition, InferenceOutput,
     InferencePort,
     InferencePurpose, InferenceRequest, NarrativeCheckpoint, NarrativeRun, OperationalCheckpoint,

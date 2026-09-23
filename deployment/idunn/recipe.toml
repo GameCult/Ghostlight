@@ -123,13 +123,13 @@ optional_environment = ["RUST_LOG"]
 contract = "ghostlight.cultnet-rudp-service-health"
 
 [state]
-schema_generation = "world-v2"
+schema_generation = "world-v3"
 
 [[state.slots]]
 id = "world"
 relative_path = "world.cc"
 kind = "cultcache-file"
-schema = "ghostlight.world_state.foundation.v0"
+schema = "ghostlight.world_state.consumer.v6"
 writer = "process-bound-single-writer"
 recovery = "preserve"
 startup = "create-or-open-after-write-lease"
@@ -147,7 +147,7 @@ startup = "create-or-open-after-write-lease"
 id = "controller-work"
 relative_path = "service/controller-work.cc"
 kind = "cultcache-file"
-schema = "ghostlight.controller_work.v3"
+schema = "ghostlight.controller_work.v17"
 writer = "process-bound-single-writer"
 recovery = "preserve"
 startup = "create-or-open-after-write-lease"
@@ -163,8 +163,8 @@ startup = "create-or-open-after-write-lease"
 
 [[provides]]
 capability = "ghostlight.world-service"
-schema = "ghostlight.world_state.foundation.v0"
-compatibility = "foundation-v0"
+schema = "ghostlight.world_state.consumer.v6"
+compatibility = "consumer-v6"
 
 [[provides]]
 capability = "gamecult.eve.surface-provider"
@@ -179,7 +179,7 @@ compatibility = "v1"
 startup = "before-promotion"
 
 [[dependencies]]
-kind = "required"
+kind = "external-operator-binding"
 capability = "heimdall.command-boundary"
 schema = "heimdall.command_boundary.v1"
 compatibility = "v1"
