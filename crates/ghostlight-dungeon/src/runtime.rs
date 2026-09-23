@@ -460,9 +460,20 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         let write_lease = write_lease_guard
             .as_ref()
             .context("production runtime lost its process write lease")?;
-        publisher
-            .publish_active(write_lease)
-            .context("publishing initial active runtime presence")?;
+        // Odin refuses Active until it has correlated the lease Idunn just
+        // granted ("Ready topology state is not supported by correlated
+        // evidence"), the same publication gap the initial Warming publish
+        // retries through. Each call is a fresh sequenced message; the lease
+        // it names cannot change between attempts (`publish_active`).
+        retry_until_deadline(
+            || publisher.publish_active(write_lease),
+            INITIAL_PRESENCE_RETRY_CADENCE,
+            Instant::now() + WRITE_LEASE_WAIT_TIMEOUT,
+            "publishing initial active runtime presence",
+            Instant::now,
+            |duration| tokio::time::sleep(duration),
+        )
+        .await?;
     }
     require_current_write_lease(write_lease_guard.as_ref())?;
     state.runtime_health = match (idunn_health, write_lease_guard) {
@@ -1928,7 +1939,7 @@ const WRITE_LEASE_WAIT_TIMEOUT: Duration = Duration::from_secs(120);
 /// Muninn re-publishes its own Warming presence every 2s while tolerating
 /// this same activation-publication gap (Muninn/crates/muninn-daemon/src/main.rs);
 /// the initial-publish retry below matches that cadence.
-const INITIAL_WARMING_RETRY_CADENCE: Duration = Duration::from_secs(2);
+const INITIAL_PRESENCE_RETRY_CADENCE: Duration = Duration::from_secs(2);
 
 /// Retries `attempt` at `cadence` until it returns `Ok` or `deadline` passes,
 /// warning on every failed attempt and returning the last error once the
@@ -1974,7 +1985,7 @@ async fn initialize_production_admission(
     // drops.
     let warming = retry_until_deadline(
         || publisher.publish_warming(),
-        INITIAL_WARMING_RETRY_CADENCE,
+        INITIAL_PRESENCE_RETRY_CADENCE,
         Instant::now() + WRITE_LEASE_WAIT_TIMEOUT,
         "publishing initial Warming runtime presence",
         Instant::now,
