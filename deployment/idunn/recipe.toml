@@ -7,42 +7,49 @@ required_gitlinks = ["vendor/eve"]
 id = "test-persona-boundary"
 phase = "test"
 runner = "rust-build"
+required_environment = ["CARGO_HOME", "HOME"]
 argv = ["cargo", "test", "--locked", "-p", "ghostlight-persona-projection"]
 
 [[steps]]
 id = "test-world-library"
 phase = "test"
 runner = "rust-build"
+required_environment = ["CARGO_HOME", "HOME"]
 argv = ["cargo", "test", "--locked", "-p", "ghostlight"]
 
 [[steps]]
 id = "test-dungeon"
 phase = "test"
 runner = "rust-build"
+required_environment = ["CARGO_HOME", "HOME"]
 argv = ["cargo", "test", "--locked", "-p", "ghostlight-dungeon", "--bin", "ghostlight-dungeon"]
 
 [[steps]]
 id = "build-daemon"
 phase = "build"
 runner = "rust-build"
+required_environment = ["CARGO_HOME", "HOME"]
 argv = ["cargo", "build", "--locked", "--release", "-p", "ghostlight-dungeon", "--bin", "ghostlight-dungeon"]
 
 [[steps]]
 id = "install-web-dependencies"
 phase = "prepare"
 runner = "web-build"
+required_environment = ["HOME", "NPM_CONFIG_CACHE"]
 argv = ["npm", "--prefix", "web", "ci"]
 
 [[steps]]
 id = "test-web"
 phase = "test"
 runner = "web-build"
+required_environment = ["HOME", "NPM_CONFIG_CACHE"]
 argv = ["npm", "--prefix", "web", "test"]
 
 [[steps]]
 id = "build-web"
 phase = "build"
 runner = "web-build"
+required_environment = ["HOME", "NPM_CONFIG_CACHE"]
 argv = ["npm", "--prefix", "web", "run", "build"]
 
 [[steps]]
@@ -62,6 +69,7 @@ argv = [
   "--exact",
 ]
 required_environment = [
+  "CARGO_HOME",
   "GHOSTLIGHT_ACCEPTANCE_PERSONA_PROSE_LOG",
   "GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID",
   "GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL",
@@ -69,6 +77,7 @@ required_environment = [
   "GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL",
   "GHOSTLIGHT_CONTROLLER_PERSONA_MODEL",
   "GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL",
+  "HOME",
   "GHOSTLIGHT_LOCAL_ENDPOINT",
 ]
 
