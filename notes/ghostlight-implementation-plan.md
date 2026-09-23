@@ -897,10 +897,12 @@ rule; (D2) the Session Zero Eve surface; (D3) travel affordance and
 per-affordance player controls, which closed the playtest gate until the
 2026-09-22 ruling.
 
-### 16. The play agent — target adopted; cut map next
+### 16. The play agent — cutting; Cuts 1 through 14 landed or landing
 
 Adopted 2026-09-22. Target `docs/architecture/ghostlight-play-agent.md`
-(commit `cb0b604`); its means will be in `ghostlight-play-agent-cut.md`.
+(commit `cb0b604`); the means are in
+`docs/architecture/ghostlight-play-agent-cut.md`, which owns each cut's
+status, findings PA.f1 onward, and every ruling.
 This step is the playtest gate (the target's "Playtest gate"). One
 Dungeon-owned operational agent replaces the Interpreter and the
 cover/cell/catalog/owner-click orchestration on Dungeon's play path; the
