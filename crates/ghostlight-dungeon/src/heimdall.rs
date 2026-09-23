@@ -70,8 +70,11 @@ struct HeimdallCommandBoundaryCatalogEntry {
     value: serde_json::Value,
 }
 
+/// Heimdall owns this document and the receipts below; Dungeon reads the
+/// fields it needs and ignores the rest. Only the signed `PrivateEnvelope`,
+/// whose shape both sides fix, rejects unknown fields.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 struct HeimdallCommandBoundaryRecord {
     schema: String,
     boundary_id: String,
@@ -83,7 +86,7 @@ struct HeimdallCommandBoundaryRecord {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 struct HeimdallBoundaryCommand {
     operation: String,
     request_schema: String,
@@ -91,7 +94,7 @@ struct HeimdallBoundaryCommand {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 struct HeimdallPrivateRoute {
     endpoint: String,
     exposure: String,
@@ -153,7 +156,7 @@ struct DiscordRolePolicy<'a> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct AuthBeginReceipt {
     pub status: String,
     pub handle: String,
@@ -162,14 +165,14 @@ pub struct AuthBeginReceipt {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct AuthNavigation {
     pub url: String,
     pub allowed_origins: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct AuthCompletionReceipt {
     pub status: String,
     pub handle: Option<String>,
@@ -184,13 +187,12 @@ pub struct AuthCompletionReceipt {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct AccountSummary {
     pub id: String,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct HeimdallSession {
     pub account_id: String,
     pub session_id: String,
@@ -200,13 +202,13 @@ pub struct HeimdallSession {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct RefreshSummary {
     pub expires_at: String,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct AuthLogoutReceipt {
     pub status: String,
     pub session_id: String,
@@ -1054,6 +1056,66 @@ mod tests {
                 .to_string()
                 .contains("another app")
         );
+    }
+
+    #[test]
+    fn reads_heimdalls_published_documents_with_fields_dungeon_does_not_use() {
+        // Shapes as Heimdall emits them: buildCommandBoundary in
+        // Heimdall/src/verse-state.ts and the receipts in
+        // Heimdall/src/private-command-plane.ts.
+        let boundary = rmp_serde::to_vec_named(&serde_json::json!({
+            "schema": "heimdall.command_boundary.v1",
+            "boundaryId": "heimdall",
+            "daemonId": "yggdrasil-heimdall",
+            "providerId": "heimdall",
+            "updatedAt": "2026-09-23T12:00:00.000Z",
+            "owner": "Heimdall auth runtime",
+            "lifecycleAuthority": "idunn.yggdrasil-source-app.deploy",
+            "healthPublication": {"contract": "x", "transport": "cultcache-store"},
+            "commands": [{
+                "operation": "heimdall.auth.begin",
+                "requestSchema": "heimdall.private_command_envelope.v1",
+                "responseSchema": "heimdall.auth_begin_receipt.v1"
+            }],
+            "privateRoute": {
+                "endpoint": "rudp://127.0.0.1:4101",
+                "exposure": "loopback-only",
+                "authentication": "app-bound HMAC + AES-256-GCM envelope",
+                "secretBearing": false
+            },
+            "forbiddenWriters": ["Odin and Idunn may observe Heimdall boundary state"],
+            "compatibility": {"httpHealth": "/healthz"}
+        }))
+        .unwrap();
+        let boundary: HeimdallCommandBoundaryRecord = rmp_serde::from_slice(&boundary)
+            .expect("Heimdall's published boundary should decode");
+        validate_heimdall_boundary(boundary).expect("Heimdall's published boundary should resolve");
+
+        let begin: AuthBeginReceipt = serde_json::from_value(serde_json::json!({
+            "schema": "heimdall.auth_begin_receipt.v1",
+            "status": "pending",
+            "handle": "h",
+            "expiresAt": "2026-09-23T12:10:00.000Z",
+            "navigation": {"url": "https://discord.com/x", "allowedOrigins": ["https://discord.com"]}
+        }))
+        .expect("Heimdall's begin receipt should decode");
+        assert_eq!(begin.status, "pending");
+        let completion: AuthCompletionReceipt = serde_json::from_value(serde_json::json!({
+            "schema": "heimdall.auth_completion_receipt.v1",
+            "status": "pending",
+            "handle": "h"
+        }))
+        .expect("Heimdall's completion receipt should decode");
+        assert_eq!(completion.status, "pending");
+        let logout: AuthLogoutReceipt = serde_json::from_value(serde_json::json!({
+            "schema": "heimdall.auth_logout_receipt.v1",
+            "status": "revoked",
+            "sessionId": "s",
+            "accessRevision": 2,
+            "revokedAt": "2026-09-23T12:20:00.000Z"
+        }))
+        .expect("Heimdall's logout receipt should decode");
+        assert_eq!(logout.access_revision, 2);
     }
 
     #[test]
