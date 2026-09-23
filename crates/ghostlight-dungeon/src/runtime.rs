@@ -13,7 +13,7 @@ use crate::{
 };
 use ghostlight::{
     CONSUMER_BODY_LIMIT, CommandBody, CommandId, ConnectorBinding, ConsumerPort,
-    ConsumerRegistry, ControllerModels, ControllerPort, ControllerRunner, ControllerWorkCustody,
+    ConsumerRegistry, ControllerError, ControllerModels, ControllerPort, ControllerRunner, ControllerWorkCustody,
     CreateJurisdictionIntent, CreateWorldIntent, DEFAULT_LOCAL_MODEL_PREFIX,
     DEFAULT_SDK_MODEL_PREFIX, KernelError, Lens,
     LensWeights, LocalBinding, MailboxError, PersonaLane, PrincipalCommandIntent, PrincipalId,
@@ -1655,13 +1655,25 @@ async fn runtime_readiness(state: &AppState) -> anyhow::Result<Value> {
     // surface a client or operator actually watches. Same `Option` ->
     // "ok"/"unavailable" shape as `projectionStatus`/`controllerStatus`
     // above; this does not invent a new channel.
+    //
+    // PA.f186: `open` can also succeed while quietly retiring a row it could
+    // not read (`play::retire_unreadable_row`, PA.f184/PA.f177) — before this,
+    // `state.play.is_some()` alone decided this field, so a successful
+    // retirement read as plain `"ok"` even though the player's own turn was
+    // just destroyed and the only trace was one `tracing::warn!`. Reusing the
+    // same `playStatus` channel (not a new one) rather than a bare enum token
+    // when a retirement happened this process is what keeps this readable
+    // without inventing a sibling field.
     let play_status = match &state.play {
-        Some(_) => "ok",
-        None => "unavailable",
+        Some(table) => match table.retired_row_sidecar() {
+            Some(sidecar) => format!("a play-turn row was retired to {}", sidecar.display()),
+            None => "ok".into(),
+        },
+        None => "unavailable".into(),
     };
     health["projectionStatus"] = Value::String(projection_status.into());
     health["controllerStatus"] = Value::String(controller_status.into());
-    health["playStatus"] = Value::String(play_status.into());
+    health["playStatus"] = Value::String(play_status);
     Ok(health)
 }
 
@@ -1737,7 +1749,39 @@ async fn seed_once(
     runner
         .sweep(1)
         .await
-        .map_err(|error| RuntimeCommandError::Payload(error.to_string()))
+        .map_err(|error| {
+            // PA.f187: `error.to_string()` used to reach the player verbatim
+            // through `dispatch_world`'s own `error.to_string()` rendering —
+            // Soul measured the real string on a fresh workstation with no
+            // inference endpoint running: "invalid command payload: <Purpose>
+            // inference failed: the local inference endpoint refused the
+            // connection: error sending request for url
+            // (http://127.0.0.1:11434/v1/chat/completions)". Connection-
+            // refused is the likeliest seed failure of all, so this handed
+            // this process's own host and port to the player on the first
+            // real failure. A player-facing refusal on this route names a
+            // category instead; the full detail is logged here, once, at the
+            // point this process actually knows it. `ControllerError`'s own
+            // `Display` is unchanged — every other caller still sees the
+            // detailed message — so this is scoped to the seed route alone.
+            tracing::warn!(%error, "seeding a world could not complete");
+            RuntimeCommandError::Payload(describe_seed_failure(&error))
+        })
+}
+
+/// PA.f187: categorizes a seed sweep's own `ControllerError` for the player,
+/// never its `Display`. `Inference`/`ProviderContract` are the connectivity
+/// class Soul's probe hit (a closed or unreachable inference endpoint); every
+/// other variant still names no internal detail, just a coarser category —
+/// none of `ControllerError`'s other arms are seed-route-reachable today, but
+/// this does not assume that stays true.
+fn describe_seed_failure(error: &ControllerError) -> String {
+    match error {
+        ControllerError::Inference { .. } | ControllerError::ProviderContract { .. } => {
+            "seeding could not reach the model".into()
+        }
+        _ => "seeding could not complete".into(),
+    }
 }
 
 /// Dungeon policy for a world created before Session Zero's sliders exist
@@ -2116,6 +2160,7 @@ mod tests {
         GameCultRuntimePresenceHealthRecord, RuntimePresenceAuthenticationContext,
         authenticate_runtime_presence_claim,
     };
+    use ghostlight::{InferenceFault, InferencePurpose};
     use tower::ServiceExt;
 
     #[cfg(target_os = "linux")]
@@ -2326,6 +2371,105 @@ mod tests {
         degraded_state.play = None;
         let unavailable = get(&degraded_state, &fixture.cookie, "/health").await;
         assert_eq!(unavailable["playStatus"], "unavailable", "{unavailable}");
+    }
+
+    /// PA.f186: `state.play.is_some()` alone used to decide `playStatus`, so
+    /// a `PlayTable::new` that succeeded by *retiring* an unreadable row
+    /// (PA.f184/PA.f177's own `retire_unreadable_row`) read as plain `"ok"`
+    /// on `/health` — the same surface `health_reports_play_status_from_state_play`
+    /// above already covers for the *unavailable* case — even though the
+    /// player's own turn had just been destroyed, with only a
+    /// `tracing::warn!` as evidence. Builds a play table over a store this
+    /// process's own `open` cannot read (`play::tests::seed_unreadable_row_for_test`,
+    /// the exact shape `play::tests::a_row_with_the_current_schema_id_and_undecodable_bytes_is_retired_to_a_sidecar_and_play_starts_fresh`
+    /// proves retires cleanly) and checks the field end to end, through the
+    /// real `/health` route.
+    ///
+    /// Mutation: revert `play_status` to `match &state.play { Some(_) =>
+    /// "ok", None => "unavailable" }` — this test's own `assert_ne!` and
+    /// `contains("retired")` both then fail, since a successful retirement
+    /// would read as plain `"ok"` again.
+    #[tokio::test]
+    async fn health_reports_a_retirement_not_plain_ok() {
+        use crate::play::tests::{ScriptedPort, seed_unreadable_row_for_test};
+
+        let mut fixture = fixture().await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        seed_unreadable_row_for_test(&store_path);
+
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.state.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let table = PlayTable::new(
+            fixture.state.world.clone(),
+            personas,
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(TEST_CONTROLLER_CONCURRENCY)),
+            &store_path,
+        )
+        .expect("opening over an unreadable row must retire it, not fail outright (PA.f184)");
+        fixture.state.play = Some(Arc::new(table));
+        fixture._play_directory = Some(directory);
+
+        let health = get(&fixture.state, &fixture.cookie, "/health").await;
+        let play_status = health["playStatus"].as_str().unwrap();
+        assert_ne!(play_status, "ok", "a retirement must not read as plain ok: {health}");
+        assert!(
+            play_status.contains("retired"),
+            "the retirement must be nameable from the readiness surface itself: {health}"
+        );
+        assert!(
+            play_status.contains("play-turn-v1.retired-unreadable-row"),
+            "the reported status must name the sidecar path, not just that something happened: {health}"
+        );
+    }
+
+    /// PA.f187: a seed-route refusal must never carry `ControllerError`'s own
+    /// `Display` to the player — Soul measured the real string on a fresh
+    /// workstation with no inference endpoint running: "invalid command
+    /// payload: OperationalAgent inference failed: the local inference
+    /// endpoint refused the connection: error sending request for url
+    /// (http://127.0.0.1:11434/v1/chat/completions)", handing the player this
+    /// process's own inference host and port. `describe_seed_failure` must
+    /// name a category instead, for the connectivity class this actually
+    /// happens on, without reproducing the endpoint anywhere in its output.
+    ///
+    /// Mutation: change `describe_seed_failure`'s `Inference { .. } |
+    /// ProviderContract { .. }` arm to `_ => error.to_string()` (or any arm
+    /// that forwards `error`'s own `Display`) — the assertions below, which
+    /// specifically check the category string never contains the raw fault
+    /// detail, then fail.
+    #[test]
+    fn describe_seed_failure_never_reproduces_the_inference_faults_own_detail() {
+        let raw_detail = "the local inference endpoint refused the connection: error sending request \
+                           for url (http://127.0.0.1:11434/v1/chat/completions)";
+        let error = ControllerError::Inference {
+            purpose: InferencePurpose::OperationalAgent,
+            source: InferenceFault::retryable(raw_detail),
+        };
+        // The raw error's own Display really does carry the host and port —
+        // pinning that here so this test fails loudly if `InferenceFault`'s
+        // own `Display` ever stops reproducing its `detail` verbatim, rather
+        // than silently testing nothing.
+        assert!(error.to_string().contains("127.0.0.1:11434"), "{error}");
+
+        let described = describe_seed_failure(&error);
+        assert!(!described.contains("127.0.0.1"), "the category must not leak the endpoint: {described}");
+        assert!(!described.contains("11434"), "the category must not leak the port: {described}");
+        assert!(!described.contains("refused the connection"), "{described}");
+        assert_eq!(described, "seeding could not reach the model");
+
+        // A non-connectivity `ControllerError` still gets a category, not a
+        // raw `Display`, even though Soul's own scenario was specifically
+        // about the inference class.
+        let other = describe_seed_failure(&ControllerError::AmbiguousOpportunity);
+        assert_eq!(other, "seeding could not complete");
     }
 
     fn route_snapshot_request(
@@ -2903,8 +3047,49 @@ mod tests {
             if !lowering_root.join("dist").join("index.js").is_file() {
                 return false;
             }
-            eve_client_bridge_dependencies_resolve(&lowering_root)
+            if !eve_client_bridge_dependencies_resolve(&lowering_root) {
+                return false;
+            }
+            // PA.f190: every gated test in this shape needs `node`, the
+            // built lowering, *and* a real `vendor/eve` git checkout —
+            // `eve_client_bridge_fixture_matches_what_the_pinned_lowering_produces_today`
+            // asserts `git -C vendor/eve rev-parse HEAD` succeeds with
+            // `.expect(...)`, not a skip. Before this, Soul hit that
+            // `.expect` by accident with a `vendor/eve` that was a copied
+            // directory rather than a checkout — this function's own two
+            // checks above both passed (a copy still carries the committed
+            // `dist/`), and the test *panicked* instead of skipping, the
+            // third instance of this exact shape (see this function's own
+            // doc comment above). Checked last, after the cheaper node/file
+            // checks, since it is the least likely to fail in a normal dev
+            // environment and this whole probe is already cached.
+            vendor_eve_git_checkout_available(&repo_root())
         })
+    }
+
+    /// The workspace root two levels above this crate's own manifest —
+    /// `vendor/eve` lives here, not under `CARGO_MANIFEST_DIR` itself.
+    fn repo_root() -> std::path::PathBuf {
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
+    }
+
+    /// PA.f190: every precondition
+    /// `eve_client_bridge_fixture_matches_what_the_pinned_lowering_produces_today`
+    /// itself asserts must be provable by `eve_client_bridge_is_available`
+    /// before that test is allowed to run rather than skip — this is the one
+    /// `eve_client_bridge_is_available` did not check. Uses the exact same
+    /// command the test's own `.expect(...)` does, so a `vendor/eve` that is
+    /// present but not a real git checkout (a copied directory, for instance)
+    /// reports unavailable here instead of reaching that `.expect` at all.
+    /// `repo_root` is a parameter, not hard-coded, so a test can point this
+    /// at a scratch directory shaped like a copied-not-checked-out
+    /// `vendor/eve` without touching the real submodule.
+    fn vendor_eve_git_checkout_available(repo_root: &std::path::Path) -> bool {
+        std::process::Command::new("git")
+            .args(["-C", "vendor/eve", "rev-parse", "HEAD"])
+            .current_dir(repo_root)
+            .output()
+            .is_ok_and(|output| output.status.success())
     }
 
     /// Runs a real `node` process that does exactly what
@@ -2939,6 +3124,52 @@ mod tests {
             .output();
         let _ = std::fs::remove_file(&probe_path);
         outcome.is_ok_and(|output| output.status.success())
+    }
+
+    /// PA.f190: `eve_client_bridge_is_available`'s own git precondition,
+    /// isolated from the `node`/`dist` checks it also runs. Requires `git` on
+    /// `PATH` (not `node`), so it is not itself gated by
+    /// `eve_client_bridge_is_available`.
+    ///
+    /// Mutation: delete the `vendor_eve_git_checkout_available(&repo_root())`
+    /// call from `eve_client_bridge_is_available` (or its early return) — a
+    /// `vendor/eve` that is present but not a checkout (this test's own
+    /// `copied` case) would then still report "available", exactly the shape
+    /// Soul hit by accident and this test's own negative assertion catches.
+    #[test]
+    fn vendor_eve_git_checkout_available_distinguishes_a_checkout_from_a_copy() {
+        // The real repo root: `vendor/eve` here is a genuine git checkout
+        // (pinned submodule), so this must report true whenever `git` itself
+        // is on `PATH` — the same precondition every other check in this
+        // module already assumes.
+        let git_on_path = std::process::Command::new("git")
+            .arg("--version")
+            .output()
+            .is_ok_and(|output| output.status.success());
+        if git_on_path {
+            assert!(
+                vendor_eve_git_checkout_available(&repo_root()),
+                "the real vendor/eve submodule checkout must report available"
+            );
+        } else {
+            eprintln!(
+                "SKIPPED vendor_eve_git_checkout_available_distinguishes_a_checkout_from_a_copy's own \
+                 positive case: `git` is not on PATH."
+            );
+        }
+
+        // A `vendor/eve` that exists as a plain copied directory — carrying
+        // real files (this test writes one) but no `.git` — is exactly the
+        // shape Soul hit by accident: `dist/index.js` can still be present
+        // (committed and copied along with everything else), so this is the
+        // one check standing between that shape and a false "available".
+        let scratch = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(scratch.path().join("vendor").join("eve")).unwrap();
+        std::fs::write(scratch.path().join("vendor").join("eve").join("marker.txt"), b"copied, not cloned").unwrap();
+        assert!(
+            !vendor_eve_git_checkout_available(scratch.path()),
+            "a copied vendor/eve directory with no .git must not report available"
+        );
     }
 
     /// Strips the fields that legitimately vary between two otherwise
@@ -2986,12 +3217,16 @@ mod tests {
             doc.vendor_eve_submodule_revision,
             std::process::Command::new("git")
                 .args(["-C", "vendor/eve", "rev-parse", "HEAD"])
-                .current_dir(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".."))
+                .current_dir(repo_root())
                 .output()
                 .ok()
                 .filter(|output| output.status.success())
                 .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_owned())
-                .expect("`git -C vendor/eve rev-parse HEAD` must succeed when the bridge is available"),
+                .expect(
+                    "`git -C vendor/eve rev-parse HEAD` must succeed when the bridge is available \
+                     (eve_client_bridge_is_available's own vendor_eve_git_checkout_available check \
+                     should have skipped this test otherwise, PA.f190)",
+                ),
             "the fixture's own stamped submodule revision no longer matches vendor/eve's checked-out \
              commit; regenerate the fixture (and update this stamp) against the revision actually \
              pinned, or the diff below is comparing against the wrong baseline"
