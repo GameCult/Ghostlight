@@ -660,13 +660,15 @@ fn verified_session_material(
     let access_expiry = i64::try_from(claims.exp).context("Heimdall access expiry is too large")?;
     let access_expires_at =
         DateTime::from_timestamp(access_expiry, 0).context("Heimdall access expiry is invalid")?;
+    // Heimdall's session record lives as long as its refresh token, so the
+    // session expiry it reports is the refresh expiry (Heimdall
+    // `issueAccessClaim`: `session.expiresAt` and `refresh.expiresAt` are both
+    // the record's `expiresAt`); only the signed access claim carries the
+    // shorter access expiry.
     let session_expires_at: DateTime<Utc> = session
         .expires_at
         .parse()
         .context("Heimdall session expiry is invalid")?;
-    if session_expires_at != access_expires_at {
-        bail!("Heimdall session expiry disagrees with its signed claim");
-    }
     let refresh_expires_at: DateTime<Utc> = completion
         .refresh
         .as_ref()
@@ -674,6 +676,9 @@ fn verified_session_material(
         .expires_at
         .parse()
         .context("Heimdall refresh expiry is invalid")?;
+    if session_expires_at != refresh_expires_at {
+        bail!("Heimdall session expiry disagrees with its refresh expiry");
+    }
     if refresh_expires_at <= access_expires_at {
         bail!("Heimdall refresh expiry does not outlive access");
     }
@@ -1225,6 +1230,82 @@ mod tests {
                 .unwrap_err()
                 .to_string()
                 .contains("omitted the account")
+        );
+    }
+
+    /// The shape Heimdall's `issueAccessClaim` returns: the access claim
+    /// expires first; session and refresh share the longer record expiry.
+    fn issued_completion(session_expiry: &str, refresh_expiry: &str) -> AuthCompletionReceipt {
+        AuthCompletionReceipt {
+            status: "authenticated".into(),
+            handle: None,
+            error: None,
+            account: None,
+            session: Some(HeimdallSession {
+                account_id: "account-1".into(),
+                session_id: "session-1".into(),
+                app_slug: APP_SLUG.into(),
+                access_revision: 1,
+                expires_at: session_expiry.into(),
+            }),
+            access_token: Some("private".into()),
+            refresh_token: Some("refresh".into()),
+            refresh: Some(RefreshSummary {
+                expires_at: refresh_expiry.into(),
+            }),
+            shared_capabilities: vec!["app_access".into()],
+        }
+    }
+
+    fn access_claims(exp: u64) -> AccessClaims {
+        AccessClaims {
+            iss: "https://heimdall.invalid".into(),
+            aud: APP_SLUG.into(),
+            sub: "account-1".into(),
+            sid: "session-1".into(),
+            exp,
+            typ: "heimdall_access".into(),
+            account_id: "account-1".into(),
+            access_revision: 1,
+            capabilities: vec!["app_access".into()],
+            app: AppClaim {
+                slug: APP_SLUG.into(),
+            },
+        }
+    }
+
+    #[test]
+    fn a_session_as_heimdall_issues_it_is_admitted() {
+        // Access expires at 2026-09-23T20:00:00Z; the session record and its
+        // refresh token last thirty days.
+        let access_exp = 1_790_193_600;
+        let material = verified_session_material(
+            issued_completion("2026-10-23T20:00:00.000Z", "2026-10-23T20:00:00.000Z"),
+            access_claims(access_exp),
+        )
+        .expect("Heimdall's issued session should be admitted");
+        assert_eq!(material.access_expires_at.timestamp(), access_exp as i64);
+        assert!(material.refresh_expires_at > material.access_expires_at);
+
+        assert!(
+            verified_session_material(
+                issued_completion("2026-10-22T20:00:00.000Z", "2026-10-23T20:00:00.000Z"),
+                access_claims(access_exp),
+            )
+            .err()
+            .expect("Heimdall shape should be refused")
+            .to_string()
+            .contains("disagrees with its refresh expiry")
+        );
+        assert!(
+            verified_session_material(
+                issued_completion("2026-09-23T19:00:00.000Z", "2026-09-23T19:00:00.000Z"),
+                access_claims(access_exp),
+            )
+            .err()
+            .expect("Heimdall shape should be refused")
+            .to_string()
+            .contains("does not outlive access")
         );
     }
 }
