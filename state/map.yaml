@@ -363,70 +363,56 @@ current_status:
   presentation_checkpoint: The historical press-layout and seed-ownership split are complete. `notes/historical-newspaper-layout-grammar.md` remains the durable grammar. Manifest v2 at `output/tex/canopy-ledger-run-61-style-1847-flow-723.manifest.toml` independently binds `style_seed=1847`, `flow_seed=723`, frozen source SHA-256 `8f195140f52a40ba705d6a66987146a1500ae89668e5d82b01d1792eb3afb882`, and the final artifact `output/pdf/canopy-ledger-run-61-style-1847-flow-723.pdf`, SHA-256 `a457f4b1702a7a52480e42fce0039f0dbe677ff32958e98f1c412b346237190c`. An identical seed pair produces byte-identical TeX and PDF; changing only flow preserves the exact style section while materially changing a plausible layout, and changing only style preserves flow topology. Cut-first and cut-midstory templates pass visual inspection; the failed split-card template is deleted. Frozen copy/assets, actual PDF `/BM /Multiply`, and economic-layer advertising authority remain invariant.
   public_reference_checkpoint: The published public architecture is immutable pre-rebuild history, not current rebuild authority. Canonical Ghostlight commit `15ea0f0` owns five archived pages covering the former overview, authority, pipelines, 43 named production stages, and eight titled elaborators. Site commit `2035e799c2cf7470b2bfc70d5a878d5d3be5e90f` publishes a shared mobile Home/Blog/Docs masthead, visibly marks every Docs page as a teardown archive, and publishes the postmortem `The World Counter Lied` at `https://ghostlight.gamecult.org/Blog/the-world-counter-lied`; live HTTP inspection returned 200 for the postmortem and Docs index and found the masthead and archive banner. Do not use the archived pages to steer the whole-machine rebuild. `docs/architecture/ghostlight-dungeon-mvp.md` owns the adopted target; publish replacement architecture only after the replacement body is implemented and verified. The site repository owns public composition and deployment.
   next_action: >
-    Nothing is in flight; no worktree exists; the branch is level with origin.
-    Landed and pushed this series: plan step 6 (ten ontology passes), the
-    local live smoke and the seeded road run (Kalsa Public, Low Sere; twelve
-    runs, every road failure now a rule in the tree), step 8 seed producer,
-    step 9 interruption, step 10 witness, step 11 Claude SDK inference port
-    with its follow-ups, and the first SDK-backed seeded road runs on
-    claude-sonnet-5 (runbook "SDK runs, 2026-09-10"; plan "Road follow-ups,
-    2026-09-10").
-    Chronology, SHAs, and per-pass facts live in git history, the evidence
-    ledger and its archive, and the docs; do not rebuild them here or in
-    the handoff, and plan step 12 (PersonaMaterial, commitment
-    statements, co-presence; run 8 is the first run whose people speak in
-    their own voices), step 13 (the world brief, world_create.v3,
-    guidance on every lane), and step 14 (nonverbal display by quote,
-    commit 0582321: a visible act lands as `Seen { by }` knowledge on the
-    co-located, quoted by the Interpreter as the visible clause alone, the
-    actor's intent private; run 10 passed with 18 displays and the first
-    live interrupted cell; the interrupted cell is exercised live and
-    logged per cell, run 11, commit 81a1f53). State and commit schemas are
-    consumer.v5; controller work rows are controller_work.v16 (a turn's
-    utterance and display are every span cited for them in prose order,
-    commit 855727f, run 12; an elaborator session carries its lens and
-    instruction text). Next, in the
-    operator's order (2026-09-15):
-    (a) the playtest gate, redirected by the operator 2026-09-22: plan
-    step 16, the play agent (target docs/architecture/ghostlight-play-agent.md,
-    committed cb0b604; the gate is its "Playtest gate" section; the cut map
-    ghostlight-play-agent-cut.md is next). One Dungeon-owned operational
-    agent replaces the Interpreter and the cover/cell/catalog/owner-click
-    orchestration on Dungeon's play path; the Projector -> Persona passes are
-    unchanged and a Persona never sees structured state. The library keeps
-    the offline machinery. Deferred by ruling, not dropped: L2-L4, Session
-    Zero D1-D3 (plan step 15), and L1.f16, f1, f13, f14; the list is the
-    target's "Deferred, by ruling". L0 and L1 are closed (postmortems in
-    docs/architecture/). (b) the outbound consumer
-    response batch with a non-loopback CultMesh lease, shaped as Njordr's
-    signal surface (custody, pressure and dependency, route, event deltas;
-    spec owned by GameCult/Njordr `docs/architecture/njordr.md`, Ghostlight's
-    obligations in the pointer docs/architecture/gamecult-economy-daemon.md);
-    (c) the deployment gate (world-v3, Idunn/Odin as recorded in the
-    handoff); (d) decision on Eve world.run_tick authority and the Eve
-    owner's fourth command-result state for an overtaken turn. Constraints:
-    inference is routed per lane by model name (`RoutedInferencePort`,
-    crates/ghostlight/src/sdk_inference.rs): models prefixed `claude` go to
-    the Claude SDK sidecar, every other model to CodexConnector, and an
-    unclaimed model is refused at open, never fallen back. The sidecar,
-    inheriting the operator's ambient Claude login, is the only live
-    provider; no Codex subscription and no API budget. The playtest gate
-    needs every play lane on a local model (Bonsai 2 on Raven's machine);
-    no local-model transport exists in source yet, and where it lives is
-    the play-agent target's open question 1. The sidecar stays as the cloud
-    fallback until the local lane has carried the playtest; deleting it is
-    decided after the gate. Operator direction: model backends share one
-    standardized CultNet connector API, the same one Epiphany uses. Today
-    only CodexConnector speaks it, consumed through the `codex-connector`
-    crate pinned in Cargo.toml; the SDK sidecar is a private length-prefixed
-    msgpack pipe to a Node child process behind the in-process
-    `InferencePort` trait. CodexConnector itself stays isolated (its main
-    is at 6519289), and is not a live provider here. A generic
-    OpenAI-compatible connector is still required before third parties use
-    the deployment; the local lane may be it (open question 1). Ghostlight never holds a credential. The elaborator swarm is drained; its review record
-    and idea ledgers are in experiments/elaboration/ (start at its README),
-    and the vault additions are in local bundles named there. Integration
-    into the vaults is still wanted and deferred until the operator has time
-    to review; it is an editorial pass, never a scripted merge.
-    Gating rules are in the handoff's re-entry warnings.
+    The play agent (plan step 16) is the live work and the playtest gate. Its
+    target is `docs/architecture/ghostlight-play-agent.md` and its cut map is
+    `docs/architecture/ghostlight-play-agent-cut.md`, which owns each cut's
+    status, findings PA.f1 onward, and every operator and Self ruling; do not
+    rebuild that chronology here or in the handoff. Cuts 1 through 14 are
+    landed or landing on `codex/ghostlight-dungeon-mvp`. The state they leave:
+    one Dungeon-owned operational agent drives a turn through `world.play`,
+    now the only human play action, while `world.speak` and the story card are
+    deleted (Cut 9, `f1732c0`); the kernel carries a Play authority, `Ruled`
+    facts, minting, retirement, affordance grants and a callable Persona turn;
+    one play table owns the turn lifecycle with one open turn per world; and
+    the Eve client round trip is exercised end to end for the first time,
+    which is where the answer path, the opaque per-question token (Cut 13,
+    PA.f170) and the play-store migrations came from. Soul's verdict after
+    Cuts 12 and 13 is ready to play with one preflight. Next action: the
+    operator plays on their own machine. The unverified leg is seeding, which
+    needs `GHOSTLIGHT_SEED_VAULT_ROOT` and appears in no runbook. Then the
+    pass close-out: the postmortem and reconciling the target against the
+    Body. After the gate, in the operator's order (2026-09-15): (b) the
+    outbound consumer response batch with a non-loopback CultMesh lease,
+    shaped as Njordr's signal surface (custody, pressure and dependency,
+    route, event deltas; spec owned by GameCult/Njordr
+    `docs/architecture/njordr.md`, Ghostlight's obligations in the pointer
+    docs/architecture/gamecult-economy-daemon.md); (c) the deployment gate
+    (world-v3, Idunn/Odin as recorded in the handoff); (d) the decision on an
+    Eve `world.run_tick` authority and the Eve owner's fourth command-result
+    state for an overtaken turn. Inference constraints: lanes route by model
+    name (`RoutedInferencePort`, crates/ghostlight/src/sdk_inference.rs), and
+    an unclaimed model is refused at open, never fallen back. Three transports
+    exist in source. The CodexConnector lane, consumed through the
+    `codex-connector` crate pinned in Cargo.toml; the Claude SDK sidecar, a
+    private length-prefixed msgpack pipe to a Node child, claiming
+    `claude`-prefixed models; and, since the play agent's Cut 2, a local
+    OpenAI-compatible loopback port (crates/ghostlight/src/local_inference.rs,
+    one POST /v1/chat/completions, no credential, inert tool calls), opened
+    only when GHOSTLIGHT_LOCAL_ENDPOINT is set and claiming the
+    GHOSTLIGHT_LOCAL_MODEL_PREFIX prefix, default `local/`. Only the sidecar
+    has been proven live; it inherits the operator's ambient Claude login and
+    stays as the cloud fallback until the local lane (Bonsai 2 on Raven's
+    machine) has carried the playtest. Deleting it is decided after the gate.
+    There is no Codex subscription and no API budget; CodexConnector stays
+    isolated at main `6519289` and is not a live provider here. Operator
+    direction: model backends share one standardized CultNet connector API,
+    the same one Epiphany uses, and a generic OpenAI-compatible connector on
+    it is still required before third parties use the deployment; the local
+    lane may become it (the play-agent target's open question 1). Ghostlight
+    never holds a credential. The elaborator swarm is drained; its review
+    record and idea ledgers are in experiments/elaboration/ (start at its
+    README), and the vault additions are in local bundles named there.
+    Integration into the vaults is still wanted and deferred until the
+    operator has time to review; it is an editorial pass, never a scripted
+    merge. Gating rules are in the handoff's re-entry warnings.
   gestalt_population: Gestalt Personas own shared population baselines; persistent member deltas own named individuality; WorldKernel materialization and approval-gated fission preserve lineage and identity. Materialisation/folding changes only representation and the exact member delta, advances resolution epoch, and retires the old cover; it has no Gestalt-wide effect authority. Selected actionable member exceptions are mandatory Projector perspective owners, so aggregation cannot silently erase their decision. Presence projection is limited to nearby active leaves and exact-location dormant members, includes reciprocal player relationship evidence, and may propose an earned cast without committing it. Simulation cells are derived covers only.

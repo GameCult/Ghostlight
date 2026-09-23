@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-09-15
+Updated: 2026-09-23
 
 This is the compact re-entry packet. It carries current authority and the next
 gate. Git owns chronology, the system map owns teardown detail, and evidence
@@ -252,10 +252,16 @@ unplaced; retire it or place its subjects.
 
 ### Constraints
 
+- A local OpenAI-compatible transport exists in source since the play agent's
+  Cut 2: `crates/ghostlight/src/local_inference.rs`, one
+  `POST /v1/chat/completions` to a loopback endpoint, no credential, inert
+  tool calls. It opens only when `GHOSTLIGHT_LOCAL_ENDPOINT` is set
+  (`runtime.rs`), and claims models by the `GHOSTLIGHT_LOCAL_MODEL_PREFIX`
+  prefix, default `local/`. No model has been run behind it yet; the
+  playtest's local lane (Bonsai 2 on Raven's machine) is unexercised.
 - The operator's Claude subscription, inherited by the SDK sidecar from the
-  ambient Claude Code login, is the only live provider, and stays as the
-  cloud fallback until a local lane (Bonsai 2 on Raven's machine) has
-  carried the playtest; no local-model transport exists in source yet.
+  ambient Claude Code login, is the only provider proven live, and stays as
+  the cloud fallback until the local lane has carried the playtest.
   Deleting the sidecar is decided after the gate. Codex remains lapsed:
   no Codex subscription and no API budget; the Codex connector is stopped;
   the smoke substrate at `F:\Projects\Ghostlight-smoke` stays.
@@ -282,8 +288,22 @@ The gate is plan step 16, the play agent
 (`docs/architecture/ghostlight-play-agent.md`, section "Playtest gate"):
 a human on a local daemon, every play lane on a local model, creates and
 seeds a world from a Vault, activates it, plays, and restarts mid-session with
-the world intact. The target owns the pass list; its cut map
-(`ghostlight-play-agent-cut.md`) is next.
+the world intact. The target owns the pass list; its cut map is
+`docs/architecture/ghostlight-play-agent-cut.md`, which owns each cut's status,
+findings PA.f1 onward, and every ruling.
+
+Cuts 1 through 14 are landed or landing on `codex/ghostlight-dungeon-mvp`. What
+the pass changed, in one line each: the autonomous drivers and owner controls
+are gone from Dungeon (Cut 1); a local inference port exists (Cut 2); the kernel
+gained a Play authority, `Ruled` facts, minting, retirement and affordance
+grants (Cuts 3 to 5); the Persona lane became callable (Cuts 6, 7); one play
+table owns the turn lifecycle (Cut 8); the Eve play surface replaced
+`world.speak` (Cut 9); and the client round trip was exercised for the first
+time through a real lowering, which is where the answer path, the question
+token and the store migrations came from (Cuts 10 to 14). Soul's verdict after
+Cuts 12 and 13 is ready to play with one preflight. The unverified leg is
+seeding: `GHOSTLIGHT_SEED_VAULT_ROOT` has not been run end to end and appears
+in no runbook.
 
 Operator rulings, 2026-09-22. One Dungeon-owned operational agent dispatches
 and interprets Persona turns, prompts the player, and negotiates results. It
@@ -313,17 +333,23 @@ caller's elaboration sessions concurrently under that caller's own ceiling.
 Dungeon runs no Active elaboration since the play agent's Cut 1 (`d69e9d4`)
 deleted its sweep and ceiling; nothing in Dungeon calls this path today.
 
-Also owed on the way, found 2026-09-15 by reading source:
+The human play path, as source stands after Cuts 1 through 14:
 
-- `world.speak` is the only human action (`runtime.rs`).
-- The Eve story card renders bare speech text only (`eve.rs`): no speaker,
-  no displays, no place or co-presence.
+- `world.play` is the only human play action (`runtime.rs::execute_world`,
+  schema `ghostlight.world_play.v0`). `world.speak` and the story card were
+  deleted by Cut 9 (`f1732c0`); the only surviving mention is a negative
+  assertion in `eve.rs`'s tests.
+- The Eve play card (`eve.rs`) is owner-gated and carries narration, the open
+  question, and the refusal of the player's own act, plus one free-text
+  control. The open question's identity rides the play button's own
+  `props.action` as an opaque token (Cut 13, PA.f170), never as an editable
+  visible field.
 - Active elaboration runs with `NullEvidenceSource` (`controllers.rs`), so no
   Vault reaches it. This is L2's subject and is deferred with L2; the play
   path stops elaborating while Active.
 - Dungeon runs no tick driver since the play agent's Cut 1 (`d69e9d4`)
   deleted it; when cells ran, they ran in sequence at 15–50 s each. Cut 8
-  owns Persona dispatch going forward.
+  owns Persona dispatch.
 
 The eight titles ship as the library's stock lens set. Their 2026-09 removal
 had no operator decision; the correction record in `state/evidence.jsonl`
