@@ -226,7 +226,7 @@ pre_rebuild_architecture:
     - Institution, faction, and consumer decision models
 
 active_subgoals:
-  - Finish and verify the smallest Idunn-owned Expected/activation/anchor/lease projection and shared bounded RUDP document transport, then land a directly managed Rust Odin that owns signed runtime observation and Expected/Present/Ready correlation. Resolve exact capability dependency closure inside the existing deployment transaction, add UDP stable-route actuation plus independently persisted post-reload data-plane observation through the existing proxy, and preserve same-generation physical continuity without granting Idunn semantic Present/Ready authority. Verify on Yggdrasil, admit Odin first, then CodexConnector and Ghostlight, prove outage/fencing/routing/legacy-negative invariants, and purge every old executable authority.
+  - Finish and verify the smallest Idunn-owned Expected/activation/anchor/lease projection and shared bounded RUDP document transport, then land a directly managed Rust Odin that owns signed runtime observation and Expected/Present/Ready correlation. Resolve exact capability dependency closure inside the existing deployment transaction, add UDP stable-route actuation plus independently persisted post-reload data-plane observation through the existing proxy, and preserve same-generation physical continuity without granting Idunn semantic Present/Ready authority. Verify on Yggdrasil, admit Odin first, then Ghostlight Dungeon (CodexConnector is not a Dungeon dependency, operator 2026-09-23), prove outage/fencing/routing/legacy-negative invariants, and purge every old executable authority.
   - Build the outbound half of the consumer contract (the consumer's read of its own projection and attributed intents toward its subject as a typed response document) and a non-loopback CultMesh authority lease, then connect a Delvehold-owned adapter to the landed inbound ingress (POST /cultnet/world-patch, ConsumerPort, PatchGround::Consumer) without consumer-specific IDs or schemas in Ghostlight.
   - Extend strategic/offscreen named-person individuation beyond the proven emerge-then-act path so people plot across sustained political waves, acquire relationships, fold, and return without granting a cell, arena, or model commit authority.
   - Keep the selectable Kalsa Vault's Public player-safe and Spoilers GM-only evidence lanes intact through Git/Obsidian sync, retrieval, exact receipts, and player projection. Do not import it into the read-only Aetheria recovery index or create a rival Ghostlight semantic index.
@@ -381,9 +381,27 @@ current_status:
     on Cut 17 judged the bar met: nothing left that would stop or mislead a
     player. The close-out is done — the postmortem is
     `docs/architecture/ghostlight-play-agent-postmortem.md`, and the target
-    and `notes/ghostlight-dungeon.md` now name their own gaps. Next action:
-    the operator plays on their own machine. Check `/health` for `playStatus`
-    first; the unverified leg is seeding, which needs
+    and `notes/ghostlight-dungeon.md` now name their own gaps. Topology
+    (operator ruling 2026-09-23, "put each of the organs on the right
+    machine"): the playtest runs on Yggdrasil. Ghostlight Dungeon runs there
+    beside Heimdall, deployed by Idunn through the binding named `ghostlight`
+    (the Dungeon unit only; Ghostlight is the library provider, Dungeon its
+    consumer) at admitted ref `codex/ghostlight-dungeon-mvp`. Bonsai 2 stays
+    on Raven's GPU; a Raven scheduled task holds a restricted-key reverse SSH
+    tunnel over the WireGuard mesh (Raven 10.77.0.4, Yggdrasil 10.77.0.1) so
+    the local lane's endpoint is Yggdrasil loopback `127.0.0.1:18080`.
+    Dungeon's local inference and Heimdall's private plane both stay
+    loopback-only. The Raven-hosted Dungeon (scheduled task
+    `GhostlightDungeon`, `C:\Meta\ghostlight`,
+    `deployment/raven/start-ghostlight-raven.ps1`) is a detour being retired,
+    not the playtest path. Next action: cut the CodexConnector binding out of
+    the Yggdrasil deploy actuator (`gamecult-ops`
+    `scripts/deploy-ghostlight-yggdrasil.sh`: connector readiness gate, key,
+    and acceptance test
+    `controllers::tests::real_codex_connector_cognition_modes_commit_speech`)
+    and its runbook, and bind the local-model link in its place; gamecult-ops
+    owns the actuator, runbook and link. Then, on Yggdrasil, check `/health`
+    for `playStatus` first; the unverified leg is seeding, which needs
     `GHOSTLIGHT_SEED_VAULT_ROOT`, appears in no runbook, and has never run
     past its configuration check, so attempt it alone before the play legs.
     Two capabilities the Dungeon brief promises are not built, and the
@@ -400,25 +418,29 @@ current_status:
     shaped as Njordr's signal surface (custody, pressure and dependency,
     route, event deltas; spec owned by GameCult/Njordr
     `docs/architecture/njordr.md`, Ghostlight's obligations in the pointer
-    docs/architecture/gamecult-economy-daemon.md); (c) the deployment gate
-    (world-v3, Idunn/Odin as recorded in the handoff); (d) the decision on an
+    docs/architecture/gamecult-economy-daemon.md); (c) the rebuilt-Idunn
+    deployment gate (world-v3, Odin-first admission, as recorded in the
+    handoff); (d) the decision on an
     Eve `world.run_tick` authority and the Eve owner's fourth command-result
     state for an overtaken turn. Inference constraints: lanes route by model
     name (`RoutedInferencePort`, crates/ghostlight/src/sdk_inference.rs), and
     an unclaimed model is refused at open, never fallen back. Three transports
     exist in source. The CodexConnector lane, consumed through the
-    `codex-connector` crate pinned in Cargo.toml; the Claude SDK sidecar, a
+    `codex-connector` crate pinned in Cargo.toml, is not an option for
+    Dungeon inference (operator, 2026-09-23); the Claude SDK sidecar, a
     private length-prefixed msgpack pipe to a Node child, claiming
     `claude`-prefixed models; and, since the play agent's Cut 2, a local
     OpenAI-compatible loopback port (crates/ghostlight/src/local_inference.rs,
     one POST /v1/chat/completions, no credential, inert tool calls), opened
     only when GHOSTLIGHT_LOCAL_ENDPOINT is set and claiming the
-    GHOSTLIGHT_LOCAL_MODEL_PREFIX prefix, default `local/`. Only the sidecar
-    has been proven live; it inherits the operator's ambient Claude login and
-    stays as the cloud fallback until the local lane (Bonsai 2 on Raven's
-    machine) has carried the playtest. Deleting it is decided after the gate.
-    There is no Codex subscription and no API budget; CodexConnector stays
-    isolated at main `6519289` and is not a live provider here. Operator
+    GHOSTLIGHT_LOCAL_MODEL_PREFIX prefix, default `local/`. The local lane
+    (Bonsai 2 on Raven, reached at Yggdrasil `127.0.0.1:18080`) is the
+    playtest's inference and has never carried a turn. Only the sidecar has
+    been proven live, on the workstation, where it inherits the operator's
+    ambient Claude login; whether it has any role on Yggdrasil is undecided,
+    and deleting it is decided after the gate. There is no Codex subscription
+    and no API budget; CodexConnector stays isolated at main `6519289` and is
+    not a provider for Dungeon. Operator
     direction: model backends share one standardized CultNet connector API,
     the same one Epiphany uses, and a generic OpenAI-compatible connector on
     it is still required before third parties use the deployment; the local

@@ -216,10 +216,11 @@ consumers enter through `POST /cultnet/world-patch` under
 `PatchGround::Consumer`; the live contract is
 `docs/architecture/ghostlight-world-consumer-api.md`. The seed lane admits a
 Draft-only owner patch from a local Vault and pursues the derived scale
-deficit. Inference runs through one `InferencePort::prepare` with two
-transports: the CodexConnector and, per `claude`-prefixed lane model, the
-Node sidecar on the Claude Agent SDK. The Rust decoder is the one validator
-on both; the sidecar hands arguments through unvalidated. The sidecar and
+deficit. Inference runs through one `InferencePort::prepare`, routed by model name
+to three transports: the CodexConnector (not an option for Dungeon, operator
+2026-09-23), the Node sidecar on the Claude Agent SDK for `claude`-prefixed
+models, and the local OpenAI-compatible port (see Constraints). The Rust
+decoder is the one validator on each; the sidecar hands arguments through unvalidated. The sidecar and
 its receipt shape are a named stopgap, deleted whole when a Messages-API port
 has budget. The SDK transport was proven on the road before the play agent's
 Cut 1 (`d69e9d4`) deleted the tick driver those runs exercised: seeded runs on
@@ -257,17 +258,30 @@ unplaced; retire it or place its subjects.
   `POST /v1/chat/completions` to a loopback endpoint, no credential, inert
   tool calls. It opens only when `GHOSTLIGHT_LOCAL_ENDPOINT` is set
   (`runtime.rs`), and claims models by the `GHOSTLIGHT_LOCAL_MODEL_PREFIX`
-  prefix, default `local/`. No model has been run behind it yet; the
-  playtest's local lane (Bonsai 2 on Raven's machine) is unexercised.
+  prefix, default `local/`. No model has been run behind it yet.
+- Topology (operator ruling 2026-09-23, "put each of the organs on the right
+  machine"): the playtest's Dungeon runs on Yggdrasil beside Heimdall,
+  deployed by Idunn through the `ghostlight` binding (Dungeon unit only) at
+  ref `codex/ghostlight-dungeon-mvp`. Bonsai 2 stays on Raven's GPU and is
+  reached at Yggdrasil loopback `127.0.0.1:18080` through a restricted-key
+  reverse SSH tunnel over the WireGuard mesh, kept up by a Raven scheduled
+  task. Local inference and Heimdall's private plane stay loopback-only.
+  The Raven-hosted Dungeon (task `GhostlightDungeon`, `C:\Meta\ghostlight`,
+  `deployment/raven/start-ghostlight-raven.ps1`) is a detour being retired.
+  `gamecult-ops` owns the actuator, runbook and link; its
+  `scripts/deploy-ghostlight-yggdrasil.sh` and
+  `runbooks/ghostlight-dungeon-yggdrasil.md` are still bound to
+  CodexConnector, and cutting that binding for the local link is the next
+  action.
+- CodexConnector is not an option for Dungeon inference (operator,
+  2026-09-23). It is a deliberately isolated Codex fork so that Epiphany
+  stops compiling Codex; nothing goes into it, and its `main` stays at
+  `6519289`. Codex remains lapsed: no subscription, no API budget; the
+  smoke substrate at `F:\Projects\Ghostlight-smoke` stays.
 - The operator's Claude subscription, inherited by the SDK sidecar from the
-  ambient Claude Code login, is the only provider proven live, and stays as
-  the cloud fallback until the local lane has carried the playtest.
-  Deleting the sidecar is decided after the gate. Codex remains lapsed:
-  no Codex subscription and no API budget; the Codex connector is stopped;
-  the smoke substrate at `F:\Projects\Ghostlight-smoke` stays.
-- CodexConnector is a deliberately isolated Codex fork so that Epiphany
-  stops compiling Codex; nothing goes into it. Its `main` at `6519289` is
-  the line Ghostlight runs.
+  ambient Claude Code login on the workstation, is the only provider proven
+  live. Its role on Yggdrasil is undecided; deleting it is decided after the
+  gate.
 - Ghostlight never reads, copies, forwards, or logs a credential. The
   connector's Codex home is the operator's real `~/.codex`; the SDK sidecar
   inherits the operator's Claude Code login from the ambient environment.
@@ -404,11 +418,11 @@ correlation owner.
 
 Install rebuilt Idunn and admit Odin first through the same
 Expected/Present/Ready contract, using its exact candidate only to bootstrap the
-evidence transport. Then admit CodexConnector and Ghostlight. Same-generation
+evidence transport. Then admit Ghostlight Dungeon; CodexConnector is not its dependency. Same-generation
 continuity, route preservation, split-brain fencing, signed health, Odin-outage
 freeze, and negative legacy-authority checks must all agree before purge.
 
-Deploy the Connector and then Ghostlight through that contract. Runtime restart,
+Deploy Ghostlight Dungeon through that contract. Runtime restart,
 route continuity, signed health, exact receipts, exclusive world-v3 state, and
 negative checks must agree before deleting old services, releases, state,
 acceptance roots, and local run scaffolding.
@@ -441,6 +455,10 @@ acceptance roots, and local run scaffolding.
   generic journal handle for the convenience of tests or adapters.
 - Do not append a commit when reduction produces no canonical mutation.
 - Do not resume Run 115.
+- A consumer never restates a foreign owner's document shape as its own
+  strict struct or fixture. Read the owner's published contract (pinned
+  schema, owner-emitted samples) and prove each direction against the real
+  counterpart. PA.f196 and PA.f197 in the play-agent cut map are the cost.
 - Do not invoke the current bounded Connector or Ghostlight redeploy helpers;
   they fail at the root/Idunn Git boundary and still embody duplicate target
   deployment authority.
