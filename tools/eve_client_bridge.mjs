@@ -88,6 +88,13 @@ async function main() {
           ? wrapper
           : wrapper.querySelector("input, textarea, select");
         if (!element) throw new Error(`bridge: node id ${nodeId} has no editable control`);
+        // PA.f174: a real browser refuses keystrokes into a disabled
+        // control outright -- typing into it here without this check would
+        // silently capture a value no real client could ever have entered,
+        // hiding exactly the gap PA.f167 named untestable.
+        if (element.disabled) {
+          throw new Error(`bridge: node id ${nodeId}'s own control is disabled; a real client cannot type into it`);
+        }
         element.value = value;
         element.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
         element.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
