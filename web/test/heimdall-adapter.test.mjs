@@ -19,12 +19,14 @@ afterEach(() => {
   restoreGlobal("window", originalGlobals.window);
 });
 
-test("browser return parser accepts only a matching completion witness", () => {
+test("browser return parser completes by attempt id and never reads the completion code", () => {
   const handle = "d0a9c1e7-89ac-46f9-8c85-c2484ed18f76";
   assert.deepEqual(readHeimdallBrowserReturn(returnUrl(handle), "ghostlight"), { status: "success", handle });
   assert.equal(readHeimdallBrowserReturn("https://yggdrasil.gamecult.org/ghostlight/", "ghostlight"), undefined);
   assert.equal(readHeimdallBrowserReturn(returnUrl(handle), "another-app")?.status, "error");
-  assert.equal(readHeimdallBrowserReturn(returnUrl(handle, "different"), "ghostlight")?.status, "error");
+  assert.deepEqual(readHeimdallBrowserReturn(returnUrl(handle, "secret-redeem-code"), "ghostlight"), { status: "success", handle });
+  assert.ok(!JSON.stringify(readHeimdallBrowserReturn(returnUrl(handle, "secret-redeem-code"), "ghostlight")).includes("secret-redeem-code"));
+  assert.equal(readHeimdallBrowserReturn(returnUrl("", "secret-redeem-code"), "ghostlight")?.status, "error");
 });
 
 test("fresh browser context redeems the URL witness and scrubs it", async () => {
@@ -76,7 +78,9 @@ function restoreGlobal(name, value) {
   else Object.defineProperty(globalThis, name, { configurable: true, value });
 }
 
-function returnUrl(attemptId, completionCode = attemptId) {
+// Heimdall issues a random completion code distinct from the attempt id, as
+// the real callback does; the fixture must not restate the old equality.
+function returnUrl(attemptId, completionCode = `code-for-${attemptId}`) {
   const parameters = new URLSearchParams({
     heimdall_status: "success",
     heimdall_provider: "discord",

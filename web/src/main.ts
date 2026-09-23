@@ -146,8 +146,8 @@ function trySubscribeToRevisions(): void {
 
 await host.start();
 trySubscribeToRevisions();
-await resumeHeimdallAccess({
-  complete: async handle => {
+const resumeTarget = {
+  complete: async (handle: string) => {
     const result = await api.completeAuthentication(handle);
     if (result.pluginPayload?.pluginId === heimdallAccessBrowserAdapter.pluginId) {
       await heimdallAccessBrowserAdapter.consumeCommandResult?.(result.pluginPayload);
@@ -155,8 +155,28 @@ await resumeHeimdallAccess({
     await host.refresh();
     trySubscribeToRevisions();
   },
-}, { appSlug: "ghostlight" });
+};
+await resumeHeimdallAccess(resumeTarget, { appSlug: "ghostlight" });
 trySubscribeToRevisions();
+
+// A player who finishes Discord in another tab or app and switches back to
+// this one, rather than following Heimdall's "Return to the app" link, never
+// reloads this page, so the load-time resume above never sees the result.
+// Re-running the same resume when the tab becomes visible asks Heimdall about
+// the attempt this tab started; it answers pending or authenticated, and the
+// adapter drops the stored attempt once the answer is final.
+let resuming = false;
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || resuming || api.hasAuthenticatedSurface()) return;
+  resuming = true;
+  resumeHeimdallAccess(resumeTarget, { appSlug: "ghostlight" })
+    .catch(error => {
+      status.textContent = error instanceof Error ? error.message : String(error);
+    })
+    .finally(() => {
+      resuming = false;
+    });
+});
 
 // The in-page gate's own completion never calls back into this file: it
 // resolves inside the vendored host's `submit()` (a command dispatch) and

@@ -1,4 +1,4 @@
-// Vendored from GameCult/Heimdall commit b9ab8c0, plugin
+// Vendored from GameCult/Heimdall commit e8e2832, plugin
 // gamecult.heimdall.access. Heimdall owns these semantics; Ghostlight embeds the
 // adapter because its release must remain self-contained.
 const ATTEMPT_KEY = "gamecult.heimdall.access.attempt";
@@ -14,54 +14,59 @@ export interface HeimdallAccessResumeOptions {
 export function createHeimdallAccessBrowserAdapter(options: { advertisedOrigins: readonly string[] }) {
   const advertisedOrigins = new Set(options.advertisedOrigins.map(value => new URL(value).origin));
   return {
-    pluginId: "gamecult.heimdall.access",
-    capabilities: ["auth.gate", "auth.begin", "auth.complete", "auth.logout"],
-    componentKinds: ["heimdall.access_gate", "heimdall.identity", "heimdall.access_status"],
-    schemas: ["heimdall.access_gate_state.v1"],
-    normalizeDocument(_schemaId: string | undefined, value: unknown): unknown {
-      return value;
-    },
-    renderComponent(component: { id?: string }, props: Record<string, unknown>): HTMLElement {
-      const view = document.createElement("section");
-      view.className = `heimdall-access heimdall-access-${String(props.state || "unknown")}`;
-      if (component.id) view.id = component.id;
-      view.setAttribute("role", "status");
-      view.setAttribute("aria-live", "polite");
-      const title = document.createElement("h2");
-      title.textContent = String(props.title || "Access");
-      const detail = document.createElement("p");
-      detail.textContent = String(props.detail || "");
-      view.append(title, detail);
-      const displayName = String(props.displayName || "");
-      if (displayName) {
-        const identity = document.createElement("p");
-        identity.className = "heimdall-identity";
-        identity.textContent = displayName;
-        view.append(identity);
+  pluginId: "gamecult.heimdall.access",
+  capabilities: ["auth.gate", "auth.begin", "auth.complete", "auth.logout"],
+  componentKinds: ["heimdall.access_gate", "heimdall.identity", "heimdall.access_status"],
+  schemas: ["heimdall.access_gate_state.v1"],
+  normalizeDocument(_schemaId: string | undefined, value: unknown): unknown {
+    return value;
+  },
+  renderComponent(
+    component: { id?: string },
+    props: Record<string, unknown>,
+  ): HTMLElement {
+    const view = document.createElement("section");
+    view.className = `heimdall-access heimdall-access-${String(props.state || "unknown")}`;
+    if (component.id) view.id = component.id;
+    view.setAttribute("role", "status");
+    view.setAttribute("aria-live", "polite");
+    const title = document.createElement("h2");
+    title.textContent = String(props.title || "Access");
+    const detail = document.createElement("p");
+    detail.textContent = String(props.detail || "");
+    view.append(title, detail);
+    const displayName = String(props.displayName || "");
+    if (displayName) {
+      const identity = document.createElement("p");
+      identity.className = "heimdall-identity";
+      identity.textContent = displayName;
+      view.append(identity);
+    }
+    return view;
+  },
+  async consumeCommandResult(
+    pluginPayload: { schemaId: string; payload: Record<string, unknown> },
+  ): Promise<void> {
+    if (pluginPayload.schemaId === "heimdall.auth_navigation_receipt.v1") {
+      const handle = String(pluginPayload.payload.handle || "");
+      const navigation = object(pluginPayload.payload.navigation);
+      const url = new URL(String(navigation.url || ""));
+      const allowedOrigins = Array.isArray(navigation.allowedOrigins)
+        ? navigation.allowedOrigins.filter((value): value is string => typeof value === "string")
+        : [];
+      if (!handle || url.protocol !== "https:" || !advertisedOrigins.has(url.origin) || !allowedOrigins.includes(url.origin)) {
+        throw new Error("Heimdall returned an unsafe authentication navigation receipt.");
       }
-      return view;
-    },
-    async consumeCommandResult(pluginPayload: { schemaId: string; payload: Record<string, unknown> }): Promise<void> {
-      if (pluginPayload.schemaId === "heimdall.auth_navigation_receipt.v1") {
-        const handle = String(pluginPayload.payload.handle || "");
-        const navigation = object(pluginPayload.payload.navigation);
-        const url = new URL(String(navigation.url || ""));
-        const allowedOrigins = Array.isArray(navigation.allowedOrigins)
-          ? navigation.allowedOrigins.filter((value): value is string => typeof value === "string")
-          : [];
-        if (!handle || url.protocol !== "https:" || !advertisedOrigins.has(url.origin) || !allowedOrigins.includes(url.origin)) {
-          throw new Error("Heimdall returned an unsafe authentication navigation receipt.");
-        }
-        sessionStorage.setItem(ATTEMPT_KEY, handle);
-        window.location.assign(url.toString());
-        return;
+      sessionStorage.setItem(ATTEMPT_KEY, handle);
+      window.location.assign(url.toString());
+      return;
+    }
+    if (pluginPayload.schemaId === "heimdall.auth_completion_status.v1") {
+      const status = String(pluginPayload.payload.status || "");
+      if (status === "authenticated" || status === "denied" || status === "expired") {
+        sessionStorage.removeItem(ATTEMPT_KEY);
       }
-      if (pluginPayload.schemaId === "heimdall.auth_completion_status.v1") {
-        const status = String(pluginPayload.payload.status || "");
-        if (status === "authenticated" || status === "denied" || status === "expired") {
-          sessionStorage.removeItem(ATTEMPT_KEY);
-        }
-      }
+    }
     },
   };
 }
@@ -114,12 +119,15 @@ export function readHeimdallBrowserReturn(
         || "Heimdall authentication failed.",
     };
   }
+  // The attempt id is the handle the app's backend completes over Heimdall's
+  // private command plane. The completion code in the same fragment is a
+  // distinct random secret for the HTTP redeem route; this adapter neither
+  // needs nor forwards it.
   const attemptId = parameters.get("heimdall_attempt_id") || "";
-  const completionCode = parameters.get("heimdall_completion_code") || "";
-  if (!attemptId || !completionCode || attemptId !== completionCode) {
-    return { status: "error", message: "Heimdall returned a malformed authentication completion witness." };
+  if (!attemptId) {
+    return { status: "error", message: "Heimdall returned an authentication completion without its attempt id." };
   }
-  return { status: "success", handle: completionCode };
+  return { status: "success", handle: attemptId };
 }
 
 function clearHeimdallBrowserReturn(): void {
