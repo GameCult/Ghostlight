@@ -538,10 +538,20 @@ impl PlayTurnStore {
             {
                 match read_current_schema_row(row) {
                     Ok(state) => (row.clone(), state, None),
-                    Err(error) => {
+                    Err(CurrentSchemaRowError::Decode(error)) => {
                         let (row, state, sidecar) =
                             retire_unreadable_row(&store, path.as_ref(), row, STORE_SCHEMA, &error)?;
                         (row, state, Some(sidecar))
+                    }
+                    // PA.f193-A/B: not a decode failure — the row's bytes
+                    // parsed into a `PlayTurnStoreState` perfectly fine, and
+                    // either the canonical re-encode check or the inner
+                    // `schema` tag disagreed. The row is left untouched and
+                    // `open` fails loudly, the same shape `upgrade_legacy_row`
+                    // already uses for its own `Other` arm (PA.f185), instead
+                    // of destroying a turn that decoded just fine.
+                    Err(CurrentSchemaRowError::Other(error)) => {
+                        return Err(error).context("reading a current-schema play-turn row failed");
                     }
                 }
             }
@@ -839,22 +849,44 @@ fn upgrade_legacy_row(
     }
 }
 
+/// `read_current_schema_row`'s own error, split the same way
+/// `upgrade_legacy_row`'s is (PA.f185, here PA.f193-A/B): only a genuine
+/// decode failure means the row is actually unreadable. A row whose bytes
+/// parse into a `PlayTurnStoreState` but fail the canonical re-encode check,
+/// or whose inner `schema` field disagrees with the envelope's own
+/// `STORE_SCHEMA`, has a perfectly readable turn inside it — before this fix
+/// both cases reached `PlayTurnStore::open` as a plain `anyhow::Error` and
+/// were routed into `retire_unreadable_row` exactly like a genuine decode
+/// failure, destroying a turn that decoded fine. Only `Decode` is that
+/// genuine case; `Other` propagates as an ordinary `open` failure instead,
+/// leaving the row untouched.
+enum CurrentSchemaRowError {
+    Decode(anyhow::Error),
+    Other(anyhow::Error),
+}
+
 /// `PlayTurnStore::open`'s current-schema arm (PA.f184): a row already
 /// declaring `STORE_SCHEMA` can still fail to read — genuinely corrupt bytes,
 /// or a future change to `PlayTurn`'s own field set or order that lands
 /// without moving `STORE_SCHEMA`, which the canonical re-encode check below
-/// exists to catch. All three checks here are read failures, not merely
-/// validity concerns: unlike `upgrade_legacy_row` (PA.f185), there is no
+/// exists to catch. Unlike `upgrade_legacy_row` (PA.f185), there is no
 /// upward-migration path for a current-schema row that fails one of these —
-/// nothing upgrades it in place — so every exit here is retirement-worthy.
-fn read_current_schema_row(row: &CultCacheEnvelope) -> anyhow::Result<PlayTurnStoreState> {
-    let state: PlayTurnStoreState =
-        rmp_serde::from_slice(&row.payload).context("play-turn state is corrupt")?;
-    if rmp_serde::to_vec_named(&state)? != row.payload {
-        bail!("play-turn state is not canonical");
+/// nothing upgrades it in place — but that does not make every exit here
+/// retirement-worthy: the canonical check and the inner-schema check both run
+/// only after the decode has already succeeded, so a row that fails either
+/// one is readable, not corrupt (PA.f193-A/B).
+fn read_current_schema_row(row: &CultCacheEnvelope) -> Result<PlayTurnStoreState, CurrentSchemaRowError> {
+    let state: PlayTurnStoreState = rmp_serde::from_slice(&row.payload)
+        .context("play-turn state is corrupt")
+        .map_err(CurrentSchemaRowError::Decode)?;
+    let reencoded = rmp_serde::to_vec_named(&state)
+        .context("re-encoding play-turn state failed")
+        .map_err(CurrentSchemaRowError::Other)?;
+    if reencoded != row.payload {
+        return Err(CurrentSchemaRowError::Other(anyhow!("play-turn state is not canonical")));
     }
     if state.schema != STORE_SCHEMA {
-        bail!("play-turn state schema is invalid");
+        return Err(CurrentSchemaRowError::Other(anyhow!("play-turn state schema is invalid")));
     }
     Ok(state)
 }
@@ -1008,9 +1040,25 @@ pub(crate) enum PlayError {
     /// — the turn is `Running`, or there is no open turn to answer.
     #[error("an answer was given but no question is currently open")]
     NoQuestionOpen,
-    /// PA.f84: the turn is `Running` and `request.text` is non-empty; only
-    /// an empty continue is accepted while a prior request's own rounds are
-    /// still being resolved.
+    /// PA.f193-D: `admit`'s own `run_lock` was already held by another call's
+    /// own round loop when this request arrived — refused before request
+    /// text or the turn's own state are even inspected. An empty continue
+    /// submitted into this exact window is refused the same way a non-empty
+    /// one is, which is what actually distinguishes this from
+    /// `TurnStillRunning` below: nothing about the request being empty makes
+    /// it succeed here. Before this split both cases shared `TurnStillRunning`'s
+    /// text, which told a player who had just submitted the empty continue
+    /// the card itself hinted at that only an empty continue is accepted —
+    /// while refusing that exact empty continue for an unrelated reason.
+    #[error("a prior request for this turn is still being processed; retry shortly")]
+    TurnBusy,
+    /// PA.f84: the turn is `Running`, `admit`'s own `run_lock` was free (this
+    /// call is the only one touching the turn), and `request.text` is
+    /// non-empty; only an empty continue is accepted while a prior request's
+    /// own rounds are still being resolved. PA.f193-D: this is the only
+    /// `PlayError` for which that sentence is actually true — a request that
+    /// instead finds `run_lock` itself held is refused as `TurnBusy` above,
+    /// before text is ever inspected.
     #[error("the turn is still running its own prior request; only an empty continue is accepted")]
     TurnStillRunning,
     /// PA.f108: empty or whitespace-only text with no turn currently open to
@@ -1108,6 +1156,15 @@ pub(crate) struct PlayTurnView {
     /// world itself. It is never folded into the surface document's own
     /// `version` field, which names `surface_version` alone.
     pub(crate) revision: u64,
+    /// PA.f193-D: whether `admit`'s own `run_lock` is held right now — a
+    /// non-blocking peek, not a fresh acquisition, taken by
+    /// `current_turn_view` alongside everything else it reads. Lets
+    /// `eve::authenticated_surface` show the "submit an empty message to
+    /// continue" hint only for a turn nothing is currently working on:
+    /// showing it while a round is genuinely in flight told a player to do
+    /// the exact thing `admit`'s own `try_lock_owned` was about to refuse as
+    /// `TurnBusy` anyway.
+    pub(crate) run_in_progress: bool,
 }
 
 /// One outcome of executing a round's already-decided tool calls.
@@ -1310,7 +1367,12 @@ impl PlayTable {
         // starting. Owned (Cut 10), not borrowed, so the guard can move into
         // the spawned task alongside the turn `admit` built.
         let Ok(run_guard) = Arc::clone(&self.run_lock).try_lock_owned() else {
-            return Err(PlayError::TurnStillRunning);
+            // PA.f193-D: `TurnBusy`, not `TurnStillRunning` — the lock itself
+            // is contended, before the turn's own state or the request's own
+            // text are inspected at all. An empty continue arriving in this
+            // exact window is refused too, which `TurnStillRunning`'s own
+            // text would misrepresent.
+            return Err(PlayError::TurnBusy);
         };
         let PlayRequest { text, answers } = request;
         let (stored, replayed_turn_id) = {
@@ -1527,6 +1589,12 @@ impl PlayTable {
     pub(crate) async fn current_turn_view(&self) -> Option<PlayTurnView> {
         let store = self.store.lock().await;
         let turn = store.current()?;
+        // PA.f193-D: `try_lock`, not `try_lock_owned` — this never wants to
+        // hold the guard, only to observe whether one is currently held, so
+        // it is dropped immediately either way. This never contends with or
+        // delays a real `admit`: at worst it observes the lock a moment
+        // before or after `admit` itself would.
+        let run_in_progress = self.run_lock.try_lock().is_err();
         Some(PlayTurnView {
             turn_id: turn.turn_id.clone(),
             state: turn.state,
@@ -1534,6 +1602,7 @@ impl PlayTable {
             narration: turn.narration.clone(),
             refusal: turn.refusal.clone(),
             revision: store.state.revision,
+            run_in_progress,
         })
     }
 
@@ -3578,23 +3647,28 @@ pub(crate) mod tests {
         }
     }
 
-    /// PA.f188 ("the interrupted turn"): a turn a process died mid-round
-    /// leaves `Running` forever — the store's own single-row shape never
-    /// resumes it on its own, and the admit arm at `run`'s own `Some(existing)
-    /// if existing.state == PlayTurnState::Running` match continues it only
-    /// on an empty-text submit (non-empty text is refused as
-    /// `TurnStillRunning`). Before this fix the card showed nothing at all in
-    /// that state — no narration, no question, no refusal, since none of
-    /// those get set on a turn that never reached a close, a question, or a
-    /// refused act since it last opened — so a player had no way to learn the
-    /// empty-submit continue exists. The card now names it explicitly while
-    /// `Running`, and says nothing extra once the turn is `AwaitingPlayer` or
-    /// `Closed` again.
+    /// PA.f193-D ("the interrupted turn"; renumbered from the PA.f188
+    /// duplicate this comment used to carry — PA.f188 elsewhere in this file
+    /// names only `open_question_of`'s own construction-site token
+    /// coverage): a turn a process died mid-round leaves `Running` forever —
+    /// the store's own single-row shape never resumes it on its own, and the
+    /// admit arm at `run`'s own `Some(existing) if existing.state ==
+    /// PlayTurnState::Running` match continues it only on an empty-text
+    /// submit (non-empty text is refused as `TurnStillRunning`). Before this
+    /// fix the card showed nothing at all in that state — no narration, no
+    /// question, no refusal, since none of those get set on a turn that
+    /// never reached a close, a question, or a refused act since it last
+    /// opened — so a player had no way to learn the empty-submit continue
+    /// exists. The card now names it explicitly while `Running` and nothing
+    /// is actively working on the turn (`run_in_progress` is false — see
+    /// `the_running_hint_does_not_appear_while_a_round_is_actually_in_flight`),
+    /// and says nothing extra once the turn is `AwaitingPlayer` or `Closed`
+    /// again.
     ///
     /// Mutation: delete the `if play.is_some_and(|view| view.state ==
-    /// PlayTurnState::Running) { ... }` block from `eve.rs`'s play-card
-    /// construction — the `running_hint` lookup below then finds nothing and
-    /// the first assertion fails.
+    /// PlayTurnState::Running && !view.run_in_progress) { ... }` block from
+    /// `eve.rs`'s play-card construction — the `running_hint` lookup below
+    /// then finds nothing and the first assertion fails.
     #[tokio::test]
     async fn the_play_card_names_the_empty_submit_continue_while_the_turn_is_running() {
         let fixture = play_world(None, "player-interrupted-turn").await;
@@ -3607,6 +3681,7 @@ pub(crate) mod tests {
             narration: None,
             refusal: None,
             revision: 1,
+            run_in_progress: false,
         };
         let surface = crate::eve::authenticated_surface(
             "player-interrupted-turn",
@@ -3615,7 +3690,7 @@ pub(crate) mod tests {
         )
         .unwrap();
         let running_hint = find_surface_node(&surface, "world.play.running")
-            .expect("a Running turn must render a hint naming the empty-submit continue");
+            .expect("a Running turn nothing is working on must render a hint naming the empty-submit continue");
         let encoded = serde_json::to_string(running_hint).unwrap();
         assert!(
             encoded.to_lowercase().contains("empty"),
@@ -3630,6 +3705,7 @@ pub(crate) mod tests {
             narration: None,
             refusal: None,
             revision: 1,
+            run_in_progress: false,
         };
         let awaiting_surface = crate::eve::authenticated_surface(
             "player-interrupted-turn",
@@ -3640,6 +3716,46 @@ pub(crate) mod tests {
         assert!(
             find_surface_node(&awaiting_surface, "world.play.running").is_none(),
             "the running hint must not appear once the turn has left Running"
+        );
+    }
+
+    /// PA.f193-D: the hint the previous test proves for an idle `Running`
+    /// turn must not also render while something is actively working on that
+    /// turn — `admit`'s own `run_lock` is held, so `admit` refuses even an
+    /// empty continue with `TurnBusy` before it ever inspects the request,
+    /// directly contradicting a hint that told the player an empty submit
+    /// would be accepted. Soul measured this: the card rendered the hint for
+    /// every `Running` turn regardless of whether a round was genuinely in
+    /// flight.
+    ///
+    /// Mutation: change the play-card construction's gate back to `play
+    /// .is_some_and(|view| view.state == PlayTurnState::Running)` (drop the
+    /// `&& !view.run_in_progress`) — the assertion below then fails, because
+    /// the hint reappears for a turn something is actively running.
+    #[tokio::test]
+    async fn the_running_hint_does_not_appear_while_a_round_is_actually_in_flight() {
+        let fixture = play_world(None, "player-interrupted-turn-busy").await;
+        let world = fixture.world.snapshot().await.unwrap();
+
+        let busy_view = PlayTurnView {
+            turn_id: test_turn_id(9302),
+            state: PlayTurnState::Running,
+            question: None,
+            narration: None,
+            refusal: None,
+            revision: 1,
+            run_in_progress: true,
+        };
+        let surface = crate::eve::authenticated_surface(
+            "player-interrupted-turn-busy",
+            Some(&world),
+            Some(&busy_view),
+        )
+        .unwrap();
+        assert!(
+            find_surface_node(&surface, "world.play.running").is_none(),
+            "the running hint must not appear while a round is actually in flight: it would tell \
+             the player to submit the exact empty continue admit is about to refuse as TurnBusy"
         );
     }
 
@@ -4306,6 +4422,150 @@ pub(crate) mod tests {
                 .any(|entry| entry.file_name().to_string_lossy().contains("retired-unreadable-row")),
             "the future-schema row must be written to a sidecar file beside the store"
         );
+    }
+
+    /// PA.f193-A: Soul's own probe — a row declaring the *current*
+    /// `STORE_SCHEMA` whose bytes decode into a perfectly valid
+    /// `PlayTurnStoreState` (every field reads back, including the turn
+    /// itself) but whose on-disk field order is not what this build's own
+    /// `to_vec_named` would produce, so the canonical re-encode check
+    /// disagrees. Before this fix `read_current_schema_row` returned a plain
+    /// `anyhow::Error` for this exactly like a genuine decode failure, and
+    /// `open` retired the row, destroying a readable turn. Now `open` returns
+    /// `Err` and leaves the row untouched.
+    ///
+    /// Mutation: change `Err(CurrentSchemaRowError::Other(error)) => return
+    /// Err(error)...` back to routing through `retire_unreadable_row` (or
+    /// collapse `CurrentSchemaRowError` back into a single `anyhow::Result`
+    /// the way it was before PA.f193-A) — the row is then retired, a sidecar
+    /// appears, and the assertions below fail.
+    #[tokio::test]
+    async fn a_current_schema_rows_non_canonical_bytes_are_not_retired() {
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+
+        // Field order alphabetical (ledger, revision, schema, turn) rather
+        // than `PlayTurnStoreState`'s own declared order (schema, turn,
+        // ledger, revision): `rmp_serde` decodes a named-struct map by key
+        // regardless of wire order, so this still parses into a valid state,
+        // but re-encoding it through the real struct produces different
+        // bytes than what is on disk.
+        let mut state_fields = std::collections::BTreeMap::new();
+        state_fields.insert("ledger", serde_json::to_value(KeyLedger::default()).unwrap());
+        state_fields.insert("revision", Value::Number(5.into()));
+        state_fields.insert("schema", Value::String(STORE_SCHEMA.into()));
+        state_fields.insert("turn", Value::Null);
+        let state_json = Value::Object(state_fields.into_iter().map(|(k, v)| (k.to_string(), v)).collect());
+        let payload = rmp_serde::to_vec_named(&state_json).unwrap();
+
+        // Sanity: this payload really does decode into a valid state, so the
+        // test is actually exercising the canonical check and not a decode
+        // failure in disguise.
+        let decoded: PlayTurnStoreState = rmp_serde::from_slice(&payload)
+            .expect("the hand-ordered payload must still decode as a valid PlayTurnStoreState");
+        assert!(rmp_serde::to_vec_named(&decoded).unwrap() != payload, "the test fixture must actually be non-canonical");
+
+        let row = CultCacheEnvelope {
+            key: STORE_KEY.into(),
+            r#type: STORE_TYPE.into(),
+            payload,
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some(STORE_SCHEMA.into()),
+        };
+        {
+            let raw_store = OwnedRedbMessagePackBackingStore::new(&store_path).unwrap();
+            assert!(
+                raw_store.compare_and_swap_batch(&[], vec![row]).unwrap(),
+                "seeding the non-canonical row must succeed against an empty store"
+            );
+        }
+
+        let error = match PlayTurnStore::open(&store_path) {
+            Ok(_) => panic!("a non-canonical current-schema row must not silently succeed either"),
+            Err(error) => error,
+        };
+        let full_chain = format!("{error:#}");
+        assert!(
+            full_chain.contains("canonical"),
+            "the failure must name the canonical mismatch: {full_chain}"
+        );
+        assert!(
+            std::fs::read_dir(directory.path())
+                .unwrap()
+                .filter_map(|entry| entry.ok())
+                .all(|entry| !entry.file_name().to_string_lossy().contains("retired-unreadable-row")),
+            "a readable turn must not be retired over a non-canonical re-encode alone"
+        );
+
+        let raw_store = OwnedRedbMessagePackBackingStore::new(&store_path).unwrap();
+        let rows = raw_store.pull_all().unwrap();
+        assert_eq!(rows.len(), 1, "the original row must still be the only row in the store");
+        assert_eq!(rows[0].schema_id.as_deref(), Some(STORE_SCHEMA));
+    }
+
+    /// PA.f193-B: a row declaring the current `STORE_SCHEMA` in its envelope,
+    /// canonical on the wire, but whose inner `schema` field names something
+    /// else — the same class of disagreement PA.f185 already covers for the
+    /// legacy arms, here for the current-schema arm PA.f185 did not touch.
+    /// The row decodes fine; only the inner tag disagrees. Before this fix
+    /// that reached `retire_unreadable_row` exactly like a decode failure.
+    ///
+    /// Mutation: delete the `if state.schema != STORE_SCHEMA` check from
+    /// `read_current_schema_row` (or route its `Other` arm back through
+    /// `retire_unreadable_row`) — the assertions below fail: with the check
+    /// deleted `open` succeeds instead of refusing; with retirement restored
+    /// a sidecar appears.
+    #[tokio::test]
+    async fn a_current_schema_rows_inner_schema_disagreeing_with_its_envelope_is_not_retired() {
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+
+        let state = PlayTurnStoreState {
+            schema: LEGACY_STORE_SCHEMA_V1.into(),
+            turn: None,
+            ledger: KeyLedger::default(),
+            revision: 7,
+        };
+        let payload = rmp_serde::to_vec_named(&state).unwrap();
+        let row = CultCacheEnvelope {
+            key: STORE_KEY.into(),
+            r#type: STORE_TYPE.into(),
+            payload,
+            stored_at: Utc::now().to_rfc3339(),
+            // Envelope says current schema; the payload's own inner `schema`
+            // field says otherwise (LEGACY_STORE_SCHEMA_V1 above) — the exact
+            // disagreement this arm exists to catch.
+            schema_id: Some(STORE_SCHEMA.into()),
+        };
+        {
+            let raw_store = OwnedRedbMessagePackBackingStore::new(&store_path).unwrap();
+            assert!(
+                raw_store.compare_and_swap_batch(&[], vec![row]).unwrap(),
+                "seeding the mismatched-inner-schema row must succeed against an empty store"
+            );
+        }
+
+        let error = match PlayTurnStore::open(&store_path) {
+            Ok(_) => panic!("an inner-schema mismatch must not silently succeed either"),
+            Err(error) => error,
+        };
+        let full_chain = format!("{error:#}");
+        assert!(
+            full_chain.contains("schema"),
+            "the failure must name the schema mismatch: {full_chain}"
+        );
+        assert!(
+            std::fs::read_dir(directory.path())
+                .unwrap()
+                .filter_map(|entry| entry.ok())
+                .all(|entry| !entry.file_name().to_string_lossy().contains("retired-unreadable-row")),
+            "a readable turn must not be retired over an inner-schema tag mismatch alone"
+        );
+
+        let raw_store = OwnedRedbMessagePackBackingStore::new(&store_path).unwrap();
+        let rows = raw_store.pull_all().unwrap();
+        assert_eq!(rows.len(), 1, "the original row must still be the only row in the store");
+        assert_eq!(rows[0].schema_id.as_deref(), Some(STORE_SCHEMA));
     }
 
     /// PA.f185: Soul's own probe — a row whose envelope declares
@@ -10021,7 +10281,7 @@ pub(crate) mod tests {
     /// under one acquisition (no two concurrent `run` calls for this table
     /// ever interleave), but a second call arriving while the first is still
     /// inside its own round loop is refused *at once* with
-    /// `TurnStillRunning` rather than queuing behind it for up to
+    /// `TurnBusy` (PA.f193-D) rather than queuing behind it for up to
     /// `ROUND_BUDGET` rounds of inference (PA.f142). Two concurrent `run`
     /// calls carrying the *same* idempotency key — the shape a genuine
     /// client retry racing itself takes — therefore give exactly one turn
@@ -10081,9 +10341,9 @@ pub(crate) mod tests {
         // lost the race for `run_lock`, is refused at once rather than
         // queued — `try_lock` decides which one wins, not this test.
         let ran = match (first_outcome, second_outcome) {
-            (Ok(RunOutcome::Ran { .. }), Err(PlayError::TurnStillRunning)) => true,
-            (Err(PlayError::TurnStillRunning), Ok(RunOutcome::Ran { .. })) => true,
-            other => panic!("expected exactly one Ran and one immediate TurnStillRunning refusal: {other:?}"),
+            (Ok(RunOutcome::Ran { .. }), Err(PlayError::TurnBusy)) => true,
+            (Err(PlayError::TurnBusy), Ok(RunOutcome::Ran { .. })) => true,
+            other => panic!("expected exactly one Ran and one immediate TurnBusy refusal: {other:?}"),
         };
         assert!(ran);
         let stored = table.store.lock().await;
@@ -10149,7 +10409,7 @@ pub(crate) mod tests {
         .await
         .expect("a busy table must refuse at once, not block waiting for run_lock");
         assert!(
-            matches!(busy, Err(PlayError::TurnStillRunning)),
+            matches!(busy, Err(PlayError::TurnBusy)),
             "a request racing an in-flight turn must be refused immediately: {busy:?}"
         );
 

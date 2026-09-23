@@ -476,8 +476,11 @@ pub(crate) fn authenticated_surface(
                                 "children":[]
                             }));
                         }
-                        // PA.f188 ("the interrupted turn"): a turn a process
-                        // died mid-round leaves `Running` forever — nothing
+                        // PA.f193-D ("the interrupted turn"; renumbered from
+                        // the PA.f188 duplicate this file's own comment used
+                        // to carry — PA.f188 names only `f295a3a`'s
+                        // construction-site coverage): a turn a process died
+                        // mid-round leaves `Running` forever — nothing
                         // resumes it on its own, and the only way forward is
                         // submitting an empty message (`play.rs`'s own
                         // `Some(existing) if existing.state ==
@@ -493,7 +496,19 @@ pub(crate) fn authenticated_surface(
                         // turn, not world truth, so it stays within
                         // invariant 8 the same way the narration/question/
                         // refusal rows above already do.
-                        if play.is_some_and(|view| view.state == PlayTurnState::Running) {
+                        //
+                        // `&& !view.run_in_progress`: `state == Running`
+                        // alone is not "nothing is happening" — it is also
+                        // true for the seconds a healthy turn is genuinely
+                        // running its own round loop. In that window `admit`
+                        // fails `run_lock`'s own `try_lock_owned` before
+                        // inspecting anything and refuses as `TurnBusy`,
+                        // contradicting a hint that told the player an empty
+                        // continue would be accepted. `run_in_progress` is
+                        // `current_turn_view`'s own non-blocking peek at that
+                        // same lock, so the hint now renders only for a
+                        // `Running` turn nothing is actively working on.
+                        if play.is_some_and(|view| view.state == PlayTurnState::Running && !view.run_in_progress) {
                             play_rows.push(json!({
                                 "id":"world.play.running",
                                 "kind":"text",
