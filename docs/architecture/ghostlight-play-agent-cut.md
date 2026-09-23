@@ -3456,6 +3456,80 @@ Interpreter, the elaborator sweep and lenses.
     schemas rather than one, plus this file's doc-comment convention.
   - **Hands reported no mutations.** Soul checks every rule's call site
     itself, as it did after Cut 10.
+- **Soul on Cuts 12 and 13** (Opus, 2026-09-23, against `a978a82`,
+  Windows).
+  - **Verdict: ready for the playtest with one preflight**, and the seed
+    leg cannot be judged at all. Cut 13's token rule is real,
+    load-bearing and better tested than Hands claimed: every mutation
+    killed exactly the tests that should die, and Soul's own PA.f170
+    attack is refused through the route.
+  - Held: the token binds an answer to its question; tokens are distinct
+    per question; every question-opening path mints; cleared on answer and
+    on fault; a legacy upgrade mints for a recovered open question; the
+    token is opaque, appears exactly once in the served document, and is
+    absent from the rendered DOM and every attribute through the real
+    pinned lowering; the merge rule; the tests read the token from the
+    served surface; the strict canonical check still covers current rows;
+    the no-node run is **163 passed, 4 skipped**.
+  - **Growth judged:** the claimed ~150 lines is 93 outside the test
+    module, of which 29 are code. Two legacy schemas and a uuid mint for a
+    real fix. It earns its keep. The doc comments re-litigate the deleted
+    comparison, which is style, not liability.
+  - Triage: PA.f176 to PA.f182 are Cut 14.
+- **PA.f176 (Cut 12, high for the gate, not the daemon):**
+  `eve_client_bridge_is_available()` checks `node` and a committed `dist/`
+  file, which is always present, and never checks the bridge's actual
+  runtime dependencies. On a clean checkout with node on PATH: **159
+  passed, 4 failed** on `jsdom`, and still 4 failed on `ajv` after running
+  the runbook's own setup line. That is PA.f169's shape returning from the
+  dependency side: a prerequisite that fails the gate instead of skipping
+  it. **Fix:** the check proves the dependencies it needs, and skips
+  otherwise; the runbook's setup line installs both packages.
+- **PA.f177 (Cut 12, moderate, preflight blocker):** PA.f172 fixed half the
+  population. `applied_keys` and `fault` were added to `PlayTurn` without
+  `#[serde(default)]` while the schema stayed `v1`, so an older `v1` row
+  fails to decode even through `upgrade_legacy_row`: "missing field
+  `applied_keys`". The play table then does not open, the card vanishes,
+  and only `playStatus` says why.
+  - **Ruling (Self, under the standing go):** the legacy reader is
+    genuinely lenient — every field added since `v1` defaults when a legacy
+    row is read. A row that still cannot be read is **retired to a sidecar
+    file and play starts fresh**, reported where the operator sees it. A
+    daemon must never answer an unreadable row by quietly having no play
+    surface.
+- **PA.f178 (Cut 13, low-moderate, fix):** with no question open,
+  `payload.answer_token` is never read, so a stale tab's second click
+  opens a **new turn** with text written for a question that is gone, and
+  spends an inference budget doing it. **Fix:** an answer token arriving
+  with no open question is refused ("that question is closed"), and never
+  opens a turn.
+- **PA.f179 (Cut 13, low, fix):** `open_question_of` and the gate both
+  fabricate an empty token through `unwrap_or_default()`, so a missing
+  token degrades to "the empty token is valid". **Fix:** compare the
+  `Option`s directly, so absence refuses.
+- **PA.f180 (Cut 13, low, fix):** `unwrap_bindings` flattens the action
+  channel and the bindings channel into one map, so the server cannot tell
+  them apart, and a token sent as a captured binding is accepted today.
+  Invariant 8 then rests entirely on `eve.rs` never emitting the token as a
+  control. **Fix:** keep the channels distinguishable at the ingress, and
+  refuse a token that arrives as a binding.
+- **PA.f181 (Cut 13, low, recorded):** `QuestionId`'s match is exercised by
+  one test that forges it, because the token refuses everything upstream.
+  It still covers the window between the runtime's read and `admit`.
+  **Kept**, with that narrowness stated where it lives.
+- **PA.f182 (Cut 13, trivial, fix):** the runbook lists three node-driving
+  tests and warns that an unguarded fourth would break the gate. Cut 13
+  added a fourth, correctly guarded, one commit after the list was
+  written. Add it.
+- **The seed leg, plainly:** the only coverage asserts that the click
+  reaches the env-var read and is refused. Nothing past that line is
+  tested anywhere: not the vault open, not the sweep, not a model call,
+  not a committed patch. If the operator sets the variable and clicks
+  Seed, everything after that read is first contact, and a failure there
+  will look like a regression in this pass when it is untested ground.
+  Plan the playtest so a failed seed does not abort the play-loop legs.
+  **Also:** that refusal names a server environment variable to the player;
+  it becomes a player-safe message with the detail logged (invariant 8).
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
