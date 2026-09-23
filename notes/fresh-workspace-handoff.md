@@ -245,11 +245,10 @@ State and commit schemas are `.consumer.v5`; world creation is
 `world_create.v4`, which requires lens weights.
 
 Deferred by design: `PolityInCausalRange`, `IndividuationRequired`, and
-Verification 13 wait for relations and population slices. Stale: the
-pre-pass-6 ignored acceptance test
-`real_local_model_cognition_modes_commit_speech` in
-`world/controllers.rs` fails at `NoAudience` because its subjects are
-unplaced; retire it or place its subjects.
+Verification 13 wait for relations and population slices. The ignored
+acceptance test `real_local_model_cognition_modes_commit_speech` in
+`world/controllers.rs` now places its three subjects in one Place
+(`roll-hall`), fixing the prior `NoAudience` rejection.
 
 ### Constraints
 

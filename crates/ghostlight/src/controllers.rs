@@ -11265,6 +11265,12 @@ mod tests {
                     brief: String::new(),
                     patch: WorldPatch {
                         declarations: vec![
+                            Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("roll-hall"),
+                                label: "The Roll Hall".into(),
+                                kind: EntityKind::Place,
+                                container: None,
+                            }),
                             Declaration::Subject(SubjectDeclaration {
                                 handle: DraftHandle::new("roll-caller"),
                                 label: "Iris, the midnight roll caller".into(),
@@ -11273,7 +11279,7 @@ mod tests {
                                     principal: human.clone(),
                                 },
                                 affordances: kernel_speak_grant(),
-                                position: None,
+                                position: Some(Ref::Draft(DraftHandle::new("roll-hall"))),
                             }),
                             Declaration::Subject(SubjectDeclaration {
                                 handle: DraftHandle::new("watch-officer"),
@@ -11281,7 +11287,7 @@ mod tests {
                                 kind: SubjectKind::Person,
                                 controller: NewController::NarrativePersona,
                                 affordances: kernel_speak_grant(),
-                                position: None,
+                                position: Some(Ref::Draft(DraftHandle::new("roll-hall"))),
                             }),
                             Declaration::Subject(SubjectDeclaration {
                                 handle: DraftHandle::new("signal-council"),
@@ -11289,7 +11295,7 @@ mod tests {
                                 kind: SubjectKind::Institution,
                                 controller: NewController::OperationalAgent,
                                 affordances: kernel_speak_grant(),
-                                position: None,
+                                position: Some(Ref::Draft(DraftHandle::new("roll-hall"))),
                             }),
                         ],
                         operations: Vec::new(),
