@@ -3645,6 +3645,39 @@ Interpreter, the elaborator sweep and lenses.
   closing narration. Both follow from invariant 8 and from narration at
   close; they are how it plays, and the operator should know before
   sitting down.
+- **Cut 15 landed (Hands, Sonnet, 2026-09-23):** `f295a3a` (`play.rs`),
+  `d366316` (`runtime.rs`), `ce382a8` (`web/src/main.ts`) and `1dea8f5`
+  (`eve.rs`).
+  - PA.f184: every arm retires, including the current schema and an
+    unrecognised future one. PA.f185: `upgrade_legacy_row`'s exits are
+    distinguished, so a readable row with a disagreeing inner schema is no
+    longer destroyed. PA.f188: both construction sites are guarded, and
+    Soul's own mutation now fails. PA.f189 and PA.f192 are done.
+  - PA.f186: `playStatus` reads "a play-turn row was retired to <path>"
+    instead of `"ok"`, from a new `PlayTable::retired_row_sidecar()`.
+  - PA.f187: `describe_seed_failure` names a category, and the detail is
+    logged.
+  - PA.f191: the web client subscribes from the current authenticated
+    state and keeps a poll fallback. There is no headless harness for
+    `main.ts`, so Hands verified it by tracing the vendored host's own
+    control flow, and says so.
+  - The card now names the empty-submit continue while a turn is
+    `Running`.
+  - Every rule was mutated, **including both construction sites**, and
+    every mutation killed its test.
+  - **Reported gap:** the `git`-checkout precondition is unit-tested by
+    parameterising the helper, not at its call site, because proving the
+    wiring would mean corrupting the real submodule. Hands recorded it as
+    not yet reached rather than claiming coverage.
+  - **Reported asymmetry:** the current-schema arm retires on any read
+    failure, including a non-canonical one, while the legacy path narrows
+    to decode failures only. That is what the brief asked for; the
+    payload is preserved verbatim either way.
+  - **Reported measurement:** the gated tests skip through an early
+    return, so the total stays 178 whether or not the bridge is
+    available. The count cannot distinguish them; only the skip lines do.
+  - Dungeon bin 170 → 178. Net about +980 lines, mostly tests and doc
+    comments.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
