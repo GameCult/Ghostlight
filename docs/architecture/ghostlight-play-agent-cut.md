@@ -3299,6 +3299,75 @@ Interpreter, the elaborator sweep and lenses.
     Hands said so rather than faking the coverage.
   - Dungeon bin 145 → 151. Net: one fixture, six tests, one field on a
     never-deployed row, one dead wire field removed.
+- **Soul on Cut 11** (Opus, 2026-09-23, against `d8b8e86`, Windows).
+  - Held: PA.f161's accept path end to end through the route (the test
+    takes its version from the route's own response); PA.f163; PA.f164,
+    with every other advertised binding checked; PA.f162's drift check,
+    killed two ways; PA.f165 verified independently; PA.f168's six call
+    sites; and the test-visibility widening, which production cannot
+    reach. 151 and 622 green.
+  - **Verdict: not ready.** PA.f169 blocks the release, PA.f172 blocks
+    Raven's own machine, and PA.f170 is a design fork for Self.
+  - Triage: PA.f169, PA.f171 to PA.f175 are Cut 12. PA.f170 needs facts
+    about the lowering first.
+- **PA.f169 (Cut 11, high, blocker):** `client_intents`
+  (`runtime.rs:2472`) has three callers and only one is behind
+  `eve_client_bridge_is_available()`. With `node` off the PATH the suite is
+  **149 passed, 2 failed**, and the same without the submodule. The
+  `gamecult-ops` runbook claims the bridge proof needs no separate gate
+  step in containers that "may carry no node at all", which is false as
+  written. **Fix:** the same skip guard on both, and correct the runbook.
+- **PA.f170 (Cut 11, medium-high, fork):** PA.f84's guarantee is not
+  restored. Asking a question commits nothing, so **two questions in one
+  turn carry the same `surface_version`**, and Cut 10 took the question id
+  off the wire. Soul's probe composed an answer for Q1 and it resolved Q2:
+  accepted, silently. Before Cut 11 the guarantee held vacuously, because
+  everything was refused; now it is a wrong accept. One tab answering each
+  question once never sees it; a reload, a second tab or a retried POST
+  does.
+  - The only counter that discriminates is the play row's revision, which
+    Cut 11 deleted from the wire, and the vendored lowering echoes exactly
+    one number: `document.version`. So the fix depends on what the
+    lowering can carry. A probe answers that before Self rules.
+- **PA.f171 (Cut 11, medium, fix):** the gate has no drift protection.
+  Removing PA.f164's authored `value` leaves the fixture test green,
+  because the recording carries the value in its own payload. The live
+  check is sharp but needs node, so nothing in CI ever runs it. **Fix:**
+  the live check gets a scheduled runner; a fixture whose liveness is
+  never checked anywhere is the thing the fixture was supposed to prevent.
+- **PA.f172 (Cut 11, medium, blocker for the playtest):**
+  `question_surface_version` was added with no `#[serde(default)]` while
+  `STORE_SCHEMA` stayed `…play_turn_store.v1`, so a row from an earlier
+  session matches by type, key and schema and then fails to decode. The
+  runtime catches that, logs a warning, and sets `play = None`: a world
+  with no play card, and `world.play` denied as unavailable, with the
+  cause only in the log. "Never deployed" was true of Yggdrasil, not of
+  the workstation the playtest runs on. **Fix:** the schema version moves
+  when the row's shape moves, an unreadable row is named as legacy rather
+  than corrupt, and a play table that fails to open is reported where the
+  operator can see it.
+- **PA.f173 (Cut 11, low):** `close_with_fault` leaves `question` and
+  `question_surface_version` set, though the doc says every path clears
+  them. It is unobservable, because `open_question_id` returns `None`
+  unless the state is `AwaitingPlayer`. **Fix:** clear them, or correct the
+  doc to say what actually guards it.
+- **PA.f174 (Cut 11, low, fix):** the `accessMode` rule is right and
+  untestable here only because the bridge assigns values directly. **Fix:**
+  the bridge asserts the element is not disabled before typing, which
+  closes it cheaply.
+- **PA.f175 (Cut 11, low-medium, fix):** `execute_round` takes one snapshot
+  and reuses it, so a round that authors and then asks records a version
+  from before its own commits. On its own it only over-accepts, but it
+  widens PA.f170's window.
+- **The seed leg is untested territory, not "one env var away".** The gate
+  test codifies the refusal as its expected result, and `seed_once` goes on
+  to open the vault and sweep against real inference, none of it
+  exercised. `GHOSTLIGHT_SEED_VAULT_ROOT` appears nowhere in
+  `deployment/` and nowhere in `gamecult-ops`, so no runbook tells the
+  operator it exists or what to point it at. That is a runbook item
+  whatever the seed attempt does.
+  exercised. It should be attempted alone, first; a failure there says
+  nothing about the answer path.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
