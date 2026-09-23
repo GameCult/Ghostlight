@@ -24,6 +24,7 @@ use std::{
 };
 
 use anyhow::{Context, anyhow, bail};
+use base64::Engine;
 use chrono::Utc;
 use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use ghostlight::{
@@ -891,10 +892,18 @@ fn read_current_schema_row(row: &CultCacheEnvelope) -> Result<PlayTurnStoreState
     Ok(state)
 }
 
-/// A legacy row's payload, `type`, `key` and `schema_id`, preserved verbatim
-/// for whoever the operator hands `retire_unreadable_row`'s sidecar file to —
-/// never JSON (GameCult substrate doctrine): msgpack, like the store row it
-/// is copied from.
+/// A legacy row's payload, `type`, `key` and `schema_id`, preserved for
+/// whoever the operator hands `retire_unreadable_row`'s sidecar file to
+/// (Soul's owed item 5). This is the one deliberate exception to the GameCult
+/// substrate doctrine's "no load-bearing JSON": the doctrine's own carve-out
+/// is content that exists to communicate with "the Non-CultNet xenos", and an
+/// operator opening a forensic dump by hand with a text editor is exactly
+/// that boundary, not a CultCache consumer. The msgpack form this replaced
+/// was preservation in name only — nothing in this Body could read it back,
+/// an operator included, without writing a one-off decoder first. JSON here
+/// is readable directly; `payload_base64` carries the row's original bytes
+/// verbatim (standard, padded alphabet) so nothing is lost, proven by the
+/// round-trip test below.
 #[derive(Serialize)]
 struct RetiredPlayTurnRow<'a> {
     retired_at: String,
@@ -903,7 +912,7 @@ struct RetiredPlayTurnRow<'a> {
     key: &'a str,
     schema_id: Option<&'a str>,
     stored_at: &'a str,
-    payload: &'a [u8],
+    payload_base64: String,
 }
 
 /// `PlayTurnStore::open`'s fallback when a row this build recognizes by its
@@ -919,9 +928,13 @@ struct RetiredPlayTurnRow<'a> {
 /// that a daemon never answers an unreadable row by quietly having no play
 /// surface, so this writes the row, byte for byte, to a sidecar file beside
 /// the store (named for what it is, so it reads as forensic evidence and not
-/// as another store — PA.f192: the extension is `.msgpack`, not `.cc`, since
+/// as another store — PA.f192: the extension is `.json`, not `.cc`, since
 /// this sidecar is a one-shot forensic dump, never a CultCache store some
-/// future process might mistake it for and try to open), clears the row
+/// future process might mistake it for and try to open; Soul's owed item 5:
+/// the content really is JSON, an operator-readable text file with the row's
+/// original bytes preserved verbatim as base64 — see `RetiredPlayTurnRow`'s
+/// own doc comment for why JSON here does not violate the GameCult substrate
+/// doctrine), clears the row
 /// through the store's own compare-and-swap (the same guard `swap_in` uses
 /// for every other write — this is not a second, unguarded writer), and
 /// returns a fresh, empty state so `open` succeeds and play starts fresh.
@@ -964,9 +977,12 @@ fn retire_unreadable_row(
         key: &row.key,
         schema_id: row.schema_id.as_deref(),
         stored_at: &row.stored_at,
-        payload: &row.payload,
+        payload_base64: base64::engine::general_purpose::STANDARD.encode(&row.payload),
     };
-    let bytes = rmp_serde::to_vec_named(&record).context("encoding the retired play-turn row failed")?;
+    // Pretty-printed (Soul's owed item 5): this file exists for an operator
+    // to open and read, not for a machine to round-trip efficiently, so
+    // legibility wins over byte count.
+    let bytes = serde_json::to_vec_pretty(&record).context("encoding the retired play-turn row failed")?;
     std::fs::write(&sidecar, &bytes)
         .with_context(|| format!("writing the retired play-turn row to {} failed", sidecar.display()))?;
 
@@ -991,19 +1007,56 @@ fn retire_unreadable_row(
 }
 
 /// Beside the store, named for what it is:
-/// `<store file stem>.retired-unreadable-row.<timestamp>.msgpack` (PA.f192).
-/// Timestamped so a second unreadable row (a different corruption, on a later
-/// run) never collides with or silently overwrites the first one's evidence.
-/// `.msgpack`, not `.cc`: this file is a one-shot forensic dump written
-/// through `std::fs::write`, never through a `CacheBackingStore`, and never
-/// meant to be opened as one.
+/// `<store file stem>.retired-unreadable-row.<timestamp>.json` (PA.f192,
+/// extension renamed from `.msgpack` for Soul's owed item 5, since the
+/// content is now genuinely JSON — see `RetiredPlayTurnRow`'s own doc
+/// comment). Timestamped so a second unreadable row (a different corruption,
+/// on a later run) never collides with or silently overwrites the first
+/// one's evidence, and so `retired_row_sidecars_on_disk`'s own lexicographic
+/// sort is also chronological. Not `.cc`: this file is a one-shot forensic
+/// dump written through `std::fs::write`, never through a
+/// `CacheBackingStore`, and never meant to be opened as a CultCache store.
 fn retired_row_sidecar_path(store_path: &Path) -> PathBuf {
     let stamp = Utc::now().format("%Y%m%dT%H%M%S%.6fZ");
     let stem = store_path
         .file_stem()
         .and_then(|stem| stem.to_str())
         .unwrap_or("play-turn");
-    store_path.with_file_name(format!("{stem}.retired-unreadable-row.{stamp}.msgpack"))
+    store_path.with_file_name(format!("{stem}.retired-unreadable-row.{stamp}.json"))
+}
+
+/// PA.f193-E: every sidecar `retire_unreadable_row` has ever written beside
+/// `store_path`, oldest first (the timestamp sorts lexicographically, since
+/// `retired_row_sidecar_path`'s own stamp format is fixed-width and
+/// zero-padded). A fresh directory scan on every call, not a fact cached once
+/// at `open` — the whole point is that this survives a restart: a clean
+/// reopen after a retirement finds no unreadable row of its own to retire,
+/// but the *evidence* that a prior process retired one is still sitting on
+/// disk until an operator clears it. Filters by this store's own filename
+/// stem so a second, unrelated `.cc` store's sidecars in the same directory
+/// are never mixed in.
+fn retired_row_sidecars_on_disk(store_path: &Path) -> Vec<PathBuf> {
+    let Some(directory) = store_path.parent() else {
+        return Vec::new();
+    };
+    let Some(stem) = store_path.file_stem().and_then(|stem| stem.to_str()) else {
+        return Vec::new();
+    };
+    let prefix = format!("{stem}.retired-unreadable-row.");
+    let Ok(entries) = std::fs::read_dir(directory) else {
+        return Vec::new();
+    };
+    let mut sidecars: Vec<PathBuf> = entries
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| name.starts_with(&prefix) && name.ends_with(".json"))
+        })
+        .collect();
+    sidecars.sort();
+    sidecars
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -1200,12 +1253,14 @@ pub(crate) struct PlayTable {
     /// itself.
     permits: Arc<Semaphore>,
     store: Mutex<PlayTurnStore>,
-    /// PA.f186: the sidecar path `store`'s own `open` wrote during this
-    /// table's construction, if it retired a row — read once, here, before
-    /// `store` moves behind its `Mutex`, so `runtime_readiness` can report it
-    /// without taking that lock. `None` for the overwhelming majority of
-    /// opens, where nothing was retired.
-    retired_sidecar: Option<PathBuf>,
+    /// PA.f186/PA.f193-E: the store's own on-disk path, kept beside `store`
+    /// so `retired_row_sidecar` can scan for sidecars without taking
+    /// `store`'s lock. Not the fact of a retirement itself — that is derived
+    /// fresh from disk on every read, on purpose: a cached "did this
+    /// process's own `open` retire something" flag reported `ok` again after
+    /// any restart, even though the sidecar evidence a prior process wrote
+    /// was still sitting right there.
+    store_path: PathBuf,
     /// One turn at a time for this table (PA.f68/PA.f112): held for the
     /// whole body of `run`, so the key check and the turn open happen under
     /// one acquisition and two concurrent `run` calls can never interleave.
@@ -1254,8 +1309,8 @@ impl PlayTable {
         store_path: impl AsRef<Path>,
     ) -> anyhow::Result<Self> {
         let play = PlayPort::new(world.clone());
-        let store = PlayTurnStore::open(store_path)?;
-        let retired_sidecar = store.retired_sidecar().map(Path::to_path_buf);
+        let store_path = store_path.as_ref().to_path_buf();
+        let store = PlayTurnStore::open(&store_path)?;
         Ok(Self {
             play,
             world,
@@ -1264,7 +1319,7 @@ impl PlayTable {
             model,
             permits,
             store: Mutex::new(store),
-            retired_sidecar,
+            store_path,
             run_lock: Arc::new(Mutex::new(())),
             poisoned: AtomicBool::new(false),
             retry_delay_base_ms: std::sync::atomic::AtomicU64::new(RETRY_DELAY_BASE_MS),
@@ -1275,12 +1330,17 @@ impl PlayTable {
         })
     }
 
-    /// PA.f186: the sidecar path this table's own store wrote if opening it
-    /// retired an unreadable row, so `runtime.rs`'s `/health` surface can
-    /// report the retirement structurally instead of only through the
-    /// `tracing::warn!` `retire_unreadable_row` already emits.
-    pub(crate) fn retired_row_sidecar(&self) -> Option<&Path> {
-        self.retired_sidecar.as_deref()
+    /// PA.f186/PA.f193-E: the most recent sidecar this store's directory
+    /// carries, if any — not only one this process's own `open` wrote.
+    /// Scanned fresh from disk on every call (`retired_row_sidecars_on_disk`,
+    /// one directory listing), so `runtime.rs`'s `/health` surface reports a
+    /// retirement across a restart: a clean reopen after a retirement finds
+    /// no unreadable row of its own, but the sidecar a prior process wrote is
+    /// still on disk until an operator clears it, and this keeps naming it.
+    /// `None` once every sidecar for this store has actually been cleared —
+    /// a healthy daemon still reports plain `ok`.
+    pub(crate) fn retired_row_sidecar(&self) -> Option<PathBuf> {
+        retired_row_sidecars_on_disk(&self.store_path).pop()
     }
 
     /// Installs PA.f99's own before-submit test hook (see the field's own
@@ -4364,12 +4424,31 @@ pub(crate) mod tests {
             .find(|entry| entry.file_name().to_string_lossy().contains("retired-unreadable-row"))
             .expect("the damaged row must be written to a sidecar file beside the store");
         assert!(
-            sidecar.file_name().to_string_lossy().ends_with(".msgpack"),
+            sidecar.file_name().to_string_lossy().ends_with(".json"),
             "the sidecar must be named for what it is (PA.f192), not `.cc`: {:?}",
             sidecar.file_name()
         );
         let sidecar_bytes = std::fs::read(sidecar.path()).unwrap();
         assert!(!sidecar_bytes.is_empty(), "the sidecar must actually carry the retired row's bytes");
+
+        // Soul's owed item 5: the sidecar must actually be readable, and the
+        // original bytes must actually be recoverable from it — not merely
+        // "the file is non-empty". Parse it as JSON, decode `payload_base64`,
+        // and prove the result is byte-for-byte `seed_unreadable_row_for_test`'s
+        // own `vec![0xC1]`.
+        let decoded: serde_json::Value = serde_json::from_slice(&sidecar_bytes)
+            .expect("the sidecar must be readable JSON, not another CultCache-shaped blob");
+        let payload_base64 = decoded["payload_base64"]
+            .as_str()
+            .expect("the sidecar must carry the original payload as a base64 string field");
+        let recovered_payload = base64::engine::general_purpose::STANDARD
+            .decode(payload_base64)
+            .expect("payload_base64 must actually decode as base64");
+        assert_eq!(
+            recovered_payload,
+            vec![0xC1],
+            "the sidecar's payload_base64 must decode to the exact original bytes, not a lossy copy"
+        );
 
         // Reopening must not hit the same row again: it was cleared from the
         // store as part of retiring it, not merely skipped this once.

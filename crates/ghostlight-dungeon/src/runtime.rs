@@ -2430,6 +2430,91 @@ mod tests {
         );
     }
 
+    /// PA.f193-E: `playStatus` used to report a retirement only for the
+    /// process that performed it — `PlayTable::retired_row_sidecar` cached a
+    /// field set once at `open`, so any later restart's own `open` found a
+    /// clean store (nothing left to retire) and reported plain `ok` again,
+    /// even though the sidecar file a prior process wrote was still sitting
+    /// on disk right beside the store with the only trace of what happened.
+    /// This reopens a *second* `PlayTable` over the exact same `store_path`
+    /// after the first retirement already ran (the shape a real daemon
+    /// restart takes) and proves `/health` still names the retirement.
+    ///
+    /// Mutation: revert `PlayTable::retired_row_sidecar` to return a field
+    /// cached at construction (`self.retired_sidecar.as_deref()`) instead of
+    /// scanning `retired_row_sidecars_on_disk` fresh — the second table's own
+    /// `open` retires nothing (the row is already fresh from the first
+    /// table's retirement), so the cached field would read `None` and the
+    /// assertion below fails.
+    #[tokio::test]
+    async fn health_reports_a_retirement_across_a_restart_not_only_the_process_that_performed_it() {
+        use crate::play::tests::{ScriptedPort, seed_unreadable_row_for_test};
+
+        let mut fixture = fixture().await;
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+        seed_unreadable_row_for_test(&store_path);
+
+        // First "process": its own `open` performs the retirement.
+        {
+            let personas = PersonaLane::new(
+                ControllerPort::new(fixture.state.world.clone()),
+                ScriptedPort::new(vec![]),
+                "gpt-5.6-sol".into(),
+                "gpt-5.6-sol".into(),
+            )
+            .unwrap();
+            let first_table = PlayTable::new(
+                fixture.state.world.clone(),
+                personas,
+                ScriptedPort::new(vec![]),
+                "gpt-5.6-terra".into(),
+                Arc::new(Semaphore::new(TEST_CONTROLLER_CONCURRENCY)),
+                &store_path,
+            )
+            .expect("opening over an unreadable row must retire it, not fail outright (PA.f184)");
+            assert!(
+                first_table.retired_row_sidecar().is_some(),
+                "the table that actually performed the retirement must report it"
+            );
+            // Dropped here: the redb `Database`'s own single-owner lock must
+            // release before a second `PlayTable` can open the same path.
+        }
+
+        // A fresh "process": opens the same, now-clean store. Nothing here
+        // retires anything — the row `first_table` left behind already reads
+        // fine — so this is exactly a restart, not a second corruption.
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.state.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let second_table = PlayTable::new(
+            fixture.state.world.clone(),
+            personas,
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(TEST_CONTROLLER_CONCURRENCY)),
+            &store_path,
+        )
+        .expect("reopening the already-retired store must succeed cleanly");
+        fixture.state.play = Some(Arc::new(second_table));
+        fixture._play_directory = Some(directory);
+
+        let health = get(&fixture.state, &fixture.cookie, "/health").await;
+        let play_status = health["playStatus"].as_str().unwrap();
+        assert_ne!(
+            play_status, "ok",
+            "a restart must still surface a retirement a prior process performed, not read as plain ok: {health}"
+        );
+        assert!(
+            play_status.contains("retired-unreadable-row"),
+            "the restarted process must still name the sidecar evidence on disk: {health}"
+        );
+    }
+
     /// PA.f187: a seed-route refusal must never carry `ControllerError`'s own
     /// `Display` to the player — Soul measured the real string on a fresh
     /// workstation with no inference endpoint running: "invalid command
