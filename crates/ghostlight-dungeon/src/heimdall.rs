@@ -1,4 +1,3 @@
-use crate::idunn_health::HeimdallDependencyBinding;
 use aes_gcm::{
     Aes256Gcm, KeyInit,
     aead::{Aead, Payload},
@@ -41,6 +40,20 @@ pub struct HeimdallClient {
     boundary_locator: HeimdallBoundaryLocator,
     runtime_id: String,
     shared_secret: String,
+}
+
+/// Idunn's projection of a managed Heimdall dependency, when Heimdall is a
+/// v2-managed target (it is not, as of this cut: every v2 deploy of it has
+/// failed and it still runs as the legacy `heimdall.service`, so
+/// `runtime.rs` always passes `None` here). Not an Idunn dependency in
+/// `deployment/idunn/recipe.toml` right now, but the type stays owned here
+/// so `require_expected_heimdall_boundary` below can resume checking a
+/// discovered boundary against it the moment Heimdall returns as a managed
+/// dependency, without re-deriving this shape from scratch.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct HeimdallDependencyBinding {
+    pub(crate) provider_id: String,
+    pub(crate) endpoint: SocketAddr,
 }
 
 #[derive(Clone)]

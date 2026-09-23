@@ -186,10 +186,3 @@ capability = "odin.verse-rendezvous"
 schema = "odin.verse-topology.v1"
 compatibility = "v1"
 startup = "before-promotion"
-
-[[dependencies]]
-kind = "external-operator-binding"
-capability = "heimdall.command-boundary"
-schema = "heimdall.command_boundary.v1"
-compatibility = "v1"
-startup = "before-promotion"

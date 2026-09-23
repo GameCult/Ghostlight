@@ -408,14 +408,16 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         .map(|bindings| bindings.odin_rudp)
         .map(Ok)
         .unwrap_or_else(configured_odin_endpoint)?;
-    let expected_heimdall = dependency_bindings
-        .as_ref()
-        .map(|bindings| bindings.heimdall.clone());
-    let heimdall = Arc::new(HeimdallClient::from_env(
-        &runtime_id,
-        odin_endpoint,
-        expected_heimdall,
-    )?);
+    // Heimdall is not an Idunn dependency: Odin now refuses every Ghostlight
+    // Active presence while a non-optional dependency it manages is not
+    // Ready, and Heimdall is not itself an Idunn-v2-managed target (every
+    // v2 deploy of it has failed; it still runs as the legacy
+    // heimdall.service). Ghostlight discovers it through Odin at use
+    // instead, and still enforces loopback-only, non-secret-bearing,
+    // app-bound HMAC+AES envelopes regardless. When Heimdall becomes a v2
+    // target, this returns to a managed `RuntimeDependencyBindings` field
+    // the way Odin's own endpoint already is.
+    let heimdall = Arc::new(HeimdallClient::from_env(&runtime_id, odin_endpoint, None)?);
     require_no_runtime_custody_failure(&mut fatal_events)?;
     let mesh = match open_mesh(&service_root, &mesh_identity, Some(odin_endpoint)) {
         Ok(mesh) => Some(mesh),

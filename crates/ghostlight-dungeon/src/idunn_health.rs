@@ -69,24 +69,12 @@ const WARMING_HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const MAX_RECENT_WARMING_PROOFS: usize = 64;
 const ODIN_CAPABILITY: (&str, &str, &str) =
     ("odin.verse-rendezvous", "odin.verse-topology.v1", "v1");
-const HEIMDALL_CAPABILITY: (&str, &str, &str) = (
-    "heimdall.command-boundary",
-    "heimdall.command_boundary.v1",
-    "v1",
-);
 #[cfg(target_os = "linux")]
 const SYSTEMD_LISTEN_FDS_START: RawFd = 3;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct HeimdallDependencyBinding {
-    pub(crate) provider_id: String,
-    pub(crate) endpoint: SocketAddr,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct RuntimeDependencyBindings {
     pub(crate) odin_rudp: SocketAddr,
-    pub(crate) heimdall: HeimdallDependencyBinding,
 }
 
 pub(crate) struct PublishedRuntimePresence {
@@ -475,11 +463,10 @@ fn runtime_dependency_bindings(
     configured_odin: SocketAddr,
 ) -> Result<RuntimeDependencyBindings> {
     ensure!(
-        expected.dependencies.len() == 2,
-        "Ghostlight Expected does not carry its exact two dependencies"
+        expected.dependencies.len() == 1,
+        "Ghostlight Expected does not carry its exact one dependency"
     );
     let odin = required_managed_dependency(expected, "shared-infrastructure", ODIN_CAPABILITY)?;
-    let heimdall = required_external_dependency(expected, HEIMDALL_CAPABILITY)?;
 
     let odin_endpoint = parse_dependency_socket_endpoint(
         odin.provider_endpoint
@@ -492,24 +479,9 @@ fn runtime_dependency_bindings(
         odin_endpoint == configured_odin,
         "GHOSTLIGHT_ODIN_RUDP differs from Expected Odin"
     );
-    let heimdall_endpoint = parse_dependency_socket_endpoint(
-        heimdall
-            .provider_endpoint
-            .as_deref()
-            .context("Expected Heimdall dependency has no endpoint")?,
-        &["rudp://", "udp://"],
-        "Heimdall dependency",
-    )?;
 
     Ok(RuntimeDependencyBindings {
         odin_rudp: odin_endpoint,
-        heimdall: HeimdallDependencyBinding {
-            provider_id: heimdall
-                .provider_id
-                .clone()
-                .context("Expected Heimdall dependency has no provider")?,
-            endpoint: heimdall_endpoint,
-        },
     })
 }
 
@@ -534,40 +506,6 @@ fn required_managed_dependency<'a>(
             && dependency.provider_id.is_some()
             && dependency.provider_authority.as_deref() == Some("managed-incarnation")
             && dependency.provider_expected_projection_sha256.is_some(),
-        "Expected dependency {} is unresolved or authority-incoherent",
-        identity.0
-    );
-    Ok(dependency)
-}
-
-/// Heimdall is not an Idunn-managed incarnation (every v2 deploy of it has
-/// failed; it still runs as the legacy `heimdall.service`), so its Expected
-/// dependency can never carry `managed-incarnation` authority. Idunn projects
-/// an operator-declared `[[external_capabilities]]` entry as
-/// `provider_authority = "external-operator-binding"` with no
-/// `provider_expected_projection_sha256` (`deployment_plan.rs`'s
-/// `DependencySelection::expected_projection`) — accept exactly that shape,
-/// never the managed one, for Heimdall alone. Odin stays managed.
-fn required_external_dependency<'a>(
-    expected: &'a IdunnExpectedIncarnationRecord,
-    identity: (&str, &str, &str),
-) -> Result<&'a IdunnExpectedDependency> {
-    let dependency = expected
-        .dependencies
-        .iter()
-        .find(|dependency| {
-            dependency.capability == identity.0
-                && dependency.schema == identity.1
-                && dependency.compatibility == identity.2
-        })
-        .with_context(|| format!("Expected omits dependency {}", identity.0))?;
-    ensure!(
-        dependency.kind == "external-operator-binding"
-            && dependency.startup == "before-promotion"
-            && dependency.minimum_capacity > 0
-            && dependency.provider_id.is_some()
-            && dependency.provider_authority.as_deref() == Some("external-operator-binding")
-            && dependency.provider_expected_projection_sha256.is_none(),
         "Expected dependency {} is unresolved or authority-incoherent",
         identity.0
     );
@@ -1296,32 +1234,6 @@ pub(crate) mod tests {
         }
     }
 
-    /// Exactly what Idunn's `DependencySelection::expected_projection`
-    /// projects for an `[[external_capabilities]]`-declared provider
-    /// (`deployment_plan.rs`): `provider_authority =
-    /// "external-operator-binding"` and no
-    /// `provider_expected_projection_sha256`, unlike a managed dependency.
-    fn external_dependency(
-        capability: &str,
-        schema: &str,
-        compatibility: &str,
-        provider_id: &str,
-        endpoint: &str,
-    ) -> IdunnExpectedDependency {
-        IdunnExpectedDependency {
-            kind: "external-operator-binding".into(),
-            capability: capability.into(),
-            schema: schema.into(),
-            compatibility: compatibility.into(),
-            minimum_capacity: 1,
-            startup: "before-promotion".into(),
-            provider_id: Some(provider_id.into()),
-            provider_authority: Some("external-operator-binding".into()),
-            provider_expected_projection_sha256: None,
-            provider_endpoint: Some(endpoint.into()),
-        }
-    }
-
     fn fixture_with_state_contract(root: &Path, state_contract_sha256: &str) -> Result<Fixture> {
         fixture_with_state_contract_and_custody(root, state_contract_sha256, false)
     }
@@ -1372,23 +1284,14 @@ pub(crate) mod tests {
                     minimum_capacity: 1,
                 },
             ],
-            dependencies: vec![
-                external_dependency(
-                    HEIMDALL_CAPABILITY.0,
-                    HEIMDALL_CAPABILITY.1,
-                    HEIMDALL_CAPABILITY.2,
-                    "yggdrasil-heimdall",
-                    "rudp://127.0.0.1:4101",
-                ),
-                managed_dependency(
-                    "shared-infrastructure",
-                    ODIN_CAPABILITY.0,
-                    ODIN_CAPABILITY.1,
-                    ODIN_CAPABILITY.2,
-                    "odin-yggdrasil",
-                    "rudp://127.0.0.1:9",
-                ),
-            ],
+            dependencies: vec![managed_dependency(
+                "shared-infrastructure",
+                ODIN_CAPABILITY.0,
+                ODIN_CAPABILITY.1,
+                ODIN_CAPABILITY.2,
+                "odin-yggdrasil",
+                "rudp://127.0.0.1:9",
+            )],
         };
         let launch = IdunnRuntimeActivationLaunch::issue(&expected, digest('7'), 100, &idunn)?;
         let activation = launch.activation().clone();
@@ -1595,7 +1498,7 @@ pub(crate) mod tests {
             parse_dependency_socket_endpoint(
                 "http://127.0.0.1:4101",
                 &["rudp://", "udp://"],
-                "Heimdall dependency",
+                "candidate dependency",
             )
             .is_err()
         );
@@ -1739,8 +1642,8 @@ pub(crate) mod tests {
     /// binary does not actually have (F2). Every field is anchored to its own
     /// table block (Soul's second pass: a bare `.contains()` anywhere in the
     /// file passed even when the matched value sat under the wrong table —
-    /// e.g. Odin's and Heimdall's dependency kinds swapped, or a schema
-    /// correct in `[[provides]]` but wrong in its own state slot).
+    /// e.g. a schema correct in `[[provides]]` but wrong in its own state
+    /// slot).
     const RECIPE_TOML: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../deployment/idunn/recipe.toml"
@@ -1832,8 +1735,11 @@ pub(crate) mod tests {
             .collect();
         assert_eq!(
             dependency_blocks.len(),
-            2,
-            "recipe does not declare Ghostlight's exact two dependencies"
+            1,
+            "recipe does not declare Ghostlight's exact one dependency \
+             (Heimdall is discovered through Odin at use, not an Idunn \
+             dependency, until Heimdall is a v2 target — see \
+             runtime_dependency_bindings)"
         );
 
         let odin_dependency = find_block(
@@ -1844,16 +1750,6 @@ pub(crate) mod tests {
         assert!(
             odin_dependency.contains("kind = \"shared-infrastructure\""),
             "recipe Odin dependency kind disagrees with idunn_health's managed-shared-infrastructure rule"
-        );
-
-        let heimdall_dependency = find_block(
-            &blocks,
-            "[[dependencies]]",
-            &format!("capability = \"{}\"", HEIMDALL_CAPABILITY.0),
-        );
-        assert!(
-            heimdall_dependency.contains("kind = \"external-operator-binding\""),
-            "recipe Heimdall dependency kind disagrees with required_external_dependency's rule"
         );
 
         assert!(
