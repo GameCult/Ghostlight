@@ -3678,6 +3678,84 @@ Interpreter, the elaborator sweep and lenses.
     available. The count cannot distinguish them; only the skip lines do.
   - Dungeon bin 170 → 178. Net about +980 lines, mostly tests and doc
     comments.
+- **Soul on Cut 15** (Opus, 2026-09-23, against `30c710e`, Windows). The
+  closing pass.
+  - Held: retirement's availability half on every arm; the legacy arm's
+    narrowing, including that a CAS failure is not retirement; **nothing
+    dies without a forensic copy first** — the sidecar is written before
+    the destructive swap and a failed write leaves the row untouched;
+    PA.f186's `ok` and `unavailable` cases; **PA.f187 fully**, since
+    `describe_seed_failure` matches on variant, so no fault shape can
+    reach the player, and no other route learned the habit; PA.f188 at
+    both construction sites (there is no third); PA.f191's shape, where
+    the 5 s poll is what refreshes the surface that flips the subscription.
+  - Every invariant **holds**, including invariant 8 on the new hint.
+  - **The invariant Cut 15 bent is not on the list and is written nowhere:
+    a readable turn is not destroyed.** PA.f185 states it for the legacy
+    arm; PA.f184 breaks it on the current arm, in the same commit.
+  - Counts: 178 with the bridge's dependencies absent, and 178 with
+    `vendor/eve` a plain copy. Library 622.
+- **PA.f193-A (Cut 15, medium, fix):** the current-schema arm routes every
+  `Err` into retirement, including `read_current_schema_row`'s
+  inner-schema tag check. Soul rebuilt PA.f185's own probe with a v3
+  envelope: the turn decodes perfectly and is destroyed anyway, fifty
+  lines from the test that asserts the opposite for the identical
+  condition on the legacy arm.
+- **PA.f193-B (Cut 15, medium, fix):** the same arm retires a row that
+  decodes but is not canonical — the trigger PA.f184's own comment calls
+  realistic. Before Cut 15 such a row left the play card dead and the row
+  **intact and recoverable by fixing the code**; after it, the row is
+  eaten on the first restart. The cut traded preservation for availability
+  on its own headline case without naming the trade.
+- **PA.f193-C (Cut 15, medium, fix):** `git -C vendor/eve rev-parse HEAD`
+  does not fail for a copied directory, because git walks up and answers
+  with the parent repository. Soul measured it: a copy reports available,
+  and the fixture test then compares the stamped revision against
+  Ghostlight's own HEAD and panics — the exact shape PA.f190 claims to
+  have closed. The unit test passes only because its fixture sits outside
+  any repository.
+- **PA.f193-D (Cut 15, low-medium, fix):** the new hint renders while
+  **any** turn is `Running`, including a healthy one, and `admit` refuses
+  an empty continue in that window with "only an empty continue is
+  accepted" — told to a player who just submitted one because the card
+  said to.
+- **PA.f193-E (Cut 15, low, fix):** `playStatus` reports a retirement only
+  for the life of the process that performed it. After any restart the
+  store opens clean and the only trace is a log line and an unreferenced
+  file.
+- **PA.f193-F (trivial):** `PA.f188` names two different findings across
+  Cut 14 and Cut 15. Renumber the later one.
+- **Soul's owed list, ruled into Cut 16 (Self, under the standing go):**
+  1. Split `read_current_schema_row`'s exits as `upgrade_legacy_row`'s are
+     split. Only a genuine decode failure is retirement; a non-canonical
+     row and an inner-tag mismatch both decode, so they leave the row
+     intact and fail the open. **Write the rule down: a readable turn is
+     never destroyed.**
+  2. Check the checkout with `git -C vendor/eve rev-parse --show-toplevel`
+     against `vendor/eve`'s own path, or `vendor/eve/.git`. Build the
+     fixture inside a `git init` root, or the test certifies nothing.
+  3. Make a skip visible without `--nocapture`. The workstation and the
+     Linux release currently report the same number for different amounts
+     of verification.
+  4. The hint gates on the run lock, not on the state alone; and the
+     `TurnStillRunning` text stops contradicting itself.
+  5. **The sidecar becomes readable:** JSON, with the payload verbatim in
+     base64 beside it. A `.msgpack` nobody can open is preservation in
+     name only.
+  6. `playStatus` derives the retirement from the sidecars on disk, so it
+     survives the restart that follows it.
+  7. Renumber the duplicate PA.f188.
+- **Target gap, for the reconciliation:** `notes/ghostlight-dungeon.md`
+  describes a much larger machine. Measured against the kernel's seven
+  commands: no d20 resolution pair, no roll receipt or outcome bands; no
+  away-time scheduler or strategic tick (`AdvanceStrategicTick`: zero
+  hits); no gestalt and no institution agency (zero hits each); a concrete
+  local-Markdown `VaultEvidenceSource` rather than the generic
+  `VaultProvider` contract, and no `CanonCandidate`; news without the tick
+  it would hang from; and hosting details naming a model family and a
+  credential store the Body does not use. The authority and invariant
+  section is what the Body honours; the implementation section is a
+  roadmap in a spec's grammar and Self reconciles it as such.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
