@@ -3329,6 +3329,47 @@ Interpreter, the elaborator sweep and lenses.
     Cut 11 deleted from the wire, and the vendored lowering echoes exactly
     one number: `document.version`. So the fix depends on what the
     lowering can carry. A probe answers that before Self rules.
+- **PA.f170's probe and ruling (Imagination, Sonnet, then Self, under the
+  standing go, 2026-09-23).** The probe drove the real lowering at the
+  pinned revision and established:
+  - A binding with no matching node anywhere is **not** captured:
+    `findAuthoredBindingValue` walks the live tree.
+  - A node whose renderer ignores `props.value` **can** carry an authored
+    value that is captured and never appears in the DOM. No `hidden` trick
+    is needed, and the lowering supports none.
+  - Simpler still: a button's own `props.action` object is spread verbatim
+    into the payload, so any field the server puts there rides back with no
+    binding machinery at all.
+  - `routeHint` is hardcoded to `sourceVersion` and `transport`; nothing
+    else passes through.
+  - `web/src/main.ts` is ours and only hand-builds one intent (the auth
+    completion), so changing the shipped client is possible but is a
+    different kind of change from shaping the served document.
+  - Whatever rides back is still blocked by `PlayPayload`'s
+    `deny_unknown_fields` and by `unwrap_bindings` refusing a mixed
+    envelope. The wire allows it; the Rust schema is a second gate.
+  - It is DOM-invisible, not network-invisible: the value is in the served
+    JSON, like `sourceVersion`. A player cannot type into it, because the
+    intent is read from the in-memory tree.
+  - **Ruling (Self):**
+    - Each question mints an **opaque random token** and the row keeps it.
+      It is not the `QuestionId` and carries no turn id, round, slot,
+      subject or any other world handle: an answer's handle, and nothing
+      else. Invariant 8 holds, because a player reading it in devtools
+      learns nothing about the world, and forging one only answers their
+      own open question.
+    - The play button carries it in `props.action`, the channel that needs
+      no binding machinery.
+    - `PlayPayload` gains the token. An answer whose token is absent or
+      does not match the open question's is refused as stale.
+    - **`question_surface_version` and the version comparison are deleted**
+      (PA.f161, PA.f175). The token is the one owner of "is this answer for
+      this question", and a second, weaker test of the same thing is the
+      split authority this pass keeps finding.
+    - PA.f168's rule becomes: the bindings envelope merges with the
+      command's own action fields, and an **unknown** sibling is still
+      refused. The action spread and the envelope arrive together, so a
+      blanket refusal would break every command.
 - **PA.f171 (Cut 11, medium, fix):** the gate has no drift protection.
   Removing PA.f164's authored `value` leaves the fixture test green,
   because the recording carries the value in its own payload. The live
