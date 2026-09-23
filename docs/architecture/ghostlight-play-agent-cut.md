@@ -1662,7 +1662,8 @@ splits them so each has its own promises. Cut 2 and Cut 6 are independent of
     is the most literal reading, flagged in the code.
 - **Promises:** P9.1 Nothing shown is world truth unless committed, except the
   question and the refusal of the player's own act (invariant 8 with Q13 A).
-- **Landed:** —
+- **Landed:** `322bdf6` and `f1732c0`; the landing note is above, with the
+  amendment that ruled the card's binding and the deletion's sequencing.
 
 ## Subtraction ledger
 
