@@ -103,14 +103,15 @@ is the witness. What is true of the tree now:
   `crates/ghostlight/src/controllers.rs`.
 - The Idunn provider side is complete: the runtime validates Expected and
   activation, publishes signed Warming until the write lease arrives, and
-  exposes managed route presence. Production has not cut over.
+  exposes managed route presence. Idunn v2 serves it on Yggdrasil since
+  2026-09-23.
 - Plan steps 6 and 8 through 14 are landed with their follow-ups: the ten
   ontology passes, the seed producer, interruption, witness, and the Claude
   SDK inference port. `notes/ghostlight-implementation-plan.md` carries each
   step's landed state; the ontology doc carries the mechanism.
 
-Do not start another world acceptance run while Yggdrasil still serves the
-legacy executable and state layout.
+World acceptance and scale runs stay gated by `state/map.yaml`
+`current_status.scale_checkpoint`.
 
 ## Immutable failure evidence
 
@@ -130,16 +131,19 @@ measure only.
 
 ## Operational boundary
 
-Yggdrasil still serves legacy Ghostlight release `a4080d4` from an enabled
-`Restart=always` unit with health v1, campaign/Session Zero state, and no
-`world.cc` or `app-sessions-v2.cc` witness. The Connector is also still on its
-legacy enabled body. CultNet through CultLib `85f7024` owns generation-bound
+Ghostlight Dungeon is live on Yggdrasil under Idunn v2 at
+`https://yggdrasil.gamecult.org/ghostlight/` (runtime `ghostlight-yggdrasil`,
+state root `/var/lib/gamecult/ghostlight-world-v2`); `/health` names the served
+commit. The legacy `ghostlight-dungeon.service` is stopped, its old state
+untouched; the v1 actuator, unit, wiring test and that state are retired in
+fact and owed deletion. The deploy and play session are recorded in the
+play-agent cut map block "The first deploy, 2026-09-23 (PA.f198-PA.f216)".
+CultNet through CultLib `85f7024` owns generation-bound
 activation, separate lifecycle brakes, process-write leases, observed
 capabilities, explicit disagreement, and routed RUDP incarnations. Odin through
 pushed `65cf2b2` owns deterministic recipe and binding admission, exact source
 freezing, sealed releases, durable deployment transactions, and the narrow
-native actuator ports. Current uncommitted Odin integration moves Idunn-owned
-projection and multi-session RUDP transport into those live paths.
+native actuator ports.
 
 Ghostlight pushed `6a79cb0` with the provider side of this cut. Its recipe
 requests Idunn's runtime bundle, candidate bind, protected activation and
@@ -147,9 +151,8 @@ provider credentials, process-write-lease path, and admitted state-root
 binding. The runtime validates Expected and activation, publishes signed
 Warming, waits for the exact process lease before opening state, keeps that
 lease current through bind, Active publication, and serving, republishes Warming
-until the lease arrives, and exposes its managed route presence. CodexConnector
-pushed `ede3c30` with the corresponding stateless provider contract. Neither
-service has been admitted through rebuilt Idunn yet.
+until the lease arrives, and exposes its managed route presence. Idunn v2 admitted it
+on 2026-09-23.
 
 The adopted cut puts a visible recipe with a constrained launch declaration in
 each target repo; raw unit or container-runtime templates are rejected. The
@@ -257,21 +260,16 @@ acceptance test `real_local_model_cognition_modes_commit_speech` in
   `POST /v1/chat/completions` to a loopback endpoint, no credential, inert
   tool calls. It opens only when `GHOSTLIGHT_LOCAL_ENDPOINT` is set
   (`runtime.rs`), and claims models by the `GHOSTLIGHT_LOCAL_MODEL_PREFIX`
-  prefix, default `local/`. No model has been run behind it yet.
+  prefix, default `local/`. Bonsai 2 is the live model behind it.
 - Topology (operator ruling 2026-09-23, "put each of the organs on the right
-  machine"): the playtest's Dungeon runs on Yggdrasil beside Heimdall,
-  deployed by Idunn through the `ghostlight` binding (Dungeon unit only) at
-  ref `codex/ghostlight-dungeon-mvp`. Bonsai 2 stays on Raven's GPU and is
-  reached at Yggdrasil loopback `127.0.0.1:18080` through a restricted-key
-  reverse SSH tunnel over the WireGuard mesh, kept up by a Raven scheduled
-  task. Local inference and Heimdall's private plane stay loopback-only.
-  The Raven-hosted Dungeon (task `GhostlightDungeon`, `C:\Meta\ghostlight`,
-  `deployment/raven/start-ghostlight-raven.ps1`) is a detour being retired.
-  `gamecult-ops` owns the actuator, runbook and link; its
-  `scripts/deploy-ghostlight-yggdrasil.sh` and
-  `runbooks/ghostlight-dungeon-yggdrasil.md` are still bound to
-  CodexConnector, and cutting that binding for the local link is the next
-  action.
+  machine"): Dungeon runs on Yggdrasil beside Heimdall under Idunn v2, binding
+  `ghostlight` (Dungeon unit only), ref `codex/ghostlight-dungeon-mvp`.
+  Bonsai 2 stays on Raven's GPU and reaches Yggdrasil loopback
+  `127.0.0.1:18080` through Raven's `BonsaiLink` task. Local inference and
+  Heimdall's private plane stay loopback-only. Heimdall is discovered through
+  Odin at use, not an Idunn dependency, until it is a v2 target. The owner
+  of deploy, link and verification is gamecult-ops
+  `runbooks/ghostlight-dungeon-yggdrasil.md`.
 - CodexConnector is not an option for Dungeon inference (operator,
   2026-09-23). It is a deliberately isolated Codex fork so that Epiphany
   stops compiling Codex; nothing goes into it, and its `main` stays at
@@ -287,11 +285,11 @@ acceptance test `real_local_model_cognition_modes_commit_speech` in
 
 ### In order
 
-1. The playtest gate below (operator order 2026-09-15; redirected to the
-   play agent 2026-09-22).
+1. The fix list from the first play session (operator, 2026-09-23: "Stop
+   here, we have shit to fix"): see "Playtest gate" below.
 2. The outbound half of the consumer contract: the response batch with a
    non-loopback CultMesh lease.
-3. The deployment gate below.
+3. Deleting the retired v1 deployment body (see "Deployment" below).
 4. Integration of the elaborator swarm's ideas (see "World fixtures and
    the elaborator swarm" below).
 
@@ -314,9 +312,14 @@ table owns the turn lifecycle (Cut 8); the Eve play surface replaced
 `world.speak` (Cut 9); and the client round trip was exercised for the first
 time through a real lowering, which is where the answer path, the question
 token and the store migrations came from (Cuts 10 to 14). Soul's verdict after
-Cuts 12 and 13 is ready to play with one preflight. The unverified leg is
-seeding: `GHOSTLIGHT_SEED_VAULT_ROOT` has not been run end to end and appears
-in no runbook.
+Cuts 12 and 13 is ready to play with one preflight.
+
+The first play session ran on Yggdrasil on 2026-09-23 and did not pass the
+gate. The fix list, in order, is PA.f212, PA.f211, PA.f213, PA.f214,
+PA.f215, PA.f216, then one Soul pass over Ghostlight `1fd52b7` onward plus
+Heimdall `e8e2832`, Odin `96a55ec` and Idunn `9ede4cd`. Each finding and its
+owner is in the cut map block "The first deploy, 2026-09-23
+(PA.f198-PA.f216)"; do not restate them here.
 
 Operator rulings, 2026-09-22. One Dungeon-owned operational agent dispatches
 and interprets Persona turns, prompts the player, and negotiates results. It
@@ -400,31 +403,15 @@ merge. The retired first-generation loop under
 is deferred: workers emit imagegen-ready prompts only, and
 `scripts/generate_bfl_images.py` has no working default key path.
 
-### Deployment gate
+### Deployment
 
-Deferred behind the orders above, not cancelled:
-
-Review and subtract the uncommitted Idunn-owned Expected/activation/anchor/lease
-projection and bounded multi-session RUDP document transport. Repoint Odin off
-its vendored CultNet fork onto CultLib `85f7024` as Ghostlight did, add UDP
-route actuation plus an independently persisted post-reload data-plane
-observation through the existing proxy, and verify that focused body on
-Yggdrasil. Then implement the directly managed Rust Odin that
-alone authenticates runtime observation into Present and derives Ready, plus
-exact capability dependency closure frozen inside the existing deployment
-transaction. Do not add another scheduler, registry, inbox, or shared-file
-correlation owner.
-
-Install rebuilt Idunn and admit Odin first through the same
-Expected/Present/Ready contract, using its exact candidate only to bootstrap the
-evidence transport. Then admit Ghostlight Dungeon; CodexConnector is not its dependency. Same-generation
-continuity, route preservation, split-brain fencing, signed health, Odin-outage
-freeze, and negative legacy-authority checks must all agree before purge.
-
-Deploy Ghostlight Dungeon through that contract. Runtime restart,
-route continuity, signed health, exact receipts, exclusive world-v3 state, and
-negative checks must agree before deleting old services, releases, state,
-acceptance roots, and local run scaffolding.
+Idunn v2 is the only deploy path (`idunn up ghostlight`, per gamecult-ops
+`runbooks/ghostlight-dungeon-yggdrasil.md`). Still owed on Ghostlight's side:
+deleting the retired v1 actuator, unit, wiring test and legacy
+`ghostlight-dungeon.service` state, and subtracting the library's
+CodexConnector transport. Idunn, Odin, CultLib and Heimdall follow-ups belong
+to those owners and are listed under "Open, other owners" in the cut map
+block "The first deploy, 2026-09-23 (PA.f198-PA.f216)".
 
 ## Essential references
 
@@ -458,9 +445,9 @@ acceptance roots, and local run scaffolding.
   strict struct or fixture. Read the owner's published contract (pinned
   schema, owner-emitted samples) and prove each direction against the real
   counterpart. PA.f196 and PA.f197 in the play-agent cut map are the cost.
-- Do not invoke the current bounded Connector or Ghostlight redeploy helpers;
-  they fail at the root/Idunn Git boundary and still embody duplicate target
-  deployment authority.
+- Deploy only through Idunn v2. Do not invoke the retired v1 actuator
+  (gamecult-ops `scripts/deploy-ghostlight-yggdrasil.sh`), its wiring test, or
+  `ghostlight-dungeon.service`; they are owed deletion, not use.
 - Do not prove world-v3 purity with a short deny list. Archive the complete old
   state root or validate a complete allowed-path contract.
 - Keep this handoff compact. Move chronology to Git, evidence, or the frozen
