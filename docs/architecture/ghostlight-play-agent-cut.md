@@ -3560,6 +3560,91 @@ Interpreter, the elaborator sweep and lenses.
   could carry internal detail. The type is shared by many routes, so its
   player-facing `Display` is its own cut, not this one's. Recorded by
   Hands rather than fixed.
+- **Soul on Cut 14** (Opus, 2026-09-23, against `3d63749`, Windows). The
+  last Soul pass of the pipeline.
+  - Counts reproduce exactly: 170 with the bridge, 170 with 4 skipped
+    without its dependencies, 622 in the library. **Soul produced the
+    no-node run Hands could not**, by running the prebuilt test binary
+    under `env -i` with `PATH` limited to `C:\Windows\System32`: all four
+    gated tests skip, nothing fails.
+  - Held: PA.f176's dependency resolution, PA.f178's guard (read from one
+    consistent snapshot), PA.f179's gate itself, PA.f180 (scoped to the
+    right channel, and every payload read goes through it), retirement
+    preserving the payload verbatim, the kernel as the only writer, one
+    play authority, and the runbook.
+  - Invariants: the kernel as only writer, no transcript crossing turns,
+    Personas never seeing structured state, an actor acting only through
+    its own affordance, verbatim speech and one play authority all
+    **hold**. Retirement holds on the legacy path and is **absent on the
+    current-schema path**. **Invariant 8 holds on the play surface and is
+    broken on the seed route.**
+  - Triage: PA.f184 to PA.f192 are Cut 15, the last fix cut.
+- **PA.f184 (Cut 14, medium, fix):** the retirement fallback is wired only
+  into the `v1` and `v2` arms. The **current-schema arm and the catch-all
+  still `bail!`**, so a damaged or future-schema row kills the play card
+  permanently with no sidecar. The realistic trigger is the strict
+  canonical check: any future change to `PlayTurn`'s fields without moving
+  `STORE_SCHEMA` makes every existing store unopenable. That is the
+  disease PA.f177 named, cured on the branches nobody's store is on.
+  **Fix:** every arm that cannot read a row retires it.
+- **PA.f185 (Cut 14, medium, fix):** `open` treats all of
+  `upgrade_legacy_row`'s error exits as "did not decode", including an
+  inner-schema disagreement, so a **fully readable turn is destroyed** and
+  the sidecar's own `reason` says it did not decode. The payload is
+  preserved verbatim, so nothing is lost, but the headline is false.
+  **Fix:** retire only on a genuine decode failure, and let
+  `upgrade_legacy_row` distinguish its exits.
+- **PA.f186 (Cut 14, medium, fix):** retirement inverts the signal PA.f172
+  added. `playStatus` is derived from `state.play.is_some()`, so a
+  successful retirement reports `"ok"` while the player's turn is gone,
+  and the only trace is one `warn`. Before Cut 14 the same row reported
+  `"unavailable"`. **Fix:** readiness reports a retirement, with the
+  sidecar's path, for the life of the process. A quiet data loss must not
+  read as health.
+- **PA.f187 (pre-existing, medium-high, fix — this is PA.f183 measured):**
+  the seed route renders an internal error into the player's refusal
+  through `to_string()`. Soul measured it rather than guessing: a refused
+  connection reaches the player as "the local inference endpoint refused
+  the connection: error sending request for url
+  (http://127.0.0.1:11434/v1/chat/completions)". Cut 14 removed the
+  variable's **name** and left its **value** exposed one line below, in
+  the failure a fresh operator is most likely to hit. **Fix:** a
+  player-facing refusal on that route names a category, and the detail is
+  logged. The vault path does not leak; `PlayError::Controller` cannot be
+  reached through `admit`, so the play path is clean.
+- **PA.f188 (Cut 14, low-medium, fix):** PA.f179 is guarded at the gate
+  and nowhere else. Soul's mutation at the **construction** site
+  (`play.rs:397`, `Some(...unwrap_or_default())`) survives the whole
+  suite, re-introducing exactly the degradation the finding removed.
+  **Fix:** guard the construction sites too.
+- **PA.f189 (Cut 14, low, fix as doc):** a sidecar that cannot be written
+  leaves `open` failing, which is the right ordering — evidence before
+  destruction — with a precondition its doc does not name. An orphan
+  sidecar can accumulate if retirement's own swap fails. **Fix:** say so.
+- **PA.f190 (pre-existing, low-medium, fix):** the availability check
+  proves the node dependency graph and says nothing about the `git`
+  requirement the same test then asserts. Soul hit it by accident with a
+  copied `vendor/eve`: the test **panicked** instead of skipping. That is
+  the third instance of PA.f169's shape, for a third reason. **Fix:** the
+  check covers every precondition the gated tests assert.
+- **PA.f191 (pre-existing, high for playability, fix):** `web/src/main.ts`
+  sets `pollMs: 0` and subscribes to the SSE stream only if the **first**
+  surface fetch was already authenticated. A player who signs in through
+  the in-page gate rather than the redirect gets a tab that never
+  refreshes, so every answer after the first is refused as stale. Cut 14
+  changed how that feels: PA.f178 turned a silent wrong-turn into a
+  visible dead end. **Fix:** subscribe from the current authenticated
+  state after any sign-in, and keep a poll fallback.
+- **PA.f192 (Cut 14, low, fix):** the sidecar is written as `.cc` into the
+  store directory while not being a CultCache store.
+- **Also for Cut 15, from the walk-through:** a turn interrupted mid-flight
+  leaves the player at a blank card whose only exit is pressing Play with
+  an empty box, and nothing says so. The card names it.
+- **For the playtest briefing, not defects:** the card is blank while a
+  turn runs, and a character's speech reaches the player folded into the
+  closing narration. Both follow from invariant 8 and from narration at
+  close; they are how it plays, and the operator should know before
+  sitting down.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
