@@ -706,7 +706,6 @@ fn inherited_authority_files() -> Result<(File, File)> {
     let listen_fd_names =
         std::env::var("LISTEN_FDNAMES").context("systemd did not name authority FDs")?;
     authority_fd_layout(
-        std::process::id(),
         &listen_pid,
         &listen_fds,
         &listen_fd_names,
@@ -737,16 +736,19 @@ fn inherited_authority_files() -> Result<(File, File)> {
     bail!("Idunn authority FDs require the managed Linux runtime")
 }
 
-#[cfg(target_os = "linux")]
-fn authority_fd_layout(
-    process_id: u32,
-    listen_pid: &str,
-    listen_fds: &str,
-    listen_fd_names: &str,
-) -> Result<()> {
+// LISTEN_PID is not compared to this process's pid. Idunn launches the
+// daemon with PrivatePIDs=yes, and systemd writes the pid it sees from the
+// outer namespace, which this process cannot observe (Odin `8e16f56`). The
+// exact count and name order here, the root-owned read-only descriptor checks,
+// and the signature verification of their contents are what bind these
+// descriptors to Idunn; LISTEN_PID is only required to be a canonical pid.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+fn authority_fd_layout(listen_pid: &str, listen_fds: &str, listen_fd_names: &str) -> Result<()> {
     ensure!(
-        listen_pid.parse::<u32>()? == process_id && listen_pid == process_id.to_string(),
-        "systemd authority FDs belong to another process"
+        listen_pid
+            .parse::<u32>()
+            .is_ok_and(|pid| pid != 0 && listen_pid == pid.to_string()),
+        "systemd passed a noncanonical LISTEN_PID"
     );
     ensure!(
         listen_fds.parse::<usize>()? == 2 && listen_fds == "2",
@@ -1397,21 +1399,22 @@ pub(crate) mod tests {
         })
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn inherited_authority_fd_layout_rejects_substitution_and_extras() -> Result<()> {
         let pid = std::process::id();
         let names = format!(
             "{IDUNN_RUNTIME_ACTIVATION_CREDENTIAL_NAME}:{RUNTIME_PRESENCE_IDENTITY_FD_NAME}"
         );
-        authority_fd_layout(pid, &pid.to_string(), "2", &names)?;
-        assert!(authority_fd_layout(pid, &(pid + 1).to_string(), "2", &names).is_err());
-        assert!(authority_fd_layout(pid, &format!("0{pid}"), "2", &names).is_err());
-        assert!(authority_fd_layout(pid, &pid.to_string(), "02", &names).is_err());
-        assert!(authority_fd_layout(pid, &pid.to_string(), "3", &names).is_err());
+        authority_fd_layout(&pid.to_string(), "2", &names)?;
+        // Under PrivatePIDs the outer pid never equals ours; it must still pass.
+        authority_fd_layout(&(pid + 1).to_string(), "2", &names)?;
+        assert!(authority_fd_layout(&format!("0{pid}"), "2", &names).is_err());
+        assert!(authority_fd_layout("0", "2", &names).is_err());
+        assert!(authority_fd_layout("", "2", &names).is_err());
+        assert!(authority_fd_layout(&pid.to_string(), "02", &names).is_err());
+        assert!(authority_fd_layout(&pid.to_string(), "3", &names).is_err());
         assert!(
             authority_fd_layout(
-                pid,
                 &pid.to_string(),
                 "2",
                 &format!(
@@ -1422,7 +1425,6 @@ pub(crate) mod tests {
         );
         assert!(
             authority_fd_layout(
-                pid,
                 &pid.to_string(),
                 "2",
                 &format!(
