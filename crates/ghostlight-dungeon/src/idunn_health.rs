@@ -271,22 +271,43 @@ impl RuntimePresencePublisher {
         let mut next_heartbeat = Instant::now() + WARMING_HEARTBEAT_INTERVAL;
         let mut recent_warming_proofs = VecDeque::new();
         remember_warming_proof(&mut recent_warming_proofs, warming.canonical_sha256.clone());
+        let mut last_acquisition_error: Option<anyhow::Error> = None;
         loop {
+            // The store and its lock existing is necessary but not
+            // sufficient: Idunn's own revocation of a prior candidate's
+            // lease leaves a present, zero-record store (and its .lock)
+            // behind, which is indistinguishable from "not yet written" by
+            // existence alone. Attempt the exact-match acquisition — the
+            // authority for what counts as this incarnation's lease stays in
+            // `acquire_recent` unchanged — and keep polling past a failure
+            // exactly as past a plain absence; only the deadline below ends
+            // the wait. This covers empty, stale-incarnation, and
+            // not-yet-written stores alike without special-casing any of
+            // them by size or by matching the error text.
             if self.write_lease_path.exists() && sibling_lock_path(&self.write_lease_path).exists()
             {
-                return ProcessWriteLeaseGuard::acquire_recent(
+                match ProcessWriteLeaseGuard::acquire_recent(
                     self.write_lease_path.clone(),
                     self.expected.clone(),
                     self.activation.clone(),
                     recent_warming_proofs.iter().cloned().collect(),
-                );
+                ) {
+                    Ok(guard) => return Ok(guard),
+                    Err(error) => last_acquisition_error = Some(error),
+                }
             }
             let now = Instant::now();
             if now >= deadline {
-                bail!(
-                    "timed out waiting for process write lease {}",
-                    self.write_lease_path.display()
-                );
+                return Err(match last_acquisition_error {
+                    Some(error) => error.context(format!(
+                        "timed out waiting for process write lease {}",
+                        self.write_lease_path.display()
+                    )),
+                    None => anyhow!(
+                        "timed out waiting for process write lease {}",
+                        self.write_lease_path.display()
+                    ),
+                });
             }
             if now >= next_heartbeat {
                 // A failed heartbeat is a warning, not a reason to abort the
@@ -1837,7 +1858,7 @@ pub(crate) mod tests {
         let root = tempfile::tempdir()?;
         let mut fixture = fixture(root.path())?;
         let warming = PublishedRuntimePresence {
-            canonical_sha256: digest('w'),
+            canonical_sha256: digest('9'),
         };
         let outer_timeout = WARMING_HEARTBEAT_INTERVAL + Duration::from_secs(1);
         let error = match fixture
@@ -1852,6 +1873,124 @@ pub(crate) mod tests {
             format!("{error:#}").contains("timed out waiting for process write lease"),
             "wait ended with `{error:#}`, not the outer timeout — a heartbeat failure aborted it early"
         );
+        Ok(())
+    }
+
+    /// Builds a lease store whose file and lock both exist but which holds
+    /// zero records — exactly what Idunn's own revocation of a prior
+    /// candidate's lease leaves behind. `push` then `delete` of a throwaway
+    /// envelope is the only way to reach that state through the crate's own
+    /// public store API without hand-encoding the on-disk format: it creates
+    /// both files, then empties the store while leaving them in place.
+    fn leave_an_empty_revoked_lease_store(path: &Path) -> Result<()> {
+        let mut store = SingleFileMessagePackBackingStore::new(path);
+        let placeholder = CultCacheEnvelope {
+            key: "placeholder".into(),
+            r#type: "placeholder.v1".into(),
+            payload: Vec::new(),
+            stored_at: "2026-09-03T00:00:00Z".into(),
+            schema_id: None,
+        };
+        store.push(&placeholder)?;
+        store.delete(&placeholder)?;
+        Ok(())
+    }
+
+    /// A present, zero-record lease store is not "not yet admitted": before
+    /// this fix `wait_for_write_lease` bailed within one poll with "process
+    /// write lease was not admitted ... zero records", the same failure mode
+    /// as the live Idunn v2 deploy this fixes (a revoked prior candidate's
+    /// lease leaves exactly this file behind). After the fix the wait keeps
+    /// polling past it, exactly as past a plain absence, and only its own
+    /// outer deadline ends it — carrying the last acquisition error forward
+    /// for diagnosis.
+    #[tokio::test]
+    async fn an_empty_revoked_lease_store_times_out_not_not_admitted() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut fixture = fixture(root.path())?;
+        let path = root.path().join("write-lease.cc");
+        leave_an_empty_revoked_lease_store(&path)?;
+        let warming = PublishedRuntimePresence {
+            canonical_sha256: digest('9'),
+        };
+        let outer_timeout = Duration::from_millis(600);
+        let started = Instant::now();
+        let error = match fixture
+            .publisher
+            .wait_for_write_lease(&warming, outer_timeout)
+            .await
+        {
+            Ok(_) => panic!("wait_for_write_lease unexpectedly acquired a lease from an empty store"),
+            Err(error) => error,
+        };
+        let elapsed = started.elapsed();
+        assert!(
+            elapsed >= outer_timeout,
+            "wait ended after {elapsed:?}, short of its own {outer_timeout:?} timeout"
+        );
+        let chain = format!("{error:#}");
+        assert!(
+            chain.contains("timed out waiting for process write lease"),
+            "wait ended with `{chain}`, not its own timeout — the empty store aborted it early"
+        );
+        assert!(
+            chain.contains("not admitted"),
+            "wait's timeout error `{chain}` lost the last acquisition error for diagnosis"
+        );
+        Ok(())
+    }
+
+    /// Same starting state as the test above — a present, zero-record lease
+    /// store — but this time a valid lease for the fixture's own incarnation
+    /// is written into it partway through the wait. The wait must still
+    /// return that lease, proving the retry actually re-attempts acquisition
+    /// on every poll rather than giving up on the store's first, empty read.
+    #[tokio::test]
+    async fn a_lease_written_after_an_empty_revoked_store_still_wins() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut fixture = fixture(root.path())?;
+        let path = root.path().join("write-lease.cc");
+        leave_an_empty_revoked_lease_store(&path)?;
+        let warming_sha256 = digest('9');
+        let warming = PublishedRuntimePresence {
+            canonical_sha256: warming_sha256.clone(),
+        };
+        let lease = IdunnProcessWriteLeaseRecord {
+            schema_version: IDUNN_PROCESS_WRITE_LEASE_SCHEMA.into(),
+            target: fixture.expected.target.clone(),
+            expected_projection_sha256: fixture.expected.canonical_sha256()?,
+            plan_id: fixture.expected.plan_id.clone(),
+            incarnation_id: fixture.expected.incarnation_id.clone(),
+            sealed_release_id: fixture.expected.sealed_release_id.clone(),
+            activation_witness_sha256: fixture.activation.canonical_sha256()?,
+            state_schema_generation: STATE_SCHEMA_GENERATION.into(),
+            state_contract_sha256: fixture.expected.state_contract_sha256.clone().unwrap(),
+            runtime_id: fixture.expected.runtime_id.clone(),
+            runtime_instance_id: fixture.activation.runtime_instance_id.clone(),
+            warming_presence_sha256: warming_sha256,
+            lease_epoch: 1,
+            issued_at_unix_millis: 200,
+        };
+        let lease_sha256 = lease.canonical_sha256()?;
+        let write_path = path.clone();
+        let writer = tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(300)).await;
+            SingleFileMessagePackBackingStore::new(&write_path)
+                .push(&CultCacheEnvelope {
+                    key: lease.target.clone(),
+                    r#type: IdunnProcessWriteLeaseRecord::TYPE.into(),
+                    payload: lease.canonical_bytes().unwrap(),
+                    stored_at: "2026-09-03T00:00:00Z".into(),
+                    schema_id: Some(IDUNN_PROCESS_WRITE_LEASE_SCHEMA.into()),
+                })
+                .unwrap();
+        });
+        let guard = fixture
+            .publisher
+            .wait_for_write_lease(&warming, Duration::from_secs(5))
+            .await?;
+        writer.await?;
+        assert_eq!(guard.canonical_sha256(), lease_sha256);
         Ok(())
     }
 
