@@ -712,6 +712,18 @@ pub(crate) fn command_result(
     plugin_payload: Option<Value>,
     receipt_extra: Option<Value>,
 ) -> Value {
+    let message = message.into();
+    // A refusal is otherwise visible only to the browser that received it.
+    // The operator log gets the operation and the refusal's own message,
+    // never the payload.
+    if !matches!(state, "accepted" | "completed" | "pending") {
+        tracing::warn!(
+            operation = %invocation.operation.operation_id,
+            state,
+            message = %message,
+            "Eve command not accepted"
+        );
+    }
     let mut receipt = json!({
         "schema":COMMAND_RECEIPT_SCHEMA,
         "receiptId":Uuid::new_v4().to_string(),
@@ -722,7 +734,7 @@ pub(crate) fn command_result(
         "authority":PROVIDER_ID,
         "providerId":PROVIDER_ID,
         "surfaceId":SURFACE_ID,
-        "message":message.into(),
+        "message":message,
         // The contract requires a source version and refuses a null one. A
         // command that reports no version reports the surface it was decided
         // against, which is 0 before any world exists.
