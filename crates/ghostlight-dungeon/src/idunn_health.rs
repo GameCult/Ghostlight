@@ -47,6 +47,21 @@ pub(crate) const TARGET: &str = "ghostlight";
 const STATE_SCHEMA_GENERATION: &str = "world-v3";
 const STATE_CONTRACT_SHA256: &str =
     "sha256-4ac3d4ceabedc48b4fc5a3c143ece00ac495d8d756bdc24f10034bcc1231970f";
+/// The exact `[state]` + `[[state.slots]]` text in `deployment/idunn/recipe.toml`
+/// that `STATE_CONTRACT_SHA256` above was computed from (Idunn's own
+/// `canonical_state_contract_sha256`: msgpack-encode the recipe's own parsed
+/// `[state]` struct, then sha256 it — run against the finalized recipe, not
+/// hand-derived). These two constants change together: whoever edits the
+/// recipe's `[state]` block must recompute `STATE_CONTRACT_SHA256` the same
+/// way and update both, or `recipe_matches_the_daemon_it_deploys` (below)
+/// fails on the text pin without saying the hash is wrong — which is the
+/// point: the test cannot recompute the hash itself (no TOML parser or
+/// msgpack encoder in this crate's dependency graph), so pinning the source
+/// text is the cheapest honest proxy for "the hash still matches this text".
+/// LF line endings: the committed git blob is LF-only; this constant matches
+/// that, not whatever CRLF a Windows checkout's autocrlf produces locally.
+#[cfg(test)]
+const EXPECTED_STATE_AND_SLOTS_TEXT: &str = "[state]\nschema_generation = \"world-v3\"\n\n[[state.slots]]\nid = \"world\"\nrelative_path = \"world.cc\"\nkind = \"cultcache-file\"\nschema = \"ghostlight.world_state.consumer.v6\"\nwriter = \"process-bound-single-writer\"\nrecovery = \"preserve\"\nstartup = \"create-or-open-after-write-lease\"\n\n[[state.slots]]\nid = \"app-sessions\"\nrelative_path = \"service/app-sessions-v2.cc\"\nkind = \"cultcache-file\"\nschema = \"ghostlight.app_session_store.v2\"\nwriter = \"process-bound-single-writer\"\nrecovery = \"preserve\"\nstartup = \"create-or-open-after-write-lease\"\n\n[[state.slots]]\nid = \"controller-work\"\nrelative_path = \"service/controller-work.cc\"\nkind = \"cultcache-file\"\nschema = \"ghostlight.controller_work.v17\"\nwriter = \"process-bound-single-writer\"\nrecovery = \"preserve\"\nstartup = \"create-or-open-after-write-lease\"\n\n[[state.slots]]\nid = \"mesh-projection\"\nrelative_path = \"service/mesh-v2.cc\"\nkind = \"cultcache-file\"\nschema = \"gamecult.eve.surface.v1\"\nwriter = \"process-bound-single-writer\"\nrecovery = \"rebuildable\"\nstartup = \"create-or-open-after-write-lease\"\n\n";
 const CULTNET_RUDP_PROTOCOL_ID: &str = "cultnet.transport.rudp.v0";
 const ODIN_CULTMESH_CATALOG_CONNECTION_ID: u32 = 0x0d1d_0002;
 const RUNTIME_PRESENCE_IDENTITY_FD_NAME: &str = "gamecult-runtime-presence-identity";
@@ -525,6 +540,31 @@ fn parse_dependency_socket_endpoint(
     Ok(socket)
 }
 
+/// True when a directory is hardened exactly as Idunn's own
+/// `harden_runtime_bundle`/`harden_installed_release` leave it: root-owned,
+/// mode 0555 (unwritable by group or other; `& 0o022 == 0` does not care
+/// about the owner-write bit, which root controls regardless). Pure over the
+/// three raw fields so the rule is testable without a Linux filesystem.
+///
+/// `gid` is accepted but never checked. Idunn creates the runtime bundle
+/// inside `runtime_root`, which is itself `setgid` to the workload's own
+/// group (e.g. `ghostlight-world-v2-state`) so the process write-lease record
+/// living beside it can share that group (Idunn/src/drivers.rs, the setgid
+/// runtime_root and its lease-record gid requirement). The bundle inherits
+/// that same real group, never gid 0 — the live Odin bundle is `root:odin`,
+/// and Odin accepts it. A `gid == 0` requirement here rejected every bundle
+/// Idunn actually produces.
+fn is_root_service_read_only_directory(uid: u32, _gid: u32, mode: u32) -> bool {
+    uid == 0 && mode & 0o022 == 0
+}
+
+/// True when a file is hardened exactly as Idunn's `harden_runtime_bundle`
+/// leaves it: root-owned, mode 0444. `gid` is accepted but never checked, for
+/// the same reason as [`is_root_service_read_only_directory`].
+fn is_root_read_only_file(uid: u32, _gid: u32, mode: u32) -> bool {
+    uid == 0 && mode & 0o222 == 0
+}
+
 fn require_runtime_bundle(bundle: &Path) -> Result<()> {
     ensure!(
         bundle.is_absolute(),
@@ -537,9 +577,11 @@ fn require_runtime_bundle(bundle: &Path) -> Result<()> {
         ensure!(
             metadata.is_dir()
                 && !metadata.file_type().is_symlink()
-                && metadata.uid() == 0
-                && metadata.gid() == 0
-                && metadata.permissions().mode() & 0o022 == 0,
+                && is_root_service_read_only_directory(
+                    metadata.uid(),
+                    metadata.gid(),
+                    metadata.permissions().mode()
+                ),
             "Idunn runtime bundle is not a root-owned service-read-only directory"
         );
         require_root_controlled_directory_chain(
@@ -627,9 +669,11 @@ fn require_root_read_only_file(path: &Path, label: &str) -> Result<()> {
     ensure!(
         metadata.is_file()
             && !metadata.file_type().is_symlink()
-            && metadata.uid() == 0
-            && metadata.gid() == 0
-            && metadata.permissions().mode() & 0o222 == 0
+            && is_root_read_only_file(
+                metadata.uid(),
+                metadata.gid(),
+                metadata.permissions().mode()
+            )
             && metadata.nlink() == 1,
         "{label} is not one root-owned read-only regular file"
     );
@@ -644,8 +688,11 @@ fn require_root_controlled_directory_chain(path: &Path, label: &str) -> Result<(
         ensure!(
             metadata.is_dir()
                 && !metadata.file_type().is_symlink()
-                && metadata.uid() == 0
-                && metadata.permissions().mode() & 0o022 == 0,
+                && is_root_service_read_only_directory(
+                    metadata.uid(),
+                    metadata.gid(),
+                    metadata.permissions().mode()
+                ),
             "{label} contains a non-root-controlled directory"
         );
     }
@@ -1614,60 +1661,179 @@ pub(crate) mod tests {
     /// constants require rather than parsing the recipe into a struct. It
     /// still catches the drift class Soul found: the recipe naming a state
     /// generation, provided schema, slot schema, or dependency shape the
-    /// binary does not actually have (F2). It does not prove field-level
-    /// placement (e.g. that the matched schema line sits under the `world`
-    /// slot and not merely somewhere in the file) the way a real parse would.
+    /// binary does not actually have (F2). Every field is anchored to its own
+    /// table block (Soul's second pass: a bare `.contains()` anywhere in the
+    /// file passed even when the matched value sat under the wrong table —
+    /// e.g. Odin's and Heimdall's dependency kinds swapped, or a schema
+    /// correct in `[[provides]]` but wrong in its own state slot).
     const RECIPE_TOML: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../deployment/idunn/recipe.toml"
     ));
 
+    /// Splits recipe text into blocks, each running from one line whose first
+    /// non-whitespace byte is `[` up to (not including) the next such line.
+    /// Assertions then search *within* the right block instead of the whole
+    /// file, so a value in the wrong table cannot satisfy them.
+    fn recipe_blocks(text: &str) -> Vec<&str> {
+        let mut starts = Vec::new();
+        let mut offset = 0usize;
+        for line in text.split_inclusive('\n') {
+            if line.trim_start().starts_with('[') {
+                starts.push(offset);
+            }
+            offset += line.len();
+        }
+        starts.push(text.len());
+        starts.windows(2).map(|pair| &text[pair[0]..pair[1]]).collect()
+    }
+
+    /// The one block whose header matches `header` and whose body contains
+    /// `anchor` (e.g. `id = "world"`, or `capability = "..."`) — the field
+    /// that names which real table this is, distinct from every other block
+    /// sharing the same header (there are four `[[state.slots]]` blocks, two
+    /// `[[provides]]` blocks, two `[[dependencies]]` blocks).
+    fn find_block<'a>(blocks: &[&'a str], header: &str, anchor: &str) -> &'a str {
+        blocks
+            .iter()
+            .copied()
+            .find(|block| block.trim_start().starts_with(header) && block.contains(anchor))
+            .unwrap_or_else(|| panic!("recipe has no {header} block containing {anchor:?}"))
+    }
+
     #[test]
     fn recipe_matches_the_daemon_it_deploys() {
-        assert!(
-            RECIPE_TOML.contains(&format!(
-                "schema_generation = \"{STATE_SCHEMA_GENERATION}\""
-            )),
-            "recipe [state] schema_generation disagrees with the daemon's STATE_SCHEMA_GENERATION"
+        let blocks = recipe_blocks(RECIPE_TOML);
+
+        let world_service = find_block(
+            &blocks,
+            "[[provides]]",
+            "capability = \"ghostlight.world-service\"",
         );
         assert!(
-            RECIPE_TOML.contains(&format!("schema = \"{STATE_SCHEMA}\"")),
-            "recipe does not name STATE_SCHEMA anywhere (world slot / provides)"
+            world_service.contains(&format!("schema = \"{STATE_SCHEMA}\"")),
+            "recipe [[provides]] ghostlight.world-service schema disagrees with STATE_SCHEMA"
         );
         assert!(
-            RECIPE_TOML.contains(&format!(
+            world_service.contains(&format!(
                 "compatibility = \"{}\"",
                 state_schema_compatibility_tag()
             )),
-            "recipe [[provides]] compatibility disagrees with state_schema_compatibility_tag()"
+            "recipe [[provides]] ghostlight.world-service compatibility disagrees with state_schema_compatibility_tag()"
         );
+
+        let world_slot = find_block(&blocks, "[[state.slots]]", "id = \"world\"");
         assert!(
-            RECIPE_TOML.contains(&format!(
+            world_slot.contains(&format!("schema = \"{STATE_SCHEMA}\"")),
+            "recipe world state slot schema disagrees with STATE_SCHEMA"
+        );
+
+        let app_sessions_slot = find_block(&blocks, "[[state.slots]]", "id = \"app-sessions\"");
+        assert!(
+            app_sessions_slot.contains(&format!(
                 "schema = \"{}\"",
                 crate::app_session::STORE_SCHEMA
             )),
             "recipe app-sessions slot schema disagrees with app_session::STORE_SCHEMA"
         );
+
+        let controller_work_slot =
+            find_block(&blocks, "[[state.slots]]", "id = \"controller-work\"");
         assert!(
-            RECIPE_TOML.contains(&format!("schema = \"{}\"", ghostlight::CONTROLLER_WORK_SCHEMA)),
+            controller_work_slot
+                .contains(&format!("schema = \"{}\"", ghostlight::CONTROLLER_WORK_SCHEMA)),
             "recipe controller-work slot schema disagrees with ghostlight::CONTROLLER_WORK_SCHEMA"
         );
+
+        let mesh_slot = find_block(&blocks, "[[state.slots]]", "id = \"mesh-projection\"");
         assert!(
-            RECIPE_TOML.contains("schema = \"gamecult.eve.surface.v1\""),
+            mesh_slot.contains("schema = \"gamecult.eve.surface.v1\""),
             "recipe mesh-projection slot schema disagrees with the mesh module's eve surface schema"
         );
+
+        let dependency_blocks: Vec<&&str> = blocks
+            .iter()
+            .filter(|block| block.trim_start().starts_with("[[dependencies]]"))
+            .collect();
         assert_eq!(
-            RECIPE_TOML.matches("[[dependencies]]").count(),
+            dependency_blocks.len(),
             2,
             "recipe does not declare Ghostlight's exact two dependencies"
         );
-        assert!(RECIPE_TOML.contains(&format!("capability = \"{}\"", ODIN_CAPABILITY.0)));
-        assert!(RECIPE_TOML.contains("kind = \"shared-infrastructure\""));
-        assert!(RECIPE_TOML.contains(&format!("capability = \"{}\"", HEIMDALL_CAPABILITY.0)));
-        assert!(RECIPE_TOML.contains("kind = \"external-operator-binding\""));
+
+        let odin_dependency = find_block(
+            &blocks,
+            "[[dependencies]]",
+            &format!("capability = \"{}\"", ODIN_CAPABILITY.0),
+        );
+        assert!(
+            odin_dependency.contains("kind = \"shared-infrastructure\""),
+            "recipe Odin dependency kind disagrees with idunn_health's managed-shared-infrastructure rule"
+        );
+
+        let heimdall_dependency = find_block(
+            &blocks,
+            "[[dependencies]]",
+            &format!("capability = \"{}\"", HEIMDALL_CAPABILITY.0),
+        );
+        assert!(
+            heimdall_dependency.contains("kind = \"external-operator-binding\""),
+            "recipe Heimdall dependency kind disagrees with required_external_dependency's rule"
+        );
+
         assert!(
             !RECIPE_TOML.contains("gamecult.codex.subscription-inference"),
             "recipe still declares the retired CodexConnector dependency"
         );
+
+        // STATE_CONTRACT_SHA256 pin (S3): the test cannot recompute Idunn's
+        // hash itself (no TOML parser or msgpack encoder here), so it pins
+        // the exact [state]+[[state.slots]] source text the hash was
+        // computed from instead. A change to that text without recomputing
+        // and updating STATE_CONTRACT_SHA256 to match fails here.
+        let start = RECIPE_TOML
+            .find("[state]")
+            .expect("recipe has a [state] block");
+        let end = RECIPE_TOML
+            .find("[[provides]]")
+            .expect("recipe [state] block is followed by [[provides]]");
+        let state_and_slots_text = RECIPE_TOML[start..end].replace("\r\n", "\n");
+        assert_eq!(
+            state_and_slots_text, EXPECTED_STATE_AND_SLOTS_TEXT,
+            "recipe [state]/[[state.slots]] text changed without updating \
+             STATE_CONTRACT_SHA256 and EXPECTED_STATE_AND_SLOTS_TEXT together \
+             (recompute the hash with Idunn's canonical_state_contract_sha256 \
+             against the new recipe)"
+        );
+    }
+
+    /// Pure over (uid, gid, mode), so it runs on this Windows workstation too
+    /// rather than sitting unexercised behind `#[cfg(target_os = "linux")]`
+    /// the way `require_runtime_bundle`'s real-filesystem check has always
+    /// been (nothing in this crate constructed a real chowned/chmodded
+    /// fixture for it before this test).
+    #[test]
+    fn root_read_only_accepts_any_gid_and_refuses_group_or_other_write() {
+        // Exactly what Idunn's harden_runtime_bundle/harden_installed_release
+        // leave: root-owned, mode 0555, and — because the bundle lives inside
+        // a setgid runtime_root — a real workload gid, not 0.
+        assert!(is_root_service_read_only_directory(0, 0, 0o555));
+        assert!(is_root_service_read_only_directory(0, 4_000, 0o555));
+        // Owner-write is not part of the rule: 0o022 only forbids group/other.
+        assert!(is_root_service_read_only_directory(0, 4_000, 0o755));
+        // Refused: not root-owned, or writable by group or other.
+        assert!(!is_root_service_read_only_directory(1_000, 0, 0o555));
+        assert!(!is_root_service_read_only_directory(0, 0, 0o575));
+        assert!(!is_root_service_read_only_directory(0, 0, 0o557));
+
+        // Exactly what harden_runtime_bundle leaves for a document: root
+        // owned, mode 0444, any gid.
+        assert!(is_root_read_only_file(0, 0, 0o444));
+        assert!(is_root_read_only_file(0, 4_000, 0o444));
+        // Refused: not root-owned, or writable by owner, group, or other.
+        assert!(!is_root_read_only_file(1_000, 0, 0o444));
+        assert!(!is_root_read_only_file(0, 4_000, 0o644));
+        assert!(!is_root_read_only_file(0, 4_000, 0o464));
+        assert!(!is_root_read_only_file(0, 4_000, 0o446));
     }
 }
