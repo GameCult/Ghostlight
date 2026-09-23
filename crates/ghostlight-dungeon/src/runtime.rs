@@ -3277,20 +3277,51 @@ mod tests {
     /// `vendor/eve` that is present but not a checkout (this test's own
     /// `copied` case) would then still report "available", exactly the shape
     /// Soul hit by accident and this test's own negative assertion catches.
+    ///
+    /// PA.f194-C: the positive case is gated on `vendor/eve/.git` actually
+    /// existing, not merely on `git` being on `PATH`. Idunn's own frozen-
+    /// source gate (`cargo test --locked -p ghostlight-dungeon --bin
+    /// ghostlight-dungeon`, the exact command this repo's Yggdrasil runbook
+    /// documents) materializes both the main tree and every Gitlink —
+    /// `vendor/eve` included — byte for byte from the Git object store
+    /// (`Idunn::drivers::materialize_tree_raw`/`materialize_gitlink_raw`),
+    /// and that writer refuses to ever write `.git` metadata
+    /// ("Git tree contains forbidden .git metadata", enforced on both the
+    /// main tree and every Gitlink target). So inside Idunn's own gate,
+    /// `vendor/eve` is unconditionally the "copied, not cloned" shape this
+    /// test's negative case below proves unavailable — not a bug in the
+    /// check, and not a shape this test's positive case should assert
+    /// against. Checking `vendor/eve/.git` directly, rather than trusting
+    /// `vendor_eve_git_checkout_available`'s own verdict, keeps this
+    /// ground truth independent of the function under test.
     #[test]
     fn vendor_eve_git_checkout_available_distinguishes_a_checkout_from_a_copy() {
-        // The real repo root: `vendor/eve` here is a genuine git checkout
-        // (pinned submodule), so this must report true whenever `git` itself
-        // is on `PATH` — the same precondition every other check in this
-        // module already assumes.
+        // The real repo root: on a normal developer checkout `vendor/eve` is
+        // a genuine git checkout (pinned submodule, `.git` is a gitlink file
+        // pointing at the superproject's `.git/modules/...`), so this must
+        // report true whenever `git` itself is on `PATH`. Inside Idunn's own
+        // frozen-source gate `vendor/eve` carries no `.git` at all by design
+        // (see the PA.f194-C doc comment above) — that is exactly the copy
+        // shape this test's negative case proves unavailable, so the positive
+        // assertion is skipped there instead of failing the gate.
+        let vendor_eve_has_git_metadata = repo_root().join("vendor").join("eve").join(".git").exists();
         let git_on_path = std::process::Command::new("git")
             .arg("--version")
             .output()
             .is_ok_and(|output| output.status.success());
-        if git_on_path {
+        if !vendor_eve_has_git_metadata {
+            eprintln!(
+                "SKIPPED vendor_eve_git_checkout_available_distinguishes_a_checkout_from_a_copy's own \
+                 positive case: vendor/eve/.git does not exist here. Inside Idunn's own frozen-source \
+                 gate this is expected (PA.f194-C, see the doc comment above) — the writer that \
+                 materializes vendor/eve there deliberately never writes .git metadata. On a normal \
+                 developer checkout this means the vendor/eve submodule was never initialized; run \
+                 `git submodule update --init vendor/eve`."
+            );
+        } else if git_on_path {
             assert!(
                 vendor_eve_git_checkout_available(&repo_root()),
-                "the real vendor/eve submodule checkout must report available"
+                "vendor/eve carries .git metadata but still reports unavailable"
             );
         } else {
             eprintln!(
