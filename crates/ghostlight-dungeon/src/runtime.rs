@@ -2951,13 +2951,13 @@ mod tests {
         );
         assert_eq!(create_intents.len(), 1);
         let created = post(&fixture.state, &fixture.cookie, create_intents.into_iter().next().unwrap()).await;
-        assert_eq!(created["state"], "accepted", "world.create via the real client: {created}");
+        assert_eq!(created["receipt"]["state"], "accepted", "world.create via the real client: {created}");
 
         let draft_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
         let approve_intents = client_intents(&draft_surface, &provider, json!([{"click": "world.approve"}]));
         assert_eq!(approve_intents.len(), 1);
         let approved = post(&fixture.state, &fixture.cookie, approve_intents.into_iter().next().unwrap()).await;
-        assert_eq!(approved["state"], "accepted", "world.approve via the real client: {approved}");
+        assert_eq!(approved["receipt"]["state"], "accepted", "world.approve via the real client: {approved}");
 
         let approved_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
         let seed_intents = client_intents(&approved_surface, &provider, json!([{"click": "world.seed"}]));
@@ -2973,7 +2973,7 @@ mod tests {
         // envelope-only proof — never refused as a payload/binding shape
         // problem the way every operation was before this cut.
         assert_eq!(
-            seeded["message"], "invalid command payload: seeding is not available on this world",
+            seeded["receipt"]["message"], "invalid command payload: seeding is not available on this world",
             "world.seed via the real client must reach the vault lookup, not refuse the payload shape: {seeded}"
         );
 
@@ -2981,7 +2981,7 @@ mod tests {
         let activate_intents = client_intents(&seeded_surface, &provider, json!([{"click": "world.activate"}]));
         assert_eq!(activate_intents.len(), 1);
         let activated = post(&fixture.state, &fixture.cookie, activate_intents.into_iter().next().unwrap()).await;
-        assert_eq!(activated["state"], "accepted", "world.activate via the real client: {activated}");
+        assert_eq!(activated["receipt"]["state"], "accepted", "world.activate via the real client: {activated}");
 
         let active_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
         let play_intents = client_intents(
@@ -2994,7 +2994,7 @@ mod tests {
         );
         assert_eq!(play_intents.len(), 1);
         let played = post(&fixture.state, &fixture.cookie, play_intents.into_iter().next().unwrap()).await;
-        assert_eq!(played["state"], "accepted", "world.play via the real client: {played}");
+        assert_eq!(played["receipt"]["state"], "accepted", "world.play via the real client: {played}");
 
         let table = fixture.state.play.clone().unwrap();
         let observed = tokio::time::timeout(Duration::from_secs(5), async move {
@@ -3058,30 +3058,30 @@ mod tests {
         let create = steps.next().unwrap();
         assert_eq!(create.label, "world.create");
         let created = post(&fixture.state, &fixture.cookie, create.intent).await;
-        assert_eq!(created["state"], "accepted", "{created}");
+        assert_eq!(created["receipt"]["state"], "accepted", "{created}");
 
         let approve = steps.next().unwrap();
         assert_eq!(approve.label, "world.approve");
         let approved = post(&fixture.state, &fixture.cookie, approve.intent).await;
-        assert_eq!(approved["state"], "accepted", "{approved}");
+        assert_eq!(approved["receipt"]["state"], "accepted", "{approved}");
 
         let seed = steps.next().unwrap();
         assert_eq!(seed.label, "world.seed");
         let seeded = post(&fixture.state, &fixture.cookie, seed.intent).await;
         assert_eq!(
-            seeded["message"], "invalid command payload: seeding is not available on this world",
+            seeded["receipt"]["message"], "invalid command payload: seeding is not available on this world",
             "{seeded}"
         );
 
         let activate = steps.next().unwrap();
         assert_eq!(activate.label, "world.activate");
         let activated = post(&fixture.state, &fixture.cookie, activate.intent).await;
-        assert_eq!(activated["state"], "accepted", "{activated}");
+        assert_eq!(activated["receipt"]["state"], "accepted", "{activated}");
 
         let play = steps.next().unwrap();
         assert_eq!(play.label, "world.play");
         let played = post(&fixture.state, &fixture.cookie, play.intent).await;
-        assert_eq!(played["state"], "accepted", "{played}");
+        assert_eq!(played["receipt"]["state"], "accepted", "{played}");
         assert!(steps.next().is_none(), "the fixture must carry exactly these five steps");
 
         let table = fixture.state.play.clone().unwrap();
@@ -3173,6 +3173,86 @@ mod tests {
     }
 
     /// The workspace root two levels above this crate's own manifest —
+    /// The browser validates every command result against
+    /// `gamecult.eve.command_result.v1` before it reads a field of it, and
+    /// that schema is `additionalProperties: false`. A flat result — state,
+    /// message and ids at the top level rather than inside the receipt — is
+    /// therefore not a lenient dialect: it is rejected whole, and the client
+    /// reports "invalid Eve command result: data must not have additional
+    /// properties" for every command, sign-in included.
+    ///
+    /// The assertion reads the contract off disk, from the pinned
+    /// `vendor/eve` checkout, rather than restating it here. A test that
+    /// spells the allowed keys itself agrees only with its own author; this
+    /// one fails when the vendored contract moves under us.
+    #[tokio::test]
+    async fn a_command_result_satisfies_the_vendored_result_and_receipt_contracts() {
+        let fixture = fixture().await;
+        let denied = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.approve",
+                "ghostlight.world_approve.v0",
+                0,
+                json!({}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+
+        let schema_root = repo_root().join("vendor").join("eve").join("schemas");
+        let result_schema: Value = serde_json::from_slice(
+            &std::fs::read(schema_root.join("gamecult.eve.command_result.v1.schema.json"))
+                .expect("the pinned vendor/eve checkout carries the result contract"),
+        )
+        .expect("the result contract is JSON");
+        let receipt_schema: Value = serde_json::from_slice(
+            &std::fs::read(schema_root.join("gamecult.eve.command_receipt.v1.schema.json"))
+                .expect("the pinned vendor/eve checkout carries the receipt contract"),
+        )
+        .expect("the receipt contract is JSON");
+
+        assert_eq!(
+            result_schema["additionalProperties"],
+            Value::Bool(false),
+            "this test only means anything while the result contract is closed",
+        );
+        let allowed: Vec<&str> = result_schema["properties"]
+            .as_object()
+            .expect("the result contract names its properties")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        for key in denied
+            .as_object()
+            .expect("a command result is an object")
+            .keys()
+        {
+            assert!(
+                allowed.contains(&key.as_str()),
+                "`{key}` is not a property the result contract admits: {denied}",
+            );
+        }
+
+        let receipt = &denied["receipt"];
+        for required in receipt_schema["required"]
+            .as_array()
+            .expect("the receipt contract names its required fields")
+        {
+            let required = required.as_str().expect("a required field is named");
+            assert!(
+                !receipt[required].is_null(),
+                "the receipt is missing its required `{required}`: {denied}",
+            );
+        }
+        assert_eq!(receipt["state"], "denied", "{denied}");
+        assert_eq!(
+            receipt["schema"], "gamecult.eve.command_receipt.v1",
+            "{denied}",
+        );
+    }
+
     /// `vendor/eve` lives here, not under `CARGO_MANIFEST_DIR` itself.
     fn repo_root() -> std::path::PathBuf {
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -3606,7 +3686,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(played["state"], "accepted");
+        assert_eq!(played["receipt"]["state"], "accepted");
 
         tokio::time::timeout(Duration::from_secs(5), async {
             loop {
@@ -3651,7 +3731,7 @@ mod tests {
 
         let answered = post(&fixture.state, &fixture.cookie, play_intent).await;
         assert_eq!(
-            answered["state"], "accepted",
+            answered["receipt"]["state"], "accepted",
             "the real client's own combined payload must be accepted: {answered}"
         );
 
@@ -3727,7 +3807,7 @@ mod tests {
 
         let created = post(&fixture.state, &fixture.cookie, intent).await;
         assert_eq!(
-            created["state"], "accepted",
+            created["receipt"]["state"], "accepted",
             "a form filled only by its labelled identity fields must still be accepted: {created}"
         );
     }
@@ -3767,7 +3847,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(created["state"], "accepted");
+        assert_eq!(created["receipt"]["state"], "accepted");
 
         let denied = post(
             &fixture.state,
@@ -3781,9 +3861,9 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(denied["state"], "denied");
+        assert_eq!(denied["receipt"]["state"], "denied");
         assert!(
-            denied["message"].as_str().unwrap_or_default().contains("rogue"),
+            denied["receipt"]["message"].as_str().unwrap_or_default().contains("rogue"),
             "an unrecognized sibling field beside the envelope must still be refused, not silently \
              discarded: {denied}"
         );
@@ -3822,21 +3902,21 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(created["state"], "accepted");
+        assert_eq!(created["receipt"]["state"], "accepted");
         let approved = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.approve", "ghostlight.world_approve.v0", 1, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(approved["state"], "accepted");
+        assert_eq!(approved["receipt"]["state"], "accepted");
         let activated = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.activate", "ghostlight.world_activate.v0", 2, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(activated["state"], "accepted");
+        assert_eq!(activated["receipt"]["state"], "accepted");
 
         let denied = post(
             &fixture.state,
@@ -3850,9 +3930,9 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(denied["state"], "denied");
+        assert_eq!(denied["receipt"]["state"], "denied");
         assert!(
-            denied["message"].as_str().unwrap_or_default().contains("minutes"),
+            denied["receipt"]["message"].as_str().unwrap_or_default().contains("minutes"),
             "a field named by both bindings and a sibling must be refused as a collision: {denied}"
         );
     }
@@ -3879,8 +3959,8 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(created["state"], "accepted");
-        assert_eq!(created["sourceVersion"], 1);
+        assert_eq!(created["receipt"]["state"], "accepted");
+        assert_eq!(created["receipt"]["sourceVersion"], 1);
 
         let approved = post(
             &fixture.state,
@@ -3894,7 +3974,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(approved["sourceVersion"], 2);
+        assert_eq!(approved["receipt"]["sourceVersion"], 2);
         let activated = post(
             &fixture.state,
             &fixture.cookie,
@@ -3907,7 +3987,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(activated["sourceVersion"], 3);
+        assert_eq!(activated["receipt"]["sourceVersion"], 3);
 
         let played = post(
             &fixture.state,
@@ -3921,7 +4001,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(played["state"], "accepted");
+        assert_eq!(played["receipt"]["state"], "accepted");
 
         // PA.f138: this leg observes the play table itself, not merely the
         // accepted response — a route that spawned the task and handed back
@@ -3954,7 +4034,7 @@ mod tests {
     /// this test's concern; only the HTTP response this route hands back
     /// before that happens is.
     ///
-    /// PA.f138: `played["state"] == "accepted"` alone is reachable by a
+    /// PA.f138: `played["receipt"]["state"] == "accepted"` alone is reachable by a
     /// mutation that spawns the task and returns the same JSON without ever
     /// calling `table.run` — this route builds `{"kind":"accepted"}` from
     /// nothing on the table itself. This test also polls
@@ -3983,7 +4063,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(created["state"], "accepted");
+        assert_eq!(created["receipt"]["state"], "accepted");
 
         let played = post(
             &fixture.state,
@@ -3997,7 +4077,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(played["state"], "accepted");
+        assert_eq!(played["receipt"]["state"], "accepted");
 
         let table = fixture.state.play.clone().unwrap();
         let observed = tokio::time::timeout(Duration::from_secs(5), async move {
@@ -4050,22 +4130,22 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(created["state"], "accepted");
+        assert_eq!(created["receipt"]["state"], "accepted");
         let approved = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.approve", "ghostlight.world_approve.v0", 1, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(approved["state"], "accepted");
+        assert_eq!(approved["receipt"]["state"], "accepted");
         let activated = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.activate", "ghostlight.world_activate.v0", 2, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(activated["state"], "accepted");
-        assert_eq!(activated["sourceVersion"], 3, "world.revision is 3, and nothing has folded anything else into it yet");
+        assert_eq!(activated["receipt"]["state"], "accepted");
+        assert_eq!(activated["receipt"]["sourceVersion"], 3, "world.revision is 3, and nothing has folded anything else into it yet");
 
         let played = post(
             &fixture.state,
@@ -4073,7 +4153,7 @@ mod tests {
             invocation("world.play", "ghostlight.world_play.v0", 3, json!({"text":"I look around."}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(played["state"], "accepted");
+        assert_eq!(played["receipt"]["state"], "accepted");
 
         let table = fixture.state.play.clone().unwrap();
         tokio::time::timeout(Duration::from_secs(5), async move {
@@ -4112,7 +4192,7 @@ mod tests {
         )
         .await;
         assert_eq!(
-            advanced["state"], "accepted",
+            advanced["receipt"]["state"], "accepted",
             "a play commit must never poison the next world command's compare-and-swap: {advanced}"
         );
     }
@@ -4143,22 +4223,22 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(created["state"], "accepted");
+        assert_eq!(created["receipt"]["state"], "accepted");
         let approved = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.approve", "ghostlight.world_approve.v0", 1, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(approved["state"], "accepted");
+        assert_eq!(approved["receipt"]["state"], "accepted");
         let activated = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.activate", "ghostlight.world_activate.v0", 2, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(activated["state"], "accepted");
-        let served_version = activated["sourceVersion"].as_u64().unwrap();
+        assert_eq!(activated["receipt"]["state"], "accepted");
+        let served_version = activated["receipt"]["sourceVersion"].as_u64().unwrap();
         (fixture, served_version)
     }
 
@@ -4299,7 +4379,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(played["state"], "accepted");
+        assert_eq!(played["receipt"]["state"], "accepted");
 
         tokio::time::timeout(Duration::from_secs(5), async {
             loop {
@@ -4348,7 +4428,7 @@ mod tests {
         )
         .await;
         assert_eq!(
-            answered["state"], "accepted",
+            answered["receipt"]["state"], "accepted",
             "an answer naming the open question's own token, read off the served surface, must be accepted: {answered}"
         );
 
@@ -4392,9 +4472,9 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(stale_answered["state"], "denied");
+        assert_eq!(stale_answered["receipt"]["state"], "denied");
         assert!(
-            stale_answered["message"]
+            stale_answered["receipt"]["message"]
                 .as_str()
                 .unwrap_or_default()
                 .contains("stale"),
@@ -4440,9 +4520,9 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(stale_answered["state"], "denied");
+        assert_eq!(stale_answered["receipt"]["state"], "denied");
         assert!(
-            stale_answered["message"]
+            stale_answered["receipt"]["message"]
                 .as_str()
                 .unwrap_or_default()
                 .contains("stale"),
@@ -4491,7 +4571,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(answered["state"], "accepted");
+        assert_eq!(answered["receipt"]["state"], "accepted");
 
         let closed = tokio::time::timeout(Duration::from_secs(5), async {
             loop {
@@ -4524,11 +4604,11 @@ mod tests {
         )
         .await;
         assert_eq!(
-            stale_resubmission["state"], "denied",
+            stale_resubmission["receipt"]["state"], "denied",
             "a spent token, resubmitted once no question is open, must be refused: {stale_resubmission}"
         );
         assert!(
-            stale_resubmission["message"]
+            stale_resubmission["receipt"]["message"]
                 .as_str()
                 .unwrap_or_default()
                 .contains("closed"),
@@ -4579,11 +4659,11 @@ mod tests {
         )
         .await;
         assert_eq!(
-            smuggled["state"], "denied",
+            smuggled["receipt"]["state"], "denied",
             "the real token, sent through the wrong channel, must still be refused: {smuggled}"
         );
         assert!(
-            smuggled["message"]
+            smuggled["receipt"]["message"]
                 .as_str()
                 .unwrap_or_default()
                 .contains("captured binding"),
@@ -4628,7 +4708,7 @@ mod tests {
         )
         .await;
         assert_eq!(
-            answered["state"], "accepted",
+            answered["receipt"]["state"], "accepted",
             "the real client's own shape — action fields as siblings, captured values inside \
              bindings — must still be accepted: {answered}"
         );
@@ -4679,7 +4759,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(played["state"], "accepted");
+        assert_eq!(played["receipt"]["state"], "accepted");
 
         tokio::time::timeout(Duration::from_secs(5), async {
             loop {
@@ -4714,7 +4794,7 @@ mod tests {
         )
         .await;
         assert_eq!(
-            answered_q1["state"], "accepted",
+            answered_q1["receipt"]["state"], "accepted",
             "Q1's own token must still answer Q1: {answered_q1}"
         );
 
@@ -4747,11 +4827,11 @@ mod tests {
         )
         .await;
         assert_eq!(
-            stale_on_q2["state"], "denied",
+            stale_on_q2["receipt"]["state"], "denied",
             "an answer composed for Q1 must never land on Q2: {stale_on_q2}"
         );
         assert!(
-            stale_on_q2["message"].as_str().unwrap_or_default().contains("stale"),
+            stale_on_q2["receipt"]["message"].as_str().unwrap_or_default().contains("stale"),
             "the refusal must name it stale: {stale_on_q2}"
         );
 
@@ -4786,7 +4866,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(played["state"], "accepted");
+        assert_eq!(played["receipt"]["state"], "accepted");
 
         tokio::time::timeout(Duration::from_secs(5), async {
             loop {
@@ -4816,7 +4896,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(answered_q1["state"], "accepted");
+        assert_eq!(answered_q1["receipt"]["state"], "accepted");
 
         tokio::time::timeout(Duration::from_secs(5), async {
             loop {
@@ -4848,7 +4928,7 @@ mod tests {
         )
         .await;
         assert_eq!(
-            replayed_q1_token["state"], "denied",
+            replayed_q1_token["receipt"]["state"], "denied",
             "Q1's own already-spent token must never answer Q2: {replayed_q1_token}"
         );
     }
@@ -4885,21 +4965,21 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(created["state"], "accepted");
+        assert_eq!(created["receipt"]["state"], "accepted");
         let approved = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.approve", "ghostlight.world_approve.v0", 1, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(approved["state"], "accepted");
+        assert_eq!(approved["receipt"]["state"], "accepted");
         let activated = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.activate", "ghostlight.world_activate.v0", 2, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(activated["state"], "accepted");
+        assert_eq!(activated["receipt"]["state"], "accepted");
 
         // The fixture's own inference connector points at an unreachable
         // address (127.0.0.1:9), so every round faults immediately; only the
@@ -4919,7 +4999,7 @@ mod tests {
             invocation("world.play", "ghostlight.world_play.v0", 3, json!({"text":"I look around."}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(played["state"], "accepted");
+        assert_eq!(played["receipt"]["state"], "accepted");
 
         // PA.f163: `dispatch_world`'s own Ok arm publishes a revision for
         // *every* accepted command, including this one's immediate
@@ -5011,21 +5091,21 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(created["state"], "accepted");
+        assert_eq!(created["receipt"]["state"], "accepted");
         let approved = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.approve", "ghostlight.world_approve.v0", 1, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(approved["state"], "accepted");
+        assert_eq!(approved["receipt"]["state"], "accepted");
         let activated = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.activate", "ghostlight.world_activate.v0", 2, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(activated["state"], "accepted");
+        assert_eq!(activated["receipt"]["state"], "accepted");
 
         let opened_empty = post(
             &fixture.state,
@@ -5034,11 +5114,11 @@ mod tests {
         )
         .await;
         assert_eq!(
-            opened_empty["state"], "denied",
+            opened_empty["receipt"]["state"], "denied",
             "an empty/whitespace-only opening with no turn open must be denied, not accepted: {opened_empty}"
         );
         assert!(
-            opened_empty["message"].as_str().unwrap().contains("empty"),
+            opened_empty["receipt"]["message"].as_str().unwrap().contains("empty"),
             "the denial must carry the admission refusal's own reason: {opened_empty}"
         );
 
@@ -5076,21 +5156,21 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(created["state"], "accepted");
+        assert_eq!(created["receipt"]["state"], "accepted");
         let approved = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.approve", "ghostlight.world_approve.v0", 1, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(approved["state"], "accepted");
+        assert_eq!(approved["receipt"]["state"], "accepted");
         let activated = post(
             &fixture.state,
             &fixture.cookie,
             invocation("world.activate", "ghostlight.world_activate.v0", 2, json!({}), &uuid::Uuid::new_v4().to_string()),
         )
         .await;
-        assert_eq!(activated["state"], "accepted");
+        assert_eq!(activated["receipt"]["state"], "accepted");
 
         // A stranger's own authenticated session — a different account, so a
         // different `PrincipalId`, never the world's own owner.
@@ -5121,7 +5201,7 @@ mod tests {
         )
         .await;
         assert_eq!(
-            played["state"], "denied",
+            played["receipt"]["state"], "denied",
             "the route itself must refuse a non-owner's world.play, not only hide the affordance: {played}"
         );
 
@@ -5157,7 +5237,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(created["state"], "accepted");
+        assert_eq!(created["receipt"]["state"], "accepted");
 
         let played = post(
             &fixture.state,
@@ -5171,7 +5251,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(played["state"], "denied");
+        assert_eq!(played["receipt"]["state"], "denied");
     }
 
     /// PA.f147, reported rather than fixed (see Hands' own report):
@@ -5213,7 +5293,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(created["state"], "accepted");
+        assert_eq!(created["receipt"]["state"], "accepted");
 
         let mut keyless: EveCommandInvocation = serde_json::from_value(invocation(
             "world.play",
@@ -5232,7 +5312,7 @@ mod tests {
             .await
             .unwrap();
         let played: Value = serde_json::from_slice(&bytes).unwrap();
-        assert_eq!(played["state"], "denied");
+        assert_eq!(played["receipt"]["state"], "denied");
         assert!(
             fixture.state.play.as_ref().unwrap().current_turn_view().await.is_none(),
             "a missing key must never reach table.run at all, not just fail inside it"
@@ -5354,8 +5434,8 @@ mod tests {
         );
         let first = post(&fixture.state, &fixture.cookie, command.clone()).await;
         let retry = post(&fixture.state, &fixture.cookie, command).await;
-        assert_eq!(first["state"], "accepted");
-        assert_eq!(retry["state"], "accepted");
+        assert_eq!(first["receipt"]["state"], "accepted");
+        assert_eq!(retry["receipt"]["state"], "accepted");
         assert_eq!(retry["pluginPayload"]["payload"]["status"], "anonymous");
     }
 
@@ -5378,9 +5458,9 @@ mod tests {
                 ),
             )
             .await;
-            assert_eq!(result["state"], "denied", "{operation}");
+            assert_eq!(result["receipt"]["state"], "denied", "{operation}");
             assert!(
-                result["message"]
+                result["receipt"]["message"]
                     .as_str()
                     .unwrap()
                     .contains("not advertised"),
@@ -5404,9 +5484,9 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(result["state"], "denied");
+        assert_eq!(result["receipt"]["state"], "denied");
         assert!(
-            result["message"]
+            result["receipt"]["message"]
                 .as_str()
                 .unwrap()
                 .contains("payload may not supply caller authority")
@@ -5633,7 +5713,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(stale["state"], "denied");
+        assert_eq!(stale["receipt"]["state"], "denied");
         assert!(current_world(&fixture.state).await.unwrap().is_none());
 
         let unweighted = post(
@@ -5648,10 +5728,10 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(unweighted["state"], "denied");
+        assert_eq!(unweighted["receipt"]["state"], "denied");
         // Refused as a payload, before genesis: a defaulted empty set would
         // also be denied, by the resolver, and must not pass for this.
-        let message = unweighted["message"].as_str().unwrap_or_default();
+        let message = unweighted["receipt"]["message"].as_str().unwrap_or_default();
         assert!(
             message.contains("missing field `lens_weights`"),
             "the omission was not refused at the payload: {message}"
@@ -5673,7 +5753,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(partial["state"], "denied");
+        assert_eq!(partial["receipt"]["state"], "denied");
         assert!(
             current_world(&fixture.state).await.unwrap().is_none(),
             "a v4 payload with no brief created a world anyway"
@@ -5697,8 +5777,8 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(result["state"], "denied");
-        let message = result["message"].as_str().unwrap_or_default();
+        assert_eq!(result["receipt"]["state"], "denied");
+        let message = result["receipt"]["message"].as_str().unwrap_or_default();
         assert!(
             message.contains("tribunal"),
             "the unknown lens was not refused by name: {message}"
@@ -5723,8 +5803,8 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(result["state"], "denied");
-        let message = result["message"].as_str().unwrap_or_default();
+        assert_eq!(result["receipt"]["state"], "denied");
+        let message = result["receipt"]["message"].as_str().unwrap_or_default();
         assert!(
             message.contains("LensWeightsNeverDraw"),
             "the refusal did not name the draw rule: {message}"
@@ -5890,9 +5970,9 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(denied["state"], "denied");
+        assert_eq!(denied["receipt"]["state"], "denied");
         assert!(
-            denied["message"].as_str().unwrap().contains("owner"),
+            denied["receipt"]["message"].as_str().unwrap().contains("owner"),
             "{denied}"
         );
 
@@ -5934,7 +6014,7 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(refused["state"], "accepted");
+        assert_eq!(refused["receipt"]["state"], "accepted");
         assert_eq!(refused["receipt"]["outcome"], "not_draft");
         assert_eq!(
             fixture.state.world.snapshot().await.unwrap().revision,
@@ -5983,8 +6063,8 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(denied["state"], "denied");
-        let message = denied["message"].as_str().unwrap_or_default();
+        assert_eq!(denied["receipt"]["state"], "denied");
+        let message = denied["receipt"]["message"].as_str().unwrap_or_default();
         assert!(
             !message.contains(SEED_VAULT_ROOT_ENVIRONMENT),
             "the player-facing refusal must not name the server's own environment variable: {denied}"

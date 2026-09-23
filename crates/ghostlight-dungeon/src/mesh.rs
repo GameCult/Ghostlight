@@ -27,6 +27,10 @@ pub(crate) const PROVIDER_ID: &str = "gamecult.ghostlight.dungeon";
 pub(crate) const SURFACE_ID: &str = "ghostlight.play";
 pub(crate) const COMMAND_BOUNDARY: &str = "ghostlight.eve.commands";
 pub(crate) const COMMAND_RESULT_SCHEMA: &str = "gamecult.eve.command_result.v1";
+pub(crate) const COMMAND_RECEIPT_SCHEMA: &str = "gamecult.eve.command_receipt.v1";
+/// The repository that owns this surface, as the command receipt contract
+/// requires of every result.
+pub(crate) const OWNER_REPO: &str = "GameCult/Ghostlight";
 
 const HEALTH_KEY: &str = "ghostlight:dungeon:health";
 const ADVERTISEMENT_KEY: &str = "eve:provider:gamecult.ghostlight.dungeon";

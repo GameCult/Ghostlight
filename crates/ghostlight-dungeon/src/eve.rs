@@ -1,12 +1,13 @@
 //! Eve/CultUI projection for the one live world owner.
 
-use crate::mesh::{COMMAND_BOUNDARY, COMMAND_RESULT_SCHEMA, PROVIDER_ID, SURFACE_ID};
+use crate::mesh::{COMMAND_BOUNDARY, COMMAND_RECEIPT_SCHEMA, COMMAND_RESULT_SCHEMA, OWNER_REPO, PROVIDER_ID, SURFACE_ID};
 use crate::play::{PlayTurnState, PlayTurnView};
 use ghostlight::{JurisdictionKey, WorldPhase, WorldSnapshot};
 use anyhow::{Context, bail};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use uuid::Uuid;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -692,27 +693,57 @@ pub(crate) fn operation_schema(operation: &str) -> Option<&'static str> {
     })
 }
 
+/// One command result in the shape `gamecult.eve.command_result.v1` actually
+/// admits: `additionalProperties: false` over exactly `schema`, `receipt`,
+/// `transientProjection`, `pluginPayload` and `draftDirective`, with the
+/// per-command detail (state, message, source version, ids) inside the
+/// receipt, which is `gamecult.eve.command_receipt.v1` and does allow its own
+/// extra fields.
+///
+/// The browser validates this envelope before it looks at anything in it, so
+/// a flat result is not a lenient dialect of the contract — it is rejected
+/// whole, with the client reporting "invalid Eve command result: data must
+/// not have additional properties" and no command of any kind completing.
 pub(crate) fn command_result(
     invocation: &EveCommandInvocation,
     state: &str,
     message: impl Into<String>,
     source_version: Option<u64>,
     plugin_payload: Option<Value>,
-    receipt: Option<Value>,
+    receipt_extra: Option<Value>,
 ) -> Value {
-    json!({
-        "schema":COMMAND_RESULT_SCHEMA,
+    let mut receipt = json!({
+        "schema":COMMAND_RECEIPT_SCHEMA,
+        "receiptId":Uuid::new_v4().to_string(),
+        "commandId":invocation.operation.idempotency_key.clone().unwrap_or_default(),
+        "command":invocation.operation.operation_id,
+        "state":state,
+        "ownerRepo":OWNER_REPO,
+        "authority":PROVIDER_ID,
         "providerId":PROVIDER_ID,
         "surfaceId":SURFACE_ID,
-        "operationId":invocation.operation.operation_id,
-        "idempotencyKey":invocation.operation.idempotency_key,
-        "state":state,
         "message":message.into(),
-        "sourceVersion":source_version,
-        "pluginPayload":plugin_payload,
-        "receipt":receipt,
-        "updatedAtUtc":Utc::now().to_rfc3339()
-    })
+        // The contract requires a source version and refuses a null one. A
+        // command that reports no version reports the surface it was decided
+        // against, which is 0 before any world exists.
+        "sourceVersion":source_version.unwrap_or(0),
+        "issuedAtUtc":Utc::now().to_rfc3339()
+    });
+    if let (Some(map), Some(extra)) = (receipt.as_object_mut(), receipt_extra) {
+        if let Some(extra) = extra.as_object() {
+            for (key, value) in extra {
+                map.insert(key.clone(), value.clone());
+            }
+        }
+    }
+    let mut result = json!({
+        "schema":COMMAND_RESULT_SCHEMA,
+        "receipt":receipt
+    });
+    if let (Some(map), Some(payload)) = (result.as_object_mut(), plugin_payload) {
+        map.insert("pluginPayload".into(), payload);
+    }
+    result
 }
 
 fn surface_document(
