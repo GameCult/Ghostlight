@@ -377,11 +377,25 @@ current_status:
     the Eve client round trip is exercised end to end for the first time,
     which is where the answer path, the opaque per-question token (Cut 13,
     PA.f170) and the play-store migrations came from. Soul's verdict after
-    Cuts 12 and 13 is ready to play with one preflight. Next action: the
-    operator plays on their own machine. The unverified leg is seeding, which
-    needs `GHOSTLIGHT_SEED_VAULT_ROOT` and appears in no runbook. Then the
-    pass close-out: the postmortem and reconciling the target against the
-    Body. After the gate, in the operator's order (2026-09-15): (b) the
+    Cuts 12 and 13 is ready to play with one preflight, and its closing pass
+    on Cut 17 judged the bar met: nothing left that would stop or mislead a
+    player. The close-out is done — the postmortem is
+    `docs/architecture/ghostlight-play-agent-postmortem.md`, and the target
+    and `notes/ghostlight-dungeon.md` now name their own gaps. Next action:
+    the operator plays on their own machine. Check `/health` for `playStatus`
+    first; the unverified leg is seeding, which needs
+    `GHOSTLIGHT_SEED_VAULT_ROOT`, appears in no runbook, and has never run
+    past its configuration check, so attempt it alone before the play legs.
+    Two capabilities the Dungeon brief promises are not built, and the
+    operator has named them as gating any wider share: fiction-first risk
+    resolution (the kernel draws an affordance's weighted outcome bands with
+    no assessment step or modifiers, the play agent cannot author
+    affordances, and an act no granted verb expresses is authored as a ruled
+    consequence with no draw — the player cannot tell those paths apart) and
+    gestalt and institution agency (institutions constrain but never act, and
+    advancing the clock only rolls routines and accumulates pressure). Risk
+    resolution is the recommended first of the two, because it is an
+    authority question as much as a mechanic. After the gate, in the operator's order (2026-09-15): (b) the
     outbound consumer response batch with a non-loopback CultMesh lease,
     shaped as Njordr's signal surface (custody, pressure and dependency,
     route, event deltas; spec owned by GameCult/Njordr
