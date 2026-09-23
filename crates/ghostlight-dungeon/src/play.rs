@@ -15,7 +15,7 @@
 
 use std::{
     collections::VecDeque,
-    path::Path,
+    path::{Path, PathBuf},
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -254,9 +254,16 @@ struct PlayTurn {
     /// stays the store's current one. Once the turn closes, this list is
     /// archived into the store's own `KeyLedger` (PA.f83), which is where a
     /// replay of one of these keys is recognized after a new turn has opened
-    /// in this one's place. No `#[serde(default)]`: the canonical re-encode
-    /// check in `PlayTurnStore::open` refuses a row missing this field, so a
-    /// default here could never actually apply (PA.f95).
+    /// in this one's place. `#[serde(default)]` (PA.f177): PA.f95's original
+    /// reasoning covered only the *current*-schema (v3) strict path, where it
+    /// still holds — `to_vec_named` always emits this field, so a v3 row that
+    /// omitted it re-encodes to different bytes and the canonical check still
+    /// bails. It did not cover the *legacy* v1/v2 branches: a row older than
+    /// this field's own introduction still carries `LEGACY_STORE_SCHEMA_V1`,
+    /// so without a default `upgrade_legacy_row`'s decode itself failed with
+    /// "missing field `applied_keys`", `PlayTurnStore::open` returned `Err`,
+    /// and `state.play` went `None` — silently, forever, on every restart.
+    #[serde(default)]
     applied_keys: Vec<String>,
     opening_prompt: String,
     player_prose: Vec<String>,
@@ -292,8 +299,12 @@ struct PlayTurn {
     /// inference exhausted its retry budget (PA.f65/PA.f94), a request-build,
     /// snapshot, or narrate failure after the turn opened (PA.f85/PA.f93), or
     /// a kernel `Invariant` error poisoned the table (PA.f66b). `None` for a
-    /// turn that closed through `end_turn` or the round budget. No
-    /// `#[serde(default)]`: same reasoning as `applied_keys` above (PA.f95).
+    /// turn that closed through `end_turn` or the round budget.
+    /// `#[serde(default)]` (PA.f177): same reasoning as `applied_keys` above
+    /// — the current-schema canonical check still holds a v3 row to it, and a
+    /// legacy row older than this field's own introduction now decodes it as
+    /// `None` instead of failing `upgrade_legacy_row` outright.
+    #[serde(default)]
     fault: Option<String>,
     state: PlayTurnState,
 }
@@ -383,7 +394,19 @@ fn open_question_of(turn: &PlayTurn) -> Option<OpenQuestion> {
     Some(OpenQuestion {
         id,
         text: turn.question.clone().unwrap_or_default(),
-        token: turn.question_token.clone().unwrap_or_default(),
+        // PA.f179: `unwrap_or_default()` used to fabricate `""` here whenever
+        // `question_token` was `None` — normally unreachable, since
+        // `execute_round`'s `ASK_PLAYER_TOOL` arm sets `question_token`
+        // alongside `question` in the same round (see this function's own
+        // doc comment), but a mutation or a future bug that defeats minting
+        // must not quietly degrade the security invariant along with it.
+        // Collapsing "no token was ever minted" into the same `""` an
+        // attacker can literally type made the gate this feeds
+        // (`runtime.rs`'s `world.play` arm) accept a forged empty
+        // `answerToken` whenever that happened. Carried as `Option<String>`
+        // now, so the gate can require both sides to be `Some` and equal —
+        // absence refuses, it does not degrade to a comparable value.
+        token: turn.question_token.clone(),
     })
 }
 
@@ -513,23 +536,41 @@ impl PlayTurnStore {
             // here — a legacy row's bytes were never canonical under v3 and
             // were never meant to be — it resumes for every write this store
             // makes from here on.
+            // PA.f177: `upgrade_legacy_row`'s own decode can still fail — a
+            // row older than `applied_keys`/`fault` themselves, or one that
+            // is genuinely damaged — even though the schema id names it
+            // recognizably legacy. That is no longer treated as "open must
+            // fail and every future open must fail on the exact same row";
+            // the row is retired to a sidecar file and the store starts
+            // fresh instead (see `retire_unreadable_row`).
             [row]
                 if row.r#type == STORE_TYPE
                     && row.key == STORE_KEY
                     && row.schema_id.as_deref() == Some(LEGACY_STORE_SCHEMA_V1) =>
             {
-                upgrade_legacy_row(&store, row, LEGACY_STORE_SCHEMA_V1)?
+                match upgrade_legacy_row(&store, row, LEGACY_STORE_SCHEMA_V1) {
+                    Ok(upgraded) => upgraded,
+                    Err(error) => {
+                        retire_unreadable_row(&store, path.as_ref(), row, LEGACY_STORE_SCHEMA_V1, &error)?
+                    }
+                }
             }
             // PA.f170: a row written between PA.f172 and PA.f170 — it has
             // `question_surface_version` (deleted, silently ignored on
             // decode since nothing here reads it) but no `question_token`.
-            // Upgraded exactly like a v1 row above.
+            // Upgraded exactly like a v1 row above; PA.f177's own retirement
+            // fallback applies here too.
             [row]
                 if row.r#type == STORE_TYPE
                     && row.key == STORE_KEY
                     && row.schema_id.as_deref() == Some(LEGACY_STORE_SCHEMA_V2) =>
             {
-                upgrade_legacy_row(&store, row, LEGACY_STORE_SCHEMA_V2)?
+                match upgrade_legacy_row(&store, row, LEGACY_STORE_SCHEMA_V2) {
+                    Ok(upgraded) => upgraded,
+                    Err(error) => {
+                        retire_unreadable_row(&store, path.as_ref(), row, LEGACY_STORE_SCHEMA_V2, &error)?
+                    }
+                }
             }
             _ => bail!("play-turn store contains foreign or otherwise-unreadable records; start with a fresh store"),
         };
@@ -692,6 +733,95 @@ fn upgrade_legacy_row(
     Ok((upgraded_row, state))
 }
 
+/// A legacy row's payload, `type`, `key` and `schema_id`, preserved verbatim
+/// for whoever the operator hands `retire_unreadable_row`'s sidecar file to —
+/// never JSON (GameCult substrate doctrine): msgpack, like the store row it
+/// is copied from.
+#[derive(Serialize)]
+struct RetiredPlayTurnRow<'a> {
+    retired_at: String,
+    reason: String,
+    r#type: &'a str,
+    key: &'a str,
+    schema_id: Option<&'a str>,
+    stored_at: &'a str,
+    payload: &'a [u8],
+}
+
+/// `PlayTurnStore::open`'s fallback when a row recognized as legacy by its
+/// `schema_id` still cannot be decoded, even leniently, by `upgrade_legacy_row`
+/// (PA.f177) — a row older than `applied_keys`/`fault` themselves, or one that
+/// is genuinely damaged past what a schema-shape upgrade can recover. Before
+/// PA.f177 this row made `open` return `Err` unconditionally: `open_play`
+/// caught that, logged it, and left `state.play` `None` — every future `open`
+/// hit the identical row and failed the identical way, so the play card
+/// stayed gone until an operator deleted the store by hand. The invariant is
+/// that a daemon never answers an unreadable row by quietly having no play
+/// surface, so this writes the row, byte for byte, to a sidecar file beside
+/// the store (named for what it is, so it reads as forensic evidence and not
+/// as another store), clears the row through the store's own
+/// compare-and-swap (the same guard `swap_in` uses for every other write —
+/// this is not a second, unguarded writer), and returns a fresh, empty
+/// state so `open` succeeds and play starts fresh. Logged at `warn`, so the
+/// fact reaches the operator through the same log stream `runtime.rs`'s own
+/// `open_play` failure warning already uses, next to the `playStatus` the
+/// operator already checks.
+fn retire_unreadable_row(
+    store: &OwnedRedbMessagePackBackingStore,
+    store_path: &Path,
+    row: &CultCacheEnvelope,
+    legacy_schema: &str,
+    decode_error: &anyhow::Error,
+) -> anyhow::Result<(CultCacheEnvelope, PlayTurnStoreState)> {
+    let reason = format!(
+        "row declared legacy schema {legacy_schema} but did not decode even leniently: {decode_error:#}"
+    );
+    let sidecar = retired_row_sidecar_path(store_path);
+    let record = RetiredPlayTurnRow {
+        retired_at: Utc::now().to_rfc3339(),
+        reason: reason.clone(),
+        r#type: &row.r#type,
+        key: &row.key,
+        schema_id: row.schema_id.as_deref(),
+        stored_at: &row.stored_at,
+        payload: &row.payload,
+    };
+    let bytes = rmp_serde::to_vec_named(&record).context("encoding the retired play-turn row failed")?;
+    std::fs::write(&sidecar, &bytes)
+        .with_context(|| format!("writing the retired play-turn row to {} failed", sidecar.display()))?;
+
+    let fresh = PlayTurnStoreState {
+        schema: STORE_SCHEMA.into(),
+        turn: None,
+        ledger: KeyLedger::default(),
+        revision: 0,
+    };
+    let fresh_row = envelope(&fresh)?;
+    if !store.compare_and_swap_batch(std::slice::from_ref(row), vec![fresh_row.clone()])? {
+        bail!("play-turn store changed while retiring an unreadable legacy row");
+    }
+
+    tracing::warn!(
+        sidecar = %sidecar.display(),
+        reason = %reason,
+        "a play-turn row could not be read even by the legacy reader; it was retired to a sidecar file and play starts fresh"
+    );
+
+    Ok((fresh_row, fresh))
+}
+
+/// Beside the store, named for what it is: `<store file stem>.retired-unreadable-row.<timestamp>.cc`.
+/// Timestamped so a second unreadable row (a different corruption, on a later
+/// run) never collides with or silently overwrites the first one's evidence.
+fn retired_row_sidecar_path(store_path: &Path) -> PathBuf {
+    let stamp = Utc::now().format("%Y%m%dT%H%M%S%.6fZ");
+    let stem = store_path
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .unwrap_or("play-turn");
+    store_path.with_file_name(format!("{stem}.retired-unreadable-row.{stamp}.cc"))
+}
+
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum PlayError {
     #[error("the play table is poisoned by a prior kernel invariant fault; restart to clear it")]
@@ -754,7 +884,14 @@ pub(crate) struct OpenQuestion {
     /// stale. Replaces PA.f161's `surface_version`, which only ever told
     /// apart questions that opened on different world revisions, not two
     /// questions opened in the same turn.
-    pub(crate) token: String,
+    ///
+    /// `Option<String>`, not `String` (PA.f179): `None` means no token was
+    /// ever minted for this question — a state the gate must refuse
+    /// outright, never compare against an answer as if `""` were a real
+    /// token. Collapsing that case into `String::default()` is exactly what
+    /// let a defeated mint degrade the gate to accepting a forged empty
+    /// `answerToken`.
+    pub(crate) token: Option<String>,
 }
 
 /// One `run` call's own outcome (PA.f109): `Replayed` names the turn a
@@ -1027,6 +1164,32 @@ impl PlayTable {
         let (turn, is_new_turn) = match stored {
             Some(existing) if existing.state == PlayTurnState::AwaitingPlayer => {
                 let open_question = existing.open_question_id();
+                // PA.f181 (no code change; narrowness recorded here, not
+                // fixed, because there is nothing to fix): in production,
+                // `answers` reaches here only from `runtime.rs`'s own
+                // `world.play` arm, which resolves it to `Some(question.id.clone())`
+                // *after* its own `answer_token_admits` gate already refused
+                // everything else — the server, not the caller, names the
+                // question being answered (PA.f151). So a real request can
+                // only ever land on the `(Some(given), Some(open)) if given
+                // == open` arm below, or on `None` (a plain continue/opening,
+                // no question open at all); the mismatch/stale case this
+                // match's own `_` arm refuses is, in production, reachable
+                // only through the race window between `runtime.rs`'s own
+                // `current_turn_view()` read (which built `question.id`) and
+                // this function's own fresh `stored` read a few lines above
+                // — the turn moved on in between, under a token that was
+                // genuinely valid for the question it was minted against a
+                // moment earlier. The one test that exercises a genuine
+                // mismatch here (`an_answer_naming_a_different_question_is_refused_as_stale`)
+                // reaches it by forging a `PlayRequest.answers` directly, at
+                // this layer, bypassing `runtime.rs`'s token gate entirely —
+                // there is no way to reach it end-to-end through the token
+                // gate on demand, only by winning the race. The check stays:
+                // it is still the one thing that closes that race window,
+                // and losing it silently would be exactly the kind of
+                // "it fixes itself after a reload" gap this project's own
+                // doctrine refuses to accept.
                 match (answers, open_question.clone()) {
                     (Some(given), Some(open)) if given == open => {
                         if text.trim().is_empty() {
@@ -1058,7 +1221,10 @@ impl PlayTable {
                             question: open_question.map(|id| OpenQuestion {
                                 id,
                                 text: existing.question.clone().unwrap_or_default(),
-                                token: existing.question_token.clone().unwrap_or_default(),
+                                // PA.f179: kept as the real `Option<String>`,
+                                // not fabricated to `""` — see
+                                // `OpenQuestion::token`'s own doc comment.
+                                token: existing.question_token.clone(),
                             }),
                         });
                     }
@@ -3825,6 +3991,151 @@ pub(crate) mod tests {
             error.to_string().contains("corrupt"),
             "a genuinely undecodable row must still be named corrupt, not legacy: {error}"
         );
+    }
+
+    /// PA.f177: a row older than `applied_keys`/`fault` themselves — written
+    /// before either field existed, still under `LEGACY_STORE_SCHEMA_V1`, the
+    /// schema id that never changed for them — must open and upgrade exactly
+    /// like any other legacy row, not fail `upgrade_legacy_row`'s decode with
+    /// "missing field `applied_keys`". Soul's probe row, named in PA.f177.
+    ///
+    /// Mutation: remove `#[serde(default)]` from `PlayTurn::applied_keys` (or
+    /// `fault`) — this row's msgpack bytes name neither field at all, so the
+    /// decode in `upgrade_legacy_row` fails, `open` falls into
+    /// `retire_unreadable_row` instead of recovering the turn, and the
+    /// `recovered.applied_keys`/`turn_id` assertions below fail because there
+    /// is no recovered turn to read.
+    #[tokio::test]
+    async fn a_legacy_v1_row_predating_applied_keys_and_fault_still_opens_and_upgrades() {
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+
+        // Encoded by hand, not through `LegacyPlayTurnV1`: that struct itself
+        // already carries `applied_keys`/`fault`. This is the shape an even
+        // earlier process wrote, before either field was added to `PlayTurn`
+        // at all — the exact gap PA.f177 named.
+        let mut turn_fields = std::collections::BTreeMap::new();
+        turn_fields.insert("turn_id", Value::String("44444444-4444-4444-4444-444444444444".into()));
+        turn_fields.insert("opening_prompt", Value::String("You stand at the gate.".into()));
+        turn_fields.insert("player_prose", Value::Array(vec![Value::String("I knock.".into())]));
+        turn_fields.insert("rounds", Value::Array(Vec::new()));
+        turn_fields.insert("calls", Value::Array(Vec::new()));
+        turn_fields.insert("persona_turns", Value::Array(Vec::new()));
+        turn_fields.insert("question", Value::Null);
+        turn_fields.insert("refusal", Value::Null);
+        turn_fields.insert("narration", Value::Null);
+        turn_fields.insert("state", Value::String("Running".into()));
+        let turn_json = Value::Object(turn_fields.into_iter().map(|(k, v)| (k.to_string(), v)).collect());
+        let mut state_fields = std::collections::BTreeMap::new();
+        state_fields.insert("schema", Value::String(LEGACY_STORE_SCHEMA_V1.into()));
+        state_fields.insert("turn", turn_json);
+        state_fields.insert(
+            "ledger",
+            serde_json::to_value(KeyLedger::default()).unwrap(),
+        );
+        state_fields.insert("revision", Value::Number(2.into()));
+        let state_json = Value::Object(state_fields.into_iter().map(|(k, v)| (k.to_string(), v)).collect());
+        // Round-trip through `serde_json::Value` into msgpack (`rmp_serde`
+        // encodes any `Serialize` type, including a dynamic `Value`), so the
+        // wire bytes genuinely lack `applied_keys`/`fault` rather than
+        // merely being constructed from a Rust struct that happens to.
+        let payload = rmp_serde::to_vec_named(&state_json).unwrap();
+
+        let legacy_row = CultCacheEnvelope {
+            key: STORE_KEY.into(),
+            r#type: STORE_TYPE.into(),
+            payload,
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some(LEGACY_STORE_SCHEMA_V1.into()),
+        };
+        {
+            let raw_store = OwnedRedbMessagePackBackingStore::new(&store_path).unwrap();
+            assert!(
+                raw_store
+                    .compare_and_swap_batch(&[], vec![legacy_row])
+                    .unwrap(),
+                "seeding the pre-applied_keys/fault row must succeed against an empty store"
+            );
+        }
+
+        let store = PlayTurnStore::open(&store_path)
+            .expect("a row predating applied_keys/fault must still open leniently, not be refused");
+        let recovered = store.current().expect("the legacy row's own turn must be recovered");
+        assert_eq!(recovered.turn_id, "44444444-4444-4444-4444-444444444444");
+        assert!(
+            recovered.applied_keys.is_empty(),
+            "a field the row never recorded at all must default, not fail the decode"
+        );
+        assert_eq!(recovered.fault, None);
+        assert_eq!(
+            store.row.schema_id.as_deref(),
+            Some(STORE_SCHEMA),
+            "the row must be upgraded to the current schema in place"
+        );
+        assert!(
+            std::fs::read_dir(directory.path())
+                .unwrap()
+                .filter_map(|entry| entry.ok())
+                .all(|entry| !entry.file_name().to_string_lossy().contains("retired-unreadable-row")),
+            "a row that decoded leniently must not also be retired to a sidecar"
+        );
+    }
+
+    /// PA.f177: a legacy-schema row that is genuinely damaged — not merely
+    /// missing a field the lenient reader now defaults — must not leave
+    /// `PlayTurnStore::open` returning `Err` forever. It is retired to a
+    /// sidecar file beside the store, and the store opens fresh with no
+    /// current turn, so `open_play` succeeds and the play card comes back
+    /// (empty) instead of staying gone across every future restart.
+    ///
+    /// Mutation: delete the `Err(error) => retire_unreadable_row(...)` arm
+    /// from `PlayTurnStore::open`'s `LEGACY_STORE_SCHEMA_V1` branch (leaving
+    /// only `upgrade_legacy_row(&store, row, LEGACY_STORE_SCHEMA_V1)?`) —
+    /// `open` then returns `Err` for this row, exactly PA.f177's own bug, and
+    /// `store.expect(...)` below panics.
+    #[tokio::test]
+    async fn a_genuinely_undecodable_legacy_row_is_retired_to_a_sidecar_and_play_starts_fresh() {
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+
+        let damaged_row = CultCacheEnvelope {
+            key: STORE_KEY.into(),
+            r#type: STORE_TYPE.into(),
+            payload: vec![0xC1], // msgpack's own reserved "never used" marker byte
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some(LEGACY_STORE_SCHEMA_V1.into()),
+        };
+        {
+            let raw_store = OwnedRedbMessagePackBackingStore::new(&store_path).unwrap();
+            assert!(
+                raw_store
+                    .compare_and_swap_batch(&[], vec![damaged_row])
+                    .unwrap(),
+                "seeding the damaged legacy row must succeed against an empty store"
+            );
+        }
+
+        let store = PlayTurnStore::open(&store_path)
+            .expect("a damaged legacy row must be retired, not fail open outright");
+        assert!(
+            store.current().is_none(),
+            "play must start fresh with no current turn once the old row is retired"
+        );
+
+        let sidecar = std::fs::read_dir(directory.path())
+            .unwrap()
+            .filter_map(|entry| entry.ok())
+            .find(|entry| entry.file_name().to_string_lossy().contains("retired-unreadable-row"))
+            .expect("the damaged row must be written to a sidecar file beside the store");
+        let sidecar_bytes = std::fs::read(sidecar.path()).unwrap();
+        assert!(!sidecar_bytes.is_empty(), "the sidecar must actually carry the retired row's bytes");
+
+        // Reopening must not hit the same row again: it was cleared from the
+        // store as part of retiring it, not merely skipped this once.
+        drop(store);
+        let reopened = PlayTurnStore::open(&store_path)
+            .expect("reopening after retirement must not refuse the store again");
+        assert!(reopened.current().is_none());
     }
 
     /// The fork Self ruled on, isolated: a commit that changes only

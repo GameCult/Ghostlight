@@ -506,6 +506,14 @@ pub(crate) fn authenticated_surface(
                         // it. `None` while no question is open: the button's
                         // own action then carries no token at all, matching a
                         // plain continue/opening, which needs none.
+                        // PA.f179: `question.token` is `Option<String>` — a
+                        // `None` here (a question open whose own token was,
+                        // for whatever reason, never minted) serializes as a
+                        // JSON `null`, which `runtime.rs`'s own
+                        // `answer_token_admits` gate refuses unconditionally,
+                        // the same as any other mismatch. It is never
+                        // rendered as an empty string a forged answer could
+                        // match.
                         let play_action = play
                             .and_then(|view| view.question.as_ref())
                             .map(|question| json!({"answerToken": question.token}))
