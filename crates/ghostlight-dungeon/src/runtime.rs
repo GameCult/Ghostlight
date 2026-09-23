@@ -162,6 +162,21 @@ struct CreatePayload {
 /// `bindings` and a sibling is refused outright — that shape nothing on the
 /// real client's own side produces, and silently preferring one over the
 /// other would hide the collision instead of surfacing it.
+/// Field names that only ever legitimately arrive as an action sibling
+/// (`props.action`'s own spread fields), never as a `captureBindings` value a
+/// player's own control edited (PA.f180): `answerToken` is the one member
+/// today — `eve::authenticated_surface` renders it DOM-invisibly on the
+/// "Play" button's own action, never through any control a `bindings` entry
+/// could come from. Nothing downstream of `unwrap_bindings` can tell the two
+/// channels apart once merged, so invariant 8 (an answer's own token proves
+/// nothing about the world, but must still prove it named a question the
+/// player was actually shown) rested entirely on `eve.rs` never emitting it
+/// as a control — a single mistake there, or a request built by hand rather
+/// than through the real client, would otherwise be indistinguishable from
+/// the real thing. This list is checked before the two objects merge, while
+/// the channel each field arrived on is still known.
+const ACTION_ONLY_PAYLOAD_FIELDS: &[&str] = &["answerToken"];
+
 fn unwrap_bindings(payload: &Value) -> Result<Value, String> {
     let Some(object) = payload.as_object() else {
         return Ok(payload.clone());
@@ -169,6 +184,14 @@ fn unwrap_bindings(payload: &Value) -> Result<Value, String> {
     let Some(bindings_object) = object.get("bindings").and_then(Value::as_object) else {
         return Ok(payload.clone());
     };
+    for field in ACTION_ONLY_PAYLOAD_FIELDS {
+        if bindings_object.contains_key(*field) {
+            return Err(format!(
+                "'{field}' arrived as a captured binding, not as an action field; it is refused \
+                 rather than trusted as though it named the question the player was actually shown"
+            ));
+        }
+    }
     let mut merged = serde_json::Map::with_capacity(object.len() + bindings_object.len());
     for (key, value) in object {
         if key == "bindings" {
@@ -1210,6 +1233,19 @@ enum RuntimeCommandError {
     Kernel(#[from] KernelError),
 }
 
+/// The one door an answer's own `answerToken` is judged by (PA.f179): admits
+/// only when both `given` (`payload.answer_token`) and `expected`
+/// (`question.token`) are `Some` and equal. Extracted to its own function so
+/// the absence case is a direct, cheap unit test rather than something only
+/// reachable through the full `world.play` HTTP round trip — `expected`
+/// being `None` (a question whose own token was, for whatever reason, never
+/// minted) must refuse unconditionally, including against a `given` that is
+/// also `None`, or against `Some("")`; it must never be treated as a
+/// wildcard or degrade to a plain string comparison.
+fn answer_token_admits(given: Option<&str>, expected: Option<&str>) -> bool {
+    matches!((given, expected), (Some(given), Some(expected)) if given == expected)
+}
+
 async fn execute_world(
     state: &AppState,
     verified_principal: &VerifiedPrincipalEvidence,
@@ -1311,10 +1347,26 @@ async fn execute_world(
         let is_awaiting_player = view
             .as_ref()
             .is_some_and(|view| view.state == PlayTurnState::AwaitingPlayer);
+        // PA.f178: a stale tab — one that rendered a card for a question
+        // that has since closed, answered, or been superseded by a fresh
+        // turn — still carries the spent `answerToken` its own render was
+        // built from. Before this check, `answer_token` was read only inside
+        // the `Some(question)` arm below, so with no question currently
+        // open this fell straight through to `answers: None`, and the
+        // request's own `text` (the stale tab's stale answer prose) silently
+        // opened a *new* turn instead: a real inference budget spent on an
+        // answer to a question that no longer exists. A token naming no
+        // currently open question is refused outright, the same family of
+        // refusal as a mismatched token, and never reaches `admit` at all.
+        if payload.answer_token.is_some() && !is_awaiting_player {
+            return Err(RuntimeCommandError::Payload(
+                "that question is closed".into(),
+            ));
+        }
         let answers = match view.as_ref().and_then(|view| view.question.as_ref()).filter(|_| is_awaiting_player) {
             None => None,
             Some(question) => {
-                if payload.answer_token.as_deref() != Some(question.token.as_str()) {
+                if !answer_token_admits(payload.answer_token.as_deref(), question.token.as_deref()) {
                     return Err(RuntimeCommandError::Payload(format!(
                         "the answer is stale: its token does not name the question \"{}\" \
                          currently open",
@@ -1663,8 +1715,17 @@ async fn seed_once(
             "the cognition organ is closed".into(),
         ));
     };
+    // The refusal a player sees must stay a projection of the world and their
+    // own act (invariant 8), never a server configuration name: naming
+    // `SEED_VAULT_ROOT_ENVIRONMENT` to the player taught them a fact about
+    // this process's own environment, not about the world. The detail is
+    // still logged, for the operator who can actually act on it.
     let root = std::env::var(SEED_VAULT_ROOT_ENVIRONMENT).map_err(|_| {
-        RuntimeCommandError::Payload(format!("{SEED_VAULT_ROOT_ENVIRONMENT} is not configured"))
+        tracing::warn!(
+            environment_variable = SEED_VAULT_ROOT_ENVIRONMENT,
+            "seeding was requested but the vault root is not configured"
+        );
+        RuntimeCommandError::Payload("seeding is not available on this world".into())
     })?;
     let vault = VaultEvidenceSource::open(std::path::Path::new(&root), &payload.vault_scope)
         .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
@@ -2061,6 +2122,36 @@ mod tests {
     #[test]
     fn managed_linux_runtime_requires_the_admitted_state_root_binding() {
         assert!(admitted_runtime_root(None).is_err());
+    }
+
+    /// PA.f179's own direct proof, independent of the HTTP round trip: an
+    /// absent expected token (the mint defeated, or any other path that
+    /// leaves `question.token` `None`) must refuse every `given`, including
+    /// `None` and `Some("")` — the exact values a naive fallback
+    /// (`unwrap_or_default()` on either side, or a plain string compare)
+    /// would treat as matching.
+    ///
+    /// Mutation: replace `answer_token_admits`'s body with
+    /// `given.unwrap_or_default() == expected.unwrap_or_default()` — the
+    /// `given: None, expected: None` and `given: Some(""), expected: None`
+    /// cases below would then wrongly admit.
+    #[test]
+    fn answer_token_admits_only_two_present_and_equal_tokens() {
+        assert!(answer_token_admits(Some("tok-a"), Some("tok-a")));
+        assert!(!answer_token_admits(Some("tok-a"), Some("tok-b")));
+        assert!(!answer_token_admits(None, Some("tok-a")));
+        assert!(
+            !answer_token_admits(None, None),
+            "a question whose own token was never minted must refuse even an answer with no token at all"
+        );
+        assert!(
+            !answer_token_admits(Some(""), None),
+            "an empty-string answer must not be treated as matching an unminted (None) token"
+        );
+        assert!(
+            !answer_token_admits(Some("tok-a"), None),
+            "any given token must be refused when none was ever minted for the question"
+        );
     }
 
     #[test]
@@ -2579,10 +2670,14 @@ mod tests {
         if !eve_client_bridge_is_available() {
             eprintln!(
                 "SKIPPED world_create_seed_activate_and_play_round_trip_through_the_real_client: \
-                 `node` or the vendored lowering's built `dist/index.js` is not available in this \
+                 `node` is missing, or the real Eve client bridge's own dependency graph (the \
+                 vendored lowering's built `dist/index.js`, its `jsdom` devDependency, and the \
+                 sibling `eve-contracts` package's own `ajv` dependency) does not resolve in this \
                  environment, so this test did not drive the real Eve client bridge. Run this where \
-                 `node` is on PATH and `vendor/eve/packages/eve-browser-lowering` has been built \
-                 (`npm install && npm run build` in that package) to exercise this check."
+                 `node` is on PATH and both `npm install --prefix \
+                 vendor/eve/packages/eve-browser-lowering` and `npm install --prefix \
+                 vendor/eve/packages/eve-contracts` have been run, then `npm run build --prefix \
+                 vendor/eve/packages/eve-browser-lowering`, to exercise this check."
             );
             return;
         }
@@ -2629,7 +2724,7 @@ mod tests {
         // envelope-only proof — never refused as a payload/binding shape
         // problem the way every operation was before this cut.
         assert_eq!(
-            seeded["message"], "invalid command payload: GHOSTLIGHT_SEED_VAULT_ROOT is not configured",
+            seeded["message"], "invalid command payload: seeding is not available on this world",
             "world.seed via the real client must reach the vault lookup, not refuse the payload shape: {seeded}"
         );
 
@@ -2725,7 +2820,7 @@ mod tests {
         assert_eq!(seed.label, "world.seed");
         let seeded = post(&fixture.state, &fixture.cookie, seed.intent).await;
         assert_eq!(
-            seeded["message"], "invalid command payload: GHOSTLIGHT_SEED_VAULT_ROOT is not configured",
+            seeded["message"], "invalid command payload: seeding is not available on this world",
             "{seeded}"
         );
 
@@ -2756,27 +2851,94 @@ mod tests {
         );
     }
 
-    /// Whether `node` and the vendored lowering's own built `dist/index.js`
-    /// are present in this environment — the two things `client_intents`
-    /// needs. Idunn's own Linux release container installs neither
-    /// (PA.f162), so this is `false` there; a workstation with the vendored
-    /// package built is `true`.
+    /// Whether `node` is on `PATH` *and* the real bridge's own module graph
+    /// actually resolves in this environment — the things `client_intents`
+    /// needs. Idunn's own Linux release container has neither (PA.f162), so
+    /// this is `false` there.
+    ///
+    /// PA.f176: this used to check only `node --version` and that
+    /// `vendor/eve/packages/eve-browser-lowering/dist/index.js` is a file —
+    /// but `dist/` is committed, so the second half of that check is always
+    /// true, whether or not `npm install` has ever run anywhere. Measured on
+    /// a clean checkout with `node` on `PATH` and no `npm install` run: this
+    /// old check reported "available", and the three gated tests then failed
+    /// outright on `jsdom` (`tools/eve_client_bridge.mjs`'s own dependency,
+    /// resolved through `eve-browser-lowering`'s own `package.json`) — not
+    /// skipped, failed, exactly the "2 of 151 failed" shape PA.f169 already
+    /// fixed once for a different pair of tests. Running the runbook's own
+    /// `npm install --prefix vendor/eve/packages/eve-browser-lowering` step
+    /// still left `ajv` unresolved: `eve-browser-lowering`'s own `dist/index.js`
+    /// imports `@gamecult/eve-contracts` (a sibling package under
+    /// `vendor/eve/packages`, wired in as a `file:` dependency), and that
+    /// sibling's own `node_modules` — where its own `ajv` dependency
+    /// lives — is never populated by an `npm install` run only inside
+    /// `eve-browser-lowering`.
+    ///
+    /// So this now proves the dependencies the bridge actually needs by
+    /// doing exactly what `tools/eve_client_bridge.mjs` does at import time —
+    /// resolving `jsdom` through the vendored lowering's own `package.json`
+    /// and dynamically importing the built `dist/index.js` itself, which is
+    /// what actually pulls in `eve-contracts` and, through it, `ajv` — in a
+    /// real `node` process (`eve_client_bridge_dependencies_resolve`), rather
+    /// than asserting a fact about one committed file that was never in
+    /// question. Cached: every call after the first reuses the one real
+    /// probe's result rather than spawning `node` again per test.
     fn eve_client_bridge_is_available() -> bool {
-        let node_on_path = std::process::Command::new("node")
-            .arg("--version")
-            .output()
-            .is_ok_and(|output| output.status.success());
-        let lowering_is_built = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("..")
-            .join("vendor")
-            .join("eve")
-            .join("packages")
-            .join("eve-browser-lowering")
-            .join("dist")
-            .join("index.js")
-            .is_file();
-        node_on_path && lowering_is_built
+        static AVAILABLE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        *AVAILABLE.get_or_init(|| {
+            let node_on_path = std::process::Command::new("node")
+                .arg("--version")
+                .output()
+                .is_ok_and(|output| output.status.success());
+            if !node_on_path {
+                return false;
+            }
+            let lowering_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("..")
+                .join("vendor")
+                .join("eve")
+                .join("packages")
+                .join("eve-browser-lowering");
+            if !lowering_root.join("dist").join("index.js").is_file() {
+                return false;
+            }
+            eve_client_bridge_dependencies_resolve(&lowering_root)
+        })
+    }
+
+    /// Runs a real `node` process that does exactly what
+    /// `tools/eve_client_bridge.mjs` does at import time — resolve `jsdom`
+    /// through the vendored lowering's own `package.json`, then dynamically
+    /// import the built `dist/index.js` — and reports whether that succeeded.
+    /// A missing `jsdom`, a missing `eve-contracts`/`ajv`, or any other
+    /// unresolved module in that same import graph fails this the same way
+    /// it would fail the real bridge script, which is the whole point: this
+    /// is a probe built from the bridge's own actual dependency surface, not
+    /// a second, independently-maintained guess at what it needs.
+    fn eve_client_bridge_dependencies_resolve(lowering_root: &std::path::Path) -> bool {
+        let lowering_root_js = lowering_root.to_string_lossy().replace('\\', "/");
+        let probe = format!(
+            "import {{ createRequire }} from \"node:module\";\n\
+             import {{ join }} from \"node:path\";\n\
+             const loweringRoot = \"{lowering_root_js}\";\n\
+             const vendorRequire = createRequire(join(loweringRoot, \"package.json\"));\n\
+             vendorRequire(\"jsdom\");\n\
+             await import(\"file://\" + join(loweringRoot, \"dist\", \"index.js\").replace(/\\\\/g, \"/\"));\n"
+        );
+        let probe_path = std::env::temp_dir().join(format!(
+            "ghostlight-eve-bridge-probe-{}-{}.mjs",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ));
+        if std::fs::write(&probe_path, &probe).is_err() {
+            return false;
+        }
+        let outcome = std::process::Command::new("node")
+            .arg(&probe_path)
+            .output();
+        let _ = std::fs::remove_file(&probe_path);
+        outcome.is_ok_and(|output| output.status.success())
     }
 
     /// Strips the fields that legitimately vary between two otherwise
@@ -2808,11 +2970,14 @@ mod tests {
         if !eve_client_bridge_is_available() {
             eprintln!(
                 "SKIPPED eve_client_bridge_fixture_matches_what_the_pinned_lowering_produces_today: \
-                 `node` or the vendored lowering's built `dist/index.js` is not available in this \
+                 `node` is missing, or the real Eve client bridge's own dependency graph (the \
+                 vendored lowering's built `dist/index.js`, its `jsdom` devDependency, and the \
+                 sibling `eve-contracts` package's own `ajv` dependency) does not resolve in this \
                  environment, so the committed fixture (src/fixtures/eve_client_bridge_intents.json) \
                  was not regenerated or diffed against the real bridge. Run this where `node` is on \
-                 PATH and `vendor/eve/packages/eve-browser-lowering` has been built (`npm install && \
-                 npm run build` in that package) to exercise this check."
+                 PATH and both `npm install --prefix vendor/eve/packages/eve-browser-lowering` and \
+                 `npm install --prefix vendor/eve/packages/eve-contracts` have been run, then `npm \
+                 run build --prefix vendor/eve/packages/eve-browser-lowering`, to exercise this check."
             );
             return;
         }
@@ -2923,7 +3088,9 @@ mod tests {
         if !eve_client_bridge_is_available() {
             eprintln!(
                 "SKIPPED the_real_client_carries_the_answer_token_and_the_bound_text_together: \
-                 `node` or the vendored lowering's built `dist/index.js` is not available in this \
+                 `node` is missing, or the real Eve client bridge's own dependency graph (the \
+                 vendored lowering's built `dist/index.js`, its `jsdom` devDependency, and the \
+                 sibling `eve-contracts` package's own `ajv` dependency) does not resolve in this \
                  environment, so this test did not drive the real Eve client bridge."
             );
             return;
@@ -3025,10 +3192,14 @@ mod tests {
         if !eve_client_bridge_is_available() {
             eprintln!(
                 "SKIPPED a_create_form_filled_only_by_its_labelled_identity_fields_is_still_accepted: \
-                 `node` or the vendored lowering's built `dist/index.js` is not available in this \
+                 `node` is missing, or the real Eve client bridge's own dependency graph (the \
+                 vendored lowering's built `dist/index.js`, its `jsdom` devDependency, and the \
+                 sibling `eve-contracts` package's own `ajv` dependency) does not resolve in this \
                  environment, so this test did not drive the real Eve client bridge. Run this where \
-                 `node` is on PATH and `vendor/eve/packages/eve-browser-lowering` has been built \
-                 (`npm install && npm run build` in that package) to exercise this check."
+                 `node` is on PATH and both `npm install --prefix \
+                 vendor/eve/packages/eve-browser-lowering` and `npm install --prefix \
+                 vendor/eve/packages/eve-contracts` have been run, then `npm run build --prefix \
+                 vendor/eve/packages/eve-browser-lowering`, to exercise this check."
             );
             return;
         }
@@ -3653,11 +3824,12 @@ mod tests {
     /// out of `PlayTurnView` directly, which a real client never sees — the
     /// answer accepted, and the turn closes with the scripted narration.
     ///
-    /// Mutation: change `payload.answer_token.as_deref() != Some(question.token.as_str())`
-    /// to always pass (or always fail) at `runtime.rs`'s `world.play` arm —
-    /// this test's own answer, echoing the exact token the surface served,
-    /// would then be wrongly refused (or a broken-but-lenient comparison
-    /// would let a later mismatch test wrongly pass).
+    /// Mutation: change the `matches!((payload.answer_token.as_deref(),
+    /// question.token.as_deref()), (Some(given), Some(expected)) if given ==
+    /// expected)` gate at `runtime.rs`'s `world.play` arm to always pass (or
+    /// always fail) — this test's own answer, echoing the exact token the
+    /// surface served, would then be wrongly refused (or a broken-but-lenient
+    /// comparison would let a later mismatch test wrongly pass).
     #[tokio::test]
     async fn an_answer_naming_the_open_questions_own_token_read_from_the_served_surface_is_accepted() {
         let (fixture, table, served_version) = played_and_awaiting_question().await;
@@ -3703,10 +3875,10 @@ mod tests {
     /// rather than being resumed by an answer that could not have named the
     /// question the player was actually shown.
     ///
-    /// Mutation: change `payload.answer_token.as_deref() != Some(question.token.as_str())`
-    /// to treat a missing token (`None`) as a match — this test's answer,
-    /// carrying no `answerToken` field at all, would then be wrongly
-    /// accepted.
+    /// Mutation: change the `matches!` gate at `runtime.rs`'s `world.play`
+    /// arm to treat a missing token (`None`) as a match — this test's
+    /// answer, carrying no `answerToken` field at all, would then be
+    /// wrongly accepted.
     #[tokio::test]
     async fn an_answer_missing_the_open_questions_own_token_is_refused_as_stale() {
         let (fixture, table, served_version) = played_and_awaiting_question().await;
@@ -3786,6 +3958,197 @@ mod tests {
             PlayTurnState::AwaitingPlayer,
             "a stale answer must leave the question open, not resume the turn"
         );
+    }
+
+    /// PA.f178: a stale tab — one still holding a render of a question that
+    /// has since been answered and closed — resubmits its own spent
+    /// `answerToken` alongside new prose. Before this cut, with no question
+    /// currently open the token was simply never read, and the prose opened
+    /// a *fresh* turn instead of being refused: a real inference budget spent
+    /// answering a question that no longer exists. The token must instead be
+    /// refused outright, and no new turn opened.
+    ///
+    /// Mutation: delete the `payload.answer_token.is_some() &&
+    /// !is_awaiting_player` guard from `execute_world`'s `world.play` arm —
+    /// this test's stale-tab resubmission would then be accepted, opening a
+    /// second turn, and both assertions below would fail (the response
+    /// would read `"accepted"`, and `current_turn_view`'s own `turn_id`
+    /// would move on from the first, closed turn).
+    #[tokio::test]
+    async fn a_stale_tabs_spent_token_is_refused_and_never_opens_a_new_turn() {
+        let (fixture, table, served_version) = played_and_awaiting_question().await;
+
+        let spent_token = play_button_token(&fixture.state, &fixture.cookie)
+            .await
+            .expect("the served surface must carry the open question's own answer token");
+
+        let answered = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                served_version,
+                json!({"text":"I go left.","answerToken":spent_token}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(answered["state"], "accepted");
+
+        let closed = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if let Some(view) = table.current_turn_view().await {
+                    if view.state == PlayTurnState::Closed {
+                        return view;
+                    }
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("the scripted end_turn call must close the turn");
+        assert_eq!(closed.narration.as_deref(), Some("The hall falls quiet."));
+        let closed_turn_id = closed.turn_id.clone();
+
+        // The stale tab, still holding its own now-spent token, resubmits —
+        // with a fresh idempotency key, so a key-replay refusal cannot be
+        // mistaken for this one.
+        let stale_resubmission = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                served_version,
+                json!({"text":"a followup the player never actually meant to send here","answerToken":spent_token}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(
+            stale_resubmission["state"], "denied",
+            "a spent token, resubmitted once no question is open, must be refused: {stale_resubmission}"
+        );
+        assert!(
+            stale_resubmission["message"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("closed"),
+            "the refusal must name the actual defect (the question is closed), not a generic decode error: \
+             {stale_resubmission}"
+        );
+
+        let still_closed = table.current_turn_view().await.unwrap();
+        assert_eq!(
+            still_closed.turn_id, closed_turn_id,
+            "a refused stale resubmission must never open a fresh turn"
+        );
+        assert_eq!(still_closed.state, PlayTurnState::Closed);
+    }
+
+    /// PA.f180: the real client never emits `answerToken` as a captured
+    /// binding — `eve.rs` renders it DOM-invisibly on the "Play" button's own
+    /// `props.action`, never through any control a `captureBindings` value
+    /// could come from — but nothing before this cut refused a request built
+    /// by hand (or by a compromised/buggy client) that sent the *correct*
+    /// token through the `bindings` channel instead of the action channel.
+    /// `unwrap_bindings` used to flatten both into one map with no memory of
+    /// which channel a field arrived on, so this would have been
+    /// indistinguishable from a real answer and accepted.
+    ///
+    /// Mutation: remove the `ACTION_ONLY_PAYLOAD_FIELDS` check from
+    /// `unwrap_bindings` — this test's answer, sending the real token through
+    /// `bindings` instead of as a sibling, would then be wrongly accepted
+    /// and the turn would close.
+    #[tokio::test]
+    async fn an_answer_token_sent_as_a_captured_binding_is_refused_not_admitted() {
+        let (fixture, table, served_version) = played_and_awaiting_question().await;
+
+        let real_token = play_button_token(&fixture.state, &fixture.cookie)
+            .await
+            .expect("the served surface must carry the open question's own answer token");
+
+        let smuggled = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                served_version,
+                json!({"bindings":{"text":"I go left.","answerToken":real_token}}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(
+            smuggled["state"], "denied",
+            "the real token, sent through the wrong channel, must still be refused: {smuggled}"
+        );
+        assert!(
+            smuggled["message"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("captured binding"),
+            "the refusal must name the actual defect (wrong channel), not a generic decode error: {smuggled}"
+        );
+
+        let still_open = table.current_turn_view().await.unwrap();
+        assert_eq!(
+            still_open.state,
+            PlayTurnState::AwaitingPlayer,
+            "a smuggled-channel token must leave the question open, not resume the turn"
+        );
+    }
+
+    /// PA.f180's negative: every other command's own round trip — the action
+    /// spread and the envelope `bindings` arriving together, as the real
+    /// lowering actually sends them — must keep working; the new check
+    /// refuses only a reserved action-only field found inside `bindings`,
+    /// never an ordinary field arriving in its usual place.
+    ///
+    /// Mutation: widen `ACTION_ONLY_PAYLOAD_FIELDS` to also cover `"text"` —
+    /// this test's ordinary answer, whose `text` legitimately arrives via
+    /// `bindings`, would then be wrongly refused.
+    #[tokio::test]
+    async fn an_ordinary_answer_with_text_via_bindings_and_token_as_a_sibling_is_still_accepted() {
+        let (fixture, table, served_version) = played_and_awaiting_question().await;
+
+        let real_token = play_button_token(&fixture.state, &fixture.cookie)
+            .await
+            .expect("the served surface must carry the open question's own answer token");
+
+        let answered = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                served_version,
+                json!({"answerToken":real_token,"bindings":{"text":"I go left."}}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(
+            answered["state"], "accepted",
+            "the real client's own shape — action fields as siblings, captured values inside \
+             bindings — must still be accepted: {answered}"
+        );
+
+        let closed = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if let Some(view) = table.current_turn_view().await {
+                    if view.state == PlayTurnState::Closed {
+                        return view;
+                    }
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("the scripted end_turn call must close the turn");
+        assert_eq!(closed.narration.as_deref(), Some("The hall falls quiet."));
     }
 
     /// PA.f170's own core proof — the defect Soul demonstrated (an answer
@@ -5080,6 +5443,58 @@ mod tests {
             fixture.state.world.snapshot().await.unwrap().revision,
             active.revision,
             "a refused seed still moved the world"
+        );
+    }
+
+    /// The seed refusal must be a projection of the world and the player's
+    /// own act (invariant 8), never a server configuration name: an
+    /// unconfigured vault root is this daemon's own operational problem, not
+    /// a fact about the world worth teaching the player. Names the actual
+    /// former leak by string, so a regression is caught by name and not only
+    /// by a vague "does not equal the old message" diff.
+    ///
+    /// Mutation: revert `seed_once`'s vault-root refusal back to
+    /// `format!("{SEED_VAULT_ROOT_ENVIRONMENT} is not configured")` — this
+    /// test's `assert!(!... .contains("GHOSTLIGHT_SEED_VAULT_ROOT"))` would
+    /// then fail.
+    #[tokio::test]
+    async fn the_unconfigured_seed_vault_refusal_does_not_name_the_environment_variable() {
+        let fixture = fixture().await;
+        two_cell_world(
+            &fixture.state,
+            &fixture.cookie,
+            BTreeMap::from([(SubjectKind::Person, 4)]),
+            vec![CreateJurisdictionIntent {
+                handle: "sere".into(),
+                label: "The Low Sere".into(),
+                permille: 1000,
+            }],
+        )
+        .await;
+        let draft = fixture.state.world.snapshot().await.unwrap();
+
+        unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
+        let denied = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.seed",
+                "ghostlight.world_seed.v1",
+                draft.revision + 1,
+                json!({}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(denied["state"], "denied");
+        let message = denied["message"].as_str().unwrap_or_default();
+        assert!(
+            !message.contains(SEED_VAULT_ROOT_ENVIRONMENT),
+            "the player-facing refusal must not name the server's own environment variable: {denied}"
+        );
+        assert_eq!(
+            message, "invalid command payload: seeding is not available on this world",
+            "{denied}"
         );
     }
 
