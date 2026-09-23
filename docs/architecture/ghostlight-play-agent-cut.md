@@ -3923,6 +3923,30 @@ Interpreter, the elaborator sweep and lenses.
   the same `182 passed`. That is the invisible-skip shape again, at
   half-test granularity where `#[ignore]` cannot express it. Soul
   confirmed it is not firing on a real checkout.
+- **PA.f196 (pre-existing, critical, fixed 2026-09-23, `0bf36c7`): found by
+  the operator on the first press of a button.** Sign-in answered "invalid
+  Eve command result: data must not have additional properties".
+  `gamecult.eve.command_result.v1` is `additionalProperties: false` over
+  exactly `schema`, `receipt`, `transientProjection`, `pluginPayload` and
+  `draftDirective`, with the per-command detail inside the receipt. Dungeon
+  returned a flat object — state, message, sourceVersion, providerId,
+  surfaceId, operationId, idempotencyKey and updatedAtUtc at the top level —
+  so the browser rejected **every** result whole. Not just sign-in: every
+  command, always, since the surface existed.
+  - **How the pipeline missed it.** Cut 10 drove the *request* path with the
+    real vendored client and proved a command reaches the daemon. Nothing
+    ever validated the *response*, because 94 assertions read the fields off
+    our own shape — `result["state"]` — which is the test-local-shape defect
+    this pass kept finding, one layer further out. The client bridge could
+    have caught it the day it was written, by validating what came back.
+  - **Fix:** the contract shape, with the detail in the receipt. The new test
+    reads both schemas off the pinned `vendor/eve` checkout and checks a real
+    result against them, rather than restating the allowed keys in an
+    assertion that can only agree with its author. Dungeon bin 182 → 183.
+  - **The lesson, for the Eureka brief:** a round trip is not proven until
+    both directions are checked against the other side's own contract.
+    Driving the real client proves the request; only validating the response
+    proves the answer.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
