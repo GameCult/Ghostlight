@@ -99,7 +99,14 @@ const api = new GhostlightEveTransport();
 const host = new EveBrowserProviderHost(surfaceHost, api, {
   body: document.body,
   clientId: "ghostlight.browser",
-  pollMs: 0,
+  // PA.f191: this used to be 0 (no poll at all), relying entirely on the
+  // `revision` SSE subscription below for every live update. A dropped
+  // stream — closed by an intermediary, or never subscribed at all (see
+  // `trySubscribeToRevisions` below) — then froze the card with no recovery
+  // short of a manual reload. This poll is deliberately low-frequency: it is
+  // a fallback net, not the primary channel, and `host.refresh()` is already
+  // a no-op when the surface version has not moved.
+  pollMs: 5_000,
   requestedSurfaceId: "ghostlight.play",
   source: "Ghostlight",
   statusElement: status,
@@ -111,7 +118,34 @@ window.addEventListener("unhandledrejection", event => {
   status.textContent = event.reason instanceof Error ? event.reason.message : String(event.reason);
 });
 
+// PA.f191: `api.hasAuthenticatedSurface()` reflects whatever the *last*
+// `surface()` fetch saw, and that flag can flip from false to true well
+// after this module's own startup sequence finishes — a player who signs in
+// through the in-page gate (`heimdall.auth_completion_status.v1`, resolved
+// entirely inside the vendored host's own `submit()`/`refresh()` cycle,
+// never observed by this file directly) authenticates on a timer this file
+// has no direct hook into. A one-shot check right after startup only ever
+// caught the redirect flow (`resumeHeimdallAccess`'s own `complete`
+// callback, below); the in-page flow left the tab with no `revision`
+// subscription for the rest of the session, so every answer after the first
+// was refused as stale and the card looked frozen. `trySubscribeToRevisions`
+// is idempotent and cheap to call speculatively — `hasAuthenticatedSurface()`
+// is a field read — so it is called at every point this file can observe an
+// authentication transition, plus on a short recheck interval to catch the
+// in-page flow it cannot observe directly any other way.
+let revisionsSubscribed = false;
+function trySubscribeToRevisions(): void {
+  if (revisionsSubscribed || !api.hasAuthenticatedSurface()) return;
+  revisionsSubscribed = true;
+  const events = new EventSource("api/eve/events");
+  events.addEventListener("revision", () => void host.refresh());
+  events.addEventListener("error", () => {
+    status.textContent = "Live revision notices are unavailable; your authoritative surface remains safe to refresh.";
+  });
+}
+
 await host.start();
+trySubscribeToRevisions();
 await resumeHeimdallAccess({
   complete: async handle => {
     const result = await api.completeAuthentication(handle);
@@ -119,13 +153,16 @@ await resumeHeimdallAccess({
       await heimdallAccessBrowserAdapter.consumeCommandResult?.(result.pluginPayload);
     }
     await host.refresh();
+    trySubscribeToRevisions();
   },
 }, { appSlug: "ghostlight" });
+trySubscribeToRevisions();
 
-if (api.hasAuthenticatedSurface()) {
-  const events = new EventSource("api/eve/events");
-  events.addEventListener("revision", () => void host.refresh());
-  events.addEventListener("error", () => {
-    status.textContent = "Live revision notices are unavailable; your authoritative surface remains safe to refresh.";
-  });
-}
+// The in-page gate's own completion never calls back into this file: it
+// resolves inside the vendored host's `submit()` (a command dispatch) and
+// its own `window.setTimeout(() => void host.refresh(), 100)`, which is the
+// one place `api.hasAuthenticatedSurface()` gets re-evaluated for that flow.
+// This is the only vantage point this file has on that transition; the
+// pollMs fallback above shares the same "cheap, idempotent, safe to run
+// speculatively" reasoning.
+window.setInterval(trySubscribeToRevisions, 2_000);
