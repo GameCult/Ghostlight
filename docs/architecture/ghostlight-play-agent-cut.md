@@ -3882,6 +3882,47 @@ Interpreter, the elaborator sweep and lenses.
     deleted; readiness uses the disk scan.
   - Every mutation killed. Dungeon bin **182 passed, 4 ignored**, and 186
     with `--include-ignored` where the bridge is built.
+- **Soul on Cut 17** (Opus, 2026-09-23, against `fe4eb0e`, Windows).
+  **The bar is met.**
+  - Soul ran the runbook's drift check verbatim: `1 passed; 0 failed; 0
+    ignored`, 46.99 s, with the fixture's stamp matching
+    `git -C vendor/eve rev-parse HEAD`. The last thing standing between a
+    stale fixture and a silent green is closed.
+  - It read Idunn's `drivers.rs` itself and **agrees**: `git ls-tree`
+    carries no `.git`, and the parser refuses a path component named
+    `.git` anyway ("Git tree contains forbidden .git metadata"). A gitlink
+    is cloned to a separate cache root, verified, materialised through the
+    same raw path and deleted. So `vendor/eve` in a frozen source is a
+    plain directory on both paths, and the gate stays green.
+  - The skip cannot hide a regression: the negative case and PA.f193-C's
+    own copy-inside-a-repo case both run unconditionally, and
+    `--include-ignored` printed **zero** skip lines on a real checkout.
+  - PA.f194-A: Soul swept every write in `play.rs`. The four
+    `compare_and_swap_batch` sites are the first write, the normal commit,
+    the legacy upgrade (decoded first) and retirement itself, and all four
+    retirement call sites now sit behind a decode attempt. **No remaining
+    path destroys a row without reading it.**
+  - PA.f194-D: the two rows are structurally exclusive and exhaustive, so
+    the card cannot be blank for a turn in flight, and both are constant
+    strings. Noted, not in scope: the hint is table-wide rather than
+    per-account, which is the shape the old one already had.
+  - Counts: **182 passed, 4 ignored**; 186 with `--include-ignored`.
+- **PA.f195-A (Cut 17, low, fixed):** the runbook still claimed, present
+  tense, that the suite is green "with all four tests skipped" when the
+  dependencies are missing, contradicting the paragraph forty lines above
+  it. An ordinary run is green because the tests are `#[ignore]`d and
+  cargo never enters them; the availability check governs the deliberate
+  `--ignored` run. Fixed in `gamecult-ops` `5d48e43`.
+- **PA.f195-B (Cut 17, trivial, owed):** `07aae19`'s message says the tuple
+  plumbing went with the field; `play.rs:504` still destructures a
+  `_retired_sidecar` every arm builds and nothing reads. A claim slightly
+  ahead of its diff.
+- **PA.f195-C (Cut 17, low, recorded):** the PA.f194-C skip prints its
+  reason with `eprintln!` on a passing test, so cargo discards it without
+  `--nocapture`, and a run where the positive half did not execute reports
+  the same `182 passed`. That is the invisible-skip shape again, at
+  half-test granularity where `#[ignore]` cannot express it. Soul
+  confirmed it is not firing on a real checkout.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
