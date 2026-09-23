@@ -41,6 +41,12 @@ class GhostlightEveTransport implements EveBrowserProviderTransport {
     return result;
   }
 
+  private advertisedTransport(): { transport?: string } {
+    const commands = (this.provider as { commands?: Array<{ command?: string; transport?: string }> } | undefined)?.commands;
+    const transport = commands?.find(command => command.command === "ghostlight.eve.commands")?.transport;
+    return transport ? { transport } : {};
+  }
+
   async completeAuthentication(handle: string): Promise<any> {
     if (!this.provider) await this.providerAdvertisement();
     return await this.submitCommand({
@@ -51,7 +57,10 @@ class GhostlightEveTransport implements EveBrowserProviderTransport {
         operationId: "heimdall.auth.complete",
         schemaId: "heimdall.auth_complete_command.v1",
         idempotencyKey: crypto.randomUUID(),
-        routeHint: { sourceVersion: this.sourceVersion },
+        // The route transport is the one the provider advertises for its
+        // command boundary, as the vendored client takes it from a command
+        // descriptor; Ghostlight refuses an invocation without it.
+        routeHint: { sourceVersion: this.sourceVersion, ...this.advertisedTransport() },
       },
       payload: { handle },
       issuedAt: new Date().toISOString(),
