@@ -1,7 +1,7 @@
 //! Eve/CultUI projection for the one live world owner.
 
 use crate::mesh::{COMMAND_BOUNDARY, COMMAND_RESULT_SCHEMA, PROVIDER_ID, SURFACE_ID};
-use crate::play::PlayTurnView;
+use crate::play::{PlayTurnState, PlayTurnView};
 use ghostlight::{JurisdictionKey, WorldPhase, WorldSnapshot};
 use anyhow::{Context, bail};
 use chrono::{DateTime, Utc};
@@ -473,6 +473,32 @@ pub(crate) fn authenticated_surface(
                                 "id":"world.play.refusal",
                                 "kind":"text",
                                 "props":{"value":refusal},
+                                "children":[]
+                            }));
+                        }
+                        // PA.f188 ("the interrupted turn"): a turn a process
+                        // died mid-round leaves `Running` forever — nothing
+                        // resumes it on its own, and the only way forward is
+                        // submitting an empty message (`play.rs`'s own
+                        // `Some(existing) if existing.state ==
+                        // PlayTurnState::Running` admit arm: empty text
+                        // continues it, non-empty text is refused as
+                        // `TurnStillRunning`). Before this the card showed
+                        // nothing at all in that state — no narration, no
+                        // question, no refusal, since none of those are set
+                        // on a turn that never got to close, ask, or record a
+                        // refused act since it last opened — so a player had
+                        // no way to learn the empty-submit continue exists at
+                        // all. This is a control hint about the player's own
+                        // turn, not world truth, so it stays within
+                        // invariant 8 the same way the narration/question/
+                        // refusal rows above already do.
+                        if play.is_some_and(|view| view.state == PlayTurnState::Running) {
+                            play_rows.push(json!({
+                                "id":"world.play.running",
+                                "kind":"text",
+                                "props":{"value":"Your last turn is still being resolved. If nothing \
+                                    arrives, submit an empty message to continue it."},
                                 "children":[]
                             }));
                         }

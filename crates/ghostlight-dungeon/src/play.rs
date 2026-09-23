@@ -3578,6 +3578,71 @@ pub(crate) mod tests {
         }
     }
 
+    /// PA.f188 ("the interrupted turn"): a turn a process died mid-round
+    /// leaves `Running` forever — the store's own single-row shape never
+    /// resumes it on its own, and the admit arm at `run`'s own `Some(existing)
+    /// if existing.state == PlayTurnState::Running` match continues it only
+    /// on an empty-text submit (non-empty text is refused as
+    /// `TurnStillRunning`). Before this fix the card showed nothing at all in
+    /// that state — no narration, no question, no refusal, since none of
+    /// those get set on a turn that never reached a close, a question, or a
+    /// refused act since it last opened — so a player had no way to learn the
+    /// empty-submit continue exists. The card now names it explicitly while
+    /// `Running`, and says nothing extra once the turn is `AwaitingPlayer` or
+    /// `Closed` again.
+    ///
+    /// Mutation: delete the `if play.is_some_and(|view| view.state ==
+    /// PlayTurnState::Running) { ... }` block from `eve.rs`'s play-card
+    /// construction — the `running_hint` lookup below then finds nothing and
+    /// the first assertion fails.
+    #[tokio::test]
+    async fn the_play_card_names_the_empty_submit_continue_while_the_turn_is_running() {
+        let fixture = play_world(None, "player-interrupted-turn").await;
+        let world = fixture.world.snapshot().await.unwrap();
+
+        let running_view = PlayTurnView {
+            turn_id: test_turn_id(9300),
+            state: PlayTurnState::Running,
+            question: None,
+            narration: None,
+            refusal: None,
+            revision: 1,
+        };
+        let surface = crate::eve::authenticated_surface(
+            "player-interrupted-turn",
+            Some(&world),
+            Some(&running_view),
+        )
+        .unwrap();
+        let running_hint = find_surface_node(&surface, "world.play.running")
+            .expect("a Running turn must render a hint naming the empty-submit continue");
+        let encoded = serde_json::to_string(running_hint).unwrap();
+        assert!(
+            encoded.to_lowercase().contains("empty"),
+            "the hint must actually name the empty-submit continue, not just say something is \
+             happening: {encoded}"
+        );
+
+        let awaiting_view = PlayTurnView {
+            turn_id: test_turn_id(9301),
+            state: PlayTurnState::AwaitingPlayer,
+            question: None,
+            narration: None,
+            refusal: None,
+            revision: 1,
+        };
+        let awaiting_surface = crate::eve::authenticated_surface(
+            "player-interrupted-turn",
+            Some(&world),
+            Some(&awaiting_view),
+        )
+        .unwrap();
+        assert!(
+            find_surface_node(&awaiting_surface, "world.play.running").is_none(),
+            "the running hint must not appear once the turn has left Running"
+        );
+    }
+
     /// PA.f134's own end-to-end proof: answering *through the turn view's own
     /// `question.id`* — the id `current_turn_view` actually exposes, never
     /// one this test built — resumes the turn, and the closed turn's
