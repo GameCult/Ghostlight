@@ -512,8 +512,32 @@ pub(crate) fn authenticated_surface(
                             play_rows.push(json!({
                                 "id":"world.play.running",
                                 "kind":"text",
-                                "props":{"value":"Your last turn is still being resolved. If nothing \
-                                    arrives, submit an empty message to continue it."},
+                                "props":{"value":"Your last turn did not finish. If nothing arrives, \
+                                    submit an empty message to continue it."},
+                                "children":[]
+                            }));
+                        }
+                        // PA.f194-D: with the hint above correctly suppressed
+                        // while a round is genuinely in flight
+                        // (`run_in_progress`), the card had nothing left to
+                        // render for the whole span between submitting a turn
+                        // and its own narration/question/refusal landing —
+                        // narration/question/refusal are all still whatever
+                        // the *previous* turn left behind (or unset, on a
+                        // fresh table), and the round in progress does not
+                        // touch any of them until it closes or opens a
+                        // question. A player who submits and sees an
+                        // unchanged or empty card has no sign anything is
+                        // happening. This row renders only while this
+                        // player's own turn is actively being worked on —
+                        // `run_in_progress`, not world truth, and stays
+                        // within invariant 8 the same way the hint above
+                        // does.
+                        if play.is_some_and(|view| view.run_in_progress) {
+                            play_rows.push(json!({
+                                "id":"world.play.resolving",
+                                "kind":"text",
+                                "props":{"value":"Resolving your turn…"},
                                 "children":[]
                             }));
                         }

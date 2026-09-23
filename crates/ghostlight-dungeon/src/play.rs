@@ -484,13 +484,6 @@ struct PlayTurnStore {
     row: CultCacheEnvelope,
     state: PlayTurnStoreState,
     healthy: bool,
-    /// PA.f186: `Some` when this store's own `open` retired an unreadable
-    /// row this process, naming the sidecar it wrote. Set once, at `open`,
-    /// and never cleared for the life of this `PlayTurnStore` — a later
-    /// commit does not touch it, since a retirement is a fact about how this
-    /// process's own custody of the row began, not an ongoing health signal
-    /// that could clear itself.
-    retired_sidecar: Option<PathBuf>,
 }
 
 impl PlayTurnStore {
@@ -500,12 +493,15 @@ impl PlayTurnStore {
             .validate_path_identity()
             .context("play-turn store path identity is invalid")?;
         let rows = store.pull_all()?;
-        // PA.f186: the third element is the sidecar path a retirement wrote
-        // this call, `None` on every ordinary path (fresh init, a row that
-        // decoded/upgraded cleanly) — carried up into `PlayTurnStore` itself
-        // so `runtime_readiness` can report a retirement structurally,
-        // without re-deriving it from `tracing::warn!` output.
-        let (row, state, retired_sidecar) = match rows.as_slice() {
+        // PA.f193-E/PA.f194-E: the third element is the sidecar path a
+        // retirement wrote this call, `None` on every ordinary path (fresh
+        // init, a row that decoded/upgraded cleanly). Nothing on
+        // `PlayTurnStore` itself keeps it — `PlayTable::retired_row_sidecar`
+        // scans the store's own directory fresh on every `/health` read
+        // instead, so a retirement a *prior* process performed is still
+        // reported after a restart, not only by the process whose own `open`
+        // happened to perform it.
+        let (row, state, _retired_sidecar) = match rows.as_slice() {
             [] => {
                 let state = PlayTurnStoreState {
                     schema: STORE_SCHEMA.into(),
@@ -632,26 +628,50 @@ impl PlayTurnStore {
                     }
                 }
             }
-            // PA.f184: our own key and type, but a schema id none of the arms
-            // above recognize — a future schema this build has never seen,
-            // not foreign data — so it is retired the same way a damaged row
-            // is, rather than leaving `open` refusing forever. Multiple rows,
-            // or a row under a different `type`/`key` entirely, still bail
-            // below: that is genuinely foreign content this store must not
-            // guess about destroying.
+            // PA.f184/PA.f194-A: our own key and type, but a schema id none
+            // of the arms above recognize — a future schema this build has
+            // never seen, not foreign data. That alone does not mean the row
+            // is unreadable: an Idunn rollback across a schema-id move can
+            // hand this build a row stamped with a schema id it has never
+            // seen whose bytes still decode cleanly under the current
+            // `PlayTurnStoreState` shape (nothing about the struct changed,
+            // only the id). Before this fix, every unrecognized schema id
+            // was retired on the id alone, with no decode attempted — a
+            // canonical, perfectly readable row lost its one open turn, and
+            // the sidecar's own `reason` claimed the row "could not be read"
+            // when nothing had tried. Attempt the decode first, exactly like
+            // the current- and legacy-schema arms above: retire only on a
+            // genuine decode failure; a row that decodes cleanly is left
+            // untouched and `open` fails loudly instead, so an operator sees
+            // the mismatch rather than losing the turn silently. Multiple
+            // rows, or a row under a different `type`/`key` entirely, still
+            // bail below: that is genuinely foreign content this store must
+            // not guess about destroying.
             [row] if row.r#type == STORE_TYPE && row.key == STORE_KEY => {
-                let reason = anyhow!(
-                    "play-turn row declares unrecognized schema {:?}",
-                    row.schema_id
-                );
-                let (row, state, sidecar) = retire_unreadable_row(
-                    &store,
-                    path.as_ref(),
-                    row,
-                    row.schema_id.as_deref().unwrap_or("<none>"),
-                    &reason,
-                )?;
-                (row, state, Some(sidecar))
+                match rmp_serde::from_slice::<PlayTurnStoreState>(&row.payload) {
+                    Ok(_) => {
+                        return Err(anyhow!(
+                            "play-turn row declares unrecognized schema {:?} but its payload decodes \
+                             cleanly under the current PlayTurnStoreState shape; refusing to retire a \
+                             readable row (PA.f194-A) — open a build that recognizes this schema",
+                            row.schema_id
+                        ));
+                    }
+                    Err(decode_error) => {
+                        let reason = anyhow::Error::new(decode_error).context(format!(
+                            "play-turn row declares unrecognized schema {:?}",
+                            row.schema_id
+                        ));
+                        let (row, state, sidecar) = retire_unreadable_row(
+                            &store,
+                            path.as_ref(),
+                            row,
+                            row.schema_id.as_deref().unwrap_or("<none>"),
+                            &reason,
+                        )?;
+                        (row, state, Some(sidecar))
+                    }
+                }
             }
             _ => bail!("play-turn store contains foreign or otherwise-unreadable records; start with a fresh store"),
         };
@@ -660,17 +680,7 @@ impl PlayTurnStore {
             row,
             state,
             healthy: true,
-            retired_sidecar,
         })
-    }
-
-    /// PA.f186: the sidecar path this store's own `open` wrote, if this
-    /// process's own open retired a row — `None` on every ordinary open.
-    /// Read once by `PlayTable::new` into its own plain field; retirement
-    /// only ever happens during `open`, so nothing after startup needs to
-    /// re-check this.
-    fn retired_sidecar(&self) -> Option<&Path> {
-        self.retired_sidecar.as_deref()
     }
 
     fn current(&self) -> Option<&PlayTurn> {
@@ -940,9 +950,11 @@ struct RetiredPlayTurnRow<'a> {
 /// returns a fresh, empty state so `open` succeeds and play starts fresh.
 /// Logged at `warn`, so the fact reaches the operator through the same log
 /// stream `runtime.rs`'s own `open_play` failure warning already uses, next
-/// to the `playStatus` the operator already checks (PA.f186: `PlayTurnStore`
-/// itself also remembers the sidecar path this call, if any, wrote, so
-/// `runtime_readiness` can report it structurally, not only in the log).
+/// to the `playStatus` the operator already checks (PA.f193-E:
+/// `PlayTable::retired_row_sidecar` reports it structurally too, by scanning
+/// the store's own directory fresh on every read rather than trusting a flag
+/// cached at `open` — see that method's own doc comment for why a cached
+/// per-process flag is not enough for `/health` to survive a restart).
 ///
 /// PA.f189: two orderings matter here and are both deliberate.
 /// - The sidecar write happens *before* the destructive compare-and-swap.
@@ -961,6 +973,19 @@ struct RetiredPlayTurnRow<'a> {
 ///   leftover with no corresponding successful retirement — and an operator
 ///   clearing them out should confirm the row it names is actually resolved
 ///   (upgraded, retired again, or the store rebuilt) before deleting one.
+///
+/// **Precondition (PA.f194-A):** the caller must have already attempted to
+/// decode `row`'s payload and that attempt must have failed — `decode_error`
+/// is trusted verbatim into the sidecar's own `reason` field ("could not be
+/// read: ..."), so a caller that has not actually tried to read the row makes
+/// that claim false. This function performs no decode of its own to verify
+/// it. An unrecognized `schema_id` alone is not evidence of unreadability: a
+/// row can declare a schema this build has never seen and still decode
+/// cleanly under the current `PlayTurnStoreState` shape (a future schema
+/// built from an identical struct, surfaced by an Idunn rollback across a
+/// schema-id move). `PlayTurnStore::open`'s own unrecognized-schema arm
+/// attempts a decode first and only calls this on genuine decode failure,
+/// exactly like its current- and legacy-schema siblings.
 fn retire_unreadable_row(
     store: &OwnedRedbMessagePackBackingStore,
     store_path: &Path,
@@ -3819,6 +3844,105 @@ pub(crate) mod tests {
         );
     }
 
+    /// PA.f194-D: with the running hint above correctly gated off while a
+    /// round is genuinely in flight, the card rendered nothing at all for the
+    /// whole span between the player submitting a turn and its own
+    /// narration/question/refusal landing — none of those are touched by the
+    /// round in progress until it closes or opens a question, so a player who
+    /// submits and watches an unchanged or empty card has no sign anything is
+    /// happening. This row renders for exactly the span the previous test
+    /// proves the running hint must not: whenever this player's own turn is
+    /// actively being worked on (`run_in_progress`), regardless of `state`.
+    ///
+    /// Mutation: delete the `if play.is_some_and(|view| view.run_in_progress)
+    /// { ... }` block that pushes `world.play.resolving` from `eve.rs`'s
+    /// play-card construction — the lookup below then finds nothing and the
+    /// first assertion fails.
+    #[tokio::test]
+    async fn the_card_shows_a_resolving_row_while_a_round_is_in_flight() {
+        let fixture = play_world(None, "player-round-in-flight").await;
+        let world = fixture.world.snapshot().await.unwrap();
+
+        let busy_view = PlayTurnView {
+            turn_id: test_turn_id(9303),
+            state: PlayTurnState::Running,
+            question: None,
+            narration: None,
+            refusal: None,
+            revision: 1,
+            run_in_progress: true,
+        };
+        let surface = crate::eve::authenticated_surface(
+            "player-round-in-flight",
+            Some(&world),
+            Some(&busy_view),
+        )
+        .unwrap();
+        assert!(
+            find_surface_node(&surface, "world.play.resolving").is_some(),
+            "the card must render something while the player's own turn is actively being worked \
+             on, not sit blank for the whole round"
+        );
+
+        let idle_view = PlayTurnView {
+            turn_id: test_turn_id(9304),
+            state: PlayTurnState::AwaitingPlayer,
+            question: None,
+            narration: Some("The hall falls quiet.".into()),
+            refusal: None,
+            revision: 1,
+            run_in_progress: false,
+        };
+        let idle_surface = crate::eve::authenticated_surface(
+            "player-round-in-flight",
+            Some(&world),
+            Some(&idle_view),
+        )
+        .unwrap();
+        assert!(
+            find_surface_node(&idle_surface, "world.play.resolving").is_none(),
+            "the resolving row must not linger once nothing is actively running"
+        );
+    }
+
+    /// PA.f194-D: the surviving running hint's own text used to claim "Your
+    /// last turn is still being resolved" — false in the only case it now
+    /// renders (`Running`, nothing actively working on it, PA.f193-D's own
+    /// `run_in_progress` gate). Its wording must describe reality: the turn
+    /// stalled, not that it is still in flight — "still being resolved" is
+    /// now what `world.play.resolving` above says instead.
+    ///
+    /// Mutation: revert the hint's text back to "Your last turn is still
+    /// being resolved..." — the assertion below fails.
+    #[tokio::test]
+    async fn the_running_hints_own_text_does_not_claim_the_turn_is_still_in_flight() {
+        let fixture = play_world(None, "player-stalled-turn-text").await;
+        let world = fixture.world.snapshot().await.unwrap();
+        let running_view = PlayTurnView {
+            turn_id: test_turn_id(9305),
+            state: PlayTurnState::Running,
+            question: None,
+            narration: None,
+            refusal: None,
+            revision: 1,
+            run_in_progress: false,
+        };
+        let surface = crate::eve::authenticated_surface(
+            "player-stalled-turn-text",
+            Some(&world),
+            Some(&running_view),
+        )
+        .unwrap();
+        let running_hint = find_surface_node(&surface, "world.play.running")
+            .expect("a Running turn nothing is working on must still render the hint");
+        let encoded = serde_json::to_string(running_hint).unwrap();
+        assert!(
+            !encoded.to_lowercase().contains("still being resolved"),
+            "the hint must not claim the turn is still being resolved when nothing is working on \
+             it: {encoded}"
+        );
+    }
+
     /// PA.f134's own end-to-end proof: answering *through the turn view's own
     /// `question.id`* — the id `current_turn_view` actually exposes, never
     /// one this test built — resumes the turn, and the closed turn's
@@ -4411,12 +4535,6 @@ pub(crate) mod tests {
             store.current().is_none(),
             "play must start fresh with no current turn once the old row is retired"
         );
-        assert!(
-            store
-                .retired_sidecar()
-                .is_some_and(|sidecar| sidecar.file_name().unwrap().to_string_lossy().contains("retired-unreadable-row")),
-            "the store must remember the sidecar path its own open wrote"
-        );
 
         let sidecar = std::fs::read_dir(directory.path())
             .unwrap()
@@ -4456,9 +4574,15 @@ pub(crate) mod tests {
         let reopened = PlayTurnStore::open(&store_path)
             .expect("reopening after retirement must not refuse the store again");
         assert!(reopened.current().is_none());
-        assert!(
-            reopened.retired_sidecar().is_none(),
-            "a clean reopen after retirement must not itself report a fresh retirement"
+        let sidecars_after_reopen = std::fs::read_dir(directory.path())
+            .unwrap()
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| entry.file_name().to_string_lossy().contains("retired-unreadable-row"))
+            .count();
+        assert_eq!(
+            sidecars_after_reopen, 1,
+            "a clean reopen after retirement must not itself perform a fresh retirement and write a \
+             second sidecar"
         );
     }
 
@@ -4501,6 +4625,109 @@ pub(crate) mod tests {
                 .any(|entry| entry.file_name().to_string_lossy().contains("retired-unreadable-row")),
             "the future-schema row must be written to a sidecar file beside the store"
         );
+    }
+
+    /// PA.f194-A: Soul's own probe — a row declaring a schema id this build
+    /// has never seen (an Idunn rollback across a schema-id move landing
+    /// this build in front of a row a newer build wrote) whose payload still
+    /// decodes cleanly into the current `PlayTurnStoreState` shape, holding
+    /// an open question and its token. Before this fix the catch-all arm
+    /// retired every unrecognized schema id on the id alone, with no decode
+    /// attempted — this canonical, perfectly readable row lost its one open
+    /// turn, and the sidecar's own `reason` field falsely claimed the row
+    /// "could not be read". Now `open` attempts the decode first, the decode
+    /// succeeds, and `open` fails loudly instead of destroying a readable
+    /// turn — the same shape the current- and legacy-schema arms already use
+    /// for their own `Other` cases.
+    ///
+    /// Mutation: delete the `match rmp_serde::from_slice::<PlayTurnStoreState>(&row.payload)`
+    /// decode attempt from the catch-all arm (or its `Ok(_) => return Err(...)`
+    /// case) and route straight to `retire_unreadable_row` again — `open` then
+    /// succeeds with `current().is_none()`, a sidecar appears, and the
+    /// assertions below fail.
+    #[tokio::test]
+    async fn a_readable_row_declaring_an_unrecognized_future_schema_is_not_retired() {
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+
+        let turn = PlayTurn {
+            turn_id: "44444444-4444-4444-4444-444444444444".into(),
+            applied_keys: vec!["key-d".into()],
+            opening_prompt: "You stand at a crossroads.".into(),
+            player_prose: vec!["I look around.".into()],
+            rounds: vec![output(
+                "r0",
+                vec![call_event(
+                    "c0",
+                    ASK_PLAYER_TOOL,
+                    serde_json::json!({"question": "Which way?"}),
+                )],
+            )],
+            calls: vec![CallRecord {
+                call_id: "c0".into(),
+                round: 0,
+                slot: 0,
+                body: Some(RecordedCall::AskPlayer("Which way?".into())),
+                result: None,
+            }],
+            persona_turns: Vec::new(),
+            question: Some("Which way?".into()),
+            question_token: Some("future-schema-token".into()),
+            refusal: None,
+            narration: None,
+            fault: None,
+            state: PlayTurnState::AwaitingPlayer,
+        };
+        let future_state = PlayTurnStoreState {
+            schema: "ghostlight.play_turn_store.v4".into(),
+            turn: Some(turn),
+            ledger: KeyLedger::default(),
+            revision: 7,
+        };
+        let future_payload = rmp_serde::to_vec_named(&future_state).unwrap();
+        // Sanity: the fixture really is readable under the current shape, so
+        // this test exercises the "decodes cleanly" branch and not a decode
+        // failure in disguise.
+        rmp_serde::from_slice::<PlayTurnStoreState>(&future_payload)
+            .expect("the test fixture must actually decode as a valid PlayTurnStoreState");
+
+        let future_row = CultCacheEnvelope {
+            key: STORE_KEY.into(),
+            r#type: STORE_TYPE.into(),
+            payload: future_payload,
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some("ghostlight.play_turn_store.v4".into()),
+        };
+        {
+            let raw_store = OwnedRedbMessagePackBackingStore::new(&store_path).unwrap();
+            assert!(
+                raw_store.compare_and_swap_batch(&[], vec![future_row]).unwrap(),
+                "seeding the readable future-schema row must succeed against an empty store"
+            );
+        }
+
+        let error = match PlayTurnStore::open(&store_path) {
+            Ok(_) => panic!("a readable future-schema row must not silently succeed, and must not be retired"),
+            Err(error) => error,
+        };
+        let full_chain = format!("{error:#}");
+        assert!(
+            full_chain.contains("decodes cleanly") || full_chain.contains("v4"),
+            "the failure must name that the row is readable, not claim it could not be read: {full_chain}"
+        );
+
+        assert!(
+            std::fs::read_dir(directory.path())
+                .unwrap()
+                .filter_map(|entry| entry.ok())
+                .all(|entry| !entry.file_name().to_string_lossy().contains("retired-unreadable-row")),
+            "a readable future-schema row must not be retired to a sidecar"
+        );
+
+        let raw_store = OwnedRedbMessagePackBackingStore::new(&store_path).unwrap();
+        let rows = raw_store.pull_all().unwrap();
+        assert_eq!(rows.len(), 1, "the original readable row must still be the only row in the store");
+        assert_eq!(rows[0].schema_id.as_deref(), Some("ghostlight.play_turn_store.v4"));
     }
 
     /// PA.f193-A: Soul's own probe — a row declaring the *current*
