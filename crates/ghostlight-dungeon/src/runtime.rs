@@ -2809,21 +2809,41 @@ mod tests {
     /// server-resolved-answer mechanism has its own direct proof instead, at
     /// the play-table layer:
     /// `play::tests::a_question_is_answered_through_the_cards_own_binding_and_the_turn_closes_with_narration`.
+    /// (Soul's owed item 3): `#[ignore]`d, not skipped-with-a-print. Before
+    /// this, an unavailable `node`/vendor-lowering environment made this
+    /// test return early and count as an ordinary pass — cargo's own summary
+    /// line reported the identical "178 passed" whether or not this actually
+    /// drove the real Eve client bridge, and only `--nocapture` surfaced the
+    /// difference (the `eprintln!` above was otherwise captured and
+    /// discarded on a passing test). `#[ignore]` makes cargo's own default
+    /// summary distinguish the two: an ordinary `cargo test` run reports this
+    /// (and its three siblings gated the same way) under "X ignored", visible
+    /// with no extra flags, and never executes the body at all. Run
+    /// `cargo test -p ghostlight-dungeon --bin ghostlight-dungeon -- --ignored`
+    /// where `node` is on PATH and both `npm install --prefix
+    /// vendor/eve/packages/eve-browser-lowering` and `npm install --prefix
+    /// vendor/eve/packages/eve-contracts` have been run, then `npm run build
+    /// --prefix vendor/eve/packages/eve-browser-lowering`, to actually
+    /// exercise it. The cost: this no longer auto-runs on a workstation that
+    /// happens to have those dependencies installed — opting in is now
+    /// explicit, and asking for it without the dependencies present now
+    /// panics instead of silently returning, since a deliberate `--ignored`
+    /// run that still cannot drive the real bridge is a real failure to
+    /// report, not a skip to swallow quietly.
     #[tokio::test]
+    #[ignore = "requires node + a built vendor/eve/eve-browser-lowering + eve-contracts; run with `cargo test -- --ignored`"]
     async fn world_create_seed_activate_and_play_round_trip_through_the_real_client() {
         if !eve_client_bridge_is_available() {
-            eprintln!(
-                "SKIPPED world_create_seed_activate_and_play_round_trip_through_the_real_client: \
-                 `node` is missing, or the real Eve client bridge's own dependency graph (the \
-                 vendored lowering's built `dist/index.js`, its `jsdom` devDependency, and the \
-                 sibling `eve-contracts` package's own `ajv` dependency) does not resolve in this \
-                 environment, so this test did not drive the real Eve client bridge. Run this where \
-                 `node` is on PATH and both `npm install --prefix \
+            panic!(
+                "world_create_seed_activate_and_play_round_trip_through_the_real_client was run \
+                 (via --ignored) but the real Eve client bridge is not available: `node` is \
+                 missing, or the vendored lowering's built `dist/index.js`, its `jsdom` \
+                 devDependency, or the sibling `eve-contracts` package's own `ajv` dependency does \
+                 not resolve in this environment. Run `node` on PATH and both `npm install --prefix \
                  vendor/eve/packages/eve-browser-lowering` and `npm install --prefix \
-                 vendor/eve/packages/eve-contracts` have been run, then `npm run build --prefix \
-                 vendor/eve/packages/eve-browser-lowering`, to exercise this check."
+                 vendor/eve/packages/eve-contracts`, then `npm run build --prefix \
+                 vendor/eve/packages/eve-browser-lowering`, before running this test."
             );
-            return;
         }
         let fixture = fixture().await;
         let provider = get(&fixture.state, &fixture.cookie, "/api/eve/provider").await;
@@ -3073,18 +3093,54 @@ mod tests {
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
     }
 
-    /// PA.f190: every precondition
+    /// PA.f190/PA.f193-C: every precondition
     /// `eve_client_bridge_fixture_matches_what_the_pinned_lowering_produces_today`
     /// itself asserts must be provable by `eve_client_bridge_is_available`
     /// before that test is allowed to run rather than skip — this is the one
-    /// `eve_client_bridge_is_available` did not check. Uses the exact same
-    /// command the test's own `.expect(...)` does, so a `vendor/eve` that is
-    /// present but not a real git checkout (a copied directory, for instance)
-    /// reports unavailable here instead of reaching that `.expect` at all.
+    /// `eve_client_bridge_is_available` did not check.
+    ///
+    /// `git -C vendor/eve rev-parse HEAD` alone certifies nothing: when
+    /// `vendor/eve` is a plain copied directory rather than a checkout, git
+    /// does not fail — it walks up past the missing `.git` and answers with
+    /// whichever *enclosing* repository it finds, which inside this checkout
+    /// is Ghostlight's own HEAD. Soul measured this directly: the prior form
+    /// of this check reported "available" for a copy sitting inside the
+    /// Ghostlight repo, and
+    /// `eve_client_bridge_fixture_matches_what_the_pinned_lowering_produces_today`
+    /// then panicked comparing the fixture's stamped revision against the
+    /// parent repo's HEAD instead of skipping.
+    ///
+    /// `--show-toplevel` names which repository git actually resolved the
+    /// first command against. Comparing that, canonicalized, to `vendor/eve`'s
+    /// own canonical path is what actually distinguishes "this directory is
+    /// its own checkout" from "this directory sits inside someone else's". A
+    /// bare tempdir outside any repository and a copy sitting inside one both
+    /// now report unavailable, rather than only the former.
     /// `repo_root` is a parameter, not hard-coded, so a test can point this
     /// at a scratch directory shaped like a copied-not-checked-out
     /// `vendor/eve` without touching the real submodule.
     fn vendor_eve_git_checkout_available(repo_root: &std::path::Path) -> bool {
+        let vendor_eve = repo_root.join("vendor").join("eve");
+        let Ok(canonical_vendor_eve) = vendor_eve.canonicalize() else {
+            return false;
+        };
+        let Ok(toplevel_output) = std::process::Command::new("git")
+            .args(["-C", "vendor/eve", "rev-parse", "--show-toplevel"])
+            .current_dir(repo_root)
+            .output()
+        else {
+            return false;
+        };
+        if !toplevel_output.status.success() {
+            return false;
+        }
+        let toplevel = String::from_utf8_lossy(&toplevel_output.stdout).trim().to_owned();
+        let Ok(canonical_toplevel) = std::path::Path::new(&toplevel).canonicalize() else {
+            return false;
+        };
+        if canonical_toplevel != canonical_vendor_eve {
+            return false;
+        }
         std::process::Command::new("git")
             .args(["-C", "vendor/eve", "rev-parse", "HEAD"])
             .current_dir(repo_root)
@@ -3172,6 +3228,93 @@ mod tests {
         );
     }
 
+    /// PA.f193-C: the bug Soul actually measured, built inside a real `git
+    /// init` root rather than a bare tempdir. The prior test's own scratch
+    /// directory sits outside any repository, so `git -C vendor/eve
+    /// rev-parse HEAD` already failed there for an unrelated reason ("no such
+    /// repository") and never exercised the actual defect: a naive `git -C
+    /// vendor/eve rev-parse HEAD` walks up past the missing `.git` and
+    /// answers with the *enclosing* repository's own HEAD instead of
+    /// failing. This test proves that false positive exists (the sanity
+    /// assertion) before proving the fix closes it.
+    ///
+    /// Mutation: revert `vendor_eve_git_checkout_available` to a bare `git -C
+    /// vendor/eve rev-parse HEAD` success check (drop the `--show-toplevel`
+    /// comparison) — the final assertion then fails, because the copy inside
+    /// this enclosing repo reports available exactly like Soul found.
+    #[test]
+    fn vendor_eve_git_checkout_available_rejects_a_copy_inside_an_enclosing_repo() {
+        let git_on_path = std::process::Command::new("git")
+            .arg("--version")
+            .output()
+            .is_ok_and(|output| output.status.success());
+        if !git_on_path {
+            eprintln!(
+                "SKIPPED vendor_eve_git_checkout_available_rejects_a_copy_inside_an_enclosing_repo: \
+                 `git` is not on PATH."
+            );
+            return;
+        }
+
+        let scratch = tempfile::tempdir().unwrap();
+        let init = std::process::Command::new("git")
+            .args(["init", "-q"])
+            .current_dir(scratch.path())
+            .status();
+        if !init.is_ok_and(|status| status.success()) {
+            eprintln!(
+                "SKIPPED vendor_eve_git_checkout_available_rejects_a_copy_inside_an_enclosing_repo: \
+                 `git init` failed in the scratch directory."
+            );
+            return;
+        }
+        let commit = std::process::Command::new("git")
+            .args([
+                "-c",
+                "user.email=ghostlight-test@example.com",
+                "-c",
+                "user.name=ghostlight-test",
+                "commit",
+                "--allow-empty",
+                "-q",
+                "-m",
+                "scratch root for PA.f193-C",
+            ])
+            .current_dir(scratch.path())
+            .status();
+        if !commit.is_ok_and(|status| status.success()) {
+            eprintln!(
+                "SKIPPED vendor_eve_git_checkout_available_rejects_a_copy_inside_an_enclosing_repo: \
+                 could not create the scratch repo's initial commit."
+            );
+            return;
+        }
+
+        // A copy, not a checkout: real files, no `.git`, sitting inside the
+        // enclosing scratch repo just created above.
+        std::fs::create_dir_all(scratch.path().join("vendor").join("eve")).unwrap();
+        std::fs::write(scratch.path().join("vendor").join("eve").join("marker.txt"), b"copied, not cloned").unwrap();
+
+        // Sanity: prove the false positive is real before proving the fix
+        // closes it. If this fails, the scratch fixture stopped reproducing
+        // Soul's bug and the test below would certify nothing either.
+        let naive = std::process::Command::new("git")
+            .args(["-C", "vendor/eve", "rev-parse", "HEAD"])
+            .current_dir(scratch.path())
+            .output();
+        assert!(
+            naive.is_ok_and(|output| output.status.success()),
+            "the naive `git -C vendor/eve rev-parse HEAD` must succeed here — this is exactly the \
+             false positive PA.f193-C found; if it no longer succeeds, this fixture stopped \
+             reproducing the bug"
+        );
+
+        assert!(
+            !vendor_eve_git_checkout_available(scratch.path()),
+            "a vendor/eve copy sitting inside an enclosing repository must not report available"
+        );
+    }
+
     /// Strips the fields that legitimately vary between two otherwise
     /// identical intents — `idempotencyKey` (`randomIdempotencyKey`) and
     /// `issuedAt` (`new Date().toISOString()`), both minted fresh by
@@ -3194,23 +3337,24 @@ mod tests {
     /// the fixture alone, without this, would be a frozen copy of the
     /// client's past behavior pretending to still be the client's current
     /// one. Runs only when `node` and the built lowering are actually
-    /// available (`eve_client_bridge_is_available`), and says so plainly
-    /// when it is not, rather than silently reporting green.
+    /// available (`eve_client_bridge_is_available`). `#[ignore]`d for the
+    /// same reason `world_create_seed_activate_and_play_round_trip_through_the_real_client`
+    /// is (Soul's owed item 3, above): a normal `cargo test` run must
+    /// distinguish "not exercised" from "passed" in its own summary line
+    /// without `--nocapture`, and only `--ignored` opts in.
     #[tokio::test]
+    #[ignore = "requires node + a built vendor/eve/eve-browser-lowering + eve-contracts; run with `cargo test -- --ignored`"]
     async fn eve_client_bridge_fixture_matches_what_the_pinned_lowering_produces_today() {
         if !eve_client_bridge_is_available() {
-            eprintln!(
-                "SKIPPED eve_client_bridge_fixture_matches_what_the_pinned_lowering_produces_today: \
-                 `node` is missing, or the real Eve client bridge's own dependency graph (the \
-                 vendored lowering's built `dist/index.js`, its `jsdom` devDependency, and the \
-                 sibling `eve-contracts` package's own `ajv` dependency) does not resolve in this \
-                 environment, so the committed fixture (src/fixtures/eve_client_bridge_intents.json) \
-                 was not regenerated or diffed against the real bridge. Run this where `node` is on \
-                 PATH and both `npm install --prefix vendor/eve/packages/eve-browser-lowering` and \
-                 `npm install --prefix vendor/eve/packages/eve-contracts` have been run, then `npm \
-                 run build --prefix vendor/eve/packages/eve-browser-lowering`, to exercise this check."
+            panic!(
+                "eve_client_bridge_fixture_matches_what_the_pinned_lowering_produces_today was run \
+                 (via --ignored) but the real Eve client bridge is not available, so the committed \
+                 fixture (src/fixtures/eve_client_bridge_intents.json) cannot be regenerated or \
+                 diffed against it. Run `node` on PATH and both `npm install --prefix \
+                 vendor/eve/packages/eve-browser-lowering` and `npm install --prefix \
+                 vendor/eve/packages/eve-contracts`, then `npm run build --prefix \
+                 vendor/eve/packages/eve-browser-lowering`, before running this test."
             );
-            return;
         }
         let doc = bridge_fixture();
         assert_eq!(
@@ -3317,18 +3461,19 @@ mod tests {
     /// `world.play` click never has an open question, so its action carries
     /// no token to prove); this test builds its own scripted question so the
     /// merge actually has something in `props.action` to carry. Skips, with
-    /// a message, exactly when the fixture-matching test above does.
+    /// `#[ignore]`d, same reason and opt-in as this file's other three
+    /// bridge-dependent tests (Soul's owed item 3, above).
     #[tokio::test]
+    #[ignore = "requires node + a built vendor/eve/eve-browser-lowering + eve-contracts; run with `cargo test -- --ignored`"]
     async fn the_real_client_carries_the_answer_token_and_the_bound_text_together() {
         if !eve_client_bridge_is_available() {
-            eprintln!(
-                "SKIPPED the_real_client_carries_the_answer_token_and_the_bound_text_together: \
-                 `node` is missing, or the real Eve client bridge's own dependency graph (the \
-                 vendored lowering's built `dist/index.js`, its `jsdom` devDependency, and the \
-                 sibling `eve-contracts` package's own `ajv` dependency) does not resolve in this \
-                 environment, so this test did not drive the real Eve client bridge."
+            panic!(
+                "the_real_client_carries_the_answer_token_and_the_bound_text_together was run (via \
+                 --ignored) but the real Eve client bridge is not available: `node` is missing, or \
+                 the vendored lowering's built `dist/index.js`, its `jsdom` devDependency, or the \
+                 sibling `eve-contracts` package's own `ajv` dependency does not resolve in this \
+                 environment."
             );
-            return;
         }
         let (fixture, served_version) = play_world_with_a_scripted_question().await;
         let table = fixture.state.play.clone().unwrap();
@@ -3422,21 +3567,22 @@ mod tests {
     /// targets". This test drives the real vendored lowering the same way,
     /// typing only `title` and `subject`, and the command must still be
     /// accepted.
+    /// `#[ignore]`d, same reason and opt-in as this file's other three
+    /// bridge-dependent tests (Soul's owed item 3, above).
     #[tokio::test]
+    #[ignore = "requires node + a built vendor/eve/eve-browser-lowering + eve-contracts; run with `cargo test -- --ignored`"]
     async fn a_create_form_filled_only_by_its_labelled_identity_fields_is_still_accepted() {
         if !eve_client_bridge_is_available() {
-            eprintln!(
-                "SKIPPED a_create_form_filled_only_by_its_labelled_identity_fields_is_still_accepted: \
-                 `node` is missing, or the real Eve client bridge's own dependency graph (the \
-                 vendored lowering's built `dist/index.js`, its `jsdom` devDependency, and the \
-                 sibling `eve-contracts` package's own `ajv` dependency) does not resolve in this \
-                 environment, so this test did not drive the real Eve client bridge. Run this where \
-                 `node` is on PATH and both `npm install --prefix \
+            panic!(
+                "a_create_form_filled_only_by_its_labelled_identity_fields_is_still_accepted was run \
+                 (via --ignored) but the real Eve client bridge is not available: `node` is missing, \
+                 or the vendored lowering's built `dist/index.js`, its `jsdom` devDependency, or the \
+                 sibling `eve-contracts` package's own `ajv` dependency does not resolve in this \
+                 environment. Run `node` on PATH and both `npm install --prefix \
                  vendor/eve/packages/eve-browser-lowering` and `npm install --prefix \
-                 vendor/eve/packages/eve-contracts` have been run, then `npm run build --prefix \
-                 vendor/eve/packages/eve-browser-lowering`, to exercise this check."
+                 vendor/eve/packages/eve-contracts`, then `npm run build --prefix \
+                 vendor/eve/packages/eve-browser-lowering`, before running this test."
             );
-            return;
         }
         let fixture = fixture().await;
         let provider = get(&fixture.state, &fixture.cookie, "/api/eve/provider").await;
