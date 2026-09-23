@@ -3855,6 +3855,33 @@ Interpreter, the elaborator sweep and lenses.
     a skip, a guard — is followed by running every command in the owning
     runbook verbatim and reading what it prints, because that is the one
     surface a test suite structurally cannot check.
+- **Cut 17 landed (Hands, Sonnet, 2026-09-23):** `abb84b4` and `07aae19`
+  in Ghostlight, `9528ef8` in `gamecult-ops`.
+  - PA.f194-B: both documented commands carry `--ignored`, and Hands ran
+    the drift check verbatim from a fresh checkout: **1 passed, 0 ignored,
+    48.32 s**, where it had reported `ok` on nothing. The paragraph
+    describing the old `SKIPPED` behaviour is rewritten.
+  - PA.f194-C, **settled from source, not guessed**: Idunn's
+    `materialize_tree_raw`/`materialize_gitlink_raw`
+    (`F:\Projects\Idunn\src\drivers.rs`) write every tree and gitlink
+    byte-for-byte from the object store and **refuse to write `.git`
+    metadata at all**. So `vendor/eve` in the gate container is
+    unconditionally a copy, never a checkout, and the bridge tests can
+    never run there. Hands took the skip branch: the positive assertion
+    checks `vendor/eve/.git` as independent ground truth and skips with a
+    named reason when it is absent. Verified by forcing that false, which
+    reproduced Idunn's exact condition.
+  - PA.f194-A: the catch-all arm decodes before retiring, so only a
+    genuine decode failure reaches `retire_unreadable_row`, and the
+    precondition is now stated **on that function**, where the violating
+    caller can see it.
+  - PA.f194-D: a `world.play.resolving` row gated on `run_in_progress`, so
+    the card always says something, and the surviving hint says "did not
+    finish" rather than claiming a turn is in flight.
+  - PA.f194-E: `PlayTurnStore::retired_sidecar` and its plumbing are
+    deleted; readiness uses the disk scan.
+  - Every mutation killed. Dungeon bin **182 passed, 4 ignored**, and 186
+    with `--include-ignored` where the bridge is built.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
