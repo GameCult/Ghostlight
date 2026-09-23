@@ -47,7 +47,7 @@ use std::{
     net::SocketAddr,
     path::PathBuf,
     sync::Arc,
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tokio::sync::{Mutex, Semaphore, broadcast, mpsc};
 use tower_http::services::ServeDir;
@@ -1916,17 +1916,73 @@ async fn maintain_session_refresh(state: AppState) -> anyhow::Result<()> {
     }
 }
 
+/// Idunn publishes Expected and starts the unit before it observes the
+/// running process on a later tick and publishes the activation
+/// (Idunn/src/control_plane.rs). Until that activation exists, Odin refuses
+/// every Warming presence this daemon publishes ("no exact current
+/// activation and provider anchor"). This is the bound both the initial
+/// Warming publish retries against and `wait_for_write_lease`'s own timeout
+/// — one constant, reused, not two.
+const WRITE_LEASE_WAIT_TIMEOUT: Duration = Duration::from_secs(120);
+
+/// Muninn re-publishes its own Warming presence every 2s while tolerating
+/// this same activation-publication gap (Muninn/crates/muninn-daemon/src/main.rs);
+/// the initial-publish retry below matches that cadence.
+const INITIAL_WARMING_RETRY_CADENCE: Duration = Duration::from_secs(2);
+
+/// Retries `attempt` at `cadence` until it returns `Ok` or `deadline` passes,
+/// warning on every failed attempt and returning the last error once the
+/// deadline is reached. `sleep` is a seam: production passes
+/// `tokio::time::sleep`; a test can pass a no-op paired with a fake `now` so
+/// the bounded-retry policy is provable without waiting the real window out.
+async fn retry_until_deadline<T, Attempt, Sleep, SleepFut>(
+    mut attempt: Attempt,
+    cadence: Duration,
+    deadline: Instant,
+    what: &str,
+    mut now: impl FnMut() -> Instant,
+    mut sleep: Sleep,
+) -> anyhow::Result<T>
+where
+    Attempt: FnMut() -> anyhow::Result<T>,
+    Sleep: FnMut(Duration) -> SleepFut,
+    SleepFut: std::future::Future<Output = ()>,
+{
+    loop {
+        match attempt() {
+            Ok(value) => return Ok(value),
+            Err(error) => {
+                tracing::warn!(%error, "{what} failed; retrying");
+                if now() >= deadline {
+                    return Err(error).context(format!("{what} timed out"));
+                }
+                sleep(cadence).await;
+            }
+        }
+    }
+}
+
 async fn initialize_production_admission(
     bound_endpoint: SocketAddr,
 ) -> anyhow::Result<Option<ProductionAdmission>> {
     let Some(mut publisher) = RuntimePresencePublisher::from_environment(bound_endpoint)? else {
         return Ok(None);
     };
-    let warming = publisher
-        .publish_warming()
-        .context("publishing initial Warming runtime presence")?;
+    // Each `publish_warming()` call mints a fresh publisher_sequence and
+    // observed_at_unix_millis (idunn_health.rs's `signed_record`), so a
+    // retried publish is a new message Odin evaluates, never a duplicate it
+    // drops.
+    let warming = retry_until_deadline(
+        || publisher.publish_warming(),
+        INITIAL_WARMING_RETRY_CADENCE,
+        Instant::now() + WRITE_LEASE_WAIT_TIMEOUT,
+        "publishing initial Warming runtime presence",
+        Instant::now,
+        |duration| tokio::time::sleep(duration),
+    )
+    .await?;
     let write_lease = publisher
-        .wait_for_write_lease(&warming, Duration::from_secs(120))
+        .wait_for_write_lease(&warming, WRITE_LEASE_WAIT_TIMEOUT)
         .await
         .with_context(|| {
             format!(
@@ -2146,6 +2202,88 @@ mod tests {
     };
     use ghostlight::{InferenceFault, InferencePurpose};
     use tower::ServiceExt;
+
+    /// A fake clock so the retry-until-deadline policy is provable without
+    /// waiting the real window out: `now()` only advances when the test's
+    /// `sleep` seam is called, exactly as it would in production (time
+    /// passes because we waited the cadence), but instantly here.
+    struct FakeClock {
+        now: std::cell::Cell<Instant>,
+    }
+
+    impl FakeClock {
+        fn new() -> Self {
+            Self {
+                now: std::cell::Cell::new(Instant::now()),
+            }
+        }
+        fn now(&self) -> Instant {
+            self.now.get()
+        }
+        fn advance(&self, by: Duration) {
+            self.now.set(self.now.get() + by);
+        }
+    }
+
+    /// S2 (a): refused, then refused, then accepted — the loop must retry
+    /// past the refusals and return the value the successful attempt
+    /// produced, not an error.
+    #[tokio::test]
+    async fn retry_until_deadline_returns_the_first_accepted_value() {
+        let clock = FakeClock::new();
+        let deadline = clock.now() + Duration::from_secs(120);
+        let mut calls = 0;
+        let result = retry_until_deadline(
+            || {
+                calls += 1;
+                if calls < 3 {
+                    Err(anyhow::anyhow!("refused (attempt {calls})"))
+                } else {
+                    Ok(format!("accepted on attempt {calls}"))
+                }
+            },
+            Duration::from_secs(2),
+            deadline,
+            "test publish",
+            || clock.now(),
+            |cadence| {
+                clock.advance(cadence);
+                std::future::ready(())
+            },
+        )
+        .await;
+        assert_eq!(result.unwrap(), "accepted on attempt 3");
+        assert_eq!(calls, 3);
+    }
+
+    /// S2 (b): always refused fails once the fake clock crosses the
+    /// deadline, carrying the last attempt's own error.
+    #[tokio::test]
+    async fn retry_until_deadline_fails_with_the_last_error_after_the_window() {
+        let clock = FakeClock::new();
+        let deadline = clock.now() + Duration::from_secs(10);
+        let mut calls = 0;
+        let result: anyhow::Result<()> = retry_until_deadline(
+            || {
+                calls += 1;
+                Err(anyhow::anyhow!("refused (attempt {calls})"))
+            },
+            Duration::from_secs(2),
+            deadline,
+            "test publish",
+            || clock.now(),
+            |cadence| {
+                clock.advance(cadence);
+                std::future::ready(())
+            },
+        )
+        .await;
+        let error = result.unwrap_err();
+        assert!(format!("{error:#}").contains("test publish timed out"));
+        assert!(format!("{error:#}").contains("refused (attempt"));
+        // Five 2s cadences cross a 10s deadline (0, 2, 4, 6, 8, 10 -> stop).
+        assert_eq!(calls, 6);
+    }
 
     #[cfg(target_os = "linux")]
     #[test]

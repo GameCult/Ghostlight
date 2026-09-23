@@ -289,10 +289,24 @@ impl RuntimePresencePublisher {
                 );
             }
             if now >= next_heartbeat {
-                let heartbeat = self
-                    .publish_warming()
-                    .context("publishing Warming heartbeat while awaiting process lease")?;
-                remember_warming_proof(&mut recent_warming_proofs, heartbeat.canonical_sha256);
+                // A failed heartbeat is a warning, not a reason to abort the
+                // wait: Odin can refuse Warming for a while after Idunn
+                // starts the unit and before it publishes the activation
+                // (Idunn/src/control_plane.rs), the same gap the initial
+                // publish in `initialize_production_admission` retries
+                // through. The lease wait keeps polling either way; only the
+                // outer `deadline` above ends it.
+                match self.publish_warming() {
+                    Ok(heartbeat) => {
+                        remember_warming_proof(&mut recent_warming_proofs, heartbeat.canonical_sha256);
+                    }
+                    Err(error) => {
+                        tracing::warn!(
+                            %error,
+                            "Warming heartbeat publish failed while awaiting process lease; still waiting"
+                        );
+                    }
+                }
                 next_heartbeat = now + WARMING_HEARTBEAT_INTERVAL;
             }
             tokio::time::sleep(Duration::from_millis(100)).await;
@@ -1807,6 +1821,38 @@ pub(crate) mod tests {
              (recompute the hash with Idunn's canonical_state_contract_sha256 \
              against the new recipe)"
         );
+    }
+
+    /// A failed heartbeat publish does not abort `wait_for_write_lease`. The
+    /// fixture publisher's endpoint (`127.0.0.1:9`) is closed, so every
+    /// publish — including the heartbeat this loop fires after
+    /// `WARMING_HEARTBEAT_INTERVAL` — fails fast. Before the fix that
+    /// failure propagated through `?` and the wait ended within about one
+    /// heartbeat interval with a "publishing Warming heartbeat" error. After
+    /// the fix it logs and keeps waiting for the write-lease file (which
+    /// this test never creates), so the wait instead runs to its own outer
+    /// timeout and fails with "timed out waiting for process write lease".
+    #[tokio::test]
+    async fn a_failed_heartbeat_does_not_abort_the_wait_for_lease() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut fixture = fixture(root.path())?;
+        let warming = PublishedRuntimePresence {
+            canonical_sha256: digest('w'),
+        };
+        let outer_timeout = WARMING_HEARTBEAT_INTERVAL + Duration::from_secs(1);
+        let error = match fixture
+            .publisher
+            .wait_for_write_lease(&warming, outer_timeout)
+            .await
+        {
+            Ok(_) => panic!("wait_for_write_lease unexpectedly acquired a lease"),
+            Err(error) => error,
+        };
+        assert!(
+            format!("{error:#}").contains("timed out waiting for process write lease"),
+            "wait ended with `{error:#}`, not the outer timeout — a heartbeat failure aborted it early"
+        );
+        Ok(())
     }
 
     /// Pure over (uid, gid, mode), so it runs on this Windows workstation too
