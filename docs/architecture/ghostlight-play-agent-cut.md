@@ -3969,6 +3969,75 @@ Interpreter, the elaborator sweep and lenses.
     `rudp://127.0.0.1:4101` on Yggdrasil and Dungeon correctly refuses a
     non-loopback route, so a Dungeon on Raven cannot reach Heimdall at all.
     The Raven playtest topology cannot sign in without moving one of them.
+- **The first deploy, 2026-09-23 (PA.f198-PA.f216).** Operator ruling:
+  "put each of the organs on the right machine". Dungeon runs on Yggdrasil
+  under Idunn v2 beside Heimdall; Bonsai 2 stays on Raven's GPU and reaches
+  Yggdrasil loopback `127.0.0.1:18080` through a Raven-held restricted
+  reverse SSH tunnel over WireGuard (runbook: gamecult-ops
+  `runbooks/ghostlight-dungeon-yggdrasil.md`, "Bonsai link"). "CodexConnector
+  is not a real option." It took about twenty deploy attempts; every defect
+  below is one a person or a live counterpart found, never a test. **The
+  common cause: nothing had run the whole path.** Each seam was proven
+  against its author's picture of the neighbour. The lesson for the
+  pipeline is in Eureka's changelog, 2026-09-23.
+  - **Fixed (Ghostlight):** PA.f198 the Yggdrasil deploy path was bound to
+    CodexConnector in the recipe, binding and managed admission
+    (`22ec118`, `c716b57`); PA.f199 the acceptance test could never pass
+    (unplaced subjects, NoAudience; `06a5edc`), and it now runs against
+    Bonsai; PA.f200 recipe schemas three generations behind the binary,
+    now pinned by `recipe_matches_the_daemon_it_deploys` (`c716b57`,
+    `e1c54c8`); PA.f201 runtime bundle required gid 0, Idunn guarantees
+    root-owned and non-writable (`e1c54c8`); PA.f202 recipe steps did not
+    declare their cache env and the image's CARGO_HOME is read-only
+    (`9a000e9`); PA.f203 `LISTEN_PID` compared across Idunn's PrivatePIDs
+    namespace, Odin's `8e16f56` never ported (`1fd52b7`); PA.f204 first
+    Warming and first Active presences fatal on Odin's correlation gaps
+    (`a397132`, `203dc36`); PA.f205 lease wait treated an empty revoked
+    store as a grant (`aca5686`, `140445d`); PA.f206 the external Heimdall
+    dependency could never be Ready, declaration removed (`c5bf090`);
+    PA.f207 browser return required attempt id == completion code, which
+    Heimdall stopped issuing (Heimdall `e8e2832`, re-vendored `e42e1c1`);
+    PA.f208 the hand-built completion omitted the route transport
+    (`4c83d54`); PA.f209 session expiry compared to the access claim;
+    Heimdall reports the refresh expiry (`454fc33`); PA.f210 refused
+    commands were invisible server-side, now logged (`9457410`).
+  - **Fixed elsewhere:** Idunn `9ede4cd` (unit could not write Ghostlight's
+    roots); Odin `96a55ec` (external dependencies block Ready); gamecult-ops
+    binding and runbook (`0dc8c55` through `5c294f9`, `f795c96`, `9521e62`).
+  - **Not Soul-reviewed:** everything from `1fd52b7` on, plus Heimdall
+    `e8e2832`, Odin `96a55ec` and Idunn `9ede4cd`, was written and verified
+    by Self under the operator's "do what you gotta do". Owed: one Soul
+    pass over that range.
+  - **Open, found in the first play session:**
+    - PA.f211 (high): Raven's `rss-watchdog.sh` restarts Bonsai between
+      calls of a live turn (limit 4.5 GiB; it defers only mid-generation,
+      and a turn is several ~11k-token calls). Written for SillyTavern,
+      which resends. Owner: gamecult-ops/Raven.
+    - PA.f212 (high): a turn whose model call dies is not surfaced. The
+      daemon logged nothing, the card said "Resolving your turn" forever,
+      and a reload showed no trace of the turn. Owner: Ghostlight play.
+    - PA.f213 (medium): world creation requests seeding, which needs
+      `GHOSTLIGHT_SEED_VAULT_ROOT`; Yggdrasil has none, so the world starts
+      bare with no prelude and nothing says so. Configure a vault or stop
+      offering seeding.
+    - PA.f214 (medium): the page sent one `world.play` with no `text`.
+    - PA.f215 (medium): the acceptance test fails against Bonsai about one
+      run in four; decide whether it demands more than the model reliably
+      does or Bonsai fumbles the speech tool.
+    - PA.f216 (product): the create flow reads backwards; the operator
+      called it "very counter intuitive".
+  - **Open, other owners:** Idunn: an AwaitingReady transaction has no
+    timeout and cannot be cancelled; redeploying a dependency strands a
+    dependent pinned to the old incarnation; "Odin topology publisher
+    sequence was replayed or reordered" and "outside the trusted
+    observation window" each failed one deploy. External dependencies are
+    half-built: Odin now permits them, CultLib's contract
+    (`runtime_authority_contracts.rs:797-805`) still refuses them, so Odin
+    `96a55ec` is dormant until the contract agrees. Heimdall must become a
+    v2 target; its dependency then returns as `required`. The legacy v1
+    actuator, unit, wiring test and `ghostlight-dungeon.service` state are
+    retired in fact and owed deletion. The library's CodexConnector
+    transport is owed its subtraction cut.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
