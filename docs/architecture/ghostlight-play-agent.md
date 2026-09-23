@@ -278,3 +278,53 @@ own mutation.
 - **Invariant 7:** a scripted local backend drives a full tool round through
   the existing evaluator.
 - **Road:** the playtest gate itself, on Raven's machine.
+
+
+## Reconciliation, 2026-09-23
+
+The cut map records the means and the postmortem records the cost. This section
+says how the Body stands against the target above.
+
+**Landed.** All eight invariants hold, each with a test that fails under its own
+mutation, and Soul verified each at the layer where it would fail rather than in
+a unit test. One operational agent drives a turn through `world.play`; the
+kernel is the only writer; the player's card carries a projection, the question,
+and the refusal of their own act. `world.speak` and the story card are deleted.
+
+**Changed from the target as written.**
+
+- An answer names its question through an opaque per-question token carried in
+  the play button, not through a version comparison. The version machinery that
+  preceded it is deleted. Two questions in one turn commit nothing between them,
+  so no counter can tell them apart.
+- The player's turn is one row keyed per world, with a request-key ledger across
+  turns. A replayed key is a no-op; a stale answer and a busy turn are refused
+  synchronously, before anything is spawned.
+- A row the daemon cannot read is retired to a readable JSON sidecar and play
+  starts fresh, reported in readiness. A row that *can* be read is never
+  destroyed — that rule is stated on the function that destroys.
+- The verbatim-quote check uses Unicode word boundaries (UAX #29), because the
+  hand-written rule accepted "I can" out of "I can't" and refused most CJK
+  quotes.
+
+**Not built, and named as gaps rather than promises.**
+
+- **Risk resolution.** The kernel resolves an act through an affordance's
+  weighted outcome bands, drawn from a digest of the world, revision, command
+  and affordance — deterministic, so a replay reproduces it. There is no
+  assessment step, no modifiers, no skill and no roll receipt, and the play
+  agent cannot author affordances: it may only grant and revoke the catalog's
+  existing verbs. An act no granted affordance expresses never draws at all; the
+  agent authors the consequence directly as the Play authority. Those two paths
+  are indistinguishable from the player's chair, which is the real gap.
+- **Gestalt and institution agency.** Institutions exist as structure and
+  constrain who may act. Nothing makes them act, and there is no strategic tick.
+  Advancing the clock rolls routines to their next due and accumulates pressure
+  on overdue obligations and goals; that is the whole of what happens
+  off-screen.
+
+**Unproven.** The seed path has never run past its configuration check. No model
+has run behind the local inference port. All test evidence is Windows; the
+release evidence is Idunn's Linux gate on Yggdrasil, where the browser-client
+tests cannot run at all, because that gate materialises source without git
+metadata.

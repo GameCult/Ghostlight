@@ -7,6 +7,32 @@
 > single-player compiler forms and 1–32 budget wording are not the live runtime
 > contract.
 
+> **What is built, 2026-09-23.** The live runtime is the play agent:
+> `docs/architecture/ghostlight-play-agent.md` for the target,
+> `ghostlight-play-agent-cut.md` for the means, and
+> `ghostlight-play-agent-postmortem.md` for what it cost. Read this document's
+> *Authority and invariants* as current — the kernel owns state, every path
+> enters the same validate-and-commit door, projections never commit, and a
+> place persists when you leave it. Read *Implementation changes* as a roadmap
+> in a spec's grammar. Of it:
+>
+> - **Live:** the Rust daemon, typed CultCache state, the Persona loop, the
+>   Eve surface and its browser client, and a Vault evidence source over local
+>   Markdown.
+> - **Not built:** fiction-first d20 resolution (a risky act draws from an
+>   affordance's weighted outcome bands, with no assessment step, no modifiers
+>   and no roll receipt; an act no granted affordance expresses is authored
+>   directly as a ruled consequence with no draw at all, and the player cannot
+>   tell those two paths apart); away-time world agency (advancing the clock
+>   rolls routines and accumulates pressure, and nothing deliberates
+>   off-screen); multiresolution gestalt and institution agency (institutions
+>   exist as offices, grants and jurisdiction, and nothing makes them act); the
+>   generic Vault provider contract and canon candidates; and the hosting
+>   details, which name a model family and a credential store the Body does not
+>   use.
+> - **Never run:** seeding past its configuration check, and any model behind
+>   the local inference port.
+
 ## Summary
 
 Build `GhostlightDungeon` inside `GameCult/Ghostlight`: a persistent, Vault-grounded, single-player narrative simulation with a private web chat interface for two testers.
