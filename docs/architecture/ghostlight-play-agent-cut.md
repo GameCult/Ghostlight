@@ -3530,6 +3530,36 @@ Interpreter, the elaborator sweep and lenses.
   Plan the playtest so a failed seed does not abort the play-loop legs.
   **Also:** that refusal names a server environment variable to the player;
   it becomes a player-safe message with the detail logged (invariant 8).
+- **Cut 14 landed (Hands, Sonnet, 2026-09-23):** `58324f8` and `0808c6a`
+  in Ghostlight, `86ba7bc` in `gamecult-ops`.
+  - PA.f177: every field added since `v1` defaults on the legacy path, and
+    a row that still cannot be decoded is written verbatim to a timestamped
+    sidecar beside the store, cleared through the same compare-and-swap
+    `swap_in` uses, and warned about with its path, in the same stream as
+    `playStatus`. Play then starts fresh.
+  - PA.f178: a spent token arriving with no open question is refused and
+    never opens a turn. PA.f179: `answer_token_admits` compares the
+    `Option`s, so absence refuses. PA.f180: `ACTION_ONLY_PAYLOAD_FIELDS`
+    keeps the channels apart, and a token sent as a binding is refused.
+  - The seed refusal no longer names the environment variable.
+  - PA.f176: the availability check resolves the bridge's real
+    dependencies. With both `node_modules` removed: **170 passed, 0
+    failed, 4 skipped.** Hands could not produce a PATH with no node at
+    all in this sandbox, because shims live outside the vendored
+    directories; it said so rather than claiming the run.
+  - **Every rule was mutated at its call site and every mutation killed**,
+    including restoring the pre-PA.f176 check and deleting the
+    `node_modules` to reproduce the bug live (166 passed, 4 failed).
+    Nothing was reported as unmutatable.
+  - Commits are grouped by file, because the items interleave inside
+    `play.rs` and `runtime.rs`; each message enumerates what it carries.
+  - Dungeon bin 163 → 170.
+- **PA.f183 (pre-existing, low, recorded):** `seed_once`'s
+  `runner.sweep(1)` renders a `ControllerError` to the player through
+  `to_string()`, and `Inference`, `ProviderContract` and `WorkPersistence`
+  could carry internal detail. The type is shared by many routes, so its
+  player-facing `Display` is its own cut, not this one's. Recorded by
+  Hands rather than fixed.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
