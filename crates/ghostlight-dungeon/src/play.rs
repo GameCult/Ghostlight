@@ -43,20 +43,32 @@ use sha2::{Digest, Sha256};
 use tokio::sync::{Mutex, Semaphore};
 
 const STORE_TYPE: &str = "ghostlight.play_turn_store.v1";
-/// PA.f172: bumped from `ghostlight.play_turn_store.v1` when
-/// `question_surface_version` was added to `PlayTurn` without
-/// `#[serde(default)]` — the row's own shape moved, so its schema id moves
-/// with it. `question_surface_version` now carries `#[serde(default)]`, so
-/// this v2 reader is a compatible read of a genuine v1 row too: `open` still
-/// gates strictly on the row's own declared `schema_id` (a fresh legacy
-/// branch recognizes `LEGACY_STORE_SCHEMA_V1` by name, never silently), but
-/// once recognized, decodes it with exactly the same struct and upgrades it
-/// in place rather than discarding the turn it names as unreadable.
-const STORE_SCHEMA: &str = "ghostlight.play_turn_store.v2";
+/// PA.f172 bumped this from v1 to v2 when `question_surface_version` was
+/// added to `PlayTurn` without `#[serde(default)]`. PA.f170 (Cut 13) bumps it
+/// again, v2 to v3: `question_surface_version` is deleted outright (the
+/// version-only staleness comparison it served is gone, replaced by the
+/// opaque per-question `question_token`) and `question_token` carries
+/// `#[serde(default)]` in its place, for exactly the same reason — a v1 or v2
+/// row's own bytes never had either field, so the same current struct decodes
+/// either as `None`. `open` still gates strictly on the row's own declared
+/// `schema_id` (a legacy branch recognizes `LEGACY_STORE_SCHEMA_V1` and
+/// `LEGACY_STORE_SCHEMA_V2` by name, never silently), but once recognized,
+/// upgrades the row to `STORE_SCHEMA` in place rather than discarding the
+/// turn it names as unreadable. A row recovered this way whose question is
+/// still open (`state == AwaitingPlayer`) mints a fresh token as part of the
+/// upgrade — no earlier schema ever recorded one, and the card is re-rendered
+/// with whatever the row holds, so a player returning to an upgraded session
+/// can still answer.
+const STORE_SCHEMA: &str = "ghostlight.play_turn_store.v3";
 /// The schema id every row written before `question_surface_version` existed
 /// carries. Recognized by `PlayTurnStore::open` as legacy, not corrupt, and
-/// upgraded to `STORE_SCHEMA` in place (PA.f172).
+/// upgraded to `STORE_SCHEMA` in place (PA.f172, PA.f170).
 const LEGACY_STORE_SCHEMA_V1: &str = "ghostlight.play_turn_store.v1";
+/// The schema id every row written between PA.f172 and PA.f170 carries: it
+/// has `question_surface_version` (now deleted) but not `question_token`.
+/// Recognized by `PlayTurnStore::open` as legacy, not corrupt, and upgraded
+/// to `STORE_SCHEMA` in place the same way a v1 row is (PA.f170).
+const LEGACY_STORE_SCHEMA_V2: &str = "ghostlight.play_turn_store.v2";
 const STORE_KEY: &str = "primary";
 
 /// The one round budget: exhausting it closes the turn and narrates, rather
@@ -252,23 +264,27 @@ struct PlayTurn {
     calls: Vec<CallRecord>,
     persona_turns: Vec<(SubjectId, PersonaTurn)>,
     question: Option<String>,
-    /// PA.f161: the world's own `eve::surface_version` at the instant this
-    /// question opened (`execute_round`'s `ASK_PLAYER_TOOL` arm), set and
-    /// cleared alongside `question` — never re-derived from whatever the
-    /// world's current revision happens to be when a later request arrives.
-    /// This is what lets an answer be refused as stale by "older than the
-    /// version the question first appeared on" rather than by "not exactly
-    /// today's version," the comparison PA.f161 replaces. `#[serde(default)]`
-    /// (PA.f172, reversing the earlier PA.f95 reasoning here): a row written
-    /// before this field existed — a real shape on a workstation that ran
-    /// Dungeon before Cut 11, not a hypothetical — decodes to `None`, exactly
-    /// what "no question ever recorded a surface version" means for a turn
-    /// this old. `STORE_SCHEMA` moved to v2 alongside this default so the
-    /// canonical re-encode check below still holds current-schema rows to
-    /// their exact bytes; only the legacy v1 read path in
-    /// `PlayTurnStore::open` relies on this default to recover an older row.
+    /// PA.f170 (Cut 13): an opaque random handle minted fresh whenever
+    /// `execute_round`'s `ASK_PLAYER_TOOL` arm opens a question, set and
+    /// cleared alongside `question`. It carries no turn id, round, slot,
+    /// subject, or any other world handle — it is an answer's handle and
+    /// nothing else (invariant 8: reading it in devtools teaches nothing
+    /// about the world). This replaces PA.f161's `question_surface_version`
+    /// and the version-only staleness comparison it served: two questions
+    /// opened in the same turn carry the same surface version (asking is
+    /// conversational and never moves it), so a version comparison alone
+    /// cannot tell them apart — the gap Soul proved for PA.f170. Runtime's
+    /// `world.play` arm refuses an answer whose own token does not name this
+    /// one. `#[serde(default)]`, matching the earlier `question_surface_version`
+    /// reasoning it replaces: a row written under `LEGACY_STORE_SCHEMA_V1` or
+    /// `LEGACY_STORE_SCHEMA_V2` never had this field, so the same current
+    /// struct decodes it to `None` for either — exactly what "no question
+    /// ever recorded a token" means for a turn that old. `PlayTurnStore::open`
+    /// mints a fresh one for a recovered row whose question is still open, so
+    /// an upgraded session stays answerable; the canonical re-encode check
+    /// below still holds current-schema (v3) rows to their exact bytes.
     #[serde(default)]
-    question_surface_version: Option<u64>,
+    question_token: Option<String>,
     refusal: Option<String>,
     narration: Option<String>,
     /// Set when the turn closed on a fault rather than the player's own
@@ -355,20 +371,19 @@ impl PlayTurn {
     }
 }
 
-/// `turn.open_question_id()` paired with the question's own text and the
-/// surface version it opened on (PA.f134/PA.f161): `None` whenever
-/// `open_question_id` is, since `turn.question` and
-/// `turn.question_surface_version` are only ever set alongside it
-/// (`execute_round`'s `ASK_PLAYER_TOOL` arm sets all three in the same
-/// round, and `answer_turn` and `close_with_fault` both clear
-/// `question`/`question_surface_version` on their own way out of
-/// `AwaitingPlayer`, PA.f173).
+/// `turn.open_question_id()` paired with the question's own text and its
+/// opaque answer token (PA.f134/PA.f170): `None` whenever `open_question_id`
+/// is, since `turn.question` and `turn.question_token` are only ever set
+/// alongside it (`execute_round`'s `ASK_PLAYER_TOOL` arm sets all three in
+/// the same round, and `answer_turn` and `close_with_fault` both clear
+/// `question`/`question_token` on their own way out of `AwaitingPlayer`,
+/// PA.f173).
 fn open_question_of(turn: &PlayTurn) -> Option<OpenQuestion> {
     let id = turn.open_question_id()?;
     Some(OpenQuestion {
         id,
         text: turn.question.clone().unwrap_or_default(),
-        surface_version: turn.question_surface_version.unwrap_or(0),
+        token: turn.question_token.clone().unwrap_or_default(),
     })
 }
 
@@ -483,36 +498,38 @@ impl PlayTurnStore {
                 }
                 (row.clone(), state)
             }
-            // PA.f172: a row written before `question_surface_version`
-            // existed — named legacy, not corrupt, because it is neither: it
-            // is a real, previously-canonical shape this process itself
-            // wrote, under the schema id that was current when it did.
-            // `question_surface_version` now carries `#[serde(default)]`, so
-            // the very same `PlayTurnStoreState` decodes it correctly (the
-            // field reads back `None`, matching what "no question ever
-            // recorded a surface version" means for a turn this old). This
-            // branch upgrades the row to `STORE_SCHEMA` (v2) in place and
-            // persists that upgrade immediately, so the legacy path is only
-            // ever taken once per row; the canonical re-encode check does
-            // not apply here — a v1 row's bytes were never canonical under
-            // v2 and were never meant to be — it resumes for every write
-            // this store makes from here on.
+            // PA.f172/PA.f170: a row written before `question_token` existed
+            // — named legacy, not corrupt, because it is neither: it is a
+            // real, previously-canonical shape this process itself wrote,
+            // under the schema id that was current when it did.
+            // `question_token` carries `#[serde(default)]`, so the very same
+            // `PlayTurnStoreState` decodes it correctly (the field reads back
+            // `None`, matching what "no question ever recorded a token"
+            // means for a turn this old). `upgrade_legacy_row` mints a fresh
+            // token when the recovered turn's own question is still open,
+            // upgrades the row to `STORE_SCHEMA` (v3) in place, and persists
+            // that upgrade immediately, so the legacy path is only ever taken
+            // once per row; the canonical re-encode check does not apply
+            // here — a legacy row's bytes were never canonical under v3 and
+            // were never meant to be — it resumes for every write this store
+            // makes from here on.
             [row]
                 if row.r#type == STORE_TYPE
                     && row.key == STORE_KEY
                     && row.schema_id.as_deref() == Some(LEGACY_STORE_SCHEMA_V1) =>
             {
-                let mut state: PlayTurnStoreState = rmp_serde::from_slice(&row.payload)
-                    .context("play-turn legacy v1 state is corrupt")?;
-                if state.schema != LEGACY_STORE_SCHEMA_V1 {
-                    bail!("play-turn legacy v1 state schema is invalid");
-                }
-                state.schema = STORE_SCHEMA.into();
-                let upgraded_row = envelope(&state)?;
-                if !store.compare_and_swap_batch(std::slice::from_ref(row), vec![upgraded_row.clone()])? {
-                    bail!("play-turn store changed while upgrading a legacy v1 row");
-                }
-                (upgraded_row, state)
+                upgrade_legacy_row(&store, row, LEGACY_STORE_SCHEMA_V1)?
+            }
+            // PA.f170: a row written between PA.f172 and PA.f170 — it has
+            // `question_surface_version` (deleted, silently ignored on
+            // decode since nothing here reads it) but no `question_token`.
+            // Upgraded exactly like a v1 row above.
+            [row]
+                if row.r#type == STORE_TYPE
+                    && row.key == STORE_KEY
+                    && row.schema_id.as_deref() == Some(LEGACY_STORE_SCHEMA_V2) =>
+            {
+                upgrade_legacy_row(&store, row, LEGACY_STORE_SCHEMA_V2)?
             }
             _ => bail!("play-turn store contains foreign or otherwise-unreadable records; start with a fresh store"),
         };
@@ -631,6 +648,50 @@ fn envelope(state: &PlayTurnStoreState) -> anyhow::Result<CultCacheEnvelope> {
     })
 }
 
+/// Mints a fresh opaque per-question answer token (PA.f170): a random handle
+/// with no world meaning of its own — not a `QuestionId`, not a subject,
+/// turn, round, or slot, and forging one only answers the forger's own
+/// already-open question (invariant 8). `execute_round`'s `ASK_PLAYER_TOOL`
+/// arm mints one every time a question opens; `upgrade_legacy_row` mints one
+/// for a recovered legacy row whose question is still open, since no earlier
+/// schema ever recorded one.
+fn mint_question_token() -> String {
+    uuid::Uuid::new_v4().to_string()
+}
+
+/// Shared by `PlayTurnStore::open`'s `LEGACY_STORE_SCHEMA_V1` and
+/// `LEGACY_STORE_SCHEMA_V2` branches (PA.f170): decodes `row` under the
+/// current `PlayTurnStoreState`/`PlayTurn` structs — both legacy schemas
+/// decode through exactly the same `#[serde(default)]` fields a current-
+/// schema row would — mints a fresh `question_token` when the recovered
+/// turn's own question is still open (no earlier schema ever recorded one),
+/// then upgrades the row to `STORE_SCHEMA` in place and persists that
+/// upgrade immediately, so the legacy path is only ever taken once per row.
+fn upgrade_legacy_row(
+    store: &OwnedRedbMessagePackBackingStore,
+    row: &CultCacheEnvelope,
+    legacy_schema: &str,
+) -> anyhow::Result<(CultCacheEnvelope, PlayTurnStoreState)> {
+    let mut state: PlayTurnStoreState = rmp_serde::from_slice(&row.payload)
+        .with_context(|| format!("play-turn legacy {legacy_schema} state is corrupt"))?;
+    if state.schema != legacy_schema {
+        bail!("play-turn legacy {legacy_schema} state schema is invalid");
+    }
+    if let Some(turn) = state.turn.as_mut()
+        && turn.state == PlayTurnState::AwaitingPlayer
+        && turn.question.is_some()
+        && turn.question_token.is_none()
+    {
+        turn.question_token = Some(mint_question_token());
+    }
+    state.schema = STORE_SCHEMA.into();
+    let upgraded_row = envelope(&state)?;
+    if !store.compare_and_swap_batch(std::slice::from_ref(row), vec![upgraded_row.clone()])? {
+        bail!("play-turn store changed while upgrading a legacy {legacy_schema} row");
+    }
+    Ok((upgraded_row, state))
+}
+
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum PlayError {
     #[error("the play table is poisoned by a prior kernel invariant fault; restart to clear it")]
@@ -687,10 +748,13 @@ pub(crate) enum PlayError {
 pub(crate) struct OpenQuestion {
     pub(crate) id: QuestionId,
     pub(crate) text: String,
-    /// PA.f161: `eve::surface_version` at the moment this question opened —
-    /// the value `runtime.rs`'s `world.play` arm compares an answer's own
-    /// `routeHint.sourceVersion` against, refusing anything older.
-    pub(crate) surface_version: u64,
+    /// PA.f170: the opaque per-question answer token minted when this
+    /// question opened — the value `runtime.rs`'s `world.play` arm compares
+    /// an answer's own `answerToken` against, refusing anything else as
+    /// stale. Replaces PA.f161's `surface_version`, which only ever told
+    /// apart questions that opened on different world revisions, not two
+    /// questions opened in the same turn.
+    pub(crate) token: String,
 }
 
 /// One `run` call's own outcome (PA.f109): `Replayed` names the turn a
@@ -994,7 +1058,7 @@ impl PlayTable {
                             question: open_question.map(|id| OpenQuestion {
                                 id,
                                 text: existing.question.clone().unwrap_or_default(),
-                                surface_version: existing.question_surface_version.unwrap_or(0),
+                                token: existing.question_token.clone().unwrap_or_default(),
                             }),
                         });
                     }
@@ -1158,7 +1222,7 @@ impl PlayTable {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -1178,7 +1242,7 @@ impl PlayTable {
             }
         }
         turn.question = None;
-        turn.question_surface_version = None;
+        turn.question_token = None;
         turn.state = PlayTurnState::Running;
         turn
     }
@@ -1209,7 +1273,7 @@ impl PlayTable {
         // on `state == AwaitingPlayer`, which a fault always leaves behind by
         // setting `state = Closed` in the same write.
         turn.question = None;
-        turn.question_surface_version = None;
+        turn.question_token = None;
         self.persist(turn).await
     }
 
@@ -1485,25 +1549,16 @@ impl PlayTable {
                     None,
                 );
                 turn.question = Some(question);
-                // PA.f161/PA.f175: the world's own surface version at the
-                // instant this question opens, so a later answer is judged
-                // against the version the question actually first appeared
-                // on, never whatever the world's version happens to be when
-                // the answer arrives. This must be a fresh snapshot taken
-                // right here, not the round-entry `snapshot` above: a round
-                // that authors (a `PLAY_TOOLS` run, committed earlier in this
-                // same `while` loop) and then asks would otherwise record the
-                // version as of before its own commits, not the version the
-                // question actually opened on.
-                let question_snapshot = match self.fetch_round_snapshot().await {
-                    Ok(snapshot) => snapshot,
-                    Err(detail) => {
-                        self.close_with_fault(turn, detail).await?;
-                        return Ok(RoundOutcome::Closed);
-                    }
-                };
-                turn.question_surface_version =
-                    Some(crate::eve::surface_version(Some(&question_snapshot)));
+                // PA.f170: a fresh opaque token, minted the instant this
+                // question opens, binds an answer to *this* question rather
+                // than to a world revision — PA.f161's `surface_version`
+                // told apart questions that opened on different revisions,
+                // but two questions opened in the same turn share one
+                // revision (asking is conversational and never moves it), so
+                // that comparison alone could not tell them apart. Unlike
+                // the version it replaces, the token needs no snapshot: it
+                // carries no world handle at all.
+                turn.question_token = Some(mint_question_token());
                 turn.state = PlayTurnState::AwaitingPlayer;
                 return Ok(RoundOutcome::AwaitingPlayer);
             }
@@ -3292,52 +3347,41 @@ pub(crate) mod tests {
         );
     }
 
-    /// PA.f175: `execute_round` takes one snapshot at round entry
-    /// (`round_snapshot`) and, before this fix, reused it for every arm in
-    /// that same round — including `ASK_PLAYER_TOOL` — so a round that
-    /// commits an authoring call (a `PLAY_TOOLS` run) and then asks in the
-    /// same round recorded `question_surface_version` from before its own
-    /// commit. A later "is this answer stale" comparison
-    /// (`runtime.rs::an_answer_naming_a_version_older_than_the_question_is_refused_as_stale`)
-    /// judges a version the question's own commit had already passed, so an
-    /// answer naming the version the commit actually landed at — the version
-    /// a real client would have just been served — could be wrongly refused
-    /// as older than the question.
+    /// PA.f170: `execute_round`'s `ASK_PLAYER_TOOL` arm mints a fresh
+    /// `question_token` every time a question opens, never reusing one
+    /// across two distinct questions in the same turn. The version it
+    /// replaces (PA.f161's `surface_version`) could not make this promise:
+    /// asking is conversational and never moves the world's own revision, so
+    /// two questions opened in the same turn — even in two different rounds,
+    /// with nothing committed between them — would have recorded the same
+    /// version. This is the token's own reason to exist: it, not a version,
+    /// is what tells the two questions apart at `runtime.rs`'s own boundary.
     ///
-    /// Mutation: revert `execute_round`'s `ASK_PLAYER_TOOL` arm to record
-    /// `crate::eve::surface_version(Some(&snapshot))` (the round-entry
-    /// snapshot) instead of fetching a fresh one at the moment the question
-    /// opens — this test's asserted version would then equal the version
-    /// from before the round's own `declare_fact` commit, one behind the
-    /// version this test expects.
+    /// Mutation: have `execute_round`'s `ASK_PLAYER_TOOL` arm reuse
+    /// `turn.question_token` when it is already `Some` instead of calling
+    /// `mint_question_token()` unconditionally — this test's two tokens
+    /// would then be equal.
     #[tokio::test]
-    async fn a_round_that_authors_and_then_asks_records_the_version_as_of_the_question_not_the_round() {
-        let fixture = play_world(None, "player-author-then-ask").await;
+    async fn two_questions_in_one_turn_mint_two_distinct_tokens() {
+        let fixture = play_world(None, "player-two-questions-distinct-tokens").await;
         let directory = tempfile::tempdir().unwrap();
         let store_path = directory.path().join("play-turn-v1.cc");
 
-        let world_before = fixture.world.snapshot().await.unwrap();
-        let version_before = crate::eve::surface_version(Some(&world_before));
-
-        let round = output(
+        let ask_one = output(
             "r0",
-            vec![
-                call_event(
-                    "c0",
-                    "declare_fact",
-                    serde_json::json!({
-                        "handle": "ruling",
-                        "label": "The Ruling",
-                        "statement": "The gate creaks open on its own.",
-                        "standing": {"standing": "ruled"},
-                    }),
-                ),
-                call_event(
-                    "c1",
-                    ASK_PLAYER_TOOL,
-                    serde_json::json!({"question": "Which way?"}),
-                ),
-            ],
+            vec![call_event(
+                "c0",
+                ASK_PLAYER_TOOL,
+                serde_json::json!({"question": "Which way?"}),
+            )],
+        );
+        let ask_two = output(
+            "r1",
+            vec![call_event(
+                "c1",
+                ASK_PLAYER_TOOL,
+                serde_json::json!({"question": "Are you sure?"}),
+            )],
         );
         let personas = PersonaLane::new(
             ControllerPort::new(fixture.world.clone()),
@@ -3349,7 +3393,7 @@ pub(crate) mod tests {
         let table = PlayTable::new(
             fixture.world.clone(),
             personas,
-            ScriptedPort::new(vec![round]),
+            ScriptedPort::new(vec![ask_one, ask_two]),
             "gpt-5.6-terra".into(),
             Arc::new(Semaphore::new(2)),
             &store_path,
@@ -3360,40 +3404,43 @@ pub(crate) mod tests {
             .run(&fixture.principal, test_turn_id(91), "I stand at a crossroads.".into())
             .await
             .unwrap();
+        let first_view = table.current_turn_view().await.unwrap();
+        let first_question = first_view.question.clone().expect("Q1 must be open");
+        assert_eq!(first_question.text, "Which way?");
 
-        let asked_view = table.current_turn_view().await.unwrap();
-        let question = asked_view
-            .question
-            .as_ref()
-            .expect("the scripted ask_player call must open a question");
+        table
+            .run(
+                &fixture.principal,
+                test_turn_id(92),
+                PlayRequest {
+                    text: "I go left.".into(),
+                    answers: Some(first_question.id.clone()),
+                },
+            )
+            .await
+            .unwrap();
+        let second_view = table.current_turn_view().await.unwrap();
+        let second_question = second_view.question.clone().expect("Q2 must be open");
+        assert_eq!(second_question.text, "Are you sure?");
 
-        let world_after = fixture.world.snapshot().await.unwrap();
-        let version_after = crate::eve::surface_version(Some(&world_after));
-        assert!(
-            version_after > version_before,
-            "declare_fact must have committed and moved the world's own revision \
-             ({version_before} -> {version_after})"
-        );
-        assert_eq!(
-            question.surface_version, version_after,
-            "the question's own recorded version must be the version as of when it opened \
-             (after this round's own declare_fact commit, {version_after}), not the \
-             round-entry version {version_before}"
+        assert_ne!(
+            first_question.token, second_question.token,
+            "two distinct questions in the same turn must never share an answer token"
         );
     }
 
     /// PA.f173: `close_with_fault` used to leave `question` and
-    /// `question_surface_version` set on the turn it closed, though a
-    /// `Closed` turn should never still carry an open question. This was
-    /// unobservable through `current_turn_view`/`open_question_id` only
-    /// because both gate on `state == AwaitingPlayer`, which closing always
-    /// leaves behind in the same write — so this test reaches past that
-    /// gate, at the raw persisted row.
+    /// `question_token` set on the turn it closed, though a `Closed` turn
+    /// should never still carry an open question. This was unobservable
+    /// through `current_turn_view`/`open_question_id` only because both gate
+    /// on `state == AwaitingPlayer`, which closing always leaves behind in
+    /// the same write — so this test reaches past that gate, at the raw
+    /// persisted row.
     ///
-    /// Mutation: remove the `turn.question = None; turn.question_surface_version
-    /// = None;` lines from `close_with_fault` — the persisted row would then
-    /// still carry the question's own text and version after the turn
-    /// closed, and this test's assertions would fail.
+    /// Mutation: remove the `turn.question = None; turn.question_token =
+    /// None;` lines from `close_with_fault` — the persisted row would then
+    /// still carry the question's own text and token after the turn closed,
+    /// and this test's assertions would fail.
     #[tokio::test]
     async fn close_with_fault_clears_the_open_question_off_the_persisted_row() {
         let fixture = play_world(None, "player-fault-clears-question").await;
@@ -3434,7 +3481,7 @@ pub(crate) mod tests {
 
         let mut turn = table.store.lock().await.current().unwrap().clone();
         assert!(turn.question.is_some());
-        assert!(turn.question_surface_version.is_some());
+        assert!(turn.question_token.is_some());
         table
             .close_with_fault(&mut turn, "manufactured fault for PA.f173".into())
             .await
@@ -3447,15 +3494,15 @@ pub(crate) mod tests {
             "a closed turn must not still carry the question it closed on top of"
         );
         assert_eq!(
-            persisted.question_surface_version, None,
-            "a closed turn must not still carry the question's own surface version"
+            persisted.question_token, None,
+            "a closed turn must not still carry the question's own answer token"
         );
     }
 
     /// A pre-Cut-11 process's own `PlayTurn`, replicated field-for-field
-    /// minus `question_surface_version` — the shape every row actually
-    /// written under `LEGACY_STORE_SCHEMA_V1` carries (PA.f172). Test-only:
-    /// no production writer ever mints this shape again.
+    /// minus `question_surface_version`/`question_token` — the shape every
+    /// row actually written under `LEGACY_STORE_SCHEMA_V1` carries (PA.f172).
+    /// Test-only: no production writer ever mints this shape again.
     #[derive(Clone, Serialize)]
     struct LegacyPlayTurnV1 {
         turn_id: String,
@@ -3480,14 +3527,44 @@ pub(crate) mod tests {
         revision: u64,
     }
 
-    /// PA.f172: a row written before `question_surface_version` existed —
-    /// under `LEGACY_STORE_SCHEMA_V1`, the schema id every pre-Cut-11 process
+    /// A between-PA.f172-and-PA.f170 process's own `PlayTurn`: it has
+    /// `question_surface_version` (deleted by this cut) but not
+    /// `question_token` — the shape every row actually written under
+    /// `LEGACY_STORE_SCHEMA_V2` carries. Test-only: no production writer
+    /// ever mints this shape again.
+    #[derive(Clone, Serialize)]
+    struct LegacyPlayTurnV2 {
+        turn_id: String,
+        applied_keys: Vec<String>,
+        opening_prompt: String,
+        player_prose: Vec<String>,
+        rounds: Vec<InferenceOutput>,
+        calls: Vec<CallRecord>,
+        persona_turns: Vec<(SubjectId, PersonaTurn)>,
+        question: Option<String>,
+        question_surface_version: Option<u64>,
+        refusal: Option<String>,
+        narration: Option<String>,
+        fault: Option<String>,
+        state: PlayTurnState,
+    }
+
+    #[derive(Clone, Serialize)]
+    struct LegacyPlayTurnStoreStateV2 {
+        schema: String,
+        turn: Option<LegacyPlayTurnV2>,
+        ledger: KeyLedger,
+        revision: u64,
+    }
+
+    /// PA.f172: a row written before `question_token` existed — under
+    /// `LEGACY_STORE_SCHEMA_V1`, the schema id every pre-Cut-11 process
     /// actually wrote (it is exactly what `STORE_SCHEMA` used to be) — is
     /// recognized by `PlayTurnStore::open` as legacy, not corrupt, and its
     /// turn recovered rather than discarded: the missing field decodes to
-    /// `None`, exactly what "no question ever recorded a surface version"
-    /// means for a turn this old. The row is also upgraded to `STORE_SCHEMA`
-    /// in place, durably, so the legacy path is only ever taken once.
+    /// `None`, exactly what "no question ever recorded a token" means for a
+    /// turn this old. The row is also upgraded to `STORE_SCHEMA` in place,
+    /// durably, so the legacy path is only ever taken once.
     ///
     /// Mutation: remove the `schema_id.as_deref() ==
     /// Some(LEGACY_STORE_SCHEMA_V1)` arm from `PlayTurnStore::open` — this
@@ -3542,8 +3619,9 @@ pub(crate) mod tests {
         assert_eq!(recovered.turn_id, "11111111-1111-1111-1111-111111111111");
         assert_eq!(recovered.opening_prompt, "You stand at the gate.");
         assert_eq!(
-            recovered.question_surface_version, None,
-            "a pre-Cut-11 turn never recorded a surface version; the missing field must decode to None"
+            recovered.question_token, None,
+            "a pre-Cut-11 turn never recorded a token, and its own question is not open (Running); \
+             the missing field must decode to None and no token must be minted for it"
         );
         assert_eq!(
             store.row.schema_id.as_deref(),
@@ -3561,6 +3639,152 @@ pub(crate) mod tests {
         drop(store);
         let reopened = PlayTurnStore::open(&store_path).unwrap();
         assert_eq!(reopened.current().unwrap().turn_id, recovered_turn_id);
+    }
+
+    /// PA.f170: the same recognition and in-place upgrade `a_legacy_v1_row_*`
+    /// proves, for a row written between PA.f172 and PA.f170 instead — it
+    /// carries `question_surface_version` (now deleted, silently ignored on
+    /// decode) but not `question_token`.
+    ///
+    /// Mutation: remove the `schema_id.as_deref() ==
+    /// Some(LEGACY_STORE_SCHEMA_V2)` arm from `PlayTurnStore::open` — this
+    /// row would then fall through to the catch-all and `open` would return
+    /// `Err`, silently disabling play on any workstation that ran Dungeon
+    /// between Cut 11 and Cut 13.
+    #[tokio::test]
+    async fn a_legacy_v2_row_is_recognized_and_upgraded_not_refused_as_corrupt() {
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+
+        let legacy_turn = LegacyPlayTurnV2 {
+            turn_id: "22222222-2222-2222-2222-222222222222".into(),
+            applied_keys: vec!["key-b".into()],
+            opening_prompt: "You stand at the gate.".into(),
+            player_prose: vec!["I knock.".into()],
+            rounds: Vec::new(),
+            calls: Vec::new(),
+            persona_turns: Vec::new(),
+            question: None,
+            question_surface_version: None,
+            refusal: None,
+            narration: None,
+            fault: None,
+            state: PlayTurnState::Running,
+        };
+        let legacy_state = LegacyPlayTurnStoreStateV2 {
+            schema: LEGACY_STORE_SCHEMA_V2.into(),
+            turn: Some(legacy_turn),
+            ledger: KeyLedger::default(),
+            revision: 4,
+        };
+        let legacy_row = CultCacheEnvelope {
+            key: STORE_KEY.into(),
+            r#type: STORE_TYPE.into(),
+            payload: rmp_serde::to_vec_named(&legacy_state).unwrap(),
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some(LEGACY_STORE_SCHEMA_V2.into()),
+        };
+        {
+            let raw_store = OwnedRedbMessagePackBackingStore::new(&store_path).unwrap();
+            assert!(
+                raw_store
+                    .compare_and_swap_batch(&[], vec![legacy_row])
+                    .unwrap(),
+                "seeding the legacy row must succeed against an empty store"
+            );
+        }
+
+        let store = PlayTurnStore::open(&store_path)
+            .expect("a genuine v2 row must open, not be refused as corrupt");
+        let recovered = store.current().expect("the legacy row's own turn must be recovered");
+        assert_eq!(recovered.turn_id, "22222222-2222-2222-2222-222222222222");
+        assert_eq!(
+            recovered.question_token, None,
+            "a v2 turn never recorded a token, and its own question is not open (Running); \
+             the missing field must decode to None and no token must be minted for it"
+        );
+        assert_eq!(
+            store.row.schema_id.as_deref(),
+            Some(STORE_SCHEMA),
+            "the legacy row must be upgraded to the current schema in place, not left at v2"
+        );
+    }
+
+    /// PA.f170: an upgraded row whose question is still open gets a freshly
+    /// minted token as part of the upgrade — no earlier schema ever recorded
+    /// one, and the card is re-rendered with whatever the row holds, so a
+    /// player returning to an upgraded session (Raven's workstation, named in
+    /// the cut's own spec) must still be able to answer.
+    ///
+    /// Mutation: remove the mint-if-open branch from `upgrade_legacy_row` —
+    /// the recovered turn's own `question_token` would then stay `None` while
+    /// `AwaitingPlayer`, and the answer this test goes on to submit would be
+    /// refused as stale by `runtime.rs`'s own boundary (no token to match)
+    /// even though the question is genuinely still open.
+    #[tokio::test]
+    async fn an_upgraded_legacy_row_whose_question_is_still_open_mints_a_fresh_token() {
+        let directory = tempfile::tempdir().unwrap();
+        let store_path = directory.path().join("play-turn-v1.cc");
+
+        let legacy_turn = LegacyPlayTurnV1 {
+            turn_id: "33333333-3333-3333-3333-333333333333".into(),
+            applied_keys: vec!["key-c".into()],
+            opening_prompt: "You stand at the gate.".into(),
+            player_prose: vec!["I knock.".into()],
+            rounds: vec![output(
+                "r0",
+                vec![call_event(
+                    "c0",
+                    ASK_PLAYER_TOOL,
+                    serde_json::json!({"question": "Which way?"}),
+                )],
+            )],
+            calls: vec![CallRecord {
+                call_id: "c0".into(),
+                round: 0,
+                slot: 0,
+                body: Some(RecordedCall::AskPlayer("Which way?".into())),
+                result: None,
+            }],
+            persona_turns: Vec::new(),
+            question: Some("Which way?".into()),
+            refusal: None,
+            narration: None,
+            fault: None,
+            state: PlayTurnState::AwaitingPlayer,
+        };
+        let legacy_state = LegacyPlayTurnStoreStateV1 {
+            schema: LEGACY_STORE_SCHEMA_V1.into(),
+            turn: Some(legacy_turn),
+            ledger: KeyLedger::default(),
+            revision: 5,
+        };
+        let legacy_row = CultCacheEnvelope {
+            key: STORE_KEY.into(),
+            r#type: STORE_TYPE.into(),
+            payload: rmp_serde::to_vec_named(&legacy_state).unwrap(),
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some(LEGACY_STORE_SCHEMA_V1.into()),
+        };
+        {
+            let raw_store = OwnedRedbMessagePackBackingStore::new(&store_path).unwrap();
+            assert!(
+                raw_store
+                    .compare_and_swap_batch(&[], vec![legacy_row])
+                    .unwrap(),
+                "seeding the legacy row must succeed against an empty store"
+            );
+        }
+
+        let store = PlayTurnStore::open(&store_path)
+            .expect("a genuine pre-Cut-11 row must open, not be refused as corrupt");
+        let recovered = store.current().expect("the legacy row's own turn must be recovered");
+        assert_eq!(recovered.state, PlayTurnState::AwaitingPlayer);
+        let token = recovered
+            .question_token
+            .clone()
+            .expect("an upgraded row whose question is still open must mint a fresh token");
+        assert!(!token.is_empty(), "a minted token must not be the empty-string fallback");
     }
 
     /// PA.f172's own negative: a row that matches the current schema id but
@@ -3631,7 +3855,7 @@ pub(crate) mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -5085,7 +5309,7 @@ pub(crate) mod tests {
             }],
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -5211,7 +5435,7 @@ pub(crate) mod tests {
             }],
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -5290,7 +5514,7 @@ pub(crate) mod tests {
             }],
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -6069,7 +6293,7 @@ pub(crate) mod tests {
             }],
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -6760,7 +6984,7 @@ pub(crate) mod tests {
             // need a `persona_turns` entry here.
             persona_turns: vec![(a, fake_persona_turn("a acted")), (b, fake_persona_turn("b acted"))],
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -6794,7 +7018,7 @@ pub(crate) mod tests {
             }],
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -6969,7 +7193,7 @@ pub(crate) mod tests {
                 // speak call below quotes from.
                 persona_turns: vec![(mara_subject, fake_persona_turn(QUOTE))],
                 question: None,
-                question_surface_version: None,
+                question_token: None,
                 refusal: None,
                 narration: None,
                 fault: None,
@@ -7309,7 +7533,7 @@ pub(crate) mod tests {
             calls: Vec::new(),
             persona_turns: vec![(mara, fake_persona_turn(PROSE))],
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -7645,7 +7869,7 @@ pub(crate) mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -8099,7 +8323,7 @@ pub(crate) mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -8200,7 +8424,7 @@ pub(crate) mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -8250,7 +8474,7 @@ pub(crate) mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -8318,7 +8542,7 @@ pub(crate) mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: Some("The end.".into()),
             fault: None,
@@ -8736,7 +8960,7 @@ pub(crate) mod tests {
                 calls: Vec::new(),
                 persona_turns: Vec::new(),
                 question: None,
-                question_surface_version: None,
+                question_token: None,
                 refusal: None,
                 narration: None,
                 fault: None,
@@ -9364,7 +9588,7 @@ pub(crate) mod tests {
             }],
             persona_turns: vec![(mara, fake_persona_turn(PROSE))],
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -9480,7 +9704,7 @@ pub(crate) mod tests {
             ],
             persona_turns: vec![(mara, fake_persona_turn(PROSE))],
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,
@@ -9770,7 +9994,7 @@ pub(crate) mod tests {
             calls: Vec::new(),
             persona_turns: Vec::new(),
             question: None,
-            question_surface_version: None,
+            question_token: None,
             refusal: None,
             narration: None,
             fault: None,

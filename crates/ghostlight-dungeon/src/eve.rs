@@ -491,11 +491,25 @@ pub(crate) fn authenticated_surface(
                         // id), so the server resolves the open question
                         // itself instead of trusting a client-supplied id at
                         // all (`runtime.rs::execute_world`'s `world.play`
-                        // arm). PA.f84's guarantee still holds: a stale
-                        // `routeHint.sourceVersion` — one that predates the
-                        // question the player is answering — is refused
-                        // there, so an answer can never land on a question
-                        // the player never saw.
+                        // arm). PA.f170's guarantee now holds by an opaque
+                        // per-question token rather than PA.f161's version
+                        // comparison (see `play::PlayTurn::question_token`'s
+                        // own doc comment for why a version alone cannot tell
+                        // two questions in the same turn apart): the button's
+                        // own `props.action` carries it DOM-invisibly, the
+                        // way `props.action.command` already does — a real
+                        // client spreads a button's own `action` fields
+                        // straight into the payload beside `bindings`
+                        // (`commandPayload`,
+                        // `vendor/eve/packages/eve-browser-lowering/src/index.ts:2101`),
+                        // never through a renderer that could show or edit
+                        // it. `None` while no question is open: the button's
+                        // own action then carries no token at all, matching a
+                        // plain continue/opening, which needs none.
+                        let play_action = play
+                            .and_then(|view| view.question.as_ref())
+                            .map(|question| json!({"answerToken": question.token}))
+                            .unwrap_or_else(|| json!({}));
                         children.extend([
                             json!({
                                 "id":"world.play.text",
@@ -508,7 +522,7 @@ pub(crate) fn authenticated_surface(
                                 "world.play",
                                 "Play",
                                 "world.play",
-                                json!({}),
+                                play_action,
                                 &["text"],
                             ),
                         ]);

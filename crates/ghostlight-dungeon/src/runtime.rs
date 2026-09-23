@@ -149,29 +149,43 @@ struct CreatePayload {
 /// `world.activate`, whose actions capture nothing) passes through
 /// unchanged — `commandPayload` on the lowering's own side never sets
 /// `bindings` when `captureBindings` is empty.
-/// Refuses a payload that carries both the envelope `bindings` object and
-/// flat sibling fields (PA.f168): a real client's payload is `{"bindings":
-/// {...}}` alone (`commandPayload` on the lowering's own side never adds a
-/// sibling), so a sibling next to `bindings` names a shape nothing produces
-/// on purpose — silently keeping only `bindings` would discard it instead of
-/// surfacing the mismatch.
-fn unwrap_bindings(payload: &Value) -> Result<&Value, String> {
+/// PA.f168's original rule refused any sibling next to the envelope
+/// `bindings` object outright. PA.f170 changes what a real client's payload
+/// carries: a button's own `props.action` fields (Cut 13's per-question
+/// answer token, for `world.play`) ride the *same* top-level payload object
+/// `commandPayload` builds — `{...action, bindings: {...captured}}` — so a
+/// sibling next to `bindings` is now the shape the real lowering produces on
+/// purpose, not a mismatch to surface. This merges the two into one flat
+/// object instead: `bindings`' own fields plus every sibling field, so a
+/// payload struct's ordinary `#[serde(deny_unknown_fields)]` still catches a
+/// genuinely unknown field exactly as it did before. A field named by both
+/// `bindings` and a sibling is refused outright — that shape nothing on the
+/// real client's own side produces, and silently preferring one over the
+/// other would hide the collision instead of surfacing it.
+fn unwrap_bindings(payload: &Value) -> Result<Value, String> {
     let Some(object) = payload.as_object() else {
-        return Ok(payload);
+        return Ok(payload.clone());
     };
-    match object.get("bindings") {
-        Some(bindings) if bindings.is_object() => {
-            if object.len() != 1 {
-                return Err(
-                    "payload carries an envelope 'bindings' object alongside flat sibling \
-                     fields; send one or the other, never both"
-                        .into(),
-                );
-            }
-            Ok(bindings)
+    let Some(bindings_object) = object.get("bindings").and_then(Value::as_object) else {
+        return Ok(payload.clone());
+    };
+    let mut merged = serde_json::Map::with_capacity(object.len() + bindings_object.len());
+    for (key, value) in object {
+        if key == "bindings" {
+            continue;
         }
-        _ => Ok(payload),
+        if bindings_object.contains_key(key) {
+            return Err(format!(
+                "payload's envelope 'bindings' object and its own sibling action field both \
+                 name '{key}'; send it in exactly one place"
+            ));
+        }
+        merged.insert(key.clone(), value.clone());
     }
+    for (key, value) in bindings_object {
+        merged.insert(key.clone(), value.clone());
+    }
+    Ok(Value::Object(merged))
 }
 
 /// Cut 10 (PA.f149): every one of these three fields is edited in a plain
@@ -229,19 +243,29 @@ fn is_handle_shape(value: &str) -> bool {
         && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '-')
 }
 
-/// `world.play`'s own payload (Cut 8b): the player's prose alone. Cut 10
-/// (PA.f151) deleted the client-supplied `answers` field: the vendored Eve
-/// browser lowering has no authored, non-editable binding value (`hidden` is
-/// not a prop any renderer reads), so the id-carrying control it used to
-/// name would have rendered as a plain, visible, editable text box holding
-/// the raw `QuestionId` — a leak, and once editable, a forgeable one. The
-/// server resolves the currently open question itself now
-/// (`execute_world`'s `world.play` arm), refusing a stale
-/// `routeHint.sourceVersion` instead of trusting a client-named id.
+/// `world.play`'s own payload. Cut 10 (PA.f151) deleted the client-supplied
+/// `answers` field: the vendored Eve browser lowering has no authored,
+/// non-editable binding value (`hidden` is not a prop any renderer reads), so
+/// the id-carrying control it used to name would have rendered as a plain,
+/// visible, editable text box holding the raw `QuestionId` — a leak, and once
+/// editable, a forgeable one. The server still resolves the currently open
+/// question itself (`execute_world`'s `world.play` arm), but PA.f170 replaces
+/// the version-only staleness check that once stood in for identity:
+/// `answer_token` is the opaque per-question token `play::ASK_PLAYER_TOOL`
+/// mints when the question opens, carried DOM-invisibly in the "Play"
+/// button's own `props.action` (`eve::authenticated_surface`) rather than
+/// through a `captureBindings` control — the real lowering spreads a button's
+/// `action` fields straight into the payload alongside `bindings`
+/// (`commandPayload`, `vendor/eve/packages/eve-browser-lowering/src/index.ts:2101`).
+/// Absent or not naming the currently open question's own token, the answer
+/// is refused as stale, never applied to whatever question happens to be
+/// open when the request is processed.
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct PlayPayload {
     text: String,
+    #[serde(default)]
+    answer_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1199,7 +1223,7 @@ async fn execute_world(
             .unwrap_or(""),
     )?;
     if invocation.operation.operation_id == "world.create" {
-        let payload: CreatePayload = serde_json::from_value(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?.clone())
+        let payload: CreatePayload = serde_json::from_value(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?)
             .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
         if let Some(root) = payload
             .jurisdictions
@@ -1259,24 +1283,25 @@ async fn execute_world(
                 "only the world's owner may play".into(),
             ));
         }
-        let payload: PlayPayload = serde_json::from_value(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?.clone())
+        let payload: PlayPayload = serde_json::from_value(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?)
             .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
         let table = state
             .play
             .clone()
             .ok_or_else(|| RuntimeCommandError::Payload("the play table is unavailable".into()))?;
         // The server resolves the open question itself — the client no
-        // longer supplies one at all. No question open: this is a plain
+        // longer names it by `QuestionId`. No question open: this is a plain
         // continue/opening, `answers: None`. A question open: the caller
-        // must be answering it. PA.f84's guarantee (an answer cannot land on
-        // a question the player never saw) holds by refusing a
-        // `routeHint.sourceVersion` older than `question.surface_version` —
-        // the world's own `eve::surface_version` at the instant this
-        // question opened (`play.rs`'s `execute_round`, PA.f161) — the only
-        // comparison this makes. A real client always echoes the most recent
-        // `version` it was actually served, so this can only refuse a
-        // genuinely stale answer, never one served after the question
-        // appeared, regardless of how many world commits landed in between.
+        // must be answering it, and PA.f170's guarantee (an answer cannot
+        // land on a question the player never saw) is judged by the opaque
+        // per-question token the question's own render carried in the "Play"
+        // button's `props.action` (`eve::authenticated_surface`), not by
+        // `routeHint.sourceVersion`: two questions opened in the same turn
+        // carry the same surface version (asking is conversational and never
+        // moves it), so a version-only comparison cannot tell them apart —
+        // exactly the gap Soul proved (PA.f170). A token that is absent, or
+        // does not name the currently open question's own token, is refused
+        // as stale.
         let view = table.current_turn_view().await;
         // PA.f155: `PlayTurnView::state` is the actual rule this branches
         // on — the turn is currently waiting on the player — rather than
@@ -1289,11 +1314,10 @@ async fn execute_world(
         let answers = match view.as_ref().and_then(|view| view.question.as_ref()).filter(|_| is_awaiting_player) {
             None => None,
             Some(question) => {
-                let source_version = invocation.operation.route_hint.source_version.unwrap_or(0);
-                if source_version < question.surface_version {
+                if payload.answer_token.as_deref() != Some(question.token.as_str()) {
                     return Err(RuntimeCommandError::Payload(format!(
-                        "the answer is stale: it names a surface older than the one the question \
-                         \"{}\" first appeared on",
+                        "the answer is stale: its token does not name the question \"{}\" \
+                         currently open",
                         question.text
                     )));
                 }
@@ -1365,17 +1389,17 @@ async fn execute_world(
     })?;
     let body = match invocation.operation.operation_id.as_str() {
         "world.approve" => {
-            serde_json::from_value::<EmptyPayload>(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?.clone())
+            serde_json::from_value::<EmptyPayload>(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?)
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
             CommandBody::ApproveDraft
         }
         "world.activate" => {
-            serde_json::from_value::<EmptyPayload>(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?.clone())
+            serde_json::from_value::<EmptyPayload>(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?)
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
             CommandBody::ActivateWorld
         }
         "world.advance_time" => {
-            let payload: AdvanceTimePayload = serde_json::from_value(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?.clone())
+            let payload: AdvanceTimePayload = serde_json::from_value(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?)
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
             CommandBody::AdvanceTime {
                 minutes: TickMinutes::new(payload.minutes).ok_or_else(|| {
@@ -1387,7 +1411,7 @@ async fn execute_world(
         // through its own port, as the owner, and the receipt reports what one
         // session did rather than what one command committed.
         "world.seed" => {
-            let payload: SeedPayload = serde_json::from_value(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?.clone())
+            let payload: SeedPayload = serde_json::from_value(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?)
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
             let outcome = seed_once(state, verified_principal, &snapshot, payload).await?;
             let after = current_world(state)
@@ -2882,6 +2906,107 @@ mod tests {
         }
     }
 
+    /// PA.f170's own round trip through the real client: with a question
+    /// open, the "Play" button's own `props.action` (the answer token) and
+    /// the bound `text` field must arrive together in one payload —
+    /// `{"answerToken":..., "bindings":{"text":...}}` — exactly the shape
+    /// `commandPayload` produces by spreading a button's own action fields
+    /// into the payload beside `bindings`
+    /// (`vendor/eve/packages/eve-browser-lowering/src/index.ts:2101`). This
+    /// is not in the committed fixture above (that walkthrough's own
+    /// `world.play` click never has an open question, so its action carries
+    /// no token to prove); this test builds its own scripted question so the
+    /// merge actually has something in `props.action` to carry. Skips, with
+    /// a message, exactly when the fixture-matching test above does.
+    #[tokio::test]
+    async fn the_real_client_carries_the_answer_token_and_the_bound_text_together() {
+        if !eve_client_bridge_is_available() {
+            eprintln!(
+                "SKIPPED the_real_client_carries_the_answer_token_and_the_bound_text_together: \
+                 `node` or the vendored lowering's built `dist/index.js` is not available in this \
+                 environment, so this test did not drive the real Eve client bridge."
+            );
+            return;
+        }
+        let (fixture, served_version) = play_world_with_a_scripted_question().await;
+        let table = fixture.state.play.clone().unwrap();
+
+        let played = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                served_version,
+                json!({"text":"I stand at a crossroads."}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(played["state"], "accepted");
+
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if let Some(view) = table.current_turn_view().await
+                    && view.state == PlayTurnState::AwaitingPlayer
+                {
+                    return;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("the scripted ask_player call must open a question");
+
+        let provider = get(&fixture.state, &fixture.cookie, "/api/eve/provider").await;
+        let surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let play_intent = client_intents(
+            &surface,
+            &provider,
+            json!([
+                {"set": {"world.play.text": "I go left."}},
+                {"click": "world.play"}
+            ]),
+        )
+        .into_iter()
+        .next()
+        .unwrap();
+
+        let payload = play_intent["payload"].clone();
+        assert!(
+            payload
+                .get("answerToken")
+                .and_then(Value::as_str)
+                .is_some_and(|token| !token.is_empty()),
+            "the real client's own button action must carry a non-empty answerToken: {payload}"
+        );
+        assert_eq!(
+            payload["bindings"]["text"], "I go left.",
+            "the real client's own captured binding must still carry the bound text beside the \
+             action's own answerToken: {payload}"
+        );
+
+        let answered = post(&fixture.state, &fixture.cookie, play_intent).await;
+        assert_eq!(
+            answered["state"], "accepted",
+            "the real client's own combined payload must be accepted: {answered}"
+        );
+
+        let closed = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if let Some(view) = table.current_turn_view().await {
+                    if view.state == PlayTurnState::Closed {
+                        return view;
+                    }
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("the scripted end_turn call must close the turn");
+        assert_eq!(closed.narration.as_deref(), Some("The hall falls quiet."));
+    }
+
     /// PA.f164: `targets`, `jurisdictions`, and `brief` are all documented
     /// "required, may be empty" (`CreatePayload`) — a legitimate deliberate
     /// choice, not a value nobody supplied. Before this fix, only `lens_weights`
@@ -2939,17 +3064,21 @@ mod tests {
         );
     }
 
-    /// PA.f168: `unwrap_bindings` refuses a payload carrying both the
-    /// envelope `bindings` object and a flat sibling field, rather than
-    /// silently keeping only `bindings` and discarding the sibling. No real
-    /// client sends this shape (`commandPayload` on the lowering's own side
-    /// never adds one), so this exercises the refusal directly.
+    /// PA.f168 originally refused any sibling next to the envelope
+    /// `bindings` object outright. PA.f170 changes what a real client's
+    /// payload carries — a button's own `props.action` fields (the answer
+    /// token, for `world.play`) ride beside `bindings` on purpose — so
+    /// `unwrap_bindings` now merges the two instead. An unrecognized sibling
+    /// is still refused, just one door downstream: the merged object still
+    /// has to satisfy the operation's own payload struct, and
+    /// `world.approve`'s `EmptyPayload` (`#[serde(deny_unknown_fields)]`)
+    /// declares none at all, so `"rogue"` is still an unknown field there.
     ///
-    /// Mutation: revert `unwrap_bindings` to its old
-    /// `.filter(|bindings| bindings.is_object()).unwrap_or(payload)` shape —
-    /// this command would then be accepted, silently discarding `"rogue"`.
+    /// Mutation: have `unwrap_bindings` silently drop an unrecognized sibling
+    /// instead of merging it in — this command would then be accepted, with
+    /// `"rogue"` discarded rather than refused.
     #[tokio::test]
-    async fn a_payload_with_a_sibling_field_beside_bindings_is_refused() {
+    async fn a_payload_with_an_unrecognized_sibling_field_beside_bindings_is_refused() {
         let fixture = fixture().await;
         let created = post(
             &fixture.state,
@@ -2986,11 +3115,77 @@ mod tests {
         .await;
         assert_eq!(denied["state"], "denied");
         assert!(
-            denied["message"]
-                .as_str()
-                .unwrap_or_default()
-                .contains("bindings"),
-            "a sibling field beside the envelope must be refused, not silently discarded: {denied}"
+            denied["message"].as_str().unwrap_or_default().contains("rogue"),
+            "an unrecognized sibling field beside the envelope must still be refused, not silently \
+             discarded: {denied}"
+        );
+    }
+
+    /// PA.f170's own negative on the merge itself: a payload naming the same
+    /// field both inside `bindings` and as a sibling of it — a shape nothing
+    /// on the real lowering's own side produces (`commandPayload` builds
+    /// `bindings` and the action's own fields from disjoint sources) — is
+    /// refused as an outright collision, never resolved by silently
+    /// preferring one side over the other.
+    ///
+    /// Mutation: have `unwrap_bindings` prefer the sibling (or the `bindings`
+    /// entry) on a name collision instead of refusing it — this command
+    /// would then be accepted with one of the two conflicting `"minutes"`
+    /// values silently discarded.
+    #[tokio::test]
+    async fn a_payload_naming_the_same_field_in_bindings_and_as_a_sibling_is_refused() {
+        let fixture = fixture().await;
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({
+                    "title":"Colliding Field World",
+                    "brief":"",
+                    "subject_label":"Operator",
+                    "targets":{},
+                    "jurisdictions":[],
+                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
+                }),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(created["state"], "accepted");
+        let approved = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.approve", "ghostlight.world_approve.v0", 1, json!({}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(approved["state"], "accepted");
+        let activated = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.activate", "ghostlight.world_activate.v0", 2, json!({}), &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(activated["state"], "accepted");
+
+        let denied = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.advance_time",
+                "ghostlight.world_advance_time.v0",
+                3,
+                json!({"bindings":{"minutes":5}, "minutes":9}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(denied["state"], "denied");
+        assert!(
+            denied["message"].as_str().unwrap_or_default().contains("minutes"),
+            "a field named by both bindings and a sibling must be refused as a collision: {denied}"
         );
     }
 
@@ -3254,17 +3449,12 @@ mod tests {
         );
     }
 
-    /// PA.f161's own harness: builds a play world through the real HTTP
-    /// route, then swaps `state.play` for a table over `crate::play::tests`'
-    /// own `ScriptedPort`, scripted to call `ask_player` and then `end_turn`
-    /// — a deterministic question this test can actually answer through the
-    /// route, which the fixture's own unreachable test inference organ
-    /// cannot produce. Returns the fixture and the world's `sourceVersion`
-    /// after activation (the version `world.play`'s own staleness check
-    /// compares an answer against, since asking a question is conversational
-    /// and moves nothing on the world).
-    async fn play_world_with_a_scripted_question() -> (Fixture, u64) {
-        use crate::play::tests::{ScriptedPort, call_event, output, text_event};
+    /// The create/approve/activate boilerplate every scripted-question
+    /// harness below needs, factored out so `play_world_with_a_scripted_question`
+    /// and `play_world_with_two_scripted_questions` (Cut 13) do not each
+    /// repeat it. Returns the fixture and the world's `sourceVersion` after
+    /// activation.
+    async fn activated_fixture(title: &str) -> (Fixture, u64) {
         let fixture = fixture().await;
         let created = post(
             &fixture.state,
@@ -3274,7 +3464,7 @@ mod tests {
                 "ghostlight.world_create.v4",
                 0,
                 json!({
-                    "title":"Scripted Question World",
+                    "title":title,
                     "brief":"",
                     "subject_label":"Operator",
                     "targets":{},
@@ -3301,6 +3491,21 @@ mod tests {
         .await;
         assert_eq!(activated["state"], "accepted");
         let served_version = activated["sourceVersion"].as_u64().unwrap();
+        (fixture, served_version)
+    }
+
+    /// PA.f161's own harness: builds a play world through the real HTTP
+    /// route, then swaps `state.play` for a table over `crate::play::tests`'
+    /// own `ScriptedPort`, scripted to call `ask_player` and then `end_turn`
+    /// — a deterministic question this test can actually answer through the
+    /// route, which the fixture's own unreachable test inference organ
+    /// cannot produce. Returns the fixture and the world's `sourceVersion`
+    /// after activation (still a required `routeHint.sourceVersion` field on
+    /// every command envelope, even though `world.play` no longer reads it
+    /// for staleness — PA.f170 judges an answer by its own token instead).
+    async fn play_world_with_a_scripted_question() -> (Fixture, u64) {
+        use crate::play::tests::{ScriptedPort, call_event, output, text_event};
+        let (fixture, served_version) = activated_fixture("Scripted Question World").await;
 
         let ask = output(
             "r0",
@@ -3334,19 +3539,83 @@ mod tests {
         (fixture, served_version)
     }
 
-    /// PA.f161's own end-to-end proof: an answer whose `routeHint.sourceVersion`
-    /// names the version a real client actually served the question on — the
-    /// world's own `surface_version` at the instant it opened, unmoved since
-    /// (asking a question is conversational) — is accepted, and the turn
-    /// closes with the scripted narration.
-    ///
-    /// Mutation: change `source_version < question.surface_version` to
-    /// `source_version <= question.surface_version` at `runtime.rs`'s
-    /// `world.play` arm — this test's own answer, echoing exactly
-    /// `question.surface_version`, would then be refused as stale, failing
-    /// the `accepted` assertion below.
-    #[tokio::test]
-    async fn an_answer_naming_the_version_the_question_actually_opened_on_is_accepted() {
+    /// PA.f170's own harness: two scripted `ask_player` calls, one per round,
+    /// with no `end_turn` — so answering Q1 leaves the turn `AwaitingPlayer`
+    /// on Q2 rather than closed, the exact shape Soul's own probe needed to
+    /// show an answer composed for Q1 landing on Q2.
+    async fn play_world_with_two_scripted_questions() -> (Fixture, u64) {
+        use crate::play::tests::{ScriptedPort, call_event, output};
+        let (fixture, served_version) = activated_fixture("Two Scripted Questions World").await;
+
+        let ask_one = output(
+            "r0",
+            vec![call_event("c0", "ask_player", serde_json::json!({"question": "Which way?"}))],
+        );
+        let ask_two = output(
+            "r1",
+            vec![call_event("c1", "ask_player", serde_json::json!({"question": "Are you sure?"}))],
+        );
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.state.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let table = PlayTable::new(
+            fixture.state.world.clone(),
+            personas,
+            ScriptedPort::new(vec![ask_one, ask_two]),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(TEST_CONTROLLER_CONCURRENCY)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+        let mut fixture = fixture;
+        fixture.state.play = Some(Arc::new(table));
+        fixture._play_directory = Some(directory);
+        (fixture, served_version)
+    }
+
+    /// Finds the surface node named `id`, depth-first, the same way
+    /// `crate::play::tests::find_surface_node` does for `play.rs`'s own
+    /// tests — duplicated locally rather than exposed `pub(crate)` across a
+    /// module boundary for one small helper.
+    fn find_surface_node<'a>(node: &'a Value, id: &str) -> Option<&'a Value> {
+        if node.get("id").and_then(Value::as_str) == Some(id) {
+            return Some(node);
+        }
+        for child in node.get("children").and_then(Value::as_array).into_iter().flatten() {
+            if let Some(found) = find_surface_node(child, id) {
+                return Some(found);
+            }
+        }
+        None
+    }
+
+    /// Reads the open question's own answer token the same way a real
+    /// client does (PA.f170): off the "Play" button's own served
+    /// `props.action.answerToken`, from the actually served surface document
+    /// — never from `PlayTurnView`/`OpenQuestion` directly, which a test
+    /// could read but a browser never does.
+    async fn play_button_token(state: &AppState, cookie: &str) -> Option<String> {
+        let surface = get(state, cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let root = surface.get("surface")?.get("root")?;
+        let button = find_surface_node(root, "world.play")?;
+        button
+            .get("props")?
+            .get("action")?
+            .get("answerToken")?
+            .as_str()
+            .map(str::to_owned)
+    }
+
+    /// Drives `play_world_with_a_scripted_question` through `world.play` and
+    /// waits for the scripted `ask_player` call to open the turn's own
+    /// question, returning the fixture, table, and served version so each
+    /// caller only writes its own answer's own assertions.
+    async fn played_and_awaiting_question() -> (Fixture, Arc<PlayTable>, u64) {
         let (fixture, served_version) = play_world_with_a_scripted_question().await;
         let table = fixture.state.play.clone().unwrap();
 
@@ -3364,23 +3633,38 @@ mod tests {
         .await;
         assert_eq!(played["state"], "accepted");
 
-        let asked = tokio::time::timeout(Duration::from_secs(5), async {
+        tokio::time::timeout(Duration::from_secs(5), async {
             loop {
-                if let Some(view) = table.current_turn_view().await {
-                    if view.state == PlayTurnState::AwaitingPlayer {
-                        return view;
-                    }
+                if let Some(view) = table.current_turn_view().await
+                    && view.state == PlayTurnState::AwaitingPlayer
+                {
+                    return;
                 }
                 tokio::time::sleep(Duration::from_millis(10)).await;
             }
         })
         .await
         .expect("the scripted ask_player call must open a question");
-        let question_version = asked.question.as_ref().unwrap().surface_version;
-        assert_eq!(
-            question_version, served_version,
-            "asking a question is conversational and must not move surface_version"
-        );
+        (fixture, table, served_version)
+    }
+
+    /// PA.f170's own end-to-end proof: a question asked, the card served,
+    /// its own answer token read out of the served surface document — never
+    /// out of `PlayTurnView` directly, which a real client never sees — the
+    /// answer accepted, and the turn closes with the scripted narration.
+    ///
+    /// Mutation: change `payload.answer_token.as_deref() != Some(question.token.as_str())`
+    /// to always pass (or always fail) at `runtime.rs`'s `world.play` arm —
+    /// this test's own answer, echoing the exact token the surface served,
+    /// would then be wrongly refused (or a broken-but-lenient comparison
+    /// would let a later mismatch test wrongly pass).
+    #[tokio::test]
+    async fn an_answer_naming_the_open_questions_own_token_read_from_the_served_surface_is_accepted() {
+        let (fixture, table, served_version) = played_and_awaiting_question().await;
+
+        let token = play_button_token(&fixture.state, &fixture.cookie)
+            .await
+            .expect("the served surface's own \"Play\" button must carry the open question's answer token");
 
         let answered = post(
             &fixture.state,
@@ -3388,15 +3672,15 @@ mod tests {
             invocation(
                 "world.play",
                 "ghostlight.world_play.v0",
-                question_version,
-                json!({"text":"I go left."}),
+                served_version,
+                json!({"text":"I go left.","answerToken":token}),
                 &uuid::Uuid::new_v4().to_string(),
             ),
         )
         .await;
         assert_eq!(
             answered["state"], "accepted",
-            "an answer naming the exact version the question opened on must be accepted: {answered}"
+            "an answer naming the open question's own token, read off the served surface, must be accepted: {answered}"
         );
 
         let closed = tokio::time::timeout(Duration::from_secs(5), async {
@@ -3414,19 +3698,113 @@ mod tests {
         assert_eq!(closed.narration.as_deref(), Some("The hall falls quiet."));
     }
 
-    /// PA.f161's own refusal proof: an answer naming a version older than the
-    /// one the question opened on — here, the version served just before
-    /// `world.play` was even called to open it — is refused as stale, and the
-    /// turn stays open rather than being resumed by an answer the player
-    /// could not have actually seen the question at.
+    /// PA.f170's own refusal proof: an answer that carries no token at all
+    /// while a question is open is refused as stale, and the turn stays open
+    /// rather than being resumed by an answer that could not have named the
+    /// question the player was actually shown.
     ///
-    /// Mutation: change `source_version < question.surface_version` to
-    /// `source_version < question.surface_version.saturating_sub(1)` (or any
-    /// weakening of the comparison) — this test's stale answer, one version
-    /// behind, would then be wrongly accepted.
+    /// Mutation: change `payload.answer_token.as_deref() != Some(question.token.as_str())`
+    /// to treat a missing token (`None`) as a match — this test's answer,
+    /// carrying no `answerToken` field at all, would then be wrongly
+    /// accepted.
     #[tokio::test]
-    async fn an_answer_naming_a_version_older_than_the_question_is_refused_as_stale() {
-        let (fixture, served_version) = play_world_with_a_scripted_question().await;
+    async fn an_answer_missing_the_open_questions_own_token_is_refused_as_stale() {
+        let (fixture, table, served_version) = played_and_awaiting_question().await;
+
+        let stale_answered = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                served_version,
+                json!({"text":"I go left."}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(stale_answered["state"], "denied");
+        assert!(
+            stale_answered["message"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("stale"),
+            "an answer with no token at all must be refused as stale: {stale_answered}"
+        );
+
+        let still_open = table.current_turn_view().await.unwrap();
+        assert_eq!(
+            still_open.state,
+            PlayTurnState::AwaitingPlayer,
+            "a stale answer must leave the question open, not resume the turn"
+        );
+    }
+
+    /// PA.f170: an answer naming a token that does not match the currently
+    /// open question's own — forged, mistyped, or simply wrong — is refused
+    /// as stale exactly like a missing one, never applied to the open
+    /// question.
+    ///
+    /// Mutation: compare only a prefix or a hash of the token instead of the
+    /// exact string — this test's near-miss token (the real one with its
+    /// last character flipped) would then be wrongly accepted for at least
+    /// some mutations of that weakened comparison.
+    #[tokio::test]
+    async fn an_answer_naming_a_mismatched_token_is_refused_as_stale() {
+        let (fixture, table, served_version) = played_and_awaiting_question().await;
+
+        let real_token = play_button_token(&fixture.state, &fixture.cookie)
+            .await
+            .expect("the served surface must carry the open question's own answer token");
+        let mut forged = real_token.clone();
+        forged.push('x');
+
+        let stale_answered = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                served_version,
+                json!({"text":"I go left.","answerToken":forged}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(stale_answered["state"], "denied");
+        assert!(
+            stale_answered["message"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("stale"),
+            "a mismatched token must be refused as stale: {stale_answered}"
+        );
+
+        let still_open = table.current_turn_view().await.unwrap();
+        assert_eq!(
+            still_open.state,
+            PlayTurnState::AwaitingPlayer,
+            "a stale answer must leave the question open, not resume the turn"
+        );
+    }
+
+    /// PA.f170's own core proof — the defect Soul demonstrated (an answer
+    /// composed for Q1 lands on Q2, the player never saw): two questions open
+    /// in the same turn, an answer carries Q1's own token, and by the time it
+    /// is submitted the turn has moved on to Q2. `question_surface_version`
+    /// could not refuse this: asking is conversational and never moves the
+    /// world's own revision, so Q1 and Q2 would have carried the same
+    /// version, and a version-only comparison could not tell them apart. The
+    /// per-question token can, and must.
+    ///
+    /// Mutation: have `runtime.rs`'s `world.play` arm resolve `answers` from
+    /// `payload.text` alone, ignoring `answer_token` entirely (reverting to
+    /// "any request while a question is open answers whatever is open now")
+    /// — this test's Q1-token answer would then be wrongly accepted against
+    /// Q2.
+    #[tokio::test]
+    async fn soul_an_answer_composed_for_q1_lands_on_q2_the_player_never_saw() {
+        let (fixture, served_version) = play_world_with_two_scripted_questions().await;
         let table = fixture.state.play.clone().unwrap();
 
         let played = post(
@@ -3443,47 +3821,175 @@ mod tests {
         .await;
         assert_eq!(played["state"], "accepted");
 
-        let asked = tokio::time::timeout(Duration::from_secs(5), async {
+        tokio::time::timeout(Duration::from_secs(5), async {
             loop {
-                if let Some(view) = table.current_turn_view().await {
-                    if view.state == PlayTurnState::AwaitingPlayer {
-                        return view;
-                    }
+                if let Some(view) = table.current_turn_view().await
+                    && view.question.as_ref().is_some_and(|question| question.text == "Which way?")
+                {
+                    return;
                 }
                 tokio::time::sleep(Duration::from_millis(10)).await;
             }
         })
         .await
-        .expect("the scripted ask_player call must open a question");
-        let question_version = asked.question.as_ref().unwrap().surface_version;
-        assert!(question_version >= 1, "the version arithmetic below needs headroom");
+        .expect("the first scripted ask_player call must open Q1");
 
-        let stale_answered = post(
+        // The player reads Q1's own token off the served surface — exactly
+        // what a real client's "Play" button would carry — but does not
+        // answer it before the table moves on to Q2.
+        let q1_token = play_button_token(&fixture.state, &fixture.cookie)
+            .await
+            .expect("the served surface must carry Q1's own answer token");
+
+        let answered_q1 = post(
             &fixture.state,
             &fixture.cookie,
             invocation(
                 "world.play",
                 "ghostlight.world_play.v0",
-                question_version - 1,
-                json!({"text":"I go left."}),
+                served_version,
+                json!({"text":"left","answerToken":q1_token}),
                 &uuid::Uuid::new_v4().to_string(),
             ),
         )
         .await;
-        assert_eq!(stale_answered["state"], "denied");
-        assert!(
-            stale_answered["message"]
-                .as_str()
-                .unwrap_or_default()
-                .contains("stale"),
-            "a version older than the question's own must be refused as stale: {stale_answered}"
+        assert_eq!(
+            answered_q1["state"], "accepted",
+            "Q1's own token must still answer Q1: {answered_q1}"
         );
 
-        let still_open = table.current_turn_view().await.unwrap();
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if let Some(view) = table.current_turn_view().await
+                    && view.question.as_ref().is_some_and(|question| question.text == "Are you sure?")
+                {
+                    return;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("answering Q1 must open Q2");
+
+        // A late request still carrying Q1's own token — the exact shape a
+        // slow retry or a second tab would produce — must never be applied
+        // to Q2, which the player has not been shown yet.
+        let stale_on_q2 = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                served_version,
+                json!({"text":"yes","answerToken":q1_token}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
         assert_eq!(
-            still_open.state,
-            PlayTurnState::AwaitingPlayer,
-            "a stale answer must leave the question open, not resume the turn"
+            stale_on_q2["state"], "denied",
+            "an answer composed for Q1 must never land on Q2: {stale_on_q2}"
+        );
+        assert!(
+            stale_on_q2["message"].as_str().unwrap_or_default().contains("stale"),
+            "the refusal must name it stale: {stale_on_q2}"
+        );
+
+        let still_on_q2 = table.current_turn_view().await.unwrap();
+        assert_eq!(
+            still_on_q2.question.as_ref().map(|question| question.text.as_str()),
+            Some("Are you sure?"),
+            "the wrongly-refused answer must leave Q2 open, not resolve it"
+        );
+    }
+
+    /// PA.f170: a token is single-use across distinct questions — reusing
+    /// the token a *closed* turn's own answered question carried, replayed
+    /// against a fresh question with a fresh token, is refused exactly like
+    /// any other mismatch (the two-questions probe above already proves
+    /// reuse within one still-open turn is refused; this proves reuse is
+    /// never grandfathered in just because the token was once genuine).
+    #[tokio::test]
+    async fn a_token_from_an_already_answered_question_is_refused_against_the_next_one() {
+        let (fixture, served_version) = play_world_with_two_scripted_questions().await;
+        let table = fixture.state.play.clone().unwrap();
+
+        let played = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                served_version,
+                json!({"text":"I stand at a crossroads."}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(played["state"], "accepted");
+
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if let Some(view) = table.current_turn_view().await
+                    && view.question.as_ref().is_some_and(|question| question.text == "Which way?")
+                {
+                    return;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("the first scripted ask_player call must open Q1");
+        let q1_token = play_button_token(&fixture.state, &fixture.cookie)
+            .await
+            .expect("the served surface must carry Q1's own answer token");
+
+        let answered_q1 = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                served_version,
+                json!({"text":"left","answerToken":q1_token.clone()}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(answered_q1["state"], "accepted");
+
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if let Some(view) = table.current_turn_view().await
+                    && view.question.as_ref().is_some_and(|question| question.text == "Are you sure?")
+                {
+                    return;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("answering Q1 must open Q2");
+        let q2_token = play_button_token(&fixture.state, &fixture.cookie)
+            .await
+            .expect("the served surface must carry Q2's own answer token");
+        assert_ne!(q1_token, q2_token, "Q1's own spent token must never be reissued for Q2");
+
+        let replayed_q1_token = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.play",
+                "ghostlight.world_play.v0",
+                served_version,
+                json!({"text":"yes","answerToken":q1_token}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(
+            replayed_q1_token["state"], "denied",
+            "Q1's own already-spent token must never answer Q2: {replayed_q1_token}"
         );
     }
 
