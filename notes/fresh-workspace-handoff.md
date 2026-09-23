@@ -247,7 +247,7 @@ State and commit schemas are `.consumer.v5`; world creation is
 Deferred by design: `PolityInCausalRange`, `IndividuationRequired`, and
 Verification 13 wait for relations and population slices. Stale: the
 pre-pass-6 ignored acceptance test
-`real_codex_connector_cognition_modes_commit_speech` in
+`real_local_model_cognition_modes_commit_speech` in
 `world/controllers.rs` fails at `NoAudience` because its subjects are
 unplaced; retire it or place its subjects.
 

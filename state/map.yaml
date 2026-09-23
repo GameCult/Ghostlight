@@ -398,7 +398,7 @@ current_status:
     the Yggdrasil deploy actuator (`gamecult-ops`
     `scripts/deploy-ghostlight-yggdrasil.sh`: connector readiness gate, key,
     and acceptance test
-    `controllers::tests::real_codex_connector_cognition_modes_commit_speech`)
+    `controllers::tests::real_local_model_cognition_modes_commit_speech`)
     and its runbook, and bind the local-model link in its place; gamecult-ops
     owns the actuator, runbook and link. Then, on Yggdrasil, check `/health`
     for `playStatus` first; the unverified leg is seeding, which needs

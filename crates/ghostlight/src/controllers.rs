@@ -11,7 +11,7 @@ use super::elaboration::{
     NullEvidenceSource, SeedCheckpoint, SeedRunner, valid_elaboration_progression,
     valid_seed_progression,
 };
-use super::local_inference::{LocalBinding, open_local_port};
+use super::local_inference::{DEFAULT_LOCAL_MODEL_PREFIX, LocalBinding, open_local_port};
 use super::sdk_inference::{
     ChildProcessLink, DEFAULT_SDK_MODEL_PREFIX, RoutedInferencePort, SdkBinding, SdkInferencePort,
 };
@@ -11224,14 +11224,14 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "requires the Idunn-sealed production CodexConnector"]
-    async fn real_codex_connector_cognition_modes_commit_speech() {
-        let connector_endpoint: SocketAddr = std::env::var("GHOSTLIGHT_CONTROLLER_CONNECTOR")
-            .expect("GHOSTLIGHT_CONTROLLER_CONNECTOR is required")
+    #[ignore = "requires a local model server on GHOSTLIGHT_LOCAL_ENDPOINT"]
+    async fn real_local_model_cognition_modes_commit_speech() {
+        let local_endpoint: SocketAddr = std::env::var("GHOSTLIGHT_LOCAL_ENDPOINT")
+            .expect("GHOSTLIGHT_LOCAL_ENDPOINT is required")
             .parse()
-            .expect("GHOSTLIGHT_CONTROLLER_CONNECTOR must be a socket address");
-        let connector_credential = std::env::var_os("GHOSTLIGHT_CONTROLLER_CREDENTIAL")
-            .expect("GHOSTLIGHT_CONTROLLER_CREDENTIAL is required");
+            .expect("GHOSTLIGHT_LOCAL_ENDPOINT must be a socket address");
+        let local_model_prefix = std::env::var("GHOSTLIGHT_LOCAL_MODEL_PREFIX")
+            .unwrap_or_else(|_| DEFAULT_LOCAL_MODEL_PREFIX.to_owned());
         let runtime_id = std::env::var("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID")
             .expect("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID is required");
         let models = ControllerModels {
@@ -11394,13 +11394,13 @@ mod tests {
         assert!(matches!(seed_receipt, SubmitReceipt::Applied(_)));
 
         let inference = open_inference(
-            Some(ConnectorBinding {
-                endpoint: connector_endpoint,
-                key_path: connector_credential.into(),
+            None,
+            None,
+            Some(LocalBinding {
+                endpoint: local_endpoint,
+                model_prefix: local_model_prefix,
                 caller_runtime_id: runtime_id,
             }),
-            None,
-            None,
             &models.each(),
         )
         .unwrap();
