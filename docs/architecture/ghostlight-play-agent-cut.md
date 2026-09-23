@@ -3431,6 +3431,31 @@ Interpreter, the elaborator sweep and lenses.
     `question_surface_version`, so the v2 schema and two of this cut's
     fixes are scoped to be superseded by Cut 13. That is the intended
     order, and Cut 13's brief carries it.
+- **Cut 13 landed (Hands, Sonnet, 2026-09-23):** `2f2a8b6`.
+  - Each question mints a `uuid::Uuid::new_v4()` token, kept on the row and
+    carried in the play button's `props.action`, the same DOM-invisible
+    channel `command` already rides. An answer whose token does not match
+    the open question's is refused.
+  - `question_surface_version`, its comparison, and the extra snapshot
+    `execute_round` fetched only to compute it are deleted. `QuestionId`
+    and `OpenQuestion` are kept: `QuestionId` is still `play.rs`'s own
+    admission key, and neither existed only for the comparison.
+  - `unwrap_bindings` merges the envelope with the command's own action
+    fields and refuses a name collision; an unknown sibling is refused one
+    door down, by the payload's `deny_unknown_fields`.
+  - The store is `v3`, reading `v1` and `v2` leniently through one
+    `upgrade_legacy_row`, minting a token when a recovered row's question
+    is still open.
+  - Soul's own regression, `soul_an_answer_composed_for_q1_lands_on_q2…`,
+    is now a passing test that reads its token out of the served surface.
+    Dungeon bin 156 → 163.
+  - The fixture is unchanged: its `world.play` click has no open question,
+    so its action never carried a token.
+  - **Reported: production code grew by about 150 lines**, in a cut meant
+    to be neutral or negative. Hands attributes it to carrying two legacy
+    schemas rather than one, plus this file's doc-comment convention.
+  - **Hands reported no mutations.** Soul checks every rule's call site
+    itself, as it did after Cut 10.
 - **PA.f77 (introduced by 7c, medium, fix):**
   `table_view_prints_only_a_subjects_own_granted_affordances`
   (`table.rs:2886`) fails about one run in four. Its unscoped
