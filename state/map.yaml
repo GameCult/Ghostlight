@@ -384,7 +384,7 @@ current_status:
     (operator ruling 2026-09-23, "put each of the organs on the right
     machine"): Ghostlight Dungeon runs on Yggdrasil beside Heimdall under
     Idunn v2, binding `ghostlight` (Dungeon unit only), ref
-    `codex/ghostlight-dungeon-mvp`, at
+    `main`, at
     `https://yggdrasil.gamecult.org/ghostlight/`; Bonsai 2 stays on Raven's
     GPU and reaches Yggdrasil loopback `127.0.0.1:18080` through Raven's
     `BonsaiLink` task. Heimdall is discovered through Odin at use, not an

@@ -89,7 +89,7 @@ wrong and is amended. Do not re-cut the scale target as fixture noise.
 
 ## Landed
 
-Git owns the commit chronology; `git log` on `codex/ghostlight-dungeon-mvp`
+Git owns the commit chronology; `git log` on `main`
 is the witness. What is true of the tree now:
 
 - The replacement mailbox/kernel is the crate and executable runtime
@@ -263,7 +263,7 @@ acceptance test `real_local_model_cognition_modes_commit_speech` in
   prefix, default `local/`. Bonsai 2 is the live model behind it.
 - Topology (operator ruling 2026-09-23, "put each of the organs on the right
   machine"): Dungeon runs on Yggdrasil beside Heimdall under Idunn v2, binding
-  `ghostlight` (Dungeon unit only), ref `codex/ghostlight-dungeon-mvp`.
+  `ghostlight` (Dungeon unit only), ref `main`.
   Bonsai 2 stays on Raven's GPU and reaches Yggdrasil loopback
   `127.0.0.1:18080` through Raven's `BonsaiLink` task. Local inference and
   Heimdall's private plane stay loopback-only. Heimdall is discovered through
