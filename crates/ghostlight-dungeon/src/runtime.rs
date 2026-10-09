@@ -2548,6 +2548,19 @@ mod tests {
         }
     }
 
+    /// The daemon's refresh owner serves until it fails: a body that returns
+    /// at once would be read by `serve` as the owner stopping.
+    #[tokio::test]
+    async fn the_session_refresh_owner_keeps_serving() {
+        let fixture = fixture().await;
+        let ran = tokio::time::timeout(
+            Duration::from_millis(300),
+            maintain_session_refresh(fixture.state.clone()),
+        )
+        .await;
+        assert!(ran.is_err(), "the refresh owner returned: {ran:?}");
+    }
+
     /// PA.f172: `state.play` being `None` — a play table that failed to
     /// open, for any reason, `PlayTurnStore::open` returning `Err` among
     /// them — must be visible on `/health`, the same operator-facing surface

@@ -1187,6 +1187,22 @@ mod tests {
         assert!(cache.key("k1", start + JWKS_TTL).is_none(), "stale at the ttl");
     }
 
+    #[tokio::test]
+    async fn a_token_signed_with_another_algorithm_is_refused_before_any_key_fetch() {
+        let token = jsonwebtoken::encode(
+            &jsonwebtoken::Header::new(Algorithm::HS256),
+            &serde_json::json!({"sub": "x"}),
+            &jsonwebtoken::EncodingKey::from_secret(b"secret"),
+        )
+        .unwrap();
+        let error = HeimdallClient::fixture()
+            .verify_access(&token)
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("unsupported signing algorithm"), "{error:#}");
+        assert!(error.downcast_ref::<VerificationUnavailable>().is_none());
+    }
+
     #[test]
     fn a_denied_status_is_the_typed_denial_and_any_other_status_passes() {
         let diagnostics = vec!["Idempotency key was reused".to_owned()];
