@@ -3,7 +3,10 @@
 ## Status
 
 This document is the adopted rebuild target for the Ghostlight runtime. It is
-the authority map for implementation work.
+the authority map for implementation work. What it describes is built in
+`crates/ghostlight` except where it says otherwise here: bounded co-op and the
+`archived` phase with read/export-only archival are design intent, and nothing
+in `crates/` implements them (`WorldPhase` has `Draft` and `Active` only).
 
 Ghostlight is a persistent, source-grounded narrative world. Its job is to
 preserve people, institutions, places, knowledge, material consequence, and
@@ -12,8 +15,8 @@ committee of models until one model permits another model's text to exist.
 
 ## Objective
 
-Build one sparse, open-world causal machine that supports solo and bounded
-co-op play, autonomous subject decisions, source-grounded expansion, external
+Build one sparse, open-world causal machine that supports solo play (bounded
+co-op is design intent, unbuilt), autonomous subject decisions, source-grounded expansion, external
 world owners, and actor-private experience.
 
 The world grows when committed pressure reaches a typed boundary: a new

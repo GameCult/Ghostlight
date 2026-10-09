@@ -9,10 +9,9 @@ it owns who may write, what the prime invariants are, and where the boundaries
 sit. This document owns what the vocabulary *is* and what the reducer checks.
 It may not introduce a writer, a semantic gate, or a second commit path.
 
-`docs/architecture/ghostlight-transition-algebra.md` and
-`docs/architecture/ghostlight-multiresolution-agency.md` describe the
-pre-rebuild machine and are teardown evidence. Their surviving ideas are named
-where they are used: one mutation vocabulary across every admission
+The pre-rebuild transition-algebra and multiresolution-agency designs were torn
+down, and their pages are gone. Their surviving ideas are named where they are
+used: one mutation vocabulary across every admission
 lane; compact mutation drafts with a complete deterministic mismatch set; and a
 resumable per-jurisdiction elaborator session checkpointed against admitted
 commit ancestry.
@@ -726,9 +725,9 @@ Adopted 2026-09-15. Plan step 15 pass L1 implemented the Lenses and Stock lens
 set bullets and the concurrency half of the Sessions bullet. Per-world evidence
 binding (L2), detail rules, rule-driven demand and sessions in Draft (L3), and
 individuation (L4) are not implemented. These are library capabilities, neutral
-to every consumer. A consumer supplies the policy: Ghostlight Dungeon's
-Session Zero (`ghostlight-session-zero.md`) is one consumer of them, and no
-consumer's concept enters this vocabulary.
+to every consumer. A consumer supplies the policy, and no
+consumer's concept enters this vocabulary. The Session Zero design
+(`ghostlight-session-zero.md`) was to be a consumer of them; it is unbuilt, and nothing in `crates/` implements it.
 
 - **Lenses.** A world carries weights over the library's lenses as world
   data. Its creator states them in `CreateWorld` (the library holds no
