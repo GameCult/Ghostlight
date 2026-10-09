@@ -148,7 +148,15 @@ from 21:04 the denial forever. Mechanism:
   that key can ever succeed, and `sessions_due_for_refresh`
   (`app_session.rs:247-268`) keeps offering the same candidate while
   `refresh_expires_at > now`. Which clause of `app_session.rs:293-299` fired at
-  21:03 is not logged.
+  21:03 is not logged, but only one is reachable: the session-id and account
+  clauses are pre-checked and revoked at `runtime.rs:1904-1916`, a revoked
+  session is never offered, and nothing else moves `access_revision`. That
+  leaves `input.access_revision() <= expected` (`app_session.rs:295`). Heimdall's
+  refresh reissues the claim with the refresh claim's `access_revision`
+  unchanged (`Heimdall/src/app.ts:716-724`; only logout bumps it,
+  `private-command-plane.ts:197`), so every real refresh is executed upstream
+  and refused locally, and the key `refresh:{sid}:{rev}` never changes within a
+  session. Question `ghostlight-verse:question:refresh-revision-contract`.
 
 ### The host
 
