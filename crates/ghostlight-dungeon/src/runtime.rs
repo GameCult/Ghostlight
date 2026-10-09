@@ -576,6 +576,7 @@ fn open_controller(
             model_prefix: std::env::var("GHOSTLIGHT_LOCAL_MODEL_PREFIX")
                 .unwrap_or_else(|_| DEFAULT_LOCAL_MODEL_PREFIX.into()),
             caller_runtime_id: runtime_id.to_owned(),
+            response_timeout: None,
         }),
         Err(_) => None,
     };

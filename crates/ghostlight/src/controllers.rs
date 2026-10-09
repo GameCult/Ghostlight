@@ -11445,6 +11445,7 @@ mod tests {
                 endpoint: local_endpoint,
                 model_prefix: local_model_prefix,
                 caller_runtime_id: runtime_id,
+                response_timeout: None,
             }),
             &models.each(),
         )

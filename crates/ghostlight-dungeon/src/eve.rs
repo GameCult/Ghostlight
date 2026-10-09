@@ -46,12 +46,13 @@ pub(crate) struct EveRouteHint {
     pub(crate) transport: Option<String>,
 }
 
-/// The `world_create.v4` payload, in one place, so the button that captures it
-/// and the descriptor that advertises it cannot drift.
-/// The card's whole account of a turn closed by a fault.
+/// The card's whole account of a turn closed by a fault: a fixed line, so
+/// the row can carry no detail text at all.
 const PLAY_FAULT_LINE: &str =
     "The storyteller lost the thread and your turn ended. Write again to start a new turn.";
 
+/// The `world_create.v4` payload, in one place, so the button that captures it
+/// and the descriptor that advertises it cannot drift.
 const CREATE_BINDINGS: [&str; 8] = [
     "title",
     "brief",

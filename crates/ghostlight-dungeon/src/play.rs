@@ -1758,8 +1758,11 @@ impl PlayTable {
     async fn close_with_fault(&self, turn: &mut PlayTurn, detail: String) -> Result<(), PlayError> {
         turn.state = PlayTurnState::Closed;
         // R2: the one place a fault closes a turn, so the one place it is
-        // logged. The detail is endpoint-free by construction (the inference
-        // port classifies without the request URL), so it is logged whole.
+        // logged, whole. The local inference port builds its detail from the
+        // fault kind and never from the transport error's text (tests pin
+        // that for each local failure class). The connector and SDK ports
+        // build details from their own error text, which this line does not
+        // scrub.
         tracing::warn!(turn_id = %turn.turn_id, detail = %detail, "play turn closed on a fault");
         turn.fault = Some(detail);
         // PA.f173: a fault can close a turn that was `AwaitingPlayer`, and
@@ -1822,8 +1825,9 @@ impl PlayTable {
     }
 
     /// One inference fault's own disposition decides its fate (PA.f94): only
-    /// `Retryable` retries at all, bounded by `ROUND_RETRY_BUDGET` and a
-    /// small capped exponential backoff (`retry_delay`, zero under test);
+    /// `Retryable` retries at all, bounded by `ROUND_RETRY_BUDGET` and the
+    /// capped exponential backoff of `retry_delay` (100 ms doubling to a 20 s
+    /// cap, 105.5 s summed over the budget; zero under test);
     /// `RecoveryRequired` and `IntegrityViolation` never retry, closing on
     /// their first occurrence — retrying either again cannot succeed
     /// differently. `Ok(())` means the caller's loop should try again;
@@ -1844,8 +1848,10 @@ impl PlayTable {
         }
     }
 
-    /// A small capped exponential backoff between retries of a `Retryable`
-    /// inference fault (PA.f94). PA.f122: the base is an ordinary field on
+    /// The capped exponential backoff between retries of a `Retryable`
+    /// inference fault (PA.f94): 100 ms doubling to a 20 s cap, whose sum over
+    /// `ROUND_RETRY_BUDGET` retries must outlast a model server reload
+    /// (pinned by the summed-backoff test). PA.f122: the base is an ordinary field on
     /// the table, not a `#[cfg(test)]` swap over the formula itself —
     /// production and test both run `backoff_delay` (below, a free function,
     /// compiled and directly unit-testable in every build), over the exact
@@ -8204,25 +8210,22 @@ pub(crate) mod tests {
         assert!(find_surface_node(&surface, "world.play.fault").is_none());
     }
 
-    /// The whole path with a real local port and a dead endpoint: reqwest's
-    /// own error text carries the request URL, and the canary is that
-    /// endpoint. No byte of it may reach the stored fault, the warn line or
-    /// the card row; the error kind still does.
-    #[tokio::test]
-    async fn a_dead_local_endpoint_closes_the_turn_without_naming_the_endpoint() {
-        let (logs, _guard) = capture_logs();
-        let fixture = play_world(None, "player-fault-canary").await;
+    /// A PlayTable over the real local port at `endpoint`, with the reply
+    /// timeout `timeout` (None is production's) and no retry sleep.
+    async fn local_play_table(
+        endpoint: std::net::SocketAddr,
+        timeout: Option<Duration>,
+        account: &str,
+        directory: &std::path::Path,
+    ) -> (WorldFixture, PlayTable) {
+        let fixture = play_world(None, account).await;
         let personas = PersonaLane::new(
             ControllerPort::new(fixture.world.clone()),
-            ScriptedPort::new(vec![]),
+            ScriptedPort::new(vec![output("proj", vec![text_event("Fine.")])]),
             "gpt-5.6-sol".into(),
             "gpt-5.6-sol".into(),
         )
         .unwrap();
-        let endpoint = {
-            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-            listener.local_addr().unwrap()
-        };
         let inference = ghostlight::open_inference(
             None,
             None,
@@ -8230,36 +8233,182 @@ pub(crate) mod tests {
                 endpoint,
                 model_prefix: "local/".into(),
                 caller_runtime_id: "play-test-runtime".into(),
+                response_timeout: timeout,
             }),
             &["local/play"],
         )
         .unwrap();
-        let directory = tempfile::tempdir().unwrap();
         let table = PlayTable::new(
             fixture.world.clone(),
             personas,
             inference,
             "local/play".into(),
             Arc::new(Semaphore::new(2)),
-            directory.path().join("play-turn-v1.cc"),
+            directory.join("play-turn-v1.cc"),
         )
         .unwrap();
         table.set_retry_delay_base_ms(0);
-        table.run(&fixture.principal, test_turn_id(431), "Hello?".into()).await.unwrap();
+        (fixture, table)
+    }
+
+    /// Runs one turn at `endpoint` through the real local port and asserts it
+    /// closed on a fault whose stored text contains `kind`, then that no byte
+    /// of the endpoint (the canary: reqwest's own error text carries the
+    /// request URL) reached the stored fault, the warn line, the card row,
+    /// or the Debug of the turn and its view.
+    async fn assert_faulted_turn_names_no_endpoint(
+        endpoint: std::net::SocketAddr,
+        timeout: Option<Duration>,
+        account: &str,
+        turn_number: u128,
+        kind: &str,
+    ) {
+        let (logs, _guard) = capture_logs();
+        let directory = tempfile::tempdir().unwrap();
+        let (fixture, table) = local_play_table(endpoint, timeout, account, directory.path()).await;
+        table.run(&fixture.principal, test_turn_id(turn_number), "Hello?".into()).await.unwrap();
 
         let world = fixture.world.snapshot().await.unwrap();
         let view = table.current_turn_view().await.unwrap();
-        assert!(view.fault, "the dead endpoint must close the turn on a fault");
-        let surface =
-            crate::eve::authenticated_surface("player-fault-canary", Some(&world), Some(&view)).unwrap();
+        assert!(view.fault, "the endpoint failure must close the turn on a fault");
+        let surface = crate::eve::authenticated_surface(account, Some(&world), Some(&view)).unwrap();
         let row = serde_json::to_string(find_surface_node(&surface, "world.play.fault").unwrap()).unwrap();
         let stored = table.store.lock().await.current().unwrap().fault.clone().unwrap();
         let log = logs.text();
-        assert!(stored.contains("refused the connection"), "the error kind is kept: {stored}");
-        for canary in [endpoint.to_string(), endpoint.ip().to_string(), "chat/completions".to_owned()] {
-            for (where_, text) in [("stored fault", &stored), ("warn line", &log), ("card row", &row)] {
+        let debug = format!("{view:?} {:?}", table.store.lock().await.current().unwrap());
+        assert!(stored.contains(kind), "the error kind is kept: {stored}");
+        for canary in [endpoint.to_string(), endpoint.ip().to_string(), endpoint.port().to_string(), "chat/completions".to_owned()] {
+            for (where_, text) in [("stored fault", &stored), ("warn line", &log), ("card row", &row), ("debug", &debug)] {
                 assert!(!text.contains(&canary), "{canary} leaked into the {where_}: {text}");
             }
+        }
+    }
+
+    /// The whole path with a dead endpoint (connect refused).
+    #[tokio::test]
+    async fn a_dead_local_endpoint_closes_the_turn_without_naming_the_endpoint() {
+        let endpoint = {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            listener.local_addr().unwrap()
+        };
+        assert_faulted_turn_names_no_endpoint(endpoint, None, "player-fault-canary", 431, "refused the connection").await;
+    }
+
+    /// The whole path with a timeout, the leg a Bonsai stall takes: the
+    /// listener accepts and never answers, the client times out at 200 ms,
+    /// and the timeout is not retried. A timeout detail built from reqwest's
+    /// error text carries the request URL and fails the canary here.
+    #[tokio::test]
+    async fn a_timed_out_local_endpoint_closes_the_turn_without_naming_the_endpoint() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            let mut held = Vec::new();
+            while let Ok((stream, _)) = listener.accept().await {
+                held.push(stream);
+            }
+        });
+        assert_faulted_turn_names_no_endpoint(
+            endpoint,
+            Some(Duration::from_millis(200)),
+            "player-fault-timeout",
+            432,
+            "timed out",
+        )
+        .await;
+    }
+
+    /// Loopback server for the composed retry tests: closes the first
+    /// `drops` connections without a byte (a model server mid-reload), then
+    /// answers each later one with an `end_turn` tool call. Returns its
+    /// address and the count of connections seen.
+    fn closing_then_ending(drops: usize) -> (std::net::SocketAddr, Arc<std::sync::atomic::AtomicUsize>) {
+        use std::io::{Read, Write};
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        let seen = Arc::new(AtomicUsize::new(0));
+        let counter = seen.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(mut stream) = stream else { return };
+                let n = counter.fetch_add(1, Ordering::SeqCst);
+                if n < drops {
+                    drop(stream);
+                    continue;
+                }
+                let mut buf = Vec::new();
+                let mut chunk = [0u8; 8192];
+                loop {
+                    let Ok(read) = stream.read(&mut chunk) else { break };
+                    if read == 0 {
+                        break;
+                    }
+                    buf.extend_from_slice(&chunk[..read]);
+                    let text = String::from_utf8_lossy(&buf).to_string();
+                    if let Some(split) = text.find("\r\n\r\n") {
+                        let len = text[..split]
+                            .to_ascii_lowercase()
+                            .lines()
+                            .find_map(|l| l.strip_prefix("content-length:").map(|v| v.trim().parse::<usize>().unwrap()))
+                            .unwrap_or(0);
+                        if buf.len() >= split + 4 + len {
+                            break;
+                        }
+                    }
+                }
+                let body = serde_json::json!({
+                    "id": format!("resp-{n}"),
+                    "choices": [{"message": {"role": "assistant", "content": null,
+                        "tool_calls": [{"id": format!("c{n}"), "type": "function",
+                            "function": {"name": END_TURN_TOOL, "arguments": "{}"}}]},
+                        "finish_reason": "tool_calls"}],
+                    "usage": {"prompt_tokens": 3, "completion_tokens": 2}
+                })
+                .to_string();
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                let _ = stream.flush();
+            }
+        });
+        (addr, seen)
+    }
+
+    /// R3 composed: a real closed send is `Retryable`, `absorb_or_close`
+    /// retries it, and the turn completes once the endpoint answers. It reads
+    /// the production budget, so the boundary moves with it: the turn
+    /// survives `ROUND_RETRY_BUDGET` empty replies and faults on one more.
+    #[tokio::test]
+    async fn a_turn_survives_empty_replies_up_to_the_retry_budget_and_faults_past_it() {
+        let (addr, seen) = closing_then_ending(3);
+        let directory = tempfile::tempdir().unwrap();
+        let (fixture, table) = local_play_table(addr, None, "player-r3-three", directory.path()).await;
+        table.run(&fixture.principal, test_turn_id(900), "Hello?".into()).await.unwrap();
+        let (state, fault) = {
+            let store = table.store.lock().await;
+            let turn = store.current().unwrap();
+            (turn.state, turn.fault.clone())
+        };
+        assert_eq!(state, PlayTurnState::Closed);
+        assert!(fault.is_none(), "{fault:?}");
+        assert_eq!(seen.load(std::sync::atomic::Ordering::SeqCst), 4, "three empty replies, then the answered call");
+
+        for (drops, account, id, survives) in [
+            (ROUND_RETRY_BUDGET, "player-r3-edge", 901u128, true),
+            (ROUND_RETRY_BUDGET + 1, "player-r3-over", 902u128, false),
+        ] {
+            let (addr, _seen) = closing_then_ending(drops);
+            let directory = tempfile::tempdir().unwrap();
+            let (fixture, table) = local_play_table(addr, None, account, directory.path()).await;
+            table.run(&fixture.principal, test_turn_id(id), "Hello?".into()).await.unwrap();
+            let store = table.store.lock().await;
+            let turn = store.current().unwrap();
+            assert_eq!(turn.state, PlayTurnState::Closed);
+            assert_eq!(turn.fault.is_none(), survives, "drops={drops} fault={:?}", turn.fault);
         }
     }
 

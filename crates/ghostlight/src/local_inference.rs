@@ -31,6 +31,10 @@ pub struct LocalBinding {
     pub endpoint: SocketAddr,
     pub model_prefix: String,
     pub caller_runtime_id: String,
+    /// How long one request may take, reply body included. `None` is
+    /// `RESPONSE_TIMEOUT`; a consumer or test sets it to reach the timeout
+    /// path without waiting that out.
+    pub response_timeout: Option<std::time::Duration>,
 }
 
 const LOCAL_RECEIPT_SCHEMA: &str = "ghostlight.local_inference_receipt.v1";
@@ -193,30 +197,33 @@ impl LocalInferencePort {
             }
             .classed(class));
         }
-        response.json::<LocalChatResponse>().await.map_err(|_| {
-            InferenceFault::integrity_violation(
-                "the local inference endpoint's reply was not the declared shape",
-            )
-            .classed(InferenceFaultClass::BadReply)
-        })
+        response.json::<LocalChatResponse>().await.map_err(send_fault)
     }
 }
 
-/// The one classifier of a send that failed before any HTTP status arrived.
-/// A request that got no response was never processed, so retrying it is
-/// safe; only a timeout is not retried, because the endpoint may still be
-/// generating. The fault carries the kind and never the error's own text:
-/// `reqwest::Error`'s `Display` ends with the request URL, which would put
-/// the endpoint into every log line and card that renders the detail.
+/// The one classifier of a send that failed before a status arrived or while
+/// its body was read. A timeout is not retried, because the endpoint may still
+/// be generating. A body that arrived whole but does not decode is `BadReply`,
+/// an integrity violation. Anything else means no complete reply came (a
+/// refused or closed connection, a body cut off mid-stream), so retrying is
+/// safe. The fault carries the kind and never the error's own text:
+/// `reqwest::Error`'s `Display` ends with the request URL, so formatting it
+/// would put the endpoint into every log line and card that renders the
+/// detail. Tests pin this for each class.
 fn send_fault(error: reqwest::Error) -> InferenceFault {
     if error.is_timeout() {
         InferenceFault::new("the local inference request timed out")
             .classed(InferenceFaultClass::Timeout)
+    } else if error.is_decode() {
+        InferenceFault::integrity_violation(
+            "the local inference endpoint's reply was not the declared shape",
+        )
+        .classed(InferenceFaultClass::BadReply)
     } else if error.is_connect() {
         InferenceFault::retryable("the local inference endpoint refused the connection")
             .classed(InferenceFaultClass::Connect)
     } else {
-        InferenceFault::retryable("the local inference endpoint closed the connection before replying")
+        InferenceFault::retryable("the local inference endpoint closed the connection before a complete reply")
             .classed(InferenceFaultClass::NoResponse)
     }
 }
@@ -393,10 +400,11 @@ impl InferencePort for LocalInferencePort {
 pub(super) fn open_local_port(
     binding: LocalBinding,
 ) -> Result<Arc<dyn InferencePort>, ControllerOpenError> {
-    Ok(Arc::new(LocalInferencePort::new(
+    Ok(Arc::new(LocalInferencePort::with_timeout(
         binding.endpoint,
         binding.model_prefix,
         binding.caller_runtime_id,
+        binding.response_timeout.unwrap_or(RESPONSE_TIMEOUT),
     )?))
 }
 
@@ -791,6 +799,7 @@ mod tests {
                 endpoint: "93.184.216.34:443".parse().unwrap(),
                 model_prefix: DEFAULT_LOCAL_MODEL_PREFIX.into(),
                 caller_runtime_id: TEST_RUNTIME.into(),
+                response_timeout: None,
             }),
             &[TEST_MODEL],
         )
@@ -897,6 +906,7 @@ mod tests {
                 endpoint: "127.0.0.1:1".parse().unwrap(),
                 model_prefix: "claude".into(),
                 caller_runtime_id: TEST_RUNTIME.into(),
+                response_timeout: None,
             }),
             &["claude-opus-5"],
         )
@@ -1179,6 +1189,7 @@ mod tests {
                 endpoint: "127.0.0.1:1".parse().unwrap(),
                 model_prefix: String::new(),
                 caller_runtime_id: TEST_RUNTIME.into(),
+                response_timeout: None,
             }),
             &[TEST_MODEL],
         )
@@ -1572,6 +1583,101 @@ mod tests {
             assert_eq!(fault.class(), expected, "{fault:?}");
             let rendered = format!("{fault} | {fault:?}");
             for canary in [addr.to_string(), addr.ip().to_string(), "chat/completions".to_owned()] {
+                assert!(!rendered.contains(&canary), "{canary} leaked into {rendered}");
+            }
+        }
+    }
+
+    fn port_with_timeout(endpoint: SocketAddr, timeout: std::time::Duration) -> LocalInferencePort {
+        let _guard = client_build_lock()
+            .lock()
+            .expect("the client-build lock is never poisoned");
+        LocalInferencePort::with_timeout(endpoint, DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME, timeout)
+            .expect("a loopback endpoint opens")
+    }
+
+    /// A loopback server that answers every request with a `200` whose
+    /// header promises 1000 body bytes and whose body is a single `{`, then
+    /// either holds the connection open (`stall`) or closes it (a cut body).
+    async fn truncated_body_endpoint(stall: bool) -> SocketAddr {
+        let listener = TcpListener::bind("127.0.0.1:0").await.expect("loopback binds");
+        let addr = listener.local_addr().expect("a bound listener has an address");
+        tokio::spawn(async move {
+            let mut held = Vec::new();
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let mut request = vec![0u8; 65536];
+                let _ = stream.read(&mut request).await;
+                let _ = stream
+                    .write_all(b"HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: 1000\r\n\r\n{")
+                    .await;
+                if stall {
+                    held.push(stream);
+                } else {
+                    let _ = stream.shutdown().await;
+                }
+            }
+        });
+        addr
+    }
+
+    /// One classifier: a timeout while the body streams is `Timeout`, not
+    /// retried. Mutants: classify the body-read error as `BadReply` again, or
+    /// treat a stall as retryable.
+    #[tokio::test]
+    async fn a_body_that_stalls_is_a_timeout_not_retried() {
+        let addr = truncated_body_endpoint(true).await;
+        let fault = infer_once(&port_with_timeout(addr, std::time::Duration::from_millis(300)))
+            .await
+            .expect_err("a stalled body produced an output");
+        assert_eq!(fault.class(), InferenceFaultClass::Timeout, "{fault:?}");
+        assert_eq!(fault.disposition(), InferenceFaultDisposition::RecoveryRequired, "{fault:?}");
+    }
+
+    /// A body cut off mid-stream (a reload dropping the connection during the
+    /// reply) is a reply that never completed: `NoResponse`, retryable.
+    #[tokio::test]
+    async fn a_body_cut_off_mid_stream_is_retryable() {
+        let addr = truncated_body_endpoint(false).await;
+        let fault = infer_once(&port(addr)).await.expect_err("a cut body produced an output");
+        assert_eq!(fault.class(), InferenceFaultClass::NoResponse, "{fault:?}");
+        assert_eq!(fault.disposition(), InferenceFaultDisposition::Retryable, "{fault:?}");
+    }
+
+    /// A body that arrived whole but is not the declared shape stays `BadReply`
+    /// and an integrity violation, never retried.
+    #[tokio::test]
+    async fn a_complete_malformed_body_is_a_bad_reply() {
+        let addr = ScriptedResponder::start(vec![(200, "not json".to_owned())]).await.endpoint();
+        let fault = infer_once(&port(addr)).await.expect_err("a malformed body produced an output");
+        assert_eq!(fault.class(), InferenceFaultClass::BadReply, "{fault:?}");
+        assert_eq!(fault.disposition(), InferenceFaultDisposition::IntegrityViolation, "{fault:?}");
+    }
+
+    /// The timeout leg of the no-endpoint rule: reqwest's `Display` for a
+    /// timeout ends with the request URL, so a detail built from it names the
+    /// canary endpoint this test bound. Covers both a stalled send and a
+    /// stalled body.
+    #[tokio::test]
+    async fn a_timeout_names_no_endpoint() {
+        let silent = {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let addr = listener.local_addr().unwrap();
+            tokio::spawn(async move {
+                let mut held = Vec::new();
+                while let Ok((stream, _)) = listener.accept().await {
+                    held.push(stream);
+                }
+            });
+            addr
+        };
+        let stalled_body = truncated_body_endpoint(true).await;
+        for addr in [silent, stalled_body] {
+            let fault = infer_once(&port_with_timeout(addr, std::time::Duration::from_millis(200)))
+                .await
+                .expect_err("a stalled endpoint produced an output");
+            assert_eq!(fault.class(), InferenceFaultClass::Timeout, "{fault:?}");
+            let rendered = format!("{fault} | {fault:?}");
+            for canary in [addr.to_string(), addr.ip().to_string(), addr.port().to_string(), "chat/completions".to_owned()] {
                 assert!(!rendered.contains(&canary), "{canary} leaked into {rendered}");
             }
         }
