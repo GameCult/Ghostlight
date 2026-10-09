@@ -197,16 +197,18 @@ impl LocalInferencePort {
             }
             .classed(class));
         }
-        response.json::<LocalChatResponse>().await.map_err(send_fault)
+        let body = response.bytes().await.map_err(send_fault)?;
+        serde_json::from_slice(&body).map_err(|_| bad_reply())
     }
 }
 
-/// The one classifier of a send that failed before a status arrived or while
-/// its body was read. A timeout is not retried, because the endpoint may still
-/// be generating. A body that arrived whole but does not decode is `BadReply`,
-/// an integrity violation. Anything else means no complete reply came (a
-/// refused or closed connection, a body cut off mid-stream), so retrying is
-/// safe. The fault carries the kind and never the error's own text:
+/// The classifier of every transport failure of a send: one that failed before
+/// a status arrived, or while the reply body was read. A timeout is not
+/// retried, because the endpoint may still be generating. Anything else means
+/// no complete reply came (a refused or closed connection, a body cut off
+/// mid-stream), so retrying is safe. A body that arrived whole but is not the
+/// declared shape is not a transport failure: `bad_reply` below classes it.
+/// The fault carries the kind and never the error's own text:
 /// `reqwest::Error`'s `Display` ends with the request URL, so formatting it
 /// would put the endpoint into every log line and card that renders the
 /// detail. Tests pin this for each class.
@@ -214,11 +216,6 @@ fn send_fault(error: reqwest::Error) -> InferenceFault {
     if error.is_timeout() {
         InferenceFault::new("the local inference request timed out")
             .classed(InferenceFaultClass::Timeout)
-    } else if error.is_decode() {
-        InferenceFault::integrity_violation(
-            "the local inference endpoint's reply was not the declared shape",
-        )
-        .classed(InferenceFaultClass::BadReply)
     } else if error.is_connect() {
         InferenceFault::retryable("the local inference endpoint refused the connection")
             .classed(InferenceFaultClass::Connect)
@@ -226,6 +223,15 @@ fn send_fault(error: reqwest::Error) -> InferenceFault {
         InferenceFault::retryable("the local inference endpoint closed the connection before a complete reply")
             .classed(InferenceFaultClass::NoResponse)
     }
+}
+
+/// A complete reply body that is not the declared shape: an integrity
+/// violation, never retried. The decode error's text is not carried.
+fn bad_reply() -> InferenceFault {
+    InferenceFault::integrity_violation(
+        "the local inference endpoint's reply was not the declared shape",
+    )
+    .classed(InferenceFaultClass::BadReply)
 }
 
 /// Lowers one prepared request to the OpenAI chat-completions body: the
