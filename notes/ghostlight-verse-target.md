@@ -40,6 +40,7 @@ pipeline and the in-game crossover are later campaigns that consume it.
 - `verse-provenance`: every world fact loaded from the verse names its source page or record; a fact with no source is a proposal until reviewed.
 - `canon-one-way`: simulation output never writes back into AetheriaLore or Aetheria's catalog without operator review.
 - `cast-persists`: a character keeps identity, memory and commitments across sessions, so episodes can follow them.
+- `every-event-renderable`: every event the kernel admits maps to exactly one render path: ship action filmed in Aetheria, or a social verb staged as an Aetheria conversation (portraits and choices; docked face to face, undocked radio over the ship). Summary captions are the only exception (ruling `verse-verbs-two-render-paths`).
 - `typed-state`: world state and its exchange are CultCache/CultNet documents; JSON only for schema publication and xenos boundaries.
 
 ## Not in scope
