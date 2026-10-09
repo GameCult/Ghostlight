@@ -3235,22 +3235,43 @@ mod tests {
         );
         assert_eq!(play_intents.len(), 1);
         assert_eq!(play_intents[0]["payload"]["bindings"]["text"], "I look around the hall.");
-        let played = post(&fixture.state, &fixture.cookie, play_intents.into_iter().next().unwrap()).await;
+        // The first process is a runtime of its own, dropped once the turn is
+        // open: the spawned round dies with it, which is what a crash does.
+        let (played, opened) = {
+            let state = fixture.state.clone();
+            let cookie = fixture.cookie.clone();
+            let held = held.clone();
+            let intent = play_intents.into_iter().next().unwrap();
+            std::thread::spawn(move || {
+                let process = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+                let seen = process.block_on(async {
+                    let played = post(&state, &cookie, intent).await;
+                    let opened = tokio::time::timeout(Duration::from_secs(5), async {
+                        loop {
+                            if let Some(view) = held.current_turn_view().await {
+                                if view.run_in_progress {
+                                    break view;
+                                }
+                            }
+                            tokio::time::sleep(Duration::from_millis(10)).await;
+                        }
+                    })
+                    .await
+                    .expect("the real client's typed world.play must open a turn a round is working on");
+                    (played, opened)
+                });
+                process.shutdown_timeout(Duration::from_secs(5));
+                seen
+            })
+            .join()
+            .unwrap()
+        };
         assert_eq!(played["receipt"]["state"], "accepted", "typed world.play via the real client: {played}");
-        let opened = tokio::time::timeout(Duration::from_secs(5), async {
-            loop {
-                if let Some(view) = held.current_turn_view().await {
-                    break view;
-                }
-                tokio::time::sleep(Duration::from_millis(10)).await;
-            }
-        })
-        .await
-        .expect("the real client's typed world.play must reach PlayTable and open a turn row");
         assert_eq!(opened.state, PlayTurnState::Running);
+        fixture.state.play = None;
+        drop(held);
 
-        // The process that held that turn is gone; the next one opens the same
-        // store and finds the turn `Running` with nothing working on it. The
+        // The next process opens the same store and finds the turn `Running` with nothing working on it. The
         // client now clicks Play with the box untouched, which is exactly what
         // the card's hint tells a player to do.
         let restarted = table_over(
