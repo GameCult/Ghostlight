@@ -45,10 +45,35 @@ pub(crate) struct HeimdallDenied {
 /// Heimdall's signing keys could not be fetched, so a receipt could not be
 /// judged either way. Distinct from a receipt that positively fails
 /// verification: the refresh loop keeps the receipt for this and revokes for
-/// that.
+/// that. It carries an error class and never the fetch error itself, whose
+/// text names the key-set URL: an error never echoes an input value.
 #[derive(Debug, thiserror::Error)]
-#[error("Heimdall signing keys unavailable: {0}")]
-pub(crate) struct VerificationUnavailable(pub(crate) String);
+#[error("Heimdall signing keys unavailable: the key-set fetch {class}")]
+pub(crate) struct VerificationUnavailable {
+    class: &'static str,
+}
+
+impl VerificationUnavailable {
+    fn of_fetch(error: &reqwest::Error) -> Self {
+        let class = if error.is_timeout() {
+            "timed out"
+        } else if error.is_connect() {
+            "could not connect"
+        } else if error.is_status() {
+            "returned an error status"
+        } else if error.is_decode() {
+            "returned an unreadable key set"
+        } else {
+            "failed"
+        };
+        Self { class }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn new(class: &'static str) -> Self {
+        Self { class }
+    }
+}
 
 /// How long a fetched signing-key set is trusted before it is fetched again.
 const JWKS_TTL: Duration = Duration::from_secs(300);
@@ -491,6 +516,13 @@ impl HeimdallClient {
         }
     }
 
+    /// The same client against another issuer, for tests that stand up their own.
+    #[cfg(test)]
+    pub(crate) fn with_issuer(mut self, issuer: impl Into<String>) -> Self {
+        self.issuer = issuer.into();
+        self
+    }
+
     pub async fn begin(&self, idempotency_key: &str) -> anyhow::Result<AuthBeginReceipt> {
         let payload = BeginCommand {
             provider: "discord",
@@ -606,15 +638,14 @@ impl HeimdallClient {
         )?))
     }
 
-    async fn fetch_jwks(&self) -> anyhow::Result<JwkSet> {
-        Ok(self
-            .http
+    async fn fetch_jwks(&self) -> Result<JwkSet, reqwest::Error> {
+        self.http
             .get(format!("{}/.well-known/jwks.json", self.issuer))
             .send()
             .await?
             .error_for_status()?
             .json()
-            .await?)
+            .await
     }
 
     async fn verify_access(&self, token: &str) -> anyhow::Result<AccessClaims> {
@@ -630,7 +661,7 @@ impl HeimdallClient {
                 let set = self
                     .fetch_jwks()
                     .await
-                    .map_err(|error| VerificationUnavailable(format!("{error:#}")))?;
+                    .map_err(|error| VerificationUnavailable::of_fetch(&error))?;
                 let jwk = set.find(&kid).cloned();
                 self.jwks
                     .lock()
@@ -1143,9 +1174,189 @@ fn required_env(name: &str) -> anyhow::Result<String> {
     Ok(value.to_owned())
 }
 
+/// A local stand-in for Heimdall's issuer: it serves the key set (or a 5xx)
+/// on a loopback port and counts the requests it receives. The key is the
+/// RFC 8037 appendix A.1 Ed25519 test key.
+#[cfg(test)]
+pub(crate) mod test_issuer {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use tokio::{
+        io::{AsyncReadExt, AsyncWriteExt},
+        net::TcpListener,
+    };
+
+    pub(crate) const KID: &str = "k1";
+    const PRIVATE_D: &str = "nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A";
+    const PUBLIC_X: &str = "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo";
+
+    #[derive(Clone, Copy)]
+    pub(crate) enum Answer {
+        KeySet,
+        ServerError,
+    }
+
+    pub(crate) struct Issuer {
+        pub(crate) url: String,
+        fetches: Arc<AtomicUsize>,
+    }
+
+    impl Issuer {
+        pub(crate) async fn start(answer: Answer) -> Self {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let url = format!("http://{}", listener.local_addr().unwrap());
+            let fetches = Arc::new(AtomicUsize::new(0));
+            let counted = fetches.clone();
+            let key_set = serde_json::json!({
+                "keys": [{"kty": "OKP", "crv": "Ed25519", "kid": KID, "x": PUBLIC_X}]
+            })
+            .to_string();
+            tokio::spawn(async move {
+                while let Ok((mut stream, _)) = listener.accept().await {
+                    let mut request = Vec::new();
+                    let mut chunk = [0_u8; 1024];
+                    while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+                        match stream.read(&mut chunk).await {
+                            Ok(0) | Err(_) => break,
+                            Ok(read) => request.extend_from_slice(&chunk[..read]),
+                        }
+                    }
+                    counted.fetch_add(1, Ordering::SeqCst);
+                    let (status, body) = match answer {
+                        Answer::KeySet => ("200 OK", key_set.as_str()),
+                        Answer::ServerError => ("503 Service Unavailable", ""),
+                    };
+                    let response = format!(
+                        "HTTP/1.1 {status}\r\ncontent-type: application/json\r\n\
+                         content-length: {}\r\nconnection: close\r\n\r\n{body}",
+                        body.len()
+                    );
+                    let _ = stream.write_all(response.as_bytes()).await;
+                    let _ = stream.shutdown().await;
+                }
+            });
+            Self { url, fetches }
+        }
+
+        pub(crate) fn fetches(&self) -> usize {
+            self.fetches.load(Ordering::SeqCst)
+        }
+
+        /// The URL of a loopback port nothing listens on.
+        pub(crate) fn closed_url() -> String {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            format!("http://{}", listener.local_addr().unwrap())
+        }
+    }
+
+    /// An access token Heimdall's key signs for `issuer`, with the claims
+    /// `verify_access` demands.
+    pub(crate) fn signed_token(issuer: &str) -> String {
+        let mut der = vec![
+            0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04, 0x22,
+            0x04, 0x20,
+        ];
+        der.extend(URL_SAFE_NO_PAD.decode(PRIVATE_D).unwrap());
+        let pem = format!(
+            "-----BEGIN PRIVATE KEY-----\n{}\n-----END PRIVATE KEY-----\n",
+            STANDARD.encode(der)
+        );
+        let mut header = jsonwebtoken::Header::new(Algorithm::EdDSA);
+        header.kid = Some(KID.into());
+        let claims = serde_json::json!({
+            "iss": issuer, "aud": APP_SLUG, "sub": "account-1", "sid": "session-1",
+            "exp": Utc::now().timestamp() + 300, "typ": "heimdall_access",
+            "account_id": "account-1", "access_revision": 1,
+            "capabilities": ["app_access"], "app": {"slug": APP_SLUG},
+        });
+        jsonwebtoken::encode(
+            &header,
+            &claims,
+            &jsonwebtoken::EncodingKey::from_ed_pem(pem.as_bytes()).unwrap(),
+        )
+        .unwrap()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use super::test_issuer::{Answer, Issuer, signed_token};
+
+    #[tokio::test]
+    async fn a_key_fetch_failure_is_typed_unavailable_and_names_no_url() {
+        let closed = Issuer::closed_url();
+        let failing = Issuer::start(Answer::ServerError).await;
+        for (base, class) in [
+            (closed, "could not connect"),
+            (failing.url.clone(), "returned an error status"),
+        ] {
+            let canary = format!("{base}/canary-q7x1");
+            let client = HeimdallClient::fixture().with_issuer(canary.clone());
+            let error = client
+                .verify_access(&signed_token(&canary))
+                .await
+                .unwrap_err();
+            assert!(error.downcast_ref::<VerificationUnavailable>().is_some(), "{error:#}");
+            for text in [format!("{error}"), format!("{error:#}"), format!("{error:?}")] {
+                assert!(text.contains("signing keys unavailable"), "{text}");
+                assert!(text.contains(class), "{text}");
+                for leaked in [canary.as_str(), base.as_str(), "canary-q7x1", "127.0.0.1"] {
+                    assert!(!text.contains(leaked), "{leaked} leaked into {text}");
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn the_key_set_is_fetched_once_within_its_ttl_and_again_after_it() {
+        let issuer = Issuer::start(Answer::KeySet).await;
+        let client = HeimdallClient::fixture().with_issuer(issuer.url.clone());
+        let token = signed_token(&issuer.url);
+        client.verify_access(&token).await.unwrap();
+        assert_eq!(issuer.fetches(), 1);
+        client.verify_access(&token).await.unwrap();
+        assert_eq!(issuer.fetches(), 1, "a second verify within the ttl reads the cache");
+        let age = |seconds: u64| {
+            client.jwks.lock().unwrap().fetched.as_mut().unwrap().0 =
+                Instant::now().checked_sub(Duration::from_secs(seconds)).unwrap();
+        };
+        age(299);
+        client.verify_access(&token).await.unwrap();
+        assert_eq!(issuer.fetches(), 1, "299 s old is still fresh");
+        age(301);
+        client.verify_access(&token).await.unwrap();
+        assert_eq!(issuer.fetches(), 2, "301 s old is fetched again");
+        client.verify_access(&token).await.unwrap();
+        assert_eq!(issuer.fetches(), 2, "and the new fetch is cached");
+    }
+
+    #[tokio::test]
+    async fn a_token_signed_under_any_other_algorithm_is_refused_before_any_key_fetch() {
+        let issuer = Issuer::start(Answer::KeySet).await;
+        let client = HeimdallClient::fixture().with_issuer(issuer.url.clone());
+        let part = |text: &str| URL_SAFE_NO_PAD.encode(text);
+        for alg in [
+            "none", "HS256", "HS384", "HS512", "RS256", "RS384", "PS256", "ES256", "ES384",
+        ] {
+            let token = format!(
+                "{}.{}.{}",
+                part(&format!(r#"{{"alg":"{alg}","typ":"JWT","kid":"k1"}}"#)),
+                part(r#"{"sub":"account-1"}"#),
+                URL_SAFE_NO_PAD.encode([0xAB_u8; 32]),
+            );
+            let error = client.verify_access(&token).await.unwrap_err();
+            assert!(error.downcast_ref::<VerificationUnavailable>().is_none(), "{alg}");
+            if alg != "none" {
+                assert!(
+                    error.to_string().contains("unsupported signing algorithm"),
+                    "{alg}: {error:#}"
+                );
+            }
+            assert_eq!(issuer.fetches(), 0, "{alg} reached the key fetch");
+        }
+    }
 
     fn boundary(endpoint: &str) -> HeimdallCommandBoundaryRecord {
         HeimdallCommandBoundaryRecord {
@@ -1185,22 +1396,6 @@ mod tests {
         assert!(cache.key("k1", start + Duration::from_secs(299)).is_some());
         assert!(cache.key("k2", start).is_none(), "a rotated-in kid refetches");
         assert!(cache.key("k1", start + JWKS_TTL).is_none(), "stale at the ttl");
-    }
-
-    #[tokio::test]
-    async fn a_token_signed_with_another_algorithm_is_refused_before_any_key_fetch() {
-        let token = jsonwebtoken::encode(
-            &jsonwebtoken::Header::new(Algorithm::HS256),
-            &serde_json::json!({"sub": "x"}),
-            &jsonwebtoken::EncodingKey::from_secret(b"secret"),
-        )
-        .unwrap();
-        let error = HeimdallClient::fixture()
-            .verify_access(&token)
-            .await
-            .unwrap_err();
-        assert!(error.to_string().contains("unsupported signing algorithm"), "{error:#}");
-        assert!(error.downcast_ref::<VerificationUnavailable>().is_none());
     }
 
     #[test]

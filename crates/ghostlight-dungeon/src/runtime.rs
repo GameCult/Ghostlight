@@ -1863,23 +1863,21 @@ fn session_cookie(raw: &str, expires_at: DateTime<Utc>, now: DateTime<Utc>) -> H
 }
 
 async fn maintain_session_refresh(state: AppState) -> anyhow::Result<()> {
-    run_refresh_loop(
-        &state.sessions,
-        state.heimdall.as_ref(),
-        Duration::from_secs(60),
-    )
-    .await
+    run_refresh_loop(&state.sessions, state.heimdall.as_ref()).await
 }
 
-/// Runs `refresh_due_sessions` once per `period` for as long as the daemon
-/// serves. The receipts it holds are Heimdall refreshes already spent
-/// upstream whose verification could not yet be judged.
+/// How often the refresh loop scans for sessions due for refresh. Decided
+/// here and nowhere else.
+const SESSION_REFRESH_PERIOD: Duration = Duration::from_secs(60);
+
+/// Runs `refresh_due_sessions` once per `SESSION_REFRESH_PERIOD` for as long
+/// as the daemon serves. The receipts it holds are Heimdall refreshes already
+/// spent upstream whose verification could not yet be judged.
 async fn run_refresh_loop(
     sessions: &Mutex<AppSessionOwner>,
     heimdall: &impl SessionRefresher,
-    period: Duration,
 ) -> anyhow::Result<()> {
-    let mut interval = tokio::time::interval(period);
+    let mut interval = tokio::time::interval(SESSION_REFRESH_PERIOD);
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     let mut unverified = HashMap::new();
     loop {
@@ -6481,6 +6479,9 @@ mod refresh_loop_tests {
         moving: Option<std::sync::Arc<Mutex<AppSessionOwner>>>,
         pending: StdMutex<Option<VerifiedSessionRefresh>>,
         calls: StdMutex<Vec<(String, String)>>,
+        /// Verify receipts with this real client, against the access token
+        /// each receipt carries, instead of from the verdict queue.
+        real: Option<(HeimdallClient, String)>,
     }
 
     impl ScriptedHeimdall {
@@ -6493,6 +6494,11 @@ mod refresh_loop_tests {
 
         fn verifying(mut self, verdicts: Vec<Verdict>) -> Self {
             self.verdicts = StdMutex::new(verdicts.into());
+            self
+        }
+
+        fn verifying_for_real(mut self, client: HeimdallClient, token: String) -> Self {
+            self.real = Some((client, token));
             self
         }
 
@@ -6566,7 +6572,7 @@ mod refresh_loop_tests {
                         error: None,
                         account: None,
                         session: None,
-                        access_token: None,
+                        access_token: self.real.as_ref().map(|(_, token)| token.clone()),
                         refresh_token: None,
                         refresh: None,
                         shared_capabilities: Vec::new(),
@@ -6577,12 +6583,15 @@ mod refresh_loop_tests {
 
         async fn verify_refresh(
             &self,
-            _completion: AuthCompletionReceipt,
+            completion: AuthCompletionReceipt,
         ) -> anyhow::Result<VerifiedSessionRefresh> {
             *self.verifications.lock().unwrap() += 1;
+            if let Some((client, _)) = &self.real {
+                return client.verify_refresh(completion).await;
+            }
             match self.verdicts.lock().unwrap().pop_front() {
                 Some(Verdict::Unavailable) => {
-                    Err(VerificationUnavailable("jwks fetch timed out".into()).into())
+                    Err(VerificationUnavailable::new("timed out").into())
                 }
                 Some(Verdict::Invalid) => bail!("Heimdall access token signature is invalid"),
                 None => Ok(self.pending.lock().unwrap().take().expect("scripted receipt")),
@@ -6814,6 +6823,12 @@ mod refresh_loop_tests {
         heimdall.moving = Some(sessions.clone());
         pass(&sessions, &heimdall).await;
         assert!(is_live(&sessions, &cookie).await);
+        // The newer state wins: the next refresh spends its claim, not the
+        // stale receipt's.
+        heimdall.moving = None;
+        heimdall.replies.lock().unwrap().push_back(Reply::Timeout);
+        pass(&sessions, &heimdall).await;
+        assert_eq!(heimdall.calls()[1].0, "claim-moved");
     }
 
     #[tokio::test]
@@ -6832,16 +6847,82 @@ mod refresh_loop_tests {
         assert!(!is_live(&sessions, &cookie).await);
     }
 
-    #[tokio::test]
-    async fn the_refresh_loop_runs_a_pass_on_every_tick() {
+    /// Lets the loop under test run everything that is ready, without moving
+    /// the paused clock.
+    async fn settle() {
+        for _ in 0..16 {
+            tokio::task::yield_now().await;
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn the_refresh_loop_runs_a_pass_every_sixty_seconds_and_keeps_going() {
         let (_directory, sessions, _cookie) = due_session(1);
-        let heimdall = ScriptedHeimdall::answering((0..200).map(|_| Reply::Timeout).collect());
-        let ran = tokio::time::timeout(
-            Duration::from_millis(400),
-            run_refresh_loop(&sessions, &heimdall, Duration::from_millis(10)),
-        )
-        .await;
-        assert!(ran.is_err(), "the loop never returns");
-        assert!(heimdall.calls().len() >= 2, "{:?}", heimdall.calls());
+        let heimdall = ScriptedHeimdall::answering((0..64).map(|_| Reply::Timeout).collect());
+        let observed = async {
+            settle().await;
+            assert_eq!(heimdall.calls().len(), 1, "the first pass runs at once");
+            tokio::time::advance(Duration::from_millis(59_999)).await;
+            settle().await;
+            assert_eq!(heimdall.calls().len(), 1, "no pass before sixty seconds");
+            tokio::time::advance(Duration::from_millis(1)).await;
+            settle().await;
+            assert_eq!(heimdall.calls().len(), 2, "the second pass at sixty seconds");
+            for passes in 3..=12 {
+                tokio::time::advance(Duration::from_secs(60)).await;
+                settle().await;
+                assert_eq!(heimdall.calls().len(), passes);
+            }
+        };
+        tokio::select! {
+            ran = run_refresh_loop(&sessions, &heimdall) => panic!("the loop returned: {ran:?}"),
+            () = observed => {}
+        }
+    }
+
+    /// A refresh receipt verified by the real client against `issuer_url`,
+    /// whose key-set fetch fails. Returns whether the session stayed live,
+    /// how many receipts were kept, and the log the pass wrote.
+    async fn pass_through_real_verification(issuer_url: &str) -> (bool, usize, String) {
+        let (_directory, sessions, cookie) = due_session(1);
+        let client = HeimdallClient::fixture().with_issuer(issuer_url);
+        let token = heimdall::test_issuer::signed_token(issuer_url);
+        let heimdall = ScriptedHeimdall::answering(vec![Reply::Receipt {
+            revision: 1,
+            claim: "claim-1",
+        }])
+        .verifying_for_real(client, token);
+        let captured = Captured::default();
+        let subscriber = tracing_subscriber::fmt()
+            .with_writer(captured.clone())
+            .with_ansi(false)
+            .finish();
+        let _guard = tracing::subscriber::set_default(subscriber);
+        let mut unverified = HashMap::new();
+        refresh_due_sessions(&sessions, &heimdall, &mut unverified).await.unwrap();
+        let logged = String::from_utf8(captured.0.lock().unwrap().clone()).unwrap();
+        (is_live(&sessions, &cookie).await, unverified.len(), logged)
+    }
+
+    #[tokio::test]
+    async fn a_key_fetch_failure_in_the_real_verification_keeps_the_session_and_the_receipt() {
+        let failing = heimdall::test_issuer::Issuer::start(heimdall::test_issuer::Answer::ServerError)
+            .await;
+        for issuer_url in [heimdall::test_issuer::Issuer::closed_url(), failing.url.clone()] {
+            let (live, kept, logged) = pass_through_real_verification(&issuer_url).await;
+            assert!(live, "{issuer_url}: a key-fetch failure signed the session out");
+            assert_eq!(kept, 1, "{issuer_url}: the spent receipt was not kept");
+            assert!(logged.contains("could not be verified yet"), "{logged}");
+        }
+    }
+
+    #[tokio::test]
+    async fn the_unverified_warning_names_the_error_class_and_no_url() {
+        let canary = format!("{}/canary-q7x1", heimdall::test_issuer::Issuer::closed_url());
+        let (_, _, logged) = pass_through_real_verification(&canary).await;
+        assert!(logged.contains("could not connect"), "{logged}");
+        for leaked in [canary.as_str(), "canary-q7x1", "127.0.0.1", "jwks.json"] {
+            assert!(!logged.contains(leaked), "{leaked} leaked into the log: {logged}");
+        }
     }
 }
