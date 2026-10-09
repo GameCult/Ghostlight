@@ -6550,6 +6550,13 @@ mod tests {
         assert!(!described(&served), "the served surface offered seeding with no vault");
         assert!(!node_ids(&served).iter().any(|id| id == "world.seed"));
 
+        // An empty variable is no configuration.
+        unsafe { std::env::set_var(SEED_VAULT_ROOT_ENVIRONMENT, "") };
+        let served =
+            get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
+        assert!(!described(&served), "an empty vault root offered seeding");
+
         let canary = "/canary-vault-root-4f9a1c";
         unsafe { std::env::set_var(SEED_VAULT_ROOT_ENVIRONMENT, canary) };
         let served =
