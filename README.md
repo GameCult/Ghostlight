@@ -1,197 +1,141 @@
 # Ghostlight
 
-Ghostlight builds persistent generative people and worlds. Its active product is
-[Ghostlight Dungeon](https://ghostlight.gamecult.org): a Vault-grounded narrative
-simulation in which places, knowledge, relationships, institutions, clocks, and
-consequences survive beyond the model's current context.
+Ghostlight is a Rust library that keeps a simulated world honest, and a play
+daemon built on it. A language model proposes; the library's kernel checks each
+proposal against typed world state and admits or refuses it. Places, people,
+knowledge, commitments, and time live in the kernel's journal, not in a model's
+context window, so they survive restarts and long stories.
 
-The project began as a research and fixture pipeline for socially persistent
-Aetheria agents. That material remains useful regression evidence. The live
-machine is now a Rust runtime with typed campaign state, one canonical world
-authority, bounded Persona projection, fiction-first action resolution, and a
-multiresolution agency graph for keeping large settings active at finite cost.
+## What is here
 
-## What Ghostlight Owns
+| Part | Path | What it is |
+|---|---|---|
+| World kernel | `crates/ghostlight/` | The sealed `ghostlight` library: world state, the closed operation set and reducer, the CultCache journal, the mailbox that is its only door, controllers, elaboration, lenses, the consumer ingress, and the inference ports. |
+| Persona projection | `crates/ghostlight-persona-projection/` | The membrane between structured state and a prose-only Persona: projection, Persona turn receipts, and the controller descriptors the kernel consumes. |
+| Dungeon | `crates/ghostlight-dungeon/` | The `ghostlight-dungeon` daemon: single-player, DM-led play over one world. HTTP and Eve routes, Heimdall sign-in, app sessions, the play table, CultMesh publication, and Idunn health. |
+| Browser | `web/` | A thin Eve browser host and the Heimdall access adapter. It renders the server's surface and owns no product state. |
+| Claude SDK sidecar | `sidecar/claude-sdk/` | A Node process that serves `claude`-prefixed models to the kernel through the Claude Agent SDK. It is a stopgap for a direct Messages API port. |
+| Deploy recipe | `deployment/idunn/recipe.toml` | The steps Idunn runs to test, build, and seal a release. |
+| Eve | `vendor/eve/` | A git submodule (`.gitmodules`) supplying the Eve browser lowering and contracts. |
 
-- `WorldKernel` is the sole owner of committed campaign state and revisions.
-- Every player command, NPC action, strategic tick, wait, import, and reload
-  enters the same validated campaign mailbox and atomic CultCache commit path.
-- Foreground actions, NPC reactions, strategic Gestalt activity, waits, travel,
-  and population fission lower into one closed semantic world-mutation algebra.
-  Means and intended effects remain proposals; only an admitted mutation batch
-  can change canonical components. There is no model-authored JSON Patch path.
-- Vault evidence constrains world compilation without pretending every playable
-  route, procedure, or local institution is already written down. The compiler
-  synthesizes the smallest compatible branch elaboration, exposes it for
-  approval, and keeps it distinct from canon. Details that must not vary belong
-  in the Vault.
-- Hosted lore Vaults are planned as Git-synchronized, Obsidian-compatible
-  Markdown hierarchies. The Vault service owns their indexes; campaigns retain
-  only manifest bindings and exact evidence receipts.
-- Projector → Persona → Interpreter turns produce proposals. Models never
-  commit world state.
-- Knowledge, perception, capability, location, custody, and authority are
-  validated against the exact actor proposing an action.
-- Fiction-first d20 resolution treats player text as an attempt rather than an
-  accomplished fact.
-- Multiresolution Gestalts keep people, institutions, and factions active under
-  a bounded Persona-cell budget without merging rivals into one mind or erasing
-  named individuals.
-- Away-time simulation advances clocks and remote agency without puppeting or
-  directly harming an absent player character.
-- CultMesh publishes typed service and Eve/CultUI state; the browser lowers that
-  surface and does not become a second state authority.
-- Odin receives Ghostlight's advertised boundary schemas and typed projections
-  over ACK-bounded RUDP publication. Internal runtime schemas are not treated as
-  discovery contracts merely because Ghostlight owns them.
+## How it works
 
-## Eve-native interface
+- The kernel is sealed. A consumer reaches it through create/open, immutable
+  snapshots, command submission, typed receipts, and the runner and port entry
+  points. There is no public mutable state, ID issuer, reducer, or journal
+  writer, and the crate declares no cargo features. The seal is proven by
+  `compile_fail` doc-tests in `crates/ghostlight/src/lib.rs` and by
+  `crates/ghostlight/tests/external_admission.rs`, which forges IDs, digests,
+  and opportunities and asserts that each is refused with nothing committed.
+- Every change enters one mailbox (`crates/ghostlight/src/mailbox.rs`) as a
+  command, is decided by one reducer, and commits atomically to a
+  digest-chained journal (`crates/ghostlight/src/journal.rs`, CultCache on redb).
+- Models author through typed tools and a repair loop
+  (`crates/ghostlight/src/elaboration.rs`, `tool_schema.rs`, `patch.rs`). A
+  refused proposal returns its mismatches to the model; it never edits state.
+- A Persona speaks only prose. A Projector builds its view, and an Interpreter
+  lowers its words into typed proposals with exact source quotes
+  (`crates/ghostlight/src/controllers.rs`).
+- Vault evidence for seeding comes from a read-only markdown directory reader
+  (`crates/ghostlight/src/vault.rs`). The Dungeon's seed lane reads the
+  directory named by `GHOSTLIGHT_SEED_VAULT_ROOT`
+  (`crates/ghostlight-dungeon/src/runtime.rs`).
+- Other programs can propose changes to the characters they control through
+  `POST /cultnet/world-patch` (`crates/ghostlight-dungeon/src/runtime.rs`,
+  `crates/ghostlight/src/consumer.rs`). The contract is
+  `docs/architecture/ghostlight-world-consumer-api.md`.
 
-Ghostlight publishes one stable logical surface, `ghostlight.play`, for
-anonymous entry, Session Zero, Contract Review, and campaign play. The browser
-contains Eve's canonical provider host and lowering package plus Heimdall's
-access-plugin adapter. It does not contain Ghostlight-specific screen renderers
-or domain API routing.
+## Ghostlight Dungeon
 
-Editable Eve bindings are the input model. Text, number, and choice controls
-bind either provider-owned typed state or renderer-local draft state; an
-operation captures named bindings and submits one canonical Eve command.
-Rejected or stale commands preserve local drafts, while an accepted receipt may
-clear named bindings before the host refetches the authoritative surface. A
-browser may lower this interaction to an HTML form for accessibility, but forms
-are not part of Eve's state or command ontology.
+Dungeon is the single-player, DM-led client. A player signs in with Heimdall,
+creates a world, seeds it from a vault, approves and activates it, and plays in
+free text. The play table (`crates/ghostlight-dungeon/src/play.rs`) owns the
+turn lifecycle; the interface is one Eve surface, `ghostlight.play`
+(`crates/ghostlight-dungeon/src/eve.rs`, described in
+`docs/architecture/ghostlight-eve-native-interface.md`). Because its player is
+not a developer, Dungeon is judged by whether someone can sit down and play.
 
-Heimdall authentication is composed as the required
-`gamecult.heimdall.access` Eve plugin. Heimdall owns OAuth attempts, provider
-callbacks, claims, entitlements, and single-use completion redemption.
-Ghostlight owns only its hashed HttpOnly app session and derives campaign
-authority from canonical membership. The browser sees an opaque attempt handle,
-never a claim, refresh credential, account hash, member ID, or actor authority.
-See
-[`docs/architecture/ghostlight-eve-native-interface.md`](docs/architecture/ghostlight-eve-native-interface.md).
+Where it runs:
 
-## Current Status
+- **Yggdrasil**, under Idunn, built from `main` by `deployment/idunn/recipe.toml`.
+  Idunn owns the daemon's lifecycle and the write lease. Odin supplies discovery
+  and Heimdall's command-boundary record. The operating runbook is
+  `gamecult-ops/runbooks/ghostlight-dungeon-yggdrasil.md`.
+- **Inference** is routed by model name: a `local/` prefix goes to an
+  OpenAI-compatible loopback endpoint
+  (`GHOSTLIGHT_LOCAL_ENDPOINT`, `crates/ghostlight/src/local_inference.rs`),
+  which in production is Bonsai on Raven's GPU reached through a loopback
+  tunnel; a `claude` prefix goes to the SDK sidecar
+  (`GHOSTLIGHT_SDK_SIDECAR`, `crates/ghostlight/src/sdk_inference.rs`).
+  Ghostlight never reads, stores, or forwards a model credential.
+- **Sign-in** is Heimdall's. Ghostlight keeps a hashed HttpOnly session and
+  derives authority from the world's owner and approvers.
 
-Ghostlight Dungeon is implemented and deployed as a native Yggdrasil,
-Heimdall-gated playtest harness. Idunn owns daemon continuity, Odin owns Verse
-discovery, and the application remains the sole owner of campaign truth.
-Authentication commands resolve Heimdall's redacted private boundary through
-Odin; no direct route is browser- or unit-owned, and valid local sessions do
-not phone home on routine commands. The
-current acceptance surface covers:
+## Direction
 
-- persistent DM-led Session Zero with shared/private channels, typed contracts,
-  private boundaries, character bargains, digest-bound unanimous approval, and
-  atomic publication;
-- source-constrained world compilation from an approved brief: canon evidence
-  pins what must remain true, compatible game-scale connective tissue becomes
-  disclosed branch-local state, and genuine premise conflicts return to
-  negotiation instead of borrowing a nearby story;
-- selectable Aetheria and Kalsa Vaults, with Kalsa's player-safe `Public` and
-  GM-only `Spoilers` evidence lanes preserved through exact receipts;
-- persistent campaigns, forks, resets, exports, and Heimdall-account-isolated sessions;
-- parallel affected-character Projector/Persona/Interpreter waves;
-- impossible-action refusal, assessed stakes, server-side rolls, and receipted
-  commits;
-- strategic clocks, away-time catch-up, institution activity, migration, and
-  information-channel-aware news;
-- bounded shared-scene co-op for up to eight Heimdall members, with exact
-  member→actor authority, actor-filtered surfaces, unanimous time/budget
-  governance, and no player puppeting or PvP mutation;
-- connected cohesive and arena simulation covers at budgets from 1 to 128;
-- Gestalt materialisation, folding, member deltas, migration, and later
-  rematerialisation of the same person;
-- atomic rejection of malformed, stale, or semantically invalid model waves;
-- one kernel-owned mutation reducer for foreground, reaction, strategic, time,
-  travel, population-fission, and bounded region-expansion consequences, with
-  exact component versions and mutation proof receipts;
-- provider, token, cache, latency, validation, state-version, and build receipts;
-- provider-neutral inference through either direct DeepSeek/OpenRouter
-  boundaries or the independent CodexConnector daemon's encrypted loopback
-  CultNet boundary, while every prompt, schema, retry, interpretation, and world
-  commit remains Ghostlight's;
-- exact-build deployment, state migration, public cutover, and restart
-  verification on Yggdrasil.
+The next work makes Ghostlight the simulation behind Aetheria's public story.
+The operator's rulings (campaign `ghostlight-verse` in the Eureka mind) ask for:
 
-Initial compiler seed publication is a bounded empty-store creation
-transaction. Named-person materialisation and folding are resolution
-transactions that preserve individual deltas without rewriting their Gestalt.
-The remaining forge gates are expansion and review of the agency corpus beyond
-its current candidate seed, removal of legacy model effect schemas,
-multi-account human pressure testing of Session Zero privacy/publication and
-bounded co-op, and continued multiresolution Gestalt agency pressure. The
-public site is provisional; checkout is not live.
+- a world loaded from the Aetheria verse, with factions and a cast;
+- storylets for Aetheria;
+- a persistent cast whose characters keep identity, memory, and commitments
+  across sessions, so serialized episodes can follow them;
+- episodes a cheap pipeline can turn into a video stream, and channel
+  characters who later appear in the game.
 
-## Bounded Co-op
+None of this exists yet. Nothing under `crates/` loads Aetheria lore, models
+storylets, or produces an episode. Every event the kernel admits is meant to
+have exactly one render path: ship action filmed in Aetheria, or a social verb
+staged as an Aetheria conversation. Today a world can declare any affordance
+kind, and the kernel does not enforce that restriction.
 
-Campaign creation now supports one to eight authenticated players. One
-`SessionZeroKernel` owns negotiation; after unanimous approval, one
-`WorldKernel` owns the shared campaign. Membership binds each account to one
-exact actor, and every player receives an actor-filtered Eve projection.
+## Build and test
 
-This milestone is intentionally one shared scene with sequential public
-actions. PvP, split parties, private in-play actions, delegation, late joining,
-and simultaneous declarations remain closed until their consent and governance
-contracts exist. See
-[`docs/architecture/ghostlight-dungeon-session-zero.md`](docs/architecture/ghostlight-dungeon-session-zero.md)
-and the longer-term
-[`multiplayer intention`](docs/architecture/ghostlight-dungeon-multiplayer-intention.md).
+The release target is Linux on Yggdrasil; a Windows build says nothing about
+it. Idunn runs the steps in `deployment/idunn/recipe.toml`, which are the
+verification:
 
-## Lore Vault Product Intention
-
-The hosted product will accept ordinary Obsidian-compatible lore Vaults synced
-through Git. Contributor and Private plans provision one active custom Vault;
-their Plus variants provision three, subject to combined indexed-source and
-import allowances. The entitlement, accounting rules, authority boundary, and
-security gates are recorded in
-[`docs/product/lore-vault-entitlements.md`](docs/product/lore-vault-entitlements.md).
-Custom tenant import is not yet part of the deployed tester harness.
-
-## Architecture
-
-The shortest reliable re-entry path is:
-
-- [`docs/architecture/ghostlight-dungeon-mvp.md`](docs/architecture/ghostlight-dungeon-mvp.md): runtime authority, compiler, action loop, persistence, hosting, and security;
-- [`docs/architecture/ghostlight-dungeon-session-zero.md`](docs/architecture/ghostlight-dungeon-session-zero.md): campaign negotiation, privacy, publication, membership, and bounded co-op;
-- [`docs/architecture/ghostlight-multiresolution-agency.md`](docs/architecture/ghostlight-multiresolution-agency.md): dynamic Gestalt partitioning, cohesive and arena cells, fairness, and atomic strategic waves;
-- [`docs/architecture/ghostlight-eve-native-interface.md`](docs/architecture/ghostlight-eve-native-interface.md): Eve bindings, the stable provider surface, private Heimdall command plane, app-session custody, and browser cut line;
-- [`docs/architecture/ghostlight-transition-algebra.md`](docs/architecture/ghostlight-transition-algebra.md): canonical subjects and components, semantic mutations, admission envelopes, atomic reduction, and the remaining writer migration;
-- [`notes/ghostlight-current-system-map.md`](notes/ghostlight-current-system-map.md): current implemented pipeline;
-- [`notes/ghostlight-implementation-plan.md`](notes/ghostlight-implementation-plan.md): live sequence and next pressure tests;
-- [`state/map.yaml`](state/map.yaml): canonical human-readable project state.
-
-## Repository Shape
-
-- `crates/ghostlight/`: the library crate — world kernel, ontology and reducer,
-  journal, mailbox, controllers, elaboration, cover, clock, consumer admission,
-  inference ports, and evidence sources;
-- `crates/ghostlight-dungeon/`: Rust daemon consuming that library — HTTP
-  routes, Eve projection/command ingress, Heimdall and app sessions, CultMesh
-  publication, Idunn health, and acceptance harnesses;
-- `crates/ghostlight-persona-projection/`: generalized projection membrane owned
-  by Ghostlight and consumed by Epiphany;
-- `docs/architecture/`: durable contracts and authority maps;
-- `docs/articles/`: accessible public explanations;
-- `notes/`: implementation planning, handoff, and current-system maps;
-- `schemas/`: published JSON Schemas for typed boundary documents;
-- `examples/`: earlier fixtures and regression material;
-- `state/`: human-readable project memory plus older research-pipeline state;
-- `tools/`: state, validation, and fixture helpers.
-- `web/`: thin Eve browser host, Ghostlight transport, and Heimdall plugin
-  adapter; product state and product-specific rendering remain server-owned.
-
-Runtime documents and campaign exports use MessagePack-backed CultCache `.cc`.
-JSON exists at schema publication, browser, MCP, model-provider, and diagnostic
-boundaries; it is not the canonical hosted state store.
-
-## Useful Commands
-
-```powershell
-cargo test --workspace
-npm run state:status
-npm run state:prepare-compaction
-npm run schema:validate
+```sh
+git submodule update --init vendor/eve
+cargo test --locked -p ghostlight-persona-projection
+cargo test --locked -p ghostlight
+cargo test --locked -p ghostlight-dungeon --bin ghostlight-dungeon
+cargo build --locked --release -p ghostlight-dungeon --bin ghostlight-dungeon
+npm --prefix web ci
+npm --prefix web test
+npm --prefix web run build
 ```
 
-For Codex-driven work, read `AGENTS.md` before changing the repository. It owns
-the persistence, grounding, verification, and handoff discipline.
+The sidecar has its own `npm --prefix sidecar/claude-sdk run build` and `test`
+(also the root scripts `sdk:build` and `sdk:test`). Four Dungeon tests are
+`#[ignore]`d because they drive the vendored browser lowering through
+`tools/eve_client_bridge.mjs` and need Node beside cargo. The release
+acceptance step runs `controllers::tests::real_local_model_cognition_modes_commit_speech`
+(ignored by default) against a real model.
+
+To run Dungeon locally: `npm run dungeon:run`, or
+`cargo run -p ghostlight-dungeon -- --state-root PATH`. Configuration is by
+`GHOSTLIGHT_*` environment variables; the recipe's `required_environment`
+lists the ones a deployment sets.
+
+## Documents
+
+- `AGENTS.md`: repository doctrine for agents.
+- `docs/architecture/ghostlight-dungeon-mvp.md`: the authority architecture
+  of the world machine.
+- `docs/architecture/ghostlight-world-ontology.md`: the vocabulary and the
+  kernel's current mechanism.
+- `docs/architecture/ghostlight-world-consumer-api.md`: the consumer contract.
+- `docs/architecture/ghostlight-eve-native-interface.md`: the Eve surface.
+- `docs/architecture/ghostlight-play-agent.md`, `ghostlight-session-zero.md`,
+  `ghostlight-library-extraction.md`, `ghostlight-stock-lenses.md`: the
+  design records of the pieces above. Pages ending in `-cut.md` and
+  `-postmortem.md` are dated history.
+- `notes/fresh-workspace-handoff.md`: where things run and where open work is
+  recorded.
+- `docs/public-architecture/`, `docs/articles/`: public explanations.
+- `docs/product/lore-vault-entitlements.md`: a product proposal for hosted
+  vaults; nothing in `crates/` implements it.
+
+Runtime documents use MessagePack-backed CultCache. JSON appears only at schema
+publication, browser, model-provider, and diagnostic boundaries.

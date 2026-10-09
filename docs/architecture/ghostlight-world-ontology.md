@@ -50,8 +50,8 @@ partition of world-authored entries; `authority`, `selection`, and
 `commitments`, `pressures`, and `last_opportunity_at` partitions; and the
 scalars `now` and `scale_intent`. There is no relation yet.
 
-`world/patch.rs` owns typed `SubjectId`/`EntityId`/`EdgeId`/`AffordanceId`
-namespaces, `Ref<Id>` with `DraftHandle` (adjacently tagged `RefKind`), and a
+`crates/ghostlight/src/lib.rs` defines the typed `SubjectId`/`EntityId`/`EdgeId`/
+`AffordanceId` namespaces; `crates/ghostlight/src/patch.rs` owns `Ref<Id>` with `DraftHandle` (adjacently tagged `RefKind`), and a
 closed `resolve_patch` that resolves declarations, then operations, and
 returns the complete `Vec<Mismatch>` before any canonical ID allocates;
 `derive_id` is deterministic over world, command, and handle.
@@ -71,7 +71,7 @@ kernel itself bounds a patch nowhere yet. `EvidenceRef::new` is `pub(super)`
 and its production use is bounded by `filter_evidence`.
 
 Character action is a precondition-effect transition. Grants are
-`BTreeMap<DecisionScope, BTreeSet<AffordanceId>>`. `world/action.rs` owns
+`BTreeMap<DecisionScope, BTreeSet<AffordanceId>>`. `crates/ghostlight/src/action.rs` owns
 `exercise()`, called from `reduce` and `apply_effect`: it checks the grant,
 evaluates each precondition against the actor's own components at the scope
 digest, selects an outcome band from
@@ -163,9 +163,9 @@ regional or global event interrupt whoever was mid-thought under that place
 (the interruption mechanism of pass 9).
 
 Time is `now: FictionalMinutes`, moved only by `CommandBody::AdvanceTime`
-from `CallerId::System(SystemCapability::Clock)`; the runtime tick submits
-the constant `CLOCK_TICK_MINUTES`, never a measured duration. `world/clock.rs`
-owns `derive_motion`, pure over state and tick: routines re-arm by exactly one
+from `CallerId::System(SystemCapability::Clock)`; the caller submits
+an explicit `TickMinutes` (Dungeon's `world.advance_time` payload), never a measured
+duration. `crates/ghostlight/src/clock.rs` owns `derive_motion`, pure over state and tick: routines re-arm by exactly one
 `period`, past-due obligations and goals write `Pressure` on their subject by
 the `step` table, and an unavailable dependency does the same. A
 `Commitment` is `(kind: Routine | Obligation | Goal, counterparty, due,
@@ -199,8 +199,8 @@ decided by `operation_ground`, which is total over `ResolvedOp`). Placeless
 referents (resources, catalog entries, facts) are not confined. The model's
 tool surface is `PATCH_TOOLS`: one tool per non-genesis `Declaration` and
 `ComponentOp` variant plus two session tools, emitted through
-`world/tool_schema.rs` from one schema spelling per type.
-`world/elaboration.rs` owns the repair loop: a session keyed by a
+`crates/ghostlight/src/tool_schema.rs` from one schema spelling per type.
+`crates/ghostlight/src/elaboration.rs` owns the repair loop: a session keyed by a
 deterministic command id (sha256 over world, jurisdiction, answer digest)
 submits a draft, persists the resolver's complete mismatch set under that id
 as a `Refusal` placed after the rounds that earned it, and continues the same
@@ -212,7 +212,9 @@ fold, bounded by `ELABORATION_ROUND_BUDGET` and the
 `EvidenceSource` receipts (`filter_evidence`); with `NullEvidenceSource` no
 canonical fact and no `Admit` can land from the elaborator lane.
 
-`world/cover.rs` owns the budgeted connected cover. `derive_cover(world, now,
+`crates/ghostlight/src/cover.rs` owns the budgeted connected cover. Since the play
+agent's Cut 1 (`d69e9d4`) nothing in Dungeon drives the cover; the library keeps
+it for offline simulation. `derive_cover(world, now,
 tick, opportunities, agency_graph, budget)` is pure: it reads the attention
 order that `order_opportunities` owns, reserves the urgency slots for its
 head, rotates the remaining subjects through singleton cells by debt, and
@@ -229,7 +231,7 @@ Cell and constituent command ids are sha256-derived.
 
 `AdmitPatch` has a third author: `CallerId::System(SystemCapability::Consumer
 { consumer })`, minted only by `WorldMailbox::submit_consumer` after the
-consumer ingress (`world/consumer.rs`) has authenticated a document against a
+consumer ingress (`crates/ghostlight/src/consumer.rs`) has authenticated a document against a
 configured secret digest. `require_patch_author` and `confine_to_ground`
 widen from jurisdiction-only to `PatchGround { Jurisdiction(JurisdictionKey),
 Consumer(ConsumerId) }`; a consumer's ground is derived from
@@ -274,7 +276,7 @@ model-authored seed patch from a hand-authored one, because the model is the
 owner's Hands during Draft and the owner's `ApproveDraft` plus `ActivateWorld`
 remain the only path to Active. Evidence for a seed session comes from
 `VaultEvidenceSource`, a read-only markdown directory reader in
-`world/vault.rs`: the reference it hands back is the note's vault-relative
+`crates/ghostlight/src/vault.rs`: the reference it hands back is the note's vault-relative
 `.md` path, and its caps (`MAX_VAULT_RECEIPTS`, `MAX_HITS_PER_REFERENT`,
 `MAX_LINK_FANOUT`, `MAX_EXCERPT_CHARS`) bound what one referent can retrieve.
 One `world.seed` invocation runs one session and commits at most one patch

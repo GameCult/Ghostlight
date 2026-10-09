@@ -2,119 +2,98 @@
 
 ## Objective
 
-Ghostlight exposes one actor-filtered logical surface, `ghostlight.play`. Eve
-owns its editable bindings, command invocation, receipts, plugin composition,
-and browser lowering. Ghostlight continues to own world creation
-(`world.create` v2), the Draft seed lane (`world.seed`), and world admission;
-Heimdall continues to own authentication and entitlement decisions.
+Ghostlight Dungeon exposes one logical surface, `ghostlight.play`, from the
+provider `gamecult.ghostlight.dungeon` (`crates/ghostlight-dungeon/src/mesh.rs`).
+Eve owns editable bindings, command invocation, receipts, plugin composition,
+and browser lowering. Ghostlight owns world creation, seeding, activation, play,
+and world admission; Heimdall owns authentication and entitlement decisions.
 
 ```text
-Ghostlight projection
+Ghostlight projection (eve.rs)
   -> EveBrowserProviderHost
   -> canonical Eve lowering
   -> gamecult.eve.command_invocation.v1
-  -> Ghostlight ingress or Heimdall private command plane
+  -> Ghostlight command ingress (runtime.rs) or Heimdall private command plane
   -> gamecult.eve.command_result.v1
   -> authoritative surface refresh
 ```
 
 ## Authority map
 
-- Owner: `SessionZeroKernel` owns draft changes, `WorldKernel` owns campaign
-  changes, Heimdall owns OAuth attempts and claims, and Ghostlight's app-session
-  owner binds a verified Heimdall subject to a local cookie.
-- Inputs: the provider projector reads only the caller's app session,
-  membership, actor-filtered campaign or Draft world slice, and public
-  Heimdall gate state. Command ingress reads one canonical Eve invocation and
-  derives member and actor identity server-side.
-- Outputs: one `gamecult.eve.surface.v1` document and one persisted
-  `gamecult.eve.command_receipt.v1` inside a command result. Invitation links
-  may appear only in a transient projection.
-- Derived state: browser drafts, tab selection, focus, command status, the
-  selected campaign card, and rendered HTML are projections or local
-  interaction state. None grants access or mutates fiction.
-- Forbidden writers: the browser, Eve lowerer, Heimdall plugin, SSE stream,
-  account preferences, and old auth store cannot choose an actor, establish
-  membership, approve a Draft admission, or commit world state.
-- Shared paths: every UI operation resolves the authenticated account and
-  exact membership, then calls the existing world mailbox.
+- Owner: the world kernel owns world changes (through `WorldMailbox`, `SeedPort`
+  and the play table), Heimdall owns OAuth attempts and claims, and Ghostlight's
+  app-session owner (`app_session.rs`) binds a verified Heimdall subject to a
+  local cookie.
+- Inputs: the projector reads only the caller's app session, the world
+  snapshot, and the caller's play-turn view. Command ingress reads one canonical
+  Eve invocation and derives the principal server-side.
+- Outputs: one `gamecult.eve.surface.v1` document and one
+  `gamecult.eve.command_receipt.v1` inside a command result.
+- Derived state: browser drafts, focus, command status, and rendered HTML are
+  projections or local interaction state. None grants access or mutates
+  fiction.
+- Forbidden writers: the browser, the Eve lowerer, the Heimdall plugin, and the
+  SSE stream cannot choose a principal or commit world state.
+- Shared path: every operation resolves the authenticated account, then calls
+  the world mailbox, the seed port, or the play port.
   SSE carries invalidation only and the host refetches the same surface.
-- Cut line: the bespoke browser renderers and product-specific API routes are
-  removed from the public router. Ghostlight's backend callback and local
-  OAuth-attempt store stop participating. `service/auth.cc` is migration and
-  rollback evidence only; `service/app-sessions.cc` owns new local sessions and
-  account preferences.
+
+## The surface
+
+`GET /api/eve/surfaces/ghostlight.play` returns a different document by caller
+and world phase (`anonymous_surface`, `authenticated_surface` in
+`crates/ghostlight-dungeon/src/eve.rs`):
+
+| Caller and world | Content | Operations |
+|---|---|---|
+| Anonymous | `heimdall.access_gate` | `heimdall.auth.begin`, `heimdall.auth.complete` |
+| Authenticated, no world | the create form: title, brief, your name, optional Narrative persona and Operational agent labels, scale target, jurisdiction roots, lens weights | `world.create` (`ghostlight.world_create.v4`) |
+| Draft world | world summary card; approve button for a required approver who has not approved; for the owner, the seed form and Seed card, and the activate button once every required approver has approved | `world.approve` (`ghostlight.world_approve.v0`), `world.seed` (`ghostlight.world_seed.v1`), `world.activate` (`ghostlight.world_activate.v0`) |
+| Active world, owner | advance-time control and the Play card: narration, the open question, the refusal of the player's own act, one free-text control | `world.advance_time` (`ghostlight.world_advance_time.v0`), `world.play` (`ghostlight.world_play.v0`) |
+
+`world.play` is the only human play action. The open question's identity rides
+the play button's own action as an opaque token, never as an editable field.
+`operation_schema` in `eve.rs` is the single table from operation id to schema.
 
 ## Editable values
 
 Eve bindings are the input model. A component binds a typed value by stable
-binding name, document identity, field path, value kind, access mode,
-authority, and optional write command. Renderer-local composers use
-`local-draft`; direct edits name provider-owned state and an advertised write
-command. An operation captures one or more named binding values atomically.
+binding name, document identity, field path, value kind, and access mode.
+Renderer-local composers use `local-draft`. An operation captures one or more
+named binding values atomically.
 
 The browser lowerer may use an HTML form for keyboard and accessibility
 behavior. HTML form structure never enters Eve state or command payload
 semantics. Accepted receipts may clear named drafts; rejection and stale
 conflict preserve them. An omitted clear-binding list means clear the surface's
-drafts; an explicit empty list means clear nothing. Operations that capture no
-editable bindings therefore cannot erase an unrelated composer, channel
-selection, boundary draft, or counterproposal. Provider-authored length limits
-lower onto editable controls before submission; Ghostlight still validates the
-same bound at ingress. Denied command receipts use an accessible alert region
-and survive authoritative surface refreshes alongside the preserved draft.
+drafts; an explicit empty list means clear nothing. Ghostlight validates every
+payload at ingress regardless of what the control advertises.
 
 ## Authentication membrane
 
 Anonymous projection contains only `heimdall.access_gate`. Its begin and
-complete operations cross Heimdall's encrypted, loopback-only CultNet boundary.
-Ghostlight first reads the redacted `heimdall:command-boundary` record from
-Odin, validates its schema, runtime, loopback route, operations, and HMAC/AES
-contract, and then invokes that discovered route. Odin does not proxy the
-command and never receives claims or completion payloads. A discovery outage
-fails new authentication closed while already-valid local Ghostlight sessions
-continue until their verified expiry.
-The browser retains only the opaque attempt handle. Discord returns to
-Heimdall; Ghostlight redeems the completion, validates the access claim and
-`app_access`, and creates a local HttpOnly session.
+complete operations cross Heimdall's encrypted, loopback-only CultNet boundary
+(`heimdall.rs`). Ghostlight reads the redacted `heimdall:command-boundary`
+record from Odin, validates it, and invokes the discovered route. Odin does not
+proxy the command and never receives claims or completion payloads. The browser
+retains only the opaque attempt handle (`web/src/heimdall-access-adapter.ts`).
+Ghostlight redeems the completion, validates the access claim, and creates a
+local HttpOnly session cookie (`ghostlight_session`).
 
-Routine requests use local verified session state. The cookie hash, stable
-account-subject hash, Heimdall session/revision, capabilities, expiries, and
-wrapped refresh claim persist in `app-sessions.cc`. Campaign authorization is
-always derived from `campaign_membership.v1`; account preferences contain only
-the selected campaign. `campaign.entry` may clear only that preference so the
-same authenticated player can return to the campaign list or begin creating
-another world with `world.create`; it cannot leave, reset, fork, or mutate any
-campaign.
-Session Zero registry lookup treats only non-terminal negotiations as active:
-`published` and `archived` records remain durable history but cannot replace the
-campaign-entry surface after the preference is cleared.
-
-Transient command-result surfaces preserve Eve's composite campaign interface
-version. A fresh or recompiled assessment may replace only the campaign-revision
-component while retaining the resolution and provider-configuration epochs.
-The roll control therefore invokes against the same version namespace as the
-authoritative `ghostlight.play` surface instead of collapsing it to a raw world
-revision.
+Routine requests use local verified session state, persisted in
+`app-sessions-v2.cc` (`app_session.rs`): the cookie hash, the Heimdall
+session and `access_revision`, expiries, and a wrapped refresh claim.
+`access_revision` is Heimdall's revocation epoch.
 
 ## Public boundary
 
 - `GET /api/eve/provider`
-- `GET /api/eve/surfaces/ghostlight.play`
+- `GET /api/eve/surfaces/{surface_id}`
 - `POST /api/eve/commands`
 - `GET /api/eve/events`
+- `GET /health`, a probe of the service's typed CultMesh health
+- `POST /cultnet/snapshot` and `POST /cultnet/world-patch`, the loopback
+  CultNet doors (see `ghostlight-world-consumer-api.md` for the second)
 
-`/health` remains a probe of the service's typed CultMesh health. Static assets
-contain only the provider host, transport, Heimdall adapter, status mount, and
-SSE invalidation. Hermodr is not a runtime dependency.
-
-## Live acceptance witness
-
-The Yggdrasil release at Ghostlight commit
-`b515ca90c25573005a616244143803b37f2d06ec` and Eve commit
-`6766bee7c14a47144191475e2f35b0343b647b45` serves the anonymous access gate
-through the canonical browser lowerer with no console errors. A canonical
-`heimdall.auth.begin` invocation was accepted through Odin-discovered Heimdall
-and returned only the plugin-scoped navigation receipt with advertised Discord
-and Heimdall origins. The deployed unit contains
-`GHOSTLIGHT_ODIN_RUDP=10.77.0.1:17871` and no direct Heimdall private endpoint.
+Static assets in `web/` contain only the Eve provider host, the transport, the
+Heimdall adapter, and the SSE invalidation hook.
