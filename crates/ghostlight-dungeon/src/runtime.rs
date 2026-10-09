@@ -6403,6 +6403,10 @@ mod refresh_loop_tests {
         Deny,
         Timeout,
         Receipt { revision: u64, claim: &'static str },
+        /// A receipt for the same claim but another Heimdall session.
+        OtherSession,
+        /// A receipt for the same claim but another account.
+        OtherAccount,
     }
 
     #[derive(Default)]
@@ -6442,10 +6446,18 @@ mod refresh_loop_tests {
                 }
                 .into()),
                 Reply::Timeout => bail!("Heimdall private command timed out"),
-                Reply::Receipt { revision, claim } => {
+                reply @ (Reply::Receipt { .. } | Reply::OtherSession | Reply::OtherAccount) => {
+                    let (account, session, revision, claim) = match reply {
+                        Reply::OtherSession => ("operator-account", "other-session", 1, "claim-1"),
+                        Reply::OtherAccount => ("other-account", "heimdall-session", 1, "claim-1"),
+                        Reply::Receipt { revision, claim } => {
+                            ("operator-account", "heimdall-session", revision, claim)
+                        }
+                        _ => unreachable!("matched above"),
+                    };
                     *self.pending.lock().unwrap() = Some(VerifiedSessionRefresh::fixture(
-                        "operator-account",
-                        "heimdall-session",
+                        account,
+                        session,
                         revision,
                         Utc::now() + chrono::Duration::seconds(90),
                         Utc::now() + chrono::Duration::days(1),
@@ -6577,6 +6589,16 @@ mod refresh_loop_tests {
         assert!(!is_live(&sessions, &cookie).await);
         refresh_due_sessions(&sessions, &heimdall).await.unwrap();
         assert_eq!(heimdall.calls().len(), 1, "a revoked session is not offered again");
+    }
+
+    #[tokio::test]
+    async fn a_receipt_for_another_session_or_account_revokes_the_local_session() {
+        for reply in [Reply::OtherSession, Reply::OtherAccount] {
+            let (_directory, sessions, cookie) = due_session(1);
+            let heimdall = ScriptedHeimdall::answering(vec![reply]);
+            refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+            assert!(!is_live(&sessions, &cookie).await);
+        }
     }
 
     #[tokio::test]

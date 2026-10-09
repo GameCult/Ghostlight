@@ -644,12 +644,7 @@ impl HeimdallClient {
         else {
             bail!("Heimdall returned a non-operation response");
         };
-        if status == "denied" {
-            return Err(HeimdallDenied {
-                diagnostics: diagnostics.join("; "),
-            }
-            .into());
-        }
+        refuse_denied(&status, &diagnostics)?;
         if payload_schema != PRIVATE_ENVELOPE_SCHEMA || payload_encoding != "messagepack-base64" {
             bail!("Heimdall returned the wrong private response contract");
         }
@@ -657,6 +652,18 @@ impl HeimdallClient {
         validate_private_response_binding(&sealed, &operation, expected_schema, idempotency_key)?;
         open_envelope(&sealed, &self.shared_secret)
     }
+}
+
+/// A response with status denied is Heimdall's answer, not a transport
+/// failure: it becomes the typed `HeimdallDenied`.
+fn refuse_denied(status: &str, diagnostics: &[String]) -> anyhow::Result<()> {
+    if status == "denied" {
+        return Err(HeimdallDenied {
+            diagnostics: diagnostics.join("; "),
+        }
+        .into());
+    }
+    Ok(())
 }
 
 fn validate_private_response_binding(
@@ -1102,6 +1109,15 @@ mod tests {
                 secret_bearing: false,
             },
         }
+    }
+
+    #[test]
+    fn a_denied_status_is_the_typed_denial_and_any_other_status_passes() {
+        let diagnostics = vec!["Idempotency key was reused".to_owned()];
+        let denial = refuse_denied("denied", &diagnostics).unwrap_err();
+        assert!(denial.downcast_ref::<HeimdallDenied>().is_some());
+        assert!(denial.to_string().contains("Idempotency key was reused"));
+        refuse_denied("accepted", &diagnostics).unwrap();
     }
 
     #[test]
