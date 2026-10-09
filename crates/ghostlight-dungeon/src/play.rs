@@ -1243,6 +1243,10 @@ pub(crate) struct PlayTurnView {
     /// the exact thing `admit`'s own `try_lock_owned` was about to refuse as
     /// `TurnBusy` anyway.
     pub(crate) run_in_progress: bool,
+    /// Whether the turn closed on a fault (`PlayTurn::fault` is set). The
+    /// detail stays in the stored row and the log; the card shows a fixed
+    /// player-safe line, never the detail (invariant 8, PA.f187).
+    pub(crate) fault: bool,
 }
 
 /// One outcome of executing a round's already-decided tool calls.
@@ -1688,6 +1692,7 @@ impl PlayTable {
             refusal: turn.refusal.clone(),
             revision: store.state.revision,
             run_in_progress,
+            fault: turn.fault.is_some(),
         })
     }
 
@@ -1752,6 +1757,10 @@ impl PlayTable {
     /// this helper only ever writes the one turn's own record.
     async fn close_with_fault(&self, turn: &mut PlayTurn, detail: String) -> Result<(), PlayError> {
         turn.state = PlayTurnState::Closed;
+        // R2: the one place a fault closes a turn, so the one place it is
+        // logged. The detail is endpoint-free by construction (the inference
+        // port classifies without the request URL), so it is logged whole.
+        tracing::warn!(turn_id = %turn.turn_id, detail = %detail, "play turn closed on a fault");
         turn.fault = Some(detail);
         // PA.f173: a fault can close a turn that was `AwaitingPlayer`, and
         // `answer_turn` is not the only door out of that state — clear the
@@ -2968,8 +2977,8 @@ const RETRY_DELAY_BASE_MS: u64 = 100;
 /// whether that base is `RETRY_DELAY_BASE_MS` (production) or whatever a
 /// test set it to.
 fn backoff_delay(base_ms: u64, attempt: usize) -> Duration {
-    const CAP: u64 = 5_000;
-    Duration::from_millis(base_ms.saturating_mul(1u64 << attempt.min(6)).min(CAP))
+    const CAP: u64 = 20_000;
+    Duration::from_millis(base_ms.saturating_mul(1u64 << attempt.min(8)).min(CAP))
 }
 
 /// A round is incomplete when it holds a tool call this table has not yet
@@ -3767,6 +3776,7 @@ pub(crate) mod tests {
             refusal: None,
             revision: 1,
             run_in_progress: false,
+            fault: false,
         };
         let surface = crate::eve::authenticated_surface(
             "player-interrupted-turn",
@@ -3791,6 +3801,7 @@ pub(crate) mod tests {
             refusal: None,
             revision: 1,
             run_in_progress: false,
+            fault: false,
         };
         let awaiting_surface = crate::eve::authenticated_surface(
             "player-interrupted-turn",
@@ -3830,6 +3841,7 @@ pub(crate) mod tests {
             refusal: None,
             revision: 1,
             run_in_progress: true,
+            fault: false,
         };
         let surface = crate::eve::authenticated_surface(
             "player-interrupted-turn-busy",
@@ -3871,6 +3883,7 @@ pub(crate) mod tests {
             refusal: None,
             revision: 1,
             run_in_progress: true,
+            fault: false,
         };
         let surface = crate::eve::authenticated_surface(
             "player-round-in-flight",
@@ -3892,6 +3905,7 @@ pub(crate) mod tests {
             refusal: None,
             revision: 1,
             run_in_progress: false,
+            fault: false,
         };
         let idle_surface = crate::eve::authenticated_surface(
             "player-round-in-flight",
@@ -3926,6 +3940,7 @@ pub(crate) mod tests {
             refusal: None,
             revision: 1,
             run_in_progress: false,
+            fault: false,
         };
         let surface = crate::eve::authenticated_surface(
             "player-stalled-turn-text",
@@ -8079,10 +8094,11 @@ pub(crate) mod tests {
         assert_eq!(backoff_delay(RETRY_DELAY_BASE_MS, 1), Duration::from_millis(200));
         assert_eq!(backoff_delay(RETRY_DELAY_BASE_MS, 2), Duration::from_millis(400));
         assert_eq!(backoff_delay(RETRY_DELAY_BASE_MS, 5), Duration::from_millis(3_200), "not yet capped");
-        assert_eq!(backoff_delay(RETRY_DELAY_BASE_MS, 6), Duration::from_millis(5_000), "capped");
+        assert_eq!(backoff_delay(RETRY_DELAY_BASE_MS, 7), Duration::from_millis(12_800), "not yet capped");
+        assert_eq!(backoff_delay(RETRY_DELAY_BASE_MS, 8), Duration::from_millis(20_000), "capped");
         assert_eq!(
             backoff_delay(RETRY_DELAY_BASE_MS, 1_000_000),
-            Duration::from_millis(5_000),
+            Duration::from_millis(20_000),
             "a very large attempt count must stay capped, never overflow or panic"
         );
         assert_eq!(
@@ -8090,6 +8106,174 @@ pub(crate) mod tests {
             Duration::ZERO,
             "a zero base (a test's own setting) must scale to zero at every attempt"
         );
+    }
+
+    /// Captures what a tracing subscriber writes, for the test that reads the
+    /// warn line a fault closes a turn with.
+    #[derive(Clone, Default)]
+    struct LogCapture(Arc<StdMutex<Vec<u8>>>);
+
+    impl std::io::Write for LogCapture {
+        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(bytes);
+            Ok(bytes.len())
+        }
+
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for LogCapture {
+        type Writer = LogCapture;
+
+        fn make_writer(&'a self) -> Self::Writer {
+            self.clone()
+        }
+    }
+
+    impl LogCapture {
+        fn text(&self) -> String {
+            String::from_utf8_lossy(&self.0.lock().unwrap()).into_owned()
+        }
+    }
+
+    fn capture_logs() -> (LogCapture, tracing::subscriber::DefaultGuard) {
+        let capture = LogCapture::default();
+        let guard = tracing::subscriber::set_default(
+            tracing_subscriber::fmt()
+                .with_writer(capture.clone())
+                .with_ansi(false)
+                .finish(),
+        );
+        (capture, guard)
+    }
+
+    /// R1 and R2. A turn closed by a fault logs its id and the fault's
+    /// detail at warn, and the owner's card shows the fixed fault row until
+    /// the view stops reporting a fault. Mutations: dropping the `warn!` in
+    /// `close_with_fault` fails the log assertions; `fault: false` in
+    /// `current_turn_view` fails the row assertion.
+    #[tokio::test]
+    async fn a_fault_closed_turn_is_logged_and_shown_on_the_card() {
+        let (logs, _guard) = capture_logs();
+        let fixture = play_world(None, "player-fault-card").await;
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            Arc::new(AlwaysFaultyPort::new()),
+            "gpt-5.6-terra".into(),
+            Arc::new(Semaphore::new(2)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+        let turn_id = test_turn_id(430);
+        table.run(&fixture.principal, turn_id.clone(), "Hello?".into()).await.unwrap();
+
+        let line = logs
+            .text()
+            .lines()
+            .find(|line| line.contains("play turn closed on a fault"))
+            .map(str::to_owned)
+            .expect("closing a turn on a fault must log a line");
+        assert!(line.contains("WARN"), "{line}");
+        assert!(line.contains(&turn_id), "the line must name the turn: {line}");
+        assert!(line.contains("provider unavailable"), "the line must carry the fault detail: {line}");
+
+        let world = fixture.world.snapshot().await.unwrap();
+        let view = table.current_turn_view().await.unwrap();
+        assert!(view.fault);
+        let surface =
+            crate::eve::authenticated_surface("player-fault-card", Some(&world), Some(&view)).unwrap();
+        let row = find_surface_node(&surface, "world.play.fault")
+            .expect("a fault-closed turn must show the fault row");
+        let encoded = serde_json::to_string(row).unwrap();
+        assert!(!encoded.contains("provider unavailable"), "the row must not carry the detail: {encoded}");
+
+        let healthy = PlayTurnView { fault: false, ..view };
+        let surface =
+            crate::eve::authenticated_surface("player-fault-card", Some(&world), Some(&healthy)).unwrap();
+        assert!(find_surface_node(&surface, "world.play.fault").is_none());
+    }
+
+    /// The whole path with a real local port and a dead endpoint: reqwest's
+    /// own error text carries the request URL, and the canary is that
+    /// endpoint. No byte of it may reach the stored fault, the warn line or
+    /// the card row; the error kind still does.
+    #[tokio::test]
+    async fn a_dead_local_endpoint_closes_the_turn_without_naming_the_endpoint() {
+        let (logs, _guard) = capture_logs();
+        let fixture = play_world(None, "player-fault-canary").await;
+        let personas = PersonaLane::new(
+            ControllerPort::new(fixture.world.clone()),
+            ScriptedPort::new(vec![]),
+            "gpt-5.6-sol".into(),
+            "gpt-5.6-sol".into(),
+        )
+        .unwrap();
+        let endpoint = {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            listener.local_addr().unwrap()
+        };
+        let inference = ghostlight::open_inference(
+            None,
+            None,
+            Some(ghostlight::LocalBinding {
+                endpoint,
+                model_prefix: "local/".into(),
+                caller_runtime_id: "play-test-runtime".into(),
+            }),
+            &["local/play"],
+        )
+        .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let table = PlayTable::new(
+            fixture.world.clone(),
+            personas,
+            inference,
+            "local/play".into(),
+            Arc::new(Semaphore::new(2)),
+            directory.path().join("play-turn-v1.cc"),
+        )
+        .unwrap();
+        table.set_retry_delay_base_ms(0);
+        table.run(&fixture.principal, test_turn_id(431), "Hello?".into()).await.unwrap();
+
+        let world = fixture.world.snapshot().await.unwrap();
+        let view = table.current_turn_view().await.unwrap();
+        assert!(view.fault, "the dead endpoint must close the turn on a fault");
+        let surface =
+            crate::eve::authenticated_surface("player-fault-canary", Some(&world), Some(&view)).unwrap();
+        let row = serde_json::to_string(find_surface_node(&surface, "world.play.fault").unwrap()).unwrap();
+        let stored = table.store.lock().await.current().unwrap().fault.clone().unwrap();
+        let log = logs.text();
+        assert!(stored.contains("refused the connection"), "the error kind is kept: {stored}");
+        for canary in [endpoint.to_string(), endpoint.ip().to_string(), "chat/completions".to_owned()] {
+            for (where_, text) in [("stored fault", &stored), ("warn line", &log), ("card row", &row)] {
+                assert!(!text.contains(&canary), "{canary} leaked into the {where_}: {text}");
+            }
+        }
+    }
+
+    /// R4: a model server reload takes about 30-40 s, so the production
+    /// backoff summed over the whole retry budget must outlast it with
+    /// margin, while the first retry stays quick. Reads the production base,
+    /// budget and curve; no copy of any of them.
+    #[test]
+    fn the_production_backoff_outlasts_a_model_reload() {
+        let total: Duration = (0..ROUND_RETRY_BUDGET)
+            .map(|attempt| backoff_delay(RETRY_DELAY_BASE_MS, attempt))
+            .sum();
+        assert!(total >= Duration::from_secs(90), "the retry window is only {total:?}");
+        assert!(backoff_delay(RETRY_DELAY_BASE_MS, 0) <= Duration::from_millis(200));
     }
 
     /// PA.f66a: exhausting the round budget closes the turn and narrates,

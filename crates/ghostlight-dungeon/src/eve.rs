@@ -48,6 +48,10 @@ pub(crate) struct EveRouteHint {
 
 /// The `world_create.v4` payload, in one place, so the button that captures it
 /// and the descriptor that advertises it cannot drift.
+/// The card's whole account of a turn closed by a fault.
+const PLAY_FAULT_LINE: &str =
+    "The storyteller lost the thread and your turn ended. Write again to start a new turn.";
+
 const CREATE_BINDINGS: [&str; 8] = [
     "title",
     "brief",
@@ -474,6 +478,17 @@ pub(crate) fn authenticated_surface(
                                 "id":"world.play.refusal",
                                 "kind":"text",
                                 "props":{"value":refusal},
+                                "children":[]
+                            }));
+                        }
+                        // R1: a turn that died on its model says so. The line is
+                        // fixed: the fault detail stays in the store and the log,
+                        // never on the card (invariant 8, PA.f187).
+                        if play.is_some_and(|view| view.fault) {
+                            play_rows.push(json!({
+                                "id":"world.play.fault",
+                                "kind":"text",
+                                "props":{"value":PLAY_FAULT_LINE},
                                 "children":[]
                             }));
                         }

@@ -83,7 +83,7 @@ pub use controllers::{
     ControllerNeed, ControllerPendingReason, ControllerRunner, ControllerWork,
     ControllerWorkCustody, ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError,
     ControllerWorkWrite,
-    GroupedCheckpoint, InferenceEvent, InferenceFault, InferenceFaultDisposition, InferenceOutput,
+    GroupedCheckpoint, InferenceEvent, InferenceFault, InferenceFaultClass, InferenceFaultDisposition, InferenceOutput,
     InferencePort,
     InferencePurpose, InferenceRequest, NarrativeCheckpoint, NarrativeRun, OperationalCheckpoint,
     OperationalRun, PersonaLane, PreparedInference, SubmissionDisposition, ToolResultOracle,

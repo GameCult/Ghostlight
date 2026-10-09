@@ -9,7 +9,7 @@
 //! flight through the same port at once.
 
 use super::controllers::{
-    ControllerOpenError, InferenceEvent, InferenceFault, InferenceOutput, InferencePort,
+    ControllerOpenError, InferenceEvent, InferenceFault, InferenceFaultClass, InferenceOutput, InferencePort,
     InferenceRequest, PreparedInference, REQUEST_EXPIRY, RESPONSE_TIMEOUT, call_id_is_valid,
     tool_name_is_valid, unix_ms,
 };
@@ -147,6 +147,17 @@ impl LocalInferencePort {
         prefix: impl Into<String>,
         caller_runtime_id: impl Into<String>,
     ) -> Result<Self, ControllerOpenError> {
+        Self::with_timeout(endpoint, prefix, caller_runtime_id, RESPONSE_TIMEOUT)
+    }
+
+    /// `new` with the response timeout named, so a test can reach the timeout
+    /// path without waiting out `RESPONSE_TIMEOUT`.
+    fn with_timeout(
+        endpoint: SocketAddr,
+        prefix: impl Into<String>,
+        caller_runtime_id: impl Into<String>,
+        timeout: std::time::Duration,
+    ) -> Result<Self, ControllerOpenError> {
         if !endpoint.ip().is_loopback() {
             return Err(ControllerOpenError::LocalEndpointNotLoopback { endpoint });
         }
@@ -154,7 +165,7 @@ impl LocalInferencePort {
             client: reqwest::Client::builder()
                 .no_proxy()
                 .redirect(reqwest::redirect::Policy::none())
-                .timeout(RESPONSE_TIMEOUT)
+                .timeout(timeout)
                 .build()
                 .expect("the local inference HTTP client builds with no custom TLS material"),
             endpoint,
@@ -170,29 +181,43 @@ impl LocalInferencePort {
             .json(&body)
             .send()
             .await
-            .map_err(|error| {
-                if error.is_connect() {
-                    InferenceFault::retryable(format!(
-                        "the local inference endpoint refused the connection: {error}"
-                    ))
-                } else {
-                    InferenceFault::new(format!("the local inference request failed: {error}"))
-                }
-            })?;
+            .map_err(send_fault)?;
         let status = response.status();
         if !status.is_success() {
             let detail = format!("the local inference endpoint returned {status}");
+            let class = InferenceFaultClass::Status(status.as_u16());
             return Err(if status.as_u16() == 429 || status.as_u16() == 503 {
                 InferenceFault::retryable(detail)
             } else {
                 InferenceFault::new(detail)
-            });
+            }
+            .classed(class));
         }
-        response.json::<LocalChatResponse>().await.map_err(|error| {
-            InferenceFault::integrity_violation(format!(
-                "the local inference endpoint's reply was not the declared shape: {error}"
-            ))
+        response.json::<LocalChatResponse>().await.map_err(|_| {
+            InferenceFault::integrity_violation(
+                "the local inference endpoint's reply was not the declared shape",
+            )
+            .classed(InferenceFaultClass::BadReply)
         })
+    }
+}
+
+/// The one classifier of a send that failed before any HTTP status arrived.
+/// A request that got no response was never processed, so retrying it is
+/// safe; only a timeout is not retried, because the endpoint may still be
+/// generating. The fault carries the kind and never the error's own text:
+/// `reqwest::Error`'s `Display` ends with the request URL, which would put
+/// the endpoint into every log line and card that renders the detail.
+fn send_fault(error: reqwest::Error) -> InferenceFault {
+    if error.is_timeout() {
+        InferenceFault::new("the local inference request timed out")
+            .classed(InferenceFaultClass::Timeout)
+    } else if error.is_connect() {
+        InferenceFault::retryable("the local inference endpoint refused the connection")
+            .classed(InferenceFaultClass::Connect)
+    } else {
+        InferenceFault::retryable("the local inference endpoint closed the connection before replying")
+            .classed(InferenceFaultClass::NoResponse)
     }
 }
 
@@ -378,7 +403,9 @@ pub(super) fn open_local_port(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::controllers::{InferencePurpose, RequestShape, open_inference, tool_request};
+    use crate::controllers::{
+        InferenceFaultDisposition, InferencePurpose, RequestShape, open_inference, tool_request,
+    };
     use crate::elaboration::{ElaborationLoopEvaluation, SEED_ROUND_BUDGET, evaluate_elaboration_loop};
     use crate::patch::{RECORD_GAP_PATCH_TOOL, SUBMIT_PATCH_TOOL, patch_tools};
     use crate::sdk_inference::{DEFAULT_SDK_MODEL_PREFIX, RoutedInferencePort, SdkBinding};
@@ -1424,5 +1451,129 @@ mod tests {
             first_output.receipt_digest, second_output.receipt_digest,
             "a changed response_id did not change the receipt digest"
         );
+    }
+
+    fn plain_request() -> InferenceRequest {
+        tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Persona,
+            TEST_MODEL,
+            "Respond only in natural prose.",
+            vec![CodexInputItem::UserText {
+                text: "Say something true.".into(),
+            }],
+            Vec::<CodexToolDefinition>::new(),
+            RequestShape {
+                max_output_tokens: 1_200,
+                parallel_tool_calls: false,
+            },
+        )
+        .expect("the request builds")
+    }
+
+    async fn infer_once(port: &LocalInferencePort) -> Result<InferenceOutput, InferenceFault> {
+        let prepared = port.prepare(plain_request()).expect("the port prepares");
+        port.infer(prepared).await
+    }
+
+    /// A loopback server that accepts the first `drops` connections and
+    /// closes each without a byte (the shape of a model server reloading),
+    /// then answers every later connection with `reply`.
+    async fn closing_then_serving(drops: usize, reply: String) -> SocketAddr {
+        let listener = TcpListener::bind("127.0.0.1:0").await.expect("loopback binds");
+        let addr = listener.local_addr().expect("a bound listener has an address");
+        let state = Arc::new(Mutex::new(ScriptedResponderState {
+            replies: VecDeque::from(vec![(200, reply)]),
+            ..Default::default()
+        }));
+        tokio::spawn(async move {
+            let mut seen = 0;
+            loop {
+                let Ok((mut stream, _)) = listener.accept().await else {
+                    return;
+                };
+                if seen < drops {
+                    seen += 1;
+                    let _ = stream.shutdown().await;
+                    continue;
+                }
+                serve_one(stream, &state).await;
+            }
+        });
+        addr
+    }
+
+    /// R3. A send that dies after the connection was made but before any
+    /// status arrives is `Retryable` and classed `NoResponse`; the recovered
+    /// endpoint then answers the very next call from the same port. Mutation:
+    /// classify only `is_connect()` errors as retryable, everything else as
+    /// recovery-required (the pre-cut shape) and the first assertion fails.
+    #[tokio::test]
+    async fn an_empty_reply_is_retryable_and_the_recovered_endpoint_answers() {
+        let addr = closing_then_serving(1, text_reply("back")).await;
+        let port = port(addr);
+        let fault = infer_once(&port).await.expect_err("a closed connection produced an output");
+        assert_eq!(fault.disposition(), InferenceFaultDisposition::Retryable, "{fault:?}");
+        assert_eq!(fault.class(), InferenceFaultClass::NoResponse, "{fault:?}");
+        infer_once(&port).await.expect("the recovered endpoint answers the retry");
+    }
+
+    /// R3's other half: a timeout is not retried, because the endpoint may
+    /// still be generating. The listener accepts and never answers.
+    #[tokio::test]
+    async fn a_timed_out_send_is_recovery_required_not_retried() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            let mut held = Vec::new();
+            while let Ok((stream, _)) = listener.accept().await {
+                held.push(stream);
+            }
+        });
+        let port = {
+            let _guard = client_build_lock().lock().expect("the client-build lock is never poisoned");
+            LocalInferencePort::with_timeout(
+                addr,
+                DEFAULT_LOCAL_MODEL_PREFIX,
+                TEST_RUNTIME,
+                std::time::Duration::from_millis(150),
+            )
+            .expect("a loopback endpoint opens")
+        };
+        let fault = infer_once(&port).await.expect_err("a silent endpoint produced an output");
+        assert_eq!(fault.disposition(), InferenceFaultDisposition::RecoveryRequired, "{fault:?}");
+        assert_eq!(fault.class(), InferenceFaultClass::Timeout, "{fault:?}");
+    }
+
+    /// The class is a typed value for every way a send can fail, and the
+    /// endpoint appears in none of the fault's renderings: the canary is the
+    /// endpoint this test bound, so a `Display` that carries the request URL
+    /// (reqwest's does) fails here.
+    #[tokio::test]
+    async fn every_send_failure_is_classed_and_names_no_endpoint() {
+        let closed = {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let addr = listener.local_addr().unwrap();
+            drop(listener);
+            addr
+        };
+        let dropping = closing_then_serving(usize::MAX, String::new()).await;
+        let status = ScriptedResponder::start(vec![(400, "{}".to_owned())]).await.endpoint();
+        let malformed = ScriptedResponder::start(vec![(200, "not json".to_owned())]).await.endpoint();
+        let cases = [
+            (closed, InferenceFaultClass::Connect),
+            (dropping, InferenceFaultClass::NoResponse),
+            (status, InferenceFaultClass::Status(400)),
+            (malformed, InferenceFaultClass::BadReply),
+        ];
+        for (addr, expected) in cases {
+            let fault = infer_once(&port(addr)).await.expect_err("the send was expected to fail");
+            assert_eq!(fault.class(), expected, "{fault:?}");
+            let rendered = format!("{fault} | {fault:?}");
+            for canary in [addr.to_string(), addr.ip().to_string(), "chat/completions".to_owned()] {
+                assert!(!rendered.contains(&canary), "{canary} leaked into {rendered}");
+            }
+        }
     }
 }

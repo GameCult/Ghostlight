@@ -198,7 +198,29 @@ impl InferenceOutput {
 #[error("{detail}")]
 pub struct InferenceFault {
     disposition: InferenceFaultDisposition,
+    class: InferenceFaultClass,
     detail: String,
+}
+
+/// What kind of trouble a fault is, as a typed value: the one place a reader
+/// learns it without parsing `detail`. Disposition says what the owning flow
+/// may do (retry, recover, quarantine); the class says what happened. A port
+/// that can tell classifies at construction (`classed`), and every other
+/// constructor leaves `Unclassified`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InferenceFaultClass {
+    /// The connection to the endpoint could not be made.
+    Connect,
+    /// The connection was made but no HTTP status arrived: closed, reset or
+    /// an empty reply.
+    NoResponse,
+    /// The request ran out of time.
+    Timeout,
+    /// The endpoint answered with this non-success status.
+    Status(u16),
+    /// The endpoint's reply was not the declared shape.
+    BadReply,
+    Unclassified,
 }
 
 /// The three-way disposition an `InferenceFault` carries, readable but not
@@ -217,6 +239,7 @@ impl InferenceFault {
     pub(super) fn new(detail: impl Into<String>) -> Self {
         Self {
             disposition: InferenceFaultDisposition::RecoveryRequired,
+            class: InferenceFaultClass::Unclassified,
             detail: detail.into(),
         }
     }
@@ -225,6 +248,7 @@ impl InferenceFault {
     pub fn retryable(detail: impl Into<String>) -> Self {
         Self {
             disposition: InferenceFaultDisposition::Retryable,
+            class: InferenceFaultClass::Unclassified,
             detail: detail.into(),
         }
     }
@@ -235,6 +259,7 @@ impl InferenceFault {
     pub fn integrity_violation(detail: impl Into<String>) -> Self {
         Self {
             disposition: InferenceFaultDisposition::IntegrityViolation,
+            class: InferenceFaultClass::Unclassified,
             detail: detail.into(),
         }
     }
@@ -243,6 +268,17 @@ impl InferenceFault {
     /// sibling cell in the same tick is unaffected.
     pub fn recovery_required(detail: impl Into<String>) -> Self {
         Self::new(detail)
+    }
+
+    /// Names what kind of trouble this fault is.
+    pub(super) fn classed(mut self, class: InferenceFaultClass) -> Self {
+        self.class = class;
+        self
+    }
+
+    /// The fault's class, read-only.
+    pub fn class(&self) -> InferenceFaultClass {
+        self.class
     }
 
     pub(super) fn requires_recovery(&self) -> bool {
