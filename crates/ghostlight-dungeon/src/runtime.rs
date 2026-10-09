@@ -1,9 +1,9 @@
 //! One-process runtime for the sealed world owner.
 
 use crate::{
-    app_session::AppSessionOwner,
+    app_session::{AppSessionOwner, RefreshRefusal},
     eve::{self, EveCommandInvocation},
-    heimdall::{self, HeimdallClient},
+    heimdall::{self, HeimdallClient, HeimdallDenied, SessionRefresher},
     idunn_health::{
         IDUNN_RUNTIME_CANDIDATE_BIND_ENVIRONMENT, ProcessWriteLeaseGuard, RuntimePresencePublisher,
         TARGET as GHOSTLIGHT_TARGET,
@@ -1867,66 +1867,86 @@ async fn maintain_session_refresh(state: AppState) -> anyhow::Result<()> {
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
         interval.tick().await;
-        let candidates = state
-            .sessions
-            .lock()
-            .await
-            .sessions_due_for_refresh(Utc::now(), chrono::Duration::minutes(2))
-            .context("app-session refresh scan lost custody")?;
-        for candidate in candidates {
-            let idempotency = format!(
-                "refresh:{}:{}",
-                candidate.heimdall_session_id, candidate.access_revision
-            );
-            let completion = match state
-                .heimdall
-                .refresh(&candidate.refresh_claim, &idempotency)
-                .await
-            {
-                Ok(value) => value,
-                Err(error) => {
-                    tracing::warn!(%error, "Heimdall refresh transport unavailable");
-                    continue;
-                }
-            };
-            let verified = match state.heimdall.verify_refresh(completion).await {
-                Ok(value) => value,
-                Err(error) => {
-                    tracing::warn!(%error, "Heimdall refresh receipt was invalid");
-                    let mut sessions = state.sessions.lock().await;
-                    if let Err(revoke_error) = sessions.revoke_cookie_hash(&candidate.cookie_hash) {
-                        return Err(revoke_error)
-                            .context("invalid Heimdall refresh could not revoke local custody");
-                    }
-                    continue;
-                }
-            };
-            if verified.heimdall_session_id() != candidate.heimdall_session_id
-                || crate::app_session::secret_hash(&format!(
-                    "heimdall-account:{}",
-                    verified.account_id()
-                )) != candidate.account_subject_hash
-            {
-                tracing::warn!("Heimdall refresh changed local session custody");
-                let mut sessions = state.sessions.lock().await;
+        refresh_due_sessions(&state.sessions, state.heimdall.as_ref()).await?;
+    }
+}
+
+/// One pass of the refresh loop over every session due for refresh.
+async fn refresh_due_sessions(
+    sessions: &Mutex<AppSessionOwner>,
+    heimdall: &impl SessionRefresher,
+) -> anyhow::Result<()> {
+    let candidates = sessions
+        .lock()
+        .await
+        .sessions_due_for_refresh(Utc::now(), chrono::Duration::minutes(2))
+        .context("app-session refresh scan lost custody")?;
+    for candidate in candidates {
+        let idempotency = crate::app_session::refresh_idempotency_key(&candidate.refresh_claim);
+        let completion = match heimdall.refresh(&candidate.refresh_claim, &idempotency).await {
+            Ok(value) => value,
+            Err(error) if error.downcast_ref::<HeimdallDenied>().is_some() => {
+                // Heimdall refused this refresh claim: it can never succeed.
+                tracing::warn!(%error, "Heimdall denied the refresh; revoking the local session");
+                let mut sessions = sessions.lock().await;
                 if let Err(revoke_error) = sessions.revoke_cookie_hash(&candidate.cookie_hash) {
                     return Err(revoke_error)
-                        .context("changed Heimdall custody could not revoke local session");
+                        .context("denied Heimdall refresh could not revoke local custody");
                 }
                 continue;
             }
-            let mut sessions = state.sessions.lock().await;
-            if let Err(error) =
-                sessions.apply_refresh(&candidate.cookie_hash, candidate.access_revision, verified)
-            {
-                if sessions.is_healthy() {
-                    tracing::warn!(%error, "local app session rejected Heimdall refresh");
-                } else {
-                    return Err(error).context("app-session refresh commit lost custody");
+            Err(error) => {
+                tracing::warn!(%error, "Heimdall refresh transport unavailable");
+                continue;
+            }
+        };
+        let verified = match heimdall.verify_refresh(completion).await {
+            Ok(value) => value,
+            Err(error) => {
+                tracing::warn!(%error, "Heimdall refresh receipt was invalid");
+                let mut sessions = sessions.lock().await;
+                if let Err(revoke_error) = sessions.revoke_cookie_hash(&candidate.cookie_hash) {
+                    return Err(revoke_error)
+                        .context("invalid Heimdall refresh could not revoke local custody");
                 }
+                continue;
+            }
+        };
+        if verified.heimdall_session_id() != candidate.heimdall_session_id
+            || crate::app_session::secret_hash(&format!(
+                "heimdall-account:{}",
+                verified.account_id()
+            )) != candidate.account_subject_hash
+        {
+            tracing::warn!("Heimdall refresh changed local session custody");
+            let mut sessions = sessions.lock().await;
+            if let Err(revoke_error) = sessions.revoke_cookie_hash(&candidate.cookie_hash) {
+                return Err(revoke_error)
+                    .context("changed Heimdall custody could not revoke local session");
+            }
+            continue;
+        }
+        let mut sessions = sessions.lock().await;
+        if let Err(error) =
+            sessions.apply_refresh(&candidate.cookie_hash, candidate.access_revision, verified)
+        {
+            if !sessions.is_healthy() {
+                return Err(error).context("app-session refresh commit lost custody");
+            }
+            tracing::warn!(%error, "local app session refused Heimdall refresh");
+            // The refresh claim is spent upstream, so a receipt that went
+            // backwards leaves nothing to retry. A session that merely moved
+            // is newer state: the next scan decides.
+            if error.downcast_ref::<RefreshRefusal>()
+                == Some(&RefreshRefusal::RevisionWentBackwards)
+                && let Err(revoke_error) = sessions.revoke_cookie_hash(&candidate.cookie_hash)
+            {
+                return Err(revoke_error)
+                    .context("backwards Heimdall refresh could not revoke local session");
             }
         }
     }
+    Ok(())
 }
 
 /// Idunn publishes Expected and starts the unit before it observes the
@@ -6368,5 +6388,225 @@ mod tests {
         assert!(committed.is_ok(), "{committed:?}");
         let after = fixture.state.world.snapshot().await.unwrap();
         assert_eq!(after.revision, before.revision + 1);
+    }
+}
+
+/// The refresh loop against a scripted Heimdall: it answers each call from a
+/// queue and records the claim and idempotency key it was sent.
+#[cfg(test)]
+mod refresh_loop_tests {
+    use super::*;
+    use crate::heimdall::{AuthCompletionReceipt, VerifiedSessionRefresh};
+    use std::{collections::VecDeque, sync::Mutex as StdMutex};
+
+    enum Reply {
+        Deny,
+        Timeout,
+        Receipt { revision: u64, claim: &'static str },
+    }
+
+    #[derive(Default)]
+    struct ScriptedHeimdall {
+        replies: StdMutex<VecDeque<Reply>>,
+        pending: StdMutex<Option<VerifiedSessionRefresh>>,
+        calls: StdMutex<Vec<(String, String)>>,
+    }
+
+    impl ScriptedHeimdall {
+        fn answering(replies: Vec<Reply>) -> Self {
+            Self {
+                replies: StdMutex::new(replies.into()),
+                ..Self::default()
+            }
+        }
+
+        fn calls(&self) -> Vec<(String, String)> {
+            self.calls.lock().unwrap().clone()
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl SessionRefresher for ScriptedHeimdall {
+        async fn refresh(
+            &self,
+            refresh_token: &str,
+            idempotency_key: &str,
+        ) -> anyhow::Result<AuthCompletionReceipt> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push((refresh_token.into(), idempotency_key.into()));
+            match self.replies.lock().unwrap().pop_front().expect("scripted reply") {
+                Reply::Deny => Err(HeimdallDenied {
+                    diagnostics: "Idempotency key was reused".into(),
+                }
+                .into()),
+                Reply::Timeout => bail!("Heimdall private command timed out"),
+                Reply::Receipt { revision, claim } => {
+                    *self.pending.lock().unwrap() = Some(VerifiedSessionRefresh::fixture(
+                        "operator-account",
+                        "heimdall-session",
+                        revision,
+                        Utc::now() + chrono::Duration::seconds(90),
+                        Utc::now() + chrono::Duration::days(1),
+                        claim,
+                    ));
+                    Ok(AuthCompletionReceipt {
+                        status: "authenticated".into(),
+                        handle: None,
+                        error: None,
+                        account: None,
+                        session: None,
+                        access_token: None,
+                        refresh_token: None,
+                        refresh: None,
+                        shared_capabilities: Vec::new(),
+                    })
+                }
+            }
+        }
+
+        async fn verify_refresh(
+            &self,
+            _completion: AuthCompletionReceipt,
+        ) -> anyhow::Result<VerifiedSessionRefresh> {
+            Ok(self.pending.lock().unwrap().take().expect("scripted receipt"))
+        }
+    }
+
+    /// A store holding one live session at `revision` whose access expires in
+    /// a minute, so every pass finds it due.
+    fn due_session(revision: u64) -> (tempfile::TempDir, Mutex<AppSessionOwner>, String) {
+        let directory = tempfile::tempdir().unwrap();
+        let key = directory.path().join("session.key");
+        std::fs::write(&key, [23_u8; 32]).unwrap();
+        let mut owner = AppSessionOwner::open(directory.path().join("sessions.cc"), &key).unwrap();
+        let cookie = owner
+            .create_session(heimdall::VerifiedSessionAdmission::fixture(
+                "operator-account",
+                "heimdall-session",
+                revision,
+                Utc::now() + chrono::Duration::seconds(60),
+                Utc::now() + chrono::Duration::days(1),
+                "claim-0",
+            ))
+            .unwrap();
+        (directory, Mutex::new(owner), cookie)
+    }
+
+    async fn is_live(sessions: &Mutex<AppSessionOwner>, cookie: &str) -> bool {
+        sessions
+            .lock()
+            .await
+            .account_for_cookie(cookie, Utc::now())
+            .unwrap()
+            .is_some()
+    }
+
+    #[derive(Clone, Default)]
+    struct Captured(std::sync::Arc<StdMutex<Vec<u8>>>);
+
+    impl std::io::Write for Captured {
+        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(bytes);
+            Ok(bytes.len())
+        }
+
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for Captured {
+        type Writer = Captured;
+
+        fn make_writer(&'a self) -> Captured {
+            self.clone()
+        }
+    }
+
+    #[tokio::test]
+    async fn a_real_refresh_at_an_equal_revision_is_applied_and_the_session_stays_live() {
+        let (_directory, sessions, cookie) = due_session(1);
+        let heimdall = ScriptedHeimdall::answering(vec![
+            Reply::Receipt { revision: 1, claim: "claim-1" },
+            Reply::Timeout,
+        ]);
+        refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+        assert!(is_live(&sessions, &cookie).await);
+        // The wrapped claim is the receipt's: the next refresh spends it.
+        refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+        assert_eq!(heimdall.calls()[1].0, "claim-1");
+        assert!(is_live(&sessions, &cookie).await);
+    }
+
+    #[tokio::test]
+    async fn a_retry_of_the_same_refresh_sends_the_same_key() {
+        let (_directory, sessions, cookie) = due_session(1);
+        let heimdall = ScriptedHeimdall::answering(vec![Reply::Timeout, Reply::Timeout]);
+        refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+        refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+        let calls = heimdall.calls();
+        assert_eq!(calls.len(), 2, "a transport failure leaves the session offered");
+        assert_eq!(calls[0], calls[1]);
+        assert!(is_live(&sessions, &cookie).await);
+    }
+
+    #[tokio::test]
+    async fn the_refresh_after_a_successful_one_sends_a_new_key() {
+        let (_directory, sessions, _cookie) = due_session(1);
+        let heimdall = ScriptedHeimdall::answering(vec![
+            Reply::Receipt { revision: 1, claim: "claim-1" },
+            Reply::Timeout,
+        ]);
+        refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+        refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+        let calls = heimdall.calls();
+        assert_ne!(calls[0].1, calls[1].1);
+        assert!(calls.iter().all(|(claim, key)| !key.contains(claim)));
+    }
+
+    #[tokio::test]
+    async fn a_receipt_with_a_lower_revision_is_refused_and_the_session_revoked() {
+        let (_directory, sessions, cookie) = due_session(2);
+        let heimdall = ScriptedHeimdall::answering(vec![
+            Reply::Receipt { revision: 1, claim: "claim-1" },
+            Reply::Timeout,
+        ]);
+        refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+        assert!(!is_live(&sessions, &cookie).await);
+        refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+        assert_eq!(heimdall.calls().len(), 1, "a revoked session is not offered again");
+    }
+
+    #[tokio::test]
+    async fn a_heimdall_denial_revokes_the_session_and_it_is_not_offered_again() {
+        let (_directory, sessions, cookie) = due_session(1);
+        let heimdall = ScriptedHeimdall::answering(vec![Reply::Deny, Reply::Timeout]);
+        refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+        assert!(!is_live(&sessions, &cookie).await);
+        refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+        assert_eq!(heimdall.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_local_refusal_logs_the_clause_that_fired() {
+        let (_directory, sessions, _cookie) = due_session(2);
+        let heimdall = ScriptedHeimdall::answering(vec![Reply::Receipt {
+            revision: 1,
+            claim: "claim-1",
+        }]);
+        let captured = Captured::default();
+        let subscriber = tracing_subscriber::fmt()
+            .with_writer(captured.clone())
+            .with_ansi(false)
+            .finish();
+        let _guard = tracing::subscriber::set_default(subscriber);
+        refresh_due_sessions(&sessions, &heimdall).await.unwrap();
+        let logged = String::from_utf8(captured.0.lock().unwrap().clone()).unwrap();
+        assert!(
+            logged.contains("refresh receipt revision went backwards"),
+            "{logged}"
+        );
     }
 }

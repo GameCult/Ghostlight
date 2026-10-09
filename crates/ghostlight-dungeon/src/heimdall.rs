@@ -30,6 +30,48 @@ const APP_SLUG: &str = "ghostlight";
 const PRIVATE_SERVICE: &str = "heimdall.private.commands";
 const PRIVATE_ENVELOPE_SCHEMA: &str = "heimdall.private_command_envelope.v1";
 
+/// Heimdall answered a private command with status denied. Distinct from a
+/// transport failure so the refresh loop never reads a message string.
+#[derive(Debug, thiserror::Error)]
+#[error("Heimdall denied the private command: {diagnostics}")]
+pub(crate) struct HeimdallDenied {
+    pub(crate) diagnostics: String,
+}
+
+/// The two Heimdall calls the refresh loop makes, as a port so a scripted
+/// Heimdall can stand in for the real one.
+#[async_trait::async_trait]
+pub(crate) trait SessionRefresher {
+    async fn refresh(
+        &self,
+        refresh_token: &str,
+        idempotency_key: &str,
+    ) -> anyhow::Result<AuthCompletionReceipt>;
+
+    async fn verify_refresh(
+        &self,
+        completion: AuthCompletionReceipt,
+    ) -> anyhow::Result<VerifiedSessionRefresh>;
+}
+
+#[async_trait::async_trait]
+impl SessionRefresher for HeimdallClient {
+    async fn refresh(
+        &self,
+        refresh_token: &str,
+        idempotency_key: &str,
+    ) -> anyhow::Result<AuthCompletionReceipt> {
+        HeimdallClient::refresh(self, refresh_token, idempotency_key).await
+    }
+
+    async fn verify_refresh(
+        &self,
+        completion: AuthCompletionReceipt,
+    ) -> anyhow::Result<VerifiedSessionRefresh> {
+        HeimdallClient::verify_refresh(self, completion).await
+    }
+}
+
 #[derive(Clone)]
 pub struct HeimdallClient {
     http: Client,
@@ -325,6 +367,28 @@ impl VerifiedSessionAdmission {
     }
 }
 
+#[cfg(test)]
+impl VerifiedSessionRefresh {
+    pub(crate) fn fixture(
+        account_id: impl Into<String>,
+        heimdall_session_id: impl Into<String>,
+        access_revision: u64,
+        access_expires_at: DateTime<Utc>,
+        refresh_expires_at: DateTime<Utc>,
+        refresh_claim: impl Into<String>,
+    ) -> Self {
+        Self(VerifiedSessionMaterial {
+            account_id: account_id.into(),
+            heimdall_session_id: heimdall_session_id.into(),
+            access_revision,
+            capabilities: vec!["app_access".into()],
+            access_expires_at,
+            refresh_expires_at,
+            refresh_claim: refresh_claim.into(),
+        })
+    }
+}
+
 impl HeimdallClient {
     pub fn from_env(
         runtime_id: &str,
@@ -581,10 +645,10 @@ impl HeimdallClient {
             bail!("Heimdall returned a non-operation response");
         };
         if status == "denied" {
-            bail!(
-                "Heimdall denied the private command: {}",
-                diagnostics.join("; ")
-            );
+            return Err(HeimdallDenied {
+                diagnostics: diagnostics.join("; "),
+            }
+            .into());
         }
         if payload_schema != PRIVATE_ENVELOPE_SCHEMA || payload_encoding != "messagepack-base64" {
             bail!("Heimdall returned the wrong private response contract");
