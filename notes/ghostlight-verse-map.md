@@ -126,6 +126,106 @@ No commit after `454fc33` touches code, so every PA.f211-PA.f216 is open on
   a Draft card with Approve, Seed and Activate as separate buttons
   (`eve.rs:343-415`).
 
+### The Bonsai host under ruling `bonsai-idle-unload-host`
+
+Probed 2026-10-09 by Imagination (`imagination-gl-bonsai`, session
+`self-2026-10-09-ag`). Fork sources were fetched raw from
+`PrismML-Eng/llama.cpp` at `1a07bfa5f4144274c8f1c9963821dd9d9a51854b`; paths
+below are `tools/server/` in that tree unless named.
+
+- **B1. Ghostlight base.** `origin/main` is `4474718`. `git diff --stat
+  4fee97f 4474718` over `controllers.rs`, `local_inference.rs`, `play.rs`,
+  `eve.rs` and `runtime.rs` is empty: every phase-1 anchor in those files holds
+  at `4474718` (the commits between are the docs-subtract cuts).
+- **B2. Who owns the host scripts.** `gamecult-ops` `origin/main` is
+  `9c12adb`. Its tree has no Bonsai script, unit, Dockerfile or template: the
+  only Bonsai file is `runbooks/bonsai-local-llm-raven.md`. No copy of
+  `rss-watchdog.sh` or `idle-reaper.sh` exists anywhere under `F:\Projects`.
+  `run.sh`, `start-all.sh`, the `Dockerfile`, the template and both scripts
+  exist only on Raven, in WSL under `/opt/gamecult/bonsai`. Their repo-to-be is
+  `gamecult-ops`, which is a campaign repo.
+- **B3. Raven unreachable during this pass.** `ssh raven` (10.77.0.4:22) and
+  the LAN address 192.168.178.165:22 both timed out. On Yggdrasil, `curl
+  http://127.0.0.1:18080/v1/models` exited 7 (connection refused: the tunnel's
+  listener is not bound). That differs from the exit 52 (accept and close)
+  recorded above, so both shapes occur. Raven was then reported under live
+  repair (bootloader damaged by an accidental format of `E:`), and no
+  further probe of Raven or the tunnel was made. Every Raven claim on this
+  page is therefore **unprobed** at mapping time. The
+  contents of `run.sh`, the watchdog and the reaper come from the Eyes file
+  `F:\Projects\bonsai-host-2026-10-09.md` §1, which read them in full at about
+  17:19 local. Residual VRAM while sleeping and the time to wake are
+  **not measured**.
+- **B4. The flag exists at the pin.** `common/arg.cpp:3779-3785` defines
+  `--sleep-idle-seconds SECONDS`, default -1 (disabled), and rejects 0 and
+  values below -1. The runbook confirms the image pins `1a07bfa5`. The argv of
+  `run.sh` in the Eyes file does not pass the flag.
+- **B5. What sleep does.** `server-queue.cpp:278-360`: when the queue has had
+  no task for `idle_sleep_ms`, it marks itself sleeping and runs the sleeping
+  callbacks. `server-context.cpp:906-921`: entering sleep calls `destroy()`,
+  which frees the model, contexts and mmproj. Leaving sleep calls
+  `load_model`, and a failed reload is `GGML_ABORT` (the process dies). A
+  request that needs the model calls `wait_until_no_sleep()`
+  (`server-queue.cpp:115-130`, from `server_res_generator`,
+  `server-context.cpp:4100-4110`) and blocks until the reload returns. So the
+  first request after sleep is one HTTP call that waits out the reload. It
+  gets no 503 and no transport error.
+- **B6. Endpoints that never wake it** (each one starts with
+  `create_response(true)`):
+  - `GET /health` (`server-context.cpp:4526-4537`) is always 200
+    `{"status":"ok"}` once the server has started.
+  - `GET /props` (`:4676-4686`) returns cached props while sleeping, with
+    `is_sleeping: true` (`get_res_props`, `:4471-4506`; the cache is filled on
+    entering sleep, `:5411-5418`).
+  - `GET /v1/models` (`:4946-4955`) is answered from the cache.
+  - `GET /metrics` is exempt too.
+
+  `README.md:2063-2075` ("Sleeping on Idle") lists the same exemptions and
+  says they do not reset the idle timer. The queue's sleeping flag clears only
+  after `load_model` returns (`server-queue.cpp:339-350`), so `/props` reports
+  `is_sleeping: true` for the whole of a wake.
+- **B7. An endpoint that wakes it.** `GET /slots` (`server-context.cpp:4601-4613`)
+  calls `create_response()` without the bypass, so it waits for a reload. Its
+  `SLOT_GET` task also resets the idle timer: `server-queue.cpp:24-26` exempts
+  only `METRICS`. A watchdog that polls `/slots` therefore wakes a sleeping
+  model, and it keeps an awake one from ever sleeping.
+- **B8. Before the first load.** Until the first load completes, every
+  non-frontend path answers 503 with `{"error":{"message":"Loading
+  model","type":"unavailable_error","code":503}}` (`server-http.cpp:253-272`).
+  This covers a fresh start and a Docker restart. Ghostlight already classifies
+  503 as retryable (`local_inference.rs:183-189` at `4474718`).
+- **B9. Log lines.** A slot starts in `launch_slot_with_task`
+  (`server-context.cpp:1614`); the reaper greps for `launch_slot_`. A slot's
+  release logs `stop processing: n_tokens = ...` at info (`:498-502`).
+- **B10. Ghostlight with a sleeping or stopped Bonsai today** (at `4474718`):
+  - `InferencePort` (`controllers.rs:299-311`) has no readiness method.
+  - `LocalInferencePort` has one client whose overall timeout is
+    `RESPONSE_TIMEOUT`, 900 s (`local_inference.rs:145-164`,
+    `controllers.rs:68`). A sleeping model therefore costs the first call its
+    reload inside one call, well under 900 s. Meanwhile the card shows
+    "Resolving your turn…" (`eve.rs:530-543`) and nothing says the model is
+    waking. This is a bounded wait, not a hang, but it is not an honest one.
+  - A stopped container behind a live tunnel accepts and closes, which today
+    becomes `InferenceFault::new`; play-faults R3 makes it retryable. A dead
+    tunnel refuses the connection, which is already retryable.
+  - A `world.play` admission error reaches the player as `PlayError`'s
+    `Display` text, through `RuntimeCommandError::Payload`
+    (`runtime.rs:1399-1402`).
+  - `admit` returns a key replay at `play.rs:1476`, before it opens a turn or
+    applies an answer (`:1479`).
+- **B11. Raven's lifecycle today** (from the Eyes file; not re-probed):
+  - The reaper (`bonsai-idle.timer`, every 5 min) runs `docker stop bonsai
+    sillytavern` when the container is older than 30 min and its log has no
+    `launch_slot_` in the last 30 min.
+  - The watchdog (`bonsai-rss.timer`, every 2 min) runs `docker restart bonsai`
+    when RSS is over 4.5 GiB, deferring while `/slots` shows `is_processing`.
+  - `run.sh` sets no restart policy unless given `--resident`.
+  - The container last ran 2026-09-30 10:38:19Z to 11:28:08Z after a desktop
+    launch. The launcher returns once the stack is up, so WSL stayed up for
+    about 50 minutes with no attached session.
+  - Raven's Idunn runs Muninn only, and Ollama and LM Studio cannot load PQ2_0
+    (Eyes §2 C and D).
+
 ### A live defect not yet in the findings
 
 The live process has logged `Heimdall refresh transport unavailable
@@ -206,7 +306,7 @@ One row per persistent kind phase 1 touches. No cell may be empty.
 | Heimdall private command receipt (Heimdall Postgres) | `(app_slug, idempotency_key)` + request fingerprint | written once per executed command; replayed for an identical request; a different request under the key is refused | Heimdall; its fingerprint rule is a Heimdall follow-up, not a phase-1 cut |
 | Idunn generation (transient unit, release dir) | `sha256-<release>` | staged → started → Warming → lease → Active → superseded or failed; the previous Active stays until a new one is Ready | Idunn; retention and failed-unit collection are Idunn's follow-up |
 | v1 body (`ghostlight-dungeon.service`, `/srv/ghostlight`, v1 state) | unit name; paths | retired in fact 2026-09-23; unit still enabled | nobody today; phase 1 assigns its removal to a gamecult-ops cut, data by operator ruling |
-| Bonsai lifecycle (Raven containers) | container `bonsai`; scripts under `/opt/gamecult/bonsai` | started by hand ("Start AI Chat"); restarted by the RSS watchdog; stopped by the idle reaper | gamecult-ops/Raven; Dungeon only reads the endpoint; availability policy is an operator question |
+| Bonsai lifecycle (Raven container and model) | container `bonsai`; installed from gamecult-ops into `/opt/gamecult/bonsai` (raven-bonsai-scripts) | today: started by hand, restarted by the RSS watchdog, stopped by the idle reaper. Ruled: the server stays up (Docker `unless-stopped`); the model loads on start and on demand and unloads after `BONSAI_SLEEP_IDLE_SECONDS` idle (llama-server sleep); the watchdog restarts only an awake, quiet server; only a human stops it ("Free the GPU"); no reaper | llama-server decides load and unload; Docker decides process restart; the watchdog decides leak restarts; gamecult-ops owns the scripts; Dungeon learns readiness only through its inference port (model-asleep) |
 | Repository docs (README, AGENTS, live architecture pages, handoff) | path on `main` | rewritten to the live machine; pre-rebuild material leaves `main` by operator ruling | the Ghostlight repo; history in git, dated cut documents and postmortems |
 
 ### Where phase 2's verb sets plug in
@@ -243,6 +343,16 @@ verbs as the target.
 - **Faults belong to the card, not the log alone.** PA.f212 is an authority
   gap: the turn store knew the fault and the projection dropped it. The fix
   extends the projection; it adds no second record.
+- **Bonsai sleeps inside its own server.** The ruling named hosts that
+  unload on idle. Ollama and LM Studio cannot load PQ2_0, and the pinned fork
+  already sleeps (B4, B5), so the cut is a flag plus deleting the reaper.
+  llama-swap would add a process and a second owner of load and unload. It
+  earns its place only if a sleeping server's leftover VRAM (its CUDA context)
+  proves too large, and raven-bonsai-scripts measures that before anything
+  else changes. The watchdog must stop calling `/slots` on a sleeping server,
+  because that call wakes the model (B7). The waking and away rows belong to
+  model-asleep and the fault row to play-faults, so neither cut decides the
+  other's row.
 - **Retrying inference is safe.** A model call is a proposal the kernel
   admits or refuses, so a transport fault before any reply is retryable. That
   is the Ghostlight half of PA.f211. The Raven half (the watchdog's quiet
