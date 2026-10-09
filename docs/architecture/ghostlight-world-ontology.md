@@ -55,10 +55,11 @@ closed `resolve_patch` that resolves declarations, then operations, and
 returns the complete `Vec<Mismatch>` before any canonical ID allocates;
 `derive_id` is deterministic over world, command, and handle.
 `Declaration::Affordance` admits a catalog entry with preconditions drawn
-only from `{ Present, Reachable, Holds }`, effect ceilings, and weighted
-outcome bands. The ten inhabited operations are `Relocate`, `OpenRoute`,
-`CloseRoute`, `AlterCost`, `Transfer`, `Transform` (one-to-one), `Consume`,
-`Admit` (same-patch evidence), `Bind`, and `Release`; `apply_operations` is
+from the nine `Precondition` variants (`Present`, `Reachable`, `Holds`,
+`Authorized`, `HasStanding`, `Knows`, `CanBroadcast`, `CanReach`,
+`Committed`), effect ceilings, and weighted outcome bands. `ComponentOp` has
+34 variants (listed under "Component operations"), `Transform` is one-to-one
+and `Admit` takes same-patch evidence; `apply_operations` is
 the one owner of operation application and conservation, and
 `patch::check_ledger` is the single named conservation check.
 `CommandBody::AdmitPatch` emits `WorldEffect::PatchAdmitted` through the one
@@ -77,7 +78,7 @@ digest, selects an outcome band from
 `BandPreimage { world_id, revision, command_id, affordance, band_count }`
 through `digest()` with no RNG, bounds the proposed effects by the band's
 ceilings, and appends `DecisionEvent { band, effects }`. Rejections are the
-complete `ActionMismatch` set (17 variants) under
+complete `ActionMismatch` set (26 variants) under
 `KernelError::ActionRejected`. `Speak` is a kernel-built entry with zero
 preconditions and an empty band that carries speech, synthesized only at
 genesis. A controller's tools, signatures, and permissions are derived from
@@ -249,10 +250,11 @@ the one decode bound for both the elaboration lane and the consumer lane,
 under four caps — `MAX_PATCH_BYTES`, `MAX_PATCH_DECLARATIONS`,
 `MAX_PATCH_OPERATIONS`, `MAX_PATCH_EVIDENCE` — and the consumer document
 travels over two wire schema constants, `CONSUMER_PATCH_SCHEMA` and
-`CONSUMER_RECEIPT_SCHEMA`, both `.v0`. The state and commit schemas bump to
-`ghostlight.world_state.consumer.v2` and `ghostlight.world_commit.consumer.v2`
-(state-schema generation `world-v3`); a store written under an earlier schema
-is refused, not migrated.
+`CONSUMER_RECEIPT_SCHEMA`, both `.v0`. The state and commit schemas then bumped to
+`ghostlight.world_state.consumer.v2` and `ghostlight.world_commit.consumer.v2`;
+the live schemas are v6 (`STATE_SCHEMA` and `COMMIT_SCHEMA` in
+`crates/ghostlight/src/lib.rs`, state-schema generation `world-v3`). A store
+written under an earlier schema is refused, not migrated.
 
 `WorldScaleIntent` now arrives at creation, not as a later admission:
 `world_create.v4` declares the title, the brief, targets, jurisdiction
@@ -303,13 +305,14 @@ is the typed component diff against the fresh components plus the
 knowledge row, and never another subject's snapshot. The re-lowering's
 provider request is a distinct round (`interpreter_round`) with its own
 content-addressed request id, so it cannot collide with the first lowering's
-request. State schema is `ghostlight.world_state.consumer.v5`, commit schema
-`ghostlight.world_commit.consumer.v5`, controller work `controller_work.v16`,
-Persona turn receipt `ghostlight.persona_turn_receipt.v3`; earlier stores and
-earlier rows are refused. Ghostlight owns a conserved narrative ledger;
+request. State schema is `ghostlight.world_state.consumer.v6`, commit schema
+`ghostlight.world_commit.consumer.v6`, controller work
+`ghostlight.controller_work.v17`, Persona turn receipt
+`ghostlight.persona_turn_receipt.v3`; earlier stores and earlier rows are
+refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
 Step 6 of the plan is complete; the seeded live run is the runbook's business.
-Plan step 12 landed the thirteenth row: `PersonaMaterial` (`values`, `voice`,
+Plan step 12 landed the last row of the component table: `PersonaMaterial` (`values`, `voice`,
 `memories`, `reads` keyed by subject) in its own `persona_material` partition,
 set whole by `SetPersonaMaterial` with `NoncanonicalText` for any padded text
 or doubled read and `NoOperationEffect` for identical material; it is read by
@@ -407,10 +410,13 @@ resolver, or reconciler is needed.
 Three namespaces, three newtypes, issued only by the reducer.
 
 ```text
-SubjectId   person, institution, population                    — can decide
-EntityId    place, resource, fact, channel                     — cannot decide
-EdgeId      route, relation, commitment, pressure              — connects the above
+SubjectId   person, institution, population   — SubjectKind, can decide
+EntityId    place, resource, fact, channel     — EntityKind, cannot decide
+EdgeId      route                              — EdgeKind, connects places
 ```
+
+Commitments and pressures are keyed by subject, not by `EdgeId`, and there is
+no relation edge kind: `EdgeKind` has one variant, `Route`.
 
 Display names are labels. They never resolve a reference or bind structure.
 An externally controlled mirror is an ordinary subject of one of these three
@@ -419,7 +425,7 @@ kinds; what is external is its `ControllerAssignment`
 
 ## Components
 
-Thirteen, each earning its place by constraining a decision. Some attach to one
+Twelve rows, each earning its place by constraining a decision. Some attach to one
 referent; some are edge-shaped and attach to a pair. The reducer does not care
 which noun a component is; it cares what it constrains.
 
@@ -438,8 +444,9 @@ which noun a component is; it cares what it constrains.
 | `Pressure` | source → target: magnitude | the causal boundary trigger |
 | `PersonaMaterial` | subject: values, voice, memories, reads | lived meaning; never authority |
 
-A `Fact` carries a `standing`: `Canonical` (admitted with evidence) or
-`Claimed { by: SubjectId }` (asserted in speech). Knowledge of a claimed fact is
+A `Fact` carries a `standing` (`FactStanding`, three variants): `Canonical`
+(admitted with evidence), `Claimed { by: SubjectId }` (asserted in speech), or
+`Ruled` (stated by the play table; only `Play` may write it). Knowledge of a claimed fact is
 belief. Deception is a subject asserting a claim while holding a contradicting
 canonical fact; misread is a listener acquiring a claim the speaker did not
 intend. Both are ordinary typed states, not narrator judgments.
@@ -451,32 +458,34 @@ problem in another without anyone deciding that it should be.
 
 ## Component operations
 
-This is the closed operation set. Every mutation the kernel will ever apply is
-one of these, and every model-facing tool is a projection of one of these.
+This is the closed operation set. Every mutation the kernel applies is one of
+these, and every model-facing tool is a projection of one of these. The type is
+`ComponentOp` in `crates/ghostlight/src/patch.rs`: 34 variants, named here by
+the component they act on. Declarations are the six `Declaration` variants.
 
 ```text
-Declaration      declare_subject, declare_place, declare_resource, declare_fact,
-                 declare_channel, declare_route             (draft handles only)
-Position         relocate(subject, via: Route)
-Route            open, close, alter_cost
-Custody          transfer(from, to, resource, qty), transform(resource, into, qty),
-                 consume(holder, resource, qty), admit(holder, resource, qty, evidence)
-Dependency       bind, release
-Authority        grant(subject, scope, kind), revoke
-Selection        open_office, close_office, install(office, incumbent), vacate
-Redress          open_forum(kind, forum, standing), close_forum
-Knowledge        acquire(subject, fact, source, confidence), communicate(speaker, fact,
-                 channel), witness(fact, place, confidence), forget
-Channel          set_reach, set_controller
-Commitment       create(subject, counterparty, kind, due, period, checks, statement), discharge
-Pressure         advance, reduce, resolve
-PersonaMaterial  set(subject, values, voice, memories, reads)
-Retirement       retire(referent, reason)
-Time             advance(minutes)
+Declaration      Subject, Entity (place or resource), Route, Affordance, Fact,
+                 Channel                                    (draft handles only)
+Position         Relocate
+Route            OpenRoute, CloseRoute, AlterCost
+Custody          Transfer, Transform, Consume, Admit (with evidence),
+                 Mint (no receipt; only Play may write it)
+Dependency       Bind, Release
+Authority        GrantAuthority, RevokeAuthority
+Selection        OpenOffice, CloseOffice, InstallIncumbent, VacateOffice
+Redress          OpenForum, CloseForum
+Knowledge        AcquireKnowledge, Communicate, Witness, Forget
+Channel          SetReach, SetController
+Commitment       CreateCommitment, DischargeCommitment
+Pressure         AdvancePressure, ReducePressure, ResolvePressure
+PersonaMaterial  SetPersonaMaterial
+Retirement       Retire
+Affordance       GrantAffordance, RevokeAffordance
 ```
 
-Thirty operations. Adding one is a design change to this document and a
-code change to the reducer; it is never a runtime patch.
+Time is not a `ComponentOp`: the clock moves only by `CommandBody::AdvanceTime`.
+Adding an operation is a design change to this document and a code change to
+the reducer; it is never a runtime patch.
 
 ## Patch construction
 
@@ -530,7 +539,7 @@ counts do not appear here and may not be added.
 The kernel owns component operations. A **world** owns its affordance catalog.
 This is the generality lever: a setting with spellcraft, insurance claims,
 oath-rhythms, or memetic sovereignty authors affordances from the same
-thirty operations, and the kernel never learns a genre.
+component operations, and the kernel never learns a genre.
 
 ```text
 Affordance
@@ -602,7 +611,9 @@ different mutations.
 Layers of collective agency are relations, not special subjects:
 
 - **Containment** nests places and jurisdictions.
-- **Membership** binds persons and slices to institutions and populations.
+- **Membership** binds persons and slices to institutions and populations;
+  design intent, with no record shape in the kernel yet (`EdgeKind` is `Route`
+  only).
 - **Jurisdiction** is an `Authority` component whose scope is a subject set or
   a place subtree.
 - **Representation** is `Selection`: an institution acts through an office
@@ -631,10 +642,10 @@ authored seed request opens a scope. Both are answered by the same patch.
 
 ```text
 CausalBoundary
-  UnelaboratedDestination { route, place }
-  PolityInCausalRange     { relation, subject }
-  IndividuationRequired   { population, slice, pressure }
-  MissingStructure        { scope }     // a commitment or pressure has no authority,
+  UnelaboratedDestination { route, place, scope }
+  PolityInCausalRange     { subject, scope }
+  IndividuationRequired   { population, scope }
+  MissingStructure        { subject, key, scope }   // a commitment has no authority,
                                         //   channel, or redress path that could resolve it
 
 SeedRequest { jurisdiction: DraftHandle, brief: EvidenceRef }   // draft phase only;
@@ -645,8 +656,12 @@ Boundaries are derived from a revision exactly as opportunities are, and each
 carries the digest of the components that derive it. One command answers one:
 
 ```text
-CommandBody::AdmitPatch { answers: Boundary | SeedRequest, patch: WorldPatch }
+CommandBody::AdmitPatch { answers: Option<PatchAnswer>, patch: WorldPatch }
+PatchAnswer = Boundary(CausalBoundary) | Deficit(JurisdictionKey)
 ```
+
+`SeedRequest` above is design intent: no type of that name exists in
+`crates/`, and Draft answers nothing.
 
 A commit clears exactly the boundary it answers. Nothing else clears one. A
 patch answering a boundary the kernel no longer derives is rejected.
@@ -942,7 +957,8 @@ Deleted before replacement behavior is added, with no compatibility path:
 - 5 qualification and verification types plus 1 outcome resolver → 0;
 - titled quotas and the titled verifier, semantic qualification, and round
   budgets → 4 derived
-  boundaries, 1 seed request, and 1 structurally counted scale deficit;
+  boundaries (`CausalBoundary`) and 1 structurally counted scale deficit (a seed
+  request is design intent, unbuilt);
 - 2 seed admission paths → 1;
 - N model-facing tool schemas hand-written per stage → 1 derived catalog.
 
@@ -954,7 +970,7 @@ invariants did not ask for.
 ## Build budget
 
 No new crate, binary, dependency, or service. Types and reduction inside
-`crates/ghostlight/src/`, one new `patch` module, one new `affordance` module,
+`crates/ghostlight/src/`, the `patch` and `action` modules,
 focused `ghostlight` tests. No workspace-wide or
 release build is admitted for this stage.
 

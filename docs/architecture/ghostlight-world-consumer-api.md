@@ -143,8 +143,12 @@ those subjects (`confine_to_ground`, the `PatchGround::Consumer` arm):
   place, never the acting subject, and a consumer's ground names no place.
   A consumer tells what its mirror knows through `AcquireKnowledge` on its own
   bound subject; it cannot cause a place-wide witnessed event;
-- a `Claimed { by }` fact must name a bound subject; a `Canonical` fact
-  declaration is refused outright — a consumer's evidence buys an `Admit`
+- `Retire`, `GrantAffordance`, `RevokeAffordance`, and `Mint` are always
+  refused (`ResolvedOp`s that are authority over standing, not structure over
+  ground);
+- a `Claimed { by }` fact must name a bound subject; a `Ruled` fact is refused
+  outright, and so is a `Canonical` fact
+  declaration — a consumer's evidence buys an `Admit`
   into its own custody and a `Claimed` fact, never a canonization;
 - a channel's reach and controller must all be bound subjects;
 - every operation's ground subjects must be bound, and its place and route
@@ -180,9 +184,9 @@ enters a log, a receipt, or the journal.
 The consumer capability's tag is part of the commit digest and the
 externally controlled assignment is part of the state shape, so both bump the
 schema. World lens weights later entered the state and `SetLensWeights`
-the commit, so the live schemas are state `ghostlight.world_state.consumer.v5`
+the commit, so the live schemas are state `ghostlight.world_state.consumer.v6`
 (state-schema generation `world-v3`) and commit
-`ghostlight.world_commit.consumer.v5`. A store written under an earlier schema
+`ghostlight.world_commit.consumer.v6`. A store written under an earlier schema
 is refused, not migrated.
 
 ## Not in this pass
