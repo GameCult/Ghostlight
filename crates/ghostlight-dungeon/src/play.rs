@@ -8175,8 +8175,8 @@ pub(crate) mod tests {
             directory.path().join("play-turn-v1.cc"),
         )
         .unwrap();
-        let turn_id = test_turn_id(430);
-        table.run(&fixture.principal, turn_id.clone(), "Hello?".into()).await.unwrap();
+        table.run(&fixture.principal, test_turn_id(430), "Hello?".into()).await.unwrap();
+        let turn_id = table.current_turn_view().await.unwrap().turn_id;
 
         let line = logs
             .text()
