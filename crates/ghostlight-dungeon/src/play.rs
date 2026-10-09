@@ -3370,14 +3370,14 @@ pub(crate) mod tests {
     /// `run_lock` — before firing a second, racing call. Deterministic,
     /// unlike relying on `tokio::join!`'s own scheduling to make a race land
     /// a particular way.
-    struct GatedPort {
+    pub(crate) struct GatedPort {
         ready: tokio::sync::Notify,
         release: tokio::sync::Notify,
         output: StdMutex<Option<InferenceOutput>>,
     }
 
     impl GatedPort {
-        fn new(output: InferenceOutput) -> Arc<Self> {
+        pub(crate) fn new(output: InferenceOutput) -> Arc<Self> {
             Arc::new(Self {
                 ready: tokio::sync::Notify::new(),
                 release: tokio::sync::Notify::new(),

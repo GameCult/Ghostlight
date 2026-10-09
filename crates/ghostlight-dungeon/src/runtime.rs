@@ -95,6 +95,11 @@ struct AppState {
     runtime_health: Option<RuntimeHealthOwner>,
     revisions: broadcast::Sender<u64>,
     fatal: mpsc::UnboundedSender<String>,
+    /// The seed lane's vault root, read once at open (`seed_vault_root_from`).
+    /// The surface offers the seed controls on whether this is `Some`, and
+    /// `seed_once` takes its root from it, so the two cannot disagree about
+    /// whether seeding exists on this server.
+    seed_vault_root: Option<PathBuf>,
 }
 
 struct ProductionAdmission {
@@ -443,6 +448,7 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         revisions,
         fatal,
         runtime_health: None,
+        seed_vault_root: seed_vault_root_from(std::env::var_os(SEED_VAULT_ROOT_ENVIRONMENT)),
     };
     require_no_runtime_custody_failure(&mut fatal_events)?;
     publish_projection(&state).await?;
@@ -808,7 +814,7 @@ async fn eve_surface(
             principal.account_subject_hash(),
             snapshot.as_ref(),
             play_view.as_ref(),
-            seed_vault_root().is_some(),
+            state.seed_vault_root.is_some(),
         )
     }) {
         Ok(surface) => Json(surface).into_response(),
@@ -1284,8 +1290,8 @@ async fn execute_world(
                     title: payload.title,
                     brief: payload.brief,
                     human_subject_label: payload.subject_label,
-                    narrative_persona_label: payload.narrative_persona_label,
-                    operational_agent_label: payload.operational_agent_label,
+                    narrative_persona_label: payload.narrative_persona_label.filter(|label| !label.trim().is_empty()),
+                    operational_agent_label: payload.operational_agent_label.filter(|label| !label.trim().is_empty()),
                     targets: payload.targets,
                     jurisdictions: payload
                         .jurisdictions
@@ -1701,13 +1707,13 @@ async fn maintain_mesh_projection(state: AppState) {
 /// scope inside it and never the root.
 const SEED_VAULT_ROOT_ENVIRONMENT: &str = "GHOSTLIGHT_SEED_VAULT_ROOT";
 
-/// The configured vault root, if any. The one reader of
-/// `SEED_VAULT_ROOT_ENVIRONMENT`: the surface offers the seed controls on
-/// whether this answers, and `seed_once` reads its root from it, so the two
-/// cannot disagree about whether seeding exists on this server.
-fn seed_vault_root() -> Option<PathBuf> {
-    std::env::var_os(SEED_VAULT_ROOT_ENVIRONMENT)
-        .filter(|root| !root.is_empty())
+/// The vault root a configured value names, if any. Open reads
+/// `SEED_VAULT_ROOT_ENVIRONMENT` once and passes the value here; this is the
+/// only place that decides what counts as configured, so an empty or
+/// whitespace-only value is no configuration wherever the state is built.
+fn seed_vault_root_from(value: Option<std::ffi::OsString>) -> Option<PathBuf> {
+    value
+        .filter(|root| !root.to_string_lossy().trim().is_empty())
         .map(PathBuf::from)
 }
 
@@ -1747,7 +1753,7 @@ async fn seed_once(
     // `SEED_VAULT_ROOT_ENVIRONMENT` to the player taught them a fact about
     // this process's own environment, not about the world. The detail is
     // still logged, for the operator who can actually act on it.
-    let root = seed_vault_root().ok_or_else(|| {
+    let root = state.seed_vault_root.clone().ok_or_else(|| {
         tracing::warn!(
             environment_variable = SEED_VAULT_ROOT_ENVIRONMENT,
             "seeding was requested but the vault root is not configured"
@@ -2547,6 +2553,7 @@ mod tests {
             runtime_health: None,
             revisions,
             fatal,
+            seed_vault_root: None,
         };
         publish_projection(&state).await.unwrap();
         Fixture {
@@ -3099,19 +3106,12 @@ mod tests {
     /// {"bindings":{...}}}` (the envelope) against Dungeon's flat payload
     /// structs — either alone was enough to refuse every field as missing.
     ///
-    /// `world.play` is included through "the route accepts it and the turn
-    /// reaches the play table" (the same proof
-    /// `world_play_reaches_the_play_table_and_is_accepted` already gives
-    /// hand-built payloads, given here to the real client's own payload
-    /// instead). This fixture's inference organ is an unreachable test
-    /// address (`127.0.0.1:9`, see `fixture()`), so the turn it opens can
-    /// never actually reach `AwaitingPlayer` here to prove the "answer" leg
-    /// through this same harness — that would need a scripted inference
-    /// port, which lives only inside `play.rs`'s own private test module
-    /// (`ScriptedPort`) and is not reachable from here. PA.f151's own
-    /// server-resolved-answer mechanism has its own direct proof instead, at
-    /// the play-table layer:
-    /// `play::tests::a_question_is_answered_through_the_cards_own_binding_and_the_turn_closes_with_narration`.
+    /// `world.play` is driven twice through the real client: typed text on a
+    /// fresh Active world opens a turn (held `Running` by an inference port
+    /// that blocks), and after a restart over the same store an untouched
+    /// Play box continues that `Running` turn to its close. No vault is
+    /// configured, so the real client is never offered a seed to click.
+    ///
     /// (Soul's owed item 3): `#[ignore]`d, not skipped-with-a-print. Before
     /// this, an unavailable `node`/vendor-lowering environment made this
     /// test return early and count as an ordinary pass — cargo's own summary
@@ -3189,37 +3189,102 @@ mod tests {
         let activated = post(&fixture.state, &fixture.cookie, activate_intents.into_iter().next().unwrap()).await;
         assert_eq!(activated["receipt"]["state"], "accepted", "world.activate via the real client: {activated}");
 
+        // A typed Play on a fresh Active world opens a turn. The first table's
+        // inference port blocks until released, so the turn stays `Running`
+        // and its row is on disk while the test looks at it.
+        use crate::play::tests::{GatedPort, ScriptedPort, call_event, output, text_event};
+        let store_directory = tempfile::tempdir().unwrap();
+        let store_path = store_directory.path().join("play-turn-v1.cc");
+        let models = ["gpt-5.6-sol", "gpt-5.6-terra"];
+        let table_over = |inference: Arc<dyn ghostlight::InferencePort>, narration: Arc<dyn ghostlight::InferencePort>| {
+            let personas = PersonaLane::new(
+                ControllerPort::new(fixture.state.world.clone()),
+                narration,
+                models[0].into(),
+                models[0].into(),
+            )
+            .unwrap();
+            Arc::new(
+                PlayTable::new(
+                    fixture.state.world.clone(),
+                    personas,
+                    inference,
+                    models[1].into(),
+                    Arc::new(Semaphore::new(TEST_CONTROLLER_CONCURRENCY)),
+                    &store_path,
+                )
+                .unwrap(),
+            )
+        };
+        let mut fixture = fixture;
+        let held = table_over(
+            GatedPort::new(output("held", vec![call_event("c0", "end_turn", json!({}))])),
+            ScriptedPort::new(vec![]),
+        );
+        fixture.state.play = Some(held.clone());
+
         let active_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
         let play_intents = client_intents(
             &active_surface,
             &provider,
-            // PA.f214: the box is never touched, so the intent carries the
-            // control's authored `text: ""`, not a missing binding.
-            json!([{"click": "world.play"}]),
+            json!([
+                {"set": {"world.play.text": "I look around the hall."}},
+                {"click": "world.play"}
+            ]),
         );
         assert_eq!(play_intents.len(), 1);
-        assert_eq!(
-            play_intents[0]["payload"]["bindings"]["text"], "",
-            "an untouched Play box must reach the route as an empty continue: {}",
-            play_intents[0]
-        );
+        assert_eq!(play_intents[0]["payload"]["bindings"]["text"], "I look around the hall.");
         let played = post(&fixture.state, &fixture.cookie, play_intents.into_iter().next().unwrap()).await;
-        assert_eq!(played["receipt"]["state"], "accepted", "world.play via the real client: {played}");
-
-        let table = fixture.state.play.clone().unwrap();
-        let observed = tokio::time::timeout(Duration::from_secs(5), async move {
+        assert_eq!(played["receipt"]["state"], "accepted", "typed world.play via the real client: {played}");
+        let opened = tokio::time::timeout(Duration::from_secs(5), async {
             loop {
-                if table.current_turn_view().await.is_some() {
-                    break;
+                if let Some(view) = held.current_turn_view().await {
+                    break view;
                 }
                 tokio::time::sleep(Duration::from_millis(10)).await;
             }
         })
-        .await;
-        assert!(
-            observed.is_ok(),
-            "the real client's own world.play intent must reach PlayTable::run and open a turn row"
+        .await
+        .expect("the real client's typed world.play must reach PlayTable and open a turn row");
+        assert_eq!(opened.state, PlayTurnState::Running);
+
+        // The process that held that turn is gone; the next one opens the same
+        // store and finds the turn `Running` with nothing working on it. The
+        // client now clicks Play with the box untouched, which is exactly what
+        // the card's hint tells a player to do.
+        let restarted = table_over(
+            ScriptedPort::new(vec![output("r0", vec![call_event("c1", "end_turn", json!({}))])]),
+            ScriptedPort::new(vec![output("proj-0", vec![text_event("The hall settles.")])]),
         );
+        fixture.state.play = Some(restarted.clone());
+        let idle = restarted.current_turn_view().await.expect("the running turn survives the restart");
+        assert_eq!(idle.state, PlayTurnState::Running);
+        assert!(!idle.run_in_progress);
+        assert_eq!(idle.turn_id, opened.turn_id);
+
+        let running_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let continue_intents = client_intents(&running_surface, &provider, json!([{"click": "world.play"}]));
+        assert_eq!(continue_intents.len(), 1);
+        assert_eq!(
+            continue_intents[0]["payload"]["bindings"]["text"], "",
+            "an untouched Play box must reach the route as an empty continue: {}",
+            continue_intents[0]
+        );
+        let continued = post(&fixture.state, &fixture.cookie, continue_intents.into_iter().next().unwrap()).await;
+        assert_eq!(continued["receipt"]["state"], "accepted", "untouched world.play via the real client: {continued}");
+        let closed = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                let view = restarted.current_turn_view().await.unwrap();
+                if view.state == PlayTurnState::Closed {
+                    break view;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("the untouched Play must continue the Running turn to its close");
+        assert_eq!(closed.turn_id, opened.turn_id, "the continue opened a new turn instead of continuing");
+        assert_eq!(closed.narration.as_deref(), Some("The hall settles."));
     }
 
     /// PA.f162: the real vendored lowering's own intents for the full
@@ -4397,6 +4462,47 @@ mod tests {
     /// and `play_world_with_two_scripted_questions` (Cut 13) do not each
     /// repeat it. Returns the fixture and the world's `sourceVersion` after
     /// activation.
+    /// A cleared optional label means none. The form's persona and agent boxes
+    /// have no authored value, so a player who typed a name and deleted it
+    /// sends "" (or spaces); the route reads that as no persona and no agent,
+    /// not as a world with an empty-named one the kernel then refuses.
+    ///
+    /// Mutation: pass `payload.narrative_persona_label` and
+    /// `payload.operational_agent_label` through `create` unfiltered.
+    #[tokio::test]
+    async fn cleared_optional_labels_create_a_world_with_no_persona_and_no_agent() {
+        let fixture = fixture().await;
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v4",
+                0,
+                json!({
+                    "title":"Cleared Labels",
+                    "brief":"",
+                    "subject_label":"Operator",
+                    "narrative_persona_label":"",
+                    "operational_agent_label":"  ",
+                    "targets":{},
+                    "jurisdictions":[],
+                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
+                }),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(created["receipt"]["state"], "accepted", "{created}");
+        let snapshot = fixture.state.world.snapshot().await.unwrap();
+        assert_eq!(
+            snapshot.subjects.len(),
+            1,
+            "a cleared label declared a persona or agent: {} subjects",
+            snapshot.subjects.len()
+        );
+    }
+
     async fn activated_fixture(title: &str) -> (Fixture, u64) {
         let fixture = fixture().await;
         let created = post(
@@ -6152,8 +6258,7 @@ mod tests {
         let draft = fixture.state.world.snapshot().await.unwrap();
 
         // The vault root is deliberately unset: neither refusal may reach it.
-        let _env = SEED_ENV_LOCK.lock().await;
-        unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
+        assert!(fixture.state.seed_vault_root.is_none());
         let denied = post(
             &fixture.state,
             &stranger,
@@ -6246,8 +6351,7 @@ mod tests {
         .await;
         let draft = fixture.state.world.snapshot().await.unwrap();
 
-        let _env = SEED_ENV_LOCK.lock().await;
-        unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
+        assert!(fixture.state.seed_vault_root.is_none());
         let denied = post(
             &fixture.state,
             &fixture.cookie,
@@ -6328,11 +6432,6 @@ mod tests {
         );
         assert!(encoded.contains("world.seed"), "the button is missing");
     }
-
-    /// `GHOSTLIGHT_SEED_VAULT_ROOT` is process-global: a test that sets or
-    /// clears it holds this for its whole body so no other such test sees the
-    /// change mid-flight.
-    static SEED_ENV_LOCK: Mutex<()> = Mutex::const_new(());
 
     /// The control node a surface binds to `binding`: what the vendored
     /// lowering's `findAuthoredBindingValue` looks up when a button is clicked.
@@ -6540,33 +6639,84 @@ mod tests {
         }
         assert!(described(&with), "world.seed not advertised with a vault");
 
-        // The served surface reads the configuration through `seed_vault_root`:
+        // The served surface reads the root from the state it is served with:
         // nothing configured offers nothing, and a configured root offers the
         // lane without the root's own text ever reaching the card.
-        let _env = SEED_ENV_LOCK.lock().await;
-        unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
         let served =
             get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
         assert!(!described(&served), "the served surface offered seeding with no vault");
         assert!(!node_ids(&served).iter().any(|id| id == "world.seed"));
 
-        // An empty variable is no configuration.
-        unsafe { std::env::set_var(SEED_VAULT_ROOT_ENVIRONMENT, "") };
-        let served =
-            get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
-        unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
-        assert!(!described(&served), "an empty vault root offered seeding");
-
-        let canary = "/canary-vault-root-4f9a1c";
-        unsafe { std::env::set_var(SEED_VAULT_ROOT_ENVIRONMENT, canary) };
-        let served =
-            get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
-        unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
+        let mut configured = fixture.state.clone();
+        configured.seed_vault_root = Some(PathBuf::from("/canary-vault-root-4f9a1c"));
+        let served = get(&configured, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
         assert!(described(&served), "the served surface hid seeding with a vault");
         assert!(node_ids(&served).iter().any(|id| id == "world.seed"));
         assert!(
             !serde_json::to_string(&served).unwrap().contains("canary-vault-root"),
             "the configured root reached the surface"
+        );
+    }
+
+    /// What counts as a configured vault root is decided in one place. An
+    /// absent, empty or whitespace-only value is no configuration, so a
+    /// server started with a blank variable offers no seeding and refuses a
+    /// forged `world.seed` with the same fixed message as an unset one, which
+    /// never echoes the value it was started with.
+    ///
+    /// Mutation: drop the `.trim()` in `seed_vault_root_from` and the
+    /// whitespace cases below answer `Some`.
+    #[tokio::test]
+    async fn a_blank_vault_root_is_no_configuration_and_its_refusal_echoes_nothing() {
+        use std::ffi::OsString;
+        assert_eq!(seed_vault_root_from(None), None);
+        for blank in ["", " ", "	
+  "] {
+            assert_eq!(
+                seed_vault_root_from(Some(OsString::from(blank))),
+                None,
+                "{blank:?} counted as a configured vault root"
+            );
+        }
+        assert_eq!(
+            seed_vault_root_from(Some(OsString::from("/vault"))),
+            Some(PathBuf::from("/vault"))
+        );
+
+        // A blank value in the state a server would build from it refuses a
+        // forged seed with the fixed message, never the value.
+        let fixture = fixture().await;
+        two_cell_world(
+            &fixture.state,
+            &fixture.cookie,
+            BTreeMap::from([(SubjectKind::Person, 4)]),
+            vec![CreateJurisdictionIntent {
+                handle: "sere".into(),
+                label: "The Low Sere".into(),
+                permille: 1000,
+            }],
+        )
+        .await;
+        let draft = fixture.state.world.snapshot().await.unwrap();
+        let mut state = fixture.state.clone();
+        state.seed_vault_root = seed_vault_root_from(Some(OsString::from("   ")));
+        let denied = post(
+            &state,
+            &fixture.cookie,
+            invocation(
+                "world.seed",
+                "ghostlight.world_seed.v1",
+                draft.revision + 1,
+                json!({"vault_scope":"canary-scope-7c2e","brief":""}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(denied["receipt"]["state"], "denied", "{denied}");
+        let message = denied["receipt"]["message"].as_str().unwrap_or_default();
+        assert_eq!(
+            message, "invalid command payload: seeding is not available on this world",
+            "{denied}"
         );
     }
 

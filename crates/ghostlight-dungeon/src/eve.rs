@@ -215,7 +215,7 @@ fn jurisdiction_label(world: &WorldSnapshot, jurisdiction: JurisdictionKey) -> S
 /// invariant 8's projection, question, and refusal, nothing else.
 ///
 /// `seed_available` is whether the seed lane's vault is configured on this
-/// server (`runtime::seed_vault_root`, the one reader of that configuration).
+/// server (`AppState::seed_vault_root`, set once at open from the environment).
 /// The seed controls and the `world.seed` descriptor are offered only where
 /// pressing the button could do something.
 pub(crate) fn authenticated_surface(
