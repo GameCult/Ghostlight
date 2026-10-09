@@ -3196,9 +3196,10 @@ mod tests {
         let store_directory = tempfile::tempdir().unwrap();
         let store_path = store_directory.path().join("play-turn-v1.cc");
         let models = ["gpt-5.6-sol", "gpt-5.6-terra"];
+        let world = fixture.state.world.clone();
         let table_over = |inference: Arc<dyn ghostlight::InferencePort>, narration: Arc<dyn ghostlight::InferencePort>| {
             let personas = PersonaLane::new(
-                ControllerPort::new(fixture.state.world.clone()),
+                ControllerPort::new(world.clone()),
                 narration,
                 models[0].into(),
                 models[0].into(),
@@ -3206,7 +3207,7 @@ mod tests {
             .unwrap();
             Arc::new(
                 PlayTable::new(
-                    fixture.state.world.clone(),
+                    world.clone(),
                     personas,
                     inference,
                     models[1].into(),
