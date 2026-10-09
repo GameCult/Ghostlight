@@ -1,5 +1,9 @@
 # Ghostlight Implementation Plan
 
+> Status: the historical plan of the 2026-09 rebuild. Steps 1-16 are landed or
+> deferred by ruling; this is not the current plan. Current work is the campaign
+> `ghostlight-verse` in the Eureka mind (see `AGENTS.md`).
+
 ## Objective
 
 Rebuild Ghostlight Dungeon as one legible world machine: one lifecycle, one
@@ -284,7 +288,7 @@ Implementation order, each pass landing tests before the next begins:
    never sees a cell.
 10. Consumer ingress: landed in pass 10. `SystemCapability::Consumer` is the
     world's third `AdmitPatch` author, minted only by
-    `WorldMailbox::submit_consumer` after `world/consumer.rs` authenticates a
+    `WorldMailbox::submit_consumer` after `crates/ghostlight/src/consumer.rs` authenticates a
     `ConsumerPatchDocument` against a `ConsumerRegistry` secret digest.
     `require_patch_author`/`confine_to_ground` widen to `PatchGround::Consumer`,
     confining a consumer to the subjects declared
@@ -324,7 +328,7 @@ behind that clause now lives only in `require_answer`. The Draft seed lane —
 invocation on the existing elaboration repair loop, admitting at most one
 Draft patch as `CallerId::Principal(owner)` through the unconfined owner lane;
 there is no marker in the journal distinguishing a seed-authored patch from a
-hand-authored one. `VaultEvidenceSource` (`world/vault.rs`) is the seed lane's
+hand-authored one. `VaultEvidenceSource` (`crates/ghostlight/src/vault.rs`) is the seed lane's
 production `EvidenceSource`: a read-only markdown directory reader whose
 evidence reference is a note's vault-relative `.md` path.
 `world.advance_time`'s missing `operation_schema` entry — every invocation of
@@ -652,7 +656,7 @@ request and output. Silence is a legitimate outcome, not a harness failure.
 
 Landed 2026-09-11 as mapped, with both recommendations taken: the small typed
 material record, and a required commitment statement. `PersonaMaterial` is
-`world/patch.rs`'s thirteenth-row component (`values`, `voice`, `memories`,
+`crates/ghostlight/src/patch.rs`'s thirteenth-row component (`values`, `voice`, `memories`,
 `reads` keyed by subject), set whole by `set_persona_material` (thirty
 operations, thirty-nine tools); a commitment carries `statement`; state and
 commit schemas are `.consumer.v3`; an affordance-made promise's statement is

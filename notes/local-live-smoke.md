@@ -5,8 +5,8 @@ No live smoke exists in this tree. The ignored test this file once documented,
 ran the production tick driver and the Active elaboration sweep against a real
 CodexConnector; the play agent's Cut 1 (`d69e9d4`) deleted both, and the test
 with them. A command that names it now matches nothing and exits 0. No
-replacement exists until the play agent's own gate (`ghostlight-play-agent.md`)
-lands one.
+replacement exists. The real-model gate that does exist is the Idunn recipe's
+`accept-real-persona-membrane` step (`deployment/idunn/recipe.toml`).
 
 What remains true and stays here: bringing up a real CodexConnector and a
 built Claude SDK sidecar. The seed lane (`world.seed`) still runs real
@@ -53,7 +53,7 @@ the same variables the deleted harness read.
 
 ## Claude SDK route
 
-`world/sdk_inference.rs`'s `SdkInferencePort` gives any lane whose configured
+`crates/ghostlight/src/sdk_inference.rs`'s `SdkInferencePort` gives any lane whose configured
 model is `claude`-prefixed (matching `GHOSTLIGHT_SDK_MODEL_PREFIX`, default
 `claude`) a second transport: a Node sidecar on the Claude Agent SDK instead of
 the CodexConnector, so a session can run on the Claude subscription with no

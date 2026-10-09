@@ -3,8 +3,10 @@
 ## Status
 
 This document is the adopted rebuild target for the Ghostlight runtime. It is
-the authority map for implementation work. The pre-rebuild body remains
-described in `notes/ghostlight-current-system-map.md` only as teardown evidence.
+the authority map for implementation work. What it describes is built in
+`crates/ghostlight` except where it says otherwise here: bounded co-op and the
+`archived` phase with read/export-only archival are design intent, and nothing
+in `crates/` implements them (`WorldPhase` has `Draft` and `Active` only).
 
 Ghostlight is a persistent, source-grounded narrative world. Its job is to
 preserve people, institutions, places, knowledge, material consequence, and
@@ -13,8 +15,8 @@ committee of models until one model permits another model's text to exist.
 
 ## Objective
 
-Build one sparse, open-world causal machine that supports solo and bounded
-co-op play, autonomous subject decisions, source-grounded expansion, external
+Build one sparse, open-world causal machine that supports solo play (bounded
+co-op is design intent, unbuilt), autonomous subject decisions, source-grounded expansion, external
 world owners, and actor-private experience.
 
 The world grows when committed pressure reaches a typed boundary: a new
@@ -61,11 +63,14 @@ multiple process attempts.
 
 `WorldKernel` owns:
 
-- lifecycle phase and revision;
-- membership, contract, boundaries, and approvals;
-- the typed world ontology;
-- committed events and fictional time;
-- fictional time, commitments, and pressures;
+- lifecycle phase and revision (`WorldState.phase`, `revision`);
+- the owner and the draft approvals (`owner`, `draft_approvals`); membership,
+  a contract, and negotiated boundaries are design intent and no field of
+  `WorldState` holds them;
+- the typed world ontology (the partitions listed under "Canonical world
+  state");
+- committed events and fictional time (`events`, `now`);
+- commitments and pressures;
 - command idempotency and the commit digest chain.
 
 There is no separate Session Zero owner, component-world owner, aggregate
@@ -75,11 +80,14 @@ campaign owner, elaboration committer, scheduler writer, or recovery writer.
 
 The only mutation input is a `CommandEnvelope` containing:
 
-- a stable command ID;
-- the exact world ID and expected revision;
-- an authenticated principal or internal system capability;
-- one closed command body;
-- exact evidence references where the command depends on source material.
+- a stable command ID (`id`);
+- the exact world ID and expected revision (`world_id`, `expected_revision`);
+- an authenticated principal or internal system capability (`caller`);
+- one closed command body (`body: CommandBody`).
+
+`CommandEnvelope` (`crates/ghostlight/src/lib.rs`) has exactly these five
+fields. Evidence references travel inside `AdmitPatch`'s `WorldPatch`, not on
+the envelope.
 
 The caller supplies identity evidence, not an authority verdict. For a patch
 command the kernel derives the caller's authority itself:
@@ -97,15 +105,17 @@ controller receives a privileged mutation path.
 
 ### Outputs
 
-An accepted command produces one `WorldCommit` containing:
+An accepted command produces one `WorldCommit` (`crates/ghostlight/src/lib.rs`)
+whose fields are:
 
-- previous and resulting revision;
-- previous and resulting state digest;
-- command ID and derived authority digest;
-- the exact admitted mutation batch;
-- committed events;
-- evidence references;
-- commit time and previous commit digest.
+- `schema` and `world_id`;
+- `command` (the committed command);
+- `previous_revision` and `resulting_revision`;
+- `previous_state_digest` and `resulting_state_digest`;
+- `previous_commit_digest` and its own `digest`;
+- `effect` (a `WorldEffect`: the admitted patch, decision, or time step, with
+  its committed events);
+- `committed_at`.
 
 The next `WorldState` and `WorldCommit` are persisted atomically. A rejection
 returns typed invariant failures and changes nothing.
@@ -151,28 +161,40 @@ command.
 `WorldState` is one aggregate with these owned partitions:
 
 ```text
-WorldState
-  identity: world_id, revision, phase, state_digest, last_commit_digest
-  governance: members, actor bindings, contract, boundaries, approvals
+WorldState (crates/ghostlight/src/lib.rs, the fields of the struct)
+  identity: schema, world_id, revision, phase, state_digest, last_commit_digest
+  authorship: owner, title, brief, draft_approvals
   ontology:
-    places and directed routes
-    subjects and typed components
-    relations
-    pressures and commitments
-    facts, knowledge grants, and provenance
-    external-owner grants
-  time: fictional clock
-  events: committed factual and speech events
-  applied_commands: bounded idempotency ledger
+    subjects, entities (place, resource, fact, channel), edges (routes)
+    positions, holdings, dependencies
+    facts, channels, knowledge
+    authority, selection, redress
+    commitments, pressures, last_opportunity_at
+    persona_material
+    controller_assignments, affordance_catalog, affordance_grants
+  time: now
+  intent: scale_intent, lens_weights
+  events: events (decision events)
 ```
+
+There is no `members`, `contract`, or boundaries field and no
+`applied_commands` ledger in `WorldState`. Command idempotency is decided from
+the commit rows keyed by command id. `WorldCommit` rows, not `WorldState`,
+carry the digest chain.
 
 The lifecycle is data inside the aggregate:
 
-- `draft`: membership, negotiation, private/shared speech, character creation,
-  evidence admission, and ontology construction are allowed by draft authority;
-- `active`: player and autonomous decisions, time, causal expansion, and
-  contract amendments are allowed by active authority;
-- `archived`: only read/export operations are allowed.
+`WorldPhase` has two variants, `Draft` and `Active`:
+
+- `Draft`: `ApproveDraft`, `ActivateWorld`, `AdmitPatch` (seed and ontology
+  construction under draft authority, which answers nothing), and
+  `SetLensWeights`;
+- `Active`: `ExerciseDecision`, `DeclineDecision`, `AdvanceTime`, `AdmitPatch`
+  that answers a derived boundary or a jurisdiction deficit, and
+  `SetLensWeights`.
+
+An `archived` phase with read/export-only archival is design intent; no variant
+exists.
 
 Activation changes `phase` in place after the current revision has the required
 member approvals. It does not copy a preview into another store or hand truth
@@ -233,19 +255,20 @@ custody, topology, or knowledge component.
 
 ### Relations
 
-Relations have typed endpoints and kind-specific constraints. The vocabulary
-covers:
+`EdgeKind` (`crates/ghostlight/src/patch.rs`) has one variant, `Route`, so the
+kernel has no general relation record yet. What the kernel carries, each in
+its own `WorldState` partition with typed endpoints:
 
-- containment and occupancy;
-- membership and lineage;
-- jurisdiction and representation;
-- custody and dependency;
-- authority and control;
-- supply and service;
-- alliance, opposition, and obligation;
-- knowledge and communication;
-- topology and access;
-- causal pressure and exposure.
+- containment (`EntityRecord.container`) and occupancy (`positions`);
+- topology and access (`Route` edges with `AccessKind`);
+- custody (`holdings`) and dependency (`dependencies`);
+- authority and representation (`authority`, `selection`, `redress`);
+- knowledge and communication (`knowledge`, `channels`);
+- obligation (`commitments`) and causal pressure (`pressures`);
+- control (`controller_assignments`).
+
+Membership, lineage, supply and service, and alliance or opposition as
+relations are design intent and have no record shape.
 
 Civic order is a typed subgraph of authority, selection or succession,
 resource access, representation, and redress relations. It is not a prose
@@ -288,15 +311,22 @@ authenticated intent or model tool call
   -> derive projections and next attention plan
 ```
 
-The closed command vocabulary includes lifecycle and membership changes,
-contract and boundary changes, speech, ontology construction, subject
-decisions, time advance, external snapshots, evidence admission, and archive.
-Every command lowers to the same mutation vocabulary. There is no
+The closed command vocabulary is `CommandBody` (`crates/ghostlight/src/lib.rs`),
+seven variants: `ApproveDraft`, `ActivateWorld`, `ExerciseDecision`,
+`DeclineDecision`, `AdmitPatch`, `AdvanceTime`, `SetLensWeights`. Speech is an
+`ExerciseDecision` effect, ontology construction and evidence admission are
+`AdmitPatch`, and world creation is a separate genesis (`CreateWorld`).
+Membership, contract and boundary changes, external snapshots, and archive are
+not commands. Every command lowers to the same mutation vocabulary. There is no
 `commit_elaboration`, separate component-batch ingress, or reload repair path.
 
 ## Inference boundary
 
-Ghostlight supports two first-class decision interfaces. The ontology assigns
+`ControllerMode` (`crates/ghostlight/src/lib.rs`) has three variants, `Human`,
+`NarrativePersona`, and `OperationalAgent`; an externally controlled subject
+has no mode. Ghostlight supports two first-class model decision interfaces
+(`DecisionControllerMode` in `crates/ghostlight-persona-projection/src/lib.rs`:
+`NarrativePersona` and `OperationalAgent`). The ontology assigns
 each exact authority scope to one `DecisionController`; the scheduler does not
 choose a mode opportunistically. The scheduler does choose resolution: a
 `NarrativePersona` controller receives its prose membrane in a singleton cell
@@ -434,8 +464,9 @@ does not require a provider, model tier, stage name, output hash, or verifier
 receipt to authorize world state.
 
 Every controller lane reaches one `InferencePort`, but that port now routes
-to either of two transports chosen by the lane's configured model name: the
-CodexConnector daemon peer, unchanged, or `SdkInferencePort`, a Node child
+to one of three transports chosen by the lane's configured model name: the
+CodexConnector daemon peer, unchanged; a local OpenAI-compatible loopback
+port (the `local/` prefix, Bonsai in production); or `SdkInferencePort`, a Node child
 process running the Claude Agent SDK against the Claude subscription while
 no Codex or Anthropic API budget exists. The SDK route is a named stopgap,
 not a peer design: its receipt attests only that this process's own child
@@ -521,11 +552,13 @@ author proposal; they do not become a hidden admission tribunal.
 
 ## Persistence and recovery
 
-One world `.cc` store contains:
+One world `.cc` store (`crates/ghostlight/src/journal.rs`) contains:
 
-- one current `world_state.v1` row;
-- immutable `world_commit.v1` rows forming a digest chain;
-- immutable exact evidence receipts referenced by commits.
+- one current `world_state.elaboration.v1` row, schema
+  `ghostlight.world_state.consumer.v6`;
+- immutable `world_commit.elaboration.v1` rows, schema
+  `ghostlight.world_commit.consumer.v6`, forming a digest chain. Evidence
+  receipts ride inside the commits' patches; there is no separate evidence row.
 
 Service authentication and model telemetry use separate service-owned stores.
 They cannot participate in world authority.
@@ -586,8 +619,11 @@ exists: the play agent's Cut 1 (`d69e9d4`) deleted the tick driver, cover and
 Active elaboration sweep it exercised, along with the ignored test itself, to
 clear the ground for the play agent's own owner. `notes/local-live-smoke.md`
 now documents only connector and Claude SDK sidecar bring-up, which the seed
-lane still uses. Exercising the road against a real controller again is the
-play agent's own gate (`ghostlight-play-agent.md`), not this contract.
+lane still uses. The real-model gate that exists today is the Idunn recipe's
+`accept-real-persona-membrane` step (`deployment/idunn/recipe.toml`), which
+runs `controllers::tests::real_local_model_cognition_modes_commit_speech`
+against a real model; exercising a whole play turn against one is not gated
+by this contract.
 `world.create`'s current payload is `world_create.v4`: title, brief, targets,
 jurisdiction roots and lens weights are required, and Dungeon's create surface
 offers uniform weights as its editable default. `world.seed` runs one

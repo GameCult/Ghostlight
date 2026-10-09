@@ -16,7 +16,7 @@ profile-side binding).
 
 ## Authority map
 
-- **Admission owner:** `require_patch_author` (`world/mod.rs`) decides which
+- **Admission owner:** `require_patch_author` (`crates/ghostlight/src/lib.rs`) decides which
   caller may submit `AdmitPatch` and returns that caller's `PatchGround`;
   `confine_to_ground` decides what a confined ground may write. Both run in
   `reduce`'s `AdmitPatch` arm and again in `apply_effect`'s `PatchAdmitted`
@@ -28,14 +28,14 @@ profile-side binding).
   read from committed state at decision time. A consumer cannot name its own
   scope on the wire, and revoking a binding in a later commit shrinks its
   authority with no ingress change.
-- **Caller minting:** `WorldMailbox::submit_consumer` (`world/mailbox.rs`) is
+- **Caller minting:** `WorldMailbox::submit_consumer` (`crates/ghostlight/src/mailbox.rs`) is
   the only constructor of `AuthenticatedCaller::verified_system(SystemCapability::Consumer { consumer })`.
-- **Ingress owner:** `world/consumer.rs` owns decoding a document, bounding
+- **Ingress owner:** `crates/ghostlight/src/consumer.rs` owns decoding a document, bounding
   it, authenticating the consumer, one port call, and one receipt
   projection. It owns no world truth, holds no opinion about a patch's
   content, and does not pre-validate — a second reducer here could disagree
   with the kernel's, so structure is decided once, by `resolve_patch`.
-- **Port:** `ConsumerPort` (`world/mailbox.rs`) has one method,
+- **Port:** `ConsumerPort` (`crates/ghostlight/src/mailbox.rs`) has one method,
   `submit_consumer`. It cannot read the world: it does not select an answer,
   does not pre-validate, and returns a receipt rather than state.
 
@@ -66,8 +66,8 @@ attributed proposal — is not part of this pass; see "Not in this pass" below.
 `POST /cultnet/world-patch`, declared beside `/cultnet/snapshot` in
 `api_router` (`runtime.rs`). The handler gates loopback and content type
 (`application/msgpack`) exactly as the snapshot route does, then hands the
-body to `world::consumer::admit_document`; everything past those two gates is
-`world/consumer.rs`'s to decide. The body limit is
+body to `ghostlight::admit_document`; everything past those two gates is
+`consumer.rs`'s to decide. The body limit is
 `CONSUMER_BODY_LIMIT = patch::MAX_PATCH_BYTES + CONSUMER_ENVELOPE_SLACK` (an
 8 KiB envelope allowance over the 256 KiB patch cap), so the transport guard
 cannot become a second opinion about how big a patch may be.
@@ -143,8 +143,12 @@ those subjects (`confine_to_ground`, the `PatchGround::Consumer` arm):
   place, never the acting subject, and a consumer's ground names no place.
   A consumer tells what its mirror knows through `AcquireKnowledge` on its own
   bound subject; it cannot cause a place-wide witnessed event;
-- a `Claimed { by }` fact must name a bound subject; a `Canonical` fact
-  declaration is refused outright — a consumer's evidence buys an `Admit`
+- `Retire`, `GrantAffordance`, `RevokeAffordance`, and `Mint` are always
+  refused (`ResolvedOp`s that are authority over standing, not structure over
+  ground);
+- a `Claimed { by }` fact must name a bound subject; a `Ruled` fact is refused
+  outright, and so is a `Canonical` fact
+  declaration — a consumer's evidence buys an `Admit`
   into its own custody and a `Claimed` fact, never a canonization;
 - a channel's reach and controller must all be bound subjects;
 - every operation's ground subjects must be bound, and its place and route
@@ -180,9 +184,9 @@ enters a log, a receipt, or the journal.
 The consumer capability's tag is part of the commit digest and the
 externally controlled assignment is part of the state shape, so both bump the
 schema. World lens weights later entered the state and `SetLensWeights`
-the commit, so the live schemas are state `ghostlight.world_state.consumer.v5`
+the commit, so the live schemas are state `ghostlight.world_state.consumer.v6`
 (state-schema generation `world-v3`) and commit
-`ghostlight.world_commit.consumer.v5`. A store written under an earlier schema
+`ghostlight.world_commit.consumer.v6`. A store written under an earlier schema
 is refused, not migrated.
 
 ## Not in this pass
