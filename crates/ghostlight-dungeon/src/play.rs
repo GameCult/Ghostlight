@@ -8373,7 +8373,7 @@ pub(crate) mod tests {
     /// the warn line, the card row and Debug nowhere.
     #[tokio::test]
     async fn a_malformed_local_reply_closes_the_turn_without_echoing_it() {
-        let endpoint = replying_with("\\"CANARY-reply-5d02c8\\"");
+        let endpoint = replying_with("\"CANARY-reply-5d02c8\"");
         assert_faulted_turn_names_no_endpoint(
             endpoint,
             None,

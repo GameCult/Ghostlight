@@ -1905,7 +1905,7 @@ mod tests {
                 .expect_err("an unroutable model inferred"),
         ] {
             assert!(fault.integrity_was_violated(), "{fault:?}");
-            assert!(fault.to_string().contains(TEST_MODEL));
+            assert!(fault.to_string().contains("no configured inference backend"), "{fault:?}");
         }
 
         // An SDK-only deployment opens with no connector binding at all, so no
