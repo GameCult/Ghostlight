@@ -101,7 +101,7 @@ petitions from subjects with standing. Authority-writing slots (`grant`,
 target, otherwise `ActionMismatch::DelegationNotMonotone`.
 
 A `Fact` is an entity with a `Statement` and a `FactStanding`: `Canonical`
-with evidence, or `Claimed { by }`. `Knowledge` is subject-keyed per fact with
+with evidence, `Claimed { by }`, or `Ruled` (stated by the play table). `Knowledge` is subject-keyed per fact with
 a `Confidence` and a `KnowledgeSource { Witnessed, Told { by, via }, Seen { by },
 Evidenced }`; a telling or a showing never overwrites a holder. `Witnessed` is minted by an authored
 patch's `AcquireKnowledge` and, with no author at all, by `Witness` (below). A

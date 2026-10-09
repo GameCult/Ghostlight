@@ -47,6 +47,7 @@ and world phase (`anonymous_surface`, `authenticated_surface` in
 | Caller and world | Content | Operations |
 |---|---|---|
 | Anonymous | `heimdall.access_gate` | `heimdall.auth.begin`, `heimdall.auth.complete` |
+| Authenticated, any world state | a `Sign out` button on every authenticated surface | `app.auth.logout` (`ghostlight.app_logout.v2`) |
 | Authenticated, no world | the create form: title, brief, your name, optional Narrative persona and Operational agent labels, scale target, jurisdiction roots, lens weights | `world.create` (`ghostlight.world_create.v4`) |
 | Draft world | world summary card; approve button for a required approver who has not approved; for the owner, the seed form and Seed card, and the activate button once every required approver has approved | `world.approve` (`ghostlight.world_approve.v0`), `world.seed` (`ghostlight.world_seed.v1`), `world.activate` (`ghostlight.world_activate.v0`) |
 | Active world, owner | advance-time control and the Play card: narration, the open question, the refusal of the player's own act, one free-text control | `world.advance_time` (`ghostlight.world_advance_time.v0`), `world.play` (`ghostlight.world_play.v0`) |

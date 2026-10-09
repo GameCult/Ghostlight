@@ -464,8 +464,9 @@ does not require a provider, model tier, stage name, output hash, or verifier
 receipt to authorize world state.
 
 Every controller lane reaches one `InferencePort`, but that port now routes
-to either of two transports chosen by the lane's configured model name: the
-CodexConnector daemon peer, unchanged, or `SdkInferencePort`, a Node child
+to one of three transports chosen by the lane's configured model name: the
+CodexConnector daemon peer, unchanged; a local OpenAI-compatible loopback
+port (the `local/` prefix, Bonsai in production); or `SdkInferencePort`, a Node child
 process running the Claude Agent SDK against the Claude subscription while
 no Codex or Anthropic API budget exists. The SDK route is a named stopgap,
 not a peer design: its receipt attests only that this process's own child
