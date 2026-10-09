@@ -199,11 +199,12 @@ impl InferenceOutput {
 pub struct InferenceFault {
     disposition: InferenceFaultDisposition,
     class: InferenceFaultClass,
-    /// Fixed text chosen by the port that built the fault. It is a
-    /// `&'static str`, so no constructor can be handed text that was
-    /// computed from a request, a reply, an endpoint or an error's own
-    /// `Display`: a fault names what kind of trouble it is and never carries
-    /// an input value. The type enforces this for every port.
+    /// Fixed text chosen by the port that built the fault. A `&'static str`
+    /// stops a constructor from being handed a `String` computed from a
+    /// request, reply, endpoint or error `Display` by accident. It is not a
+    /// seal: the constructors are `pub`, and `Box::leak` turns any `String`
+    /// into a `&'static str`. What keeps input values out of a fault is each
+    /// port's canary test, so a new port needs one.
     detail: &'static str,
 }
 

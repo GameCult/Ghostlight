@@ -29,7 +29,7 @@ use chrono::Utc;
 use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use ghostlight::{
     CommandBody, CommandId, ControllerError, ControllerMode, ControllerPort, DecisionInvocation,
-    DecisionOpportunity, InferenceEvent, InferenceFault, InferenceFaultDisposition,
+    DecisionOpportunity, InferenceEvent, InferenceFault, InferenceFaultClass, InferenceFaultDisposition,
     InferenceOutput, InferencePort, InferenceRequest, KernelError, MailboxError, PersonaLane,
     PlayPort, PrincipalCommandIntent, Statement, SubjectId, TickMinutes, VerifiedPrincipalEvidence,
     WorldMailbox, WorldPatch, WorldSnapshot, actor_tools, authoring_tools, decode_actor_call,
@@ -37,6 +37,22 @@ use ghostlight::{
     table_view,
 };
 use ghostlight_persona_projection::{PersonaTurn, SourceSpan};
+
+/// What closes a turn on a fault: the stored detail text and the typed class
+/// that says what happened. Every non-inference failure is `Unclassified`; an
+/// inference fault keeps the class its port gave it (`InferenceFaultClass`,
+/// the HTTP status included), so the warn line in `close_with_fault` can name
+/// it without the detail text carrying it.
+struct TurnFault {
+    detail: String,
+    class: InferenceFaultClass,
+}
+
+impl From<String> for TurnFault {
+    fn from(detail: String) -> Self {
+        Self { detail, class: InferenceFaultClass::Unclassified }
+    }
+}
 use codex_connector::{CodexInputItem, CodexToolDefinition};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -1755,16 +1771,21 @@ impl PlayTable {
     /// `Invariant` fault. Distinct from poisoning the whole table: that
     /// stays each caller's own decision (`RoundOutcome::Poisoned`), because
     /// this helper only ever writes the one turn's own record.
-    async fn close_with_fault(&self, turn: &mut PlayTurn, detail: String) -> Result<(), PlayError> {
+    async fn close_with_fault(&self, turn: &mut PlayTurn, fault: impl Into<TurnFault>) -> Result<(), PlayError> {
+        let TurnFault { detail, class } = fault.into();
         turn.state = PlayTurnState::Closed;
         // R2: the one place a fault closes a turn, so the one place it is
-        // logged, whole. An `InferenceFault`'s detail is a `&'static str`, so
-        // no inference port (local, connector or SDK) can have put an
-        // endpoint, request or reply text into it; the type guarantees that,
-        // not this line. The details of the other failures that reach here
-        // (kernel, request build, snapshot) are their callers' own error
-        // text, and nothing here constrains them.
-        tracing::warn!(turn_id = %turn.turn_id, detail = %detail, "play turn closed on a fault");
+        // logged, whole. The line names the typed class (for an HTTP reply,
+        // its status code, which is the server's answer and not an input
+        // value) beside the detail. An `InferenceFault`'s detail is a
+        // `&'static str`, which stops a port from handing it computed text by
+        // accident; it does not stop a deliberate `Box::leak` into the
+        // `pub` constructors, and a new port's canary test is what actually
+        // keeps endpoint, request and reply text out. The details of the
+        // other failures that reach here (kernel, request build, snapshot)
+        // are their callers' own error text, and nothing here constrains
+        // them.
+        tracing::warn!(turn_id = %turn.turn_id, class = ?class, detail = %detail, "play turn closed on a fault");
         turn.fault = Some(detail);
         // PA.f173: a fault can close a turn that was `AwaitingPlayer`, and
         // `answer_turn` is not the only door out of that state — clear the
@@ -1789,7 +1810,7 @@ impl PlayTable {
         turn: &PlayTurn,
         round: usize,
         principal: &VerifiedPrincipalEvidence,
-    ) -> Result<InferenceOutput, String> {
+    ) -> Result<InferenceOutput, TurnFault> {
         let snapshot = self.round_snapshot().await?;
         let dispatched = turn.dispatched_subjects();
         let tools = self.round_tools(&snapshot, &dispatched, principal)?;
@@ -1832,8 +1853,8 @@ impl PlayTable {
     /// `RecoveryRequired` and `IntegrityViolation` never retry, closing on
     /// their first occurrence — retrying either again cannot succeed
     /// differently. `Ok(())` means the caller's loop should try again;
-    /// `Err(detail)` is the fault's own detail text, to close the turn with.
-    async fn absorb_or_close(&self, fault: InferenceFault, attempt: &mut usize) -> Result<(), String> {
+    /// `Err` carries the fault's own detail text and class, to close the turn with.
+    async fn absorb_or_close(&self, fault: InferenceFault, attempt: &mut usize) -> Result<(), TurnFault> {
         match fault.disposition() {
             InferenceFaultDisposition::Retryable if *attempt < ROUND_RETRY_BUDGET => {
                 let delay = self.retry_delay(*attempt);
@@ -1845,7 +1866,9 @@ impl PlayTable {
             }
             InferenceFaultDisposition::Retryable
             | InferenceFaultDisposition::RecoveryRequired
-            | InferenceFaultDisposition::IntegrityViolation => Err(fault.to_string()),
+            | InferenceFaultDisposition::IntegrityViolation => {
+                Err(TurnFault { detail: fault.to_string(), class: fault.class() })
+            }
         }
     }
 
@@ -4229,7 +4252,7 @@ pub(crate) mod tests {
         assert!(turn.question.is_some());
         assert!(turn.question_token.is_some());
         table
-            .close_with_fault(&mut turn, "manufactured fault for PA.f173".into())
+            .close_with_fault(&mut turn, "manufactured fault for PA.f173".to_owned())
             .await
             .unwrap();
 
@@ -8349,6 +8372,12 @@ pub(crate) mod tests {
     /// Loopback server that answers every request with a `200` whose whole
     /// body is `body`.
     fn replying_with(body: &'static str) -> std::net::SocketAddr {
+        replying_with_status("200 OK", body)
+    }
+
+    /// Loopback server that answers every request with `status` (a status
+    /// line tail such as `404 Not Found`) and `body`.
+    fn replying_with_status(status: &'static str, body: &'static str) -> std::net::SocketAddr {
         use std::io::Write;
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = listener.local_addr().unwrap();
@@ -8358,13 +8387,50 @@ pub(crate) mod tests {
                 read_http_request(&mut stream);
                 let _ = write!(
                     stream,
-                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                    "HTTP/1.1 {}\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                    status,
                     body.len(),
                     body
                 );
             }
         });
         addr
+    }
+
+    /// The status leg through the whole path: an endpoint that answers 404
+    /// (model not loaded) or 502 (a proxy in front of a dead server) closes
+    /// the turn on a fault whose warn line carries that code as the typed
+    /// class, and the reply body, which here is a canary, reaches nothing.
+    /// Mutations: dropping `class` from the warn line, or logging a fixed
+    /// status, fails one of the two.
+    #[tokio::test]
+    async fn a_non_success_status_reaches_the_warn_line_as_its_code() {
+        for (number, status, code) in [(434u128, "404 Not Found", "404"), (435, "502 Bad Gateway", "502")] {
+            let endpoint = replying_with_status(status, "CANARY-status-body-7e41");
+            let account = format!("player-fault-status-{code}");
+            assert_faulted_turn_names_no_endpoint(
+                endpoint,
+                None,
+                &account,
+                number,
+                "non-success status",
+                &["CANARY-status-body-7e41"],
+            )
+            .await;
+            let (logs, _guard) = capture_logs();
+            let directory = tempfile::tempdir().unwrap();
+            let (fixture, table) = local_play_table(endpoint, None, &account, directory.path()).await;
+            table.run(&fixture.principal, test_turn_id(number + 100), "Hello?".into()).await.unwrap();
+            let log = logs.text();
+            let line = log
+                .lines()
+                .find(|line| line.contains("play turn closed on a fault"))
+                .expect("the fault must be logged");
+            let expected = format!("Status({code})");
+            assert!(line.contains(&expected), "the warn line must carry {expected}: {line}");
+            let other = if code == "404" { "Status(502)" } else { "Status(404)" };
+            assert!(!line.contains(other), "{line}");
+        }
     }
 
     /// The malformed-reply leg through the whole path: a whole body that is
