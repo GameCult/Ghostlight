@@ -46,6 +46,21 @@ struct AppSession {
     revoked_at: Option<DateTime<Utc>>,
 }
 
+/// The clause by which the local commit refuses a refresh Heimdall executed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub(crate) enum RefreshRefusal {
+    #[error("local session was revoked during refresh")]
+    Revoked,
+    #[error("local session moved to another revision since the refresh candidate was taken")]
+    MovedSinceCandidate,
+    #[error("refresh receipt revision went backwards")]
+    RevisionWentBackwards,
+    #[error("refresh receipt names a different Heimdall session")]
+    SessionId,
+    #[error("refresh receipt names a different account")]
+    Account,
+}
+
 pub(crate) struct RefreshCandidate {
     pub(crate) cookie_hash: String,
     pub(crate) account_subject_hash: String,
@@ -290,14 +305,25 @@ impl AppSessionOwner {
             .sessions
             .get_mut(cookie_hash)
             .context("local session vanished during refresh")?;
-        if session.revoked_at.is_some()
-            || session.access_revision != expected_access_revision
-            || input.access_revision() <= expected_access_revision
-            || session.heimdall_session_id != input.heimdall_session_id()
-            || session.account_subject_hash
-                != secret_hash(&format!("heimdall-account:{}", input.account_id()))
+        if session.revoked_at.is_some() {
+            return Err(RefreshRefusal::Revoked.into());
+        }
+        if session.access_revision != expected_access_revision {
+            return Err(RefreshRefusal::MovedSinceCandidate.into());
+        }
+        // Heimdall's access_revision is a revocation epoch: refresh rotates
+        // the token at the same revision, so equal is the normal receipt and
+        // only a lower one is a refusal.
+        if input.access_revision() < expected_access_revision {
+            return Err(RefreshRefusal::RevisionWentBackwards.into());
+        }
+        if session.heimdall_session_id != input.heimdall_session_id() {
+            return Err(RefreshRefusal::SessionId.into());
+        }
+        if session.account_subject_hash
+            != secret_hash(&format!("heimdall-account:{}", input.account_id()))
         {
-            bail!("local session changed during refresh");
+            return Err(RefreshRefusal::Account.into());
         }
         session.access_revision = input.access_revision();
         session.verified_capabilities = input.capabilities().to_vec();
@@ -365,6 +391,16 @@ impl AppSessionOwner {
         self.healthy = false;
         Err(error)
     }
+}
+
+/// The idempotency key of the refresh that spends `refresh_claim`: a retry of
+/// that refresh derives the same key, the next refresh (a new claim) a new one,
+/// and the claim itself never leaves the process in it.
+pub(crate) fn refresh_idempotency_key(refresh_claim: &str) -> String {
+    format!(
+        "refresh:{}",
+        secret_hash(&format!("heimdall-refresh-key:{refresh_claim}"))
+    )
 }
 
 pub(crate) fn secret_hash(value: &str) -> String {
@@ -785,6 +821,40 @@ mod tests {
         };
         assert!(store.compare_and_swap_batch(&[], vec![foreign]).unwrap());
         assert!(AppSessionOwner::open(&store_path, &key).is_err());
+    }
+
+    #[test]
+    fn a_refresh_for_a_session_that_moved_is_refused_by_name() {
+        let directory = tempfile::tempdir().unwrap();
+        let key = directory.path().join("session.key");
+        std::fs::write(&key, [5_u8; 32]).unwrap();
+        let mut owner =
+            AppSessionOwner::open(directory.path().join("sessions.cc"), &key).unwrap();
+        let cookie = owner
+            .create_session(VerifiedSessionAdmission::fixture(
+                "account",
+                "session",
+                1,
+                Utc::now() + chrono::Duration::minutes(1),
+                Utc::now() + chrono::Duration::days(1),
+                "claim-0",
+            ))
+            .unwrap();
+        let receipt = VerifiedSessionRefresh::fixture(
+            "account",
+            "session",
+            1,
+            Utc::now() + chrono::Duration::minutes(1),
+            Utc::now() + chrono::Duration::days(1),
+            "claim-1",
+        );
+        let error = owner
+            .apply_refresh(&secret_hash(&cookie), 0, receipt)
+            .unwrap_err();
+        assert_eq!(
+            error.downcast_ref::<RefreshRefusal>(),
+            Some(&RefreshRefusal::MovedSinceCandidate)
+        );
     }
 
     #[test]
