@@ -192,10 +192,10 @@ pub(super) enum SidecarLinkError {
     /// The pipe reached EOF or the child exited. Never a partial output.
     Closed,
     /// A length prefix over the cap, a truncated body, or an undecodable one.
-    Codec(String),
+    Codec,
     /// The child could not be started. The entry file existed at open, so this
     /// is an environment fault an operator must fix.
-    Spawn(String),
+    Spawn,
 }
 
 /// The child-process seam, so the protocol driver is testable without Node, a
@@ -222,26 +222,21 @@ pub(super) async fn read_frame<R: AsyncRead + Unpin>(
         .map_err(|_| SidecarLinkError::Closed)?;
     let length = u32::from_be_bytes(prefix) as usize;
     if length == 0 || length > MAX_SIDECAR_FRAME_BYTES {
-        return Err(SidecarLinkError::Codec(format!(
-            "sidecar frame length {length} is outside 1..={MAX_SIDECAR_FRAME_BYTES}"
-        )));
+        return Err(SidecarLinkError::Codec);
     }
     let mut body = vec![0_u8; length];
     reader
         .read_exact(&mut body)
         .await
-        .map_err(|error| SidecarLinkError::Codec(error.to_string()))?;
-    rmp_serde::from_slice(&body).map_err(|error| SidecarLinkError::Codec(error.to_string()))
+        .map_err(|_| SidecarLinkError::Codec)?;
+    rmp_serde::from_slice(&body).map_err(|_| SidecarLinkError::Codec)
 }
 
 fn encode_frame(frame: &SidecarFrame) -> Result<Vec<u8>, SidecarLinkError> {
     let body = rmp_serde::to_vec_named(frame)
-        .map_err(|error| SidecarLinkError::Codec(error.to_string()))?;
+        .map_err(|_| SidecarLinkError::Codec)?;
     if body.len() > MAX_SIDECAR_FRAME_BYTES {
-        return Err(SidecarLinkError::Codec(format!(
-            "sidecar frame of {} bytes exceeds {MAX_SIDECAR_FRAME_BYTES}",
-            body.len()
-        )));
+        return Err(SidecarLinkError::Codec);
     }
     let mut framed = Vec::with_capacity(body.len() + 4);
     framed.extend_from_slice(&(body.len() as u32).to_be_bytes());
@@ -279,15 +274,15 @@ impl ChildProcessLink {
             .stderr(Stdio::inherit())
             .kill_on_drop(true)
             .spawn()
-            .map_err(|error| SidecarLinkError::Spawn(error.to_string()))?;
+            .map_err(|_| SidecarLinkError::Spawn)?;
         let stdin = child
             .stdin
             .take()
-            .ok_or_else(|| SidecarLinkError::Spawn("sidecar stdin was not piped".into()))?;
+            .ok_or(SidecarLinkError::Spawn)?;
         let stdout = child
             .stdout
             .take()
-            .ok_or_else(|| SidecarLinkError::Spawn("sidecar stdout was not piped".into()))?;
+            .ok_or(SidecarLinkError::Spawn)?;
         Ok(SidecarChild {
             child,
             stdin,
@@ -485,7 +480,7 @@ impl SdkInferencePort {
                                 return Err(link_fault(error));
                             }
                         }
-                        Err(error) => {
+                        Err(_) => {
                             let _ = self.link.restart().await;
                             return Err(InferenceFault::new("the tool-result owner refused a tool call"));
                         }
@@ -522,8 +517,8 @@ fn link_fault(error: SidecarLinkError) -> InferenceFault {
         SidecarLinkError::Closed => {
             InferenceFault::new("the SDK sidecar exited during a query")
         }
-        SidecarLinkError::Spawn(_) => InferenceFault::new("the SDK sidecar could not start"),
-        SidecarLinkError::Codec(_) => {
+        SidecarLinkError::Spawn => InferenceFault::new("the SDK sidecar could not start"),
+        SidecarLinkError::Codec => {
             InferenceFault::integrity_violation("the SDK sidecar's framing was invalid")
         }
     }
@@ -1707,7 +1702,7 @@ mod tests {
     }
 
     /// The SDK port's share of the no-input-text rule: text the sidecar sent,
-    /// the link's own error text, a request's effort and a request's model
+    /// a request's effort and a request's model
     /// name each arrive as a canary, and none reaches the fault. The fault
     /// type carries only fixed text, so this fails if a port ever routes a
     /// computed string into it (through `Box::leak`, say).
@@ -1744,10 +1739,6 @@ mod tests {
             let fault = port.infer(prepared).await.expect_err("a fault frame produced an output");
             assert_names_no(&fault, CANARY);
         }
-
-        // The link's own error text.
-        assert_names_no(&link_fault(SidecarLinkError::Spawn(CANARY.into())), CANARY);
-        assert_names_no(&link_fault(SidecarLinkError::Codec(CANARY.into())), CANARY);
 
         // An effort the SDK has no counterpart for.
         let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
