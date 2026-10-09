@@ -15,7 +15,10 @@ use cultnet_rs::{
     CultNetRudpSocketTransportOptions,
 };
 use hmac::{Hmac, Mac};
-use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header, jwk::JwkSet};
+use jsonwebtoken::{
+    Algorithm, DecodingKey, Validation, decode, decode_header,
+    jwk::{Jwk, JwkSet},
+};
 use rand::RngCore;
 use reqwest::Client;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -23,6 +26,7 @@ use sha2::{Digest, Sha256};
 use std::{
     net::{SocketAddr, UdpSocket},
     path::PathBuf,
+    sync::{Arc, Mutex as StdMutex},
     time::{Duration, Instant},
 };
 
@@ -36,6 +40,40 @@ const PRIVATE_ENVELOPE_SCHEMA: &str = "heimdall.private_command_envelope.v1";
 #[error("Heimdall denied the private command: {diagnostics}")]
 pub(crate) struct HeimdallDenied {
     pub(crate) diagnostics: String,
+}
+
+/// Heimdall's signing keys could not be fetched, so a receipt could not be
+/// judged either way. Distinct from a receipt that positively fails
+/// verification: the refresh loop keeps the receipt for this and revokes for
+/// that.
+#[derive(Debug, thiserror::Error)]
+#[error("Heimdall signing keys unavailable: {0}")]
+pub(crate) struct VerificationUnavailable(pub(crate) String);
+
+/// How long a fetched signing-key set is trusted before it is fetched again.
+const JWKS_TTL: Duration = Duration::from_secs(300);
+
+/// The last fetched signing-key set and when it was fetched.
+#[derive(Default)]
+pub(crate) struct JwksCache {
+    fetched: Option<(Instant, JwkSet)>,
+}
+
+impl JwksCache {
+    /// The key published under `kid`, if the cached set is still fresh and
+    /// holds it. A miss on a fresh set still refetches, so a rotated key is
+    /// found.
+    pub(crate) fn key(&self, kid: &str, now: Instant) -> Option<Jwk> {
+        let (fetched_at, set) = self.fetched.as_ref()?;
+        if now.saturating_duration_since(*fetched_at) >= JWKS_TTL {
+            return None;
+        }
+        set.find(kid).cloned()
+    }
+
+    pub(crate) fn store(&mut self, set: JwkSet, now: Instant) {
+        self.fetched = Some((now, set));
+    }
 }
 
 /// The two Heimdall calls the refresh loop makes, as a port so a scripted
@@ -82,6 +120,7 @@ pub struct HeimdallClient {
     boundary_locator: HeimdallBoundaryLocator,
     runtime_id: String,
     shared_secret: String,
+    jwks: Arc<StdMutex<JwksCache>>,
 }
 
 /// Idunn's projection of a managed Heimdall dependency, when Heimdall is a
@@ -226,7 +265,7 @@ pub struct AuthNavigation {
     pub allowed_origins: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthCompletionReceipt {
     pub status: String,
@@ -241,12 +280,12 @@ pub struct AuthCompletionReceipt {
     pub shared_capabilities: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct AccountSummary {
     pub id: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HeimdallSession {
     pub account_id: String,
@@ -256,7 +295,7 @@ pub struct HeimdallSession {
     pub expires_at: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RefreshSummary {
     pub expires_at: String,
@@ -424,6 +463,7 @@ impl HeimdallClient {
             },
             runtime_id: runtime_id.into(),
             shared_secret,
+            jwks: Arc::default(),
         })
     }
 
@@ -447,6 +487,7 @@ impl HeimdallClient {
             }),
             runtime_id: "ghostlight-test-runtime".into(),
             shared_secret: "fixture-secret".into(),
+            jwks: Arc::default(),
         }
     }
 
@@ -565,28 +606,44 @@ impl HeimdallClient {
         )?))
     }
 
-    async fn verify_access(&self, token: &str) -> anyhow::Result<AccessClaims> {
-        let header = decode_header(token)?;
-        if header.alg != Algorithm::EdDSA {
-            bail!("Heimdall used an unsupported signing algorithm");
-        }
-        let kid = header.kid.context("Heimdall token omitted kid")?;
-        let jwks: JwkSet = self
+    async fn fetch_jwks(&self) -> anyhow::Result<JwkSet> {
+        Ok(self
             .http
             .get(format!("{}/.well-known/jwks.json", self.issuer))
             .send()
             .await?
             .error_for_status()?
             .json()
-            .await?;
-        let jwk = jwks
-            .find(&kid)
-            .context("Heimdall signing key was not published")?;
+            .await?)
+    }
+
+    async fn verify_access(&self, token: &str) -> anyhow::Result<AccessClaims> {
+        let header = decode_header(token)?;
+        if header.alg != Algorithm::EdDSA {
+            bail!("Heimdall used an unsupported signing algorithm");
+        }
+        let kid = header.kid.context("Heimdall token omitted kid")?;
+        let cached = self.jwks.lock().expect("jwks cache").key(&kid, Instant::now());
+        let jwk = match cached {
+            Some(jwk) => jwk,
+            None => {
+                let set = self
+                    .fetch_jwks()
+                    .await
+                    .map_err(|error| VerificationUnavailable(format!("{error:#}")))?;
+                let jwk = set.find(&kid).cloned();
+                self.jwks
+                    .lock()
+                    .expect("jwks cache")
+                    .store(set, Instant::now());
+                jwk.context("Heimdall signing key was not published")?
+            }
+        };
         let mut validation = Validation::new(Algorithm::EdDSA);
         validation.set_audience(&[APP_SLUG]);
         validation.set_issuer(&[self.issuer.as_str()]);
         let claims =
-            decode::<AccessClaims>(token, &DecodingKey::from_jwk(jwk)?, &validation)?.claims;
+            decode::<AccessClaims>(token, &DecodingKey::from_jwk(&jwk)?, &validation)?.claims;
         if claims.typ != "heimdall_access"
             || claims.aud != APP_SLUG
             || claims.iss != self.issuer
@@ -1109,6 +1166,25 @@ mod tests {
                 secret_bearing: false,
             },
         }
+    }
+
+    fn key_set(kid: &str) -> JwkSet {
+        serde_json::from_value(serde_json::json!({
+            "keys": [{"kty": "OKP", "crv": "Ed25519", "kid": kid,
+                      "x": "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo"}]
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn a_cached_key_set_serves_until_its_ttl_and_misses_an_unpublished_kid() {
+        let start = Instant::now();
+        let mut cache = JwksCache::default();
+        assert!(cache.key("k1", start).is_none(), "an empty cache has no key");
+        cache.store(key_set("k1"), start);
+        assert!(cache.key("k1", start + Duration::from_secs(299)).is_some());
+        assert!(cache.key("k2", start).is_none(), "a rotated-in kid refetches");
+        assert!(cache.key("k1", start + JWKS_TTL).is_none(), "stale at the ttl");
     }
 
     #[test]
