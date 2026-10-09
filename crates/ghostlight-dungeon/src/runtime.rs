@@ -3242,7 +3242,7 @@ mod tests {
             let cookie = fixture.cookie.clone();
             let held = held.clone();
             let intent = play_intents.into_iter().next().unwrap();
-            std::thread::spawn(move || {
+            tokio::task::spawn_blocking(move || {
                 let process = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
                 let seen = process.block_on(async {
                     let played = post(&state, &cookie, intent).await;
@@ -3263,7 +3263,7 @@ mod tests {
                 process.shutdown_timeout(Duration::from_secs(5));
                 seen
             })
-            .join()
+            .await
             .unwrap()
         };
         assert_eq!(played["receipt"]["state"], "accepted", "typed world.play via the real client: {played}");
