@@ -146,8 +146,27 @@ pub(super) enum SidecarFaultReason {
 }
 
 impl SidecarFaultReason {
-    fn into_fault(self, detail: String) -> InferenceFault {
-        let detail = format!("SDK sidecar reported {self:?}: {detail}");
+    /// The sidecar's own `detail` text is never carried: the reason names the
+    /// failure and the fault's text is fixed per reason.
+    fn into_fault(self) -> InferenceFault {
+        let detail = match self {
+            Self::RateLimited => "SDK sidecar reported rate limited",
+            Self::Overloaded => "SDK sidecar reported overloaded",
+            Self::ServerError => "SDK sidecar reported a server error",
+            Self::ApiTimeout => "SDK sidecar reported an API timeout",
+            Self::AuthenticationFailed => "SDK sidecar reported authentication failed",
+            Self::OrgNotAllowed => "SDK sidecar reported organization not allowed",
+            Self::BillingError => "SDK sidecar reported a billing error",
+            Self::InvalidRequest => "SDK sidecar reported an invalid request",
+            Self::ModelNotFound => "SDK sidecar reported model not found",
+            Self::MaxOutputTokens => "SDK sidecar reported max output tokens",
+            Self::MaxBudgetUsd => "SDK sidecar reported max budget",
+            Self::ExecutionError => "SDK sidecar reported an execution error",
+            Self::Unknown => "SDK sidecar reported an unknown failure",
+            Self::ProtocolViolation => "SDK sidecar reported a protocol violation",
+            Self::ToolRegistrationFailed => "SDK sidecar reported tool registration failed",
+            Self::TurnCapRefused => "SDK sidecar reported the turn cap refused",
+        };
         match self {
             Self::RateLimited | Self::Overloaded | Self::ServerError | Self::ApiTimeout => {
                 InferenceFault::retryable(detail)
@@ -468,7 +487,7 @@ impl SdkInferencePort {
                         }
                         Err(error) => {
                             let _ = self.link.restart().await;
-                            return Err(InferenceFault::new(error.to_string()));
+                            return Err(InferenceFault::new("the tool-result owner refused a tool call"));
                         }
                     }
                 }
@@ -482,10 +501,10 @@ impl SdkInferencePort {
                 SidecarFrame::Fault {
                     query_id: seen,
                     reason,
-                    detail,
+                    ..
                 } if seen == query_id => {
                     let _ = self.link.restart().await;
-                    return Err(reason.into_fault(detail));
+                    return Err(reason.into_fault());
                 }
                 _ => {
                     let _ = self.link.restart().await;
@@ -501,13 +520,11 @@ impl SdkInferencePort {
 fn link_fault(error: SidecarLinkError) -> InferenceFault {
     match error {
         SidecarLinkError::Closed => {
-            InferenceFault::new("the SDK sidecar exited during a query".to_string())
+            InferenceFault::new("the SDK sidecar exited during a query")
         }
-        SidecarLinkError::Spawn(detail) => {
-            InferenceFault::new(format!("the SDK sidecar could not start: {detail}"))
-        }
-        SidecarLinkError::Codec(detail) => {
-            InferenceFault::integrity_violation(format!("SDK sidecar framing: {detail}"))
+        SidecarLinkError::Spawn(_) => InferenceFault::new("the SDK sidecar could not start"),
+        SidecarLinkError::Codec(_) => {
+            InferenceFault::integrity_violation("the SDK sidecar's framing was invalid")
         }
     }
 }
@@ -526,9 +543,9 @@ pub(super) fn lower_query(
     if let Some(effort) = request.reasoning_effort.as_deref()
         && !SDK_EFFORT_LEVELS.contains(&effort)
     {
-        return Err(InferenceFault::integrity_violation(format!(
-            "reasoning effort `{effort}` has no SDK counterpart"
-        )));
+        return Err(InferenceFault::integrity_violation(
+            "the requested reasoning effort has no SDK counterpart",
+        ));
     }
     let mut items = request.input.iter();
     let Some(CodexInputItem::UserText { text: prompt }) = items.next() else {
@@ -641,7 +658,7 @@ fn assemble_output(
         total_cost_usd_estimate: material.total_cost_usd_estimate,
     };
     let receipt_bytes = rmp_serde::to_vec_named(&receipt)
-        .map_err(|error| InferenceFault::new(error.to_string()))?;
+        .map_err(|_| InferenceFault::new("the SDK receipt could not be encoded"))?;
     Ok(InferenceOutput {
         events: lowered,
         receipt_digest: format!("sha256:{:x}", Sha256::digest(&receipt_bytes)),
@@ -763,9 +780,9 @@ impl InferencePort for RoutedInferencePort {
         let model = request.provider_model().to_owned();
         match self.route(&model) {
             Some(port) => port.prepare(request),
-            None => Err(InferenceFault::integrity_violation(format!(
-                "no configured inference backend claims the model `{model}`"
-            ))),
+            None => Err(InferenceFault::integrity_violation(
+                "no configured inference backend claims the requested model",
+            )),
         }
     }
 
@@ -773,9 +790,9 @@ impl InferencePort for RoutedInferencePort {
         let model = request.invocation.request.model.clone();
         match self.route(&model) {
             Some(port) => port.infer(request).await,
-            None => Err(InferenceFault::integrity_violation(format!(
-                "no configured inference backend claims the model `{model}`"
-            ))),
+            None => Err(InferenceFault::integrity_violation(
+                "no configured inference backend claims the requested model",
+            )),
         }
     }
 
@@ -1482,7 +1499,7 @@ mod tests {
     fn soul_every_sidecar_reason_carries_its_named_disposition() {
         use SidecarFaultReason::*;
         for reason in [RateLimited, Overloaded, ServerError, ApiTimeout] {
-            let fault = reason.into_fault("detail".into());
+            let fault = reason.into_fault();
             assert!(
                 !fault.requires_recovery() && !fault.integrity_was_violated(),
                 "{reason:?} was not retryable"
@@ -1500,13 +1517,13 @@ mod tests {
             Unknown,
         ] {
             assert!(
-                reason.into_fault("detail".into()).requires_recovery(),
+                reason.into_fault().requires_recovery(),
                 "{reason:?} was not recovery-required"
             );
         }
         for reason in [ProtocolViolation, ToolRegistrationFailed, TurnCapRefused] {
             assert!(
-                reason.into_fault("detail".into()).integrity_was_violated(),
+                reason.into_fault().integrity_was_violated(),
                 "{reason:?} did not violate integrity"
             );
         }
@@ -1682,6 +1699,91 @@ mod tests {
             .await
             .expect_err("a reordered dispatch produced an output");
         assert!(fault.integrity_was_violated(), "{fault:?}");
+    }
+
+    fn assert_names_no(fault: &InferenceFault, canary: &str) {
+        let rendered = format!("{fault} | {fault:?}");
+        assert!(!rendered.contains(canary), "{canary} leaked into {rendered}");
+    }
+
+    /// The SDK port's share of the no-input-text rule: text the sidecar sent,
+    /// the link's own error text, a request's effort and a request's model
+    /// name each arrive as a canary, and none reaches the fault. The fault
+    /// type carries only fixed text, so this fails if a port ever routes a
+    /// computed string into it (through `Box::leak`, say).
+    #[tokio::test]
+    async fn an_sdk_fault_carries_no_text_it_was_handed() {
+        const CANARY: &str = "CANARY-sdk-91b6d0";
+
+        // The sidecar's own detail, for every reason it may name.
+        for reason in [
+            SidecarFaultReason::RateLimited,
+            SidecarFaultReason::Overloaded,
+            SidecarFaultReason::ServerError,
+            SidecarFaultReason::ApiTimeout,
+            SidecarFaultReason::AuthenticationFailed,
+            SidecarFaultReason::OrgNotAllowed,
+            SidecarFaultReason::BillingError,
+            SidecarFaultReason::InvalidRequest,
+            SidecarFaultReason::ModelNotFound,
+            SidecarFaultReason::MaxOutputTokens,
+            SidecarFaultReason::MaxBudgetUsd,
+            SidecarFaultReason::ExecutionError,
+            SidecarFaultReason::Unknown,
+            SidecarFaultReason::ProtocolViolation,
+            SidecarFaultReason::ToolRegistrationFailed,
+            SidecarFaultReason::TurnCapRefused,
+        ] {
+            let link = ScriptedLink::new(vec![SidecarFrame::Fault {
+                query_id: 1,
+                reason,
+                detail: CANARY.into(),
+            }]);
+            let port = SdkInferencePort::new(link, TEST_RUNTIME);
+            let prepared = prose_prepared(&port, "Say something true.");
+            let fault = port.infer(prepared).await.expect_err("a fault frame produced an output");
+            assert_names_no(&fault, CANARY);
+        }
+
+        // The link's own error text.
+        assert_names_no(&link_fault(SidecarLinkError::Spawn(CANARY.into())), CANARY);
+        assert_names_no(&link_fault(SidecarLinkError::Codec(CANARY.into())), CANARY);
+
+        // An effort the SDK has no counterpart for.
+        let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
+        let mut prepared = prose_prepared(&port, "Say something true.");
+        prepared.invocation.request.reasoning_effort = Some(CANARY.into());
+        let fault = lower_query(1, &prepared, 1).expect_err("an unmapped effort lowered");
+        assert_names_no(&fault, CANARY);
+
+        // A model no backend claims, prepared and inferred through the router.
+        let directory = tempfile::tempdir().unwrap();
+        let entry = directory.path().join("main.js");
+        std::fs::write(&entry, "// sidecar").unwrap();
+        let routed = open_inference(
+            None,
+            Some(SdkBinding {
+                sidecar_entry: entry,
+                caller_runtime_id: TEST_RUNTIME.into(),
+                model_prefix: DEFAULT_SDK_MODEL_PREFIX.into(),
+            }),
+            None,
+            &models(TEST_MODEL).each(),
+        )
+        .expect("the SDK model routes");
+        let request = tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Persona,
+            CANARY,
+            "Respond only in natural prose.",
+            vec![CodexInputItem::UserText { text: "Say something true.".into() }],
+            Vec::<CodexToolDefinition>::new(),
+            RequestShape { max_output_tokens: 1_200, parallel_tool_calls: false },
+        )
+        .expect("the request builds");
+        let fault = routed.prepare(request).err().expect("an unroutable model prepared");
+        assert_names_no(&fault, CANARY);
     }
 
     /// Soul: the lowering's own gate table, every row.

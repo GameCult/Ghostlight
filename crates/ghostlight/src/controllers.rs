@@ -199,7 +199,12 @@ impl InferenceOutput {
 pub struct InferenceFault {
     disposition: InferenceFaultDisposition,
     class: InferenceFaultClass,
-    detail: String,
+    /// Fixed text chosen by the port that built the fault. It is a
+    /// `&'static str`, so no constructor can be handed text that was
+    /// computed from a request, a reply, an endpoint or an error's own
+    /// `Display`: a fault names what kind of trouble it is and never carries
+    /// an input value. The type enforces this for every port.
+    detail: &'static str,
 }
 
 /// What kind of trouble a fault is, as a typed value: the one place a reader
@@ -236,37 +241,37 @@ pub enum InferenceFaultDisposition {
 }
 
 impl InferenceFault {
-    pub(super) fn new(detail: impl Into<String>) -> Self {
+    pub(super) fn new(detail: &'static str) -> Self {
         Self {
             disposition: InferenceFaultDisposition::RecoveryRequired,
             class: InferenceFaultClass::Unclassified,
-            detail: detail.into(),
+            detail: detail,
         }
     }
 
     /// Transport trouble the owning flow may retry.
-    pub fn retryable(detail: impl Into<String>) -> Self {
+    pub fn retryable(detail: &'static str) -> Self {
         Self {
             disposition: InferenceFaultDisposition::Retryable,
             class: InferenceFaultClass::Unclassified,
-            detail: detail.into(),
+            detail: detail,
         }
     }
 
     /// The one disposition that makes `ControllerError::requires_quarantine`
     /// true for an `Inference` fault: the provider's answer cannot be trusted,
     /// so the tick driver stops rather than commits.
-    pub fn integrity_violation(detail: impl Into<String>) -> Self {
+    pub fn integrity_violation(detail: &'static str) -> Self {
         Self {
             disposition: InferenceFaultDisposition::IntegrityViolation,
             class: InferenceFaultClass::Unclassified,
-            detail: detail.into(),
+            detail: detail,
         }
     }
 
     /// The non-quarantining failure: this purpose cannot complete, but a
     /// sibling cell in the same tick is unaffected.
-    pub fn recovery_required(detail: impl Into<String>) -> Self {
+    pub fn recovery_required(detail: &'static str) -> Self {
         Self::new(detail)
     }
 
@@ -457,7 +462,8 @@ impl PreparedInference {
         request: InferenceRequest,
     ) -> Result<PreparedInference, InferenceFault> {
         let request_bytes =
-            serde_json::to_vec(&request).map_err(|error| InferenceFault::new(error.to_string()))?;
+            serde_json::to_vec(&request)
+                .map_err(|_| InferenceFault::new("an inference request could not be serialized"))?;
         let purpose = request.purpose;
         let invocation = CodexTransportInvocation::new(
             caller_runtime_id,
@@ -465,7 +471,7 @@ impl PreparedInference {
             Sha256::digest(request_bytes).into(),
             request.provider,
         )
-        .map_err(|error| InferenceFault::new(error.to_string()))?;
+        .map_err(|_| InferenceFault::new("an inference invocation could not be built"))?;
         Ok(PreparedInference {
             purpose,
             invocation,
@@ -500,7 +506,7 @@ impl CodexConnectorInferencePort {
             MAX_CONNECTOR_FRAME_BYTES,
             Some(RESPONSE_TIMEOUT),
         )
-        .map_err(|error| InferenceFault::new(error.to_string()))?;
+        .map_err(|_| InferenceFault::new("the CodexConnector client could not be built"))?;
         Ok(Self {
             client,
             caller_runtime_id,
@@ -513,10 +519,11 @@ impl CodexConnectorInferencePort {
         caller_runtime_id: impl Into<String>,
     ) -> Result<Self, InferenceFault> {
         let bytes = Zeroizing::new(
-            std::fs::read(path.as_ref()).map_err(|error| InferenceFault::new(error.to_string()))?,
+            std::fs::read(path.as_ref())
+                .map_err(|_| InferenceFault::new("the CodexConnector key file could not be read"))?,
         );
         let raw = std::str::from_utf8(bytes.as_slice())
-            .map_err(|error| InferenceFault::new(error.to_string()))?;
+            .map_err(|_| InferenceFault::new("the CodexConnector key file is not UTF-8"))?;
         let key = raw.trim_end_matches(['\r', '\n']);
         if key.is_empty() || key.len() != raw.trim().len() {
             return Err(InferenceFault::new(
@@ -537,42 +544,51 @@ impl CodexConnectorInferencePort {
             .execute(&request.invocation)
             .map_err(|error| match error {
                 CodexConnectorClientError::Connection(_) => {
-                    InferenceFault::retryable(error.to_string())
+                    InferenceFault::retryable("the CodexConnector connection failed")
                 }
                 CodexConnectorClientError::InvalidConfig
                 | CodexConnectorClientError::FrameSize
                 | CodexConnectorClientError::Encoding
                 | CodexConnectorClientError::Transport(_) => {
-                    InferenceFault::integrity_violation(error.to_string())
+                    InferenceFault::integrity_violation("the CodexConnector transport failed")
                 }
             })?;
         let (events, receipt) = match result.disposition {
             CodexTransportDisposition::Refused(reason) => {
-                let detail = format!("CodexConnector refused request: {reason:?}");
                 return Err(match reason {
-                    CodexRefusal::InFlight | CodexRefusal::Capacity => {
-                        InferenceFault::retryable(detail)
+                    CodexRefusal::InFlight => {
+                        InferenceFault::retryable("CodexConnector refused request: in flight")
                     }
-                    CodexRefusal::Expired | CodexRefusal::Indeterminate => {
-                        InferenceFault::new(detail)
+                    CodexRefusal::Capacity => {
+                        InferenceFault::retryable("CodexConnector refused request: at capacity")
                     }
-                    CodexRefusal::IdentitySubstitution
-                    | CodexRefusal::ProviderDigestSubstitution
-                    | CodexRefusal::Policy
-                    | CodexRefusal::ReplayConflict
-                    | CodexRefusal::Malformed => InferenceFault::integrity_violation(detail),
+                    CodexRefusal::Expired => {
+                        InferenceFault::new("CodexConnector refused request: expired")
+                    }
+                    CodexRefusal::Indeterminate => {
+                        InferenceFault::new("CodexConnector refused request: indeterminate")
+                    }
+                    CodexRefusal::IdentitySubstitution => InferenceFault::integrity_violation(
+                        "CodexConnector refused request: identity substitution",
+                    ),
+                    CodexRefusal::ProviderDigestSubstitution => InferenceFault::integrity_violation(
+                        "CodexConnector refused request: provider digest substitution",
+                    ),
+                    CodexRefusal::Policy => {
+                        InferenceFault::integrity_violation("CodexConnector refused request: policy")
+                    }
+                    CodexRefusal::ReplayConflict => InferenceFault::integrity_violation(
+                        "CodexConnector refused request: replay conflict",
+                    ),
+                    CodexRefusal::Malformed => InferenceFault::integrity_violation(
+                        "CodexConnector refused request: malformed",
+                    ),
                 });
             }
             CodexTransportDisposition::Transported { events, receipt } => (events, receipt),
         };
-        if let CodexTransportOutcome::Failed {
-            failure_kind,
-            message,
-        } = &receipt.outcome
-        {
-            return Err(InferenceFault::new(format!(
-                "Codex provider failed ({failure_kind}): {message}"
-            )));
+        if let CodexTransportOutcome::Failed { .. } = &receipt.outcome {
+            return Err(InferenceFault::new("the Codex provider reported a failed outcome"));
         }
         let events = events
             .into_iter()
@@ -590,7 +606,7 @@ impl CodexConnectorInferencePort {
             })
             .collect();
         let receipt_bytes = rmp_serde::to_vec_named(&receipt)
-            .map_err(|error| InferenceFault::new(error.to_string()))?;
+            .map_err(|_| InferenceFault::new("the CodexConnector receipt could not be encoded"))?;
         Ok(InferenceOutput {
             events,
             receipt_digest: format!("sha256:{:x}", Sha256::digest(&receipt_bytes)),
@@ -612,14 +628,14 @@ impl InferencePort for CodexConnectorInferencePort {
         let port = self.clone();
         tokio::task::spawn_blocking(move || port.execute(request))
             .await
-            .map_err(|error| InferenceFault::new(error.to_string()))?
+            .map_err(|_| InferenceFault::new("the CodexConnector worker task failed"))?
     }
 }
 
 pub(super) fn unix_ms() -> Result<u64, InferenceFault> {
     let millis = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map_err(|error| InferenceFault::new(error.to_string()))?
+        .map_err(|_| InferenceFault::new("the system clock is before the Unix epoch"))?
         .as_millis();
     u64::try_from(millis).map_err(|_| InferenceFault::new("system time exceeds u64 milliseconds"))
 }
@@ -6833,6 +6849,34 @@ fn purpose_name(purpose: InferencePurpose) -> &'static str {
 #[cfg(test)]
 mod tests {
 
+    /// The connector port's share of the no-input-text rule: a key-file path
+    /// and a runtime identity each arrive as a canary, and the fault names
+    /// only what failed. (The legs that need a live connector, a refusal or a
+    /// failed provider outcome, are fixed text by the fault type.)
+    #[test]
+    fn a_connector_fault_carries_no_text_it_was_handed() {
+        const CANARY: &str = "CANARY-connector-2c4d7a";
+        let endpoint: SocketAddr = "127.0.0.1:9".parse().unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let not_utf8 = directory.path().join(CANARY);
+        std::fs::write(&not_utf8, [0xff_u8, 0xfe]).unwrap();
+        let faults = [
+            CodexConnectorInferencePort::from_secret_file(endpoint, directory.path().join("absent").join(CANARY), "runtime")
+                .err()
+                .expect("a missing key file opened"),
+            CodexConnectorInferencePort::from_secret_file(endpoint, &not_utf8, "runtime")
+                .err()
+                .expect("a key file that is not UTF-8 opened"),
+            CodexConnectorInferencePort::new(endpoint, "key".into(), format!(" {CANARY} "))
+                .err()
+                .expect("a runtime identity with whitespace opened"),
+        ];
+        for fault in faults {
+            let rendered = format!("{fault} | {fault:?}");
+            assert!(!rendered.contains(CANARY), "{CANARY} leaked into {rendered}");
+        }
+    }
+
     /// The decision lanes' tools go to the same provider under the same
     /// strict rules as the patch catalog; the interpreter's fixed tools and a
     /// granted catalog entry are checked offline here for the same reason.
@@ -11445,7 +11489,6 @@ mod tests {
                 endpoint: local_endpoint,
                 model_prefix: local_model_prefix,
                 caller_runtime_id: runtime_id,
-                response_timeout: None,
             }),
             &models.each(),
         )

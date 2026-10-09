@@ -22,5 +22,10 @@ tracing.workspace = true
 uuid.workspace = true
 zeroize.workspace = true
 
+[features]
+# Exposes `open_local_port_with_timeout` to a consumer's tests. Production
+# builds never enable it.
+test-support = []
+
 [dev-dependencies]
 tempfile = "3"

@@ -1758,11 +1758,12 @@ impl PlayTable {
     async fn close_with_fault(&self, turn: &mut PlayTurn, detail: String) -> Result<(), PlayError> {
         turn.state = PlayTurnState::Closed;
         // R2: the one place a fault closes a turn, so the one place it is
-        // logged, whole. The local inference port builds its detail from the
-        // fault kind and never from the transport error's text (tests pin
-        // that for each local failure class). The connector and SDK ports
-        // build details from their own error text, which this line does not
-        // scrub.
+        // logged, whole. An `InferenceFault`'s detail is a `&'static str`, so
+        // no inference port (local, connector or SDK) can have put an
+        // endpoint, request or reply text into it; the type guarantees that,
+        // not this line. The details of the other failures that reach here
+        // (kernel, request build, snapshot) are their callers' own error
+        // text, and nothing here constrains them.
         tracing::warn!(turn_id = %turn.turn_id, detail = %detail, "play turn closed on a fault");
         turn.fault = Some(detail);
         // PA.f173: a fault can close a turn that was `AwaitingPlayer`, and
@@ -3303,7 +3304,7 @@ pub(crate) mod tests {
     /// exercise `world.play`'s own staleness comparison against a question
     /// that actually opened, rather than one hand-built.
     pub(crate) struct ScriptedPort {
-        queue: StdMutex<VecDeque<Result<InferenceOutput, String>>>,
+        queue: StdMutex<VecDeque<Result<InferenceOutput, &'static str>>>,
         seen: StdMutex<Vec<InferenceRequest>>,
     }
 
@@ -8226,18 +8227,15 @@ pub(crate) mod tests {
             "gpt-5.6-sol".into(),
         )
         .unwrap();
-        let inference = ghostlight::open_inference(
-            None,
-            None,
-            Some(ghostlight::LocalBinding {
-                endpoint,
-                model_prefix: "local/".into(),
-                caller_runtime_id: "play-test-runtime".into(),
-                response_timeout: timeout,
-            }),
-            &["local/play"],
-        )
-        .unwrap();
+        let binding = ghostlight::LocalBinding {
+            endpoint,
+            model_prefix: "local/".into(),
+            caller_runtime_id: "play-test-runtime".into(),
+        };
+        let inference = match timeout {
+            Some(timeout) => ghostlight::open_local_port_with_timeout(binding, timeout).unwrap(),
+            None => ghostlight::open_inference(None, None, Some(binding), &["local/play"]).unwrap(),
+        };
         let table = PlayTable::new(
             fixture.world.clone(),
             personas,
@@ -8262,6 +8260,7 @@ pub(crate) mod tests {
         account: &str,
         turn_number: u128,
         kind: &str,
+        reply_canaries: &[&str],
     ) {
         let (logs, _guard) = capture_logs();
         let directory = tempfile::tempdir().unwrap();
@@ -8277,7 +8276,10 @@ pub(crate) mod tests {
         let log = logs.text();
         let debug = format!("{view:?} {:?}", table.store.lock().await.current().unwrap());
         assert!(stored.contains(kind), "the error kind is kept: {stored}");
-        for canary in [endpoint.to_string(), endpoint.ip().to_string(), endpoint.port().to_string(), "chat/completions".to_owned()] {
+        let canaries = [endpoint.to_string(), endpoint.ip().to_string(), endpoint.port().to_string(), "chat/completions".to_owned()]
+            .into_iter()
+            .chain(reply_canaries.iter().map(|canary| (*canary).to_owned()));
+        for canary in canaries {
             for (where_, text) in [("stored fault", &stored), ("warn line", &log), ("card row", &row), ("debug", &debug)] {
                 assert!(!text.contains(&canary), "{canary} leaked into the {where_}: {text}");
             }
@@ -8291,7 +8293,7 @@ pub(crate) mod tests {
             let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
             listener.local_addr().unwrap()
         };
-        assert_faulted_turn_names_no_endpoint(endpoint, None, "player-fault-canary", 431, "refused the connection").await;
+        assert_faulted_turn_names_no_endpoint(endpoint, None, "player-fault-canary", 431, "refused the connection", &[]).await;
     }
 
     /// The whole path with a timeout, the leg a Bonsai stall takes: the
@@ -8314,6 +8316,71 @@ pub(crate) mod tests {
             "player-fault-timeout",
             432,
             "timed out",
+            &[],
+        )
+        .await;
+    }
+
+    /// Reads one HTTP request (headers and the declared body) off `stream`.
+    fn read_http_request(stream: &mut std::net::TcpStream) {
+        use std::io::Read;
+        let mut buf = Vec::new();
+        let mut chunk = [0u8; 8192];
+        loop {
+            let Ok(read) = stream.read(&mut chunk) else { break };
+            if read == 0 {
+                break;
+            }
+            buf.extend_from_slice(&chunk[..read]);
+            let text = String::from_utf8_lossy(&buf).to_string();
+            if let Some(split) = text.find("\r\n\r\n") {
+                let len = text[..split]
+                    .to_ascii_lowercase()
+                    .lines()
+                    .find_map(|l| l.strip_prefix("content-length:").map(|v| v.trim().parse::<usize>().unwrap()))
+                    .unwrap_or(0);
+                if buf.len() >= split + 4 + len {
+                    break;
+                }
+            }
+        }
+    }
+
+    /// Loopback server that answers every request with a `200` whose whole
+    /// body is `body`.
+    fn replying_with(body: &'static str) -> std::net::SocketAddr {
+        use std::io::Write;
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(mut stream) = stream else { return };
+                read_http_request(&mut stream);
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+            }
+        });
+        addr
+    }
+
+    /// The malformed-reply leg through the whole path: a whole body that is
+    /// not the declared shape closes the turn on a fault, and serde's text
+    /// for it, which echoes the reply's own value, reaches the stored fault,
+    /// the warn line, the card row and Debug nowhere.
+    #[tokio::test]
+    async fn a_malformed_local_reply_closes_the_turn_without_echoing_it() {
+        let endpoint = replying_with("\\"CANARY-reply-5d02c8\\"");
+        assert_faulted_turn_names_no_endpoint(
+            endpoint,
+            None,
+            "player-fault-malformed",
+            433,
+            "not the declared shape",
+            &["CANARY-reply-5d02c8"],
         )
         .await;
     }
@@ -8323,7 +8390,7 @@ pub(crate) mod tests {
     /// answers each later one with an `end_turn` tool call. Returns its
     /// address and the count of connections seen.
     fn closing_then_ending(drops: usize) -> (std::net::SocketAddr, Arc<std::sync::atomic::AtomicUsize>) {
-        use std::io::{Read, Write};
+        use std::io::Write;
         use std::sync::atomic::{AtomicUsize, Ordering};
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = listener.local_addr().unwrap();
@@ -8337,26 +8404,7 @@ pub(crate) mod tests {
                     drop(stream);
                     continue;
                 }
-                let mut buf = Vec::new();
-                let mut chunk = [0u8; 8192];
-                loop {
-                    let Ok(read) = stream.read(&mut chunk) else { break };
-                    if read == 0 {
-                        break;
-                    }
-                    buf.extend_from_slice(&chunk[..read]);
-                    let text = String::from_utf8_lossy(&buf).to_string();
-                    if let Some(split) = text.find("\r\n\r\n") {
-                        let len = text[..split]
-                            .to_ascii_lowercase()
-                            .lines()
-                            .find_map(|l| l.strip_prefix("content-length:").map(|v| v.trim().parse::<usize>().unwrap()))
-                            .unwrap_or(0);
-                        if buf.len() >= split + 4 + len {
-                            break;
-                        }
-                    }
-                }
+                read_http_request(&mut stream);
                 let body = serde_json::json!({
                     "id": format!("resp-{n}"),
                     "choices": [{"message": {"role": "assistant", "content": null,

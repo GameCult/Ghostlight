@@ -31,10 +31,6 @@ pub struct LocalBinding {
     pub endpoint: SocketAddr,
     pub model_prefix: String,
     pub caller_runtime_id: String,
-    /// How long one request may take, reply body included. `None` is
-    /// `RESPONSE_TIMEOUT`; a consumer or test sets it to reach the timeout
-    /// path without waiting that out.
-    pub response_timeout: Option<std::time::Duration>,
 }
 
 const LOCAL_RECEIPT_SCHEMA: &str = "ghostlight.local_inference_receipt.v1";
@@ -135,6 +131,10 @@ pub(super) struct LocalInferencePort {
     endpoint: SocketAddr,
     prefix: String,
     caller_runtime_id: String,
+    /// Read only by the tests that pin which timeout a constructor resolves
+    /// to; the live timeout is the client's.
+    #[cfg(test)]
+    response_timeout: std::time::Duration,
 }
 
 impl LocalInferencePort {
@@ -154,8 +154,10 @@ impl LocalInferencePort {
         Self::with_timeout(endpoint, prefix, caller_runtime_id, RESPONSE_TIMEOUT)
     }
 
-    /// `new` with the response timeout named, so a test can reach the timeout
-    /// path without waiting out `RESPONSE_TIMEOUT`.
+    /// `new` with the response timeout named. `new` is the only production
+    /// caller and passes `RESPONSE_TIMEOUT`, so production has one timeout
+    /// owner; the other callers are tests that reach the timeout path without
+    /// waiting `RESPONSE_TIMEOUT` out.
     fn with_timeout(
         endpoint: SocketAddr,
         prefix: impl Into<String>,
@@ -175,6 +177,8 @@ impl LocalInferencePort {
             endpoint,
             prefix: prefix.into(),
             caller_runtime_id: caller_runtime_id.into(),
+            #[cfg(test)]
+            response_timeout: timeout,
         })
     }
 
@@ -188,7 +192,7 @@ impl LocalInferencePort {
             .map_err(send_fault)?;
         let status = response.status();
         if !status.is_success() {
-            let detail = format!("the local inference endpoint returned {status}");
+            let detail = "the local inference endpoint returned a non-success status";
             let class = InferenceFaultClass::Status(status.as_u16());
             return Err(if status.as_u16() == 429 || status.as_u16() == 503 {
                 InferenceFault::retryable(detail)
@@ -268,11 +272,8 @@ fn lower_request(prepared: &PreparedInference, prefix: &str) -> Result<Value, In
     }
     let mut tools = Vec::with_capacity(request.tools.len());
     for tool in &request.tools {
-        let parameters: Value = serde_json::from_str(&tool.parameters_json).map_err(|error| {
-            InferenceFault::integrity_violation(format!(
-                "tool `{}` parameters are not valid JSON: {error}",
-                tool.name
-            ))
+        let parameters: Value = serde_json::from_str(&tool.parameters_json).map_err(|_| {
+            InferenceFault::integrity_violation("a tool's parameters are not valid JSON")
         })?;
         tools.push(json!({
             "type": "function",
@@ -366,7 +367,7 @@ fn assemble_output(
             .unwrap_or_default(),
     };
     let receipt_bytes = rmp_serde::to_vec_named(&receipt)
-        .map_err(|error| InferenceFault::new(error.to_string()))?;
+        .map_err(|_| InferenceFault::new("the local inference receipt could not be encoded"))?;
     Ok(InferenceOutput::new(
         events,
         format!("sha256:{:x}", Sha256::digest(&receipt_bytes)),
@@ -406,12 +407,29 @@ impl InferencePort for LocalInferencePort {
 pub(super) fn open_local_port(
     binding: LocalBinding,
 ) -> Result<Arc<dyn InferencePort>, ControllerOpenError> {
+    Ok(Arc::new(local_port(binding)?))
+}
+
+/// The same port with a named response timeout, for a consumer's tests that
+/// reach the timeout path without waiting `RESPONSE_TIMEOUT` out. It exists
+/// only under the `test-support` feature, which production builds never
+/// enable, so `LocalBinding` carries no timeout and a release has exactly
+/// one: `RESPONSE_TIMEOUT`.
+#[cfg(feature = "test-support")]
+pub fn open_local_port_with_timeout(
+    binding: LocalBinding,
+    timeout: std::time::Duration,
+) -> Result<Arc<dyn InferencePort>, ControllerOpenError> {
     Ok(Arc::new(LocalInferencePort::with_timeout(
         binding.endpoint,
         binding.model_prefix,
         binding.caller_runtime_id,
-        binding.response_timeout.unwrap_or(RESPONSE_TIMEOUT),
+        timeout,
     )?))
+}
+
+fn local_port(binding: LocalBinding) -> Result<LocalInferencePort, ControllerOpenError> {
+    LocalInferencePort::new(binding.endpoint, binding.model_prefix, binding.caller_runtime_id)
 }
 
 #[cfg(test)]
@@ -805,7 +823,6 @@ mod tests {
                 endpoint: "93.184.216.34:443".parse().unwrap(),
                 model_prefix: DEFAULT_LOCAL_MODEL_PREFIX.into(),
                 caller_runtime_id: TEST_RUNTIME.into(),
-                response_timeout: None,
             }),
             &[TEST_MODEL],
         )
@@ -912,7 +929,6 @@ mod tests {
                 endpoint: "127.0.0.1:1".parse().unwrap(),
                 model_prefix: "claude".into(),
                 caller_runtime_id: TEST_RUNTIME.into(),
-                response_timeout: None,
             }),
             &["claude-opus-5"],
         )
@@ -1195,7 +1211,6 @@ mod tests {
                 endpoint: "127.0.0.1:1".parse().unwrap(),
                 model_prefix: String::new(),
                 caller_runtime_id: TEST_RUNTIME.into(),
-                response_timeout: None,
             }),
             &[TEST_MODEL],
         )
@@ -1657,6 +1672,48 @@ mod tests {
         let fault = infer_once(&port(addr)).await.expect_err("a malformed body produced an output");
         assert_eq!(fault.class(), InferenceFaultClass::BadReply, "{fault:?}");
         assert_eq!(fault.disposition(), InferenceFaultDisposition::IntegrityViolation, "{fault:?}");
+    }
+
+    /// The malformed-body leg of the no-input-text rule: serde's `Display`
+    /// for a type mismatch echoes the offending value, so a detail built from
+    /// it carries the reply's own text. The canary is a value inside a whole
+    /// body that fails to deserialize.
+    #[tokio::test]
+    async fn a_malformed_body_carries_neither_its_own_text_nor_the_endpoint() {
+        const CANARY: &str = "CANARY-reply-7f3e91";
+        let addr = ScriptedResponder::start(vec![(200, format!("\"{CANARY}\""))]).await.endpoint();
+        let fault = infer_once(&port(addr)).await.expect_err("a malformed body produced an output");
+        assert_eq!(fault.class(), InferenceFaultClass::BadReply, "{fault:?}");
+        let rendered = format!("{fault} | {fault:?}");
+        for canary in [CANARY.to_owned(), addr.to_string(), addr.ip().to_string()] {
+            assert!(!rendered.contains(&canary), "{canary} leaked into {rendered}");
+        }
+    }
+
+    /// The production default is `RESPONSE_TIMEOUT` (a cold model load lives
+    /// inside one request) at the constructor and at the port a binding
+    /// opens: a shorter default turns every cold start into a Timeout fault
+    /// that is never retried.
+    #[test]
+    fn the_production_default_timeout_is_response_timeout_at_both_resolving_sites() {
+        assert_eq!(RESPONSE_TIMEOUT, std::time::Duration::from_secs(900));
+        let endpoint: SocketAddr = "127.0.0.1:9".parse().unwrap();
+        let constructed = {
+            let _guard = client_build_lock().lock().expect("the client-build lock is never poisoned");
+            LocalInferencePort::new(endpoint, DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME)
+                .expect("a loopback endpoint opens")
+        };
+        assert_eq!(constructed.response_timeout, RESPONSE_TIMEOUT);
+        let opened = {
+            let _guard = client_build_lock().lock().expect("the client-build lock is never poisoned");
+            local_port(LocalBinding {
+                endpoint,
+                model_prefix: DEFAULT_LOCAL_MODEL_PREFIX.into(),
+                caller_runtime_id: TEST_RUNTIME.into(),
+            })
+            .expect("a loopback binding opens")
+        };
+        assert_eq!(opened.response_timeout, RESPONSE_TIMEOUT);
     }
 
     /// The timeout leg of the no-endpoint rule: reqwest's `Display` for a

@@ -97,6 +97,8 @@ pub use elaboration::{
 };
 pub use lens::{Lens, LensWeights};
 pub use local_inference::{DEFAULT_LOCAL_MODEL_PREFIX, LocalBinding};
+#[cfg(feature = "test-support")]
+pub use local_inference::open_local_port_with_timeout;
 pub(crate) use mailbox::ElaborationPort;
 pub use mailbox::{ConsumerPort, ControllerPort, MailboxError, PlayPort, SeedPort, WorldMailbox};
 pub use patch::{
