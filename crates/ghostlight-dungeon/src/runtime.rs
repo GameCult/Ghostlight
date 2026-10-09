@@ -6431,17 +6431,26 @@ mod tests {
             let intent = untouched_intent(&surface, command, &typed);
             let sent = intent["payload"].clone();
             let result = post(&fixture.state, &fixture.cookie, intent).await;
-            assert_eq!(
-                result["receipt"]["state"], "accepted",
-                "{command} with an untouched form ({sent}) was not admitted: {result}"
-            );
-            exercised.push(command);
             if command == "world.play" {
+                // No turn is running here, so the empty box is refused by the
+                // play table itself (a new turn needs text). That refusal is
+                // the proof: the payload reached the table as `text: ""`
+                // instead of dying at the route as a missing field. Continuing
+                // a Running turn on that empty text is the table's own rule
+                // (`empty_text_while_the_turn_is_running_continues_it`).
+                assert_eq!(sent["bindings"]["text"], "", "{sent}");
+                let message = result["receipt"]["message"].as_str().unwrap_or_default();
+                assert!(
+                    message.contains("a new turn needs non-empty text"),
+                    "an untouched Play box did not reach the play table: {result}"
+                );
+            } else {
                 assert_eq!(
-                    sent["bindings"]["text"], "",
-                    "an untouched Play box must submit an empty continue"
+                    result["receipt"]["state"], "accepted",
+                    "{command} with an untouched form ({sent}) was not admitted: {result}"
                 );
             }
+            exercised.push(command);
         }
         // The walk reaches every button that captures a binding on the Active
         // surface, so a control added later without an authored value or a
