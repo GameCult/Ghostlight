@@ -8283,6 +8283,7 @@ pub(crate) mod tests {
         account: &str,
         turn_number: u128,
         kind: &str,
+        class: &str,
         reply_canaries: &[&str],
     ) {
         let (logs, _guard) = capture_logs();
@@ -8299,6 +8300,11 @@ pub(crate) mod tests {
         let log = logs.text();
         let debug = format!("{view:?} {:?}", table.store.lock().await.current().unwrap());
         assert!(stored.contains(kind), "the error kind is kept: {stored}");
+        let warn = log
+            .lines()
+            .find(|line| line.contains("play turn closed on a fault"))
+            .expect("closing a turn on a fault must log a line");
+        assert!(warn.contains(&format!("class={class}")), "the warn line must carry class {class}: {warn}");
         let canaries = [endpoint.to_string(), endpoint.ip().to_string(), endpoint.port().to_string(), "chat/completions".to_owned()]
             .into_iter()
             .chain(reply_canaries.iter().map(|canary| (*canary).to_owned()));
@@ -8316,7 +8322,7 @@ pub(crate) mod tests {
             let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
             listener.local_addr().unwrap()
         };
-        assert_faulted_turn_names_no_endpoint(endpoint, None, "player-fault-canary", 431, "refused the connection", &[]).await;
+        assert_faulted_turn_names_no_endpoint(endpoint, None, "player-fault-canary", 431, "refused the connection", "Connect", &[]).await;
     }
 
     /// The whole path with a timeout, the leg a Bonsai stall takes: the
@@ -8339,6 +8345,7 @@ pub(crate) mod tests {
             "player-fault-timeout",
             432,
             "timed out",
+            "Timeout",
             &[],
         )
         .await;
@@ -8414,22 +8421,10 @@ pub(crate) mod tests {
                 &account,
                 number,
                 "non-success status",
+                &format!("Status({code})"),
                 &["CANARY-status-body-7e41"],
             )
             .await;
-            let (logs, _guard) = capture_logs();
-            let directory = tempfile::tempdir().unwrap();
-            let (fixture, table) = local_play_table(endpoint, None, &account, directory.path()).await;
-            table.run(&fixture.principal, test_turn_id(number + 100), "Hello?".into()).await.unwrap();
-            let log = logs.text();
-            let line = log
-                .lines()
-                .find(|line| line.contains("play turn closed on a fault"))
-                .expect("the fault must be logged");
-            let expected = format!("Status({code})");
-            assert!(line.contains(&expected), "the warn line must carry {expected}: {line}");
-            let other = if code == "404" { "Status(502)" } else { "Status(404)" };
-            assert!(!line.contains(other), "{line}");
         }
     }
 
@@ -8446,6 +8441,7 @@ pub(crate) mod tests {
             "player-fault-malformed",
             433,
             "not the declared shape",
+            "BadReply",
             &["CANARY-reply-5d02c8"],
         )
         .await;
