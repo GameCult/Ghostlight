@@ -1647,9 +1647,15 @@ mod tests {
     #[tokio::test]
     async fn a_body_that_stalls_is_a_timeout_not_retried() {
         let addr = truncated_body_endpoint(true).await;
-        let fault = infer_once(&port_with_timeout(addr, std::time::Duration::from_millis(300)))
-            .await
-            .expect_err("a stalled body produced an output");
+        // Bounded, so a client that ignores the timeout it was given fails
+        // here instead of waiting out a longer one.
+        let fault = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            infer_once(&port_with_timeout(addr, std::time::Duration::from_millis(300))),
+        )
+        .await
+        .expect("the client honours the timeout it was given")
+        .expect_err("a stalled body produced an output");
         assert_eq!(fault.class(), InferenceFaultClass::Timeout, "{fault:?}");
         assert_eq!(fault.disposition(), InferenceFaultDisposition::RecoveryRequired, "{fault:?}");
     }
