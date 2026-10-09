@@ -3,8 +3,7 @@
 ## Status
 
 This document is the adopted rebuild target for the Ghostlight runtime. It is
-the authority map for implementation work. The pre-rebuild body remains
-described in `notes/ghostlight-current-system-map.md` only as teardown evidence.
+the authority map for implementation work.
 
 Ghostlight is a persistent, source-grounded narrative world. Its job is to
 preserve people, institutions, places, knowledge, material consequence, and

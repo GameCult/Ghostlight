@@ -127,13 +127,20 @@ lists the ones a deployment sets.
   kernel's current mechanism.
 - `docs/architecture/ghostlight-world-consumer-api.md`: the consumer contract.
 - `docs/architecture/ghostlight-eve-native-interface.md`: the Eve surface.
-- `docs/architecture/ghostlight-play-agent.md`, `ghostlight-session-zero.md`,
-  `ghostlight-library-extraction.md`, `ghostlight-stock-lenses.md`: the
-  design records of the pieces above. Pages ending in `-cut.md` and
-  `-postmortem.md` are dated history.
+- `docs/architecture/ghostlight-library-extraction.md`,
+  `ghostlight-stock-lenses.md`: closed records of landed work. Pages ending in
+  `-cut.md` and `-postmortem.md` are dated history.
+- `docs/architecture/ghostlight-play-agent.md`: historical. Its status line
+  predates the play-agent cuts; read it with `-cut.md` beside it, not as the
+  current play surface (`crates/ghostlight-dungeon/src/play.rs` is).
+- `docs/architecture/ghostlight-session-zero.md`: unbuilt design, superseded by
+  the play agent. Nothing in `crates/` implements it.
 - `notes/fresh-workspace-handoff.md`: where things run and where open work is
   recorded.
-- `docs/public-architecture/`, `docs/articles/`: public explanations.
+- `docs/public-architecture/`, `docs/articles/`: unbuilt design and essays
+  written before the rebuild. They describe campaigns, co-op, Nemesis
+  and strategic resolvers as organs; none of that exists in `crates/`. They do not
+  describe the running machine.
 - `docs/product/lore-vault-entitlements.md`: a product proposal for hosted
   vaults; nothing in `crates/` implements it.
 
