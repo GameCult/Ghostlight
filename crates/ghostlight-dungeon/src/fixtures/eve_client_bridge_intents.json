@@ -58,30 +58,6 @@
       "intent": {
         "clientId": "eve.bridge.test",
         "commandBoundary": "ghostlight.eve.commands",
-        "issuedAt": "2026-09-22T23:30:07.195Z",
-        "operation": {
-          "idempotencyKey": "1d6a441e-f173-41af-a798-a9123039d5e0",
-          "operationId": "world.seed",
-          "routeHint": {
-            "sourceVersion": 2,
-            "transport": "https-json"
-          },
-          "schemaId": "ghostlight.world_seed.v1"
-        },
-        "payload": {
-          "bindings": {}
-        },
-        "providerId": "gamecult.ghostlight.dungeon",
-        "receiptSchema": "gamecult.eve.command_result.v1",
-        "schema": "gamecult.eve.command_invocation.v1",
-        "surfaceId": "ghostlight.play"
-      },
-      "label": "world.seed"
-    },
-    {
-      "intent": {
-        "clientId": "eve.bridge.test",
-        "commandBoundary": "ghostlight.eve.commands",
         "issuedAt": "2026-09-22T23:30:09.010Z",
         "operation": {
           "idempotencyKey": "20d01b36-cdfa-4e59-b5f3-31be54d94bc6",

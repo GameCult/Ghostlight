@@ -3745,7 +3745,7 @@ pub(crate) mod tests {
         // card that once read it) — the leaking text above is durable and
         // real, and this call has structurally no way to reach it.
         let surface =
-            crate::eve::authenticated_surface("player-projection-only", Some(&world), Some(&view))
+            crate::eve::authenticated_surface("player-projection-only", Some(&world), Some(&view), true)
                 .unwrap();
         let play_card = find_surface_node(&surface, "world.play.card").expect("the play card");
         let play_card_encoded = serde_json::to_string(play_card).unwrap();
@@ -3812,6 +3812,7 @@ pub(crate) mod tests {
             "player-interrupted-turn",
             Some(&world),
             Some(&running_view),
+            true,
         )
         .unwrap();
         let running_hint = find_surface_node(&surface, "world.play.running")
@@ -3837,6 +3838,7 @@ pub(crate) mod tests {
             "player-interrupted-turn",
             Some(&world),
             Some(&awaiting_view),
+            true,
         )
         .unwrap();
         assert!(
@@ -3877,6 +3879,7 @@ pub(crate) mod tests {
             "player-interrupted-turn-busy",
             Some(&world),
             Some(&busy_view),
+            true,
         )
         .unwrap();
         assert!(
@@ -3919,6 +3922,7 @@ pub(crate) mod tests {
             "player-round-in-flight",
             Some(&world),
             Some(&busy_view),
+            true,
         )
         .unwrap();
         assert!(
@@ -3941,6 +3945,7 @@ pub(crate) mod tests {
             "player-round-in-flight",
             Some(&world),
             Some(&idle_view),
+            true,
         )
         .unwrap();
         assert!(
@@ -3976,6 +3981,7 @@ pub(crate) mod tests {
             "player-stalled-turn-text",
             Some(&world),
             Some(&running_view),
+            true,
         )
         .unwrap();
         let running_hint = find_surface_node(&surface, "world.play.running")
@@ -4048,6 +4054,7 @@ pub(crate) mod tests {
             "player-card-question",
             Some(&world_before),
             Some(&asked_view),
+            true,
         )
         .unwrap();
 
@@ -4096,6 +4103,7 @@ pub(crate) mod tests {
             "player-card-question",
             Some(&world_after),
             Some(&closed_view),
+            true,
         )
         .unwrap();
         assert!(
@@ -8222,7 +8230,7 @@ pub(crate) mod tests {
         let view = table.current_turn_view().await.unwrap();
         assert!(view.fault);
         let surface =
-            crate::eve::authenticated_surface("player-fault-card", Some(&world), Some(&view)).unwrap();
+            crate::eve::authenticated_surface("player-fault-card", Some(&world), Some(&view), true).unwrap();
         let row = find_surface_node(&surface, "world.play.fault")
             .expect("a fault-closed turn must show the fault row");
         let encoded = serde_json::to_string(row).unwrap();
@@ -8230,7 +8238,7 @@ pub(crate) mod tests {
 
         let healthy = PlayTurnView { fault: false, ..view };
         let surface =
-            crate::eve::authenticated_surface("player-fault-card", Some(&world), Some(&healthy)).unwrap();
+            crate::eve::authenticated_surface("player-fault-card", Some(&world), Some(&healthy), true).unwrap();
         assert!(find_surface_node(&surface, "world.play.fault").is_none());
     }
 
@@ -8294,7 +8302,7 @@ pub(crate) mod tests {
         let world = fixture.world.snapshot().await.unwrap();
         let view = table.current_turn_view().await.unwrap();
         assert!(view.fault, "the endpoint failure must close the turn on a fault");
-        let surface = crate::eve::authenticated_surface(account, Some(&world), Some(&view)).unwrap();
+        let surface = crate::eve::authenticated_surface(account, Some(&world), Some(&view), true).unwrap();
         let row = serde_json::to_string(find_surface_node(&surface, "world.play.fault").unwrap()).unwrap();
         let stored = table.store.lock().await.current().unwrap().fault.clone().unwrap();
         let log = logs.text();

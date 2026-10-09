@@ -213,10 +213,16 @@ fn jurisdiction_label(world: &WorldSnapshot, jurisdiction: JurisdictionKey) -> S
 /// carries no play-turn state of its own. The play card below reads `play`
 /// alone, never the operator's own unscoped log of every committed event:
 /// invariant 8's projection, question, and refusal, nothing else.
+///
+/// `seed_available` is whether the seed lane's vault is configured on this
+/// server (`runtime::seed_vault_root`, the one reader of that configuration).
+/// The seed controls and the `world.seed` descriptor are offered only where
+/// pressing the button could do something.
 pub(crate) fn authenticated_surface(
     account: &str,
     snapshot: Option<&WorldSnapshot>,
     play: Option<&PlayTurnView>,
+    seed_available: bool,
 ) -> anyhow::Result<Value> {
     // The document's own `version` names the world's `surface_version`
     // alone — the one meaning `routeHint.sourceVersion` and the kernel's
@@ -369,7 +375,7 @@ pub(crate) fn authenticated_surface(
                             "WorldMailbox",
                         ));
                     }
-                    if world.owner == ghostlight::PrincipalId::new(account) {
+                    if seed_available && world.owner == ghostlight::PrincipalId::new(account) {
                         children.extend([
                             json!({
                                 "id":"world.seed.vault_scope",
@@ -604,7 +610,12 @@ pub(crate) fn authenticated_surface(
                             json!({
                                 "id":"world.play.text",
                                 "kind":"control.input.textarea",
-                                "props":{"label":"What do you do?","rows":3,"placeholder":"Write freely"},
+                                // PA.f214: an authored `value`, as `world.create.brief` above:
+                                // the lowering only captures a `value`, so a box left
+                                // untouched must still submit `text: ""`, which continues
+                                // an existing Running turn (the running hint tells players
+                                // to click Play with the box empty).
+                                "props":{"label":"What do you do?","rows":3,"value":"","placeholder":"Write freely"},
                                 "stateBindings":[local_draft("text", "string")],
                                 "children":[]
                             }),
@@ -913,7 +924,7 @@ mod tests {
 
     #[test]
     fn empty_authenticated_surface_has_create_without_session_zero() {
-        let surface = authenticated_surface("sha256:owner", None, None).unwrap();
+        let surface = authenticated_surface("sha256:owner", None, None, true).unwrap();
         let encoded = serde_json::to_string(&surface).unwrap();
         assert!(encoded.contains("world.create"));
         assert!(encoded.contains("narrative_persona_label"));

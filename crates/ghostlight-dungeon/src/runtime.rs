@@ -808,6 +808,7 @@ async fn eve_surface(
             principal.account_subject_hash(),
             snapshot.as_ref(),
             play_view.as_ref(),
+            seed_vault_root().is_some(),
         )
     }) {
         Ok(surface) => Json(surface).into_response(),
@@ -1700,6 +1701,16 @@ async fn maintain_mesh_projection(state: AppState) {
 /// scope inside it and never the root.
 const SEED_VAULT_ROOT_ENVIRONMENT: &str = "GHOSTLIGHT_SEED_VAULT_ROOT";
 
+/// The configured vault root, if any. The one reader of
+/// `SEED_VAULT_ROOT_ENVIRONMENT`: the surface offers the seed controls on
+/// whether this answers, and `seed_once` reads its root from it, so the two
+/// cannot disagree about whether seeding exists on this server.
+fn seed_vault_root() -> Option<PathBuf> {
+    std::env::var_os(SEED_VAULT_ROOT_ENVIRONMENT)
+        .filter(|root| !root.is_empty())
+        .map(PathBuf::from)
+}
+
 /// One seeding session, inside the request that asked for it. There is no
 /// background task and no stop channel: a spawned sweep would need the owner's
 /// verified evidence to outlive the request that carried it, and then two new
@@ -1736,14 +1747,14 @@ async fn seed_once(
     // `SEED_VAULT_ROOT_ENVIRONMENT` to the player taught them a fact about
     // this process's own environment, not about the world. The detail is
     // still logged, for the operator who can actually act on it.
-    let root = std::env::var(SEED_VAULT_ROOT_ENVIRONMENT).map_err(|_| {
+    let root = seed_vault_root().ok_or_else(|| {
         tracing::warn!(
             environment_variable = SEED_VAULT_ROOT_ENVIRONMENT,
             "seeding was requested but the vault root is not configured"
         );
         RuntimeCommandError::Payload("seeding is not available on this world".into())
     })?;
-    let vault = VaultEvidenceSource::open(std::path::Path::new(&root), &payload.vault_scope)
+    let vault = VaultEvidenceSource::open(&root, &payload.vault_scope)
         .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
     let runner = controllers.seeder(
         SeedPort::new(state.world.clone(), verified_principal.clone()),
@@ -3166,26 +3177,14 @@ mod tests {
         let approved = post(&fixture.state, &fixture.cookie, approve_intents.into_iter().next().unwrap()).await;
         assert_eq!(approved["receipt"]["state"], "accepted", "world.approve via the real client: {approved}");
 
+        // No test fixture in this crate configures `GHOSTLIGHT_SEED_VAULT_ROOT`,
+        // so the Draft surface offers no seeding to click at all (PA.f213).
         let approved_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
-        let seed_intents = client_intents(&approved_surface, &provider, json!([{"click": "world.seed"}]));
-        assert_eq!(seed_intents.len(), 1);
-        let seeded = post(&fixture.state, &fixture.cookie, seed_intents.into_iter().next().unwrap()).await;
-        // No test fixture in this crate configures `GHOSTLIGHT_SEED_VAULT_ROOT`
-        // (`world_seed_is_owner_only_and_draft_only_before_it_spends_anything`
-        // asserts the same denial), so a real vault read is out of reach
-        // here regardless of payload shape. The proof this leg carries is
-        // narrower: the payload itself was accepted and reached the vault
-        // lookup at all — `SeedPayload` has no required field, so
-        // `captureBindings: []` (the click alone) is this operation's own
-        // envelope-only proof — never refused as a payload/binding shape
-        // problem the way every operation was before this cut.
-        assert_eq!(
-            seeded["receipt"]["message"], "invalid command payload: seeding is not available on this world",
-            "world.seed via the real client must reach the vault lookup, not refuse the payload shape: {seeded}"
+        assert!(
+            !serde_json::to_string(&approved_surface).unwrap().contains("world.seed"),
+            "a server with no vault offered seeding to the real client"
         );
-
-        let seeded_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
-        let activate_intents = client_intents(&seeded_surface, &provider, json!([{"click": "world.activate"}]));
+        let activate_intents = client_intents(&approved_surface, &provider, json!([{"click": "world.activate"}]));
         assert_eq!(activate_intents.len(), 1);
         let activated = post(&fixture.state, &fixture.cookie, activate_intents.into_iter().next().unwrap()).await;
         assert_eq!(activated["receipt"]["state"], "accepted", "world.activate via the real client: {activated}");
@@ -3194,12 +3193,16 @@ mod tests {
         let play_intents = client_intents(
             &active_surface,
             &provider,
-            json!([
-                {"set": {"world.play.text": "The new owner looks around."}},
-                {"click": "world.play"}
-            ]),
+            // PA.f214: the box is never touched, so the intent carries the
+            // control's authored `text: ""`, not a missing binding.
+            json!([{"click": "world.play"}]),
         );
         assert_eq!(play_intents.len(), 1);
+        assert_eq!(
+            play_intents[0]["payload"]["bindings"]["text"], "",
+            "an untouched Play box must reach the route as an empty continue: {}",
+            play_intents[0]
+        );
         let played = post(&fixture.state, &fixture.cookie, play_intents.into_iter().next().unwrap()).await;
         assert_eq!(played["receipt"]["state"], "accepted", "world.play via the real client: {played}");
 
@@ -3272,14 +3275,6 @@ mod tests {
         let approved = post(&fixture.state, &fixture.cookie, approve.intent).await;
         assert_eq!(approved["receipt"]["state"], "accepted", "{approved}");
 
-        let seed = steps.next().unwrap();
-        assert_eq!(seed.label, "world.seed");
-        let seeded = post(&fixture.state, &fixture.cookie, seed.intent).await;
-        assert_eq!(
-            seeded["receipt"]["message"], "invalid command payload: seeding is not available on this world",
-            "{seeded}"
-        );
-
         let activate = steps.next().unwrap();
         assert_eq!(activate.label, "world.activate");
         let activated = post(&fixture.state, &fixture.cookie, activate.intent).await;
@@ -3289,7 +3284,7 @@ mod tests {
         assert_eq!(play.label, "world.play");
         let played = post(&fixture.state, &fixture.cookie, play.intent).await;
         assert_eq!(played["receipt"]["state"], "accepted", "{played}");
-        assert!(steps.next().is_none(), "the fixture must carry exactly these five steps");
+        assert!(steps.next().is_none(), "the fixture must carry exactly these four steps");
 
         let table = fixture.state.play.clone().unwrap();
         let observed = tokio::time::timeout(Duration::from_secs(5), async move {
@@ -3811,14 +3806,7 @@ mod tests {
         post(&fixture.state, &fixture.cookie, approve_intent.clone()).await;
 
         let approved_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
-        let seed_intent = client_intents(&approved_surface, &provider, json!([{"click": "world.seed"}]))
-            .into_iter()
-            .next()
-            .unwrap();
-        post(&fixture.state, &fixture.cookie, seed_intent.clone()).await;
-
-        let seeded_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
-        let activate_intent = client_intents(&seeded_surface, &provider, json!([{"click": "world.activate"}]))
+        let activate_intent = client_intents(&approved_surface, &provider, json!([{"click": "world.activate"}]))
             .into_iter()
             .next()
             .unwrap();
@@ -3838,7 +3826,7 @@ mod tests {
         .unwrap();
         post(&fixture.state, &fixture.cookie, play_intent.clone()).await;
 
-        let regenerated = [create_intent, approve_intent, seed_intent, activate_intent, play_intent];
+        let regenerated = [create_intent, approve_intent, activate_intent, play_intent];
         let committed = bridge_fixture().steps;
         assert_eq!(regenerated.len(), committed.len(), "step count drifted");
         for (regenerated_intent, committed_step) in regenerated.into_iter().zip(committed) {
@@ -6050,7 +6038,7 @@ mod tests {
             .account_subject_hash()
             .to_owned();
         let stranger = "someone-else";
-        let mut surfaces = vec![eve::authenticated_surface(&owner, None, None).unwrap()];
+        let mut surfaces = vec![eve::authenticated_surface(&owner, None, None, true).unwrap()];
         two_cell_world(
             &fixture.state,
             &fixture.cookie,
@@ -6065,7 +6053,7 @@ mod tests {
         let draft = fixture.state.world.snapshot().await.unwrap();
         assert_eq!(draft.phase, WorldPhase::Draft);
         for account in [owner.as_str(), stranger] {
-            surfaces.push(eve::authenticated_surface(account, Some(&draft), None).unwrap());
+            surfaces.push(eve::authenticated_surface(account, Some(&draft), None, true).unwrap());
         }
         for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
             let snapshot = fixture.state.world.snapshot().await.unwrap();
@@ -6097,7 +6085,7 @@ mod tests {
         let play_view = current_play_view(&fixture.state).await;
         for account in [owner.as_str(), stranger] {
             surfaces.push(
-                eve::authenticated_surface(account, Some(&active), play_view.as_ref()).unwrap(),
+                eve::authenticated_surface(account, Some(&active), play_view.as_ref(), true).unwrap(),
             );
         }
         surfaces.push(eve::anonymous_surface());
@@ -6164,6 +6152,7 @@ mod tests {
         let draft = fixture.state.world.snapshot().await.unwrap();
 
         // The vault root is deliberately unset: neither refusal may reach it.
+        let _env = SEED_ENV_LOCK.lock().await;
         unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
         let denied = post(
             &fixture.state,
@@ -6257,6 +6246,7 @@ mod tests {
         .await;
         let draft = fixture.state.world.snapshot().await.unwrap();
 
+        let _env = SEED_ENV_LOCK.lock().await;
         unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
         let denied = post(
             &fixture.state,
@@ -6309,7 +6299,7 @@ mod tests {
         )
         .await;
         let draft = fixture.state.world.snapshot().await.unwrap();
-        let surface = eve::authenticated_surface(&owner, Some(&draft), None).unwrap();
+        let surface = eve::authenticated_surface(&owner, Some(&draft), None, true).unwrap();
         let encoded = serde_json::to_string(&surface).unwrap();
         let card = surface["surface"]["root"]["children"]
             .as_array()
@@ -6337,6 +6327,231 @@ mod tests {
                 .contains(&format!("{}", draft.revision.saturating_sub(1))),
         );
         assert!(encoded.contains("world.seed"), "the button is missing");
+    }
+
+    /// `GHOSTLIGHT_SEED_VAULT_ROOT` is process-global: a test that sets or
+    /// clears it holds this for its whole body so no other such test sees the
+    /// change mid-flight.
+    static SEED_ENV_LOCK: Mutex<()> = Mutex::const_new(());
+
+    /// The control node a surface binds to `binding`: what the vendored
+    /// lowering's `findAuthoredBindingValue` looks up when a button is clicked.
+    fn control_for_binding<'a>(node: &'a Value, binding: &str) -> Option<&'a Value> {
+        let bound = node["stateBindings"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .any(|state| state["bindingName"] == binding);
+        if bound {
+            return Some(node);
+        }
+        node["children"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .find_map(|child| control_for_binding(child, binding))
+    }
+
+    fn button_for_command<'a>(node: &'a Value, command: &str) -> Option<&'a Value> {
+        if node["kind"] == "control.button" && node["props"]["command"] == command {
+            return Some(node);
+        }
+        node["children"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .find_map(|child| button_for_command(child, command))
+    }
+
+    /// What the vendored lowering sends when `command`'s button is clicked and
+    /// the player has typed only into the controls named in `typed`: the
+    /// button's own action fields beside `bindings`, where a binding takes the
+    /// typed text, else the control's authored `value`, else is omitted. Every
+    /// input is read off the served surface, so the payload is whatever the
+    /// production surface would make a real client send.
+    fn untouched_intent(surface: &Value, command: &str, typed: &[(&str, Value)]) -> Value {
+        let root = &surface["surface"]["root"];
+        let button = button_for_command(root, command)
+            .unwrap_or_else(|| panic!("the surface carries no {command} button"));
+        let mut payload = button["props"]["action"].as_object().cloned().unwrap_or_default();
+        payload.remove("command");
+        let mut bindings = serde_json::Map::new();
+        for binding in button["props"]["captureBindings"].as_array().into_iter().flatten() {
+            let binding = binding.as_str().unwrap();
+            if let Some((_, value)) = typed.iter().find(|(name, _)| *name == binding) {
+                bindings.insert(binding.to_owned(), value.clone());
+            } else if let Some(authored) = control_for_binding(root, binding)
+                .and_then(|control| control["props"].get("value"))
+            {
+                bindings.insert(binding.to_owned(), authored.clone());
+            }
+        }
+        payload.insert("bindings".into(), Value::Object(bindings));
+        let descriptor = surface["commands"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|descriptor| descriptor["command"] == command)
+            .unwrap_or_else(|| panic!("the surface advertises no {command} descriptor"));
+        invocation(
+            command,
+            descriptor["payloadSchema"].as_str().unwrap(),
+            surface["version"].as_u64().unwrap(),
+            Value::Object(payload),
+            &uuid::Uuid::new_v4().to_string(),
+        )
+    }
+
+    /// PA.f214, at the layer where it failed: a form left untouched must still
+    /// submit a payload the route admits. The player types only where an empty
+    /// answer has no meaning (a world's title and first name, how many minutes
+    /// to advance); every other control is left exactly as the surface served
+    /// it, and every bound command must then be admitted, not refused as a
+    /// missing field. Play with an untouched box sends `text: ""`.
+    #[tokio::test]
+    async fn every_bound_command_admits_the_payload_an_untouched_form_submits() {
+        let fixture = fixture().await;
+        let mut exercised = Vec::new();
+        let steps: [(&str, Vec<(&str, Value)>); 5] = [
+            (
+                "world.create",
+                vec![
+                    ("title", json!("Untouched Form World")),
+                    ("subject_label", json!("The Operator")),
+                ],
+            ),
+            ("world.approve", vec![]),
+            ("world.activate", vec![]),
+            ("world.advance_time", vec![("minutes", json!(1))]),
+            ("world.play", vec![]),
+        ];
+        for (command, typed) in steps {
+            let surface =
+                get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+            let intent = untouched_intent(&surface, command, &typed);
+            let sent = intent["payload"].clone();
+            let result = post(&fixture.state, &fixture.cookie, intent).await;
+            assert_eq!(
+                result["receipt"]["state"], "accepted",
+                "{command} with an untouched form ({sent}) was not admitted: {result}"
+            );
+            exercised.push(command);
+            if command == "world.play" {
+                assert_eq!(
+                    sent["bindings"]["text"], "",
+                    "an untouched Play box must submit an empty continue"
+                );
+            }
+        }
+        // The walk reaches every button that captures a binding on the Active
+        // surface, so a control added later without an authored value or a
+        // place in this walk fails here rather than in a player's hands.
+        let active =
+            get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let mut buttons = Vec::new();
+        surface_buttons(&active["surface"]["root"], &mut buttons);
+        for command in buttons {
+            let bound = button_for_command(&active["surface"]["root"], &command).unwrap()["props"]
+                ["captureBindings"]
+                .as_array()
+                .unwrap()
+                .len();
+            assert!(
+                bound == 0 || exercised.contains(&command.as_str()),
+                "{command} captures bindings but the untouched-form walk never submitted it"
+            );
+        }
+    }
+
+    /// PA.f213: the seed controls, card and descriptor exist only where a vault
+    /// is configured; with none, pressing the button could only be refused.
+    #[tokio::test]
+    async fn the_seed_controls_are_offered_only_where_a_vault_is_configured() {
+        let fixture = fixture().await;
+        let owner = fixture
+            .state
+            .sessions
+            .lock()
+            .await
+            .account_for_cookie(&fixture.cookie, Utc::now())
+            .unwrap()
+            .unwrap()
+            .account_subject_hash()
+            .to_owned();
+        two_cell_world(
+            &fixture.state,
+            &fixture.cookie,
+            BTreeMap::from([(SubjectKind::Person, 4)]),
+            vec![CreateJurisdictionIntent {
+                handle: "sere".into(),
+                label: "The Low Sere".into(),
+                permille: 1000,
+            }],
+        )
+        .await;
+        let draft = fixture.state.world.snapshot().await.unwrap();
+        let seed_nodes = [
+            "world.seed.vault_scope",
+            "world.seed.brief",
+            "world.seed",
+            "world.seed.card",
+        ];
+        let node_ids = |surface: &Value| -> Vec<String> {
+            fn walk(node: &Value, into: &mut Vec<String>) {
+                if let Some(id) = node["id"].as_str() {
+                    into.push(id.to_owned());
+                }
+                for child in node["children"].as_array().into_iter().flatten() {
+                    walk(child, into);
+                }
+            }
+            let mut ids = Vec::new();
+            walk(&surface["surface"]["root"], &mut ids);
+            ids
+        };
+        let described = |surface: &Value| {
+            surface["commands"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|descriptor| descriptor["command"] == "world.seed")
+        };
+
+        let without = eve::authenticated_surface(&owner, Some(&draft), None, false).unwrap();
+        let ids = node_ids(&without);
+        for id in seed_nodes {
+            assert!(!ids.iter().any(|node| node == id), "{id} offered with no vault");
+        }
+        assert!(!described(&without), "world.seed advertised with no vault");
+
+        let with = eve::authenticated_surface(&owner, Some(&draft), None, true).unwrap();
+        let ids = node_ids(&with);
+        for id in seed_nodes {
+            assert!(ids.iter().any(|node| node == id), "{id} missing with a vault");
+        }
+        assert!(described(&with), "world.seed not advertised with a vault");
+
+        // The served surface reads the configuration through `seed_vault_root`:
+        // nothing configured offers nothing, and a configured root offers the
+        // lane without the root's own text ever reaching the card.
+        let _env = SEED_ENV_LOCK.lock().await;
+        unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
+        let served =
+            get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        assert!(!described(&served), "the served surface offered seeding with no vault");
+        assert!(!node_ids(&served).iter().any(|id| id == "world.seed"));
+
+        let canary = "/canary-vault-root-4f9a1c";
+        unsafe { std::env::set_var(SEED_VAULT_ROOT_ENVIRONMENT, canary) };
+        let served =
+            get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        unsafe { std::env::remove_var(SEED_VAULT_ROOT_ENVIRONMENT) };
+        assert!(described(&served), "the served surface hid seeding with a vault");
+        assert!(node_ids(&served).iter().any(|id| id == "world.seed"));
+        assert!(
+            !serde_json::to_string(&served).unwrap().contains("canary-vault-root"),
+            "the configured root reached the surface"
+        );
     }
 
     /// `SeedPort` holds one `VerifiedPrincipalEvidence` for the whole session,
