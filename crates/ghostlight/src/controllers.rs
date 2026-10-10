@@ -7269,6 +7269,7 @@ mod tests {
         let heard = EntityId::issue();
         let unheard = EntityId::issue();
         let actor = SubjectSnapshot {
+            import_key: None,
             id: actor_id,
             label: "Mara at the rain gate".into(),
             kind: SubjectKind::Person,
@@ -7315,6 +7316,7 @@ mod tests {
             last_acted_at: None,
         };
         let speaker = SubjectSnapshot {
+            import_key: None,
             id: speaker_id,
             label: "Iris in the tollhouse".into(),
             kind: SubjectKind::Person,
@@ -7438,6 +7440,7 @@ mod tests {
             affordance_ids: vec![speak_affordance],
         };
         let actor = SubjectSnapshot {
+            import_key: None,
             id: actor_id,
             label: "The Ledger Clerk".into(),
             kind: SubjectKind::Person,
@@ -7712,6 +7715,7 @@ mod tests {
                                 controller: NewController::NarrativePersona,
                                 affordances: kernel_speak_grant(),
                                 position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                                import_key: None,
                             }),
                             Declaration::Subject(SubjectDeclaration {
                                 handle: DraftHandle::new("mara"),
@@ -7720,6 +7724,7 @@ mod tests {
                                 controller: NewController::NarrativePersona,
                                 affordances: kernel_speak_grant(),
                                 position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                                import_key: None,
                             }),
                             Declaration::Subject(SubjectDeclaration {
                                 handle: DraftHandle::new("otho"),
@@ -7728,6 +7733,7 @@ mod tests {
                                 controller: NewController::NarrativePersona,
                                 affordances: kernel_speak_grant(),
                                 position: Some(Ref::Draft(DraftHandle::new("vault"))),
+                                import_key: None,
                             }),
                         ],
                         operations: Vec::new(),
@@ -7865,6 +7871,7 @@ mod tests {
                                 controller: NewController::NarrativePersona,
                                 affordances: kernel_speak_grant(),
                                 position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                                import_key: None,
                             }),
                             Declaration::Subject(SubjectDeclaration {
                                 handle: DraftHandle::new("human"),
@@ -7875,6 +7882,7 @@ mod tests {
                                 },
                                 affordances: kernel_speak_grant(),
                                 position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                                import_key: None,
                             }),
                             Declaration::Subject(SubjectDeclaration {
                                 handle: DraftHandle::new("operational"),
@@ -7883,6 +7891,7 @@ mod tests {
                                 controller: NewController::OperationalAgent,
                                 affordances: kernel_speak_grant(),
                                 position: Some(Ref::Draft(DraftHandle::new("vault"))),
+                                import_key: None,
                             }),
                         ],
                         operations: Vec::new(),
@@ -9058,6 +9067,7 @@ mod tests {
             affordance_ids: vec![speak_affordance],
         };
         let subject = SubjectSnapshot {
+            import_key: None,
             id: subject_id,
             label: "Mara at the rain gate".into(),
             kind: SubjectKind::Person,
@@ -9113,6 +9123,7 @@ mod tests {
             last_acted_at: None,
         };
         let speaker = SubjectSnapshot {
+            import_key: None,
             id: speaker_id,
             label: "Iris in the tollhouse".into(),
             kind: SubjectKind::Person,
@@ -9234,6 +9245,7 @@ mod tests {
             affordance_ids: vec![speak_affordance],
         };
         let actor = SubjectSnapshot {
+            import_key: None,
             id: actor_id,
             label: "The Walker".into(),
             kind: SubjectKind::Person,
@@ -9259,6 +9271,7 @@ mod tests {
             last_acted_at: None,
         };
         let other = SubjectSnapshot {
+            import_key: None,
             id: other_id,
             label: "The Vault Keeper".into(),
             kind: SubjectKind::Person,
@@ -9712,6 +9725,7 @@ mod tests {
             index: 0,
         };
         let subject = |id, label: &str, position, components, commitments, pressures| SubjectSnapshot {
+            import_key: None,
             id,
             label: label.into(),
             kind: SubjectKind::Person,
@@ -10836,6 +10850,7 @@ mod tests {
                                 affordances: kernel_speak_grant(),
                                 // Speech needs a room to fill.
                                 position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                                import_key: None,
                             }),
                         ],
                         operations: Vec::new(),
@@ -11435,6 +11450,7 @@ mod tests {
                                 },
                                 affordances: kernel_speak_grant(),
                                 position: Some(Ref::Draft(DraftHandle::new("roll-hall"))),
+                                import_key: None,
                             }),
                             Declaration::Subject(SubjectDeclaration {
                                 handle: DraftHandle::new("watch-officer"),
@@ -11443,6 +11459,7 @@ mod tests {
                                 controller: NewController::NarrativePersona,
                                 affordances: kernel_speak_grant(),
                                 position: Some(Ref::Draft(DraftHandle::new("roll-hall"))),
+                                import_key: None,
                             }),
                             Declaration::Subject(SubjectDeclaration {
                                 handle: DraftHandle::new("signal-council"),
@@ -11451,6 +11468,7 @@ mod tests {
                                 controller: NewController::OperationalAgent,
                                 affordances: kernel_speak_grant(),
                                 position: Some(Ref::Draft(DraftHandle::new("roll-hall"))),
+                                import_key: None,
                             }),
                         ],
                         operations: Vec::new(),
@@ -11936,6 +11954,7 @@ mod tests {
             controller: NewController::NarrativePersona,
             affordances: kernel_speak_grant(),
             position: Some(Ref::Draft(DraftHandle::new(road_container))),
+            import_key: None,
         }));
         let operations = if roots == Roots::None {
             Vec::new()
@@ -13619,6 +13638,7 @@ mod tests {
                 controller: NewController::NarrativePersona,
                 affordances: kernel_speak_grant(),
                 position,
+                import_key: None,
             })
         };
         let creation = mailbox
@@ -14627,6 +14647,7 @@ mod tests {
                 controller,
                 affordances: kernel_speak_grant(),
                 position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                import_key: None,
             }));
         }
         let creation = mailbox
@@ -15178,6 +15199,7 @@ mod tests {
                 controller,
                 affordances: kernel_speak_grant(),
                 position: Some(Ref::Draft(DraftHandle::new(&format!("room{index}")))),
+                import_key: None,
             }));
         }
         let creation = mailbox
@@ -15658,6 +15680,7 @@ mod tests {
                                 },
                                 affordances: kernel_speak_grant(),
                                 position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                                import_key: None,
                             }),
                         ],
                         operations: Vec::new(),
@@ -16577,6 +16600,7 @@ mod tests {
                     },
                     affordances: kernel_speak_grant(),
                     position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                    import_key: None,
                 })))
                 .collect(),
                 operations: Vec::new(),
@@ -18065,6 +18089,7 @@ mod tests {
                 controller: NewController::NarrativePersona,
                 affordances: kernel_speak_grant(),
                 position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                import_key: None,
             }),
             Declaration::Subject(SubjectDeclaration {
                 handle: DraftHandle::new("subject1"),
@@ -18073,6 +18098,7 @@ mod tests {
                 controller: NewController::OperationalAgent,
                 affordances: kernel_speak_grant(),
                 position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                import_key: None,
             }),
         ];
         let creation = mailbox
@@ -18573,6 +18599,7 @@ mod tests {
                 controller,
                 affordances: kernel_speak_grant(),
                 position: Some(Ref::Draft(DraftHandle::new("commons"))),
+                import_key: None,
             })
         };
         let ledger = EvidenceRef::new("the fixture ledger");

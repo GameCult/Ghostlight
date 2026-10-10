@@ -62,6 +62,8 @@ mod controllers;
 mod cover;
 mod elaboration;
 mod grammar;
+#[cfg(test)]
+mod import_key_tests;
 mod journal;
 mod lens;
 mod local_inference;
@@ -119,6 +121,7 @@ pub(crate) use patch::{
     PersonaMaterial, Position, PressureMagnitude, PressureSource, Quantity, Reach,
     SubjectDeclaration, WorldScaleIntent, WorldScaleIntentRef,
 };
+pub use patch::ImportKey;
 #[cfg(test)]
 use patch::{
     AffordanceDeclaration, AudienceRef, AudienceSpec, ChannelDeclaration, ComponentOp,
@@ -723,6 +726,10 @@ pub enum CommandBody {
 struct SubjectState {
     label: String,
     kind: SubjectKind,
+    /// Written only when a subject declaration is resolved; absent from a
+    /// subject nobody imported, so its digests are unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    import_key: Option<ImportKey>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -1012,6 +1019,8 @@ pub struct SubjectSnapshot {
     pub id: SubjectId,
     pub label: String,
     pub kind: SubjectKind,
+    /// The Aetheria record this subject was imported from, if it was.
+    pub import_key: Option<ImportKey>,
     /// Absent for an externally controlled mirror, which has no controller and
     /// no turn. Every reader fails closed on `None`; none gets a default.
     pub(crate) controller_id: Option<ControllerId>,
@@ -2126,6 +2135,21 @@ fn admit_resolved(
             return Err(KernelError::Invariant(
                 "admitted affordance ID collision".into(),
             ));
+        }
+    }
+    // The subjects map's only writer holds the same injectivity the resolver
+    // checks, decided by the same function.
+    {
+        let held = patch::held_import_keys(state.subjects.values());
+        let mut declared = BTreeSet::new();
+        for subject in &resolved.subjects {
+            if let Some(key) = &subject.subject.import_key
+                && patch::import_key_fault(key, &held, &mut declared).is_some()
+            {
+                return Err(KernelError::Invariant(
+                    "admitted subject's import key is malformed, held or repeated".into(),
+                ));
+            }
         }
     }
     for subject in &resolved.subjects {
@@ -4011,6 +4035,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 id: *subject_id,
                 label: subject.label.clone(),
                 kind: subject.kind,
+                import_key: subject.import_key.clone(),
                 controller_id: controller.id(),
                 controller_mode: controller.mode(),
                 human_controller: controller.human_principal().cloned(),
@@ -5491,6 +5516,7 @@ mod tests {
             // The fixture world is one room. Co-located speech needs a place to
             // fill, so every fixture subject stands in the commons.
             position: Some(Ref::Draft(DraftHandle::new(COMMONS))),
+            import_key: None,
         })
     }
 
@@ -5593,6 +5619,7 @@ mod tests {
                             .chain(std::iter::once(Ref::Draft(DraftHandle::new("convene"))))
                             .collect(),
                         position: Some(Ref::Draft(DraftHandle::new(COMMONS))),
+                        import_key: None,
                     }),
                 ],
             },
@@ -5743,6 +5770,7 @@ mod tests {
                     controller: NewController::OperationalAgent,
                     affordances: BTreeSet::from([speak]),
                     position: Some(Ref::Draft(DraftHandle::new("yard"))),
+                    import_key: None,
                 }),
             ],
             // A route that should start closed is declared and closed in one
@@ -5848,6 +5876,7 @@ mod tests {
                 }))
                 .collect(),
             position: Some(Ref::Existing(place)),
+            import_key: None,
         })
     }
 
@@ -6368,6 +6397,7 @@ mod tests {
                 controller: NewController::OperationalAgent,
                 affordances: civic_grants(handles, &speak),
                 position: Some(place),
+                import_key: None,
             })
         };
         let declarations = civic_affordances()
@@ -6424,6 +6454,7 @@ mod tests {
                         &speak,
                     ),
                     position: Some(Ref::Draft(DraftHandle::new("hall"))),
+                    import_key: None,
                 }),
                 Declaration::Subject(SubjectDeclaration {
                     handle: DraftHandle::new("reeve"),
@@ -6435,6 +6466,7 @@ mod tests {
                         &speak,
                     ),
                     position: Some(Ref::Draft(DraftHandle::new("chamber"))),
+                    import_key: None,
                 }),
                 person(
                     "farmer",
@@ -6458,6 +6490,7 @@ mod tests {
                     controller: NewController::NarrativePersona,
                     affordances: civic_grants(&["levy", "petition"], &speak),
                     position: None,
+                    import_key: None,
                 }),
             ])
             .collect();
@@ -6621,6 +6654,7 @@ mod tests {
                     Ref::Draft(DraftHandle::new("recant")),
                 ]),
                 position: place.map(|place| Ref::Draft(DraftHandle::new(place))),
+                import_key: None,
             })
         };
         submit_owner(
@@ -7889,6 +7923,7 @@ mod tests {
                             controller: NewController::OperationalAgent,
                             affordances: BTreeSet::from([speak.clone()]),
                             position: Some(Ref::Existing(topology.road)),
+                            import_key: None,
                         }),
                     ],
                     operations: Vec::new(),
@@ -8907,6 +8942,7 @@ mod custody_tests {
                             controller: NewController::OperationalAgent,
                             affordances: BTreeSet::from([speak.clone()]),
                             position: Some(Ref::Existing(topology.yard)),
+                            import_key: None,
                         }),
                     ],
                     operations: vec![ComponentOp::Admit {
@@ -9566,6 +9602,7 @@ mod custody_tests {
                             controller: NewController::OperationalAgent,
                             affordances: BTreeSet::from([speak.clone()]),
                             position: Some(Ref::Existing(topology.yard)),
+                            import_key: None,
                         }),
                     ],
                     operations: vec![admit(u64::MAX), admit(1)],
@@ -11558,6 +11595,7 @@ mod witness_tests {
             controller: NewController::NarrativePersona,
             affordances: BTreeSet::from([speak.clone(), Ref::Draft(DraftHandle::new("beacon"))]),
             position: Some(Ref::Draft(DraftHandle::new(place))),
+            import_key: None,
         })
     }
 
@@ -12671,6 +12709,7 @@ mod witness_tests {
                                         // Every non-mirror subject must hold one.
                                         affordances: BTreeSet::from([Ref::Existing(beacon)]),
                                         position: position.map(Ref::Existing),
+                                        import_key: None,
                                     }),
                                 ],
                                 operations: vec![witness(
@@ -13035,6 +13074,7 @@ mod clock_tests {
                     Ref::Draft(DraftHandle::new("threaten")),
                 ]),
                 position: Some(Ref::Draft(DraftHandle::new(place))),
+                import_key: None,
             })
         };
         let subject = |handle: &str| Ref::Draft(DraftHandle::new(handle));
@@ -17088,6 +17128,7 @@ mod clock_tests {
                                 controller: NewController::NarrativePersona,
                                 affordances: BTreeSet::from([speak]),
                                 position: Some(Ref::Existing(clockwork.dead_end)),
+                                import_key: None,
                             }),
                         ],
                         operations: Vec::new(),
@@ -17154,6 +17195,7 @@ mod clock_tests {
                                 controller: NewController::NarrativePersona,
                                 affordances: BTreeSet::from([speak]),
                                 position: Some(Ref::Existing(clockwork.dead_end)),
+                                import_key: None,
                             }),
                         ],
                         operations: Vec::new(),
@@ -17231,6 +17273,7 @@ mod clock_tests {
                             },
                             affordances: BTreeSet::new(),
                             position: Some(Ref::Existing(commons)),
+                            import_key: None,
                         })],
                         operations: Vec::new(),
                         evidence: Vec::new(),
@@ -17324,6 +17367,7 @@ mod clock_tests {
                     controller: NewController::NarrativePersona,
                     affordances: BTreeSet::from([speak]),
                     position: Some(Ref::Existing(clockwork.dead_end)),
+                    import_key: None,
                 }),
             ],
             operations: vec![ComponentOp::Mint {
@@ -17566,6 +17610,7 @@ mod clock_tests {
                         // the boundary its own answer claims: an occupied
                         // place is no longer unelaborated.
                         position: Some(Ref::Existing(clockwork.dead_end)),
+                        import_key: None,
                     })],
                     operations: Vec::new(),
                     evidence: Vec::new(),
@@ -17744,6 +17789,7 @@ mod clock_tests {
                         controller: NewController::NarrativePersona,
                         affordances: BTreeSet::from([speak]),
                         position: Some(Ref::Existing(clockwork.dead_end)),
+                        import_key: None,
                     })],
                     operations: vec![ComponentOp::Retire {
                         subject: Ref::Draft(DraftHandle::new("stray")),
@@ -17853,6 +17899,7 @@ mod clock_tests {
                             controller: NewController::NarrativePersona,
                             affordances: BTreeSet::from([speak]),
                             position: Some(Ref::Existing(commons)),
+                            import_key: None,
                         }),
                     ],
                     operations: vec![ComponentOp::GrantAffordance {
@@ -18067,6 +18114,7 @@ mod clock_tests {
                         controller: NewController::NarrativePersona,
                         affordances: BTreeSet::from([speak]),
                         position: Some(Ref::Existing(clockwork.dead_end)),
+                        import_key: None,
                     })],
                     operations: vec![ComponentOp::GrantAffordance {
                         subject: Ref::Draft(DraftHandle::new("stray")),
@@ -18485,6 +18533,7 @@ mod clock_tests {
                             Ref::Existing(clockwork.threaten),
                         ]),
                         position: Some(Ref::Existing(clockwork.dead_end)),
+                        import_key: None,
                     })],
                     operations: vec![ComponentOp::RevokeAffordance {
                         subject: Ref::Draft(DraftHandle::new("stray")),
@@ -18933,6 +18982,7 @@ mod clock_tests {
                             controller: NewController::NarrativePersona,
                             affordances: BTreeSet::from([speak.clone()]),
                             position: None,
+                            import_key: None,
                         }),
                         Declaration::Channel(ChannelDeclaration {
                             handle: DraftHandle::new("wire"),

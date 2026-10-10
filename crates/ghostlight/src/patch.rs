@@ -23,6 +23,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, btree_map::Entry};
+use unicode_properties::{GeneralCategory, UnicodeGeneralCategory};
 use uuid::Uuid;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -945,6 +946,102 @@ impl EvidenceRef {
     }
 }
 
+/// The Aetheria record a subject was imported from: the CultCache schema id and
+/// the record key, compared exactly as two separate texts so no pair of
+/// distinct records can spell one key. Admission keeps the mapping injective;
+/// a key is never matched by prefix, case or normalisation.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(deny_unknown_fields)]
+pub struct ImportKey {
+    schema: String,
+    record: String,
+}
+
+/// The longest either part of an import key may be, in bytes.
+const MAX_IMPORT_KEY_PART_BYTES: usize = 200;
+
+impl ImportKey {
+    pub fn new(schema: impl Into<String>, record: impl Into<String>) -> Self {
+        Self {
+            schema: schema.into(),
+            record: record.into(),
+        }
+    }
+
+    pub fn schema(&self) -> &str {
+        &self.schema
+    }
+
+    pub fn record(&self) -> &str {
+        &self.record
+    }
+
+    /// The one predicate for an import key, called by the resolver and by the
+    /// load-time state gate alike. The record part is canonical free text: not
+    /// empty, at most 200 bytes, no leading, trailing or doubled space, already NFC
+    /// (refused, never normalised, so the kernel derives no second spelling),
+    /// no control or format character, and no whitespace but U+0020. The schema
+    /// part is a schema id: the same text with no space at all.
+    pub(super) fn is_canonical(&self) -> bool {
+        is_canonical_key_text(&self.record)
+            && is_canonical_key_text(&self.schema)
+            && !self.schema.contains(' ')
+    }
+}
+
+fn is_canonical_key_text(part: &str) -> bool {
+    !part.is_empty()
+        && part.len() <= MAX_IMPORT_KEY_PART_BYTES
+        && !part.starts_with(' ')
+        && !part.ends_with(' ')
+        && !part.contains("  ")
+        && unicode_normalization::is_nfc(part)
+        && part.chars().all(|c| {
+            !c.is_control()
+                && c.general_category() != GeneralCategory::Format
+                && (c == ' ' || !c.is_whitespace())
+        })
+}
+
+/// Why an import key cannot join a world: the resolver names these by draft
+/// handle, the state gates by invariant text.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum ImportKeyFault {
+    Malformed,
+    Held,
+    Duplicate,
+}
+
+/// The keys the subjects hold, retired ones included, so a key is never
+/// reissued. Derived on demand; no stored index.
+pub(super) fn held_import_keys<'a>(
+    subjects: impl IntoIterator<Item = &'a super::SubjectState>,
+) -> BTreeSet<&'a ImportKey> {
+    subjects
+        .into_iter()
+        .filter_map(|subject| subject.import_key.as_ref())
+        .collect()
+}
+
+/// The one decision on a key: malformed, held by a subject already in the
+/// world, or already claimed in `declared` (which it joins). Every door that
+/// admits or loads subjects calls this, so none can decide otherwise.
+pub(super) fn import_key_fault<'a>(
+    key: &'a ImportKey,
+    held: &BTreeSet<&ImportKey>,
+    declared: &mut BTreeSet<&'a ImportKey>,
+) -> Option<ImportKeyFault> {
+    if !key.is_canonical() {
+        Some(ImportKeyFault::Malformed)
+    } else if held.contains(key) {
+        Some(ImportKeyFault::Held)
+    } else if !declared.insert(key) {
+        Some(ImportKeyFault::Duplicate)
+    } else {
+        None
+    }
+}
+
 /// `position` is the subject's presence: one place it stands in. A subject
 /// declared without one is unplaced until a later pass gives placement an owner.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -959,6 +1056,11 @@ pub(crate) struct SubjectDeclaration {
     /// atomically.
     pub(crate) affordances: BTreeSet<Ref<AffordanceId>>,
     pub(crate) position: Option<Ref<EntityId>>,
+    /// The record this subject was imported from, if any. Absent from a
+    /// subject nobody imported, so such a world's state and digests are what
+    /// they were before import keys existed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) import_key: Option<ImportKey>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -1363,6 +1465,19 @@ pub enum Mismatch {
     },
     /// The grammar binds the kernel's speak verb as anything but a Conversation.
     SpeakRenderPathDisagreesWithGrammar {
+        handle: DraftHandle,
+    },
+    /// An import key is empty, has whitespace, or is longer than 200 bytes in
+    /// either part.
+    MalformedImportKey {
+        handle: DraftHandle,
+    },
+    /// Two subjects in one patch declare the same import key.
+    DuplicateImportKey {
+        handle: DraftHandle,
+    },
+    /// A subject already in the world, retired or not, holds this import key.
+    ImportKeyHeld {
         handle: DraftHandle,
     },
     UnresolvedDraft {
@@ -3135,6 +3250,8 @@ pub(super) fn resolve_patch(
         kind_names.insert(kernel_speak_entry().kind);
     }
 
+    let held_keys = held_import_keys(state.subjects.values());
+    let mut declared_keys: BTreeSet<&ImportKey> = BTreeSet::new();
     for (position, declaration) in patch.declarations.iter().enumerate() {
         let (handle, label, kind) = match declaration {
             Declaration::Subject(subject) => (
@@ -3172,6 +3289,21 @@ pub(super) fn resolve_patch(
                 Entry::Occupied(_) => mismatches.push(Mismatch::DuplicateHandle {
                     handle: handle.clone(),
                 }),
+            }
+        }
+        if let Declaration::Subject(subject) = declaration
+            && let Some(key) = &subject.import_key
+        {
+            let handle = subject.handle.clone();
+            match import_key_fault(key, &held_keys, &mut declared_keys) {
+                Some(ImportKeyFault::Malformed) => {
+                    mismatches.push(Mismatch::MalformedImportKey { handle });
+                }
+                Some(ImportKeyFault::Held) => mismatches.push(Mismatch::ImportKeyHeld { handle }),
+                Some(ImportKeyFault::Duplicate) => {
+                    mismatches.push(Mismatch::DuplicateImportKey { handle });
+                }
+                None => {}
             }
         }
         if let Declaration::Affordance(affordance) = declaration {
@@ -5278,6 +5410,7 @@ pub(super) fn resolve_patch(
             subject: SubjectState {
                 label: input.label.clone(),
                 kind: input.kind,
+                import_key: input.import_key.clone(),
             },
             controller,
             affordances: granted,
@@ -7902,6 +8035,7 @@ mod tests {
             controller: NewController::OperationalAgent,
             affordances: BTreeSet::from([speak_entry(kernel)]),
             position,
+            import_key: None,
         })
     }
 
@@ -8169,6 +8303,7 @@ mod tests {
                 controller: NewController::NarrativePersona,
                 affordances: BTreeSet::from([Ref::Draft(DraftHandle::new(handle))]),
                 position: None,
+                import_key: None,
             })
         };
 
@@ -8469,6 +8604,7 @@ mod tests {
                 },
                 affordances: BTreeSet::from([speak_entry(&kernel)]),
                 position: None,
+                import_key: None,
             }),
         ]);
         let error = kernel
@@ -8521,6 +8657,7 @@ mod tests {
                 controller: NewController::NarrativePersona,
                 affordances: BTreeSet::from([speak_entry(&kernel)]),
                 position: None,
+                import_key: None,
             }),
         ]);
         let receipt = submit_owner(&mut kernel, &before, admit(repaired));
@@ -9076,6 +9213,7 @@ mod tests {
             controller: NewController::NarrativePersona,
             affordances: BTreeSet::from([speak_entry(&kernel)]),
             position: None,
+            import_key: None,
         })]);
         submit_owner(&mut kernel, &before, admit(patch.clone()));
         let admitted = *kernel
@@ -9352,6 +9490,7 @@ mod tests {
                 controller: NewController::NarrativePersona,
                 affordances: BTreeSet::from([speak]),
                 position: None,
+                import_key: None,
             })])),
         );
         let active = activate(&mut kernel);

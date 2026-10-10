@@ -518,6 +518,7 @@ mod tests {
                 },
                 controller,
                 position: Some(Ref::Existing(commons)),
+                import_key: None,
             })
         };
         WorldPatch {
@@ -1195,6 +1196,7 @@ mod tests {
                 controller: NewController::External { consumer },
                 affordances: BTreeSet::new(),
                 position: Some(Ref::Existing(commons)),
+                import_key: None,
             })])
         };
         // A binding to another consumer is outside its ground.
@@ -1573,6 +1575,7 @@ mod tests {
                 controller,
                 affordances,
                 position: Some(Ref::Existing(mirror.commons)),
+                import_key: None,
             })])
         };
         let pairing = |result: Result<SubmitReceipt, KernelError>| {
