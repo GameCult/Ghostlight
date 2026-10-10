@@ -402,10 +402,7 @@ fn grammar_digest_is_derived_and_order_free() {
         a.digest,
         changed(&|v| v[0].1.render_path = RenderPath::Conversation)
     );
-    assert_ne!(
-        a.digest,
-        changed(&|v| v[1].1.roles[0].role = "from".into())
-    );
+    assert_ne!(a.digest, changed(&|v| v[1].1.roles[0].role = "from".into()));
     assert_ne!(
         a.digest,
         changed(&|v| v[1].1.roles[0].referent = GrammarReferentKind::Faction)
@@ -533,8 +530,8 @@ fn submit_as(
     )
 }
 
-/// A bound world whose revision has moved past genesis: one owner patch that
-/// adds a dead-end place the elaborator can answer, then activation.
+/// A bound Draft world whose revision has moved past genesis: one owner patch
+/// that adds a dead-end place the elaborator can answer.
 fn advanced_grammar_world() -> (tempfile::TempDir, WorldKernel, crate::EntityId) {
     let extra = [("hail", verb(RenderPath::Conversation, &[]))];
     let (dir, kernel) = create(bound(Some(grammar_with(&extra)), "Advanced"));
@@ -560,7 +557,6 @@ fn advanced_grammar_world() -> (tempfile::TempDir, WorldKernel, crate::EntityId)
         ]),
     )
     .unwrap();
-    crate::tests::activate(&mut kernel);
     let dead_end = *kernel
         .state
         .entities
@@ -574,7 +570,29 @@ fn advanced_grammar_world() -> (tempfile::TempDir, WorldKernel, crate::EntityId)
 #[test]
 fn every_admission_door_refuses_outside_the_grammar_after_the_revision_has_moved() {
     let (_dir, mut kernel, dead_end) = advanced_grammar_world();
-    assert!(kernel.state.revision > 1, "the world has moved past genesis");
+    // The owner declares unanswered only in Draft, so it is checked there, at
+    // revision 1; the other doors act in Active.
+    assert_eq!(kernel.state.revision, 1);
+    let owner_door = |kernel: &mut WorldKernel| {
+        for (patch, expected) in [
+            (
+                patch_of(vec![declare("wave", "wave", &[])]),
+                not_in_grammar("wave"),
+            ),
+            (
+                patch_of(vec![declare("hail", "hail", &[("who", person())])]),
+                disagrees("hail"),
+            ),
+        ] {
+            assert_eq!(rejected(admit(kernel, patch)), expected, "owner");
+        }
+    };
+    owner_door(&mut kernel);
+    crate::tests::activate(&mut kernel);
+    assert!(
+        kernel.state.revision > 1,
+        "the world has moved past genesis"
+    );
     let answer = crate::derive_boundaries(&kernel.state)
         .unwrap()
         .into_iter()
@@ -584,8 +602,11 @@ fn every_admission_door_refuses_outside_the_grammar_after_the_revision_has_moved
         })
         .expect("the dead end is an unelaborated destination");
     let doors: Vec<(&str, CallerId, Option<crate::PatchAnswer>)> = vec![
-        ("owner", CallerId::Principal(owner()), None),
-        ("play", CallerId::System(crate::SystemCapability::Play), None),
+        (
+            "play",
+            CallerId::System(crate::SystemCapability::Play),
+            None,
+        ),
         (
             "consumer",
             CallerId::System(crate::SystemCapability::Consumer {
@@ -617,7 +638,10 @@ fn every_admission_door_refuses_outside_the_grammar_after_the_revision_has_moved
             patch_of(vec![declare("hail", "hail", &[("who", person())])]),
         );
         assert_eq!(rejected(roles), disagrees("hail"), "{door}");
-        assert_eq!(kernel.state.revision, revision, "{door} refusal moved the world");
+        assert_eq!(
+            kernel.state.revision, revision,
+            "{door} refusal moved the world"
+        );
     }
     // The same path admits what the grammar carries, so the refusals above are
     // the grammar's and not a closed door.
@@ -653,7 +677,13 @@ fn a_grammar_that_binds_speak_as_anything_but_conversation_is_refused_at_bind() 
     // A ShipAction speak with a role fails on the signature first and is still
     // refused: no variant of speak but zero roles, Conversation, is admitted.
     assert_eq!(
-        rejected(create(bound(Some(ship(&[("to", GrammarReferentKind::Person)])), "Loud")).1),
+        rejected(
+            create(bound(
+                Some(ship(&[("to", GrammarReferentKind::Person)])),
+                "Loud"
+            ))
+            .1
+        ),
         disagrees(crate::patch::KERNEL_SPEAK_HANDLE)
     );
     // The control: Conversation speak binds.
@@ -665,7 +695,17 @@ fn a_grammar_that_binds_speak_as_anything_but_conversation_is_refused_at_bind() 
 /// the catalog's only writer holds the grammar check itself.
 #[test]
 fn an_effect_resolved_elsewhere_cannot_install_an_entry_outside_the_grammar() {
-    let (_dir, kernel) = create(bound(Some(grammar_with(&[])), "Forged"));
+    let extra = [
+        (
+            "meet",
+            verb(
+                RenderPath::ShipAction,
+                &[("who", GrammarReferentKind::Person)],
+            ),
+        ),
+        ("hail", verb(RenderPath::Conversation, &[])),
+    ];
+    let (_dir, kernel) = create(bound(Some(grammar_with(&extra)), "Forged"));
     let kernel = kernel.unwrap();
     let mut twin = kernel.state.clone();
     twin.grammar = None;
@@ -681,8 +721,8 @@ fn an_effect_resolved_elsewhere_cannot_install_an_entry_outside_the_grammar() {
     };
     for (label, resolved, admitted) in [
         ("outside kind", resolve("wave", &[]), false),
-        ("wrong roles", resolve("convene", &[("who", person())]), false),
-        ("carried verb", resolve("convene", &[]), true),
+        ("wrong roles", resolve("meet", &[("whom", person())]), false),
+        ("carried verb", resolve("hail", &[]), true),
     ] {
         let mut state = kernel.state.clone();
         let catalog = state.affordance_catalog.len();

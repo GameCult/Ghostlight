@@ -64,11 +64,9 @@ impl GrammarVerb {
     /// referent kinds, same order.
     pub(crate) fn admits_roles(&self, roles: &[RoleSpec]) -> bool {
         self.roles.len() == roles.len()
-            && self
-                .roles
-                .iter()
-                .zip(roles)
-                .all(|(want, have)| want.role == have.role.0 && want.referent.ref_kind() == have.kind)
+            && self.roles.iter().zip(roles).all(|(want, have)| {
+                want.role == have.role.0 && want.referent.ref_kind() == have.kind
+            })
     }
 }
 
