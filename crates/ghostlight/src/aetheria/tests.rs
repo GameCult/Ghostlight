@@ -421,11 +421,12 @@ fn an_allegiance_key_that_is_not_canonical_text_is_refused_by_key_and_field() {
     }
 }
 
-/// The store's own writer keeps one row per record key, so a second row is
-/// spliced into the fixture's snapshot bytes the way a hand-merged file would
-/// hold it.
-#[test]
-fn two_faction_rows_under_one_record_key_are_refused() {
+/// The fixture's snapshot bytes with the record rows changed by `change`, for
+/// what the store's own writer will not produce: it keeps one row per record
+/// key and stores rows in key order.
+fn spliced_catalog(
+    change: impl FnOnce(&mut Vec<rmpv::Value>),
+) -> (tempfile::TempDir, std::path::PathBuf) {
     let bytes = std::fs::read(FIXTURE).unwrap();
     let rmpv::Value::Array(mut snapshot) = rmpv::decode::read_value(&mut bytes.as_slice()).unwrap()
     else {
@@ -434,18 +435,25 @@ fn two_faction_rows_under_one_record_key_are_refused() {
     let rmpv::Value::Array(records) = &mut snapshot[2] else {
         panic!("snapshot holds no records");
     };
-    let twin = records
-        .iter()
-        .find(|record| record[0].as_str() == Some("faction-adrasteia"))
-        .unwrap()
-        .clone();
-    records.push(twin);
+    change(records);
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("catalog.cc");
     let mut spliced = Vec::new();
     rmpv::encode::write_value(&mut spliced, &rmpv::Value::Array(snapshot)).unwrap();
     std::fs::write(&path, spliced).unwrap();
+    (dir, path)
+}
 
+#[test]
+fn two_faction_rows_under_one_record_key_are_refused() {
+    let (_dir, path) = spliced_catalog(|records| {
+        let twin = records
+            .iter()
+            .find(|record| record[0].as_str() == Some("faction-adrasteia"))
+            .unwrap()
+            .clone();
+        records.push(twin);
+    });
     assert_eq!(
         read_aetheria_catalog(&path),
         Err(CatalogReadError::DuplicateFaction {
@@ -456,10 +464,11 @@ fn two_faction_rows_under_one_record_key_are_refused() {
 
 #[test]
 fn factions_are_read_in_record_key_order_whatever_the_file_order() {
-    let mut rows = fixture_rows();
-    rows.sort_by(|a, b| b.key.cmp(&a.key));
-    assert_eq!(rows.first().unwrap().key, "verb-speak");
-    let names: Vec<_> = read(&rows)
+    let (_dir, path) = spliced_catalog(|records| {
+        records.sort_by(|a, b| b[0].as_str().cmp(&a[0].as_str()));
+        assert_eq!(records[0][0].as_str(), Some("verb-speak"));
+    });
+    let names: Vec<_> = read_aetheria_catalog(&path)
         .unwrap()
         .factions
         .into_iter()
