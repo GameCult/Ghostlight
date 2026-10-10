@@ -375,7 +375,7 @@ Imagination `imagination-gl-verse-sim-0b`, session `self-2026-10-10-ag`,
 `two-ghostlight-consumers`, `verse-verbs-two-render-paths`,
 `verse-cast-crossmedia`, `action-scenes-in-game` and
 `aetheria-release:ruling:storylets-simulate-sift-lift-weave`. Draft target:
-`notes/ghostlight-verse-target-r3-draft.md`. Rebuilt kernel read at
+`notes/ghostlight-verse-target.md` (revision 3, which absorbed the draft). Rebuilt kernel read at
 `origin/main` `367e2eb`.
 
 ### Where the old machine is
@@ -408,7 +408,7 @@ makes unavoidable; everything else ports as designed.
 | Resolution cover (`resolution.rs` 5,505 lines: `plan_cover`, `validate_cover`, `advance_detail_debt`, merge loss; `domain.rs:345-497`) | budgeted partition into `SimulationCell`s (`Cohesive` or `Arena`), seven-term `MergeLoss`, `ResolutionPolicy` (cell budget 1-240, provider parallelism, epochs), `ResolutionPin` (KeepTogether, KeepSeparate, MinimumIndividualDetail), `ResolutionDemand` (axis weights, focal subjects, horizon), cell leases, causal follow-through windows | the old campaign record as the store for policy, pins, leases and debt | `cover.rs` (1,116 lines): pure `derive_cover`, content-addressed cell ids under `ghostlight.cover.v1`, `TickIndex` derived from the clock, debt rotation with urgency slots | **F9** the cover never enters `WorldState` (cover.rs:6-9). Policy, pins, leases and demand move to the verse runner's own run record, not the kernel. **F10** an `Arena` cell presents partitioned views, never a knowledge union (ontology "Scale" item 4); the old arena knowledge union does not port. `Cohesive` ports as the population subject acting for itself. The merge-loss terms port onto main's partitioner as its grouping cost. |
 | Strategic wave pipeline (`scheduler.rs` 3,336 lines, `persona.rs` 6,540 lines cell projection) | demand projection by a cheap model; per-cell Projector → Persona → Interpreter membrane; `CellActionProposal` and attributed `CellInaction`; parallel dispatch under one provider gate; `ResolutionWaveCheckpoint` resuming only failed cells | `ModelPort` and the old persona stack (`persona.rs`) | `controllers.rs` (`NarrativePersona`, `OperationalAgent`, Projector/Interpreter), `RoutedInferencePort`, `WorldMailbox` role ports, `ExerciseDecision`/`DeclineDecision` commands | **F11** a cell's output is one affordance invocation or decline per constituent, each admitted separately against its scope digest (invariants 7, 10); there is no wave-level atomic commit. A refused grouped constituent stays refused (ontology "Scale"). |
 | Outcome resolution (`outcome.rs` 4,387 lines; selective semantic verifier) | a batched model resolver returns a typed result per strategic attempt; a same-snapshot verifier advises on risky effects | model-decided outcomes | outcome bands on affordances, chosen by kernel digest (`BandPreimage`), no RNG | **F12** not ported. The kernel decides outcomes (target invariant `kernel-decides`, ontology invariant 7). Strategic activities, institution postures and migrations become catalog affordances (from Aetheria's grammar) whose effects compile to the 34 `ComponentOp`s: posture to `CreateCommitment`, migration to `Relocate`. |
-| Fission (`compiler.rs` `GestaltFissionRequest`, `domain.rs:716` `GestaltFissionPreview`, `FissionGestalt` command) | approval-gated split of a population along one axis, member deltas assigned to one child, lineage kept | the `FissionGestalt` kernel command; lineage as its own record | elaboration patches (`submit_elaboration`); `Retire` | **F13** fission is one elaboration patch: declare child populations, Membership edges (F6), relocate each named member's membership, retire or keep the parent. Lineage is the Membership/Command edges plus the commit, not a separate record. The operator approval gate ports unchanged (see question `gestalt-fission-approval`). |
+| Fission (`compiler.rs` `GestaltFissionRequest`, `domain.rs:716` `GestaltFissionPreview`, `FissionGestalt` command) | approval-gated split of a population along one axis, member deltas assigned to one child, lineage kept | the `FissionGestalt` kernel command; lineage as its own record | elaboration patches (`submit_elaboration`); `Retire` | **F13** fission is one elaboration patch: declare child populations, Membership edges (F6), relocate each named member's membership, retire or keep the parent. Lineage is the Membership/Command edges plus the commit, not a separate record. **F17** (ruling `gestalt-fission-auto`) the old operator approval gate does not port: a fission answering a derived boundary is admitted during the run and listed in the run record for the operator to see afterwards. |
 | Tick driver and away time (`main.rs` `scheduler_loop`, `process_due_ticks`, `advance_one_strategic_tick`; `scheduler.rs:1943` `due_tick_target`) | a background loop on 60 s and 300 s pulses; one strategic tick per idle hour after 15 min, capped at 8 (`away_budget_waits_and_caps_at_eight`); return catch-up before a player's fictional command; yields to live turns; `AdvanceStrategicTick` commits atomically; worlds with no simulatable agency tick without a model | a player and their idleness; the `AdvanceStrategicTick` command; the in-daemon timer | `ClockPort::advance_time` (mailbox.rs:688), `clock.rs` `derive_motion` (routines auto-fulfil, overdue obligations and goals raise pressure, zero inference) | **F14** a verse world has no player, so "away time" is the schedule itself: a run advances N ticks of a configured fiction span. Not ontology-forced; forced by the consumer. **F15** each tick is: derive cover, run cells, submit each proposal, then `AdvanceTime` (cover.rs:43-45 states this order); there is no `AdvanceStrategicTick`. |
 | Clock consequences (`clock.rs` 739 lines, `ClockConsequenceBinding`) | a model bound due clocks to agent actions | a model stage on the clock | `clock.rs` `derive_motion`, zero inference | **F16** not ported; main's deterministic motion replaces it. |
 | Model stage receipts (`persona_stage_receipt.v1`, written by `advance_one_strategic_tick`) | per-stage receipt keyed by hash, collisions refused | the old store | `LocalInferenceReceipt`/`SdkInferenceReceipt` (request hashes, token counts) | Not forced. Main's receipts carry hashes but not the response body, and nothing found persists them; replay needs the response stored (prior art (c), "Determinism and replay"). |
@@ -424,7 +424,7 @@ These are the only cost evidence for a cadence and budget ruling.
 Ruling `teardown-was-authority-sprawl` sorts the old tree: the rows above are
 the good ideas to port (gestalts, multiresolution cover, pins and debt,
 away-time as a driver, checkpointed parallel waves, attributed inaction,
-strategic individuation, fission with approval, the newspaper path, stage
+strategic individuation, fission, the newspaper path, stage
 receipts). The ad hoc mutation rules stay dead. Each has a replacement on
 main:
 
@@ -484,29 +484,123 @@ invariant `grammar-governs` in the draft target. An empty cell is marked
 
 | Kind | Identity (namespace; injective?) | Lifecycle | Authority (owner; forbidden writers) |
 |---|---|---|---|
-| Verse grammar: Aetheria's ontology and action grammar (subject kinds, place kinds, faction vocabulary, affordance kinds each tagged with one render path, social verbs) | **EMPTY** namespace: no document, schema or repo holds it today. Proposed: a CultCache schema id plus a revision, and the world binds the grammar's content digest, which is injective. | **EMPTY** beyond creation: authored, revised; how a running world moves to a new grammar revision is unanswered (main refuses earlier schemas and never migrates, world-consumer-api.md:184-190) | Owner proposed: Aetheria, which knows what it can render (ruling `verse-sim-pipeline`). Where it lives and in what format: question `verse-grammar-home`. Forbidden writers: Ghostlight elaborators and the play authority (the catalog is input to genesis, not something a run invents); the kernel today lets the owner declare any affordance kind (map "Where phase 2's verb sets plug in"), so nothing enforces this yet. |
+| Verse grammar: Aetheria's ontology and action grammar (verbs, each with one render path and its participant roles) | `aetheria.verse_grammar` (CultGlobal, one per catalog, carries the revision) and `aetheria.verse_verb` keyed by its canonical kind name, in Aetheria's catalog `GameData/Aetheria.cc` (ruling `verse-grammar-home-ruled`). A world binds (schema id, revision, sha256 over the verbs' canonical encoding sorted by kind): injective per content. | authored and revised through an AetherDb command; a world keeps the revision it was created under; moving a running world to a new revision is not designed (main never migrates), so a revision means a new world until a migration is needed | Owner: Aetheria, for which verbs exist, how each renders and who takes part. Ghostlight owns what each verb does to world state (question `verb-effects-owner`). Forbidden writers: Ghostlight elaborators, the play authority and every run; the kernel refuses a kind or role signature the bound grammar lacks (cut `grammar-binding`). |
 | Lore source (AetheriaLore pages, Aetheria `Faction` records) | page path + AetheriaLore commit; `aetheria.faction` CultDocument key + Aetheria commit. Injective per commit. | read at genesis and elaboration; never written by the sim | Owners: AetheriaLore and Aetheria. Forbidden writers: every sim organ (target invariant `canon-one-way`). |
 | Verse world (journal and state) | `WorldId`, reducer-issued; `revision` and digest chain | created, approved, activated; one commit per admitted command; never forked today | The kernel, through its closed operation set. Forbidden writers: the runner, the Eve surface and meddling tools except through kernel commands. |
 | Elaborated entities: places, resources, facts, channels, routes | `EntityId`/`EdgeId`, reducer-issued; injective | admitted by patch; retired; facts may be Canonical, Claimed or Ruled | Kernel admits; elaborators and the owner propose. Lore-derived facts carry their source (`verse-provenance`). |
-| Import key: lore record ↔ Ghostlight id (which subject *is* faction X) | **EMPTY**: labels never resolve references (ontology "Identity"), and nothing records or checks that one Aetheria faction key maps to exactly one subject | must survive re-elaboration and any grammar revision | **EMPTY** owner. Proposed: the genesis patch writes one Canonical fact per imported record citing its key, and admission refuses a second subject citing the same key. Not on main. |
+| Import key: Aetheria record or lore page ↔ Ghostlight id | `(schema id, record key)` for a catalog record (`aetheria.faction/<CultRecordKey>`); `(vault-relative page path)` for a lore page (phase B). Injective: admission refuses a second subject or entity carrying a key already held. The Aetheria commit is on the world's genesis command, not in the key, so the key survives re-reading a newer catalog. | written once, by the declaration that creates the subject or entity; never changed; retiring the subject retires the key with it, and the key is never reissued | Kernel admission (cut `import-key`). Writers: genesis and elaboration patches only (ruling `grammar-scope-ruled`). |
 | Factions (Aetheria factions as actors) | `SubjectId`, kind `Institution` | declared at genesis from `aetheria.faction`; act through offices and catalog affordances; can be retired | Kernel; the faction's `OperationalAgent` controller proposes. Needs relations (port F6) for alliance and rivalry. |
-| Gestalts (populations at each resolution) | `SubjectId`, kind `Population` (F1, F2) | declared at genesis or elaboration; migrate by `Relocate`; split by fission (F13); retired | Kernel admits; elaborators propose fission; operator approves fission (question `gestalt-fission-approval`). Forbidden writers: the cover and the runner (they choose resolution, never identity). |
+| Gestalts (populations at each resolution) | `SubjectId`, kind `Population` (F1, F2) | declared at genesis or elaboration; migrate by `Relocate`; split by fission (F13); retired | Kernel admits. Fission is an elaboration patch answering a derived boundary, one of the named non-verb writers (ruling `grammar-scope-ruled`), admitted during the run without waiting (ruling `gestalt-fission-auto`). The operator sees it afterwards: the run record lists each fission commit, and the meddling surface shows it in the run history. Forbidden writers: the cover and the runner (they choose resolution, never identity). |
 | Individuated members (the people gestalts give up) | `SubjectId`, kind `Person`, with a Membership edge to the population (F3, F6) | born by an elaboration patch answering `IndividuationRequired` or a strategic individuation; never folded back (F4) | Kernel admits; the elaborator or the cell proposes; duplicates of an established identity refused (ported test). |
 | How a region moves between resolutions | derived, no identity of its own: a cell id is a content hash under `ghostlight.cover.v1` | recomputed every tick from pins, budget, pressure and debt; a leased cell survives while still connected (old lease rule) | `derive_cover` (pure); pins and budget from the run record; promotion and demotion are only cell assignment (F4, F9). Forbidden writers: the kernel (never sees a cell), any model. |
-| Cast (characters the audience follows) | **EMPTY**: no component or record marks a subject as cast | **EMPTY**: who joins or leaves the cast, and when | **EMPTY** owner. A cast member is a `Person` subject (target invariant `cast-persists`); curating the roster is an operator act (question `meddling-first-acts` lists it). The old `MinimumIndividualDetail` pin is how the cast keeps detail focus. |
-| Verse run (one scheduled invocation) | **EMPTY** namespace on main. Proposed: (`WorldId`, run sequence), sequence assigned by the runner. | scheduled → running → per-tick checkpoint → completed, failed or stopped; a failed run resumes from its last checkpoint | Owner: the verse runner. Idunn owns when it starts and process survival. Forbidden writers: Dungeon's play loop, an in-daemon timer, the Eve surface. Cadence and budget: question `verse-run-cadence-budget`. |
+| Cast (characters the audience follows) | a `Person` `SubjectId` named in the run record's cast roster; no kernel component (being followed changes attention, not the world) | joins or leaves by an operator steering act at a tick boundary (ruling `meddling-first-ruled`); a member who is retired in the world stays in the roster's history | Owner: the operator, through run controls. The cover keeps roster members at singleton resolution (the old `MinimumIndividualDetail` pin). Forbidden writers: models and the runner. Lands in phase D; phase A has no persons. |
+| Verse run (one invocation) | `(WorldId, run sequence)`, sequence assigned by the runner, document `ghostlight.verse_run.v1` | started manually under a token cap (ruling `verse-cadence-ruled`) → per-tick checkpoint → Completed, BudgetExhausted, Failed or Stopped; a failed run resumes from its last checkpoint; nightly scheduling arrives after cost per tick is measured | Owner: the verse runner (cut `verse-run`). Idunn will own scheduled start and process survival (phase D). Forbidden writers: Dungeon's play loop, an in-daemon timer, the Eve surface. |
 | Tick | `TickIndex`, derived from the world clock, never stored (cover.rs:33-38) | derive cover, run cells, submit proposals, then `AdvanceTime` (F15); a resumed tick re-derives the same command ids, so the kernel's idempotency ledger answers with the original receipts | Kernel owns time; the runner owns the order. |
-| Run record: policy, pins, demand, leases, checkpoints | **EMPTY** on main; old shapes `ResolutionPolicy`, `ResolutionPin`, `ResolutionWaveCheckpoint` | policy and pins changed by operator act at a tick boundary (old epoch rule); checkpoints per tick, superseded | Runner. Forbidden writers: the kernel. |
+| Run record: policy, pins, demand, roster, checkpoints, spend | inside `ghostlight.verse_run.v1`; phase A carries cap, tick span, cover budget, checkpoints and spend; pins, demand and roster arrive with phase C-D | policy and pins revised by operator act at a tick boundary with an epoch (old `ResolutionControlReceipt` rule); checkpoints per tick, superseded | Runner. Forbidden writers: the kernel. |
 | Model proposal and its validation | derived command id (world, tick, cell, constituent), so injective per tick | proposed; admitted, or refused (`ScopeChanged`, precondition, ceiling); a narrative singleton may re-lower once (`interrupted_from`) | Kernel reducer decides. Forbidden writers: an outcome resolver or verifier model (F12). |
-| Provider call record (for replay and cost) | request hash (main's receipts) | **EMPTY**: main's receipts are not persisted and hold no response body | Owner proposed: the inference port writes, the runner stores per run. Replay re-feeds stored responses into the deterministic kernel. |
-| Pipeline output: newspaper issues, episodes, storylets | **EMPTY** on main. The old newspaper had `ghostlight.world_newspaper_issue.v3` keyed by a publication task binding (port row above); episodes and storylets have no kind anywhere. The commit journal's `DecisionEvent`s are the raw history; `operator_log` is owner-only. | newspaper: composed, checkpointed at press close, persisted, never edited; episodes and storylets **EMPTY** | Owner: each pipeline reader owns its own output. **EMPTY** for episodes and storylets. First consumer: question `verse-first-consumer`. Forbidden writers: every reader may write only its own output, never the world (`canon-one-way`, `grammar-governs`). |
-| Operator meddling act | kernel commands carry an idempotency key and the owner principal; run controls carry the run id and an epoch | committed to the journal (world acts) or the run record (controls); never edited afterwards | Owner: the operator, through the verse Eve surface. Forbidden: any tool that writes `.cc` files or the journal directly. What it does first: question `meddling-first-acts`. |
+| Provider call record (for replay and cost) | `(run id, call sequence)`, document `ghostlight.verse_provider_call.v1`, carrying the provider request sha256, model, response events and token usage | written once per call by the recording port before its output reaches a lane; never edited; replay serves it back by request sha256 | Owner: the recording port in front of the inference lane (cut `call-record`), which also owns the run's spend and refuses a call whose bound exceeds the remaining cap. Forbidden writers: lanes and the runner. |
+| Pipeline output: newspaper issues; later episodes and storylets | newspaper: the old `ghostlight.world_newspaper_issue.v3` shape at `f9f019b`, keyed by world and the commit range it covers (ruling `verse-first-consumer-ruled`); episodes and storylets have no kind yet and are outside this target's phases | newspaper: composed, checkpointed at press close, persisted, never edited | Owner: each reader owns its own output (`readers-read`). Forbidden writers: every reader may write only its own output, never the world. Lands in phase D. |
+| Operator meddling act | world acts: kernel commands with an idempotency key and the owner principal; steering acts: run-record revisions with the run id and an epoch | committed to the journal (inject) or the run record (steer); never edited afterwards | Owner: the operator, through the verse Eve surface (ruling `meddling-first-ruled`: steer first, then inject). Forbidden: any tool that writes `.cc` files or the journal directly. Lands in phase D. |
 
 ### Cells that could not be filled
 
-- Verse grammar: no namespace, no home, no format, no revision rule.
-- Import key: no owner and no injectivity check between Aetheria records and subjects.
-- Cast: no identity, lifecycle or owner.
-- Verse run and run record: no namespace or store on main (the old shapes exist at `f9f019b`).
-- Provider call record: nothing persists a response for replay.
-- Pipeline output: episodes and storylets have no kind and no owner; the newspaper has an old design at `f9f019b` and nothing on main.
+Revision 3's rulings settle every cell the 0b pass left empty except these:
+
+- Verse grammar, lifecycle: how a running world moves to a new grammar revision. Not needed until a grammar revision meets a world worth keeping; a new world is the answer until then.
+- Episodes and storylets: no kind and no owner. Both are outside revision 3's phases.
+
+## Verse sim: phase A body facts (probed 2026-10-10)
+
+Imagination `imagination-gl-verse-sim-cuts`, session `self-2026-10-10-ag`. Pinned to
+Ghostlight `origin/main` `367e2eb` and Aetheria `origin/master` `b623d51`. Each line is
+a source read.
+
+- **A1 Aetheria content is one CultCache catalog.** `AetheriaStores.Open`
+  (`Assets/Scripts/ServerShared/AetheriaStores.cs:9`) registers `CatalogTypes` in one
+  `SingleFileMessagePackBackingStore` over `GameData/Aetheria.cc` (LFS,
+  `.gitattributes` `GameData/*.cc`). A `[CultGlobal]` catalog type with no record makes
+  `Open` throw ("catalog globals are authored, never invented"), so a new global and
+  its record land together. Content is authored by `tools/AetherDb` commands with an
+  `apply` switch (`Program.cs:25-48`, `PiratesFaction` at 1848 is the newest pattern).
+- **A2 Factions are `aetheria.faction` v1** (`Corporations.cs:13-59`): name, short
+  name, description, personality weights, colours, name file, boss hull, influence,
+  and `Allegiance`, a map of faction refs to weights. No home place and no members.
+- **A3 What the game can film today** is Aetheria's `TaskType` (`Agents/Tasks/AgentTask.cs:24-32`):
+  Mine, Haul, Tow, Defend, Attack, Explore. That is the ship-action half of the starter
+  grammar. The conversation half on Ghostlight's side is the kernel-built `speak`
+  (`patch.rs:2396-2415`): zero roles, colocated audience, carries speech.
+- **A4 Ghostlight reads CultCache single files already.** The workspace pins
+  `cultcache-rs` at CultLib `85f7024`, which carries `SingleFileMessagePackBackingStore`
+  (`packages/cultcache-rs/src/lib.rs:305`). `crates/ghostlight` depends on it
+  (`Cargo.toml`), today only for the redb controller-work store.
+- **A5 Affordance kinds are open text.** `AffordanceKindName` (`patch.rs:247-254`) is
+  checked for shape and per-patch uniqueness only (`patch.rs:3135-3151`). Genesis
+  re-derives its patch through `resolve_patch` (`lib.rs:1939-1993`), so a check inside
+  resolution holds for genesis and for every later patch alike.
+- **A6 World creation is Dungeon-shaped.** `WorldMailbox::create` (`mailbox.rs:105`)
+  lowers `CreateWorldIntent` (`lib.rs:433-452`), which requires a human subject and
+  declares one commons where every genesis subject stands. A verse genesis has no
+  human, so it needs its own intent; it reuses the same `CreateWorld` command
+  (`lib.rs:414-428`) and `resolve_patch`.
+- **A7 The tick driver's parts exist; the driver does not.** `derive_cover`
+  (`cover.rs:263`), `ControllerRunner::run_cell` (`controllers.rs:3266`, singleton and
+  grouped cells, derived command ids so a resumed tick is idempotent),
+  `WorldMailbox::agency_graph` (`mailbox.rs:449`, reserved to the tick driver) and
+  `PlayPort::advance_time` (`mailbox.rs:688`). Nothing on main calls them in a loop.
+- **A8 No lane reaches a hosted cheap model.** The connector lane is CodexConnector,
+  which runs the Codex executable for GPT models (its daemon manifest allows
+  `gpt-5.6-*`) and returns no token usage. The local lane speaks OpenAI-compatible
+  chat completions (`local_inference.rs`), parses `usage`, but refuses any
+  non-loopback endpoint in its constructor (`local_inference.rs:167`) and carries no
+  credential. DeepSeek's API is OpenAI-compatible, so the hosted lane is a second
+  binding of the local port.
+- **A9 Token usage stops at the port.** `LocalInferenceReceipt` holds prompt and
+  completion tokens (`local_inference.rs:42-55`, built at 347-370), but
+  `InferenceOutput` (`controllers.rs:155-159`) carries only events and a receipt
+  digest, so nothing above a port can count spend.
+- **A10 Principal evidence is constructible.** `VerifiedPrincipalEvidence::new` is
+  public (`lib.rs:160`); the Dungeon builds it from a Heimdall session. A phase-A CLI
+  run by the operator on the host builds it from a configured account subject hash.
+
+## Phase A cut order
+
+Phase A delivers the first watched run: the operator invokes
+`ghostlight-verse run` on Yggdrasil under a token cap and reads, per tick, what each
+Aetheria faction did in grammar verbs and what it cost. Specs in `depends_on` order
+(admission status below the list):
+
+1. `verse-grammar` (Aetheria): the two document types, validation, catalog
+   registration and the AetherDb command that authors the starter grammar.
+2. `grammar-binding` (Ghostlight kernel): a world binds a grammar at genesis; the
+   resolver refuses kinds and role signatures it lacks. No IO.
+3. `import-key` (Ghostlight kernel): the subject and entity import key and its
+   injectivity check. No IO.
+4. `grammar-reader` (Ghostlight): reads Aetheria's catalog file, yields the grammar
+   binding and the faction records; fixture written by Aetheria's own types.
+5. `hosted-lane` (Ghostlight): the local port's hosted binding and token usage on
+   `InferenceOutput`.
+6. `call-record` (Ghostlight): the recording port, call records, the cap at the
+   call door, and the replay port.
+7. `verse-genesis` (Ghostlight): the verse creation intent: factions as institutions
+   under import keys, grammar verbs lowered to affordances, the world bound.
+8. `verse-run` (Ghostlight): the run record, the tick loop and the
+   `ghostlight-verse` binary with `genesis` and `run`.
+
+Phase A leaves out, on purpose: relations and allegiances (F6, phase B), lore
+elaboration (phase B), persons and the cast (phase B-D), pins, debt, fission (phase
+C), the Eve surface, Idunn scheduling and the newspaper (phase D). Verb effects are
+empty in phase A: a ship verb records the act as a decision event and changes no
+component, the same under either answer to question `verb-effects-owner`.
+
+Admission, 2026-10-10: `grammar-binding`, `import-key`, `hosted-lane` and
+`call-record` are in the mind. `verse-grammar` was refused `RepoNotInCampaign`
+(`GameCult/Aetheria` is not in the campaign's repos), and `grammar-reader` was then
+refused `UnknownDependency` (`verse-grammar`), which holds `verse-genesis` and
+`verse-run` behind it. The four held specs are written in full, anchors checked
+SAME at their bases, outside the repo; they are admitted once the campaign lists
+`GameCult/Aetheria`.
+
+Rationale for the order: the two kernel cuts are pure and land before anything that
+reads a file; the reader's fixture needs Aetheria's types, so it waits on
+`verse-grammar`; spend has one owner, the recording port, so the cap is built
+before the runner and the runner never counts tokens itself.
