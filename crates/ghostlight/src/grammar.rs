@@ -8,7 +8,7 @@
 //! digest its verbs do not have.
 
 use crate::SubjectKind;
-use crate::patch::{EntityKind, RefKind, RoleSpec};
+use crate::patch::{AffordanceKindName, EntityKind, RefKind, RoleSpec, kernel_speak_entry};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -70,6 +70,14 @@ impl GrammarVerb {
                 .zip(roles)
                 .all(|(want, have)| want.role == have.role.0 && want.referent.ref_kind() == have.kind)
     }
+}
+
+/// Why a bound grammar refuses an affordance entry.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum GrammarRefusal {
+    KindNotInGrammar,
+    RolesDisagree,
+    SpeakNotConversation,
 }
 
 #[derive(Clone, Copy, Debug, thiserror::Error, PartialEq, Eq)]
@@ -161,6 +169,26 @@ impl GrammarBinding {
 
     pub(crate) fn verb(&self, kind: &str) -> Option<&GrammarVerb> {
         self.verbs.get(kind)
+    }
+
+    /// The one grammar check. The resolver turns a refusal into a mismatch and
+    /// `admit_resolved`, the only writer of the affordance catalog, into an
+    /// invariant error, so no path adds an entry without passing it.
+    pub(crate) fn refusal(
+        &self,
+        kind: &AffordanceKindName,
+        roles: &[RoleSpec],
+    ) -> Option<GrammarRefusal> {
+        let Some(verb) = self.verb(&kind.0) else {
+            return Some(GrammarRefusal::KindNotInGrammar);
+        };
+        if !verb.admits_roles(roles) {
+            return Some(GrammarRefusal::RolesDisagree);
+        }
+        if *kind == kernel_speak_entry().kind && verb.render_path != RenderPath::Conversation {
+            return Some(GrammarRefusal::SpeakNotConversation);
+        }
+        None
     }
 }
 

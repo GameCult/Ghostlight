@@ -13,6 +13,7 @@
 
 use super::clock::{FictionalMinutes, TickMinutes};
 use super::tool_schema;
+use super::grammar::GrammarRefusal;
 use super::{
     AffordanceId, CommandId, ControllerAssignment, ControllerId, EdgeId, EntityId, LensWeights,
     NewController, SubjectId, SubjectKind, SubjectState, WorldId,
@@ -1358,6 +1359,10 @@ pub enum Mismatch {
     /// The kind is a verb of the bound grammar, but the declared roles are not
     /// its signature (name, referent kind or order).
     AffordanceRolesDisagreeWithGrammar {
+        handle: DraftHandle,
+    },
+    /// The grammar binds the kernel's speak verb as anything but a Conversation.
+    SpeakRenderPathDisagreesWithGrammar {
         handle: DraftHandle,
     },
     UnresolvedDraft {
@@ -3083,17 +3088,14 @@ fn check_against_grammar(
     let Some(grammar) = &state.grammar else {
         return;
     };
-    match grammar.verb(&kind.0) {
-        None => mismatches.push(Mismatch::AffordanceKindNotInGrammar {
-            handle: handle.clone(),
-        }),
-        Some(verb) if !verb.admits_roles(roles) => {
-            mismatches.push(Mismatch::AffordanceRolesDisagreeWithGrammar {
-                handle: handle.clone(),
-            })
+    let handle = handle.clone();
+    mismatches.extend(grammar.refusal(kind, roles).map(|refusal| match refusal {
+        GrammarRefusal::KindNotInGrammar => Mismatch::AffordanceKindNotInGrammar { handle },
+        GrammarRefusal::RolesDisagree => Mismatch::AffordanceRolesDisagreeWithGrammar { handle },
+        GrammarRefusal::SpeakNotConversation => {
+            Mismatch::SpeakRenderPathDisagreesWithGrammar { handle }
         }
-        Some(_) => {}
-    }
+    }));
 }
 
 /// The one resolution owner for every admission lane: declarations, references,

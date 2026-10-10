@@ -514,3 +514,196 @@ fn existing_world_reopens_with_unchanged_digests() {
         snapshot.state_digest
     );
 }
+
+fn submit_as(
+    kernel: &mut WorldKernel,
+    caller: CallerId,
+    answers: Option<crate::PatchAnswer>,
+    patch: WorldPatch,
+) -> Result<SubmitReceipt, KernelError> {
+    let snapshot = kernel.snapshot().unwrap();
+    kernel.submit(
+        command(
+            &snapshot,
+            CommandId::new(),
+            caller.clone(),
+            CommandBody::AdmitPatch { answers, patch },
+        ),
+        &crate::AuthenticatedCaller::fixture(caller),
+    )
+}
+
+/// A bound world whose revision has moved past genesis: one owner patch that
+/// adds a dead-end place the elaborator can answer, then activation.
+fn advanced_grammar_world() -> (tempfile::TempDir, WorldKernel, crate::EntityId) {
+    let extra = [("hail", verb(RenderPath::Conversation, &[]))];
+    let (dir, kernel) = create(bound(Some(grammar_with(&extra)), "Advanced"));
+    let mut kernel = kernel.unwrap();
+    let commons = *kernel.state.entities.keys().next().unwrap();
+    admit(
+        &mut kernel,
+        patch_of(vec![
+            Declaration::Entity(crate::patch::EntityDeclaration {
+                handle: DraftHandle::new("dead-end"),
+                label: "The Unwalked Road".into(),
+                kind: EntityKind::Place,
+                container: None,
+            }),
+            Declaration::Route(crate::patch::RouteDeclaration {
+                handle: DraftHandle::new("gate"),
+                label: "The Field Gate".into(),
+                from: crate::patch::Ref::Existing(commons),
+                to: crate::patch::Ref::Draft(DraftHandle::new("dead-end")),
+                access: crate::patch::AccessKind::Public,
+                cost: crate::patch::Cost(1),
+            }),
+        ]),
+    )
+    .unwrap();
+    crate::tests::activate(&mut kernel);
+    let dead_end = *kernel
+        .state
+        .entities
+        .iter()
+        .find(|(_, record)| record.label == "The Unwalked Road")
+        .map(|(id, _)| id)
+        .unwrap();
+    (dir, kernel, dead_end)
+}
+
+#[test]
+fn every_admission_door_refuses_outside_the_grammar_after_the_revision_has_moved() {
+    let (_dir, mut kernel, dead_end) = advanced_grammar_world();
+    assert!(kernel.state.revision > 1, "the world has moved past genesis");
+    let answer = crate::derive_boundaries(&kernel.state)
+        .unwrap()
+        .into_iter()
+        .find(|boundary| {
+            matches!(boundary, crate::CausalBoundary::UnelaboratedDestination { place, .. }
+                if *place == dead_end)
+        })
+        .expect("the dead end is an unelaborated destination");
+    let doors: Vec<(&str, CallerId, Option<crate::PatchAnswer>)> = vec![
+        ("owner", CallerId::Principal(owner()), None),
+        ("play", CallerId::System(crate::SystemCapability::Play), None),
+        (
+            "consumer",
+            CallerId::System(crate::SystemCapability::Consumer {
+                consumer: crate::ConsumerId::of_name("grammar-door"),
+            }),
+            None,
+        ),
+        (
+            "elaborator",
+            CallerId::System(crate::SystemCapability::Elaborator {
+                jurisdiction: crate::JurisdictionKey::PlaceSubtree(dead_end),
+            }),
+            Some(crate::PatchAnswer::Boundary(answer)),
+        ),
+    ];
+    for (door, caller, answers) in doors {
+        let revision = kernel.state.revision;
+        let kind = submit_as(
+            &mut kernel,
+            caller.clone(),
+            answers.clone(),
+            patch_of(vec![declare("wave", "wave", &[])]),
+        );
+        assert_eq!(rejected(kind), not_in_grammar("wave"), "{door}");
+        let roles = submit_as(
+            &mut kernel,
+            caller,
+            answers,
+            patch_of(vec![declare("hail", "hail", &[("who", person())])]),
+        );
+        assert_eq!(rejected(roles), disagrees("hail"), "{door}");
+        assert_eq!(kernel.state.revision, revision, "{door} refusal moved the world");
+    }
+    // The same path admits what the grammar carries, so the refusals above are
+    // the grammar's and not a closed door.
+    let receipt = submit_as(
+        &mut kernel,
+        CallerId::System(crate::SystemCapability::Play),
+        None,
+        patch_of(vec![declare("hail", "hail", &[])]),
+    )
+    .unwrap();
+    assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+}
+
+#[test]
+fn a_grammar_that_binds_speak_as_anything_but_conversation_is_refused_at_bind() {
+    let ship = |roles: &[(&str, GrammarReferentKind)]| {
+        GrammarBinding::new(
+            "aetheria.grammar",
+            1,
+            [
+                ("speak".to_owned(), verb(RenderPath::ShipAction, roles)),
+                ("convene".to_owned(), verb(RenderPath::Conversation, &[])),
+            ],
+        )
+        .unwrap()
+    };
+    assert_eq!(
+        rejected(create(bound(Some(ship(&[])), "Filmed speech")).1),
+        vec![Mismatch::SpeakRenderPathDisagreesWithGrammar {
+            handle: DraftHandle::new(crate::patch::KERNEL_SPEAK_HANDLE),
+        }]
+    );
+    // A ShipAction speak with a role fails on the signature first and is still
+    // refused: no variant of speak but zero roles, Conversation, is admitted.
+    assert_eq!(
+        rejected(create(bound(Some(ship(&[("to", GrammarReferentKind::Person)])), "Loud")).1),
+        disagrees(crate::patch::KERNEL_SPEAK_HANDLE)
+    );
+    // The control: Conversation speak binds.
+    assert!(create(bound(Some(grammar_with(&[])), "Spoken")).1.is_ok());
+}
+
+/// `apply_effect` re-decides an effect it is handed. An effect resolved against
+/// a world with no grammar must not install an entry the bound grammar lacks:
+/// the catalog's only writer holds the grammar check itself.
+#[test]
+fn an_effect_resolved_elsewhere_cannot_install_an_entry_outside_the_grammar() {
+    let (_dir, kernel) = create(bound(Some(grammar_with(&[])), "Forged"));
+    let kernel = kernel.unwrap();
+    let mut twin = kernel.state.clone();
+    twin.grammar = None;
+    let resolve = |kind: &str, roles: &[(&str, RefKind)]| {
+        crate::patch::resolve_patch(
+            &twin,
+            CommandId::new(),
+            &patch_of(vec![declare("probe", kind, roles)]),
+            None,
+            None,
+        )
+        .expect("the unbound twin admits any canonical kind")
+    };
+    for (label, resolved, admitted) in [
+        ("outside kind", resolve("wave", &[]), false),
+        ("wrong roles", resolve("convene", &[("who", person())]), false),
+        ("carried verb", resolve("convene", &[]), true),
+    ] {
+        let mut state = kernel.state.clone();
+        let catalog = state.affordance_catalog.len();
+        let result = crate::apply_effect(
+            &mut state,
+            CommandId::new(),
+            &CallerId::Principal(owner()),
+            &crate::WorldEffect::PatchAdmitted {
+                answers: None,
+                resolved,
+            },
+        );
+        if admitted {
+            result.unwrap_or_else(|error| panic!("{label}: {error:?}"));
+            assert_eq!(state.affordance_catalog.len(), catalog + 1, "{label}");
+        } else {
+            assert!(
+                matches!(result, Err(KernelError::Invariant(_))),
+                "{label}: {result:?}"
+            );
+            assert_eq!(state.affordance_catalog.len(), catalog, "{label}");
+        }
+    }
+}

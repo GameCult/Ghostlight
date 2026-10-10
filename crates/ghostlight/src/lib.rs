@@ -2101,6 +2101,18 @@ fn admit_resolved(
         .filter_map(ControllerAssignment::id)
         .collect();
     for entry in &resolved.affordances {
+        // The catalog's only writer holds the same grammar check the resolver
+        // runs, so an effect resolved elsewhere cannot install an entry the
+        // bound grammar refuses.
+        if state.grammar.as_ref().is_some_and(|grammar| {
+            grammar
+                .refusal(&entry.affordance.kind, &entry.affordance.roles)
+                .is_some()
+        }) {
+            return Err(KernelError::Invariant(
+                "admitted affordance is outside the bound grammar".into(),
+            ));
+        }
         if state
             .affordance_catalog
             .insert(entry.affordance_id, entry.affordance.clone())
