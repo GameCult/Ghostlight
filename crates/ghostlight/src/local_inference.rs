@@ -1996,7 +1996,7 @@ mod tests {
     #[test]
     fn hosted_binding_refuses_a_key_shape_that_cannot_ride_a_header() {
         let directory = tempfile::tempdir().unwrap();
-        let cases: [(&str, &[u8]); 8] = [
+        let cases: [(&str, &[u8]); 9] = [
             ("interior newline", b"keycanary\nsecondline"),
             ("interior carriage return", b"keycanary\rsecondline"),
             ("interior tab", b"keycanary\tsecondline"),
@@ -2005,6 +2005,7 @@ mod tests {
             ("trailing space before the newline", b"keycanary \n"),
             ("non-ascii", "keycanary-\u{e9}".as_bytes()),
             ("leading newline", b"\nkeycanary"),
+            ("interior DEL", b"keycanary\x7fsecondline"),
         ];
         for (label, content) in cases {
             let path = write_key_file(&directory, content);
