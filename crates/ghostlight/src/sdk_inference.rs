@@ -1274,6 +1274,7 @@ mod tests {
         let granted = vec![AffordanceSnapshot {
             id: AffordanceId::issue(),
             entry: kernel_speak_entry(),
+            render_path: None,
         }];
         let speak = granted[0].entry.kind.0.clone();
         let link = ScriptedLink::new(vec![
@@ -1990,6 +1991,7 @@ mod tests {
         let granted = vec![AffordanceSnapshot {
             id: AffordanceId::issue(),
             entry: kernel_speak_entry(),
+            render_path: None,
         }];
         let mut emitted: Vec<(String, String)> = patch_tools()
             .into_iter()

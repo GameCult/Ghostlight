@@ -61,6 +61,7 @@ mod consumer;
 mod controllers;
 mod cover;
 mod elaboration;
+mod grammar;
 mod journal;
 mod lens;
 mod local_inference;
@@ -94,6 +95,10 @@ pub use cover::{AgencyGraph, Cell, Cover, CoverBudget, CoverBudgetError, TickInd
 pub use elaboration::{
     ElaborationCheckpoint, ElaborationRunner, ElaboratorSession, EvidenceError, EvidenceQuery,
     EvidenceReceipt, EvidenceSource, SeedCheckpoint, SeedOutcome, SeedRunner, select_row,
+};
+pub use grammar::{
+    GrammarBinding, GrammarError, GrammarIdentity, GrammarReferentKind, GrammarRole, GrammarVerb,
+    RenderPath,
 };
 pub use lens::{Lens, LensWeights};
 pub use local_inference::{DEFAULT_LOCAL_MODEL_PREFIX, LocalBinding};
@@ -425,6 +430,10 @@ struct CreateWorld {
     /// The world's flavor as genesis writes it. `SetLensWeights` may replace
     /// it later; this command carries what the world began with.
     lens_weights: LensWeights,
+    /// The grammar the world is bound to for its whole life, or none for an
+    /// open-catalog world. Authored here and nowhere else: genesis installs it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    grammar: Option<GrammarBinding>,
 }
 
 /// Unattributed creation intent. World ingress derives ownership, controller
@@ -828,6 +837,11 @@ struct WorldState {
     /// Authored at creation and never mutated; the one prose the world says
     /// about itself, projected as guidance to every lane.
     brief: String,
+    /// Bound by genesis and never written again; absent from a world with no
+    /// grammar, so such a world's state and digests are what they were before
+    /// grammars existed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    grammar: Option<GrammarBinding>,
     draft_approvals: BTreeSet<PrincipalId>,
     subjects: BTreeMap<SubjectId, SubjectState>,
     entities: BTreeMap<EntityId, EntityRecord>,
@@ -1135,6 +1149,9 @@ pub(crate) struct ForumSnapshot {
 pub struct AffordanceSnapshot {
     pub id: AffordanceId,
     pub entry: Affordance,
+    /// Derived from the world's grammar by this entry's kind; none when the
+    /// world has no grammar.
+    pub render_path: Option<RenderPath>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1197,6 +1214,8 @@ pub struct WorldSnapshot {
     pub owner: PrincipalId,
     pub title: String,
     pub brief: String,
+    /// The bound grammar's identity; none for a world with an open catalog.
+    pub grammar: Option<GrammarIdentity>,
     pub draft_approvals: BTreeSet<PrincipalId>,
     pub required_approvers: BTreeSet<PrincipalId>,
     pub subjects: Vec<SubjectSnapshot>,
@@ -1425,7 +1444,12 @@ fn prepare_creation(
     // derived ID, so it is minted before resolution rather than by it.
     let world_id = WorldId::issue();
     let resolved = patch::resolve_patch(
-        &WorldState::empty(world_id, input.owner.clone(), title.clone()),
+        &WorldState::empty(
+            world_id,
+            input.owner.clone(),
+            title.clone(),
+            input.grammar.clone(),
+        ),
         input.id,
         &input.patch,
         Some(&input.scale_intent),
@@ -1896,7 +1920,12 @@ impl WorldState {
     /// The world before any structure. Genesis resolves its own patch against
     /// this value, so the genesis lane and `AdmitPatch` share one resolver
     /// signature instead of hand-passing empty partitions.
-    fn empty(world_id: WorldId, owner: PrincipalId, title: String) -> Self {
+    fn empty(
+        world_id: WorldId,
+        owner: PrincipalId,
+        title: String,
+        grammar: Option<GrammarBinding>,
+    ) -> Self {
         Self {
             schema: STATE_SCHEMA.into(),
             world_id,
@@ -1905,6 +1934,7 @@ impl WorldState {
             owner,
             title,
             brief: String::new(),
+            grammar,
             draft_approvals: BTreeSet::new(),
             subjects: BTreeMap::new(),
             entities: BTreeMap::new(),
@@ -1962,7 +1992,7 @@ impl WorldState {
         // The same re-derive-and-compare that `apply_committed_command` runs for
         // every other command. Deterministic allocation is what lets one
         // equality replace a field-by-field binding zip.
-        let mut state = Self::empty(world_id, owner.clone(), title.clone());
+        let mut state = Self::empty(world_id, owner.clone(), title.clone(), command.grammar.clone());
         state.brief = brief.clone();
         let expected = patch::resolve_patch(
             &state,
@@ -4079,6 +4109,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
         owner: state.owner.clone(),
         title: state.title.clone(),
         brief: state.brief.clone(),
+        grammar: state.grammar.as_ref().map(GrammarBinding::identity),
         draft_approvals: state.draft_approvals.clone(),
         required_approvers: required_approvers(state),
         subjects,
@@ -4088,6 +4119,11 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
             .map(|(affordance_id, entry)| AffordanceSnapshot {
                 id: *affordance_id,
                 entry: entry.clone(),
+                render_path: state
+                    .grammar
+                    .as_ref()
+                    .and_then(|grammar| grammar.verb(&entry.kind.0))
+                    .map(|verb| verb.render_path),
             })
             .collect(),
         places,
@@ -5545,6 +5581,7 @@ mod tests {
             },
             scale_intent: WorldScaleIntentRef::default(),
             lens_weights: stock_weights(),
+            grammar: None,
         }
     }
 
@@ -15162,7 +15199,7 @@ mod clock_tests {
             }));
         let title = normalize_title(&input.title).unwrap();
         let resolved = patch::resolve_patch(
-            &WorldState::empty(world_id, input.owner.clone(), title.clone()),
+            &WorldState::empty(world_id, input.owner.clone(), title.clone(), None),
             input.id,
             &input.patch,
             Some(&input.scale_intent),
@@ -15191,7 +15228,7 @@ mod clock_tests {
         });
         let title = normalize_title(&input.title).unwrap();
         let resolved = patch::resolve_patch(
-            &WorldState::empty(world_id, input.owner.clone(), title.clone()),
+            &WorldState::empty(world_id, input.owner.clone(), title.clone(), None),
             input.id,
             &input.patch,
             Some(&input.scale_intent),

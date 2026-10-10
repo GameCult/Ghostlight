@@ -1109,6 +1109,7 @@ mod tests {
                 position: None,
             }),
             scale_intent: WorldScaleIntentRef::default(),
+            grammar: None,
         };
         let (mut kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
         let snapshot = kernel.snapshot().unwrap();
@@ -1192,6 +1193,7 @@ mod tests {
                 position: None,
             }),
             scale_intent: WorldScaleIntentRef::default(),
+            grammar: None,
         };
         let (mut kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
         let snapshot = kernel.snapshot().unwrap();
@@ -1757,6 +1759,7 @@ mod tests {
                 position: None,
             }),
             scale_intent: WorldScaleIntentRef::default(),
+            grammar: None,
         };
         let (kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
         let mut forged_head = kernel.state.clone();

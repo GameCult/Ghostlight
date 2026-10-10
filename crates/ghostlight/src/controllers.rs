@@ -6905,6 +6905,7 @@ mod tests {
         AffordanceSnapshot {
             id,
             entry: kernel_speak_entry(),
+            render_path: None,
         }
     }
     use crate::{
@@ -7285,6 +7286,7 @@ mod tests {
             last_acted_at: None,
         };
         let snapshot = WorldSnapshot {
+            grammar: None,
             lens_weights: crate::tests::stock_weights(),
             world_id: opportunity.world_id,
             revision: opportunity.revision,
@@ -7407,6 +7409,7 @@ mod tests {
             last_acted_at: None,
         };
         let snapshot = WorldSnapshot {
+            grammar: None,
             lens_weights: crate::tests::stock_weights(),
             world_id: opportunity.world_id,
             revision: opportunity.revision,
@@ -7672,6 +7675,7 @@ mod tests {
                         evidence: Vec::new(),
                     },
                     scale_intent: WorldScaleIntentRef::default(),
+                    grammar: None,
                 },
                 &authenticated,
             )
@@ -7826,6 +7830,7 @@ mod tests {
                         evidence: Vec::new(),
                     },
                     scale_intent: WorldScaleIntentRef::default(),
+                    grammar: None,
                 },
                 &authenticated,
             )
@@ -9071,6 +9076,7 @@ mod tests {
             last_acted_at: None,
         };
         let snapshot = WorldSnapshot {
+            grammar: None,
             lens_weights: crate::tests::stock_weights(),
             world_id: opportunity.world_id,
             revision: opportunity.revision,
@@ -9233,6 +9239,7 @@ mod tests {
             open: true,
         };
         let snapshot = WorldSnapshot {
+            grammar: None,
             lens_weights: crate::tests::stock_weights(),
             world_id: opportunity.world_id,
             revision: opportunity.revision,
@@ -9434,6 +9441,7 @@ mod tests {
                 }],
                 carries_speech: false,
             },
+            render_path: None,
         };
         let speak = speak_snapshot(AffordanceId::issue());
         let granted = vec![carry.clone(), speak.clone()];
@@ -9734,6 +9742,7 @@ mod tests {
             affordance_ids: vec![speak_affordance],
         };
         let snapshot = WorldSnapshot {
+            grammar: None,
             lens_weights: crate::tests::stock_weights(),
             world_id: opportunity.world_id,
             revision: opportunity.revision,
@@ -10773,6 +10782,7 @@ mod tests {
                         evidence: Vec::new(),
                     },
                     scale_intent: WorldScaleIntentRef::default(),
+                    grammar: None,
                 },
                 &authenticated,
             )
@@ -11386,6 +11396,7 @@ mod tests {
                         evidence: Vec::new(),
                     },
                     scale_intent: WorldScaleIntentRef::default(),
+                    grammar: None,
                 },
                 &owner_caller,
             )
@@ -11904,6 +11915,7 @@ mod tests {
                             ]),
                         },
                     },
+                    grammar: None,
                 },
                 &authenticated,
             )
@@ -13582,6 +13594,7 @@ mod tests {
                         evidence: Vec::new(),
                     },
                     scale_intent,
+                    grammar: None,
                 },
                 &authenticated,
             )
@@ -14568,6 +14581,7 @@ mod tests {
                         evidence: Vec::new(),
                     },
                     scale_intent: WorldScaleIntentRef::default(),
+                    grammar: None,
                 },
                 &authenticated,
             )
@@ -15116,6 +15130,7 @@ mod tests {
                         evidence: Vec::new(),
                     },
                     scale_intent: WorldScaleIntentRef::default(),
+                    grammar: None,
                 },
                 &authenticated,
             )
@@ -15588,6 +15603,7 @@ mod tests {
                         targets: BTreeMap::from([(SubjectKind::Person, target)]),
                         jurisdictions: BTreeMap::from([(DraftHandle::new("sere"), 1000)]),
                     },
+                    grammar: None,
                 },
                 &authenticated,
             )
@@ -16503,6 +16519,7 @@ mod tests {
                 evidence: Vec::new(),
             },
             scale_intent: intent,
+            grammar: None,
         };
 
         let (mailbox, task) = WorldMailbox::open(directory.path().join("two-roots.cc")).unwrap();
@@ -18019,6 +18036,7 @@ mod tests {
                         evidence: vec![ledger],
                     },
                     scale_intent: WorldScaleIntentRef::default(),
+                    grammar: None,
                 },
                 &authenticated,
             )
@@ -18547,6 +18565,7 @@ mod tests {
                         evidence: vec![ledger],
                     },
                     scale_intent: WorldScaleIntentRef::default(),
+                    grammar: None,
                 },
                 &authenticated,
             )

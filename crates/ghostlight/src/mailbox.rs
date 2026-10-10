@@ -189,6 +189,7 @@ impl WorldMailbox {
                 },
                 scale_intent,
                 lens_weights: input.lens_weights,
+                grammar: None,
             },
             AuthenticatedCaller::verified_principal(principal_id),
         )
@@ -988,6 +989,7 @@ mod tests {
     fn creation(id: CommandId, title: &str) -> CreateWorld {
         CreateWorld {
             lens_weights: crate::tests::stock_weights(),
+            grammar: None,
             id,
             owner: PrincipalId::new("owner"),
             title: title.into(),
@@ -1425,6 +1427,7 @@ mod tests {
                         evidence: Vec::new(),
                     },
                     scale_intent: WorldScaleIntentRef::default(),
+                    grammar: None,
                 },
                 &authenticated,
             )

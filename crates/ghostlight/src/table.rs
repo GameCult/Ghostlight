@@ -2489,6 +2489,7 @@ mod tests {
                 outcome_bands: Vec::new(),
                 carries_speech: false,
             },
+            render_path: None,
         }
     }
 

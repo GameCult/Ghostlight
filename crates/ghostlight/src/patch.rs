@@ -1350,6 +1350,16 @@ pub enum Mismatch {
     EmptyLabel {
         handle: DraftHandle,
     },
+    /// The world is bound to a grammar and this affordance's kind is not one of
+    /// its verbs.
+    AffordanceKindNotInGrammar {
+        handle: DraftHandle,
+    },
+    /// The kind is a verb of the bound grammar, but the declared roles are not
+    /// its signature (name, referent kind or order).
+    AffordanceRolesDisagreeWithGrammar {
+        handle: DraftHandle,
+    },
     UnresolvedDraft {
         site: Site,
         referent: DraftHandle,
@@ -3061,6 +3071,31 @@ fn candidate_set(
     }
 }
 
+/// A bound grammar is the whole catalog: a kind it lacks, or a role signature
+/// it does not carry, is refused. A world with no grammar is not checked.
+fn check_against_grammar(
+    state: &super::WorldState,
+    handle: &DraftHandle,
+    kind: &AffordanceKindName,
+    roles: &[RoleSpec],
+    mismatches: &mut Vec<Mismatch>,
+) {
+    let Some(grammar) = &state.grammar else {
+        return;
+    };
+    match grammar.verb(&kind.0) {
+        None => mismatches.push(Mismatch::AffordanceKindNotInGrammar {
+            handle: handle.clone(),
+        }),
+        Some(verb) if !verb.admits_roles(roles) => {
+            mismatches.push(Mismatch::AffordanceRolesDisagreeWithGrammar {
+                handle: handle.clone(),
+            })
+        }
+        Some(_) => {}
+    }
+}
+
 /// The one resolution owner for every admission lane: declarations, references,
 /// topology admission, and operation preconditions. Every check runs against the
 /// complete candidate graph — what the world already holds plus what this patch
@@ -3083,6 +3118,11 @@ pub(super) fn resolve_patch(
     let speak_handle = DraftHandle::new(KERNEL_SPEAK_HANDLE);
     if admits_human {
         index.insert(speak_handle.clone(), RefKind::Affordance);
+    }
+    if admits_human {
+        // The kernel-built entry is held to the grammar like any declaration.
+        let speak = kernel_speak_entry();
+        check_against_grammar(state, &speak_handle, &speak.kind, &speak.roles, &mut mismatches);
     }
     let mut kind_names: BTreeSet<AffordanceKindName> = state
         .affordance_catalog
@@ -3141,6 +3181,13 @@ pub(super) fn resolve_patch(
                 &affordance.effect_slots,
                 &affordance.outcome_bands,
                 affordance.carries_speech,
+                &mut mismatches,
+            );
+            check_against_grammar(
+                state,
+                &affordance.handle,
+                &affordance.kind,
+                &affordance.roles,
                 &mut mismatches,
             );
             if !kind_names.insert(affordance.kind.clone()) {
