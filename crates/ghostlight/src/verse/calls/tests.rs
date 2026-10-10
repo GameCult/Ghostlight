@@ -13,6 +13,7 @@ type Script = Vec<Result<InferenceOutput, InferenceFault>>;
 struct ScriptedPort {
     replies: Mutex<VecDeque<Result<InferenceOutput, InferenceFault>>>,
     calls: AtomicUsize,
+    lent: AtomicUsize,
     gate: Option<Arc<tokio::sync::Semaphore>>,
 }
 
@@ -21,6 +22,7 @@ impl ScriptedPort {
         Arc::new(Self {
             replies: Mutex::new(replies.into()),
             calls: AtomicUsize::new(0),
+            lent: AtomicUsize::new(0),
             gate: None,
         })
     }
@@ -29,6 +31,7 @@ impl ScriptedPort {
         Arc::new(Self {
             replies: Mutex::new(replies.into()),
             calls: AtomicUsize::new(0),
+            lent: AtomicUsize::new(0),
             gate: Some(gate),
         })
     }
@@ -42,6 +45,10 @@ impl ScriptedPort {
 impl InferencePort for ScriptedPort {
     fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
         PreparedInference::prepare("verse-test", 4_102_444_800_000, request)
+    }
+
+    fn lend_tool_results(&self, _: &PreparedInference, _: Box<dyn ToolResultOracle>) {
+        self.lent.fetch_add(1, Ordering::SeqCst);
     }
 
     async fn infer(&self, _: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
@@ -323,14 +330,40 @@ async fn calls_on_the_wire_hold_their_bound() {
     while inner.calls() == 0 {
         tokio::task::yield_now().await;
     }
-    let fault = port
-        .infer(prepared_for("held", 1_200))
-        .await
-        .expect_err("the first call's bound is still held");
+    // A second call that was let through would wait on the closed gate.
+    let second = tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        port.infer(prepared_for("held", 1_200)),
+    )
+    .await
+    .expect("the second call was refused, not left waiting on the provider");
+    let fault = second.expect_err("the first call's bound is still held");
     assert_eq!(fault.class(), InferenceFaultClass::BudgetExhausted);
     assert_eq!(inner.calls(), 1);
     gate.add_permits(1);
     first.await.unwrap().expect("the first call completes");
+}
+
+struct NoTools;
+
+impl ToolResultOracle for NoTools {
+    fn remaining_rounds(&self) -> u32 {
+        0
+    }
+
+    fn answer(&mut self, _: &str, _: &str) -> Result<String, crate::ControllerError> {
+        Ok(String::new())
+    }
+}
+
+#[test]
+fn tool_results_are_lent_to_the_port_underneath() {
+    let directory = tempfile::tempdir().unwrap();
+    let (store, _) = store_in(&directory);
+    let inner = ScriptedPort::new(Vec::new());
+    let port = recording(&inner, &store, "run-lend", u64::MAX);
+    port.lend_tool_results(&prepared_for("lend", 1_200), Box::new(NoTools));
+    assert_eq!(inner.lent.load(Ordering::SeqCst), 1);
 }
 
 #[tokio::test]
@@ -594,6 +627,13 @@ fn the_store_refuses_any_row_that_is_not_a_canonical_v1_record() {
         ("wrong key", v1("run-x/2", payload.clone())),
         ("not canonical", v1(&key, loose)),
         ("not a record", v1(&key, vec![1, 2, 3])),
+        (
+            "a run id that is not a key segment",
+            v1(
+                &row_key("bad/run", 1),
+                rmp_serde::to_vec_named(&sample_record("bad/run", 1)).unwrap(),
+            ),
+        ),
         ("sequence zero", record_at(0)),
         ("a hole in the run", record_at(2)),
     ];

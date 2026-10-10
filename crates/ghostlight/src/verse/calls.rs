@@ -164,7 +164,6 @@ fn decode_row(row: &CultCacheEnvelope) -> Result<ProviderCallRecord, CallRecordE
 #[derive(Default)]
 struct RunTally {
     last_sequence: u64,
-    count: u64,
     charged: u64,
 }
 
@@ -192,14 +191,17 @@ impl CallRecordStore {
             .map_err(|_| CallRecordError::Store)?;
         let rows = store.pull_all().map_err(|_| CallRecordError::Store)?;
         let mut runs: BTreeMap<String, RunTally> = BTreeMap::new();
+        let mut counts: BTreeMap<String, u64> = BTreeMap::new();
         for row in &rows {
             let record = decode_row(row)?;
+            *counts.entry(record.run_id.clone()).or_default() += 1;
             let tally = runs.entry(record.run_id).or_default();
             tally.last_sequence = tally.last_sequence.max(record.sequence);
-            tally.count += 1;
             tally.charged = tally.charged.saturating_add(record.charged);
         }
-        if runs.values().any(|tally| tally.count != tally.last_sequence) {
+        // Keys are unique, so a run is dense from 1 exactly when its rows
+        // number its highest sequence.
+        if runs.iter().any(|(run, tally)| counts[run] != tally.last_sequence) {
             return Err(CallRecordError::Corrupt);
         }
         Ok(Self {
@@ -249,7 +251,6 @@ impl CallRecordStore {
         state.store.push(&row).map_err(|_| CallRecordError::Store)?;
         let tally = state.runs.entry(record.run_id.clone()).or_default();
         tally.last_sequence = record.sequence;
-        tally.count += 1;
         tally.charged = tally.charged.saturating_add(record.charged);
         Ok(())
     }
