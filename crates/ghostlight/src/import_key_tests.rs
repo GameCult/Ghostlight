@@ -541,5 +541,9 @@ fn a_keyed_world_reopens_with_its_keys_and_digests() {
     let reopened = WorldKernel::open(dir.path().join("world.cc"), world_id).unwrap();
     let again = reopened.snapshot().unwrap();
     assert_eq!(again.state_digest, snapshot.state_digest);
-    assert_eq!(keys_in(&reopened), vec![alpha()]);
+    let keys = keys_in(&reopened);
+    assert_eq!(keys, vec![alpha()]);
+    // A reader of the snapshot gets both parts back, separately.
+    assert_eq!(keys[0].schema(), "aetheria.ship");
+    assert_eq!(keys[0].record(), "Alpha");
 }
