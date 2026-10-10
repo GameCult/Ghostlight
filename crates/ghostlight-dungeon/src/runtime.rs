@@ -5721,30 +5721,16 @@ mod tests {
 
     // ---- World.begin ----------------------------------------------------
 
-    fn find_node<'a>(node: &'a Value, id: &str) -> Option<&'a Value> {
-        if node["id"] == id {
-            return Some(node);
-        }
-        node["children"]
-            .as_array()?
-            .iter()
-            .find_map(|child| find_node(child, id))
-    }
-
-    /// The payload the real client builds from the served Begin button: its
-    /// own action fields (minus the command name) beside the captured
-    /// `bindings`. Every authored constant comes from the surface this
-    /// process served, never from a copy in the test.
+    /// The payload the real client builds from the served Begin button, with
+    /// the three fields typed. Every authored constant comes from the surface
+    /// this process served, never from a copy in the test.
     fn begin_payload_from(surface: &Value, title: &str, brief: &str, subject: &str) -> Value {
-        let button = find_node(&surface["surface"]["root"], "world.begin")
-            .expect("the empty-world surface offers Begin");
-        let mut payload = button["props"]["action"].as_object().cloned().unwrap();
-        payload.remove("command");
-        payload.insert(
-            "bindings".into(),
-            json!({"title":title,"brief":brief,"subject_label":subject}),
-        );
-        Value::Object(payload)
+        untouched_intent(
+            surface,
+            "world.begin",
+            &[("title", json!(title)), ("brief", json!(brief)), ("subject_label", json!(subject))],
+        )["payload"]
+            .clone()
     }
 
     fn begin_invocation(payload: Value, key: &str) -> Value {
@@ -6859,16 +6845,14 @@ mod tests {
     async fn every_bound_command_admits_the_payload_an_untouched_form_submits() {
         let fixture = fixture().await;
         let mut exercised = Vec::new();
-        let steps: [(&str, Vec<(&str, Value)>); 5] = [
+        let steps: [(&str, Vec<(&str, Value)>); 3] = [
             (
-                "world.create",
+                "world.begin",
                 vec![
                     ("title", json!("Untouched Form World")),
                     ("subject_label", json!("The Operator")),
                 ],
             ),
-            ("world.approve", vec![]),
-            ("world.activate", vec![]),
             ("world.advance_time", vec![("minutes", json!(1))]),
             ("world.play", vec![]),
         ];

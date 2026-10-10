@@ -916,7 +916,14 @@ mod tests {
         }
         assert_eq!(find(root, "world.begin.brief").unwrap()["props"]["value"], "");
 
-        let commands = surface["commands"].as_array().unwrap();
+        // Beside the sign-out every signed-in surface carries, Begin is the
+        // only command.
+        let commands: Vec<&Value> = surface["commands"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|descriptor| descriptor["command"] != "app.auth.logout")
+            .collect();
         assert_eq!(commands.len(), 1, "{commands:?}");
         assert_eq!(commands[0]["command"], "world.begin");
         assert_eq!(commands[0]["payloadSchema"], "ghostlight.world_create.v4");
