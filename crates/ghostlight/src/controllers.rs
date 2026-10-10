@@ -11307,34 +11307,243 @@ mod tests {
         task.await.unwrap();
     }
 
-    #[tokio::test]
-    #[ignore = "requires a local model server on GHOSTLIGHT_LOCAL_ENDPOINT"]
-    async fn real_local_model_cognition_modes_commit_speech() {
-        let local_endpoint: SocketAddr = std::env::var("GHOSTLIGHT_LOCAL_ENDPOINT")
-            .expect("GHOSTLIGHT_LOCAL_ENDPOINT is required")
-            .parse()
-            .expect("GHOSTLIGHT_LOCAL_ENDPOINT must be a socket address");
-        let local_model_prefix = std::env::var("GHOSTLIGHT_LOCAL_MODEL_PREFIX")
-            .unwrap_or_else(|_| DEFAULT_LOCAL_MODEL_PREFIX.to_owned());
-        let runtime_id = std::env::var("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID")
-            .expect("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID is required");
-        let models = ControllerModels {
-            projector: std::env::var("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL")
-                .expect("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL is required"),
-            persona: std::env::var("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL")
-                .expect("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL is required"),
-            interpreter: std::env::var("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL")
-                .expect("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL is required"),
-            operational_agent: std::env::var("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL")
-                .expect("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL is required"),
-            elaborator: std::env::var("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL")
-                .expect("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL is required"),
-        };
-        let persona_log = std::env::var_os("GHOSTLIGHT_ACCEPTANCE_PERSONA_PROSE_LOG")
-            .expect("GHOSTLIGHT_ACCEPTANCE_PERSONA_PROSE_LOG is required");
+    // ---- Acceptance gate: the real-model run, in attempts ---------------
+    //
+    // The gate proves the pipe: a model reply is parsed, bounded, and a valid
+    // one commits. An attempt that fails for the model's content (a reply with
+    // nothing speakable to commit) is retried; a transport, provider-contract
+    // or kernel fault fails the gate at once. Every failed attempt is printed
+    // with its assertion and an excerpt of the reply, and the pass rate is
+    // recorded per run (never gating: a pass on any attempt passes).
 
-        let directory = tempfile::tempdir().unwrap();
-        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+    const ACCEPTANCE_ATTEMPTS: usize = 3;
+    const ACCEPTANCE_EVIDENCE_BYTES: usize = 400;
+
+    #[derive(Debug, PartialEq, Eq)]
+    enum AttemptFailure {
+        /// The pipe worked and the model's reply gave nothing to commit.
+        Content {
+            assertion: &'static str,
+            evidence: String,
+        },
+        /// Transport, provider contract or kernel: retrying cannot help.
+        Fault {
+            assertion: &'static str,
+            detail: String,
+        },
+    }
+
+    impl AttemptFailure {
+        fn content(assertion: &'static str, evidence: String) -> Self {
+            Self::Content {
+                assertion,
+                evidence,
+            }
+        }
+
+        fn fault(assertion: &'static str, detail: String) -> Self {
+            Self::Fault { assertion, detail }
+        }
+
+        fn is_fault(&self) -> bool {
+            matches!(self, Self::Fault { .. })
+        }
+
+        fn render(&self, attempt: usize, attempts: usize) -> String {
+            match self {
+                Self::Content {
+                    assertion,
+                    evidence,
+                } => format!(
+                    "acceptance attempt {attempt}/{attempts} content failure, retried: {assertion}: {evidence}"
+                ),
+                Self::Fault { assertion, detail } => format!(
+                    "acceptance attempt {attempt}/{attempts} fault, not retried: {assertion}: {detail}"
+                ),
+            }
+        }
+    }
+
+    /// The bounded, single-line form of model text the step log carries.
+    fn evidence_excerpt(text: &str) -> String {
+        let mut end = text.len().min(ACCEPTANCE_EVIDENCE_BYTES);
+        while !text.is_char_boundary(end) {
+            end -= 1;
+        }
+        let mut excerpt = text[..end].escape_debug().to_string();
+        if end < text.len() {
+            excerpt.push_str("...");
+        }
+        excerpt
+    }
+
+    fn narrative_evidence(decision: &NarrativeDecision) -> String {
+        let gaps = decision
+            .capture()
+            .gaps
+            .iter()
+            .map(|gap| format!("{:?}: {}", gap.kind, gap.detail))
+            .collect::<Vec<_>>()
+            .join("; ");
+        format!(
+            "prose={} gaps={}",
+            evidence_excerpt(decision.persona_turn().source_prose()),
+            evidence_excerpt(&gaps)
+        )
+    }
+
+    fn operational_evidence(decision: &OperationalDecision) -> String {
+        let needs = decision
+            .capture()
+            .needs
+            .iter()
+            .map(|need| need.detail.as_str())
+            .collect::<Vec<_>>()
+            .join("; ");
+        format!("needs={}", evidence_excerpt(&needs))
+    }
+
+    /// Where a narrative run's result lands: an applied command passes; a
+    /// reply the interpreter turned into a decline is the model's content;
+    /// everything else (an error, a pending run, an interruption, a command
+    /// the world did not apply) is a fault.
+    fn narrative_outcome(
+        run: Result<NarrativeRun, ControllerError>,
+    ) -> Result<NarrativeDecision, AttemptFailure> {
+        match run {
+            Err(error) => Err(AttemptFailure::fault(
+                "NarrativePersona run returned an error",
+                evidence_excerpt(&error.to_string()),
+            )),
+            Ok(NarrativeRun::Pending(pending)) => Err(AttemptFailure::fault(
+                "NarrativePersona run stayed pending",
+                format!("{:?}", pending.reason()),
+            )),
+            Ok(NarrativeRun::Interrupted(_)) => Err(AttemptFailure::fault(
+                "NarrativePersona run was interrupted",
+                String::new(),
+            )),
+            Ok(NarrativeRun::Completed(decision)) => match decision.submission() {
+                SubmissionDisposition::Completed(SubmitReceipt::Applied(_)) => Ok(decision),
+                SubmissionDisposition::NoProposal(_) => Err(AttemptFailure::content(
+                    "NarrativePersona reply produced nothing to commit",
+                    narrative_evidence(&decision),
+                )),
+                _ => Err(AttemptFailure::fault(
+                    "NarrativePersona run did not apply one world command",
+                    String::new(),
+                )),
+            },
+        }
+    }
+
+    fn operational_outcome(
+        run: Result<OperationalRun, ControllerError>,
+    ) -> Result<OperationalDecision, AttemptFailure> {
+        match run {
+            Err(error) => Err(AttemptFailure::fault(
+                "OperationalAgent run returned an error",
+                evidence_excerpt(&error.to_string()),
+            )),
+            Ok(OperationalRun::Pending(pending)) => Err(AttemptFailure::fault(
+                "OperationalAgent run stayed pending",
+                format!("{:?}", pending.reason()),
+            )),
+            Ok(OperationalRun::Completed(decision)) => match decision.submission() {
+                SubmissionDisposition::Completed(SubmitReceipt::Applied(_)) => Ok(decision),
+                SubmissionDisposition::NoProposal(_) => Err(AttemptFailure::content(
+                    "OperationalAgent reply produced nothing to commit",
+                    operational_evidence(&decision),
+                )),
+                _ => Err(AttemptFailure::fault(
+                    "OperationalAgent run did not apply one world command",
+                    String::new(),
+                )),
+            },
+        }
+    }
+
+    struct AcceptanceRun<T> {
+        passed: Option<T>,
+        /// Every failed attempt, in order: attempt n is entry n - 1.
+        failures: Vec<AttemptFailure>,
+        attempts: usize,
+        limit: usize,
+    }
+
+    impl<T> AcceptanceRun<T> {
+        /// The one line of pass-rate record: attempts made and whether any
+        /// passed. Recorded for every run; no rule reads it to gate.
+        fn pass_rate_line(&self) -> String {
+            format!(
+                "acceptance-pass-rate attempts={} passed={}",
+                self.attempts,
+                u8::from(self.passed.is_some())
+            )
+        }
+
+        fn record(&self) -> String {
+            let mut lines: Vec<String> = self
+                .failures
+                .iter()
+                .enumerate()
+                .map(|(index, failure)| failure.render(index + 1, self.limit))
+                .collect();
+            lines.push(self.pass_rate_line());
+            lines.join("\n")
+        }
+    }
+
+    /// Runs `attempt` until one passes, a fault stops it, or `limit` content
+    /// failures have been spent. Each failure is printed as it happens, so a
+    /// later hang or panic cannot take the earlier attempts' evidence with it.
+    async fn run_attempts<T, Fut>(
+        limit: usize,
+        mut attempt: impl FnMut(usize) -> Fut,
+    ) -> AcceptanceRun<T>
+    where
+        Fut: std::future::Future<Output = Result<T, AttemptFailure>>,
+    {
+        let mut failures = Vec::new();
+        for number in 1..=limit {
+            match attempt(number).await {
+                Ok(passed) => {
+                    return AcceptanceRun {
+                        passed: Some(passed),
+                        failures,
+                        attempts: number,
+                        limit,
+                    };
+                }
+                Err(failure) => {
+                    println!("{}", failure.render(number, limit));
+                    let stop = failure.is_fault();
+                    failures.push(failure);
+                    if stop {
+                        return AcceptanceRun {
+                            passed: None,
+                            failures,
+                            attempts: number,
+                            limit,
+                        };
+                    }
+                }
+            }
+        }
+        AcceptanceRun {
+            passed: None,
+            failures,
+            attempts: limit,
+            limit,
+        }
+    }
+
+    /// The fixture: a fresh active world, owner and human approved, with the
+    /// seed speech spoken. Nothing here depends on a model.
+    async fn acceptance_world(
+        directory: &std::path::Path,
+    ) -> (WorldMailbox, tokio::task::JoinHandle<()>) {
+        let (mailbox, task) = WorldMailbox::open(directory.join("world.cc")).unwrap();
         let owner = PrincipalId::new("acceptance-owner");
         let human = PrincipalId::new("acceptance-roll-caller");
         let owner_caller = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
@@ -11483,25 +11692,21 @@ mod tests {
             .unwrap();
         assert!(matches!(seed_receipt, SubmitReceipt::Applied(_)));
 
-        let inference = open_inference(
-            None,
-            None,
-            Some(LocalBinding {
-                endpoint: local_endpoint,
-                model_prefix: local_model_prefix,
-                caller_runtime_id: runtime_id,
-            }),
-            &models.each(),
-        )
-        .unwrap();
-        let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
-        let runner = ControllerRunner::open(mailbox.clone(), inference, work, models).unwrap();
-
-        snapshot = mailbox.snapshot().await.unwrap();
         let log = mailbox.operator_log().await.unwrap();
         assert!(log.len() == 1);
         let seeded_text = log[0].speech.as_ref().unwrap();
         assert!(seeded_text.as_str().as_bytes() == seed.as_bytes());
+        (mailbox, task)
+    }
+
+    /// The model-dependent part: one NarrativePersona turn and one
+    /// OperationalAgent turn over the fixture world. Returns the persona
+    /// prose that committed.
+    async fn acceptance_turns(
+        runner: &ControllerRunner,
+        mailbox: &WorldMailbox,
+    ) -> Result<String, AttemptFailure> {
+        let mut snapshot = mailbox.snapshot().await.unwrap();
         let narrative_subject = snapshot
             .subjects
             .iter()
@@ -11515,19 +11720,15 @@ mod tests {
             .cloned()
             .unwrap();
         let narrative_command = CommandId::new();
-        let narrative_run = match runner
-            .run_narrative(narrative_command, &narrative_opportunity)
-            .await
-        {
-            Ok(run) => run,
-            Err(_) => panic!("NarrativePersona acceptance returned an error"),
-        };
-        let NarrativeRun::Completed(narrative_decision) = narrative_run else {
-            panic!("NarrativePersona acceptance did not complete")
-        };
-        let narrative_receipt = match narrative_decision.submission() {
-            SubmissionDisposition::Completed(SubmitReceipt::Applied(receipt)) => receipt,
-            _ => panic!("NarrativePersona acceptance did not apply one world command"),
+        let narrative_decision = narrative_outcome(
+            runner
+                .run_narrative(narrative_command, &narrative_opportunity)
+                .await,
+        )?;
+        let SubmissionDisposition::Completed(SubmitReceipt::Applied(narrative_receipt)) =
+            narrative_decision.submission()
+        else {
+            unreachable!("narrative_outcome admits only an applied command")
         };
         assert!(narrative_receipt.command_id == narrative_command);
         assert!(narrative_decision.persona_turn().receipt_is_valid());
@@ -11561,15 +11762,29 @@ mod tests {
                 == narrative_opportunity.scope_digest.as_str()
         );
         let persona_prose = narrative_decision.persona_turn().source_prose().to_owned();
-        assert!(!persona_prose.trim().is_empty());
-        assert!(persona_prose.len() <= 65_536);
+        if persona_prose.trim().is_empty() || persona_prose.len() > 65_536 {
+            return Err(AttemptFailure::content(
+                "NarrativePersona prose is empty or over its bound",
+                evidence_excerpt(&persona_prose),
+            ));
+        }
         assert!(!narrative_decision.capture().inference_receipts.is_empty());
-        let narrative_span = narrative_decision.capture().speech[0].clone();
+        let Some(narrative_span) = narrative_decision.capture().speech.first().cloned() else {
+            return Err(AttemptFailure::content(
+                "NarrativePersona commit carried no spoken span",
+                evidence_excerpt(&persona_prose),
+            ));
+        };
         let narrative_speech = persona_prose
             .get(narrative_span.start_byte..narrative_span.end_byte)
             .unwrap()
             .to_owned();
-        assert!(!narrative_speech.trim().is_empty());
+        if narrative_speech.trim().is_empty() {
+            return Err(AttemptFailure::content(
+                "NarrativePersona spoken span is blank",
+                evidence_excerpt(&persona_prose),
+            ));
+        }
         let ControllerWorkLookup::Confirmed(ControllerWork::Narrative(
             NarrativeCheckpoint::ReadyToSubmit {
                 completed: persisted_interpreter_outputs,
@@ -11620,19 +11835,15 @@ mod tests {
             .cloned()
             .unwrap();
         let operational_command = CommandId::new();
-        let operational_run = match runner
-            .run_operational(operational_command, &operational_opportunity)
-            .await
-        {
-            Ok(run) => run,
-            Err(_) => panic!("OperationalAgent acceptance returned an error"),
-        };
-        let OperationalRun::Completed(operational_decision) = operational_run else {
-            panic!("OperationalAgent acceptance did not complete")
-        };
-        let operational_receipt = match operational_decision.submission() {
-            SubmissionDisposition::Completed(SubmitReceipt::Applied(receipt)) => receipt,
-            _ => panic!("OperationalAgent acceptance did not apply one world command"),
+        let operational_decision = operational_outcome(
+            runner
+                .run_operational(operational_command, &operational_opportunity)
+                .await,
+        )?;
+        let SubmissionDisposition::Completed(SubmitReceipt::Applied(operational_receipt)) =
+            operational_decision.submission()
+        else {
+            unreachable!("operational_outcome admits only an applied command")
         };
         assert!(operational_receipt.command_id == operational_command);
         assert!(!operational_decision.capture().inference_receipts.is_empty());
@@ -11641,10 +11852,14 @@ mod tests {
             .proposal
             .as_ref()
             .and_then(|invocation| invocation.speech.as_ref())
-            .unwrap()
-            .as_str()
-            .to_owned();
-        assert!(!operational_speech.trim().is_empty());
+            .map(|speech| speech.as_str().to_owned())
+            .unwrap_or_default();
+        if operational_speech.trim().is_empty() {
+            return Err(AttemptFailure::content(
+                "OperationalAgent commit carried no speech",
+                operational_evidence(&operational_decision),
+            ));
+        }
         let ControllerWorkLookup::Confirmed(ControllerWork::Operational(
             OperationalCheckpoint::ReadyToSubmit {
                 completed: persisted_agent_outputs,
@@ -11679,18 +11894,380 @@ mod tests {
         let committed_operational_speech = operational_event.speech.as_ref().unwrap();
         assert!(committed_operational_speech.as_str().as_bytes() == operational_speech.as_bytes());
 
+        Ok(persona_prose)
+    }
+
+    struct AcceptanceConfig {
+        local_endpoint: SocketAddr,
+        local_model_prefix: String,
+        runtime_id: String,
+        models: ControllerModels,
+    }
+
+    impl AcceptanceConfig {
+        fn from_environment() -> Self {
+            Self {
+                local_endpoint: std::env::var("GHOSTLIGHT_LOCAL_ENDPOINT")
+                    .expect("GHOSTLIGHT_LOCAL_ENDPOINT is required")
+                    .parse()
+                    .expect("GHOSTLIGHT_LOCAL_ENDPOINT must be a socket address"),
+                local_model_prefix: std::env::var("GHOSTLIGHT_LOCAL_MODEL_PREFIX")
+                    .unwrap_or_else(|_| DEFAULT_LOCAL_MODEL_PREFIX.to_owned()),
+                runtime_id: std::env::var("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID")
+                    .expect("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID is required"),
+                models: ControllerModels {
+                    projector: std::env::var("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL")
+                        .expect("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL is required"),
+                    persona: std::env::var("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL")
+                        .expect("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL is required"),
+                    interpreter: std::env::var("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL")
+                        .expect("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL is required"),
+                    operational_agent: std::env::var("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL")
+                        .expect("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL is required"),
+                    elaborator: std::env::var("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL")
+                        .expect("GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL is required"),
+                },
+            }
+        }
+    }
+
+    /// One attempt against the real local model, over a world of its own: a
+    /// failed attempt has already moved the last one's world.
+    async fn acceptance_attempt(config: &AcceptanceConfig) -> Result<String, AttemptFailure> {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = acceptance_world(directory.path()).await;
+        let inference = open_inference(
+            None,
+            None,
+            Some(LocalBinding {
+                endpoint: config.local_endpoint,
+                model_prefix: config.local_model_prefix.clone(),
+                caller_runtime_id: config.runtime_id.clone(),
+            }),
+            &config.models.each(),
+        )
+        .unwrap();
+        let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
+        let runner =
+            ControllerRunner::open(mailbox.clone(), inference, work, config.models.clone())
+                .unwrap();
+        let result = acceptance_turns(&runner, &mailbox).await;
         drop(runner);
         drop(mailbox);
         task.await.unwrap();
+        result
+    }
 
+    #[tokio::test]
+    #[ignore = "requires a local model server on GHOSTLIGHT_LOCAL_ENDPOINT"]
+    async fn real_local_model_cognition_modes_commit_speech() {
+        let config = AcceptanceConfig::from_environment();
+        let persona_log = std::env::var_os("GHOSTLIGHT_ACCEPTANCE_PERSONA_PROSE_LOG")
+            .expect("GHOSTLIGHT_ACCEPTANCE_PERSONA_PROSE_LOG is required");
+
+        let run = run_attempts(ACCEPTANCE_ATTEMPTS, |_| acceptance_attempt(&config)).await;
+        println!("{}", run.pass_rate_line());
+
+        // The prose log is the release evidence: every failed attempt, the
+        // pass rate, and the persona prose of the attempt that passed.
+        let mut evidence = run.record();
+        if let Some(prose) = &run.passed {
+            evidence.push_str("\npersona-prose:\n");
+            evidence.push_str(prose);
+        }
         let mut persona_file = std::fs::OpenOptions::new()
             .write(true)
             .create_new(true)
             .open(persona_log)
             .unwrap();
-        std::io::Write::write_all(&mut persona_file, persona_prose.as_bytes()).unwrap();
+        std::io::Write::write_all(&mut persona_file, evidence.as_bytes()).unwrap();
         persona_file.sync_all().unwrap();
+
+        assert!(
+            run.passed.is_some(),
+            "acceptance gate failed after {} of {} attempts; the failed attempts are printed above",
+            run.attempts,
+            ACCEPTANCE_ATTEMPTS
+        );
     }
+
+    /// What a scripted port says to one acceptance attempt.
+    #[derive(Clone, Copy)]
+    enum ScriptedReply {
+        /// A persona reply that quotes speech and an agent that speaks.
+        Valid,
+        /// A well-formed reply with nothing speakable in it.
+        NothingSpeakable,
+        /// The provider cannot be reached.
+        Transport,
+        /// The persona commits; the agent answers with a decline.
+        OperationalNothingSpeakable,
+        /// The persona commits; the provider fails for the agent.
+        OperationalTransport,
+    }
+
+    /// One acceptance attempt over the real fixture world and the real
+    /// runner, with only the model replaced by a script.
+    async fn scripted_attempt(reply: ScriptedReply) -> Result<String, AttemptFailure> {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = acceptance_world(directory.path()).await;
+        let narrative_commits = || {
+            vec![
+                output(
+                    vec![InferenceEvent::Text("Lamplight steadies on the roll hall.".into())],
+                    "valid-projector",
+                ),
+                output(
+                    vec![InferenceEvent::Text(
+                        "Mara lifts her head and says, \"I hear the roll call.\"".into(),
+                    )],
+                    "valid-persona",
+                ),
+                output(
+                    vec![
+                        InferenceEvent::ToolCall {
+                            call_id: "speak".into(),
+                            name: INTERPRETER_SPEAK_TOOL.into(),
+                            arguments: json!({ "source_quote": "I hear the roll call." })
+                                .to_string(),
+                        },
+                        InferenceEvent::ToolCall {
+                            call_id: "finish".into(),
+                            name: FINISH_INTERPRETATION_TOOL.into(),
+                            arguments: "{}".into(),
+                        },
+                    ],
+                    "valid-interpreter",
+                ),
+            ]
+        };
+        let outputs = match reply {
+            ScriptedReply::Valid => {
+                let mut outputs = narrative_commits();
+                outputs.push(output(
+                    vec![InferenceEvent::ToolCall {
+                        call_id: "speak".into(),
+                        name: SPEAK_KIND.into(),
+                        arguments: json!({ "text": "The Signal Council hears the roll call." })
+                            .to_string(),
+                    }],
+                    "valid-operational",
+                ));
+                outputs
+            }
+            ScriptedReply::OperationalNothingSpeakable => {
+                let mut outputs = narrative_commits();
+                outputs.push(output(
+                    vec![
+                        InferenceEvent::ToolCall {
+                            call_id: "need".into(),
+                            name: RECORD_NEED_TOOL.into(),
+                            arguments: json!({ "detail": "No current intervention is warranted." })
+                                .to_string(),
+                        },
+                        InferenceEvent::ToolCall {
+                            call_id: "finish".into(),
+                            name: FINISH_WITHOUT_PROPOSAL_TOOL.into(),
+                            arguments: "{}".into(),
+                        },
+                    ],
+                    "empty-operational",
+                ));
+                outputs
+            }
+            ScriptedReply::OperationalTransport => {
+                let mut outputs = narrative_commits();
+                outputs.push(Err(InferenceFault::retryable(
+                    "connector transport interrupted",
+                )));
+                outputs
+            }
+            ScriptedReply::NothingSpeakable => {
+                let source = "I listen to the rain and let the question pass.";
+                vec![
+                    output(
+                        vec![InferenceEvent::Text("Rain ticks on the rail.".into())],
+                        "empty-projector",
+                    ),
+                    output(vec![InferenceEvent::Text(source.into())], "empty-persona"),
+                    output(
+                        vec![
+                            InferenceEvent::ToolCall {
+                                call_id: "gap".into(),
+                                name: INTERPRETER_RECORD_GAP_TOOL.into(),
+                                arguments: json!({
+                                    "kind": "unresolved",
+                                    "source_quote": source,
+                                    "detail": "The prose expresses no supported world action."
+                                })
+                                .to_string(),
+                            },
+                            InferenceEvent::ToolCall {
+                                call_id: "finish".into(),
+                                name: FINISH_INTERPRETATION_TOOL.into(),
+                                arguments: "{}".into(),
+                            },
+                        ],
+                        "empty-interpreter",
+                    ),
+                ]
+            }
+            ScriptedReply::Transport => {
+                vec![Err(InferenceFault::retryable(
+                    "connector transport interrupted",
+                ))]
+            }
+        };
+        let persisted = Arc::new(AtomicBool::new(true));
+        let port = Arc::new(RecordingPort {
+            outputs: Mutex::new(outputs),
+            persisted_before_interpreter: persisted.clone(),
+        });
+        let store = Arc::new(RecordingWorkStore {
+            persisted,
+            work: Mutex::new(BTreeMap::new()),
+        });
+        let runner = ControllerRunner::open(mailbox.clone(), port, store, models())
+            .expect("the fixture ports open");
+        let result = acceptance_turns(&runner, &mailbox).await;
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+        result
+    }
+
+    #[tokio::test]
+    async fn acceptance_gate_passes_when_content_failures_are_followed_by_a_valid_reply() {
+        let run = run_attempts(ACCEPTANCE_ATTEMPTS, |attempt| {
+            scripted_attempt(if attempt < 3 {
+                ScriptedReply::NothingSpeakable
+            } else {
+                ScriptedReply::Valid
+            })
+        })
+        .await;
+        assert_eq!(run.attempts, 3);
+        assert_eq!(
+            run.passed.as_deref(),
+            Some("Mara lifts her head and says, \"I hear the roll call.\"")
+        );
+        assert_eq!(run.failures.len(), 2);
+        assert!(run.failures.iter().all(|failure| !failure.is_fault()));
+        let record = run.record();
+        // Both failed attempts are kept with their assertion and the reply's
+        // words; the pass rate is recorded and did not gate the pass.
+        assert_eq!(
+            record
+                .lines()
+                .filter(|line| line.contains("content failure, retried"))
+                .count(),
+            2
+        );
+        assert!(record.contains("acceptance attempt 1/3"));
+        assert!(record.contains("acceptance attempt 2/3"));
+        assert!(record.contains("NarrativePersona reply produced nothing to commit"));
+        assert!(record.contains("I listen to the rain and let the question pass."));
+        assert!(record.contains("The prose expresses no supported world action."));
+        assert!(record.ends_with("acceptance-pass-rate attempts=3 passed=1"));
+    }
+
+    #[tokio::test]
+    async fn acceptance_gate_fails_after_the_attempt_limit_of_content_failures() {
+        let calls = std::sync::atomic::AtomicUsize::new(0);
+        let run = run_attempts(2, |_| {
+            calls.fetch_add(1, Ordering::SeqCst);
+            scripted_attempt(ScriptedReply::NothingSpeakable)
+        })
+        .await;
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert!(run.passed.is_none());
+        assert_eq!(run.failures.len(), 2);
+        assert!(
+            run.record()
+                .ends_with("acceptance-pass-rate attempts=2 passed=0")
+        );
+    }
+
+    #[tokio::test]
+    async fn acceptance_gate_stops_at_once_on_a_transport_fault() {
+        let calls = std::sync::atomic::AtomicUsize::new(0);
+        let run = run_attempts(ACCEPTANCE_ATTEMPTS, |_| {
+            calls.fetch_add(1, Ordering::SeqCst);
+            scripted_attempt(ScriptedReply::Transport)
+        })
+        .await;
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert!(run.passed.is_none());
+        assert_eq!(
+            run.failures,
+            vec![AttemptFailure::fault(
+                "NarrativePersona run stayed pending",
+                "InferenceRetryable".into()
+            )]
+        );
+        assert!(
+            run.record()
+                .ends_with("acceptance-pass-rate attempts=1 passed=0")
+        );
+    }
+
+    #[tokio::test]
+    async fn acceptance_gate_does_not_retry_a_fault_that_follows_a_content_failure() {
+        let calls = std::sync::atomic::AtomicUsize::new(0);
+        let run = run_attempts(ACCEPTANCE_ATTEMPTS, |attempt| {
+            calls.fetch_add(1, Ordering::SeqCst);
+            scripted_attempt(if attempt == 1 {
+                ScriptedReply::NothingSpeakable
+            } else {
+                ScriptedReply::Transport
+            })
+        })
+        .await;
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert!(run.passed.is_none());
+        assert!(!run.failures[0].is_fault());
+        assert!(run.failures[1].is_fault());
+    }
+
+    #[tokio::test]
+    async fn acceptance_gate_classifies_the_operational_lane_the_same_way() {
+        let declined = scripted_attempt(ScriptedReply::OperationalNothingSpeakable).await;
+        let Err(AttemptFailure::Content {
+            assertion,
+            evidence,
+        }) = declined
+        else {
+            panic!("an operational decline was not a content failure")
+        };
+        assert_eq!(
+            assertion,
+            "OperationalAgent reply produced nothing to commit"
+        );
+        assert!(evidence.contains("No current intervention is warranted."));
+        assert_eq!(
+            scripted_attempt(ScriptedReply::OperationalTransport).await,
+            Err(AttemptFailure::fault(
+                "OperationalAgent run stayed pending",
+                "InferenceRetryable".into()
+            ))
+        );
+    }
+
+    #[test]
+    fn acceptance_evidence_is_bounded_single_line_and_never_splits_a_character() {
+        // 3-byte characters put the 400-byte bound inside a character.
+        let long = "\u{20ac}".repeat(300);
+        let excerpt = evidence_excerpt(&long);
+        assert!(excerpt.ends_with("..."));
+        assert_eq!(excerpt.matches('\u{20ac}').count(), 133);
+        let short = "one line\nsecond line";
+        assert_eq!(evidence_excerpt(short), "one line\\nsecond line");
+        let exact = "a".repeat(ACCEPTANCE_EVIDENCE_BYTES);
+        assert_eq!(evidence_excerpt(&exact), exact);
+        let over = "a".repeat(ACCEPTANCE_EVIDENCE_BYTES + 1);
+        assert_eq!(evidence_excerpt(&over), format!("{exact}..."));
+    }
+
 
     // ---- Soul: the elaboration runner, which nothing drove -------------
 

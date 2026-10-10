@@ -67,6 +67,7 @@ argv = [
   "--",
   "--ignored",
   "--exact",
+  "--nocapture",
 ]
 required_environment = [
   "CARGO_HOME",
