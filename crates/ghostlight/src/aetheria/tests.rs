@@ -353,3 +353,25 @@ fn reading_leaves_the_catalog_and_its_directory_untouched() {
     assert_eq!(std::fs::read(&path).unwrap(), bytes);
     assert_eq!(listing(dir.path()), before, "the reader created a file");
 }
+
+#[test]
+fn every_referent_code_maps_to_its_own_kind() {
+    // The fixture binds only Faction, Cargo and Place; Person and Population
+    // are authored here at the role's integer key, each read back as itself.
+    for (code, expected) in [
+        (1, GrammarReferentKind::Person),
+        (2, GrammarReferentKind::Faction),
+        (3, GrammarReferentKind::Population),
+        (4, GrammarReferentKind::Place),
+        (5, GrammarReferentKind::Cargo),
+    ] {
+        let mut rows = fixture_rows();
+        edit(&mut rows, "verb-attack", |cells| cells[3][0][2] = json!(code));
+        let catalog = read(&rows).unwrap();
+        assert_eq!(
+            catalog.grammar.verb("attack"),
+            Some(&verb(RenderPath::ShipAction, &[("target", expected)])),
+            "code {code}"
+        );
+    }
+}
