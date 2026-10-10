@@ -327,9 +327,13 @@ async fn calls_on_the_wire_hold_their_bound() {
         let port = port.clone();
         tokio::spawn(async move { port.infer(prepared_for("held", 1_200)).await })
     };
-    while inner.calls() == 0 {
-        tokio::task::yield_now().await;
-    }
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while inner.calls() == 0 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("the first call reached the provider");
     // A second call that was let through would wait on the closed gate.
     let second = tokio::time::timeout(
         std::time::Duration::from_secs(5),
