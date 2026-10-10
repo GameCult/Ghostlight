@@ -270,7 +270,7 @@ async fn cap_refuses_before_the_provider_is_called() {
     drop(port);
 
     // Exactly the cap is allowed.
-    let exact = recording(&inner, &store, "run-cap", bound);
+    let exact = recording(&inner, &store, "run-exact-cap", bound);
     exact
         .infer(probe)
         .await
@@ -592,13 +592,13 @@ async fn a_reopened_run_resumes_its_spend() {
     let inner = ScriptedPort::new(vec![Ok(
         reply("one", "r1").with_usage(usage(bound, 0, None))
     )]);
-    let first = recording(&inner, &store, "run-resume", bound * 2);
+    let first = recording(&inner, &store, "run-resume", bound * 2 - 1);
     first.infer(probe.clone()).await.unwrap();
     drop((first, store));
 
     let store = Arc::new(CallRecordStore::open(&path).unwrap());
     let inner = ScriptedPort::new(vec![Ok(reply("two", "r2"))]);
-    let resumed = recording(&inner, &store, "run-resume", bound * 2);
+    let resumed = recording(&inner, &store, "run-resume", bound * 2 - 1);
     assert_eq!(resumed.spent(), bound);
     let fault = resumed
         .infer(probe)
