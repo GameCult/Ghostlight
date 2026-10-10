@@ -490,19 +490,26 @@ fn the_subjects_map_refuses_a_second_subject_for_one_key_even_when_resolved_else
     );
 }
 
+fn contains(haystack: &[u8], needle: &[u8]) -> bool {
+    haystack.windows(needle.len()).any(|window| window == needle)
+}
+
 #[test]
 fn keyless_world_digests_unchanged() {
     // A subject nobody imported serialises without the field at all, so every
     // digest written before keys existed is the digest of the same bytes.
     let (_dir, kernel) = create(creation(CommandId::new(), "Keyless"));
     let kernel = kernel.unwrap();
-    let state = serde_json::to_string(&kernel.state).unwrap();
-    assert!(!state.contains("import_key"), "a keyless world grew a field");
+    let state = rmp_serde::to_vec_named(&kernel.state).unwrap();
+    assert!(
+        !contains(&state, b"import_key"),
+        "a keyless world grew a field"
+    );
     // A keyed world carries it, round-trips, and digests differently.
     let (_dir, keyed) = keyed_world();
-    let keyed_state = serde_json::to_string(&keyed.state).unwrap();
-    assert!(keyed_state.contains("import_key"));
-    let back: crate::WorldState = serde_json::from_str(&keyed_state).unwrap();
+    let keyed_state = rmp_serde::to_vec_named(&keyed.state).unwrap();
+    assert!(contains(&keyed_state, b"import_key"));
+    let back: crate::WorldState = rmp_serde::from_slice(&keyed_state).unwrap();
     assert_eq!(
         crate::state_digest(&back).unwrap(),
         crate::state_digest(&keyed.state).unwrap()
@@ -512,7 +519,7 @@ fn keyless_world_digests_unchanged() {
         crate::state_digest(&kernel.state).unwrap()
     );
     // And a pre-key state deserialises with every key absent.
-    let stripped: crate::WorldState = serde_json::from_str(&state).unwrap();
+    let stripped: crate::WorldState = rmp_serde::from_slice(&state).unwrap();
     assert!(stripped.subjects.values().all(|s| s.import_key.is_none()));
 }
 
