@@ -976,7 +976,7 @@ fn the_replay_key_covers_what_the_request_asks_and_not_what_names_it() {
     };
     let same = digest(&|_| {});
     assert_eq!(same, content_digest(&base).unwrap());
-    let changes: [(&str, Box<dyn Fn(&mut CodexProviderRequest)>); 10] = [
+    let changes: Vec<(&str, Box<dyn Fn(&mut CodexProviderRequest)>)> = vec![
         ("model", Box::new(|r| r.model.push('x'))),
         ("instructions", Box::new(|r| r.instructions.push('x'))),
         (
@@ -1016,6 +1016,32 @@ fn the_replay_key_covers_what_the_request_asks_and_not_what_names_it() {
         (
             "parallel_tool_calls",
             Box::new(|r| r.parallel_tool_calls = !r.parallel_tool_calls),
+        ),
+        ("schema_id", Box::new(|r| r.schema_id.push_str(".v2"))),
+        (
+            "reasoning_summary",
+            Box::new(|r| r.reasoning_summary = Some("auto".into())),
+        ),
+        (
+            "output_format_name",
+            Box::new(|r| r.output_format_name = Some("persona_reply".into())),
+        ),
+        (
+            "tool_choice",
+            Box::new(|r| {
+                r.tool_choice = match r.tool_choice {
+                    codex_connector::CodexToolChoice::Auto => {
+                        codex_connector::CodexToolChoice::Required
+                    }
+                    codex_connector::CodexToolChoice::Required => {
+                        codex_connector::CodexToolChoice::Auto
+                    }
+                }
+            }),
+        ),
+        (
+            "prompt_cache_key",
+            Box::new(|r| r.prompt_cache_key = Some("ghostlight-persona-1".into())),
         ),
     ];
     for (field, change) in changes {
