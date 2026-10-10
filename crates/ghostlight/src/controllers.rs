@@ -12172,6 +12172,24 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn acceptance_gate_records_a_pass_on_the_second_attempt_against_the_limit() {
+        let run = run_attempts(ACCEPTANCE_ATTEMPTS, |attempt| {
+            scripted_attempt(if attempt == 1 {
+                ScriptedReply::NothingSpeakable
+            } else {
+                ScriptedReply::Valid
+            })
+        })
+        .await;
+        assert!(run.passed.is_some());
+        // The failed attempt is numbered against the limit, not against the
+        // attempts made; the pass rate states the attempts made.
+        let record = run.record();
+        assert!(record.starts_with("acceptance attempt 1/3 content failure, retried"));
+        assert!(record.ends_with("acceptance-pass-rate attempts=2 passed=1"));
+    }
+
+    #[tokio::test]
     async fn acceptance_gate_fails_after_the_attempt_limit_of_content_failures() {
         let calls = std::sync::atomic::AtomicUsize::new(0);
         let run = run_attempts(2, |_| {
