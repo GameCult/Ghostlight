@@ -421,13 +421,33 @@ fn an_allegiance_key_that_is_not_canonical_text_is_refused_by_key_and_field() {
     }
 }
 
+/// The store's own writer keeps one row per record key, so a second row is
+/// spliced into the fixture's snapshot bytes the way a hand-merged file would
+/// hold it.
 #[test]
 fn two_faction_rows_under_one_record_key_are_refused() {
-    let mut rows = fixture_rows();
-    let twin = row_of(&mut rows, "faction-adrasteia").clone();
-    rows.push(twin);
+    let bytes = std::fs::read(FIXTURE).unwrap();
+    let rmpv::Value::Array(mut snapshot) = rmpv::decode::read_value(&mut bytes.as_slice()).unwrap()
+    else {
+        panic!("snapshot is not a tuple");
+    };
+    let rmpv::Value::Array(records) = &mut snapshot[2] else {
+        panic!("snapshot holds no records");
+    };
+    let twin = records
+        .iter()
+        .find(|record| record[0].as_str() == Some("faction-adrasteia"))
+        .unwrap()
+        .clone();
+    records.push(twin);
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("catalog.cc");
+    let mut spliced = Vec::new();
+    rmpv::encode::write_value(&mut spliced, &rmpv::Value::Array(snapshot)).unwrap();
+    std::fs::write(&path, spliced).unwrap();
+
     assert_eq!(
-        read(&rows),
+        read_aetheria_catalog(&path),
         Err(CatalogReadError::DuplicateFaction {
             record: "faction-adrasteia".into()
         })
