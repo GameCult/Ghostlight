@@ -14,7 +14,7 @@ use crate::{
 use ghostlight::{
     CONSUMER_BODY_LIMIT, CommandBody, CommandId, ConnectorBinding, ConsumerPort,
     ConsumerRegistry, ControllerError, ControllerModels, ControllerPort, ControllerRunner, ControllerWorkCustody,
-    CreateJurisdictionIntent, CreateWorldIntent, DEFAULT_LOCAL_MODEL_PREFIX,
+    CreateJurisdictionIntent, CreateWorldIntent, CreationReceipt, DEFAULT_LOCAL_MODEL_PREFIX,
     DEFAULT_SDK_MODEL_PREFIX, KernelError, Lens,
     LensWeights, LocalBinding, MailboxError, PersonaLane, PrincipalCommandIntent, PrincipalId,
     SdkBinding, SeedOutcome, SeedPort, SubjectKind, SubmitReceipt, TickMinutes,
@@ -39,6 +39,7 @@ use cultnet_rs::{
     decode_cultnet_message_from_slice, encode_cultnet_message_to_vec,
 };
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use serde_json::{Value, json};
 use std::{
     collections::{BTreeMap, HashMap},
@@ -1242,6 +1243,8 @@ enum RuntimeCommandError {
     Mailbox(#[from] MailboxError),
     #[error(transparent)]
     Kernel(#[from] KernelError),
+    #[error("the begin stopped at its {step} step: {cause}")]
+    BeginStopped { step: &'static str, cause: String },
 }
 
 /// The one door an answer's own `answerToken` is judged by (PA.f179): admits
@@ -1255,6 +1258,143 @@ enum RuntimeCommandError {
 /// wildcard or degrade to a plain string comparison.
 fn answer_token_admits(given: Option<&str>, expected: Option<&str>) -> bool {
     matches!((given, expected), (Some(given), Some(expected)) if given == expected)
+}
+
+/// `world.create`'s whole effect: genesis for the payload as stated. The one
+/// create path, shared by the `world.create` command and the first step of
+/// `world.begin`.
+async fn create_world(
+    state: &AppState,
+    verified_principal: &VerifiedPrincipalEvidence,
+    command_id: CommandId,
+    payload: CreatePayload,
+) -> Result<CreationReceipt, RuntimeCommandError> {
+    if payload
+        .jurisdictions
+        .iter()
+        .any(|root| !is_handle_shape(&root.handle))
+    {
+        return Err(RuntimeCommandError::Payload(
+            "a jurisdiction handle is not a draft handle".into(),
+        ));
+    }
+    state
+        .world
+        .create(
+            CreateWorldIntent {
+                id: command_id,
+                title: payload.title,
+                brief: payload.brief,
+                human_subject_label: payload.subject_label,
+                narrative_persona_label: payload.narrative_persona_label.filter(|label| !label.trim().is_empty()),
+                operational_agent_label: payload.operational_agent_label.filter(|label| !label.trim().is_empty()),
+                targets: payload.targets,
+                jurisdictions: payload
+                    .jurisdictions
+                    .into_iter()
+                    .map(|root| CreateJurisdictionIntent {
+                        handle: root.handle,
+                        label: root.label,
+                        permille: root.permille,
+                    })
+                    .collect(),
+                lens_weights: payload.lens_weights,
+            },
+            verified_principal,
+        )
+        .await
+        .map_err(map_mailbox)
+}
+
+fn created_receipt(receipt: &CreationReceipt) -> Value {
+    json!({
+        "kind":"created",
+        "commandId":serde_json::to_value(receipt.command_id).unwrap_or(Value::Null),
+        "worldId":serde_json::to_value(receipt.world_id).unwrap_or(Value::Null),
+        "stateDigest":receipt.resulting_state_digest,
+        "commitDigest":receipt.commit_digest
+    })
+}
+
+/// The id of one of the kernel commands a Begin submits after its create:
+/// derived from the Begin's own key and the step's name, so a replayed Begin
+/// replays each of its commands through the kernel's own idempotency ledger
+/// instead of submitting new ones.
+fn begin_step_id(begin_key: &str, step: &str) -> Result<CommandId, KernelError> {
+    let key = uuid::Uuid::parse_str(begin_key).map_err(|_| KernelError::InvalidCommandId)?;
+    let digest = Sha256::new()
+        .chain_update(b"ghostlight.world.begin.v1")
+        .chain_update(key.as_bytes())
+        .chain_update(step.as_bytes())
+        .finalize();
+    let mut bytes = [0_u8; 16];
+    bytes.copy_from_slice(&digest[..16]);
+    CommandId::parse_uuid(&uuid::Uuid::from_bytes(bytes).to_string())
+}
+
+/// `world.begin`: the owner's one click. The surface sequences, the kernel
+/// decides: create, approve and activate reach it as three separate commands,
+/// each admitted or refused on its own, and the sequence stops at the first
+/// refusal. What the kernel committed before it stays committed, and the
+/// card then offers the next step's own button. When the owner is not the
+/// world's only required approver the kernel refuses the activate step.
+async fn begin_world(
+    state: &AppState,
+    verified_principal: &VerifiedPrincipalEvidence,
+    begin_key: &str,
+    command_id: CommandId,
+    payload: CreatePayload,
+) -> Result<Value, RuntimeCommandError> {
+    let created = create_world(state, verified_principal, command_id, payload)
+        .await
+        .map_err(|error| stopped_at("create", error))?;
+    let mut reached = "created";
+    for (step, body, done) in [
+        ("approve", CommandBody::ApproveDraft, "approved"),
+        ("activate", CommandBody::ActivateWorld, "activated"),
+    ] {
+        let snapshot = current_world(state)
+            .await
+            .ok()
+            .flatten()
+            .ok_or(RuntimeCommandError::BeginStopped {
+                step,
+                cause: "the world could not be read".into(),
+            })?;
+        state
+            .world
+            .submit_principal(
+                PrincipalCommandIntent {
+                    id: begin_step_id(begin_key, step).map_err(|error| stopped_at(step, error.into()))?,
+                    world_id: created.world_id,
+                    expected_revision: snapshot.revision,
+                    body,
+                },
+                verified_principal,
+            )
+            .await
+            .map_err(|error| stopped_at(step, map_mailbox(error)))?;
+        reached = done;
+    }
+    Ok(json!({
+        "kind":"begun",
+        "reached":reached,
+        "worldId":serde_json::to_value(created.world_id).unwrap_or(Value::Null),
+        "commitDigest":created.commit_digest
+    }))
+}
+
+/// A refusal at one step of a Begin: its own variant so the receipt names the
+/// step, except an unknown outcome, which stays one (the caller must not read
+/// it as a refusal).
+fn stopped_at(step: &'static str, error: RuntimeCommandError) -> RuntimeCommandError {
+    match error {
+        RuntimeCommandError::OutcomeUnknown(detail) => RuntimeCommandError::OutcomeUnknown(format!("{step}: {detail}")),
+        other => RuntimeCommandError::BeginStopped {
+            step,
+            cause: other.to_string(),
+        },
+    }
 }
 
 async fn execute_world(
@@ -1272,49 +1412,21 @@ async fn execute_world(
     if invocation.operation.operation_id == "world.create" {
         let payload: CreatePayload = serde_json::from_value(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?)
             .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
-        if let Some(root) = payload
-            .jurisdictions
-            .iter()
-            .find(|root| !is_handle_shape(&root.handle))
-        {
-            return Err(RuntimeCommandError::Payload(format!(
-                "jurisdiction handle {} is not a draft handle",
-                root.handle
-            )));
-        }
-        let receipt = state
-            .world
-            .create(
-                CreateWorldIntent {
-                    id: command_id,
-                    title: payload.title,
-                    brief: payload.brief,
-                    human_subject_label: payload.subject_label,
-                    narrative_persona_label: payload.narrative_persona_label.filter(|label| !label.trim().is_empty()),
-                    operational_agent_label: payload.operational_agent_label.filter(|label| !label.trim().is_empty()),
-                    targets: payload.targets,
-                    jurisdictions: payload
-                        .jurisdictions
-                        .into_iter()
-                        .map(|root| CreateJurisdictionIntent {
-                            handle: root.handle,
-                            label: root.label,
-                            permille: root.permille,
-                        })
-                        .collect(),
-                    lens_weights: payload.lens_weights,
-                },
-                verified_principal,
-            )
-            .await
-            .map_err(map_mailbox)?;
-        return Ok(json!({
-            "kind":"created",
-            "commandId":serde_json::to_value(receipt.command_id).unwrap_or(Value::Null),
-            "worldId":serde_json::to_value(receipt.world_id).unwrap_or(Value::Null),
-            "stateDigest":receipt.resulting_state_digest,
-            "commitDigest":receipt.commit_digest
-        }));
+        let receipt = create_world(state, verified_principal, command_id, payload).await?;
+        return Ok(created_receipt(&receipt));
+    }
+    if invocation.operation.operation_id == "world.begin" {
+        // The same `world_create.v4` payload as `world.create`. The detail of a
+        // refused payload is not echoed: this route's fields are what the
+        // owner typed.
+        let payload: CreatePayload = unwrap_bindings(&invocation.payload)
+            .ok()
+            .and_then(|flat| serde_json::from_value(flat).ok())
+            .ok_or_else(|| {
+                RuntimeCommandError::Payload("the begin payload does not satisfy world_create.v4".into())
+            })?;
+        let key = invocation.operation.idempotency_key.as_deref().unwrap_or("");
+        return begin_world(state, verified_principal, key, command_id, payload).await;
     }
     if invocation.operation.operation_id == "world.play" {
         // Cut 10 (PA.f152): owner-gated, like `world.advance_time` and
@@ -3138,10 +3250,10 @@ mod tests {
     /// report, not a skip to swallow quietly.
     #[tokio::test]
     #[ignore = "requires node + a built vendor/eve/eve-browser-lowering + eve-contracts; run with `cargo test -- --ignored`"]
-    async fn world_create_seed_activate_and_play_round_trip_through_the_real_client() {
+    async fn world_begin_and_play_round_trip_through_the_real_client() {
         if !eve_client_bridge_is_available() {
             panic!(
-                "world_create_seed_activate_and_play_round_trip_through_the_real_client was run \
+                "world_begin_and_play_round_trip_through_the_real_client was run \
                  (via --ignored) but the real Eve client bridge is not available: `node` is \
                  missing, or the vendored lowering's built `dist/index.js`, its `jsdom` \
                  devDependency, or the sibling `eve-contracts` package's own `ajv` dependency does \
@@ -3155,42 +3267,27 @@ mod tests {
         let provider = get(&fixture.state, &fixture.cookie, "/api/eve/provider").await;
 
         let empty_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
-        let create_intents = client_intents(
+        let begin_intents = client_intents(
             &empty_surface,
             &provider,
             json!([
                 {"set": {
-                    "world.create.title": "Bridge World",
-                    "world.create.brief": "A world built by the real client bridge.",
-                    "world.create.subject": "The Bridge Operator",
-                    "world.create.targets": "{}",
-                    "world.create.jurisdictions": "[]",
-                    "world.create.lens_weights": "{\"patina\":1,\"charter\":1,\"ledger\":1,\"hearth\":1,\"tangle\":1,\"veil\":1,\"ember\":1,\"numen\":1}"
+                    "world.begin.title": "Bridge World",
+                    "world.begin.brief": "A world built by the real client bridge.",
+                    "world.begin.subject": "The Bridge Operator"
                 }},
-                {"click": "world.create"}
+                {"click": "world.begin"}
             ]),
         );
-        assert_eq!(create_intents.len(), 1);
-        let created = post(&fixture.state, &fixture.cookie, create_intents.into_iter().next().unwrap()).await;
-        assert_eq!(created["receipt"]["state"], "accepted", "world.create via the real client: {created}");
-
-        let draft_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
-        let approve_intents = client_intents(&draft_surface, &provider, json!([{"click": "world.approve"}]));
-        assert_eq!(approve_intents.len(), 1);
-        let approved = post(&fixture.state, &fixture.cookie, approve_intents.into_iter().next().unwrap()).await;
-        assert_eq!(approved["receipt"]["state"], "accepted", "world.approve via the real client: {approved}");
-
-        // No fixture sets `AppState.seed_vault_root`, so the Draft surface
-        // offers no seeding to click at all (PA.f213).
-        let approved_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        assert_eq!(begin_intents.len(), 1);
+        let begun = post(&fixture.state, &fixture.cookie, begin_intents.into_iter().next().unwrap()).await;
+        assert_eq!(begun["receipt"]["state"], "accepted", "world.begin via the real client: {begun}");
+        assert_eq!(begun["receipt"]["reached"], "activated", "{begun}");
+        let active_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
         assert!(
-            !serde_json::to_string(&approved_surface).unwrap().contains("world.seed"),
-            "a server with no vault offered seeding to the real client"
+            serde_json::to_string(&active_surface).unwrap().contains("world.play.card"),
+            "one Begin through the real client did not reach the play card"
         );
-        let activate_intents = client_intents(&approved_surface, &provider, json!([{"click": "world.activate"}]));
-        assert_eq!(activate_intents.len(), 1);
-        let activated = post(&fixture.state, &fixture.cookie, activate_intents.into_iter().next().unwrap()).await;
-        assert_eq!(activated["receipt"]["state"], "accepted", "world.activate via the real client: {activated}");
 
         // A typed Play on a fresh Active world opens a turn. The first table's
         // inference port blocks until released, so the turn stays `Running`
@@ -3344,7 +3441,7 @@ mod tests {
     /// PA.f162's own gate proof: replays the committed fixture's intents,
     /// in order, straight through `api_router` — no `node`, no bridge, no
     /// vendored `dist/index.js` anywhere in this call path. This is what
-    /// `world_create_seed_activate_and_play_round_trip_through_the_real_client`
+    /// `world_begin_and_play_round_trip_through_the_real_client`
     /// (which drives the real bridge, and so needs `node`) proved once, at
     /// capture time; this test proves it again on every run, on the door
     /// Idunn's own `cargo test --locked -p ghostlight-dungeon --bin
@@ -3355,26 +3452,17 @@ mod tests {
         let fixture = fixture().await;
         let mut steps = doc.steps.into_iter();
 
-        let create = steps.next().unwrap();
-        assert_eq!(create.label, "world.create");
-        let created = post(&fixture.state, &fixture.cookie, create.intent).await;
-        assert_eq!(created["receipt"]["state"], "accepted", "{created}");
-
-        let approve = steps.next().unwrap();
-        assert_eq!(approve.label, "world.approve");
-        let approved = post(&fixture.state, &fixture.cookie, approve.intent).await;
-        assert_eq!(approved["receipt"]["state"], "accepted", "{approved}");
-
-        let activate = steps.next().unwrap();
-        assert_eq!(activate.label, "world.activate");
-        let activated = post(&fixture.state, &fixture.cookie, activate.intent).await;
-        assert_eq!(activated["receipt"]["state"], "accepted", "{activated}");
+        let begin = steps.next().unwrap();
+        assert_eq!(begin.label, "world.begin");
+        let begun = post(&fixture.state, &fixture.cookie, begin.intent).await;
+        assert_eq!(begun["receipt"]["state"], "accepted", "{begun}");
+        assert_eq!(begun["receipt"]["reached"], "activated", "{begun}");
 
         let play = steps.next().unwrap();
         assert_eq!(play.label, "world.play");
         let played = post(&fixture.state, &fixture.cookie, play.intent).await;
         assert_eq!(played["receipt"]["state"], "accepted", "{played}");
-        assert!(steps.next().is_none(), "the fixture must carry exactly these four steps");
+        assert!(steps.next().is_none(), "the fixture must carry exactly these two steps");
 
         let table = fixture.state.play.clone().unwrap();
         let observed = tokio::time::timeout(Duration::from_secs(5), async move {
@@ -3826,7 +3914,7 @@ mod tests {
     /// client's past behavior pretending to still be the client's current
     /// one. Runs only when `node` and the built lowering are actually
     /// available (`eve_client_bridge_is_available`). `#[ignore]`d for the
-    /// same reason `world_create_seed_activate_and_play_round_trip_through_the_real_client`
+    /// same reason `world_begin_and_play_round_trip_through_the_real_client`
     /// is (Soul's owed item 3, above): a normal `cargo test` run must
     /// distinguish "not exercised" from "passed" in its own summary line
     /// without `--nocapture`, and only `--ignored` opts in.
@@ -3868,39 +3956,22 @@ mod tests {
         let provider = get(&fixture.state, &fixture.cookie, "/api/eve/provider").await;
 
         let empty_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
-        let create_intent = client_intents(
+        let begin_intent = client_intents(
             &empty_surface,
             &provider,
             json!([
                 {"set": {
-                    "world.create.title": "Bridge Fixture World",
-                    "world.create.brief": "A world captured for the committed Eve client bridge fixture.",
-                    "world.create.subject": "The Fixture Operator",
-                    "world.create.targets": "{}",
-                    "world.create.jurisdictions": "[]",
-                    "world.create.lens_weights": "{\"patina\":1,\"charter\":1,\"ledger\":1,\"hearth\":1,\"tangle\":1,\"veil\":1,\"ember\":1,\"numen\":1}"
+                    "world.begin.title": "Bridge Fixture World",
+                    "world.begin.brief": "A world captured for the committed Eve client bridge fixture.",
+                    "world.begin.subject": "The Fixture Operator"
                 }},
-                {"click": "world.create"}
+                {"click": "world.begin"}
             ]),
         )
         .into_iter()
         .next()
         .unwrap();
-        post(&fixture.state, &fixture.cookie, create_intent.clone()).await;
-
-        let draft_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
-        let approve_intent = client_intents(&draft_surface, &provider, json!([{"click": "world.approve"}]))
-            .into_iter()
-            .next()
-            .unwrap();
-        post(&fixture.state, &fixture.cookie, approve_intent.clone()).await;
-
-        let approved_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
-        let activate_intent = client_intents(&approved_surface, &provider, json!([{"click": "world.activate"}]))
-            .into_iter()
-            .next()
-            .unwrap();
-        post(&fixture.state, &fixture.cookie, activate_intent.clone()).await;
+        post(&fixture.state, &fixture.cookie, begin_intent.clone()).await;
 
         let active_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
         let play_intent = client_intents(
@@ -3916,7 +3987,7 @@ mod tests {
         .unwrap();
         post(&fixture.state, &fixture.cookie, play_intent.clone()).await;
 
-        let regenerated = [create_intent, approve_intent, activate_intent, play_intent];
+        let regenerated = [begin_intent, play_intent];
         let committed = bridge_fixture().steps;
         assert_eq!(regenerated.len(), committed.len(), "step count drifted");
         for (regenerated_intent, committed_step) in regenerated.into_iter().zip(committed) {
@@ -4052,10 +4123,10 @@ mod tests {
     /// bridge-dependent tests (Soul's owed item 3, above).
     #[tokio::test]
     #[ignore = "requires node + a built vendor/eve/eve-browser-lowering + eve-contracts; run with `cargo test -- --ignored`"]
-    async fn a_create_form_filled_only_by_its_labelled_identity_fields_is_still_accepted() {
+    async fn a_begin_form_filled_only_by_its_labelled_fields_is_still_accepted() {
         if !eve_client_bridge_is_available() {
             panic!(
-                "a_create_form_filled_only_by_its_labelled_identity_fields_is_still_accepted was run \
+                "a_begin_form_filled_only_by_its_labelled_fields_is_still_accepted was run \
                  (via --ignored) but the real Eve client bridge is not available: `node` is missing, \
                  or the vendored lowering's built `dist/index.js`, its `jsdom` devDependency, or the \
                  sibling `eve-contracts` package's own `ajv` dependency does not resolve in this \
@@ -4074,10 +4145,10 @@ mod tests {
             &provider,
             json!([
                 {"set": {
-                    "world.create.title": "Untouched Fields World",
-                    "world.create.subject": "The Owner"
+                    "world.begin.title": "Untouched Fields World",
+                    "world.begin.subject": "The Owner"
                 }},
-                {"click": "world.create"}
+                {"click": "world.begin"}
             ]),
         );
         assert_eq!(create_intents.len(), 1);
@@ -4087,8 +4158,11 @@ mod tests {
         // rather than omitting the fields outright.
         let bindings = &intent["payload"]["bindings"];
         assert_eq!(bindings["brief"], "");
-        assert_eq!(bindings["targets"], "{}");
-        assert_eq!(bindings["jurisdictions"], "[]");
+        // The fields the form does not ask for ride the button's own action,
+        // beside `bindings`, not through it.
+        assert_eq!(intent["payload"]["targets"], "{}");
+        assert_eq!(intent["payload"]["jurisdictions"], "[]");
+        assert!(intent["payload"]["lens_weights"].is_string());
 
         let created = post(&fixture.state, &fixture.cookie, intent).await;
         assert_eq!(
@@ -5643,6 +5717,255 @@ mod tests {
             fixture.state.play.as_ref().unwrap().current_turn_view().await.is_none(),
             "a missing key must never reach table.run at all, not just fail inside it"
         );
+    }
+
+    // ---- World.begin ----------------------------------------------------
+
+    fn find_node<'a>(node: &'a Value, id: &str) -> Option<&'a Value> {
+        if node["id"] == id {
+            return Some(node);
+        }
+        node["children"]
+            .as_array()?
+            .iter()
+            .find_map(|child| find_node(child, id))
+    }
+
+    /// The payload the real client builds from the served Begin button: its
+    /// own action fields (minus the command name) beside the captured
+    /// `bindings`. Every authored constant comes from the surface this
+    /// process served, never from a copy in the test.
+    fn begin_payload_from(surface: &Value, title: &str, brief: &str, subject: &str) -> Value {
+        let button = find_node(&surface["surface"]["root"], "world.begin")
+            .expect("the empty-world surface offers Begin");
+        let mut payload = button["props"]["action"].as_object().cloned().unwrap();
+        payload.remove("command");
+        payload.insert(
+            "bindings".into(),
+            json!({"title":title,"brief":brief,"subject_label":subject}),
+        );
+        Value::Object(payload)
+    }
+
+    fn begin_invocation(payload: Value, key: &str) -> Value {
+        invocation("world.begin", "ghostlight.world_create.v4", 0, payload, key)
+    }
+
+    async fn served_surface(fixture: &Fixture) -> Value {
+        get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await
+    }
+
+    async fn owner_principal(fixture: &Fixture) -> VerifiedPrincipalEvidence {
+        fixture
+            .state
+            .sessions
+            .lock()
+            .await
+            .account_for_cookie(&fixture.cookie, Utc::now())
+            .unwrap()
+            .unwrap()
+    }
+
+    /// R1 and R2: one Begin reaches an Active world, and the kernel received
+    /// three separate commands, each admitted on its own. The ledger is the
+    /// witness: each step's own id replays as already applied at its own
+    /// revision, so none of them was merged into another or skipped.
+    ///
+    /// Mutations: submit no approve (the activate is then refused); give the
+    /// approve and activate commands the create's id (the kernel's ledger
+    /// answers the replay of their own ids with a conflict, not a receipt).
+    #[tokio::test]
+    async fn begin_commits_create_approve_and_activate_as_three_separate_commands() {
+        let fixture = fixture().await;
+        let key = uuid::Uuid::new_v4().to_string();
+        let payload = begin_payload_from(&served_surface(&fixture).await, "Begun World", "A premise.", "The Owner");
+        let begun = post(&fixture.state, &fixture.cookie, begin_invocation(payload.clone(), &key)).await;
+        assert_eq!(begun["receipt"]["state"], "accepted", "{begun}");
+        assert_eq!(begun["receipt"]["kind"], "begun");
+        assert_eq!(begun["receipt"]["reached"], "activated");
+
+        let world = current_world(&fixture.state).await.unwrap().unwrap();
+        assert_eq!(world.phase, WorldPhase::Active);
+        assert_eq!(world.revision, 2, "genesis, approval and activation are three commits");
+
+        let principal = owner_principal(&fixture).await;
+        for (step, body, revision) in [
+            ("approve", CommandBody::ApproveDraft, 1),
+            ("activate", CommandBody::ActivateWorld, 2),
+        ] {
+            let replay = fixture
+                .state
+                .world
+                .submit_principal(
+                    PrincipalCommandIntent {
+                        id: begin_step_id(&key, step).unwrap(),
+                        world_id: world.world_id,
+                        expected_revision: world.revision,
+                        body,
+                    },
+                    &principal,
+                )
+                .await
+                .unwrap();
+            match replay {
+                SubmitReceipt::AlreadyApplied(receipt) => assert_eq!(receipt.resulting_revision, revision, "{step}"),
+                SubmitReceipt::Applied(_) => panic!("the {step} step was not already in the ledger"),
+            }
+        }
+        // The create is the command under the Begin's own key.
+        let create_replay = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.create", "ghostlight.world_create.v4", 0, payload, &key),
+        )
+        .await;
+        assert_eq!(create_replay["receipt"]["commitDigest"], begun["receipt"]["commitDigest"]);
+    }
+
+    /// A replayed Begin (the same key) replays its commands through the
+    /// kernel's ledger and commits nothing new.
+    #[tokio::test]
+    async fn a_replayed_begin_commits_nothing_new() {
+        let fixture = fixture().await;
+        let key = uuid::Uuid::new_v4().to_string();
+        let payload = begin_payload_from(&served_surface(&fixture).await, "Replayed World", "", "The Owner");
+        let first = post(&fixture.state, &fixture.cookie, begin_invocation(payload.clone(), &key)).await;
+        assert_eq!(first["receipt"]["state"], "accepted", "{first}");
+        let second = post(&fixture.state, &fixture.cookie, begin_invocation(payload, &key)).await;
+        assert_eq!(second["receipt"]["state"], "accepted", "{second}");
+        assert_eq!(second["receipt"]["reached"], "activated");
+        assert_eq!(current_world(&fixture.state).await.unwrap().unwrap().revision, 2);
+    }
+
+    /// R3: the sequence stops at the first refusal, and the world stays in the
+    /// phase the kernel committed. Here the kernel refuses the approve (the
+    /// draft was already approved by hand), so the Begin is denied naming that
+    /// step, the world stays an approved Draft, and the card offers the next
+    /// step's own button, which continues to an Active world.
+    ///
+    /// Mutations: carry on to the activate after a refused approve; report a
+    /// refused step as accepted.
+    #[tokio::test]
+    async fn begin_stops_at_the_first_refusal_and_the_card_offers_the_next_step() {
+        let fixture = fixture().await;
+        let key = uuid::Uuid::new_v4().to_string();
+        let payload = begin_payload_from(&served_surface(&fixture).await, "Stopped World", "", "The Owner");
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.create", "ghostlight.world_create.v4", 0, payload.clone(), &key),
+        )
+        .await;
+        assert_eq!(created["receipt"]["state"], "accepted", "{created}");
+        let draft = current_world(&fixture.state).await.unwrap().unwrap();
+        fixture
+            .state
+            .world
+            .submit_principal(
+                PrincipalCommandIntent {
+                    id: CommandId::new(),
+                    world_id: draft.world_id,
+                    expected_revision: draft.revision,
+                    body: CommandBody::ApproveDraft,
+                },
+                &owner_principal(&fixture).await,
+            )
+            .await
+            .unwrap();
+
+        let refused = post(&fixture.state, &fixture.cookie, begin_invocation(payload, &key)).await;
+        assert_eq!(refused["receipt"]["state"], "denied", "{refused}");
+        let message = refused["receipt"]["message"].as_str().unwrap_or_default();
+        assert!(message.contains("approve"), "the refusal did not name its step: {message}");
+        let world = current_world(&fixture.state).await.unwrap().unwrap();
+        assert_eq!(world.phase, WorldPhase::Draft, "a refused step must leave the draft as the kernel committed it");
+        assert_eq!(world.revision, 1);
+
+        let mut buttons = Vec::new();
+        surface_buttons(&served_surface(&fixture).await["surface"]["root"], &mut buttons);
+        assert!(buttons.contains(&"world.activate".to_owned()), "{buttons:?}");
+        assert!(!buttons.contains(&"world.begin".to_owned()), "a world exists; Begin must not be offered");
+
+        let activated = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.activate",
+                "ghostlight.world_activate.v0",
+                world.revision + 1,
+                json!({}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(activated["receipt"]["state"], "accepted", "{activated}");
+        assert_eq!(current_world(&fixture.state).await.unwrap().unwrap().phase, WorldPhase::Active);
+    }
+
+    /// A Draft the kernel holds unapproved (a world created by `world.create`
+    /// alone) offers Approve, then Activate: Begin's refusal paths land on the
+    /// same buttons a hand-driven Draft always had.
+    #[tokio::test]
+    async fn an_unapproved_draft_offers_approve_and_no_begin() {
+        let fixture = fixture().await;
+        let payload = begin_payload_from(&served_surface(&fixture).await, "Plain Draft", "", "The Owner");
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation("world.create", "ghostlight.world_create.v4", 0, payload, &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(created["receipt"]["state"], "accepted", "{created}");
+        let mut buttons = Vec::new();
+        surface_buttons(&served_surface(&fixture).await["surface"]["root"], &mut buttons);
+        assert!(buttons.contains(&"world.approve".to_owned()), "{buttons:?}");
+        assert!(!buttons.contains(&"world.begin".to_owned()), "{buttons:?}");
+    }
+
+    /// No refusal of a Begin echoes anything the owner typed or sent: not the
+    /// kernel's refusal of an empty title, not a payload the begin route cannot
+    /// read, not a jurisdiction handle (here and on `world.create`, which
+    /// shares the create path).
+    #[tokio::test]
+    async fn a_refused_begin_never_echoes_what_was_sent() {
+        let fixture = fixture().await;
+        let canary = "CANARY-7f3a91-ZZ";
+        let surface = served_surface(&fixture).await;
+
+        let mut empty_title = begin_payload_from(&surface, "", canary, canary);
+        empty_title["bindings"]["title"] = json!("");
+        let mut unreadable = begin_payload_from(&surface, "A World", canary, canary);
+        unreadable[canary] = json!(canary);
+        let mut bad_handle = begin_payload_from(&surface, "A World", canary, canary);
+        bad_handle["jurisdictions"] = json!(
+            serde_json::to_string(&json!([{"handle":canary,"label":canary,"permille":10}])).unwrap()
+        );
+        let mut missing_name = begin_payload_from(&surface, canary, canary, canary);
+        missing_name["bindings"].as_object_mut().unwrap().remove("subject_label");
+
+        for (what, operation, payload) in [
+            ("empty title", "world.begin", empty_title),
+            ("unreadable payload", "world.begin", unreadable),
+            ("jurisdiction handle", "world.begin", bad_handle.clone()),
+            ("jurisdiction handle on create", "world.create", bad_handle),
+            ("missing name", "world.begin", missing_name),
+        ] {
+            let refused = post(
+                &fixture.state,
+                &fixture.cookie,
+                invocation(operation, "ghostlight.world_create.v4", 0, payload, &uuid::Uuid::new_v4().to_string()),
+            )
+            .await;
+            assert_eq!(refused["receipt"]["state"], "denied", "{what}: {refused}");
+            assert!(
+                !refused.to_string().contains(canary),
+                "{what}: the refusal echoed an input value: {refused}"
+            );
+            assert!(
+                current_world(&fixture.state).await.unwrap().is_none(),
+                "{what}: a refused Begin left a world"
+            );
+        }
     }
 
     #[tokio::test]
