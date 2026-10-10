@@ -1220,6 +1220,41 @@ mod tests {
         assert_eq!(output.events.len(), 2);
     }
 
+    /// The SDK lane reports the run's tokens summed over its models: the whole
+    /// prompt is fresh input plus both cache figures, the cached part is the
+    /// cache read, and a run that reported nothing is `None`, not a zero.
+    #[tokio::test]
+    async fn the_sdk_receipts_token_counts_reach_inference_output() {
+        let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
+        let prepared = prose_prepared(&port, "Say something true.");
+        let events = vec![SidecarEvent::Text { text: "ok".into() }];
+        let mut two_models = material();
+        two_models.usage = vec![
+            SdkModelUsage {
+                model: TEST_MODEL.into(),
+                input_tokens: 11,
+                output_tokens: 5,
+                cache_read_input_tokens: 3,
+                cache_creation_input_tokens: 2,
+            },
+            SdkModelUsage {
+                model: "claude-haiku-5".into(),
+                input_tokens: 100,
+                output_tokens: 40,
+                cache_read_input_tokens: 7,
+                cache_creation_input_tokens: 0,
+            },
+        ];
+        let output = assemble_output(&prepared, events.clone(), two_models, &[]).unwrap();
+        assert_eq!(
+            output.usage(),
+            Some(TokenUsage { prompt: 123, completion: 45, cached_prompt: Some(10) })
+        );
+        let mut none = material();
+        none.usage = Vec::new();
+        assert_eq!(assemble_output(&prepared, events, none, &[]).unwrap().usage(), None);
+    }
+
     /// Spec test 11. The digest is a pure function of the receipt, so it is
     /// compared directly rather than through two whole queries.
     #[tokio::test]
