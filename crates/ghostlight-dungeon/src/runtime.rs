@@ -95,7 +95,7 @@ struct AppState {
     runtime_health: Option<RuntimeHealthOwner>,
     revisions: broadcast::Sender<u64>,
     fatal: mpsc::UnboundedSender<String>,
-    /// The seed lane's vault root, read once at open (`seed_vault_root_from`).
+    /// The seed lane's vault root, read once at open (`seed_vault_root_from_environment`).
     /// The surface offers the seed controls on whether this is `Some`, and
     /// `seed_once` takes its root from it, so the two cannot disagree about
     /// whether seeding exists on this server.
@@ -448,7 +448,7 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         revisions,
         fatal,
         runtime_health: None,
-        seed_vault_root: seed_vault_root_from(std::env::var_os(SEED_VAULT_ROOT_ENVIRONMENT)),
+        seed_vault_root: seed_vault_root_from_environment(|name| std::env::var_os(name)),
     };
     require_no_runtime_custody_failure(&mut fatal_events)?;
     publish_projection(&state).await?;
@@ -1707,12 +1707,15 @@ async fn maintain_mesh_projection(state: AppState) {
 /// scope inside it and never the root.
 const SEED_VAULT_ROOT_ENVIRONMENT: &str = "GHOSTLIGHT_SEED_VAULT_ROOT";
 
-/// The vault root a configured value names, if any. Open reads
-/// `SEED_VAULT_ROOT_ENVIRONMENT` once and passes the value here; this is the
-/// only place that decides what counts as configured, so an empty or
-/// whitespace-only value is no configuration wherever the state is built.
-fn seed_vault_root_from(value: Option<std::ffi::OsString>) -> Option<PathBuf> {
-    value
+/// The vault root the environment names, if any. Open passes the process
+/// environment as `lookup` and the result lives in `AppState`, so the root is
+/// read once at startup and changing it needs a restart. This is the only place
+/// that names the variable and decides what counts as configured, so an empty
+/// or whitespace-only value is no configuration wherever the state is built.
+fn seed_vault_root_from_environment(
+    lookup: impl Fn(&str) -> Option<std::ffi::OsString>,
+) -> Option<PathBuf> {
+    lookup(SEED_VAULT_ROOT_ENVIRONMENT)
         .filter(|root| !root.to_string_lossy().trim().is_empty())
         .map(PathBuf::from)
 }
@@ -3177,8 +3180,8 @@ mod tests {
         let approved = post(&fixture.state, &fixture.cookie, approve_intents.into_iter().next().unwrap()).await;
         assert_eq!(approved["receipt"]["state"], "accepted", "world.approve via the real client: {approved}");
 
-        // No test fixture in this crate configures `GHOSTLIGHT_SEED_VAULT_ROOT`,
-        // so the Draft surface offers no seeding to click at all (PA.f213).
+        // No fixture sets `AppState.seed_vault_root`, so the Draft surface
+        // offers no seeding to click at all (PA.f213).
         let approved_surface = get(&fixture.state, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
         assert!(
             !serde_json::to_string(&approved_surface).unwrap().contains("world.seed"),
@@ -6680,28 +6683,60 @@ mod tests {
         );
     }
 
+    /// The root the server opens with comes from `GHOSTLIGHT_SEED_VAULT_ROOT`
+    /// and from nothing else the environment holds.
+    ///
+    /// Mutation: look up another name, or ignore the answer, in
+    /// `seed_vault_root_from_environment`.
+    #[test]
+    fn the_vault_root_is_read_from_the_seed_variable_only() {
+        use std::ffi::OsString;
+        let environment = |entries: &'static [(&'static str, &'static str)]| {
+            move |name: &str| {
+                entries
+                    .iter()
+                    .find(|(key, _)| *key == name)
+                    .map(|(_, value)| OsString::from(*value))
+            }
+        };
+        assert_eq!(
+            seed_vault_root_from_environment(environment(&[(
+                "GHOSTLIGHT_SEED_VAULT_ROOT",
+                "/vault"
+            )])),
+            Some(PathBuf::from("/vault"))
+        );
+        assert_eq!(
+            seed_vault_root_from_environment(environment(&[
+                ("GHOSTLIGHT_VAULT_ROOT", "/other"),
+                ("HOME", "/home"),
+            ])),
+            None
+        );
+    }
+
     /// What counts as a configured vault root is decided in one place. An
     /// absent, empty or whitespace-only value is no configuration, so a
     /// server started with a blank variable offers no seeding and refuses a
     /// forged `world.seed` with the same fixed message as an unset one, which
     /// never echoes the value it was started with.
     ///
-    /// Mutation: drop the `.trim()` in `seed_vault_root_from` and the
+    /// Mutation: drop the `.trim()` in `seed_vault_root_from_environment` and the
     /// whitespace cases below answer `Some`.
     #[tokio::test]
     async fn a_blank_vault_root_is_no_configuration_and_its_refusal_echoes_nothing() {
         use std::ffi::OsString;
-        assert_eq!(seed_vault_root_from(None), None);
+        assert_eq!(seed_vault_root_from_environment(|_| None), None);
         for blank in ["", " ", "	
   "] {
             assert_eq!(
-                seed_vault_root_from(Some(OsString::from(blank))),
+                seed_vault_root_from_environment(|_| Some(OsString::from(blank))),
                 None,
                 "{blank:?} counted as a configured vault root"
             );
         }
         assert_eq!(
-            seed_vault_root_from(Some(OsString::from("/vault"))),
+            seed_vault_root_from_environment(|_| Some(OsString::from("/vault"))),
             Some(PathBuf::from("/vault"))
         );
 
@@ -6721,7 +6756,7 @@ mod tests {
         .await;
         let draft = fixture.state.world.snapshot().await.unwrap();
         let mut state = fixture.state.clone();
-        state.seed_vault_root = seed_vault_root_from(Some(OsString::from("   ")));
+        state.seed_vault_root = seed_vault_root_from_environment(|_| Some(OsString::from("   ")));
         let denied = post(
             &state,
             &fixture.cookie,

@@ -38,7 +38,8 @@ context window, so they survive restarts and long stories.
   (`crates/ghostlight/src/controllers.rs`).
 - Vault evidence for seeding comes from a read-only markdown directory reader
   (`crates/ghostlight/src/vault.rs`). The Dungeon's seed lane reads the
-  directory named by `GHOSTLIGHT_SEED_VAULT_ROOT`
+  directory named by `GHOSTLIGHT_SEED_VAULT_ROOT`, read once at startup, so
+  changing it needs a restart
   (`crates/ghostlight-dungeon/src/runtime.rs`).
 - Other programs can propose changes to the characters they control through
   `POST /cultnet/world-patch` (`crates/ghostlight-dungeon/src/runtime.rs`,
