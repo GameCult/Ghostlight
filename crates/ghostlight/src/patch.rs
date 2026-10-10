@@ -3194,12 +3194,12 @@ pub(super) fn resolve_patch(
 
     // Derived from the subjects the world holds, retired ones included, so a
     // key is never reissued; no stored index.
-    let mut import_keys: BTreeSet<&ImportKey> = state
+    let held_keys: BTreeSet<&ImportKey> = state
         .subjects
         .values()
         .filter_map(|subject| subject.import_key.as_ref())
         .collect();
-    let mut held_keys = import_keys.clone();
+    let mut declared_keys: BTreeSet<&ImportKey> = BTreeSet::new();
     for (position, declaration) in patch.declarations.iter().enumerate() {
         let (handle, label, kind) = match declaration {
             Declaration::Subject(subject) => (
@@ -3247,7 +3247,7 @@ pub(super) fn resolve_patch(
                 mismatches.push(Mismatch::MalformedImportKey { handle });
             } else if held_keys.contains(key) {
                 mismatches.push(Mismatch::ImportKeyHeld { handle });
-            } else if !import_keys.insert(key) {
+            } else if !declared_keys.insert(key) {
                 mismatches.push(Mismatch::DuplicateImportKey { handle });
             }
         }

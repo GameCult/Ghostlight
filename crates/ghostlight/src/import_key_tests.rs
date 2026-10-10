@@ -166,9 +166,9 @@ fn one_patch_cannot_declare_two_subjects_with_one_import_key() {
     assert_eq!(kernel.state.revision, revision, "a refusal moved the world");
 }
 
-/// The fixture world past genesis: the owner adds an unwalked place, and the
-/// world is active so Play and the elaborator can act.
-fn active_keyed_world() -> (tempfile::TempDir, WorldKernel, EntityId) {
+/// The fixture world past genesis but still in Draft: the owner has added an
+/// unwalked place the elaborator can later answer.
+fn advanced_keyed_world() -> (tempfile::TempDir, WorldKernel, EntityId) {
     let (dir, mut kernel) = keyed_world();
     let place = commons(&kernel);
     submit_as(
@@ -200,14 +200,52 @@ fn active_keyed_world() -> (tempfile::TempDir, WorldKernel, EntityId) {
         .find(|(_, record)| record.label == "The Unwalked Road")
         .map(|(id, _)| id)
         .unwrap();
-    activate(&mut kernel);
     (dir, kernel, dead_end)
+}
+
+/// Each door names the held key, typed, and the refusal leaves the revision
+/// where it was. The owner and the consumer declare in Draft only; Play and the
+/// elaborator act in Active.
+fn refuse_held_key_at_each_door(
+    kernel: &mut WorldKernel,
+    place: EntityId,
+    doors: Vec<(&str, CallerId, Option<PatchAnswer>)>,
+) {
+    for (door, caller, answers) in doors {
+        let revision = kernel.state.revision;
+        let result = submit_as(
+            kernel,
+            caller,
+            answers,
+            patch_of(vec![mirror("copy", Some(alpha()), place)]),
+        );
+        assert_eq!(rejected(result), vec![held("copy")], "{door}");
+        assert_eq!(
+            kernel.state.revision, revision,
+            "{door} refusal moved the world"
+        );
+    }
+}
+
+fn consumer() -> CallerId {
+    CallerId::System(SystemCapability::Consumer {
+        consumer: ConsumerId::of_name("import-key"),
+    })
 }
 
 #[test]
 fn a_held_import_key_is_refused_at_every_door_after_the_revision_has_moved() {
-    let (_dir, mut kernel, dead_end) = active_keyed_world();
-    assert!(kernel.state.revision > 1, "the world has moved past genesis");
+    let (_dir, mut kernel, dead_end) = advanced_keyed_world();
+    assert!(kernel.state.revision > 0, "the world has moved past genesis");
+    refuse_held_key_at_each_door(
+        &mut kernel,
+        dead_end,
+        vec![
+            ("owner", CallerId::Principal(owner()), None),
+            ("consumer", consumer(), None),
+        ],
+    );
+    activate(&mut kernel);
     let answer = crate::derive_boundaries(&kernel.state)
         .unwrap()
         .into_iter()
@@ -216,62 +254,33 @@ fn a_held_import_key_is_refused_at_every_door_after_the_revision_has_moved() {
                 if *place == dead_end)
         })
         .expect("the dead end is an unelaborated destination");
-    let doors: Vec<(&str, CallerId, Option<PatchAnswer>)> = vec![
-        ("owner", CallerId::Principal(owner()), None),
-        (
-            "consumer",
-            CallerId::System(SystemCapability::Consumer {
-                consumer: ConsumerId::of_name("import-key"),
-            }),
-            None,
-        ),
-        ("play", CallerId::System(SystemCapability::Play), None),
-        (
-            "elaborator",
-            CallerId::System(SystemCapability::Elaborator {
-                jurisdiction: JurisdictionKey::PlaceSubtree(dead_end),
-            }),
-            Some(PatchAnswer::Boundary(answer)),
-        ),
-    ];
-    for (door, caller, answers) in doors {
-        let revision = kernel.state.revision;
-        let result = submit_as(
-            &mut kernel,
-            caller.clone(),
-            answers.clone(),
-            patch_of(vec![mirror("copy", Some(alpha()), dead_end)]),
-        );
-        // The owner and the consumer author in Draft only, so in an active
-        // world those two may refuse for the phase before they resolve; the
-        // held key is named wherever the declaration is resolved at all.
-        match result {
-            Err(KernelError::PatchRejected(set)) => {
-                assert!(set.contains(&held("copy")), "{door}: {set:?}")
-            }
-            other => {
-                assert!(
-                    matches!(door, "owner" | "consumer"),
-                    "{door} did not resolve the declaration: {other:?}"
-                );
-            }
-        }
-        assert_eq!(
-            kernel.state.revision, revision,
-            "{door} refusal moved the world"
-        );
-    }
-    // The same path admits an unheld key, so the refusals are the key's.
+    refuse_held_key_at_each_door(
+        &mut kernel,
+        dead_end,
+        vec![
+            ("play", CallerId::System(SystemCapability::Play), None),
+            (
+                "elaborator",
+                CallerId::System(SystemCapability::Elaborator {
+                    jurisdiction: JurisdictionKey::PlaceSubtree(dead_end),
+                }),
+                Some(PatchAnswer::Boundary(answer.clone())),
+            ),
+        ],
+    );
+    // The same doors admit an unheld key, so the refusals are the key's; and
+    // what a door admitted is held against every later door.
     let fresh = key("aetheria.ship", "Gamma");
     let receipt = submit_as(
         &mut kernel,
-        CallerId::System(SystemCapability::Play),
-        None,
+        CallerId::System(SystemCapability::Elaborator {
+            jurisdiction: JurisdictionKey::PlaceSubtree(dead_end),
+        }),
+        Some(PatchAnswer::Boundary(answer)),
         patch_of(vec![mirror("fresh", Some(fresh.clone()), dead_end)]),
     )
     .unwrap();
     assert!(matches!(receipt, SubmitReceipt::Applied(_)));
-    // A later revision holds it too.
     let again = submit_as(
         &mut kernel,
         CallerId::System(SystemCapability::Play),
