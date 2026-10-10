@@ -1877,8 +1877,11 @@ mod tests {
     /// file, so the production reader is the path under test.
     const SYNTHETIC_KEY: &str = "synthetic-bearer-0123456789abcdef";
 
+    /// One file per call (named by its content's length and first byte), so
+    /// several cases in one directory never overwrite each other.
     fn write_key_file(directory: &tempfile::TempDir, content: &[u8]) -> PathBuf {
-        let path = directory.path().join("provider.key");
+        let tag = format!("{}-{}", content.len(), content.first().copied().unwrap_or(0));
+        let path = directory.path().join(format!("provider-{tag}.key"));
         std::fs::write(&path, content).unwrap();
         path
     }
@@ -1967,7 +1970,7 @@ mod tests {
             assert!(matches!(error, ControllerOpenError::HostedKeyUnreadable), "{label}");
             let rendered = format!("{error} | {error:?}");
             assert!(!rendered.contains(&canary), "{label}: the path leaked");
-            assert!(!rendered.contains("provider.key"), "{label}: the file name leaked");
+            assert!(!rendered.contains("provider-"), "{label}: the file name leaked");
         }
         // A key file that ends in the usual newline is the key without it.
         let ok = write_key_file(&directory, b"fine-key\r\n");
@@ -2165,5 +2168,19 @@ mod tests {
         assert!(Arc::ptr_eq(routed.route("local/a").unwrap(), &local_port));
         assert!(Arc::ptr_eq(routed.route("hosted/a").unwrap(), &hosted_port));
         assert!(routed.route("other").is_none());
+
+        // Overlapping hosted claims: the longest prefix wins.
+        let narrow_port = Arc::new(port("127.0.0.1:1".parse().unwrap())) as Arc<dyn InferencePort>;
+        let routed = RoutedInferencePort::new(
+            None,
+            None,
+            "claude",
+            vec![
+                ("hosted/".to_owned(), Arc::clone(&hosted_port)),
+                ("hosted/deep/".to_owned(), Arc::clone(&narrow_port)),
+            ],
+        );
+        assert!(Arc::ptr_eq(routed.route("hosted/deep/x").unwrap(), &narrow_port));
+        assert!(Arc::ptr_eq(routed.route("hosted/x").unwrap(), &hosted_port));
     }
 }
