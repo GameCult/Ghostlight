@@ -207,10 +207,10 @@ fn decode_row(row: &CultCacheEnvelope) -> Result<DecodedRow, CallRecordError> {
     match (row.r#type.as_str(), row.schema_id.as_deref()) {
         (CALL_RECORD_ROW, Some(CALL_RECORD_SCHEMA)) => {
             let record: ProviderCallRecord = canonical(row)?;
-            if RunId::new(&record.run_id).is_err()
-                || record.sequence == 0
-                || row.key != row_key(&record.run_id, record.sequence)
-            {
+            // The run id and a sequence of zero need no check here: a run id
+            // that is no key segment has no readable ledger, and a zero
+            // sequence fails the density rule in `open`.
+            if row.key != row_key(&record.run_id, record.sequence) {
                 return Err(CallRecordError::Corrupt);
             }
             Ok(DecodedRow::Call(record))
