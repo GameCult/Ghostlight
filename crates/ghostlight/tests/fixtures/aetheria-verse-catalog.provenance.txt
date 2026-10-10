@@ -1,0 +1,16 @@
+aetheria-verse-catalog.cc was written by Aetheria's own types, not by hand and not by Ghostlight.
+
+Writer:   tests/Aetheria.Shared.Tests/VerseGrammarTests.cs, WriteFixture (xunit test
+          Fixture_writer_is_deterministic_and_emits_what_the_grammar_reader_needs),
+          which authors VerseGrammar, three VerseVerb and two Faction records through
+          Aetheria's CultCache types and leaves the file at AETHERIA_VERSE_FIXTURE_PATH.
+Aetheria: GameCult/Aetheria origin/master 92b82e9aa5bb422c568c4bfc85a8f641426a41fc
+          (contains aetheria-release cut verse-grammar, merged at 35af2930).
+Command:  AETHERIA_VERSE_FIXTURE_PATH=/tmp/aetheria-verse-catalog.cc
+          dotnet test tests/Aetheria.Shared.Tests
+            -p:CultLibRoot=<CultLib 45c2f40 clone> -p:CultMathRoot=<CultLib 252e226c clone>
+            --filter "FullyQualifiedName~Fixture_writer_is_deterministic"
+          run on Yggdrasil through the verify stopgap (dotnet/sdk:10.0), 2026-10-10.
+Content:  six records; two writes of the writer agree on content, though not bytes
+          (CultCache stamps storedAt from the wall clock). Regenerate and diff on content,
+          never hand-edit.

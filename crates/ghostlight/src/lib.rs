@@ -56,6 +56,7 @@
 //! ```
 
 mod action;
+mod aetheria;
 mod clock;
 mod consumer;
 mod controllers;
@@ -94,6 +95,9 @@ pub use controllers::{
     TracingInferencePort, open_controller_work, open_inference,
 };
 pub(crate) use cover::{CellId, Constituent, Resolution};
+pub use aetheria::{
+    AetheriaCatalog, AetheriaFaction, CatalogReadError, VerbRule, read_aetheria_catalog,
+};
 pub use cover::{AgencyGraph, Cell, Cover, CoverBudget, CoverBudgetError, TickIndex, derive_cover};
 pub use elaboration::{
     ElaborationCheckpoint, ElaborationRunner, ElaboratorSession, EvidenceError, EvidenceQuery,

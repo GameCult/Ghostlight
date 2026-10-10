@@ -12,6 +12,7 @@ cultcache-rs.workspace = true
 ghostlight-persona-projection = { path = "../ghostlight-persona-projection" }
 reqwest.workspace = true
 rmp-serde.workspace = true
+rmpv = "1.3"
 serde.workspace = true
 serde_bytes = "0.11"
 serde_json.workspace = true
