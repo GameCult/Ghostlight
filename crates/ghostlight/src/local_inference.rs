@@ -961,14 +961,14 @@ mod tests {
             .lock()
             .expect("the client-build lock is never poisoned");
         LocalInferencePort::new(
-            "[::1]:1".parse().unwrap(),
+            Endpoint::Loopback("[::1]:1".parse().unwrap()),
             DEFAULT_LOCAL_MODEL_PREFIX,
             TEST_RUNTIME,
         )
         .expect("the IPv6 loopback address opens");
 
         let error = LocalInferencePort::new(
-            "[2001:db8::1]:8080".parse().unwrap(),
+            Endpoint::Loopback("[2001:db8::1]:8080".parse().unwrap()),
             DEFAULT_LOCAL_MODEL_PREFIX,
             TEST_RUNTIME,
         )
@@ -1167,7 +1167,7 @@ mod tests {
                 std::env::set_var("HTTP_PROXY", &proxy_url);
                 std::env::set_var("http_proxy", &proxy_url);
             }
-            let built = LocalInferencePort::new(target.endpoint(), DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME);
+            let built = LocalInferencePort::new(Endpoint::Loopback(target.endpoint()), DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME);
             unsafe {
                 std::env::remove_var("HTTP_PROXY");
                 std::env::remove_var("http_proxy");
@@ -1685,7 +1685,7 @@ mod tests {
         let port = {
             let _guard = client_build_lock().lock().expect("the client-build lock is never poisoned");
             LocalInferencePort::with_timeout(
-                addr,
+                Endpoint::Loopback(addr),
                 DEFAULT_LOCAL_MODEL_PREFIX,
                 TEST_RUNTIME,
                 std::time::Duration::from_millis(150),
