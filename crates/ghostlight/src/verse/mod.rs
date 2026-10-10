@@ -6,5 +6,5 @@ mod calls;
 
 pub use calls::{
     CALL_RECORD_SCHEMA, CallRecordError, CallRecordStore, ProviderCallRecord,
-    RecordingInferencePort, ReplayInferencePort, RunId,
+    RecordingInferencePort, ReplayInferencePort, RunField, RunId, RunStart,
 };

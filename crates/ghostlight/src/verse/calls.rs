@@ -38,9 +38,9 @@ use std::{
 use thiserror::Error;
 
 const CALL_RECORD_ROW: &str = "verse_provider_call.v1";
-const RUN_SPEND_ROW: &str = "verse_run_spend.v1";
+const RUN_LEDGER_ROW: &str = "verse_run_ledger.v1";
 /// The run ledger document's schema.
-const RUN_SPEND_SCHEMA: &str = "ghostlight.verse_run_spend.v1";
+const RUN_LEDGER_SCHEMA: &str = "ghostlight.verse_run_ledger.v1";
 /// The call record document's schema. A store holding any other row type or
 /// schema is refused at open: this store is not migrated from, or shared with,
 /// another document.
@@ -62,6 +62,46 @@ pub enum CallRecordError {
     RunInUse,
     #[error("the call could pass the run's token cap")]
     OverCap,
+    #[error("the run was recorded with a different {0}")]
+    RunMismatch(RunField),
+}
+
+/// What a run is bound to when it begins, named by the field a mismatch refuses.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RunField {
+    /// The token cap the run was opened with.
+    Cap,
+    /// The identity of the world the run started from.
+    WorldId,
+    /// The state digest of the world the run started from.
+    StateDigest,
+}
+
+impl std::fmt::Display for RunField {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Cap => "token cap",
+            Self::WorldId => "world id",
+            Self::StateDigest => "world state digest",
+        })
+    }
+}
+
+/// The world a run began from: its identity and state digest. Replay is of a
+/// restored copy of this world, so it takes the same two values.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RunStart {
+    world_id: String,
+    state_digest: String,
+}
+
+impl RunStart {
+    pub fn of(world: &crate::WorldSnapshot) -> Self {
+        Self {
+            world_id: world.world_id.text(),
+            state_digest: world.state_digest.clone(),
+        }
+    }
 }
 
 /// A run's identity as a key segment.
@@ -158,37 +198,62 @@ fn hex(digest: &[u8]) -> String {
 /// one world's random identity. Everything else the provider is sent
 /// (model, instructions, input, tools, shape) is in the digest.
 fn content_digest(request: &CodexProviderRequest) -> Result<String, InferenceFault> {
+    // Exhaustive on purpose: a field added upstream must be placed in the key
+    // or left out here by name before this compiles.
+    let CodexProviderRequest {
+        schema_id,
+        request_id: _request_id,           // names the call, not what it asks
+        conversation_id: _conversation_id, // names the call, not what it asks
+        model,
+        instructions,
+        input,
+        reasoning_effort,
+        reasoning_summary,
+        service_tier,
+        output_format_name,
+        previous_response_id,
+        tools,
+        tool_choice,
+        parallel_tool_calls,
+        output_schema_json,
+        max_output_tokens,
+        prompt_cache_key,
+    } = request;
     let bytes = rmp_serde::to_vec(&(
-        &request.schema_id,
-        &request.model,
-        &request.instructions,
-        &request.input,
-        &request.reasoning_effort,
-        &request.reasoning_summary,
-        &request.service_tier,
-        &request.output_format_name,
-        &request.previous_response_id,
-        &request.tools,
-        &request.tool_choice,
-        request.parallel_tool_calls,
-        &request.output_schema_json,
-        request.max_output_tokens,
-        &request.prompt_cache_key,
+        schema_id,
+        model,
+        instructions,
+        input,
+        reasoning_effort,
+        reasoning_summary,
+        service_tier,
+        output_format_name,
+        previous_response_id,
+        tools,
+        tool_choice,
+        parallel_tool_calls,
+        output_schema_json,
+        max_output_tokens,
+        prompt_cache_key,
     ))
     .map_err(|_| InferenceFault::new("a provider request could not be measured"))?;
     Ok(hex(&Sha256::digest(bytes)))
 }
 
-/// A run's persisted ledger: tokens reserved or charged against its cap.
+/// A run's persisted ledger, the one owner of what the run began as: the cap
+/// it was opened under, the world it started from, and the tokens reserved or
+/// charged so far.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct RunSpend {
+struct RunLedger {
     run_id: String,
+    cap: u64,
+    start: RunStart,
     spent: u64,
 }
 
 enum DecodedRow {
     Call(ProviderCallRecord),
-    Spend(RunSpend),
+    Ledger(RunLedger),
 }
 
 fn canonical<T: Serialize + for<'de> Deserialize<'de>>(
@@ -207,20 +272,22 @@ fn decode_row(row: &CultCacheEnvelope) -> Result<DecodedRow, CallRecordError> {
     match (row.r#type.as_str(), row.schema_id.as_deref()) {
         (CALL_RECORD_ROW, Some(CALL_RECORD_SCHEMA)) => {
             let record: ProviderCallRecord = canonical(row)?;
-            // The run id and a sequence of zero need no check here: a run id
-            // that is no key segment has no readable ledger, and a zero
-            // sequence fails the density rule in `open`.
-            if row.key != row_key(&record.run_id, record.sequence) {
+            // A run id that is no whole key segment would key into another
+            // run's records, and sequences count from 1.
+            if RunId::new(&record.run_id).is_err()
+                || record.sequence == 0
+                || row.key != row_key(&record.run_id, record.sequence)
+            {
                 return Err(CallRecordError::Corrupt);
             }
             Ok(DecodedRow::Call(record))
         }
-        (RUN_SPEND_ROW, Some(RUN_SPEND_SCHEMA)) => {
-            let spend: RunSpend = canonical(row)?;
-            if RunId::new(&spend.run_id).is_err() || row.key != spend.run_id {
+        (RUN_LEDGER_ROW, Some(RUN_LEDGER_SCHEMA)) => {
+            let ledger: RunLedger = canonical(row)?;
+            if RunId::new(&ledger.run_id).is_err() || row.key != ledger.run_id {
                 return Err(CallRecordError::Corrupt);
             }
-            Ok(DecodedRow::Spend(spend))
+            Ok(DecodedRow::Ledger(ledger))
         }
         _ => Err(CallRecordError::Corrupt),
     }
@@ -229,8 +296,8 @@ fn decode_row(row: &CultCacheEnvelope) -> Result<DecodedRow, CallRecordError> {
 #[derive(Default)]
 struct RunTally {
     last_sequence: u64,
-    /// Tokens reserved or charged: the persisted ledger, read at open.
-    spent: u64,
+    /// The persisted ledger, read at open and written where it is spent.
+    ledger: Option<RunLedger>,
 }
 
 struct StoreState {
@@ -271,18 +338,23 @@ impl CallRecordStore {
                     let tally = runs.entry(record.run_id).or_default();
                     tally.last_sequence = tally.last_sequence.max(record.sequence);
                 }
-                DecodedRow::Spend(spend) => {
-                    runs.entry(spend.run_id).or_default().spent = spend.spent;
+                DecodedRow::Ledger(ledger) => {
+                    runs.entry(ledger.run_id.clone()).or_default().ledger = Some(ledger);
                 }
             }
         }
-        // Keys are unique, so a run is dense from 1 exactly when its rows
-        // number its highest sequence. Every record was reserved before it was
-        // made, so the ledger covers what the records charged.
+        // Sequences start at 1 and keys are unique, so a run is dense exactly
+        // when its rows number its highest sequence. Every record was reserved
+        // in a ledger before it was made, so a run with records has a ledger
+        // that covers what they charged.
         for (run, tally) in &runs {
             let rows = counts.get(run).copied().unwrap_or(0);
             let recorded = charged.get(run).copied().unwrap_or(0);
-            if rows != tally.last_sequence || tally.spent < recorded {
+            let covered = tally
+                .ledger
+                .as_ref()
+                .is_some_and(|ledger| ledger.spent >= recorded);
+            if rows != tally.last_sequence || !covered {
                 return Err(CallRecordError::Corrupt);
             }
         }
@@ -315,16 +387,46 @@ impl CallRecordStore {
             .lock()?
             .runs
             .get(run.as_str())
-            .map_or(0, |tally| tally.spent))
+            .and_then(|tally| tally.ledger.as_ref())
+            .map_or(0, |ledger| ledger.spent))
     }
 
     /// Takes the run's ledger for one port, or refuses when another holds it.
-    fn own(&self, run: &RunId) -> Result<(), CallRecordError> {
-        if self.lock()?.owned.insert(run.as_str().to_owned()) {
-            Ok(())
-        } else {
-            Err(CallRecordError::RunInUse)
+    /// The first claim of a run writes its ledger: the cap it is opened under
+    /// and the world it starts from. A later claim must name the same cap; the
+    /// start is not compared, because a resumed world has moved on.
+    fn claim(&self, run: &RunId, cap: u64, start: &RunStart) -> Result<(), CallRecordError> {
+        let mut state = self.lock()?;
+        if !state.owned.insert(run.as_str().to_owned()) {
+            return Err(CallRecordError::RunInUse);
         }
+        let begun = match state.runs.get(run.as_str()).and_then(|t| t.ledger.as_ref()) {
+            Some(ledger) if ledger.cap == cap => Ok(()),
+            Some(_) => Err(CallRecordError::RunMismatch(RunField::Cap)),
+            None => Self::write_ledger(
+                &mut state,
+                RunLedger {
+                    run_id: run.as_str().to_owned(),
+                    cap,
+                    start: start.clone(),
+                    spent: 0,
+                },
+            ),
+        };
+        if begun.is_err() {
+            state.owned.remove(run.as_str());
+        }
+        begun
+    }
+
+    /// The world a run began from, when it has begun.
+    fn start_of(&self, run: &RunId) -> Result<Option<RunStart>, CallRecordError> {
+        Ok(self
+            .lock()?
+            .runs
+            .get(run.as_str())
+            .and_then(|tally| tally.ledger.as_ref())
+            .map(|ledger| ledger.start.clone()))
     }
 
     fn disown(&self, run: &RunId) {
@@ -333,23 +435,38 @@ impl CallRecordStore {
         }
     }
 
-    /// Persists `spent` as the run's ledger, then adopts it in memory. A write
-    /// that fails leaves the previous figure.
-    fn write_spent(state: &mut StoreState, run: &str, spent: u64) -> Result<(), CallRecordError> {
-        let spend = RunSpend {
-            run_id: run.to_owned(),
-            spent,
-        };
+    /// Persists the ledger, then adopts it in memory. A write that fails
+    /// leaves the previous ledger.
+    fn write_ledger(state: &mut StoreState, ledger: RunLedger) -> Result<(), CallRecordError> {
         let row = CultCacheEnvelope {
-            key: run.to_owned(),
-            r#type: RUN_SPEND_ROW.into(),
-            payload: rmp_serde::to_vec_named(&spend).map_err(|_| CallRecordError::Store)?,
+            key: ledger.run_id.clone(),
+            r#type: RUN_LEDGER_ROW.into(),
+            payload: rmp_serde::to_vec_named(&ledger).map_err(|_| CallRecordError::Store)?,
             stored_at: Utc::now().to_rfc3339(),
-            schema_id: Some(RUN_SPEND_SCHEMA.into()),
+            schema_id: Some(RUN_LEDGER_SCHEMA.into()),
         };
         state.store.push(&row).map_err(|_| CallRecordError::Store)?;
-        state.runs.entry(run.to_owned()).or_default().spent = spent;
+        state.runs.entry(ledger.run_id.clone()).or_default().ledger = Some(ledger);
         Ok(())
+    }
+
+    /// Persists `spent` as the run's spend; the run must have been claimed.
+    fn write_spent(state: &mut StoreState, run: &str, spent: u64) -> Result<(), CallRecordError> {
+        let mut ledger = state
+            .runs
+            .get(run)
+            .and_then(|tally| tally.ledger.clone())
+            .ok_or(CallRecordError::Store)?;
+        ledger.spent = spent;
+        Self::write_ledger(state, ledger)
+    }
+
+    fn held(state: &StoreState, run: &RunId) -> u64 {
+        state
+            .runs
+            .get(run.as_str())
+            .and_then(|tally| tally.ledger.as_ref())
+            .map_or(0, |ledger| ledger.spent)
     }
 
     /// Charges `bound` to the run's persisted ledger, or refuses with
@@ -357,8 +474,7 @@ impl CallRecordStore {
     /// the write hold one lock, so calls on the wire hold their bounds.
     fn reserve(&self, run: &RunId, bound: u64, cap: u64) -> Result<(), CallRecordError> {
         let mut state = self.lock()?;
-        let held = state.runs.get(run.as_str()).map_or(0, |tally| tally.spent);
-        let after = held.saturating_add(bound);
+        let after = Self::held(&state, run).saturating_add(bound);
         if after > cap {
             return Err(CallRecordError::OverCap);
         }
@@ -379,8 +495,9 @@ impl CallRecordStore {
         if let Some(record) = record {
             Self::push_record(&mut state, record)?;
         }
-        let held = state.runs.get(run.as_str()).map_or(0, |tally| tally.spent);
-        let settled = held.saturating_sub(bound).saturating_add(charged);
+        let settled = Self::held(&state, run)
+            .saturating_sub(bound)
+            .saturating_add(charged);
         Self::write_spent(&mut state, run.as_str(), settled)
     }
 
@@ -446,15 +563,18 @@ pub struct RecordingInferencePort {
 }
 
 impl RecordingInferencePort {
-    /// Takes ownership of the run's ledger, which resumes from the store. A
-    /// second port on a run whose first is alive is refused with `RunInUse`.
+    /// Takes ownership of the run's ledger, which resumes from the store. The
+    /// first open of a run records its cap and the world it starts from; a
+    /// reopen with another cap is refused with `RunMismatch(Cap)`. A second
+    /// port on a run whose first is alive is refused with `RunInUse`.
     pub fn open(
         inner: Arc<dyn InferencePort>,
         store: Arc<CallRecordStore>,
         run: RunId,
         cap_tokens: u64,
+        start: &RunStart,
     ) -> Result<Self, CallRecordError> {
-        store.own(&run)?;
+        store.claim(&run, cap_tokens, start)?;
         Ok(Self {
             inner,
             store,
@@ -567,20 +687,26 @@ pub struct ReplayInferencePort {
 }
 
 impl ReplayInferencePort {
-    /// `records` are one run's, as `CallRecordStore::records` returns them.
+    /// Replays `run` from the store against `world`, a restored copy of the
+    /// world the run started from. Any other world is refused here, before a
+    /// call, with `RunMismatch` naming the field; a run the store never began
+    /// is `NotReplayable`.
     pub fn new(
         caller_runtime_id: impl Into<String>,
-        records: Vec<ProviderCallRecord>,
+        store: &CallRecordStore,
+        run: &RunId,
+        world: &RunStart,
     ) -> Result<Self, CallRecordError> {
-        let dense = records.iter().enumerate().all(|(index, record)| {
-            record.sequence == index as u64 + 1 && record.run_id == records[0].run_id
-        });
-        if !dense {
-            return Err(CallRecordError::NotReplayable);
+        let began = store.start_of(run)?.ok_or(CallRecordError::NotReplayable)?;
+        if began.world_id != world.world_id {
+            return Err(CallRecordError::RunMismatch(RunField::WorldId));
+        }
+        if began.state_digest != world.state_digest {
+            return Err(CallRecordError::RunMismatch(RunField::StateDigest));
         }
         Ok(Self {
             caller_runtime_id: caller_runtime_id.into(),
-            pending: Mutex::new(records.into()),
+            pending: Mutex::new(store.records(run)?.into()),
         })
     }
 }

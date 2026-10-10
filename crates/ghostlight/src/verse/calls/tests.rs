@@ -129,14 +129,28 @@ fn store_in(directory: &tempfile::TempDir) -> (Arc<CallRecordStore>, std::path::
     )
 }
 
+/// A world identity and digest for tests that need a run to start somewhere.
+fn start() -> RunStart {
+    RunStart {
+        world_id: "world-a".into(),
+        state_digest: "sha256:a".into(),
+    }
+}
+
 fn recording(
     inner: &Arc<ScriptedPort>,
     store: &Arc<CallRecordStore>,
     run: &str,
     cap: u64,
 ) -> RecordingInferencePort {
-    RecordingInferencePort::open(inner.clone(), store.clone(), RunId::new(run).unwrap(), cap)
-        .expect("the port opens")
+    RecordingInferencePort::open(
+        inner.clone(),
+        store.clone(),
+        RunId::new(run).unwrap(),
+        cap,
+        &start(),
+    )
+    .expect("the port opens")
 }
 
 fn json(output: &InferenceOutput) -> Vec<u8> {
@@ -502,6 +516,7 @@ async fn one_run_has_one_ledger_and_one_owner() {
         store.clone(),
         RunId::new("run-own").unwrap(),
         cap,
+        &start(),
     );
     assert_eq!(second.err(), Some(CallRecordError::RunInUse));
     // Another run is another ledger.
@@ -583,7 +598,7 @@ async fn a_reopened_run_resumes_its_spend() {
 
     let store = Arc::new(CallRecordStore::open(&path).unwrap());
     let inner = ScriptedPort::new(vec![Ok(reply("two", "r2"))]);
-    let resumed = recording(&inner, &store, "run-resume", bound * 2 - 1);
+    let resumed = recording(&inner, &store, "run-resume", bound * 2);
     assert_eq!(resumed.spent(), bound);
     let fault = resumed
         .infer(probe)
@@ -619,8 +634,7 @@ async fn replay_serves_stored_responses_and_refuses_strangers() {
     }
     let calls_made = inner.calls();
 
-    let stored = store.records(&run).unwrap();
-    let replay = ReplayInferencePort::new("verse-replay", stored).unwrap();
+    let replay = ReplayInferencePort::new("verse-replay", &store, &run, &start()).unwrap();
     // A request the run never made is a fault and consumes nothing.
     let stranger = replay
         .prepare(request_for(CommandId::new(), "z", 1_200))
@@ -665,20 +679,14 @@ fn sample_record(run: &str, sequence: u64) -> ProviderCallRecord {
 }
 
 #[test]
-fn replay_needs_one_runs_dense_records() {
-    assert!(
-        ReplayInferencePort::new("x", vec![sample_record("a", 1), sample_record("a", 2)]).is_ok()
+fn replay_needs_a_run_the_store_began() {
+    let directory = tempfile::tempdir().unwrap();
+    let (store, _) = store_in(&directory);
+    let run = RunId::new("never-begun").unwrap();
+    assert_eq!(
+        ReplayInferencePort::new("x", &store, &run, &start()).err(),
+        Some(CallRecordError::NotReplayable)
     );
-    for records in [
-        vec![sample_record("a", 2)],
-        vec![sample_record("a", 1), sample_record("a", 3)],
-        vec![sample_record("a", 1), sample_record("b", 2)],
-    ] {
-        assert_eq!(
-            ReplayInferencePort::new("x", records).err(),
-            Some(CallRecordError::NotReplayable)
-        );
-    }
 }
 
 #[tokio::test]
@@ -710,11 +718,13 @@ async fn a_record_holds_no_request_text() {
 
 fn spend_row(run: &str, spent: u64) -> CultCacheEnvelope {
     envelope(
-        RUN_SPEND_ROW,
-        Some(RUN_SPEND_SCHEMA),
+        RUN_LEDGER_ROW,
+        Some(RUN_LEDGER_SCHEMA),
         run,
-        rmp_serde::to_vec_named(&RunSpend {
+        rmp_serde::to_vec_named(&RunLedger {
             run_id: run.into(),
+            cap: u64::MAX,
+            start: start(),
             spent,
         })
         .unwrap(),
@@ -800,11 +810,13 @@ fn the_store_refuses_any_row_that_is_not_a_canonical_v1_record() {
         (
             "a ledger at the wrong key",
             envelope(
-                RUN_SPEND_ROW,
-                Some(RUN_SPEND_SCHEMA),
+                RUN_LEDGER_ROW,
+                Some(RUN_LEDGER_SCHEMA),
                 "other",
-                rmp_serde::to_vec_named(&RunSpend {
+                rmp_serde::to_vec_named(&RunLedger {
                     run_id: "run-x".into(),
+                    cap: u64::MAX,
+                    start: start(),
                     spent: 1,
                 })
                 .unwrap(),
@@ -813,12 +825,14 @@ fn the_store_refuses_any_row_that_is_not_a_canonical_v1_record() {
         (
             "a ledger that is not canonical",
             envelope(
-                RUN_SPEND_ROW,
-                Some(RUN_SPEND_SCHEMA),
+                RUN_LEDGER_ROW,
+                Some(RUN_LEDGER_SCHEMA),
                 "run-x",
                 [
-                    rmp_serde::to_vec_named(&RunSpend {
+                    rmp_serde::to_vec_named(&RunLedger {
                         run_id: "run-x".into(),
+                        cap: u64::MAX,
+                        start: start(),
                         spent: 1,
                     })
                     .unwrap(),
@@ -909,7 +923,7 @@ async fn replay_keys_the_request_content_not_the_command_identity() {
         .unwrap();
     }
     // A fresh genesis names every command anew; the content is what repeats.
-    let replay = ReplayInferencePort::new("verse-replay", store.records(&run).unwrap()).unwrap();
+    let replay = ReplayInferencePort::new("verse-replay", &store, &run, &start()).unwrap();
     let under_new_names = |prompt: &str, max: u32| {
         replay
             .prepare(request_for(CommandId::new(), prompt, max))
@@ -927,4 +941,264 @@ async fn replay_keys_the_request_content_not_the_command_identity() {
         .unwrap();
     assert_eq!(json(&one), json(&reply("one", "r1")));
     assert_eq!(json(&two), json(&reply("two", "r2")));
+}
+
+#[tokio::test]
+async fn usage_one_token_over_the_bound_faults_and_stores_no_record() {
+    let directory = tempfile::tempdir().unwrap();
+    let (store, _) = store_in(&directory);
+    let prepared = prepared_for("one over", 1_200);
+    let bound = bound_of(&prepared);
+    let inner = ScriptedPort::new(vec![Ok(
+        reply("edge", "r1").with_usage(usage(bound, 1, None))
+    )]);
+    let port = recording(&inner, &store, "run-edge", bound + 200);
+    let fault = port.infer(prepared).await.expect_err("one over");
+    assert_eq!(fault.class(), InferenceFaultClass::BudgetExhausted);
+    assert_eq!(port.spent(), bound + 1, "charged in full");
+    assert!(
+        store
+            .records(&RunId::new("run-edge").unwrap())
+            .unwrap()
+            .is_empty()
+    );
+}
+
+/// Every field of the provider request is in the replay key except the two
+/// ids that name the call.
+#[test]
+fn the_replay_key_covers_what_the_request_asks_and_not_what_names_it() {
+    let base = prepared_for("key", 1_200).invocation.request.clone();
+    let digest = |edit: &dyn Fn(&mut CodexProviderRequest)| {
+        let mut request = base.clone();
+        edit(&mut request);
+        content_digest(&request).unwrap()
+    };
+    let same = digest(&|_| {});
+    assert_eq!(same, content_digest(&base).unwrap());
+    let changes: [(&str, Box<dyn Fn(&mut CodexProviderRequest)>); 10] = [
+        ("model", Box::new(|r| r.model.push('x'))),
+        ("instructions", Box::new(|r| r.instructions.push('x'))),
+        (
+            "tools",
+            Box::new(|r| {
+                r.tools.push(CodexToolDefinition {
+                    name: "t".into(),
+                    description: "d".into(),
+                    parameters_json: "{}".into(),
+                })
+            }),
+        ),
+        (
+            "input",
+            Box::new(|r| r.input.push(CodexInputItem::UserText { text: "x".into() })),
+        ),
+        (
+            "max_output_tokens",
+            Box::new(|r| r.max_output_tokens = Some(1)),
+        ),
+        (
+            "reasoning_effort",
+            Box::new(|r| r.reasoning_effort = Some("low".into())),
+        ),
+        (
+            "service_tier",
+            Box::new(|r| r.service_tier = Some("flex".into())),
+        ),
+        (
+            "output_schema_json",
+            Box::new(|r| r.output_schema_json = Some("{}".into())),
+        ),
+        (
+            "previous_response_id",
+            Box::new(|r| r.previous_response_id = Some("p".into())),
+        ),
+        (
+            "parallel_tool_calls",
+            Box::new(|r| r.parallel_tool_calls = !r.parallel_tool_calls),
+        ),
+    ];
+    for (field, change) in changes {
+        assert_ne!(digest(&*change), same, "{field} is not in the replay key");
+    }
+    assert_eq!(digest(&|r| r.request_id.push('x')), same);
+    assert_eq!(digest(&|r| r.conversation_id.push('x')), same);
+}
+
+fn open_with(
+    rows: Vec<CultCacheEnvelope>,
+) -> (tempfile::TempDir, Result<CallRecordStore, CallRecordError>) {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("calls.redb");
+    let mut backing = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
+    for row in &rows {
+        backing.push(row).unwrap();
+    }
+    drop(backing);
+    let opened = CallRecordStore::open(&path);
+    (directory, opened)
+}
+
+fn record_row(record: &ProviderCallRecord) -> CultCacheEnvelope {
+    envelope(
+        CALL_RECORD_ROW,
+        Some(CALL_RECORD_SCHEMA),
+        &row_key(&record.run_id, record.sequence),
+        rmp_serde::to_vec_named(record).unwrap(),
+    )
+}
+
+#[test]
+fn a_run_with_sequence_zero_beside_a_hole_is_refused() {
+    let (_directory, opened) = open_with(vec![
+        record_row(&sample_record("run-x", 0)),
+        record_row(&sample_record("run-x", 2)),
+        spend_row("run-x", 6),
+    ]);
+    assert_eq!(opened.err(), Some(CallRecordError::Corrupt));
+}
+
+#[test]
+fn a_record_charged_nothing_still_needs_its_ledger() {
+    let mut record = sample_record("run-y", 1);
+    record.charged = 0;
+    let (_directory, opened) = open_with(vec![record_row(&record)]);
+    assert_eq!(opened.err(), Some(CallRecordError::Corrupt));
+}
+
+#[test]
+fn a_record_whose_run_id_is_no_whole_key_segment_is_refused() {
+    let mut stray = sample_record("run-z/b", 1);
+    stray.charged = 0;
+    let (_directory, opened) = open_with(vec![
+        record_row(&stray),
+        record_row(&sample_record("run-z", 1)),
+        spend_row("run-z", 3),
+    ]);
+    assert_eq!(opened.err(), Some(CallRecordError::Corrupt));
+    // A neighbouring run id that merely shares the prefix keeps its own records.
+    let (_directory, opened) = open_with(vec![
+        record_row(&sample_record("run-z", 1)),
+        spend_row("run-z", 3),
+        spend_row("run-z-b", 0),
+    ]);
+    let store = opened.unwrap();
+    assert_eq!(
+        store.records(&RunId::new("run-z").unwrap()).unwrap().len(),
+        1
+    );
+}
+
+#[tokio::test]
+async fn a_run_reopens_only_under_the_cap_it_began_with() {
+    let directory = tempfile::tempdir().unwrap();
+    let (store, path) = store_in(&directory);
+    let inner = ScriptedPort::new(Vec::new());
+    drop(recording(&inner, &store, "run-cap", 5_000));
+    let run = RunId::new("run-cap").unwrap();
+    let open = |store: &Arc<CallRecordStore>, cap: u64| {
+        RecordingInferencePort::open(inner.clone(), store.clone(), run.clone(), cap, &start())
+    };
+    for other in [4_999, 5_001, u64::MAX] {
+        assert_eq!(
+            open(&store, other).err(),
+            Some(CallRecordError::RunMismatch(RunField::Cap))
+        );
+    }
+    // A refused reopen does not hold the run, and the cap outlives the process.
+    drop(open(&store, 5_000).expect("the same cap reopens"));
+    drop(store);
+    let store = Arc::new(CallRecordStore::open(&path).unwrap());
+    assert_eq!(
+        open(&store, 5_001).err(),
+        Some(CallRecordError::RunMismatch(RunField::Cap))
+    );
+    open(&store, 5_000).expect("the same cap reopens after a restart");
+    let message = format!("{}", CallRecordError::RunMismatch(RunField::Cap));
+    assert!(message.contains("token cap") && !message.contains("5000"));
+}
+
+/// A world made by the production path: one genesis command in a fresh world
+/// file, its snapshot, and the file's path.
+async fn genesis(
+    directory: &std::path::Path,
+    command: CommandId,
+) -> (crate::WorldSnapshot, std::path::PathBuf) {
+    let path = directory.join("world.cc");
+    let (mailbox, task) = crate::WorldMailbox::open(&path).expect("an empty world");
+    mailbox
+        .create_fixture(
+            crate::tests::creation(command, "Replayed"),
+            &crate::tests::auth_principal(crate::tests::owner()),
+        )
+        .await
+        .expect("a created world");
+    let snapshot = mailbox.snapshot().await.unwrap();
+    drop(mailbox);
+    task.await.unwrap();
+    (snapshot, path)
+}
+
+async fn reopened(path: &std::path::Path) -> crate::WorldSnapshot {
+    let (mailbox, task) = crate::WorldMailbox::open(path).expect("a restored world");
+    let snapshot = mailbox.snapshot().await.unwrap();
+    drop(mailbox);
+    task.await.unwrap();
+    snapshot
+}
+
+#[tokio::test]
+async fn replay_runs_against_a_restored_copy_and_refuses_any_other_world_up_front() {
+    let command = CommandId::new();
+    let first = tempfile::tempdir().unwrap();
+    let (world, world_file) = genesis(first.path(), command).await;
+    let began = RunStart::of(&world);
+
+    let directory = tempfile::tempdir().unwrap();
+    let (store, _) = store_in(&directory);
+    let run = RunId::new("run-world").unwrap();
+    let inner = ScriptedPort::new(ok_all(&[reply("one", "r1")]));
+    let live =
+        RecordingInferencePort::open(inner.clone(), store.clone(), run.clone(), u64::MAX, &began)
+            .unwrap();
+    live.infer(live.prepare(request_for(command, "go", 1_200)).unwrap())
+        .await
+        .unwrap();
+    drop(live);
+
+    // A byte copy of the starting world, restored, replays the run.
+    let restored_dir = tempfile::tempdir().unwrap();
+    let restored_file = restored_dir.path().join("world.cc");
+    std::fs::copy(&world_file, &restored_file).unwrap();
+    let restored = RunStart::of(&reopened(&restored_file).await);
+    assert_eq!(restored, began);
+    let replay = ReplayInferencePort::new("verse-replay", &store, &run, &restored)
+        .expect("a restored copy replays");
+    let served = replay
+        .infer(replay.prepare(request_for(command, "go", 1_200)).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(json(&served), json(&reply("one", "r1")));
+
+    // The same genesis created again is another world and is refused before
+    // any call, naming the field and nothing it held.
+    let again = tempfile::tempdir().unwrap();
+    let (recreated, _) = genesis(again.path(), command).await;
+    let refusal = ReplayInferencePort::new("verse-replay", &store, &run, &RunStart::of(&recreated))
+        .err()
+        .expect("a re-created world");
+    assert_eq!(refusal, CallRecordError::RunMismatch(RunField::WorldId));
+    let text = format!("{refusal} {refusal:?}");
+    assert!(!text.contains(&began.world_id) && !text.contains(&began.state_digest));
+
+    // The same id with another digest is refused too.
+    let drifted = RunStart {
+        world_id: began.world_id.clone(),
+        state_digest: format!("{}x", began.state_digest),
+    };
+    assert_eq!(
+        ReplayInferencePort::new("verse-replay", &store, &run, &drifted).err(),
+        Some(CallRecordError::RunMismatch(RunField::StateDigest))
+    );
+    assert_eq!(inner.calls(), 1, "replay never reached the provider");
 }

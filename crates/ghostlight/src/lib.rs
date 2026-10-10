@@ -133,7 +133,7 @@ pub use table::{
 pub use vault::{VaultError, VaultEvidenceSource};
 pub use verse::{
     CALL_RECORD_SCHEMA, CallRecordError, CallRecordStore, ProviderCallRecord, RecordingInferencePort,
-    ReplayInferencePort, RunId,
+    ReplayInferencePort, RunField, RunId, RunStart,
 };
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
 
