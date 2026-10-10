@@ -701,3 +701,52 @@ fn admitting_a_resolved_effect_refuses_two_subjects_with_one_key() {
     );
     assert!(!format!("{error:?}").contains("Beta"), "the refusal echoed the key");
 }
+
+/// A decomposable character at every position of a real-shaped key: the NFD
+/// spelling is refused wherever it sits, the NFC spelling is admitted, so the
+/// rule cannot be a prefix, suffix or first-character check.
+#[test]
+fn a_decomposable_character_is_refused_in_nfd_at_every_position() {
+    let (_dir, mut kernel) = keyed_world();
+    let place = commons(&kernel);
+    let template: Vec<char> = "Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Ewan Hart"
+        .chars()
+        .collect();
+    let submit = |kernel: &mut WorldKernel, handle: &str, record: String| {
+        submit_as(
+            kernel,
+            CallerId::Principal(owner()),
+            None,
+            patch_of(vec![mirror(
+                handle,
+                Some(key("aetheria.lore", &record)),
+                place,
+            )]),
+        )
+    };
+    let spelled = |position: usize, inserted: &str| {
+        let mut record: String = template[..position].iter().collect();
+        record.push_str(inserted);
+        record.extend(&template[position..]);
+        record
+    };
+    for position in 0..=template.len() {
+        let nfd = spelled(position, "e\u{301}");
+        assert!(
+            !unicode_normalization::is_nfc(&nfd),
+            "position {position} is not NFD"
+        );
+        let set = rejected(submit(&mut kernel, "bad", nfd));
+        assert_eq!(set, vec![malformed("bad")], "NFD at position {position}");
+    }
+    for position in 0..=template.len() {
+        let nfc = spelled(position, "\u{e9}");
+        submit(&mut kernel, &format!("good{position}"), nfc)
+            .unwrap_or_else(|_| panic!("NFC at position {position} was refused"));
+    }
+    assert_eq!(
+        keys_in(&kernel).len(),
+        1 + template.len() + 1,
+        "the genesis key and one NFC key per position are held, no NFD key"
+    );
+}
