@@ -1,6 +1,8 @@
 use super::*;
 use crate::CommandId;
-use crate::controllers::{InferenceFaultDisposition, RequestShape, tool_request};
+use crate::controllers::{
+    InferenceFaultClass, InferenceFaultDisposition, RequestShape, tool_request,
+};
 use codex_connector::{CodexInputItem, CodexToolDefinition};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -171,7 +173,7 @@ async fn recording_port_stores_each_call_before_returning() {
         let prepared = port
             .prepare(request_for(CommandId::new(), "tell", 1_200))
             .unwrap();
-        let digest = hex(&prepared.invocation.provider_request_sha256);
+        let digest = content_digest(&prepared.invocation.request).unwrap();
         let returned = port.infer(prepared).await.unwrap();
         assert_eq!(json(&returned), json(expected));
         let stored = store.records(&run).unwrap();
@@ -183,7 +185,7 @@ async fn recording_port_stores_each_call_before_returning() {
         let record = &stored[index];
         assert_eq!(record.sequence(), index as u64 + 1);
         assert_eq!(record.run_id(), "run-a");
-        assert_eq!(record.request_sha256(), digest);
+        assert_eq!(record.content_sha256(), digest);
         assert_eq!(record.model(), MODEL);
         assert_eq!(record.purpose(), InferencePurpose::Persona);
         assert_eq!(record.usage(), expected.usage);
@@ -251,6 +253,7 @@ async fn cap_refuses_before_the_provider_is_called() {
             .is_empty()
     );
     assert_eq!(port.spent(), 0);
+    drop(port);
 
     // Exactly the cap is allowed.
     let exact = recording(&inner, &store, "run-cap", bound);
@@ -389,7 +392,7 @@ async fn a_reply_with_no_usage_is_charged_its_bound() {
 }
 
 #[tokio::test]
-async fn a_fault_is_charged_its_bound_unless_it_never_connected() {
+async fn a_fault_keeps_its_reservation_charged() {
     let directory = tempfile::tempdir().unwrap();
     let (store, _) = store_in(&directory);
     let prepared = prepared_for("fault", 1_200);
@@ -397,28 +400,171 @@ async fn a_fault_is_charged_its_bound_unless_it_never_connected() {
     let inner = ScriptedPort::new(vec![
         Err(InferenceFault::retryable("down").classed(InferenceFaultClass::Connect)),
         Err(InferenceFault::retryable("slow").classed(InferenceFaultClass::Timeout)),
+        Err(InferenceFault::new("junk").classed(InferenceFaultClass::BadReply)),
     ]);
     let port = recording(&inner, &store, "run-fault", u64::MAX);
-    port.infer(prepared.clone())
-        .await
-        .expect_err("connect fault");
-    assert_eq!(port.spent(), 0, "nothing was sent");
-    let fault = port.infer(prepared).await.expect_err("timeout fault");
-    assert_eq!(
-        fault.class(),
+    for (index, class) in [
+        InferenceFaultClass::Connect,
         InferenceFaultClass::Timeout,
-        "the fault passes through"
-    );
-    assert_eq!(
-        port.spent(),
-        bound,
-        "a request that may have run is charged its bound"
-    );
+        InferenceFaultClass::BadReply,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let fault = port.infer(prepared.clone()).await.expect_err("a fault");
+        assert_eq!(fault.class(), class, "the fault passes through");
+        assert_eq!(port.spent(), bound * (index as u64 + 1));
+    }
     assert!(
         store
             .records(&RunId::new("run-fault").unwrap())
             .unwrap()
             .is_empty()
+    );
+}
+
+#[tokio::test]
+async fn faulting_calls_across_restarts_never_pass_the_cap() {
+    let directory = tempfile::tempdir().unwrap();
+    let (store, path) = store_in(&directory);
+    let prepared = prepared_for("loop", 1_200);
+    let bound = bound_of(&prepared);
+    let cap = bound * 3 + bound / 2;
+    drop(store);
+    let mut reached_the_provider = 0;
+    for attempt in 0..12 {
+        let store = Arc::new(CallRecordStore::open(&path).unwrap());
+        let class = if attempt % 2 == 0 {
+            InferenceFaultClass::BadReply
+        } else {
+            InferenceFaultClass::Timeout
+        };
+        let inner = ScriptedPort::new(vec![Err(InferenceFault::new("down").classed(class))]);
+        let port = recording(&inner, &store, "run-loop", cap);
+        let fault = port.infer(prepared.clone()).await.expect_err("a fault");
+        reached_the_provider += inner.calls();
+        if inner.calls() == 0 {
+            assert_eq!(fault.class(), InferenceFaultClass::BudgetExhausted);
+        }
+        assert!(port.spent() <= cap, "{} > {cap}", port.spent());
+    }
+    assert_eq!(reached_the_provider, 3, "a restart returns no budget");
+}
+
+#[tokio::test]
+async fn a_call_abandoned_on_the_wire_stays_charged_after_a_restart() {
+    let directory = tempfile::tempdir().unwrap();
+    let (store, path) = store_in(&directory);
+    let prepared = prepared_for("crash", 1_200);
+    let bound = bound_of(&prepared);
+    let gate = Arc::new(tokio::sync::Semaphore::new(0));
+    let inner = ScriptedPort::gated(vec![Ok(reply("never", "r"))], gate);
+    let port = Arc::new(recording(&inner, &store, "run-crash", bound));
+    let call = {
+        let port = port.clone();
+        let prepared = prepared.clone();
+        tokio::spawn(async move { port.infer(prepared).await })
+    };
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while inner.calls() == 0 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("the call reached the provider");
+    call.abort();
+    let _ = call.await;
+    drop((port, store));
+
+    let store = Arc::new(CallRecordStore::open(&path).unwrap());
+    let inner = ScriptedPort::new(vec![Ok(reply("again", "r2"))]);
+    let reopened = recording(&inner, &store, "run-crash", bound);
+    assert_eq!(reopened.spent(), bound);
+    let fault = reopened
+        .infer(prepared)
+        .await
+        .expect_err("the cap is spent");
+    assert_eq!(fault.class(), InferenceFaultClass::BudgetExhausted);
+    assert_eq!(inner.calls(), 0);
+}
+
+#[tokio::test]
+async fn one_run_has_one_ledger_and_one_owner() {
+    let directory = tempfile::tempdir().unwrap();
+    let (store, _) = store_in(&directory);
+    let prepared = prepared_for("owner", 1_200);
+    let bound = bound_of(&prepared);
+    let cap = bound + bound / 2;
+    let inner = ScriptedPort::new(vec![Ok(reply("a", "r1")), Ok(reply("b", "r2"))]);
+    let first = recording(&inner, &store, "run-own", cap);
+    let second = RecordingInferencePort::open(
+        inner.clone(),
+        store.clone(),
+        RunId::new("run-own").unwrap(),
+        cap,
+    );
+    assert_eq!(second.err(), Some(CallRecordError::RunInUse));
+    // Another run is another ledger.
+    drop(recording(&inner, &store, "run-other", cap));
+    first.infer(prepared.clone()).await.unwrap();
+    assert_eq!(first.spent(), bound);
+    // The owner going away frees the run, and its spend carries over.
+    drop(first);
+    let next = recording(&inner, &store, "run-own", cap);
+    assert_eq!(next.spent(), bound);
+    next.infer(prepared)
+        .await
+        .expect_err("the cap holds across owners");
+    assert_eq!(inner.calls(), 1);
+}
+
+#[tokio::test]
+async fn usage_over_the_bound_is_charged_in_full_and_faults_the_call() {
+    let directory = tempfile::tempdir().unwrap();
+    let (store, _) = store_in(&directory);
+    let prepared = prepared_for("liar", 1_200);
+    let bound = bound_of(&prepared);
+    let cap = bound + 200;
+    let run = RunId::new("run-over").unwrap();
+    let inner = ScriptedPort::new(vec![
+        Ok(reply("big", "r1").with_usage(usage(bound, bound, None))),
+        Ok(reply("never", "r2")),
+    ]);
+    let port = recording(&inner, &store, "run-over", cap);
+    let fault = port.infer(prepared.clone()).await.expect_err("over bound");
+    assert_eq!(fault.class(), InferenceFaultClass::BudgetExhausted);
+    assert_eq!(
+        fault.disposition(),
+        InferenceFaultDisposition::IntegrityViolation
+    );
+    assert_eq!(port.spent(), bound * 2, "charged in full");
+    assert!(store.records(&run).unwrap().is_empty());
+    // The run is stopped: the next call is refused before the provider.
+    let fault = port.infer(prepared).await.expect_err("the cap is passed");
+    assert_eq!(fault.class(), InferenceFaultClass::BudgetExhausted);
+    assert_eq!(inner.calls(), 1);
+}
+
+#[tokio::test]
+async fn usage_exactly_at_the_bound_is_a_normal_reply() {
+    let directory = tempfile::tempdir().unwrap();
+    let (store, _) = store_in(&directory);
+    let prepared = prepared_for("exact", 1_200);
+    let bound = bound_of(&prepared);
+    let inner = ScriptedPort::new(vec![Ok(reply("fits", "r1").with_usage(usage(
+        bound - 10,
+        10,
+        None,
+    )))]);
+    let port = recording(&inner, &store, "run-exact", bound);
+    port.infer(prepared).await.expect("a reply at its bound");
+    assert_eq!(port.spent(), bound);
+    assert_eq!(
+        store
+            .records(&RunId::new("run-exact").unwrap())
+            .unwrap()
+            .len(),
+        1
     );
 }
 
@@ -477,7 +623,7 @@ async fn replay_serves_stored_responses_and_refuses_strangers() {
     let replay = ReplayInferencePort::new("verse-replay", stored).unwrap();
     // A request the run never made is a fault and consumes nothing.
     let stranger = replay
-        .prepare(request_for(CommandId::new(), "a", 1_200))
+        .prepare(request_for(CommandId::new(), "z", 1_200))
         .unwrap();
     let fault = replay.infer(stranger).await.expect_err("a stranger");
     assert_eq!(
@@ -488,10 +634,7 @@ async fn replay_serves_stored_responses_and_refuses_strangers() {
     let second_first = replay
         .prepare(request_for(commands[1], "b", 1_200))
         .unwrap();
-    replay
-        .infer(second_first)
-        .await
-        .expect_err("out of order");
+    replay.infer(second_first).await.expect_err("out of order");
     // In order, each request gets exactly what the run received.
     for ((command, prompt), expected) in commands.iter().zip(["a", "b", "c"]).zip(&outputs) {
         let prepared = replay
@@ -513,7 +656,7 @@ fn sample_record(run: &str, sequence: u64) -> ProviderCallRecord {
         sequence,
         purpose: InferencePurpose::Persona,
         model: MODEL.into(),
-        request_sha256: "ab".into(),
+        content_sha256: "ab".into(),
         events: vec![InferenceEvent::Text("t".into())],
         receipt_digest: "r".into(),
         usage: None,
@@ -551,7 +694,7 @@ async fn a_record_holds_no_request_text() {
         .unwrap()
         .pull_all()
         .unwrap();
-    assert_eq!(raw.len(), 1);
+    assert_eq!(raw.len(), 2, "one record and the run's ledger");
     for row in raw {
         let bytes = [row.key.as_bytes(), row.payload.as_slice()].concat();
         assert!(
@@ -563,6 +706,19 @@ async fn a_record_holds_no_request_text() {
     }
     let refusal = InferenceFault::budget_exhausted();
     assert!(!format!("{refusal} {refusal:?}").contains(canary));
+}
+
+fn spend_row(run: &str, spent: u64) -> CultCacheEnvelope {
+    envelope(
+        RUN_SPEND_ROW,
+        Some(RUN_SPEND_SCHEMA),
+        run,
+        rmp_serde::to_vec_named(&RunSpend {
+            run_id: run.into(),
+            spent,
+        })
+        .unwrap(),
+    )
 }
 
 fn envelope(
@@ -640,6 +796,37 @@ fn the_store_refuses_any_row_that_is_not_a_canonical_v1_record() {
         ),
         ("sequence zero", record_at(0)),
         ("a hole in the run", record_at(2)),
+        ("a record with no ledger", record_at(1)),
+        (
+            "a ledger at the wrong key",
+            envelope(
+                RUN_SPEND_ROW,
+                Some(RUN_SPEND_SCHEMA),
+                "other",
+                rmp_serde::to_vec_named(&RunSpend {
+                    run_id: "run-x".into(),
+                    spent: 1,
+                })
+                .unwrap(),
+            ),
+        ),
+        (
+            "a ledger that is not canonical",
+            envelope(
+                RUN_SPEND_ROW,
+                Some(RUN_SPEND_SCHEMA),
+                "run-x",
+                [
+                    rmp_serde::to_vec_named(&RunSpend {
+                        run_id: "run-x".into(),
+                        spent: 1,
+                    })
+                    .unwrap(),
+                    vec![0xc0],
+                ]
+                .concat(),
+            ),
+        ),
     ];
     for (label, row) in cases {
         let directory = tempfile::tempdir().unwrap();
@@ -651,17 +838,28 @@ fn the_store_refuses_any_row_that_is_not_a_canonical_v1_record() {
         let error = CallRecordStore::open(&path).err();
         assert_eq!(error, Some(CallRecordError::Corrupt), "{label}");
     }
-    // The same row, well formed, opens.
+    // A ledger under the charges of its records is refused too.
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("calls.redb");
-    OwnedRedbMessagePackBackingStore::new(&path)
-        .unwrap()
-        .push(&v1(&key, payload))
-        .unwrap();
+    let mut backing = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
+    backing.push(&v1(&key, payload.clone())).unwrap();
+    backing.push(&spend_row("run-x", 2)).unwrap();
+    drop(backing);
+    assert_eq!(
+        CallRecordStore::open(&path).err(),
+        Some(CallRecordError::Corrupt)
+    );
+    // The same rows, well formed and covered by the ledger, open.
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("calls.redb");
+    let mut backing = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
+    backing.push(&v1(&key, payload)).unwrap();
+    backing.push(&spend_row("run-x", 3)).unwrap();
+    drop(backing);
     let store = CallRecordStore::open(&path).unwrap();
     let run = RunId::new("run-x").unwrap();
     assert_eq!(store.records(&run).unwrap(), vec![good]);
-    assert_eq!(store.charged(&run).unwrap(), 3);
+    assert_eq!(store.spent(&run).unwrap(), 3);
 }
 
 #[test]
@@ -693,4 +891,40 @@ fn a_run_id_is_a_key_safe_segment() {
     for bad in ["", "has/slash", "has space", "caf\u{e9}", &"a".repeat(65)] {
         assert_eq!(RunId::new(bad), Err(CallRecordError::InvalidRunId));
     }
+}
+
+#[tokio::test]
+async fn replay_keys_the_request_content_not_the_command_identity() {
+    let directory = tempfile::tempdir().unwrap();
+    let (store, _) = store_in(&directory);
+    let run = RunId::new("run-world").unwrap();
+    let inner = ScriptedPort::new(ok_all(&[reply("one", "r1"), reply("two", "r2")]));
+    let live = recording(&inner, &store, "run-world", u64::MAX);
+    for prompt in ["first", "second"] {
+        live.infer(
+            live.prepare(request_for(CommandId::new(), prompt, 1_200))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    }
+    // A fresh genesis names every command anew; the content is what repeats.
+    let replay = ReplayInferencePort::new("verse-replay", store.records(&run).unwrap()).unwrap();
+    let under_new_names = |prompt: &str, max: u32| {
+        replay
+            .prepare(request_for(CommandId::new(), prompt, max))
+            .unwrap()
+    };
+    // The same words under a different output allowance are another request.
+    replay
+        .infer(under_new_names("first", 1_201))
+        .await
+        .expect_err("a different shape");
+    let one = replay.infer(under_new_names("first", 1_200)).await.unwrap();
+    let two = replay
+        .infer(under_new_names("second", 1_200))
+        .await
+        .unwrap();
+    assert_eq!(json(&one), json(&reply("one", "r1")));
+    assert_eq!(json(&two), json(&reply("two", "r2")));
 }

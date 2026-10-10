@@ -10,33 +10,37 @@
 //! Lanes and runners never count tokens. A request is held against the cap by
 //! its bound: the serialized provider request's bytes (a token is at least one
 //! byte, so bytes bound the prompt) plus the request's own output allowance.
-//! The bound is exact for a port that makes one provider round per call (the
-//! hosted and local lanes). A port that loops tools inside one call can spend
-//! more than one round's bound; its settled usage is still charged, so the next
-//! call is refused, but this decorator cannot stop the overshoot of that call.
 //!
-//! Charging rule, one path: a reply that reports usage is charged prompt plus
-//! completion (cached prompt tokens are part of the prompt); a reply that
-//! reports none is charged its bound; a fault is charged its bound, except a
-//! connect fault, which never reached the provider and costs nothing.
+//! The run's spend is one persisted ledger row per run, owned by the store and
+//! written where it is spent. A call reserves its bound in that row before the
+//! provider is called; a reply settles the reservation to what it reported
+//! (prompt plus completion, cached prompt tokens being part of the prompt; none
+//! reported is charged the bound); a fault leaves the reservation charged. A
+//! restart reads the row, so no restart returns budget. A reply that reports
+//! more than the call's bound is charged in full and faults the call, so the
+//! run's spend never passes the cap unnoticed. One port at a time owns a run.
 
 use crate::controllers::{
-    InferenceEvent, InferenceFault, InferenceFaultClass, InferenceOutput, InferencePort,
-    InferencePurpose, InferenceRequest, PreparedInference, REQUEST_EXPIRY, TokenUsage,
-    ToolResultOracle, unix_ms,
+    InferenceEvent, InferenceFault, InferenceOutput, InferencePort, InferencePurpose,
+    InferenceRequest, PreparedInference, REQUEST_EXPIRY, TokenUsage, ToolResultOracle, unix_ms,
 };
 use async_trait::async_trait;
 use chrono::Utc;
+use codex_connector::CodexProviderRequest;
 use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::{
-    collections::{BTreeMap, VecDeque},
+    collections::{BTreeMap, BTreeSet, VecDeque},
     path::Path,
     sync::{Arc, Mutex},
 };
 use thiserror::Error;
 
 const CALL_RECORD_ROW: &str = "verse_provider_call.v1";
+const RUN_SPEND_ROW: &str = "verse_run_spend.v1";
+/// The run ledger document's schema.
+const RUN_SPEND_SCHEMA: &str = "ghostlight.verse_run_spend.v1";
 /// The call record document's schema. A store holding any other row type or
 /// schema is refused at open: this store is not migrated from, or shared with,
 /// another document.
@@ -54,6 +58,10 @@ pub enum CallRecordError {
     OutOfSequence,
     #[error("replay needs one run's records in dense sequence from 1")]
     NotReplayable,
+    #[error("another recording port already owns this run")]
+    RunInUse,
+    #[error("the call could pass the run's token cap")]
+    OverCap,
 }
 
 /// A run's identity as a key segment.
@@ -79,7 +87,7 @@ impl RunId {
     }
 }
 
-/// One provider call of one run: the request's digest (never its text, so no
+/// One provider call of one run: the request's content digest (never its text, so no
 /// prompt or credential is stored), the reply exactly as the lane received it,
 /// and what the call was charged. Keyed (run id, sequence).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -88,7 +96,7 @@ pub struct ProviderCallRecord {
     sequence: u64,
     purpose: InferencePurpose,
     model: String,
-    request_sha256: String,
+    content_sha256: String,
     events: Vec<InferenceEvent>,
     receipt_digest: String,
     usage: Option<TokenUsage>,
@@ -112,9 +120,9 @@ impl ProviderCallRecord {
         &self.model
     }
 
-    /// Lowercase hex of the provider request's digest.
-    pub fn request_sha256(&self) -> &str {
-        &self.request_sha256
+    /// Lowercase hex of the request's content digest (see `content_digest`).
+    pub fn content_sha256(&self) -> &str {
+        &self.content_sha256
     }
 
     pub fn usage(&self) -> Option<TokenUsage> {
@@ -140,49 +148,110 @@ fn row_key(run: &str, sequence: u64) -> String {
     format!("{run}/{sequence:020}")
 }
 
-fn hex(digest: &[u8; 32]) -> String {
+fn hex(digest: &[u8]) -> String {
     digest.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
-fn decode_row(row: &CultCacheEnvelope) -> Result<ProviderCallRecord, CallRecordError> {
-    if row.r#type != CALL_RECORD_ROW || row.schema_id.as_deref() != Some(CALL_RECORD_SCHEMA) {
-        return Err(CallRecordError::Corrupt);
+/// What a request asks of the provider, without the ids that name it. The
+/// request and conversation ids are derived from the command id, and a command
+/// id from the world it ran in, so keying on them would tie a recorded run to
+/// one world's random identity. Everything else the provider is sent
+/// (model, instructions, input, tools, shape) is in the digest.
+fn content_digest(request: &CodexProviderRequest) -> Result<String, InferenceFault> {
+    let bytes = rmp_serde::to_vec(&(
+        &request.schema_id,
+        &request.model,
+        &request.instructions,
+        &request.input,
+        &request.reasoning_effort,
+        &request.reasoning_summary,
+        &request.service_tier,
+        &request.output_format_name,
+        &request.previous_response_id,
+        &request.tools,
+        &request.tool_choice,
+        request.parallel_tool_calls,
+        &request.output_schema_json,
+        request.max_output_tokens,
+        &request.prompt_cache_key,
+    ))
+    .map_err(|_| InferenceFault::new("a provider request could not be measured"))?;
+    Ok(hex(&Sha256::digest(bytes)))
+}
+
+/// A run's persisted ledger: tokens reserved or charged against its cap.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct RunSpend {
+    run_id: String,
+    spent: u64,
+}
+
+enum DecodedRow {
+    Call(ProviderCallRecord),
+    Spend(RunSpend),
+}
+
+fn canonical<T: Serialize + for<'de> Deserialize<'de>>(
+    row: &CultCacheEnvelope,
+) -> Result<T, CallRecordError> {
+    let value: T = rmp_serde::from_slice(&row.payload).map_err(|_| CallRecordError::Corrupt)?;
+    let again = rmp_serde::to_vec_named(&value).map_err(|_| CallRecordError::Corrupt)?;
+    if again == row.payload {
+        Ok(value)
+    } else {
+        Err(CallRecordError::Corrupt)
     }
-    let record: ProviderCallRecord =
-        rmp_serde::from_slice(&row.payload).map_err(|_| CallRecordError::Corrupt)?;
-    let canonical = rmp_serde::to_vec_named(&record).map_err(|_| CallRecordError::Corrupt)?;
-    if canonical != row.payload
-        || RunId::new(&record.run_id).is_err()
-        || record.sequence == 0
-        || row.key != row_key(&record.run_id, record.sequence)
-    {
-        return Err(CallRecordError::Corrupt);
+}
+
+fn decode_row(row: &CultCacheEnvelope) -> Result<DecodedRow, CallRecordError> {
+    match (row.r#type.as_str(), row.schema_id.as_deref()) {
+        (CALL_RECORD_ROW, Some(CALL_RECORD_SCHEMA)) => {
+            let record: ProviderCallRecord = canonical(row)?;
+            if RunId::new(&record.run_id).is_err()
+                || record.sequence == 0
+                || row.key != row_key(&record.run_id, record.sequence)
+            {
+                return Err(CallRecordError::Corrupt);
+            }
+            Ok(DecodedRow::Call(record))
+        }
+        (RUN_SPEND_ROW, Some(RUN_SPEND_SCHEMA)) => {
+            let spend: RunSpend = canonical(row)?;
+            if RunId::new(&spend.run_id).is_err() || row.key != spend.run_id {
+                return Err(CallRecordError::Corrupt);
+            }
+            Ok(DecodedRow::Spend(spend))
+        }
+        _ => Err(CallRecordError::Corrupt),
     }
-    Ok(record)
 }
 
 #[derive(Default)]
 struct RunTally {
     last_sequence: u64,
-    charged: u64,
+    /// Tokens reserved or charged: the persisted ledger, read at open.
+    spent: u64,
 }
 
 struct StoreState {
     store: OwnedRedbMessagePackBackingStore,
     runs: BTreeMap<String, RunTally>,
+    /// Runs with a recording port alive; one ledger has one owner.
+    owned: BTreeSet<String>,
 }
 
-/// The call records of every run in one CultCache file. Records are appended
-/// and never changed; a run's sequence is dense from 1.
+/// The call records and spend ledgers of every run in one CultCache file.
+/// Records are appended and never changed; a run's sequence is dense from 1.
 pub struct CallRecordStore {
     state: Mutex<StoreState>,
 }
 
 impl CallRecordStore {
     /// Opens the file, creating it empty when absent. Every row must be a
-    /// canonical call record of this schema with its key and a dense sequence;
-    /// anything else, an earlier or later schema version included, is refused
-    /// and nothing is migrated.
+    /// canonical call record or run ledger of this schema with its key, a
+    /// dense sequence, and a ledger that covers its records' charges; anything
+    /// else, an earlier or later schema version included, is refused and
+    /// nothing is migrated.
     pub fn open(path: impl AsRef<Path>) -> Result<Self, CallRecordError> {
         let store = OwnedRedbMessagePackBackingStore::new(path.as_ref())
             .map_err(|_| CallRecordError::Store)?;
@@ -192,20 +261,37 @@ impl CallRecordStore {
         let rows = store.pull_all().map_err(|_| CallRecordError::Store)?;
         let mut runs: BTreeMap<String, RunTally> = BTreeMap::new();
         let mut counts: BTreeMap<String, u64> = BTreeMap::new();
+        let mut charged: BTreeMap<String, u64> = BTreeMap::new();
         for row in &rows {
-            let record = decode_row(row)?;
-            *counts.entry(record.run_id.clone()).or_default() += 1;
-            let tally = runs.entry(record.run_id).or_default();
-            tally.last_sequence = tally.last_sequence.max(record.sequence);
-            tally.charged = tally.charged.saturating_add(record.charged);
+            match decode_row(row)? {
+                DecodedRow::Call(record) => {
+                    *counts.entry(record.run_id.clone()).or_default() += 1;
+                    let total = charged.entry(record.run_id.clone()).or_default();
+                    *total = total.saturating_add(record.charged);
+                    let tally = runs.entry(record.run_id).or_default();
+                    tally.last_sequence = tally.last_sequence.max(record.sequence);
+                }
+                DecodedRow::Spend(spend) => {
+                    runs.entry(spend.run_id).or_default().spent = spend.spent;
+                }
+            }
         }
         // Keys are unique, so a run is dense from 1 exactly when its rows
-        // number its highest sequence.
-        if runs.iter().any(|(run, tally)| counts[run] != tally.last_sequence) {
-            return Err(CallRecordError::Corrupt);
+        // number its highest sequence. Every record was reserved before it was
+        // made, so the ledger covers what the records charged.
+        for (run, tally) in &runs {
+            let rows = counts.get(run).copied().unwrap_or(0);
+            let recorded = charged.get(run).copied().unwrap_or(0);
+            if rows != tally.last_sequence || tally.spent < recorded {
+                return Err(CallRecordError::Corrupt);
+            }
         }
         Ok(Self {
-            state: Mutex::new(StoreState { store, runs }),
+            state: Mutex::new(StoreState {
+                store,
+                runs,
+                owned: BTreeSet::new(),
+            }),
         })
     }
 
@@ -223,17 +309,90 @@ impl CallRecordStore {
             + 1)
     }
 
-    /// Tokens this run's stored calls were charged.
-    pub fn charged(&self, run: &RunId) -> Result<u64, CallRecordError> {
+    /// Tokens this run has reserved or been charged: its persisted ledger.
+    pub fn spent(&self, run: &RunId) -> Result<u64, CallRecordError> {
         Ok(self
             .lock()?
             .runs
             .get(run.as_str())
-            .map_or(0, |tally| tally.charged))
+            .map_or(0, |tally| tally.spent))
+    }
+
+    /// Takes the run's ledger for one port, or refuses when another holds it.
+    fn own(&self, run: &RunId) -> Result<(), CallRecordError> {
+        if self.lock()?.owned.insert(run.as_str().to_owned()) {
+            Ok(())
+        } else {
+            Err(CallRecordError::RunInUse)
+        }
+    }
+
+    fn disown(&self, run: &RunId) {
+        if let Ok(mut state) = self.state.lock() {
+            state.owned.remove(run.as_str());
+        }
+    }
+
+    /// Persists `spent` as the run's ledger, then adopts it in memory. A write
+    /// that fails leaves the previous figure.
+    fn write_spent(state: &mut StoreState, run: &str, spent: u64) -> Result<(), CallRecordError> {
+        let spend = RunSpend {
+            run_id: run.to_owned(),
+            spent,
+        };
+        let row = CultCacheEnvelope {
+            key: run.to_owned(),
+            r#type: RUN_SPEND_ROW.into(),
+            payload: rmp_serde::to_vec_named(&spend).map_err(|_| CallRecordError::Store)?,
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some(RUN_SPEND_SCHEMA.into()),
+        };
+        state.store.push(&row).map_err(|_| CallRecordError::Store)?;
+        state.runs.entry(run.to_owned()).or_default().spent = spent;
+        Ok(())
+    }
+
+    /// Charges `bound` to the run's persisted ledger, or refuses with
+    /// `OverCap` when the ledger plus the bound would pass `cap`. The check and
+    /// the write hold one lock, so calls on the wire hold their bounds.
+    fn reserve(&self, run: &RunId, bound: u64, cap: u64) -> Result<(), CallRecordError> {
+        let mut state = self.lock()?;
+        let held = state.runs.get(run.as_str()).map_or(0, |tally| tally.spent);
+        let after = held.saturating_add(bound);
+        if after > cap {
+            return Err(CallRecordError::OverCap);
+        }
+        Self::write_spent(&mut state, run.as_str(), after)
+    }
+
+    /// Replaces a reservation of `bound` with what the call was charged. With
+    /// a record, the record is stored first, so a crash between the two writes
+    /// leaves the larger reservation charged.
+    fn settle(
+        &self,
+        run: &RunId,
+        bound: u64,
+        charged: u64,
+        record: Option<&ProviderCallRecord>,
+    ) -> Result<(), CallRecordError> {
+        let mut state = self.lock()?;
+        if let Some(record) = record {
+            Self::push_record(&mut state, record)?;
+        }
+        let held = state.runs.get(run.as_str()).map_or(0, |tally| tally.spent);
+        let settled = held.saturating_sub(bound).saturating_add(charged);
+        Self::write_spent(&mut state, run.as_str(), settled)
     }
 
     fn append(&self, record: &ProviderCallRecord) -> Result<(), CallRecordError> {
         let mut state = self.lock()?;
+        Self::push_record(&mut state, record)
+    }
+
+    fn push_record(
+        state: &mut StoreState,
+        record: &ProviderCallRecord,
+    ) -> Result<(), CallRecordError> {
         let last = state
             .runs
             .get(&record.run_id)
@@ -249,9 +408,11 @@ impl CallRecordStore {
             schema_id: Some(CALL_RECORD_SCHEMA.into()),
         };
         state.store.push(&row).map_err(|_| CallRecordError::Store)?;
-        let tally = state.runs.entry(record.run_id.clone()).or_default();
-        tally.last_sequence = record.sequence;
-        tally.charged = tally.charged.saturating_add(record.charged);
+        state
+            .runs
+            .entry(record.run_id.clone())
+            .or_default()
+            .last_sequence = record.sequence;
         Ok(())
     }
 
@@ -265,54 +426,46 @@ impl CallRecordStore {
             .map_err(|_| CallRecordError::Store)?;
         let mut records = Vec::new();
         for row in rows.iter().filter(|row| row.key.starts_with(&prefix)) {
-            records.push(decode_row(row)?);
+            if let DecodedRow::Call(record) = decode_row(row)? {
+                records.push(record);
+            }
         }
         records.sort_by_key(|record| record.sequence);
         Ok(records)
     }
 }
 
-struct Ledger {
-    /// Tokens charged by finished calls, restored from the store at open.
-    settled: u64,
-    /// Bounds held by calls still on the wire.
-    in_flight: u64,
-}
-
-/// Decorates a port for one run: refuses a call that could pass the cap,
-/// charges the real cost, and stores every reply before returning it.
+/// Decorates a port for one run: reserves each call's bound in the run's
+/// ledger before the provider is called, settles it to the real cost, and
+/// stores every reply before returning it.
 pub struct RecordingInferencePort {
     inner: Arc<dyn InferencePort>,
     store: Arc<CallRecordStore>,
     run: RunId,
     cap: u64,
-    ledger: Mutex<Ledger>,
 }
 
 impl RecordingInferencePort {
-    /// The run's spend resumes from its stored records.
+    /// Takes ownership of the run's ledger, which resumes from the store. A
+    /// second port on a run whose first is alive is refused with `RunInUse`.
     pub fn open(
         inner: Arc<dyn InferencePort>,
         store: Arc<CallRecordStore>,
         run: RunId,
         cap_tokens: u64,
     ) -> Result<Self, CallRecordError> {
-        let settled = store.charged(&run)?;
+        store.own(&run)?;
         Ok(Self {
             inner,
             store,
             run,
             cap: cap_tokens,
-            ledger: Mutex::new(Ledger {
-                settled,
-                in_flight: 0,
-            }),
         })
     }
 
-    /// Tokens charged to the run so far.
+    /// Tokens reserved or charged to the run so far.
     pub fn spent(&self) -> u64 {
-        self.ledger.lock().map_or(u64::MAX, |ledger| ledger.settled)
+        self.store.spent(&self.run).unwrap_or(u64::MAX)
     }
 
     /// The most this request can cost: its serialized bytes plus its output
@@ -329,59 +482,46 @@ impl RecordingInferencePort {
         Ok((payload.len() as u64).saturating_add(u64::from(allowance)))
     }
 
-    fn reserve(&self, bound: u64) -> Result<(), InferenceFault> {
-        let mut ledger = self
-            .ledger
-            .lock()
-            .map_err(|_| InferenceFault::integrity_violation("the run's ledger was poisoned"))?;
-        let held = ledger.settled.saturating_add(ledger.in_flight);
-        if held.saturating_add(bound) > self.cap {
-            return Err(InferenceFault::budget_exhausted());
-        }
-        ledger.in_flight += bound;
-        Ok(())
-    }
-
     fn settle(
         &self,
         bound: u64,
         identity: (InferencePurpose, String, String),
         result: Result<InferenceOutput, InferenceFault>,
     ) -> Result<InferenceOutput, InferenceFault> {
-        let mut ledger = self
-            .ledger
-            .lock()
-            .map_err(|_| InferenceFault::integrity_violation("the run's ledger was poisoned"))?;
-        ledger.in_flight = ledger.in_flight.saturating_sub(bound);
-        let output = match result {
-            Ok(output) => output,
-            Err(fault) => {
-                if fault.class() != InferenceFaultClass::Connect {
-                    ledger.settled = ledger.settled.saturating_add(bound);
-                }
-                return Err(fault);
-            }
-        };
+        // A fault leaves its reservation charged: the request may have run.
+        let output = result?;
         let charged = match output.usage {
             Some(usage) => usage.prompt.saturating_add(usage.completion),
             None => bound,
         };
-        ledger.settled = ledger.settled.saturating_add(charged);
-        let (purpose, model, request_sha256) = identity;
-        let sequence = self.store.next_sequence(&self.run).map_err(unrecorded)?;
+        if charged > bound {
+            self.store
+                .settle(&self.run, bound, charged, None)
+                .map_err(unrecorded)?;
+            return Err(InferenceFault::budget_exhausted());
+        }
+        let (purpose, model, content_sha256) = identity;
         let record = ProviderCallRecord {
             run_id: self.run.as_str().to_owned(),
-            sequence,
+            sequence: self.store.next_sequence(&self.run).map_err(unrecorded)?,
             purpose,
             model,
-            request_sha256,
+            content_sha256,
             events: output.events.clone(),
             receipt_digest: output.receipt_digest.clone(),
             usage: output.usage,
             charged,
         };
-        self.store.append(&record).map_err(unrecorded)?;
+        self.store
+            .settle(&self.run, bound, charged, Some(&record))
+            .map_err(unrecorded)?;
         Ok(output)
+    }
+}
+
+impl Drop for RecordingInferencePort {
+    fn drop(&mut self) {
+        self.store.disown(&self.run);
     }
 }
 
@@ -397,12 +537,17 @@ impl InferencePort for RecordingInferencePort {
 
     async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
         let bound = Self::bound(&request)?;
-        self.reserve(bound)?;
         let identity = (
             request.purpose,
             request.invocation.request.model.clone(),
-            hex(&request.invocation.provider_request_sha256),
+            content_digest(&request.invocation.request)?,
         );
+        self.store
+            .reserve(&self.run, bound, self.cap)
+            .map_err(|error| match error {
+                CallRecordError::OverCap => InferenceFault::budget_exhausted(),
+                _ => unrecorded(error),
+            })?;
         let result = self.inner.infer(request).await;
         self.settle(bound, identity, result)
     }
@@ -412,7 +557,8 @@ impl InferencePort for RecordingInferencePort {
     }
 }
 
-/// Serves a run's stored replies, in sequence, to the same requests. It holds
+/// Serves a run's stored replies, in sequence, to the same requests, matched
+/// by what they ask of the provider and not by the ids that name them. It holds
 /// no provider and makes no call: a request that is not the next recorded one
 /// is a fault.
 pub struct ReplayInferencePort {
@@ -454,13 +600,13 @@ impl InferencePort for ReplayInferencePort {
             .pending
             .lock()
             .map_err(|_| InferenceFault::integrity_violation("the replay queue was poisoned"))?;
-        let digest = hex(&request.invocation.provider_request_sha256);
+        let digest = content_digest(&request.invocation.request)?;
         let Some(next) = pending.front() else {
             return Err(InferenceFault::integrity_violation(
                 "replay has no recorded call left",
             ));
         };
-        if next.request_sha256 != digest {
+        if next.content_sha256 != digest {
             return Err(InferenceFault::integrity_violation(
                 "the request is not the next recorded call",
             ));
