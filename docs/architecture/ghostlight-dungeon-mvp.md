@@ -625,8 +625,9 @@ runs `controllers::tests::real_local_model_cognition_modes_commit_speech`
 against a real model; exercising a whole play turn against one is not gated
 by this contract.
 `world.create`'s current payload is `world_create.v4`: title, brief, targets,
-jurisdiction roots and lens weights are required, and Dungeon's create surface
-offers uniform weights as its editable default. `world.seed` runs one
+jurisdiction roots and lens weights are required. Dungeon's Begin button states
+them as authored constants (no targets, no roots, uniform weights) beside the
+three fields the form asks for. `world.seed` runs one
 `SeedRunner` session per invocation against a `VaultEvidenceSource`.
 
 Focused tests must prove:
