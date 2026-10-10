@@ -78,11 +78,11 @@ pub(super) const CELL_TOOL_STEP_BUDGET: usize = 2;
 /// carried by tool identity, never by a model-written argument.
 const HANDLE_SEPARATOR: &str = "__";
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v17";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v18";
 /// The `controller-work` state slot's schema. `pub` so a deploy recipe (or a
 /// test pinning one, e.g. `ghostlight-dungeon`'s recipe-drift test) can check
 /// itself against this constant instead of hand-copying the version number.
-pub const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v17";
+pub const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v18";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -2512,7 +2512,7 @@ pub enum ControllerOpenError {
     LocalEndpointNotLoopback { endpoint: SocketAddr },
     #[error("the hosted inference endpoint must be an https URL")]
     HostedEndpointNotHttps,
-    #[error("the hosted inference key file is unreadable, empty, or has surrounding whitespace")]
+    #[error("the hosted inference key file is unreadable, empty, or is not one run of visible ASCII")]
     HostedKeyUnreadable,
     #[error("two inference transports both claim model prefix `{prefix}`")]
     SharedModelPrefix { prefix: String },
@@ -12913,17 +12913,17 @@ mod tests {
     /// refused at open and not migrated; the same payload under the current
     /// version opens, so the refusal is the version's.
     #[tokio::test]
-    async fn a_controller_work_row_from_v15_is_refused_at_open() {
+    async fn a_controller_work_row_from_v17_is_refused_at_open() {
         let checkpoint = refused_checkpoint().await;
         let directory = tempfile::tempdir().unwrap();
         let Err(error) = open_with_raw_row(
             &directory,
-            "v15.cc",
+            "v17.cc",
             &checkpoint,
-            "controller_work.v15",
-            "ghostlight.controller_work.v15",
+            "controller_work.v17",
+            "ghostlight.controller_work.v17",
         ) else {
-            panic!("a v15 row was accepted by the {CONTROLLER_WORK_ROW} store");
+            panic!("a v17 row was accepted by the {CONTROLLER_WORK_ROW} store");
         };
         assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
         open_with_raw_row(

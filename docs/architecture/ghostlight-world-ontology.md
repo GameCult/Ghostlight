@@ -307,7 +307,7 @@ provider request is a distinct round (`interpreter_round`) with its own
 content-addressed request id, so it cannot collide with the first lowering's
 request. State schema is `ghostlight.world_state.consumer.v6`, commit schema
 `ghostlight.world_commit.consumer.v6`, controller work
-`ghostlight.controller_work.v17`, Persona turn receipt
+`ghostlight.controller_work.v18`, Persona turn receipt
 `ghostlight.persona_turn_receipt.v3`; earlier stores and earlier rows are
 refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
