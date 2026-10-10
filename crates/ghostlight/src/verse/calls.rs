@@ -339,7 +339,8 @@ impl CallRecordStore {
                     tally.last_sequence = tally.last_sequence.max(record.sequence);
                 }
                 DecodedRow::Ledger(ledger) => {
-                    runs.entry(ledger.run_id.clone()).or_default().ledger = Some(ledger);
+                    let run = ledger.run_id.clone();
+                    runs.entry(run).or_default().ledger = Some(ledger);
                 }
             }
         }
@@ -446,7 +447,8 @@ impl CallRecordStore {
             schema_id: Some(RUN_LEDGER_SCHEMA.into()),
         };
         state.store.push(&row).map_err(|_| CallRecordError::Store)?;
-        state.runs.entry(ledger.run_id.clone()).or_default().ledger = Some(ledger);
+        let run = ledger.run_id.clone();
+        state.runs.entry(run).or_default().ledger = Some(ledger);
         Ok(())
     }
 
