@@ -5862,7 +5862,10 @@ mod tests {
         let refused = post(&fixture.state, &fixture.cookie, begin_invocation(payload, &key)).await;
         assert_eq!(refused["receipt"]["state"], "denied", "{refused}");
         let message = refused["receipt"]["message"].as_str().unwrap_or_default();
-        assert!(message.contains("approve"), "the refusal did not name its step: {message}");
+        assert!(
+            message.starts_with("the begin stopped at its approve step"),
+            "the refusal did not name its step: {message}"
+        );
         let world = current_world(&fixture.state).await.unwrap().unwrap();
         assert_eq!(world.phase, WorldPhase::Draft, "a refused step must leave the draft as the kernel committed it");
         assert_eq!(world.revision, 1);
