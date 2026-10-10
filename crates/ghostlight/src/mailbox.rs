@@ -121,6 +121,7 @@ impl WorldMailbox {
                 controller,
                 affordances: kernel_speak_grant(),
                 position: Some(Ref::Draft(DraftHandle::new(GENESIS_PLACE))),
+                import_key: None,
             })
         };
         // Roots stand beside the commons, not inside it: a root contained by
@@ -1011,6 +1012,7 @@ mod tests {
                         },
                         affordances: kernel_speak_grant(),
                         position: Some(Ref::Draft(DraftHandle::new(GENESIS_PLACE))),
+                        import_key: None,
                     }),
                 ],
                 operations: Vec::new(),
@@ -1398,6 +1400,7 @@ mod tests {
                 controller,
                 affordances: kernel_speak_grant(),
                 position: Some(Ref::Draft(DraftHandle::new(format!("room-{handle}")))),
+                import_key: None,
             })
         };
         let room = |handle: &str| {
