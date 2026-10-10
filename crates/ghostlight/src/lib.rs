@@ -2132,6 +2132,21 @@ fn admit_resolved(
             ));
         }
     }
+    // The subjects map's only writer holds the same injectivity the resolver
+    // checks, decided by the same function.
+    {
+        let held = patch::held_import_keys(state.subjects.values());
+        let mut declared = BTreeSet::new();
+        for subject in &resolved.subjects {
+            if let Some(key) = &subject.subject.import_key
+                && patch::import_key_fault(key, &held, &mut declared).is_some()
+            {
+                return Err(KernelError::Invariant(
+                    "admitted subject's import key is malformed, held or repeated".into(),
+                ));
+            }
+        }
+    }
     for subject in &resolved.subjects {
         let scope = DecisionScope {
             subject_id: subject.subject_id,
@@ -2175,19 +2190,6 @@ fn admit_resolved(
         {
             return Err(KernelError::Invariant(
                 "admitted controller ID collision".into(),
-            ));
-        }
-        // The subjects map's only writer holds the same injectivity the
-        // resolver checks, so no resolved effect can install a second
-        // subject for one record.
-        if subject.subject.import_key.is_some()
-            && state
-                .subjects
-                .values()
-                .any(|held| held.import_key == subject.subject.import_key)
-        {
-            return Err(KernelError::Invariant(
-                "admitted subject repeats a held import key".into(),
             ));
         }
         if state

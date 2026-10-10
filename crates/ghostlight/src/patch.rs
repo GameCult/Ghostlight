@@ -23,6 +23,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, btree_map::Entry};
+use unicode_properties::{GeneralCategory, UnicodeGeneralCategory};
 use uuid::Uuid;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -975,12 +976,69 @@ impl ImportKey {
         &self.record
     }
 
-    fn is_canonical(&self) -> bool {
-        [&self.schema, &self.record].into_iter().all(|part| {
-            !part.is_empty()
-                && part.len() <= MAX_IMPORT_KEY_PART_BYTES
-                && !part.chars().any(char::is_whitespace)
+    /// The one predicate for an import key, called by the resolver and by the
+    /// load-time state gate alike. The record part is canonical free text: not
+    /// empty, at most 200 bytes, no leading, trailing or doubled space, already NFC
+    /// (refused, never normalised, so the kernel derives no second spelling),
+    /// no control or format character, and no whitespace but U+0020. The schema
+    /// part is a schema id: the same text with no space at all.
+    pub(super) fn is_canonical(&self) -> bool {
+        is_canonical_key_text(&self.record)
+            && is_canonical_key_text(&self.schema)
+            && !self.schema.contains(' ')
+    }
+}
+
+fn is_canonical_key_text(part: &str) -> bool {
+    !part.is_empty()
+        && part.len() <= MAX_IMPORT_KEY_PART_BYTES
+        && !part.starts_with(' ')
+        && !part.ends_with(' ')
+        && !part.contains("  ")
+        && unicode_normalization::is_nfc(part)
+        && part.chars().all(|c| {
+            !c.is_control()
+                && c.general_category() != GeneralCategory::Format
+                && (c == ' ' || !c.is_whitespace())
         })
+}
+
+/// Why an import key cannot join a world: the resolver names these by draft
+/// handle, the state gates by invariant text.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum ImportKeyFault {
+    Malformed,
+    Held,
+    Duplicate,
+}
+
+/// The keys the subjects hold, retired ones included, so a key is never
+/// reissued. Derived on demand; no stored index.
+pub(super) fn held_import_keys<'a>(
+    subjects: impl IntoIterator<Item = &'a super::SubjectState>,
+) -> BTreeSet<&'a ImportKey> {
+    subjects
+        .into_iter()
+        .filter_map(|subject| subject.import_key.as_ref())
+        .collect()
+}
+
+/// The one decision on a key: malformed, held by a subject already in the
+/// world, or already claimed in `declared` (which it joins). Every door that
+/// admits or loads subjects calls this, so none can decide otherwise.
+pub(super) fn import_key_fault<'a>(
+    key: &'a ImportKey,
+    held: &BTreeSet<&ImportKey>,
+    declared: &mut BTreeSet<&'a ImportKey>,
+) -> Option<ImportKeyFault> {
+    if !key.is_canonical() {
+        Some(ImportKeyFault::Malformed)
+    } else if held.contains(key) {
+        Some(ImportKeyFault::Held)
+    } else if !declared.insert(key) {
+        Some(ImportKeyFault::Duplicate)
+    } else {
+        None
     }
 }
 
@@ -3192,13 +3250,7 @@ pub(super) fn resolve_patch(
         kind_names.insert(kernel_speak_entry().kind);
     }
 
-    // Derived from the subjects the world holds, retired ones included, so a
-    // key is never reissued; no stored index.
-    let held_keys: BTreeSet<&ImportKey> = state
-        .subjects
-        .values()
-        .filter_map(|subject| subject.import_key.as_ref())
-        .collect();
+    let held_keys = held_import_keys(state.subjects.values());
     let mut declared_keys: BTreeSet<&ImportKey> = BTreeSet::new();
     for (position, declaration) in patch.declarations.iter().enumerate() {
         let (handle, label, kind) = match declaration {
@@ -3243,12 +3295,15 @@ pub(super) fn resolve_patch(
             && let Some(key) = &subject.import_key
         {
             let handle = subject.handle.clone();
-            if !key.is_canonical() {
-                mismatches.push(Mismatch::MalformedImportKey { handle });
-            } else if held_keys.contains(key) {
-                mismatches.push(Mismatch::ImportKeyHeld { handle });
-            } else if !declared_keys.insert(key) {
-                mismatches.push(Mismatch::DuplicateImportKey { handle });
+            match import_key_fault(key, &held_keys, &mut declared_keys) {
+                Some(ImportKeyFault::Malformed) => {
+                    mismatches.push(Mismatch::MalformedImportKey { handle });
+                }
+                Some(ImportKeyFault::Held) => mismatches.push(Mismatch::ImportKeyHeld { handle }),
+                Some(ImportKeyFault::Duplicate) => {
+                    mismatches.push(Mismatch::DuplicateImportKey { handle });
+                }
+                None => {}
             }
         }
         if let Declaration::Affordance(affordance) = declaration {
