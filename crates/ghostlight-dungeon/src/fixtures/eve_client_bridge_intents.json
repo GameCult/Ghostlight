@@ -5,9 +5,9 @@
       "intent": {
         "clientId": "eve.bridge.test",
         "commandBoundary": "ghostlight.eve.commands",
-        "issuedAt": "2026-09-22T23:30:03.348Z",
+        "issuedAt": "2026-10-09T23:58:34.345Z",
         "operation": {
-          "idempotencyKey": "0af70fc4-d2bf-4f9b-9914-696a27580065",
+          "idempotencyKey": "00e4b100-7626-4c62-8f45-5c2cfd5b5528",
           "operationId": "world.create",
           "routeHint": {
             "sourceVersion": 0,
@@ -36,9 +36,9 @@
       "intent": {
         "clientId": "eve.bridge.test",
         "commandBoundary": "ghostlight.eve.commands",
-        "issuedAt": "2026-09-22T23:30:05.143Z",
+        "issuedAt": "2026-10-09T23:58:35.759Z",
         "operation": {
-          "idempotencyKey": "99503a87-9e15-45b7-8776-765a8dc4216b",
+          "idempotencyKey": "10b5cf50-43c3-4735-b54c-3cec0c1e632b",
           "operationId": "world.approve",
           "routeHint": {
             "sourceVersion": 1,
@@ -58,9 +58,9 @@
       "intent": {
         "clientId": "eve.bridge.test",
         "commandBoundary": "ghostlight.eve.commands",
-        "issuedAt": "2026-09-22T23:30:09.010Z",
+        "issuedAt": "2026-10-09T23:58:37.240Z",
         "operation": {
-          "idempotencyKey": "20d01b36-cdfa-4e59-b5f3-31be54d94bc6",
+          "idempotencyKey": "d89dea99-cfeb-4992-9d5d-33b3f7a1cce2",
           "operationId": "world.activate",
           "routeHint": {
             "sourceVersion": 2,
@@ -80,9 +80,9 @@
       "intent": {
         "clientId": "eve.bridge.test",
         "commandBoundary": "ghostlight.eve.commands",
-        "issuedAt": "2026-09-22T23:30:11.040Z",
+        "issuedAt": "2026-10-09T23:58:38.611Z",
         "operation": {
-          "idempotencyKey": "2301df6e-397b-4d5b-afa3-ef965e57b49a",
+          "idempotencyKey": "d654e813-be7d-4818-9872-9aecd86c4e39",
           "operationId": "world.play",
           "routeHint": {
             "sourceVersion": 3,
