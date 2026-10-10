@@ -2107,10 +2107,12 @@ mod tests {
         ])
         .await;
         let port = port(responder.endpoint());
-        let none = infer_once(&port).await.unwrap();
-        let zeroes = infer_once(&port).await.unwrap();
-        let half = infer_once(&port).await.unwrap();
-        let null = infer_once(&port).await.unwrap();
+        // One prepared request, so the receipts differ in nothing but the reply.
+        let prepared = port.prepare(plain_request()).expect("the port prepares");
+        let none = port.infer(prepared.clone()).await.unwrap();
+        let zeroes = port.infer(prepared.clone()).await.unwrap();
+        let half = port.infer(prepared.clone()).await.unwrap();
+        let null = port.infer(prepared).await.unwrap();
         assert_eq!(none.usage(), None);
         assert_eq!(zeroes.usage(), Some(TokenUsage { prompt: 0, completion: 0, cached_prompt: None }));
         assert_eq!(half.usage(), None, "a reply missing a count reported a zero");
