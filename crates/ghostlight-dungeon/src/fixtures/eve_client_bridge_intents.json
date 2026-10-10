@@ -5,10 +5,10 @@
       "intent": {
         "clientId": "eve.bridge.test",
         "commandBoundary": "ghostlight.eve.commands",
-        "issuedAt": "2026-10-09T23:58:34.345Z",
+        "issuedAt": "2026-10-10T00:38:56.201Z",
         "operation": {
-          "idempotencyKey": "00e4b100-7626-4c62-8f45-5c2cfd5b5528",
-          "operationId": "world.create",
+          "idempotencyKey": "25d921aa-f228-425c-92e3-08c5dd9af508",
+          "operationId": "world.begin",
           "routeHint": {
             "sourceVersion": 0,
             "transport": "https-json"
@@ -18,71 +18,27 @@
         "payload": {
           "bindings": {
             "brief": "A world captured for the committed Eve client bridge fixture.",
-            "jurisdictions": "[]",
-            "lens_weights": "{\"patina\":1,\"charter\":1,\"ledger\":1,\"hearth\":1,\"tangle\":1,\"veil\":1,\"ember\":1,\"numen\":1}",
             "subject_label": "The Fixture Operator",
-            "targets": "{}",
             "title": "Bridge Fixture World"
-          }
-        },
-        "providerId": "gamecult.ghostlight.dungeon",
-        "receiptSchema": "gamecult.eve.command_result.v1",
-        "schema": "gamecult.eve.command_invocation.v1",
-        "surfaceId": "ghostlight.play"
-      },
-      "label": "world.create"
-    },
-    {
-      "intent": {
-        "clientId": "eve.bridge.test",
-        "commandBoundary": "ghostlight.eve.commands",
-        "issuedAt": "2026-10-09T23:58:35.759Z",
-        "operation": {
-          "idempotencyKey": "10b5cf50-43c3-4735-b54c-3cec0c1e632b",
-          "operationId": "world.approve",
-          "routeHint": {
-            "sourceVersion": 1,
-            "transport": "https-json"
           },
-          "schemaId": "ghostlight.world_approve.v0"
+          "jurisdictions": "[]",
+          "lens_weights": "{\"patina\":1,\"charter\":1,\"ledger\":1,\"hearth\":1,\"tangle\":1,\"veil\":1,\"ember\":1,\"numen\":1}",
+          "targets": "{}"
         },
-        "payload": {},
         "providerId": "gamecult.ghostlight.dungeon",
         "receiptSchema": "gamecult.eve.command_result.v1",
         "schema": "gamecult.eve.command_invocation.v1",
         "surfaceId": "ghostlight.play"
       },
-      "label": "world.approve"
+      "label": "world.begin"
     },
     {
       "intent": {
         "clientId": "eve.bridge.test",
         "commandBoundary": "ghostlight.eve.commands",
-        "issuedAt": "2026-10-09T23:58:37.240Z",
+        "issuedAt": "2026-10-10T00:38:57.625Z",
         "operation": {
-          "idempotencyKey": "d89dea99-cfeb-4992-9d5d-33b3f7a1cce2",
-          "operationId": "world.activate",
-          "routeHint": {
-            "sourceVersion": 2,
-            "transport": "https-json"
-          },
-          "schemaId": "ghostlight.world_activate.v0"
-        },
-        "payload": {},
-        "providerId": "gamecult.ghostlight.dungeon",
-        "receiptSchema": "gamecult.eve.command_result.v1",
-        "schema": "gamecult.eve.command_invocation.v1",
-        "surfaceId": "ghostlight.play"
-      },
-      "label": "world.activate"
-    },
-    {
-      "intent": {
-        "clientId": "eve.bridge.test",
-        "commandBoundary": "ghostlight.eve.commands",
-        "issuedAt": "2026-10-09T23:58:38.611Z",
-        "operation": {
-          "idempotencyKey": "d654e813-be7d-4818-9872-9aecd86c4e39",
+          "idempotencyKey": "fc391d0d-d107-4a66-b5c5-b754ffa814fa",
           "operationId": "world.play",
           "routeHint": {
             "sourceVersion": 3,
