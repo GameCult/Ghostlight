@@ -153,13 +153,23 @@ struct LocalChatFunctionCall {
     arguments: String,
 }
 
+/// A count may be absent from the wire (no usage reported, never a zero), but
+/// a count that is present must be a number: an explicit null is an integrity
+/// violation, as it is on the local lane before the hosted lane existed.
+fn present_count<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    u64::deserialize(deserializer).map(Some)
+}
+
 /// Every count is optional on the wire: a reply missing the prompt or
 /// completion count reports no usage rather than a zero.
 #[derive(Debug, Deserialize)]
 struct LocalChatUsage {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "present_count")]
     prompt_tokens: Option<u64>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "present_count")]
     completion_tokens: Option<u64>,
     /// DeepSeek's cache-hit count, part of `prompt_tokens`.
     #[serde(default)]
@@ -541,7 +551,10 @@ fn read_key_file(path: &std::path::Path) -> Result<Zeroizing<String>, Controller
     let bytes = Zeroizing::new(std::fs::read(path).map_err(|_| ControllerOpenError::HostedKeyUnreadable)?);
     let raw = std::str::from_utf8(bytes.as_slice()).map_err(|_| ControllerOpenError::HostedKeyUnreadable)?;
     let key = raw.trim_end_matches(['\r', '\n']);
-    if key.is_empty() || key.len() != key.trim().len() {
+    // A bearer token is one run of visible ASCII: anything else (padding, an
+    // interior newline, a control character) cannot ride an Authorization
+    // header, so it is refused here and not at the first send.
+    if key.is_empty() || !key.bytes().all(|byte| byte.is_ascii_graphic()) {
         return Err(ControllerOpenError::HostedKeyUnreadable);
     }
     Ok(Zeroizing::new(key.to_owned()))
@@ -2106,7 +2119,6 @@ mod tests {
             (200, absent),
             (200, usage_reply(json!({"prompt_tokens": 0, "completion_tokens": 0}))),
             (200, usage_reply(json!({"prompt_tokens": 9}))),
-            (200, usage_reply(json!({"prompt_tokens": null, "completion_tokens": 3}))),
         ])
         .await;
         let port = port(responder.endpoint());
@@ -2114,13 +2126,46 @@ mod tests {
         let prepared = port.prepare(plain_request()).expect("the port prepares");
         let none = port.infer(prepared.clone()).await.unwrap();
         let zeroes = port.infer(prepared.clone()).await.unwrap();
-        let half = port.infer(prepared.clone()).await.unwrap();
-        let null = port.infer(prepared).await.unwrap();
+        let half = port.infer(prepared).await.unwrap();
         assert_eq!(none.usage(), None);
         assert_eq!(zeroes.usage(), Some(TokenUsage { prompt: 0, completion: 0, cached_prompt: None }));
         assert_eq!(half.usage(), None, "a reply missing a count reported a zero");
-        assert_eq!(null.usage(), None);
         assert_eq!(none.receipt_digest(), zeroes.receipt_digest());
+    }
+
+    /// A usage count that is present but null is a malformed reply: an
+    /// integrity violation on the local lane (as before the hosted lane
+    /// existed) and on the hosted lane that shares its driver. Only a count
+    /// that is absent is a typed absence.
+    #[tokio::test]
+    async fn a_null_usage_count_is_an_integrity_violation_on_both_lanes() {
+        let directory = tempfile::tempdir().unwrap();
+        let key_path = write_key_file(&directory, SYNTHETIC_KEY.as_bytes());
+        let bodies = [
+            json!({"prompt_tokens": null, "completion_tokens": 3}),
+            json!({"prompt_tokens": 3, "completion_tokens": null}),
+        ];
+        for hosted in [false, true] {
+            for usage in &bodies {
+                let responder = ScriptedResponder::start(vec![(200, usage_reply(usage.clone()))]).await;
+                let fault = if hosted {
+                    let port = hosted_port_over_plain_http(
+                        format!("http://{}", responder.endpoint()),
+                        &key_path,
+                    );
+                    infer_once(&port).await
+                } else {
+                    infer_once(&port(responder.endpoint())).await
+                }
+                .expect_err("a null usage count produced an output");
+                assert_eq!(fault.class(), InferenceFaultClass::BadReply, "hosted={hosted} {fault:?}");
+                assert_eq!(
+                    fault.disposition(),
+                    InferenceFaultDisposition::IntegrityViolation,
+                    "hosted={hosted} {fault:?}"
+                );
+            }
+        }
     }
 
     #[test]
