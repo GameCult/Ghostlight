@@ -547,3 +547,116 @@ fn a_keyed_world_reopens_with_its_keys_and_digests() {
     assert_eq!(keys[0].schema(), "aetheria.ship");
     assert_eq!(keys[0].record(), "Alpha");
 }
+
+
+#[test]
+fn a_record_key_is_one_canonical_spelling() {
+    let (_dir, mut kernel) = keyed_world();
+    let place = commons(&kernel);
+    let nfc = "Caf\u{e9}";
+    let nfd = "Cafe\u{301}";
+    let submit = |kernel: &mut WorldKernel, handle: &str, record: &str| {
+        submit_as(
+            kernel,
+            CallerId::Principal(owner()),
+            None,
+            patch_of(vec![mirror(
+                handle,
+                Some(key("aetheria.ship", record)),
+                place,
+            )]),
+        )
+    };
+    submit(&mut kernel, "nfc", nfc).expect("the NFC spelling is admitted");
+    let refused = [
+        nfd,
+        "Alpha\u{200b}",
+        "Alpha\u{0}",
+        "\u{feff}Alpha",
+        "Alpha\u{202e}",
+        "Alpha\u{7}",
+        "Del  ta",
+        "Del\tta",
+        "Del\u{a0}ta",
+        "Del\u{2003}ta",
+        "Del\nta",
+    ];
+    for (index, record) in refused.iter().enumerate() {
+        let set = rejected(submit(&mut kernel, "bad", record));
+        assert_eq!(set, vec![malformed("bad")], "spelling {index}");
+        assert!(
+            !format!("{set:?}").contains("Alpha"),
+            "spelling {index} echoed the key"
+        );
+    }
+    assert_eq!(
+        keys_in(&kernel).len(),
+        2,
+        "only the genesis key and the NFC key are held"
+    );
+}
+
+#[test]
+fn a_lore_page_path_with_spaces_is_a_record_key() {
+    let (_dir, mut kernel) = keyed_world();
+    let place = commons(&kernel);
+    let record = "Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Ewan Hart";
+    let declare = |kernel: &mut WorldKernel, handle: &str| {
+        submit_as(
+            kernel,
+            CallerId::Principal(owner()),
+            None,
+            patch_of(vec![mirror(
+                handle,
+                Some(key("aetheria.lore", record)),
+                place,
+            )]),
+        )
+    };
+    declare(&mut kernel, "ewan").expect("a path with interior spaces is admitted");
+    assert_eq!(rejected(declare(&mut kernel, "again")), vec![held("again")]);
+}
+
+#[test]
+fn a_loaded_state_with_a_bad_import_key_is_refused() {
+    let (_dir, mut kernel) = keyed_world();
+    let place = commons(&kernel);
+    submit_as(
+        &mut kernel,
+        CallerId::Principal(owner()),
+        None,
+        patch_of(vec![mirror(
+            "beta",
+            Some(key("aetheria.ship", "Beta")),
+            place,
+        )]),
+    )
+    .unwrap();
+    assert!(crate::journal::verify_state_shape(&kernel.state).is_ok());
+    let corrupt = |edit: &dyn Fn(&mut ImportKey)| {
+        let mut state = kernel.state.clone();
+        for subject in state.subjects.values_mut() {
+            if let Some(held) = subject.import_key.as_mut() {
+                edit(held);
+            }
+        }
+        crate::journal::verify_state_shape(&state)
+    };
+    let shared = corrupt(&|held| *held = alpha());
+    assert!(
+        matches!(&shared, Err(crate::journal::JournalError::Corrupt(why)) if why.contains("import key")),
+        "two subjects sharing one key: {shared:?}"
+    );
+    assert!(
+        corrupt(&|held| *held = key("aetheria.ship", " Beta ")).is_err(),
+        "a key with edge spaces must not load"
+    );
+    assert!(
+        corrupt(&|held| *held = key("", "")).is_err(),
+        "an empty key must not load"
+    );
+    assert!(
+        corrupt(&|held| *held = key("aetheria.ship", "Be\u{200b}ta")).is_err(),
+        "a key with a format character must not load"
+    );
+}
