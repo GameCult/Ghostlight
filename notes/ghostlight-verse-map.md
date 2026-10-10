@@ -366,3 +366,147 @@ verbs as the target.
   Dungeon tests that drive the real client, and nothing runs them. Fixing the
   gate means a runner with both Rust and Node, which is Idunn's recipe and
   runner surface: a follow-up, with each phase-1 Hands run doing them by hand.
+
+## Verse sim: port inventory and model page
+
+Imagination `imagination-gl-verse-sim-0b`, session `self-2026-10-10-ag`,
+2026-10-10. Governing rulings: `verse-sim-pipeline`, `aetheria-sim-first`,
+`gestalt-machinery-port` (the old machine is ported, not redesigned), with
+`two-ghostlight-consumers`, `verse-verbs-two-render-paths`,
+`verse-cast-crossmedia`, `action-scenes-in-game` and
+`aetheria-release:ruling:storylets-simulate-sift-lift-weave`. Draft target:
+`notes/ghostlight-verse-target-r3-draft.md`. Rebuilt kernel read at
+`origin/main` `367e2eb`.
+
+### Where the old machine is
+
+The multiresolution gestalt machinery is **not** under the parked tag
+`parked/ghostlight-pre-rebuild`: that tag parks the docs, Python tools and
+fixtures that `main` still carried on 2026-10-09. The Rust machine was
+deleted by the kernel rebuild `6bb6869` (2026-09-02, "Rebuild Ghostlight
+around explicit world authority", −105,981 lines). Its last complete tree is
+the rebuild's parent, **`f9f019b`**, in `crates/ghostlight-dungeon/src/`.
+Retrieve with `git show f9f019b:crates/ghostlight-dungeon/src/<file>`.
+Its design record is `docs/architecture/ghostlight-multiresolution-agency.md`
+(on this branch; the live-fire evidence is at lines 830-936) and the
+explainer `docs/articles/multiresolution-gestalts.md`. The autonomous tick
+driver that survived `6bb6869` in reduced form was deleted later by play-agent
+Cut 1 `d69e9d4` (−2,184 lines).
+
+### Port inventory
+
+Old line counts are of the file at `f9f019b`. "Main" means `origin/main`
+`367e2eb`. A **forced change** is one the rebuilt ontology
+(`docs/architecture/ghostlight-world-ontology.md`, its numbered invariants)
+makes unavoidable; everything else ports as designed.
+
+| Old organ (file, size) | What it held | Depends on, absent from main | Attaches to on main | Forced change |
+|---|---|---|---|---|
+| Gestalt types (`domain.rs:130-345`) | `GestaltPersonaState` (shared capabilities, knowledge, resources, goals, pressures, home place); `GestaltMemberDelta` (per-person additions and removals over the baseline, equipment, obligations, relationships, memories, `materialized_actor_id`, relevance lease); `GestaltLineage` (fission ancestry by axis) | string ids with `gestalt:`/`member:` prefixes (`canonical_gestalt_member_local_id` strips repeats); free-string capabilities and knowledge | `SubjectKind::Population` (lib.rs:361-364); `PersonaMaterial`; `Knowledge`, `Custody`, `Commitment`, `Pressure` rows on the population subject | **F1** ids are reducer-issued `SubjectId`s, never caller strings (ontology invariants 1-2). **F2** the baseline is the population subject's own typed components, not a parallel state record. |
+| Members, individuation, promotion, demotion (`domain.rs:144-262`, `gestalt.rs` 937 lines `GestaltPresencePlanner`, `resolution.rs:2239-2648`) | a member exists as a delta; *individuation* creates the delta; *promotion* materializes an Actor from baseline + delta; *demotion* de-materializes the Actor back into the delta; a model presence planner proposes all three per scene | a second identity layer: the same person is a delta and, at times, an Actor (`materialized_actor_id`) | `CausalBoundary::IndividuationRequired { population, scope }` (lib.rs:4132; ontology "Institutional layers and flow"); `Declaration::Subject` in an elaboration patch | **F3** an individuated member is a `Person` subject from birth and stays one; its delta becomes its own components and `PersonaMaterial` (invariant 4: only subjects decide). **F4** promotion and demotion change *resolution* (singleton cell or grouped cell), never identity; the old `GestaltDemotion { actor_id }` has no port. **F5** a member's knowledge is its own `Knowledge` rows; "effective knowledge = baseline + delta" (`resolution.rs:3130`) is not readable as authority (invariant 6), so individuation copies the baseline facts it needs with `AcquireKnowledge` citing accessible facts. |
+| Agency graph (`domain.rs:264-333`, `resolution.rs:104-160`) | `AgencyProfile` per subject: six axes (Geography, Ideology, Authority, EconomyRole, SpeciesBody, Information) as string facets, `detail_debt`, `last_detail_tick`, `active_leaf`; `AgencyRelation` with ten kinds (Containment, Command, Membership, Alliance, Rivalry, Trade, Migration, Communication, Coercion, SharedLocation) and strength | a relation record: main has none ("There is no relation yet", ontology line 50; `EdgeKind` is `Route` only, line 419) | `cover.rs` builds adjacency from containment, membership, jurisdiction, shared place, relation and pressure (ontology "Scale"); the Tangle lens names relations | **F6** a typed relation edge enters the kernel (an `EdgeKind` beside `Route`, with `ComponentOp`s to form and dissolve it): Membership, Command, Alliance, Rivalry, Trade, Coercion, Migration; Containment of subjects and SharedLocation and Communication are already derivable (positions, channels) and do not port as edges. This is the target r2 phase-2 work, now pulled forward. **F7** axis facets are derived from typed components, not stored strings (geography from positions, authority from `Authority`/`Selection`, economy from `Custody`/`Dependency`, information from `Channel`/`Knowledge`); Ideology and SpeciesBody have no typed home and are dropped from the partition until one exists. **F8** `detail_debt` is derived from `last_opportunity_at` (main keeps that partition), not stored per profile. |
+| Resolution cover (`resolution.rs` 5,505 lines: `plan_cover`, `validate_cover`, `advance_detail_debt`, merge loss; `domain.rs:345-497`) | budgeted partition into `SimulationCell`s (`Cohesive` or `Arena`), seven-term `MergeLoss`, `ResolutionPolicy` (cell budget 1-240, provider parallelism, epochs), `ResolutionPin` (KeepTogether, KeepSeparate, MinimumIndividualDetail), `ResolutionDemand` (axis weights, focal subjects, horizon), cell leases, causal follow-through windows | the old campaign record as the store for policy, pins, leases and debt | `cover.rs` (1,116 lines): pure `derive_cover`, content-addressed cell ids under `ghostlight.cover.v1`, `TickIndex` derived from the clock, debt rotation with urgency slots | **F9** the cover never enters `WorldState` (cover.rs:6-9). Policy, pins, leases and demand move to the verse runner's own run record, not the kernel. **F10** an `Arena` cell presents partitioned views, never a knowledge union (ontology "Scale" item 4); the old arena knowledge union does not port. `Cohesive` ports as the population subject acting for itself. The merge-loss terms port onto main's partitioner as its grouping cost. |
+| Strategic wave pipeline (`scheduler.rs` 3,336 lines, `persona.rs` 6,540 lines cell projection) | demand projection by a cheap model; per-cell Projector → Persona → Interpreter membrane; `CellActionProposal` and attributed `CellInaction`; parallel dispatch under one provider gate; `ResolutionWaveCheckpoint` resuming only failed cells | `ModelPort` and the old persona stack (`persona.rs`) | `controllers.rs` (`NarrativePersona`, `OperationalAgent`, Projector/Interpreter), `RoutedInferencePort`, `WorldMailbox` role ports, `ExerciseDecision`/`DeclineDecision` commands | **F11** a cell's output is one affordance invocation or decline per constituent, each admitted separately against its scope digest (invariants 7, 10); there is no wave-level atomic commit. A refused grouped constituent stays refused (ontology "Scale"). |
+| Outcome resolution (`outcome.rs` 4,387 lines; selective semantic verifier) | a batched model resolver returns a typed result per strategic attempt; a same-snapshot verifier advises on risky effects | model-decided outcomes | outcome bands on affordances, chosen by kernel digest (`BandPreimage`), no RNG | **F12** not ported. The kernel decides outcomes (target invariant `kernel-decides`, ontology invariant 7). Strategic activities, institution postures and migrations become catalog affordances (from Aetheria's grammar) whose effects compile to the 34 `ComponentOp`s: posture to `CreateCommitment`, migration to `Relocate`. |
+| Fission (`compiler.rs` `GestaltFissionRequest`, `domain.rs:716` `GestaltFissionPreview`, `FissionGestalt` command) | approval-gated split of a population along one axis, member deltas assigned to one child, lineage kept | the `FissionGestalt` kernel command; lineage as its own record | elaboration patches (`submit_elaboration`); `Retire` | **F13** fission is one elaboration patch: declare child populations, Membership edges (F6), relocate each named member's membership, retire or keep the parent. Lineage is the Membership/Command edges plus the commit, not a separate record. The operator approval gate ports unchanged (see question `gestalt-fission-approval`). |
+| Tick driver and away time (`main.rs` `scheduler_loop`, `process_due_ticks`, `advance_one_strategic_tick`; `scheduler.rs:1943` `due_tick_target`) | a background loop on 60 s and 300 s pulses; one strategic tick per idle hour after 15 min, capped at 8 (`away_budget_waits_and_caps_at_eight`); return catch-up before a player's fictional command; yields to live turns; `AdvanceStrategicTick` commits atomically; worlds with no simulatable agency tick without a model | a player and their idleness; the `AdvanceStrategicTick` command; the in-daemon timer | `ClockPort::advance_time` (mailbox.rs:688), `clock.rs` `derive_motion` (routines auto-fulfil, overdue obligations and goals raise pressure, zero inference) | **F14** a verse world has no player, so "away time" is the schedule itself: a run advances N ticks of a configured fiction span. Not ontology-forced; forced by the consumer. **F15** each tick is: derive cover, run cells, submit each proposal, then `AdvanceTime` (cover.rs:43-45 states this order); there is no `AdvanceStrategicTick`. |
+| Clock consequences (`clock.rs` 739 lines, `ClockConsequenceBinding`) | a model bound due clocks to agent actions | a model stage on the clock | `clock.rs` `derive_motion`, zero inference | **F16** not ported; main's deterministic motion replaces it. |
+| Model stage receipts (`persona_stage_receipt.v1`, written by `advance_one_strategic_tick`) | per-stage receipt keyed by hash, collisions refused | the old store | `LocalInferenceReceipt`/`SdkInferenceReceipt` (request hashes, token counts) | Not forced. Main's receipts carry hashes but not the response body, and nothing found persists them; replay needs the response stored (prior art (c), "Determinism and replay"). |
+| Newspaper output path (`newspaper.rs` 6,120 lines, 27 tests; typesetter `tools/typeset_newspaper.py`, `notes/historical-newspaper-layout-grammar.md` and woodcut prompts under the parked tag) | the proof the old machine wrote newspapers at scale: a newsroom of staff and journalists, an editorial agenda, story pitches with conflict axes, articles that cite exact source facts and named people, a copy desk that files grounding findings, a press close checkpoint, Markdown and audit renderers; persisted as `world_newspaper_composition.v3` | the old `Campaign` and `ModelPort` | the commit journal and `WorldSnapshot`; facts with standing; `Channel` reach (news is what a channel's audience could know) | None from the ontology: it reads world state and writes only its own compositions (`advance_world_newspaper` writes the store under its own schema, never a campaign field). It ports as the first pipeline reader, with the copy desk checking citations against committed facts. |
+| Tests | ~113 gestalt-related tests: kernel.rs 38 of 71, resolution.rs 16 of 26, scheduler.rs 14 of 19, gestalt.rs 6, persona.rs 18 of 41, outcome.rs 5 of 26, compiler.rs 8 of 73, main.rs 8 of 33 (names matched by script) | the old types | main's cover and clock tests | Port the invariants, not the tests: cover completeness and budget (`aetheria_scale_cover_is_complete_unique_and_budgeted`, `partitions_one_thousand_subjects_into_a_two_hundred_cell_wave`), `rivals_at_budget_one_form_an_arena_not_a_false_collective`, `contradictory_pins_are_rejected`, `detail_debt_rotates_low_budget_attention`, `lease_cannot_preserve_a_cell_disconnected_by_current_topology`, `partial_wave_checkpoint_resumes_only_failed_cells`, `named_member_activity_stays_attributed_to_the_person`, `individuation_cannot_duplicate_an_established_population_identity`, `gestalt_migration_moves_only_the_population_leaf`. Tests of F3-F5, F10, F12 and F16 subjects do not port. |
+
+Live-fire numbers the old machine left (multiresolution-agency.md:846-889):
+the 31-wave, budget-8 run over 24 subjects took 1,211.6 s and 1,468,039
+prompt plus 165,725 completion tokens (60.69% cache hits, 7,567 prompt tokens
+per committed consequence); a four-wave golden took 126,826 prompt tokens.
+These are the only cost evidence for a cadence and budget ruling.
+
+Ruling `teardown-was-authority-sprawl` sorts the old tree: the rows above are
+the good ideas to port (gestalts, multiresolution cover, pins and debt,
+away-time as a driver, checkpointed parallel waves, attributed inaction,
+strategic individuation, fission with approval, the newspaper path, stage
+receipts). The ad hoc mutation rules stay dead. Each has a replacement on
+main:
+
+| Ad hoc rule in the old tree | Where | What replaces it on main |
+|---|---|---|
+| caller-supplied string ids and prefix normalisation (`member:`, `gestalt:`, `normalize_legacy_gestalt_member_identities`) | domain.rs:160-195, resolution.rs:160 | ontology invariants 1-2: reducer-issued typed ids |
+| two-phase `AdmitEntity` and the flat per-mutation batch, repaired by reconciliation steps | legacy_transition.rs, transition.rs | invariant 3: one atomic `WorldPatch`; `resolve_patch` returns the complete mismatch set |
+| wave-level strategic outcome resolver (a model decides whether an attempt worked) | outcome.rs | invariant 7: outcome bands chosen by kernel digest |
+| selective same-snapshot semantic verifier on risky effects | outcome.rs, persona.rs effect verifier | invariant 5 (custody conserves) and effect ceilings on the affordance |
+| titled verifiers, quotas, `*Qualification`/`*Verification`, complexity rounds, cover-completeness targets | compiler.rs, elaboration.rs | invariant 9: structural admission; `WorldScaleIntent` deficit; stock lenses |
+| a stale proposal discarded on any revision change | kernel.rs | invariant 10: scope-digest binding |
+| a model binding due clocks to actions | clock.rs | `derive_motion`, zero inference |
+| a model presence planner deciding individuation, promotion and demotion | gestalt.rs | `IndividuationRequired` boundary answered by an elaboration patch; promotion and demotion are cover assignment (F4) |
+| arena knowledge union and "effective member knowledge" | resolution.rs:3095-3150 | invariant 6: knowledge scoped to the holder; partitioned views |
+| prompt-only prohibitions against repeated postures and absence-as-inaction, with text-length bounds | persona.rs contracts (multiresolution-agency.md:873-893) | `DeclineDecision` per constituent; `NoCanonicalChange` refusal of no-op commitments |
+| guard that a strategic tick may not write an external subject | kernel.rs:1150-1170 | `ExternallyControlled` controller: an external subject has no opportunity and no turn (world-consumer-api.md:113-130) |
+| "two competing plan authorities" check between a plan and a wave | kernel.rs:1142 | one command path per act (`ExerciseDecision`), no plan object |
+
+### Does main route every mutation through the grammar?
+
+Checked in `crates/ghostlight/src/lib.rs` at `367e2eb`, `reduce` (lines
+1658-1790). The answer splits in two, and the split is a finding.
+
+- **Holds: one reducer, one closed operation set.** Every command is one of
+  seven `CommandBody` variants, `reduce` turns it into a typed `WorldEffect`,
+  and every world change is one of the 34 `ComponentOp`s, six
+  `Declaration`s, the clock, lifecycle or lens weights. "Adding an operation
+  is a design change ... never a runtime patch" (ontology "Component
+  operations"). The whole of `apply_effect` was not read, so "nothing else
+  writes `WorldState`" is read from the design and the dispatch, not proven
+  line by line.
+- **Does not hold for the world-authored action grammar.** Only
+  `ExerciseDecision` goes through an affordance (`require_granted`,
+  `action::exercise`). Three other paths mutate the world without one:
+  `AdmitPatch` (the owner unconfined, elaborators within jurisdiction, the
+  consumer within its bound subjects, and `Play`, which may `Mint` and write
+  `Ruled` facts); `AdvanceTime`, whose `derive_motion` rolls routines and
+  raises pressure by kernel rule; and `ApproveDraft`, `ActivateWorld`,
+  `SetLensWeights`. So "applied the action grammar to world state mutation" is
+  true of the closed operation set and false of Aetheria's grammar in the
+  `verse-sim-pipeline` sense. Draft target invariant `grammar-governs` makes
+  the line explicit, and question `grammar-scope-of-mutation` asks where the
+  operator wants it.
+
+For the verse: promotion and demotion are not mutations at all (F4).
+Away-time results are affordance invocations from cells plus clock motion.
+Individuation and fission are elaboration patches. Meddling is owner patches
+or run controls. Each is named in the Authority column below; any writer not
+named there is forbidden.
+
+### Model page
+
+One row per persistent kind the verse sim needs. The Authority column names
+the one owner and the forbidden writers; for world state the rule is
+invariant `grammar-governs` in the draft target. An empty cell is marked
+**EMPTY** and is a finding.
+
+| Kind | Identity (namespace; injective?) | Lifecycle | Authority (owner; forbidden writers) |
+|---|---|---|---|
+| Verse grammar: Aetheria's ontology and action grammar (subject kinds, place kinds, faction vocabulary, affordance kinds each tagged with one render path, social verbs) | **EMPTY** namespace: no document, schema or repo holds it today. Proposed: a CultCache schema id plus a revision, and the world binds the grammar's content digest, which is injective. | **EMPTY** beyond creation: authored, revised; how a running world moves to a new grammar revision is unanswered (main refuses earlier schemas and never migrates, world-consumer-api.md:184-190) | Owner proposed: Aetheria, which knows what it can render (ruling `verse-sim-pipeline`). Where it lives and in what format: question `verse-grammar-home`. Forbidden writers: Ghostlight elaborators and the play authority (the catalog is input to genesis, not something a run invents); the kernel today lets the owner declare any affordance kind (map "Where phase 2's verb sets plug in"), so nothing enforces this yet. |
+| Lore source (AetheriaLore pages, Aetheria `Faction` records) | page path + AetheriaLore commit; `aetheria.faction` CultDocument key + Aetheria commit. Injective per commit. | read at genesis and elaboration; never written by the sim | Owners: AetheriaLore and Aetheria. Forbidden writers: every sim organ (target invariant `canon-one-way`). |
+| Verse world (journal and state) | `WorldId`, reducer-issued; `revision` and digest chain | created, approved, activated; one commit per admitted command; never forked today | The kernel, through its closed operation set. Forbidden writers: the runner, the Eve surface and meddling tools except through kernel commands. |
+| Elaborated entities: places, resources, facts, channels, routes | `EntityId`/`EdgeId`, reducer-issued; injective | admitted by patch; retired; facts may be Canonical, Claimed or Ruled | Kernel admits; elaborators and the owner propose. Lore-derived facts carry their source (`verse-provenance`). |
+| Import key: lore record ↔ Ghostlight id (which subject *is* faction X) | **EMPTY**: labels never resolve references (ontology "Identity"), and nothing records or checks that one Aetheria faction key maps to exactly one subject | must survive re-elaboration and any grammar revision | **EMPTY** owner. Proposed: the genesis patch writes one Canonical fact per imported record citing its key, and admission refuses a second subject citing the same key. Not on main. |
+| Factions (Aetheria factions as actors) | `SubjectId`, kind `Institution` | declared at genesis from `aetheria.faction`; act through offices and catalog affordances; can be retired | Kernel; the faction's `OperationalAgent` controller proposes. Needs relations (port F6) for alliance and rivalry. |
+| Gestalts (populations at each resolution) | `SubjectId`, kind `Population` (F1, F2) | declared at genesis or elaboration; migrate by `Relocate`; split by fission (F13); retired | Kernel admits; elaborators propose fission; operator approves fission (question `gestalt-fission-approval`). Forbidden writers: the cover and the runner (they choose resolution, never identity). |
+| Individuated members (the people gestalts give up) | `SubjectId`, kind `Person`, with a Membership edge to the population (F3, F6) | born by an elaboration patch answering `IndividuationRequired` or a strategic individuation; never folded back (F4) | Kernel admits; the elaborator or the cell proposes; duplicates of an established identity refused (ported test). |
+| How a region moves between resolutions | derived, no identity of its own: a cell id is a content hash under `ghostlight.cover.v1` | recomputed every tick from pins, budget, pressure and debt; a leased cell survives while still connected (old lease rule) | `derive_cover` (pure); pins and budget from the run record; promotion and demotion are only cell assignment (F4, F9). Forbidden writers: the kernel (never sees a cell), any model. |
+| Cast (characters the audience follows) | **EMPTY**: no component or record marks a subject as cast | **EMPTY**: who joins or leaves the cast, and when | **EMPTY** owner. A cast member is a `Person` subject (target invariant `cast-persists`); curating the roster is an operator act (question `meddling-first-acts` lists it). The old `MinimumIndividualDetail` pin is how the cast keeps detail focus. |
+| Verse run (one scheduled invocation) | **EMPTY** namespace on main. Proposed: (`WorldId`, run sequence), sequence assigned by the runner. | scheduled → running → per-tick checkpoint → completed, failed or stopped; a failed run resumes from its last checkpoint | Owner: the verse runner. Idunn owns when it starts and process survival. Forbidden writers: Dungeon's play loop, an in-daemon timer, the Eve surface. Cadence and budget: question `verse-run-cadence-budget`. |
+| Tick | `TickIndex`, derived from the world clock, never stored (cover.rs:33-38) | derive cover, run cells, submit proposals, then `AdvanceTime` (F15); a resumed tick re-derives the same command ids, so the kernel's idempotency ledger answers with the original receipts | Kernel owns time; the runner owns the order. |
+| Run record: policy, pins, demand, leases, checkpoints | **EMPTY** on main; old shapes `ResolutionPolicy`, `ResolutionPin`, `ResolutionWaveCheckpoint` | policy and pins changed by operator act at a tick boundary (old epoch rule); checkpoints per tick, superseded | Runner. Forbidden writers: the kernel. |
+| Model proposal and its validation | derived command id (world, tick, cell, constituent), so injective per tick | proposed; admitted, or refused (`ScopeChanged`, precondition, ceiling); a narrative singleton may re-lower once (`interrupted_from`) | Kernel reducer decides. Forbidden writers: an outcome resolver or verifier model (F12). |
+| Provider call record (for replay and cost) | request hash (main's receipts) | **EMPTY**: main's receipts are not persisted and hold no response body | Owner proposed: the inference port writes, the runner stores per run. Replay re-feeds stored responses into the deterministic kernel. |
+| Pipeline output: newspaper issues, episodes, storylets | **EMPTY** on main. The old newspaper had `ghostlight.world_newspaper_issue.v3` keyed by a publication task binding (port row above); episodes and storylets have no kind anywhere. The commit journal's `DecisionEvent`s are the raw history; `operator_log` is owner-only. | newspaper: composed, checkpointed at press close, persisted, never edited; episodes and storylets **EMPTY** | Owner: each pipeline reader owns its own output. **EMPTY** for episodes and storylets. First consumer: question `verse-first-consumer`. Forbidden writers: every reader may write only its own output, never the world (`canon-one-way`, `grammar-governs`). |
+| Operator meddling act | kernel commands carry an idempotency key and the owner principal; run controls carry the run id and an epoch | committed to the journal (world acts) or the run record (controls); never edited afterwards | Owner: the operator, through the verse Eve surface. Forbidden: any tool that writes `.cc` files or the journal directly. What it does first: question `meddling-first-acts`. |
+
+### Cells that could not be filled
+
+- Verse grammar: no namespace, no home, no format, no revision rule.
+- Import key: no owner and no injectivity check between Aetheria records and subjects.
+- Cast: no identity, lifecycle or owner.
+- Verse run and run record: no namespace or store on main (the old shapes exist at `f9f019b`).
+- Provider call record: nothing persists a response for replay.
+- Pipeline output: episodes and storylets have no kind and no owner; the newspaper has an old design at `f9f019b` and nothing on main.
