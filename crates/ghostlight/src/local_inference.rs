@@ -1990,6 +1990,36 @@ mod tests {
         assert_eq!(read_key_file(&ok).unwrap().as_str(), "fine-key");
     }
 
+    /// A bearer token is one run of visible ASCII. Each shape that cannot ride
+    /// an Authorization header is refused at open with the typed fault, and the
+    /// refusal carries neither the key text nor the path.
+    #[test]
+    fn hosted_binding_refuses_a_key_shape_that_cannot_ride_a_header() {
+        let directory = tempfile::tempdir().unwrap();
+        let cases: [(&str, &[u8]); 8] = [
+            ("interior newline", b"keycanary\nsecondline"),
+            ("interior carriage return", b"keycanary\rsecondline"),
+            ("interior tab", b"keycanary\tsecondline"),
+            ("interior NUL", b"keycanary\0secondline"),
+            ("leading space", b" keycanary"),
+            ("trailing space before the newline", b"keycanary \n"),
+            ("non-ascii", "keycanary-\u{e9}".as_bytes()),
+            ("leading newline", b"\nkeycanary"),
+        ];
+        for (label, content) in cases {
+            let path = write_key_file(&directory, content);
+            let canary = path.display().to_string();
+            let error = open_hosted_port(hosted_binding("https://api.example.test", path))
+                .err()
+                .unwrap_or_else(|| panic!("{label}: a key that cannot ride a header opened"));
+            assert!(matches!(error, ControllerOpenError::HostedKeyUnreadable), "{label}");
+            let rendered = format!("{error} | {error:?}");
+            assert!(!rendered.contains("keycanary"), "{label}: the key leaked");
+            assert!(!rendered.contains("secondline"), "{label}: the key leaked");
+            assert!(!rendered.contains(&canary), "{label}: the path leaked");
+        }
+    }
+
     #[tokio::test]
     async fn hosted_request_carries_the_bearer_and_loopback_carries_none() {
         let directory = tempfile::tempdir().unwrap();
@@ -2119,6 +2149,7 @@ mod tests {
             (200, absent),
             (200, usage_reply(json!({"prompt_tokens": 0, "completion_tokens": 0}))),
             (200, usage_reply(json!({"prompt_tokens": 9}))),
+            (200, usage_reply(json!({"completion_tokens": 9}))),
         ])
         .await;
         let port = port(responder.endpoint());
@@ -2126,10 +2157,12 @@ mod tests {
         let prepared = port.prepare(plain_request()).expect("the port prepares");
         let none = port.infer(prepared.clone()).await.unwrap();
         let zeroes = port.infer(prepared.clone()).await.unwrap();
-        let half = port.infer(prepared).await.unwrap();
+        let half = port.infer(prepared.clone()).await.unwrap();
+        let other_half = port.infer(prepared).await.unwrap();
         assert_eq!(none.usage(), None);
         assert_eq!(zeroes.usage(), Some(TokenUsage { prompt: 0, completion: 0, cached_prompt: None }));
-        assert_eq!(half.usage(), None, "a reply missing a count reported a zero");
+        assert_eq!(half.usage(), None, "a reply missing the completion count reported a zero");
+        assert_eq!(other_half.usage(), None, "a reply missing the prompt count reported a zero");
         assert_eq!(none.receipt_digest(), zeroes.receipt_digest());
     }
 
