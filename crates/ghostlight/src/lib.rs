@@ -70,6 +70,7 @@ mod sdk_inference;
 mod table;
 mod tool_schema;
 mod vault;
+mod verse;
 
 pub(crate) use action::ActionMismatch;
 pub(crate) use clock::Motion;
@@ -130,6 +131,10 @@ pub use table::{
     id_text, id_text_matches, table_view,
 };
 pub use vault::{VaultError, VaultEvidenceSource};
+pub use verse::{
+    CALL_RECORD_SCHEMA, CallRecordError, CallRecordStore, ProviderCallRecord, RecordingInferencePort,
+    ReplayInferencePort, RunId,
+};
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
 
 use chrono::{DateTime, Utc};

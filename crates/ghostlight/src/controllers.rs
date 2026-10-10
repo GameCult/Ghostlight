@@ -250,6 +250,9 @@ pub enum InferenceFaultClass {
     Status(u16),
     /// The endpoint's reply was not the declared shape.
     BadReply,
+    /// A recording port refused the call because it could pass the run's
+    /// token cap. Nothing was sent; the run stops and does not retry.
+    BudgetExhausted,
     Unclassified,
 }
 
@@ -298,6 +301,14 @@ impl InferenceFault {
     /// sibling cell in the same tick is unaffected.
     pub fn recovery_required(detail: &'static str) -> Self {
         Self::new(detail)
+    }
+
+    /// The run's token cap would be passed by this call, so it was not made.
+    /// An integrity violation is the one disposition that stops the owning
+    /// flow without retrying, which is what a spent budget asks for.
+    pub(crate) fn budget_exhausted() -> Self {
+        Self::integrity_violation("the run's token cap would be passed by this call")
+            .classed(InferenceFaultClass::BudgetExhausted)
     }
 
     /// Names what kind of trouble this fault is.
