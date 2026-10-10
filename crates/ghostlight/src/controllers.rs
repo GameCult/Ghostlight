@@ -11,7 +11,9 @@ use super::elaboration::{
     NullEvidenceSource, SeedCheckpoint, SeedRunner, valid_elaboration_progression,
     valid_seed_progression,
 };
-use super::local_inference::{DEFAULT_LOCAL_MODEL_PREFIX, LocalBinding, open_local_port};
+use super::local_inference::{
+    DEFAULT_LOCAL_MODEL_PREFIX, HostedBinding, LocalBinding, open_hosted_port, open_local_port,
+};
 use super::sdk_inference::{
     ChildProcessLink, DEFAULT_SDK_MODEL_PREFIX, RoutedInferencePort, SdkBinding, SdkInferencePort,
 };
@@ -156,6 +158,21 @@ pub enum InferenceEvent {
 pub struct InferenceOutput {
     pub(super) events: Vec<InferenceEvent>,
     pub(super) receipt_digest: String,
+    /// What the provider reported spending on this reply. `None` is a reply
+    /// that reported none (the connector lane's receipt carries no counts);
+    /// it is never a zero.
+    #[serde(default)]
+    pub(super) usage: Option<TokenUsage>,
+}
+
+/// Tokens one reply cost, as the provider counted them. `prompt` is the
+/// whole prompt, cache hits included; `cached_prompt` is the part the
+/// provider served from its cache, `None` when it reported no cache figure.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TokenUsage {
+    pub prompt: u64,
+    pub completion: u64,
+    pub cached_prompt: Option<u64>,
 }
 
 impl InferenceOutput {
@@ -165,7 +182,14 @@ impl InferenceOutput {
         Self {
             events,
             receipt_digest: receipt_digest.into(),
+            usage: None,
         }
+    }
+
+    /// The same output carrying the provider's reported token usage.
+    pub fn with_usage(mut self, usage: TokenUsage) -> Self {
+        self.usage = Some(usage);
+        self
     }
 
     pub(super) fn prose_only(
@@ -611,6 +635,7 @@ impl CodexConnectorInferencePort {
         Ok(InferenceOutput {
             events,
             receipt_digest: format!("sha256:{:x}", Sha256::digest(&receipt_bytes)),
+            usage: None,
         })
     }
 }
@@ -2485,7 +2510,11 @@ pub enum ControllerOpenError {
     SdkSidecarMissing { path: String },
     #[error("the local inference endpoint `{endpoint}` is not loopback")]
     LocalEndpointNotLoopback { endpoint: SocketAddr },
-    #[error("the local and SDK inference transports both claim model prefix `{prefix}`")]
+    #[error("the hosted inference endpoint must be an https URL")]
+    HostedEndpointNotHttps,
+    #[error("the hosted inference key file is unreadable, empty, or has surrounding whitespace")]
+    HostedKeyUnreadable,
+    #[error("two inference transports both claim model prefix `{prefix}`")]
     SharedModelPrefix { prefix: String },
     #[error("the {transport} inference transport's model prefix must not be empty")]
     EmptyModelPrefix { transport: &'static str },
@@ -2508,6 +2537,7 @@ pub fn open_inference(
     connector: Option<ConnectorBinding>,
     sdk: Option<SdkBinding>,
     local: Option<LocalBinding>,
+    hosted: Option<HostedBinding>,
     models: &[&str],
 ) -> Result<Arc<dyn InferencePort>, ControllerOpenError> {
     let connector: Option<Arc<dyn InferencePort>> = match connector {
@@ -2551,15 +2581,31 @@ pub fn open_inference(
         }
         None => None,
     };
-    if let Some((prefix, _)) = &local
-        && sdk.is_some()
-        && *prefix == sdk_model_prefix
-    {
+    // The hosted lane is the local port's second binding: the same
+    // OpenAI-compatible port, an https endpoint and a bearer key read once
+    // from a file. It claims its own prefix beside the local one.
+    let hosted: Option<(String, Arc<dyn InferencePort>)> = match hosted {
+        Some(binding) => {
+            if binding.model_prefix.is_empty() {
+                return Err(ControllerOpenError::EmptyModelPrefix { transport: "hosted" });
+            }
+            let prefix = binding.model_prefix.clone();
+            Some((prefix, open_hosted_port(binding)?))
+        }
+        None => None,
+    };
+    let claims: Vec<(String, Arc<dyn InferencePort>)> = local.into_iter().chain(hosted).collect();
+    let mut claimed: Vec<&str> = claims.iter().map(|(prefix, _)| prefix.as_str()).collect();
+    if sdk.is_some() {
+        claimed.push(&sdk_model_prefix);
+    }
+    claimed.sort_unstable();
+    if let Some(pair) = claimed.windows(2).find(|pair| pair[0] == pair[1]) {
         return Err(ControllerOpenError::SharedModelPrefix {
-            prefix: prefix.clone(),
+            prefix: pair[0].to_owned(),
         });
     }
-    let routed = RoutedInferencePort::new(connector, sdk, sdk_model_prefix, local);
+    let routed = RoutedInferencePort::new(connector, sdk, sdk_model_prefix, claims);
     for &model in models {
         if routed.route(model).is_none() {
             return Err(ControllerOpenError::UnroutableModel {
@@ -7092,6 +7138,7 @@ mod tests {
                 arguments: json!({"detail":"The wind reading is missing."}).to_string(),
             }],
             receipt_digest: "sha256:operational-round-zero".into(),
+            usage: None,
         }];
         let substituted_operational = operational_in_flight(
             operational_command,
@@ -7130,6 +7177,7 @@ mod tests {
                 .to_string(),
             }],
             receipt_digest: "sha256:narrative-round-zero".into(),
+            usage: None,
         }];
         let substituted_narrative = narrative_interpreter_in_flight(
             narrative_command,
@@ -9931,6 +9979,7 @@ mod tests {
                 .map(|(id, name, arguments)| oracle_call(id, name, arguments))
                 .collect(),
             receipt_digest: format!("sha256:{receipt}"),
+            usage: None,
         }
     }
 
@@ -10807,6 +10856,7 @@ mod tests {
         Ok(InferenceOutput {
             events,
             receipt_digest: format!("sha256:{receipt}"),
+            usage: None,
         })
     }
 
@@ -11491,6 +11541,7 @@ mod tests {
                 model_prefix: local_model_prefix,
                 caller_runtime_id: runtime_id,
             }),
+            None,
             &models.each(),
         )
         .unwrap();
@@ -14763,12 +14814,14 @@ mod tests {
             InferenceOutput {
                 events: vec![speak_call("call", "c0__notgranted", "Anything.")],
                 receipt_digest: "sha256:grouped".into(),
+                usage: None,
             },
             // The repair round the grouped budget buys. It calls nothing, so the
             // handle finishes silent.
             InferenceOutput {
                 events: vec![InferenceEvent::Text("Nothing further.".into())],
                 receipt_digest: "sha256:grouped-repair".into(),
+                usage: None,
             },
         ];
         let GroupedLoopEvaluation::Complete { capture } =

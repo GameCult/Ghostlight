@@ -14,7 +14,7 @@
 //! Projector may call it.
 
 use super::controllers::{
-    self, ControllerError, InferenceEvent, InferenceOutput, InferencePurpose, InferenceRequest,
+    self, ControllerError, InferenceEvent, InferenceOutput, InferencePurpose, InferenceRequest, TokenUsage,
     RequestShape, tool_request,
 };
 use super::patch::{
@@ -1069,6 +1069,12 @@ impl InferenceOutput {
     /// The provider's own receipt digest, carried verbatim.
     pub fn receipt_digest(&self) -> &str {
         &self.receipt_digest
+    }
+
+    /// The tokens the provider reported for this reply; `None` when it
+    /// reported none.
+    pub fn usage(&self) -> Option<TokenUsage> {
+        self.usage
     }
 }
 

@@ -587,7 +587,7 @@ fn open_controller(
     };
     let mut all_models: Vec<&str> = models.each().to_vec();
     all_models.push(&play_model);
-    let inference = open_inference(connector, sdk, local, &all_models)?;
+    let inference = open_inference(connector, sdk, local, None, &all_models)?;
     let work = open_controller_work(service_root.join("controller-work.cc"))?;
     let runner = ControllerRunner::open(world.clone(), inference.clone(), work, models.clone())?;
     Ok(OpenedControllers {
@@ -2513,7 +2513,7 @@ mod tests {
             key_path: controller_key,
             caller_runtime_id: "ghostlight-runtime-test".into(),
         };
-        let inference = open_inference(Some(connector), None, None, &models.each()).unwrap();
+        let inference = open_inference(Some(connector), None, None, None, &models.each()).unwrap();
         let work = open_controller_work(directory.path().join("controller-work.cc")).unwrap();
         let controllers =
             ControllerRunner::open(world.clone(), inference.clone(), work, models.clone()).unwrap();
