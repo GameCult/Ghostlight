@@ -567,27 +567,50 @@ fn advanced_grammar_world() -> (tempfile::TempDir, WorldKernel, crate::EntityId)
     (dir, kernel, dead_end)
 }
 
+type Door = (&'static str, CallerId, Option<crate::PatchAnswer>);
+
+/// Each door refuses an outside kind and a wrong role signature, typed, and the
+/// refusal leaves the revision where it was. The owner and the consumer declare
+/// unanswered only in Draft; Play and the elaborator act in Active.
+fn refuse_at_each_door(kernel: &mut WorldKernel, doors: Vec<Door>) {
+    for (door, caller, answers) in doors {
+        let revision = kernel.state.revision;
+        let kind = submit_as(
+            kernel,
+            caller.clone(),
+            answers.clone(),
+            patch_of(vec![declare("wave", "wave", &[])]),
+        );
+        assert_eq!(rejected(kind), not_in_grammar("wave"), "{door}");
+        let roles = submit_as(
+            kernel,
+            caller,
+            answers,
+            patch_of(vec![declare("hail", "hail", &[("who", person())])]),
+        );
+        assert_eq!(rejected(roles), disagrees("hail"), "{door}");
+        assert_eq!(
+            kernel.state.revision, revision,
+            "{door} refusal moved the world"
+        );
+    }
+}
+
 #[test]
 fn every_admission_door_refuses_outside_the_grammar_after_the_revision_has_moved() {
     let (_dir, mut kernel, dead_end) = advanced_grammar_world();
-    // The owner declares unanswered only in Draft, so it is checked there, at
-    // revision 1; the other doors act in Active.
     assert_eq!(kernel.state.revision, 1);
-    let owner_door = |kernel: &mut WorldKernel| {
-        for (patch, expected) in [
-            (
-                patch_of(vec![declare("wave", "wave", &[])]),
-                not_in_grammar("wave"),
-            ),
-            (
-                patch_of(vec![declare("hail", "hail", &[("who", person())])]),
-                disagrees("hail"),
-            ),
-        ] {
-            assert_eq!(rejected(admit(kernel, patch)), expected, "owner");
-        }
-    };
-    owner_door(&mut kernel);
+    let draft_doors = vec![
+        ("owner", CallerId::Principal(owner()), None),
+        (
+            "consumer",
+            CallerId::System(crate::SystemCapability::Consumer {
+                consumer: crate::ConsumerId::of_name("grammar-door"),
+            }),
+            None,
+        ),
+    ];
+    refuse_at_each_door(&mut kernel, draft_doors);
     crate::tests::activate(&mut kernel);
     assert!(
         kernel.state.revision > 1,
@@ -601,17 +624,10 @@ fn every_admission_door_refuses_outside_the_grammar_after_the_revision_has_moved
                 if *place == dead_end)
         })
         .expect("the dead end is an unelaborated destination");
-    let doors: Vec<(&str, CallerId, Option<crate::PatchAnswer>)> = vec![
+    let active_doors = vec![
         (
             "play",
             CallerId::System(crate::SystemCapability::Play),
-            None,
-        ),
-        (
-            "consumer",
-            CallerId::System(crate::SystemCapability::Consumer {
-                consumer: crate::ConsumerId::of_name("grammar-door"),
-            }),
             None,
         ),
         (
@@ -622,27 +638,7 @@ fn every_admission_door_refuses_outside_the_grammar_after_the_revision_has_moved
             Some(crate::PatchAnswer::Boundary(answer)),
         ),
     ];
-    for (door, caller, answers) in doors {
-        let revision = kernel.state.revision;
-        let kind = submit_as(
-            &mut kernel,
-            caller.clone(),
-            answers.clone(),
-            patch_of(vec![declare("wave", "wave", &[])]),
-        );
-        assert_eq!(rejected(kind), not_in_grammar("wave"), "{door}");
-        let roles = submit_as(
-            &mut kernel,
-            caller,
-            answers,
-            patch_of(vec![declare("hail", "hail", &[("who", person())])]),
-        );
-        assert_eq!(rejected(roles), disagrees("hail"), "{door}");
-        assert_eq!(
-            kernel.state.revision, revision,
-            "{door} refusal moved the world"
-        );
-    }
+    refuse_at_each_door(&mut kernel, active_doors);
     // The same path admits what the grammar carries, so the refusals above are
     // the grammar's and not a closed door.
     let receipt = submit_as(
