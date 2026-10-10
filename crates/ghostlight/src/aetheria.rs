@@ -16,7 +16,7 @@ use crate::grammar::{
     GrammarBinding, GrammarError, GrammarReferentKind, GrammarRole, GrammarVerb, RenderPath,
 };
 use cultcache_rs::SingleFileMessagePackBackingStore;
-use serde_json::Value;
+use rmpv::Value;
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -73,6 +73,10 @@ pub enum CatalogReadError {
     MultipleGrammars,
     #[error("record {record:?} field {field} is missing or not the mirrored type")]
     MalformedRecord { record: String, field: u8 },
+    #[error("record {record:?} field {field} is not a canonical import key")]
+    NonCanonicalKey { record: String, field: u8 },
+    #[error("record {record:?} is a second aetheria.faction under one record key")]
+    DuplicateFaction { record: String },
     #[error("record {record:?} field {field} is not a known render path")]
     UnknownRenderPath { record: String, field: u8 },
     #[error("record {record:?} field {field} is not a known referent kind")]
@@ -107,7 +111,16 @@ pub fn read_aetheria_catalog(path: impl AsRef<Path>) -> Result<AetheriaCatalog, 
             }
             VERB_SCHEMA => verbs.push(read_verb(&Cells::of(&row.key, &row.payload)?)?),
             FACTION_SCHEMA => {
-                factions.push(read_faction(&row.key, &Cells::of(&row.key, &row.payload)?)?)
+                let faction = read_faction(&row.key, &Cells::of(&row.key, &row.payload)?)?;
+                if factions
+                    .last()
+                    .is_some_and(|seen: &AetheriaFaction| seen.key == faction.key)
+                {
+                    return Err(CatalogReadError::DuplicateFaction {
+                        record: row.key.clone(),
+                    });
+                }
+                factions.push(faction);
             }
             _ => {}
         }
@@ -127,7 +140,8 @@ struct Cells<'a> {
 
 impl<'a> Cells<'a> {
     fn of(record: &'a str, payload: &[u8]) -> Result<Self, CatalogReadError> {
-        match rmp_serde::from_slice::<Value>(payload) {
+        let mut payload = payload;
+        match rmpv::decode::read_value(&mut payload) {
             Ok(Value::Array(cells)) => Ok(Self { record, cells }),
             _ => Err(CatalogReadError::MalformedRecord {
                 record: record.to_owned(),
@@ -138,6 +152,13 @@ impl<'a> Cells<'a> {
 
     fn malformed(&self, field: u8) -> CatalogReadError {
         CatalogReadError::MalformedRecord {
+            record: self.record.to_owned(),
+            field,
+        }
+    }
+
+    fn non_canonical(&self, field: u8) -> CatalogReadError {
+        CatalogReadError::NonCanonicalKey {
             record: self.record.to_owned(),
             field,
         }
@@ -165,8 +186,11 @@ impl<'a> Cells<'a> {
     /// A string Aetheria may leave null; null reads as empty.
     fn text_or_empty(&self, field: u8) -> Result<String, CatalogReadError> {
         match self.cell(field)? {
-            Value::Null => Ok(String::new()),
-            Value::String(text) => Ok(text.clone()),
+            Value::Nil => Ok(String::new()),
+            Value::String(text) => text
+                .as_str()
+                .map(str::to_owned)
+                .ok_or_else(|| self.malformed(field)),
             _ => Err(self.malformed(field)),
         }
     }
@@ -243,19 +267,25 @@ fn canonical_name(name: &str, max_len: usize) -> bool {
 }
 
 fn read_faction(key: &str, cells: &Cells) -> Result<AetheriaFaction, CatalogReadError> {
-    let Some(allegiance) = cells.cell(12)?.as_object() else {
+    let own = ImportKey::new(FACTION_SCHEMA, key);
+    if !own.is_canonical() {
+        return Err(cells.non_canonical(0));
+    }
+    let Some(allegiance) = cells.cell(12)?.as_map() else {
         return Err(cells.malformed(12));
     };
     let mut standing = BTreeMap::new();
     for (other, weight) in allegiance {
+        let other = other.as_str().ok_or_else(|| cells.malformed(12))?;
         let weight = weight.as_f64().ok_or_else(|| cells.malformed(12))?;
-        standing.insert(
-            ImportKey::new(FACTION_SCHEMA, other.as_str()),
-            weight as f32,
-        );
+        let other = ImportKey::new(FACTION_SCHEMA, other);
+        if !other.is_canonical() {
+            return Err(cells.non_canonical(12));
+        }
+        standing.insert(other, weight as f32);
     }
     Ok(AetheriaFaction {
-        key: ImportKey::new(FACTION_SCHEMA, key),
+        key: own,
         name: cells.text(1)?,
         short_name: cells.text_or_empty(2)?,
         description: cells.text_or_empty(3)?,

@@ -366,7 +366,9 @@ fn every_referent_code_maps_to_its_own_kind() {
         (5, GrammarReferentKind::Cargo),
     ] {
         let mut rows = fixture_rows();
-        edit(&mut rows, "verb-attack", |cells| cells[3][0][2] = json!(code));
+        edit(&mut rows, "verb-attack", |cells| {
+            cells[3][0][2] = json!(code)
+        });
         let catalog = read(&rows).unwrap();
         assert_eq!(
             catalog.grammar.verb("attack"),
@@ -374,4 +376,122 @@ fn every_referent_code_maps_to_its_own_kind() {
             "code {code}"
         );
     }
+}
+
+fn faction_with_key(record: &str) -> Vec<CultCacheEnvelope> {
+    let mut rows = fixture_rows();
+    row_of(&mut rows, "faction-brannoch").key = record.into();
+    rows
+}
+
+#[test]
+fn a_faction_record_key_that_is_not_canonical_text_is_refused_by_key_and_field() {
+    for bad in [
+        "faction-cafe\u{301}",
+        "faction-brannoch ",
+        "faction-\u{202e}brannoch",
+        "",
+    ] {
+        assert_eq!(
+            read(&faction_with_key(bad)),
+            Err(CatalogReadError::NonCanonicalKey {
+                record: bad.into(),
+                field: 0
+            }),
+            "{bad:?}"
+        );
+    }
+}
+
+#[test]
+fn an_allegiance_key_that_is_not_canonical_text_is_refused_by_key_and_field() {
+    for bad in ["faction-cafe\u{301}", "faction-adrasteia ", "\u{202e}"] {
+        let mut rows = fixture_rows();
+        edit(&mut rows, "faction-brannoch", |cells| {
+            cells[12] = json!({ bad: 0.5 });
+        });
+        assert_eq!(
+            read(&rows),
+            Err(CatalogReadError::NonCanonicalKey {
+                record: "faction-brannoch".into(),
+                field: 12
+            }),
+            "{bad:?}"
+        );
+    }
+}
+
+#[test]
+fn two_faction_rows_under_one_record_key_are_refused() {
+    let mut rows = fixture_rows();
+    let twin = row_of(&mut rows, "faction-adrasteia").clone();
+    rows.push(twin);
+    assert_eq!(
+        read(&rows),
+        Err(CatalogReadError::DuplicateFaction {
+            record: "faction-adrasteia".into()
+        })
+    );
+}
+
+#[test]
+fn factions_are_read_in_record_key_order_whatever_the_file_order() {
+    let mut rows = fixture_rows();
+    rows.sort_by(|a, b| b.key.cmp(&a.key));
+    assert_eq!(rows.first().unwrap().key, "verb-speak");
+    let names: Vec<_> = read(&rows)
+        .unwrap()
+        .factions
+        .into_iter()
+        .map(|faction| faction.name)
+        .collect();
+    assert_eq!(names, ["Adrasteia", "Brannoch"]);
+}
+
+#[test]
+fn an_allegiance_that_is_not_a_map_is_malformed_not_empty() {
+    for not_a_map in [
+        json!([]),
+        json!(["faction-adrasteia"]),
+        Value::Null,
+        json!(1),
+    ] {
+        let mut rows = fixture_rows();
+        let shape = not_a_map.clone();
+        edit(&mut rows, "faction-brannoch", |cells| cells[12] = shape);
+        assert_eq!(
+            read(&rows),
+            Err(CatalogReadError::MalformedRecord {
+                record: "faction-brannoch".into(),
+                field: 12
+            }),
+            "{not_a_map}"
+        );
+    }
+}
+
+/// Appends cells to a faction as Aetheria's C# CultCache writes a `byte[]`
+/// (MessagePack bin) and a `DateTime` (MessagePack timestamp, ext -1).
+#[test]
+fn bin_and_ext_fields_aetheria_adds_at_higher_keys_are_ignored() {
+    let mut rows = fixture_rows();
+    let row = row_of(&mut rows, "faction-adrasteia");
+    let rmpv::Value::Array(mut cells) =
+        rmpv::decode::read_value(&mut row.payload.as_slice()).unwrap()
+    else {
+        panic!("not positional");
+    };
+    cells.push(rmpv::Value::Binary(vec![1, 0, 7]));
+    cells.push(rmpv::Value::Ext(
+        -1,
+        vec![0, 0, 0, 0, 0x65, 0x1f, 0x2a, 0x80],
+    ));
+    let mut payload = Vec::new();
+    rmpv::encode::write_value(&mut payload, &rmpv::Value::Array(cells)).unwrap();
+    row.payload = payload;
+
+    assert_eq!(
+        read(&rows).unwrap(),
+        read_aetheria_catalog(FIXTURE).unwrap()
+    );
 }

@@ -668,6 +668,7 @@ dependencies = [
  "ghostlight-persona-projection",
  "reqwest",
  "rmp-serde",
+ "rmpv",
  "serde",
  "serde_bytes",
  "serde_json",
