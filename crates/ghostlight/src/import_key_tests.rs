@@ -580,6 +580,9 @@ fn a_record_key_is_one_canonical_spelling() {
         "Del\u{a0}ta",
         "Del\u{2003}ta",
         "Del\nta",
+        // The violation sits deep in a long, real-shaped path, past any prefix.
+        "Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cafe\u{301}",
+        "Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Ewan\u{200b}Hart",
     ];
     for (index, record) in refused.iter().enumerate() {
         let set = rejected(submit(&mut kernel, "bad", record));
@@ -659,4 +662,42 @@ fn a_loaded_state_with_a_bad_import_key_is_refused() {
         corrupt(&|held| *held = key("aetheria.ship", "Be\u{200b}ta")).is_err(),
         "a key with a format character must not load"
     );
+}
+
+/// The admission backstop, reached with an effect resolution never produced: a
+/// resolved patch whose two subjects carry one key. The control is the same
+/// effect with distinct keys, admitted by the same function.
+#[test]
+fn admitting_a_resolved_effect_refuses_two_subjects_with_one_key() {
+    let (_dir, kernel) = keyed_world();
+    let place = commons(&kernel);
+    let resolve = || {
+        crate::patch::resolve_patch(
+            &kernel.state,
+            CommandId::new(),
+            &patch_of(vec![
+                mirror("first", Some(key("aetheria.ship", "Beta")), place),
+                mirror("second", Some(key("aetheria.ship", "Gamma")), place),
+            ]),
+            None,
+            None,
+        )
+        .expect("two distinct keys resolve")
+    };
+    let resolves_to = crate::resolution_revision(&kernel.state).unwrap();
+    let mut control = kernel.state.clone();
+    crate::admit_resolved(&mut control, &resolve(), resolves_to)
+        .expect("distinct keys are admitted");
+
+    let mut twinned = resolve();
+    assert_eq!(twinned.subjects.len(), 2);
+    twinned.subjects[1].subject.import_key = twinned.subjects[0].subject.import_key.clone();
+    let mut state = kernel.state.clone();
+    let error = crate::admit_resolved(&mut state, &twinned, resolves_to)
+        .expect_err("one key on two resolved subjects is refused");
+    assert!(
+        matches!(&error, KernelError::Invariant(why) if why.contains("import key")),
+        "{error:?}"
+    );
+    assert!(!format!("{error:?}").contains("Beta"), "the refusal echoed the key");
 }
