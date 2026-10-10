@@ -1,7 +1,7 @@
 use super::*;
 use crate::patch::{
-    AffordanceDeclaration, AffordanceKindName, Declaration, DraftHandle, EntityKind, Mismatch,
-    OutcomeBand, Role, RoleSpec,
+    AffordanceDeclaration, AffordanceKindName, AudienceSpec, Declaration, DraftHandle, EntityKind,
+    Mismatch, OutcomeBand, Precondition, Role, RoleSpec,
 };
 use crate::tests::{auth_principal, command, creation, owner};
 use crate::{
@@ -54,13 +54,17 @@ fn declare(handle: &str, kind: &str, roles: &[(&str, RefKind)]) -> Declaration {
                 kind: *kind,
             })
             .collect(),
-        preconditions: Vec::new(),
+        // Speech with one audience is the smallest entry the resolver does
+        // not refuse as inert; the grammar check does not read it.
+        preconditions: vec![Precondition::CanBroadcast {
+            via: AudienceSpec::Colocated,
+        }],
         effect_slots: Vec::new(),
         outcome_bands: vec![OutcomeBand {
             weight: 1,
             effects: Vec::new(),
         }],
-        carries_speech: false,
+        carries_speech: true,
     })
 }
 
