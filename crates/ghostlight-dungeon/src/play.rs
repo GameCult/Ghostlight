@@ -8265,7 +8265,7 @@ pub(crate) mod tests {
         };
         let inference = match timeout {
             Some(timeout) => ghostlight::open_local_port_with_timeout(binding, timeout).unwrap(),
-            None => ghostlight::open_inference(None, None, Some(binding), &["local/play"]).unwrap(),
+            None => ghostlight::open_inference(None, None, Some(binding), None, &["local/play"]).unwrap(),
         };
         let table = PlayTable::new(
             fixture.world.clone(),

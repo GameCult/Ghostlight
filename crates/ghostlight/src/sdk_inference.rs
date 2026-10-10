@@ -7,7 +7,7 @@
 //! its own, computes no tool result, and holds no credential.
 
 use super::controllers::{
-    InferenceEvent, InferenceFault, InferenceOutput, InferencePort, InferenceRequest,
+    InferenceEvent, InferenceFault, InferenceOutput, InferencePort, InferenceRequest, TokenUsage,
     PreparedInference, REQUEST_EXPIRY, RESPONSE_TIMEOUT, ToolResultOracle, call_id_is_valid,
     tool_name_is_valid, unix_ms,
 };
@@ -119,6 +119,22 @@ pub(super) struct SdkModelUsage {
     pub(super) output_tokens: u64,
     pub(super) cache_read_input_tokens: u64,
     pub(super) cache_creation_input_tokens: u64,
+}
+
+/// The reply's token usage summed over the models the run used. The whole
+/// prompt is the fresh input plus both cache figures (Anthropic reports them
+/// apart); the cached part is what was read from cache. A run that reported
+/// no usage at all is `None`, never a zero.
+fn sdk_usage(usage: &[SdkModelUsage]) -> Option<TokenUsage> {
+    if usage.is_empty() {
+        return None;
+    }
+    let sum = |field: fn(&SdkModelUsage) -> u64| usage.iter().map(field).sum::<u64>();
+    Some(TokenUsage {
+        prompt: sum(|u| u.input_tokens) + sum(|u| u.cache_read_input_tokens) + sum(|u| u.cache_creation_input_tokens),
+        completion: sum(|u| u.output_tokens),
+        cached_prompt: Some(sum(|u| u.cache_read_input_tokens)),
+    })
 }
 
 /// The failures the sidecar is allowed to name. It reports a reason; this
@@ -654,9 +670,10 @@ fn assemble_output(
     };
     let receipt_bytes = rmp_serde::to_vec_named(&receipt)
         .map_err(|_| InferenceFault::new("the SDK receipt could not be encoded"))?;
-    Ok(InferenceOutput {
-        events: lowered,
-        receipt_digest: format!("sha256:{:x}", Sha256::digest(&receipt_bytes)),
+    let output = InferenceOutput::new(lowered, format!("sha256:{:x}", Sha256::digest(&receipt_bytes)));
+    Ok(match sdk_usage(&receipt.usage) {
+        Some(usage) => output.with_usage(usage),
+        None => output,
     })
 }
 
@@ -713,10 +730,10 @@ pub(super) struct RoutedInferencePort {
     connector: Option<Arc<dyn InferencePort>>,
     sdk: Option<Arc<dyn InferencePort>>,
     sdk_model_prefix: String,
-    /// The local port's own claimed prefix, carried beside it rather than in a
-    /// third bare `String` field, so `route` can compare its length against
-    /// the SDK's claim without a third parallel field to keep in sync.
-    local: Option<(String, Arc<dyn InferencePort>)>,
+    /// The OpenAI-compatible ports (the loopback one and the hosted one), each
+    /// with its own claimed prefix carried beside it, so `route` can compare
+    /// lengths without a parallel field per port to keep in sync.
+    claims: Vec<(String, Arc<dyn InferencePort>)>,
 }
 
 impl RoutedInferencePort {
@@ -724,13 +741,13 @@ impl RoutedInferencePort {
         connector: Option<Arc<dyn InferencePort>>,
         sdk: Option<Arc<dyn InferencePort>>,
         sdk_model_prefix: impl Into<String>,
-        local: Option<(String, Arc<dyn InferencePort>)>,
+        claims: Vec<(String, Arc<dyn InferencePort>)>,
     ) -> Self {
         Self {
             connector,
             sdk,
             sdk_model_prefix: sdk_model_prefix.into(),
-            local,
+            claims,
         }
     }
 
@@ -747,9 +764,10 @@ impl RoutedInferencePort {
         // the connector, which is what keeps a typo'd model prefix loud
         // instead of silently reaching the wrong backend.
         let local_claim = self
-            .local
-            .as_ref()
+            .claims
+            .iter()
             .filter(|(prefix, _)| model.starts_with(prefix.as_str()))
+            .max_by_key(|(prefix, _)| prefix.len())
             .map(|(prefix, port)| (prefix.len(), port));
         let sdk_claim = model
             .starts_with(&self.sdk_model_prefix)
@@ -1202,6 +1220,41 @@ mod tests {
         assert_eq!(output.events.len(), 2);
     }
 
+    /// The SDK lane reports the run's tokens summed over its models: the whole
+    /// prompt is fresh input plus both cache figures, the cached part is the
+    /// cache read, and a run that reported nothing is `None`, not a zero.
+    #[tokio::test]
+    async fn the_sdk_receipts_token_counts_reach_inference_output() {
+        let port = SdkInferencePort::new(ScriptedLink::new(Vec::new()), TEST_RUNTIME);
+        let prepared = prose_prepared(&port, "Say something true.");
+        let events = vec![SidecarEvent::Text { text: "ok".into() }];
+        let mut two_models = material();
+        two_models.usage = vec![
+            SdkModelUsage {
+                model: TEST_MODEL.into(),
+                input_tokens: 11,
+                output_tokens: 5,
+                cache_read_input_tokens: 3,
+                cache_creation_input_tokens: 2,
+            },
+            SdkModelUsage {
+                model: "claude-haiku-5".into(),
+                input_tokens: 100,
+                output_tokens: 40,
+                cache_read_input_tokens: 7,
+                cache_creation_input_tokens: 0,
+            },
+        ];
+        let output = assemble_output(&prepared, events.clone(), two_models, &[]).unwrap();
+        assert_eq!(
+            output.usage(),
+            Some(TokenUsage { prompt: 123, completion: 45, cached_prompt: Some(10) })
+        );
+        let mut none = material();
+        none.usage = Vec::new();
+        assert_eq!(assemble_output(&prepared, events, none, &[]).unwrap().usage(), None);
+    }
+
     /// Spec test 11. The digest is a pure function of the receipt, so it is
     /// compared directly rather than through two whole queries.
     #[tokio::test]
@@ -1336,7 +1389,7 @@ mod tests {
             Some(Arc::clone(&connector)),
             Some(Arc::clone(&sdk)),
             DEFAULT_SDK_MODEL_PREFIX,
-            None,
+            Vec::new(),
         );
         assert!(Arc::ptr_eq(routed.route("claude-opus-5").unwrap(), &sdk));
         assert!(Arc::ptr_eq(
@@ -1347,7 +1400,7 @@ mod tests {
             Some(Arc::clone(&connector)),
             Some(Arc::clone(&sdk)),
             "gpt-",
-            None,
+            Vec::new(),
         );
         assert!(Arc::ptr_eq(moved.route("gpt-5.6-terra").unwrap(), &sdk));
         assert!(Arc::ptr_eq(
@@ -1386,11 +1439,11 @@ mod tests {
         };
 
         assert!(matches!(
-            open_inference(None, Some(sdk()), None, &models("gpt-5.6-terra").each()),
+            open_inference(None, Some(sdk()), None, None, &models("gpt-5.6-terra").each()),
             Err(ControllerOpenError::UnroutableModel { .. })
         ));
         assert!(matches!(
-            open_inference(Some(connector()), None, None, &models("claude-opus-5").each()),
+            open_inference(Some(connector()), None, None, None, &models("claude-opus-5").each()),
             Err(ControllerOpenError::UnroutableModel { .. })
         ));
         assert!(matches!(
@@ -1402,12 +1455,13 @@ mod tests {
                     model_prefix: DEFAULT_SDK_MODEL_PREFIX.into(),
                 }),
                 None,
+                None,
                 &models(TEST_MODEL).each(),
             ),
             Err(ControllerOpenError::SdkSidecarMissing { .. })
         ));
         assert!(
-            open_inference(Some(connector()), Some(sdk()), None, &models(TEST_MODEL).each()).is_ok(),
+            open_inference(Some(connector()), Some(sdk()), None, None, &models(TEST_MODEL).each()).is_ok(),
             "a configuration where every model routes did not open"
         );
     }
@@ -1760,6 +1814,7 @@ mod tests {
                 model_prefix: DEFAULT_SDK_MODEL_PREFIX.into(),
             }),
             None,
+            None,
             &models(TEST_MODEL).each(),
         )
         .expect("the SDK model routes");
@@ -1882,7 +1937,7 @@ mod tests {
             )) as Arc<dyn InferencePort>),
             None,
             DEFAULT_SDK_MODEL_PREFIX,
-            None,
+            Vec::new(),
         );
         assert!(connector_only.route(TEST_MODEL).is_none());
         let prepared =
@@ -1913,6 +1968,7 @@ mod tests {
                     caller_runtime_id: TEST_RUNTIME.into(),
                     model_prefix: DEFAULT_SDK_MODEL_PREFIX.into(),
                 }),
+                None,
                 None,
                 &models(TEST_MODEL).each(),
             )

@@ -2158,6 +2158,7 @@ mod tests {
                 })
                 .collect(),
             receipt_digest: "sha256:receipt".into(),
+            usage: None,
         }
     }
 

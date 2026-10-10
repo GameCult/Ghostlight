@@ -87,7 +87,7 @@ pub use controllers::{
     GroupedCheckpoint, InferenceEvent, InferenceFault, InferenceFaultClass, InferenceFaultDisposition, InferenceOutput,
     InferencePort,
     InferencePurpose, InferenceRequest, NarrativeCheckpoint, NarrativeRun, OperationalCheckpoint,
-    OperationalRun, PersonaLane, PreparedInference, SubmissionDisposition, ToolResultOracle,
+    OperationalRun, PersonaLane, PreparedInference, SubmissionDisposition, TokenUsage, ToolResultOracle,
     TracingInferencePort, open_controller_work, open_inference,
 };
 pub(crate) use cover::{CellId, Constituent, Resolution};
@@ -101,7 +101,7 @@ pub use grammar::{
     RenderPath,
 };
 pub use lens::{Lens, LensWeights};
-pub use local_inference::{DEFAULT_LOCAL_MODEL_PREFIX, LocalBinding};
+pub use local_inference::{DEFAULT_HOSTED_MODEL_PREFIX, DEFAULT_LOCAL_MODEL_PREFIX, HostedBinding, LocalBinding};
 #[cfg(feature = "test-support")]
 pub use local_inference::open_local_port_with_timeout;
 pub(crate) use mailbox::ElaborationPort;

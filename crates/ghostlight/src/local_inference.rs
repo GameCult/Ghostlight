@@ -1,5 +1,8 @@
-//! A local OpenAI-compatible inference port, for a loopback model server this
-//! process does not authenticate to and does not need a credential for.
+//! An OpenAI-compatible inference port with two bindings. The local binding
+//! reaches a loopback model server this process does not authenticate to and
+//! needs no credential for. The hosted binding reaches an https endpoint
+//! (a cheap hosted model for the Aetheria verse) with a bearer key read once
+//! from a file.
 //!
 //! This module owns one authority: lowering a prepared request to one
 //! `POST /v1/chat/completions` call and lifting the reply back into the same
@@ -10,8 +13,8 @@
 
 use super::controllers::{
     ControllerOpenError, InferenceEvent, InferenceFault, InferenceFaultClass, InferenceOutput, InferencePort,
-    InferenceRequest, PreparedInference, REQUEST_EXPIRY, RESPONSE_TIMEOUT, call_id_is_valid,
-    tool_name_is_valid, unix_ms,
+    InferenceRequest, PreparedInference, REQUEST_EXPIRY, RESPONSE_TIMEOUT, TokenUsage,
+    call_id_is_valid, tool_name_is_valid, unix_ms,
 };
 use async_trait::async_trait;
 use codex_connector::CodexInputItem;
@@ -19,7 +22,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::Arc;
+use zeroize::Zeroizing;
 
 /// The model-name prefix that names the local transport when nothing
 /// configures one.
@@ -31,6 +36,41 @@ pub struct LocalBinding {
     pub endpoint: SocketAddr,
     pub model_prefix: String,
     pub caller_runtime_id: String,
+}
+
+/// The model-name prefix that names the hosted transport when nothing
+/// configures one.
+pub const DEFAULT_HOSTED_MODEL_PREFIX: &str = "hosted/";
+
+/// Everything the hosted binding needs to open. `base_url` is the provider's
+/// origin (`https://api.deepseek.com`); the port appends
+/// `/v1/chat/completions`. The key is read from `key_path` once, at open.
+pub struct HostedBinding {
+    pub base_url: String,
+    pub key_path: PathBuf,
+    pub model_prefix: String,
+    pub caller_runtime_id: String,
+}
+
+/// Where the port sends its one request. The credential lives only in the
+/// `Hosted` variant, so the loopback binding cannot carry one.
+enum Endpoint {
+    Loopback(SocketAddr),
+    Hosted {
+        base_url: String,
+        key: Zeroizing<String>,
+    },
+}
+
+impl Endpoint {
+    fn url(&self) -> String {
+        match self {
+            Self::Loopback(address) => format!("http://{address}/v1/chat/completions"),
+            Self::Hosted { base_url, .. } => {
+                format!("{}/v1/chat/completions", base_url.trim_end_matches('/'))
+            }
+        }
+    }
 }
 
 const LOCAL_RECEIPT_SCHEMA: &str = "ghostlight.local_inference_receipt.v1";
@@ -113,22 +153,47 @@ struct LocalChatFunctionCall {
     arguments: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct LocalChatUsage {
-    #[serde(default)]
-    prompt_tokens: u64,
-    #[serde(default)]
-    completion_tokens: u64,
+/// A count may be absent from the wire (no usage reported, never a zero), but
+/// a count that is present must be a number: an explicit null is an integrity
+/// violation, as it is on the local lane before the hosted lane existed.
+fn present_count<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    u64::deserialize(deserializer).map(Some)
 }
 
-/// The local OpenAI-compatible backend behind Ghostlight's inference seam.
+/// Every count is optional on the wire: a reply missing the prompt or
+/// completion count reports no usage rather than a zero.
+#[derive(Debug, Deserialize)]
+struct LocalChatUsage {
+    #[serde(default, deserialize_with = "present_count")]
+    prompt_tokens: Option<u64>,
+    #[serde(default, deserialize_with = "present_count")]
+    completion_tokens: Option<u64>,
+    /// DeepSeek's cache-hit count, part of `prompt_tokens`.
+    #[serde(default)]
+    prompt_cache_hit_tokens: Option<u64>,
+}
+
+impl LocalChatUsage {
+    fn reported(&self) -> Option<TokenUsage> {
+        Some(TokenUsage {
+            prompt: self.prompt_tokens?,
+            completion: self.completion_tokens?,
+            cached_prompt: self.prompt_cache_hit_tokens,
+        })
+    }
+}
+
+/// The OpenAI-compatible backend behind Ghostlight's inference seam.
 /// Unlike the SDK port, it runs no query loop: one prepared request lowers to
 /// one HTTP call, and any tool call in the reply comes back inert for Rust's
 /// own evaluator to drive the next round, exactly as the connector lane
 /// already does.
 pub(super) struct LocalInferencePort {
     client: reqwest::Client,
-    endpoint: SocketAddr,
+    endpoint: Endpoint,
     prefix: String,
     caller_runtime_id: String,
     /// Read only by the tests that pin which timeout a constructor resolves
@@ -138,16 +203,17 @@ pub(super) struct LocalInferencePort {
 }
 
 impl LocalInferencePort {
-    /// The loopback check happens here, in the constructor, so a non-loopback
-    /// endpoint cannot reach this port through any path that builds one —
-    /// not only the one `open_inference` exercises today. The client is
-    /// built with `.no_proxy()` so an environment proxy variable can never
-    /// carry this request, or a `proxy-authorization` header derived from a
-    /// proxy URL's userinfo, off this loopback endpoint; and with redirects
-    /// disabled, so a 3xx reply cannot re-POST the request's contents to a
-    /// second endpoint this port never opened.
+    /// The endpoint checks happen here, in the constructor, so neither a
+    /// non-loopback local endpoint nor a non-https hosted one can reach this
+    /// port through any path that builds one — not only the one
+    /// `open_inference` exercises today. The client is built with
+    /// `.no_proxy()` so an environment proxy variable can never carry this
+    /// request, or a `proxy-authorization` header derived from a proxy URL's
+    /// userinfo, off the endpoint; and with redirects disabled, so a 3xx
+    /// reply cannot re-POST the request's contents (or the hosted bearer) to
+    /// a second endpoint this port never opened.
     fn new(
-        endpoint: SocketAddr,
+        endpoint: Endpoint,
         prefix: impl Into<String>,
         caller_runtime_id: impl Into<String>,
     ) -> Result<Self, ControllerOpenError> {
@@ -159,13 +225,34 @@ impl LocalInferencePort {
     /// owner; the other callers are tests that reach the timeout path without
     /// waiting `RESPONSE_TIMEOUT` out.
     fn with_timeout(
-        endpoint: SocketAddr,
+        endpoint: Endpoint,
         prefix: impl Into<String>,
         caller_runtime_id: impl Into<String>,
         timeout: std::time::Duration,
     ) -> Result<Self, ControllerOpenError> {
-        if !endpoint.ip().is_loopback() {
-            return Err(ControllerOpenError::LocalEndpointNotLoopback { endpoint });
+        Self::build(endpoint, prefix, caller_runtime_id, timeout, false)
+    }
+
+    /// The one builder. `allow_plain_http` is false on every production path;
+    /// the tests' hosted seam passes true so a hosted endpoint can be a
+    /// loopback responder with no TLS.
+    fn build(
+        endpoint: Endpoint,
+        prefix: impl Into<String>,
+        caller_runtime_id: impl Into<String>,
+        timeout: std::time::Duration,
+        allow_plain_http: bool,
+    ) -> Result<Self, ControllerOpenError> {
+        match &endpoint {
+            Endpoint::Loopback(address) if !address.ip().is_loopback() => {
+                return Err(ControllerOpenError::LocalEndpointNotLoopback { endpoint: *address });
+            }
+            Endpoint::Hosted { base_url, .. }
+                if !allow_plain_http && !base_url.starts_with("https://") =>
+            {
+                return Err(ControllerOpenError::HostedEndpointNotHttps);
+            }
+            _ => {}
         }
         Ok(Self {
             client: reqwest::Client::builder()
@@ -183,13 +270,11 @@ impl LocalInferencePort {
     }
 
     async fn send(&self, body: Value) -> Result<LocalChatResponse, InferenceFault> {
-        let response = self
-            .client
-            .post(format!("http://{}/v1/chat/completions", self.endpoint))
-            .json(&body)
-            .send()
-            .await
-            .map_err(send_fault)?;
+        let mut request = self.client.post(self.endpoint.url()).json(&body);
+        if let Endpoint::Hosted { key, .. } = &self.endpoint {
+            request = request.bearer_auth(key.as_str());
+        }
+        let response = request.send().await.map_err(send_fault)?;
         let status = response.status();
         if !status.is_success() {
             let detail = "the local inference endpoint returned a non-success status";
@@ -240,8 +325,9 @@ fn bad_reply() -> InferenceFault {
 
 /// Lowers one prepared request to the OpenAI chat-completions body: the
 /// system message is the request's instructions, every input item maps to
-/// one message in order, and every offered tool is declared `strict`. No
-/// header but content type is ever set on the request this builds.
+/// one message in order, and every offered tool is declared `strict`. The
+/// body carries no credential; the hosted binding's bearer is the one header
+/// `send` adds.
 fn lower_request(prepared: &PreparedInference, prefix: &str) -> Result<Value, InferenceFault> {
     let request = &prepared.invocation.request;
     let model = request.model.strip_prefix(prefix).unwrap_or(&request.model);
@@ -345,6 +431,7 @@ fn assemble_output(
             arguments: call.function.arguments,
         });
     }
+    let usage = response.usage.as_ref().and_then(LocalChatUsage::reported);
     let receipt = LocalInferenceReceipt {
         schema_id: LOCAL_RECEIPT_SCHEMA.to_owned(),
         request_id: request.request_id.clone(),
@@ -358,20 +445,21 @@ fn assemble_output(
         prompt_tokens: response
             .usage
             .as_ref()
-            .map(|usage| usage.prompt_tokens)
+            .and_then(|usage| usage.prompt_tokens)
             .unwrap_or_default(),
         completion_tokens: response
             .usage
             .as_ref()
-            .map(|usage| usage.completion_tokens)
+            .and_then(|usage| usage.completion_tokens)
             .unwrap_or_default(),
     };
     let receipt_bytes = rmp_serde::to_vec_named(&receipt)
         .map_err(|_| InferenceFault::new("the local inference receipt could not be encoded"))?;
-    Ok(InferenceOutput::new(
-        events,
-        format!("sha256:{:x}", Sha256::digest(&receipt_bytes)),
-    ))
+    let output = InferenceOutput::new(events, format!("sha256:{:x}", Sha256::digest(&receipt_bytes)));
+    Ok(match usage {
+        Some(usage) => output.with_usage(usage),
+        None => output,
+    })
 }
 
 #[async_trait]
@@ -421,7 +509,7 @@ pub fn open_local_port_with_timeout(
     timeout: std::time::Duration,
 ) -> Result<Arc<dyn InferencePort>, ControllerOpenError> {
     Ok(Arc::new(LocalInferencePort::with_timeout(
-        binding.endpoint,
+        Endpoint::Loopback(binding.endpoint),
         binding.model_prefix,
         binding.caller_runtime_id,
         timeout,
@@ -429,7 +517,47 @@ pub fn open_local_port_with_timeout(
 }
 
 fn local_port(binding: LocalBinding) -> Result<LocalInferencePort, ControllerOpenError> {
-    LocalInferencePort::new(binding.endpoint, binding.model_prefix, binding.caller_runtime_id)
+    LocalInferencePort::new(
+        Endpoint::Loopback(binding.endpoint),
+        binding.model_prefix,
+        binding.caller_runtime_id,
+    )
+}
+
+/// Builds the hosted port from its binding: reads the key file once, then the
+/// constructor checks the URL is https. Every failure names the field's
+/// error and never the path, the URL or the key.
+pub(super) fn open_hosted_port(
+    binding: HostedBinding,
+) -> Result<Arc<dyn InferencePort>, ControllerOpenError> {
+    Ok(Arc::new(hosted_port(binding)?))
+}
+
+fn hosted_port(binding: HostedBinding) -> Result<LocalInferencePort, ControllerOpenError> {
+    let key = read_key_file(&binding.key_path)?;
+    LocalInferencePort::new(
+        Endpoint::Hosted {
+            base_url: binding.base_url,
+            key,
+        },
+        binding.model_prefix,
+        binding.caller_runtime_id,
+    )
+}
+
+/// The key file's whole content, minus one trailing newline run. Empty, not
+/// UTF-8, or padded with whitespace is unreadable.
+fn read_key_file(path: &std::path::Path) -> Result<Zeroizing<String>, ControllerOpenError> {
+    let bytes = Zeroizing::new(std::fs::read(path).map_err(|_| ControllerOpenError::HostedKeyUnreadable)?);
+    let raw = std::str::from_utf8(bytes.as_slice()).map_err(|_| ControllerOpenError::HostedKeyUnreadable)?;
+    let key = raw.trim_end_matches(['\r', '\n']);
+    // A bearer token is one run of visible ASCII: anything else (padding, an
+    // interior newline, a control character) cannot ride an Authorization
+    // header, so it is refused here and not at the first send.
+    if key.is_empty() || !key.bytes().all(|byte| byte.is_ascii_graphic()) {
+        return Err(ControllerOpenError::HostedKeyUnreadable);
+    }
+    Ok(Zeroizing::new(key.to_owned()))
 }
 
 #[cfg(test)]
@@ -663,7 +791,7 @@ mod tests {
         let _guard = client_build_lock()
             .lock()
             .expect("the client-build lock is never poisoned");
-        LocalInferencePort::new(endpoint, DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME)
+        LocalInferencePort::new(Endpoint::Loopback(endpoint), DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME)
             .expect("a loopback endpoint opens")
     }
 
@@ -824,6 +952,7 @@ mod tests {
                 model_prefix: DEFAULT_LOCAL_MODEL_PREFIX.into(),
                 caller_runtime_id: TEST_RUNTIME.into(),
             }),
+            None,
             &[TEST_MODEL],
         )
         .err()
@@ -845,14 +974,14 @@ mod tests {
             .lock()
             .expect("the client-build lock is never poisoned");
         LocalInferencePort::new(
-            "[::1]:1".parse().unwrap(),
+            Endpoint::Loopback("[::1]:1".parse().unwrap()),
             DEFAULT_LOCAL_MODEL_PREFIX,
             TEST_RUNTIME,
         )
         .expect("the IPv6 loopback address opens");
 
         let error = LocalInferencePort::new(
-            "[2001:db8::1]:8080".parse().unwrap(),
+            Endpoint::Loopback("[2001:db8::1]:8080".parse().unwrap()),
             DEFAULT_LOCAL_MODEL_PREFIX,
             TEST_RUNTIME,
         )
@@ -903,7 +1032,7 @@ mod tests {
             Some(Arc::clone(&connector_port)),
             Some(Arc::clone(&sdk_port)),
             "claude",
-            Some(("claude-local/".to_owned(), Arc::clone(&local_port))),
+            vec![("claude-local/".to_owned(), Arc::clone(&local_port))],
         );
         assert!(Arc::ptr_eq(
             routed.route("claude-local/llama-8b").unwrap(),
@@ -930,6 +1059,7 @@ mod tests {
                 model_prefix: "claude".into(),
                 caller_runtime_id: TEST_RUNTIME.into(),
             }),
+            None,
             &["claude-opus-5"],
         )
         .err()
@@ -1050,7 +1180,7 @@ mod tests {
                 std::env::set_var("HTTP_PROXY", &proxy_url);
                 std::env::set_var("http_proxy", &proxy_url);
             }
-            let built = LocalInferencePort::new(target.endpoint(), DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME);
+            let built = LocalInferencePort::new(Endpoint::Loopback(target.endpoint()), DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME);
             unsafe {
                 std::env::remove_var("HTTP_PROXY");
                 std::env::remove_var("http_proxy");
@@ -1212,6 +1342,7 @@ mod tests {
                 model_prefix: String::new(),
                 caller_runtime_id: TEST_RUNTIME.into(),
             }),
+            None,
             &[TEST_MODEL],
         )
         .err()
@@ -1236,6 +1367,7 @@ mod tests {
                 caller_runtime_id: TEST_RUNTIME.into(),
                 model_prefix: String::new(),
             }),
+            None,
             None,
             &[TEST_MODEL],
         )
@@ -1566,7 +1698,7 @@ mod tests {
         let port = {
             let _guard = client_build_lock().lock().expect("the client-build lock is never poisoned");
             LocalInferencePort::with_timeout(
-                addr,
+                Endpoint::Loopback(addr),
                 DEFAULT_LOCAL_MODEL_PREFIX,
                 TEST_RUNTIME,
                 std::time::Duration::from_millis(150),
@@ -1613,7 +1745,7 @@ mod tests {
         let _guard = client_build_lock()
             .lock()
             .expect("the client-build lock is never poisoned");
-        LocalInferencePort::with_timeout(endpoint, DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME, timeout)
+        LocalInferencePort::with_timeout(Endpoint::Loopback(endpoint), DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME, timeout)
             .expect("a loopback endpoint opens")
     }
 
@@ -1706,7 +1838,7 @@ mod tests {
         let endpoint: SocketAddr = "127.0.0.1:9".parse().unwrap();
         let constructed = {
             let _guard = client_build_lock().lock().expect("the client-build lock is never poisoned");
-            LocalInferencePort::new(endpoint, DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME)
+            LocalInferencePort::new(Endpoint::Loopback(endpoint), DEFAULT_LOCAL_MODEL_PREFIX, TEST_RUNTIME)
                 .expect("a loopback endpoint opens")
         };
         assert_eq!(constructed.response_timeout, RESPONSE_TIMEOUT);
@@ -1750,5 +1882,383 @@ mod tests {
                 assert!(!rendered.contains(&canary), "{canary} leaked into {rendered}");
             }
         }
+    }
+
+    // ---- The hosted binding and token usage (cut hosted-lane) ----
+
+    /// A synthetic bearer, generated for the test and written to a temp key
+    /// file, so the production reader is the path under test.
+    const SYNTHETIC_KEY: &str = "synthetic-bearer-0123456789abcdef";
+
+    /// One file per call (named by its content's length and first byte), so
+    /// several cases in one directory never overwrite each other.
+    fn write_key_file(directory: &tempfile::TempDir, content: &[u8]) -> PathBuf {
+        let tag = format!("{}-{}", content.len(), content.first().copied().unwrap_or(0));
+        let path = directory.path().join(format!("provider-{tag}.key"));
+        std::fs::write(&path, content).unwrap();
+        path
+    }
+
+    fn hosted_binding(base_url: &str, key_path: PathBuf) -> HostedBinding {
+        HostedBinding {
+            base_url: base_url.into(),
+            key_path,
+            model_prefix: DEFAULT_HOSTED_MODEL_PREFIX.into(),
+            caller_runtime_id: TEST_RUNTIME.into(),
+        }
+    }
+
+    /// The test-only seam: the production key reader and the production
+    /// builder, with the https requirement lifted so the endpoint can be a
+    /// loopback responder with no TLS.
+    fn hosted_port_over_plain_http(base_url: String, key_path: &std::path::Path) -> LocalInferencePort {
+        let _guard = client_build_lock()
+            .lock()
+            .expect("the client-build lock is never poisoned");
+        LocalInferencePort::build(
+            Endpoint::Hosted {
+                base_url,
+                key: read_key_file(key_path).expect("the synthetic key file reads"),
+            },
+            DEFAULT_HOSTED_MODEL_PREFIX,
+            TEST_RUNTIME,
+            RESPONSE_TIMEOUT,
+            true,
+        )
+        .expect("the hosted seam opens")
+    }
+
+    fn usage_reply(usage: Value) -> String {
+        json!({
+            "id": "resp-usage",
+            "choices": [{
+                "message": {"role": "assistant", "content": "ok", "tool_calls": []},
+                "finish_reason": "stop",
+            }],
+            "usage": usage,
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn hosted_binding_refuses_plain_http() {
+        let directory = tempfile::tempdir().unwrap();
+        let key_path = write_key_file(&directory, SYNTHETIC_KEY.as_bytes());
+        for url in ["http://api.example.test", "ftp://api.example.test", "api.example.test", ""] {
+            let error = open_hosted_port(hosted_binding(url, key_path.clone()))
+                .err()
+                .expect("a non-https hosted endpoint opened");
+            assert!(matches!(error, ControllerOpenError::HostedEndpointNotHttps), "{url}");
+            assert!(!error.to_string().contains("example"), "the refusal echoed the URL");
+        }
+        let through_open_inference = open_inference(
+            None,
+            None,
+            None,
+            Some(hosted_binding("http://api.example.test", key_path.clone())),
+            &["hosted/deepseek-chat"],
+        )
+        .err()
+        .expect("open_inference opened a plain-http hosted endpoint");
+        assert!(matches!(through_open_inference, ControllerOpenError::HostedEndpointNotHttps));
+        assert!(open_hosted_port(hosted_binding("https://api.example.test", key_path)).is_ok());
+    }
+
+    #[test]
+    fn hosted_binding_refuses_an_empty_key_file() {
+        let directory = tempfile::tempdir().unwrap();
+        let absent = directory.path().join("absent.key");
+        let cases: Vec<(&str, PathBuf)> = vec![
+            ("empty", write_key_file(&directory, b"")),
+            ("only a newline", write_key_file(&directory, b"\n")),
+            ("padded", write_key_file(&directory, b" key-with-padding \n")),
+            ("not utf-8", write_key_file(&directory, &[0xff, 0xfe, 0xfd])),
+            ("absent", absent),
+        ];
+        for (label, path) in cases {
+            let canary = path.display().to_string();
+            let error = open_hosted_port(hosted_binding("https://api.example.test", path))
+                .err()
+                .unwrap_or_else(|| panic!("{label}: a bad key file opened"));
+            assert!(matches!(error, ControllerOpenError::HostedKeyUnreadable), "{label}");
+            let rendered = format!("{error} | {error:?}");
+            assert!(!rendered.contains(&canary), "{label}: the path leaked");
+            assert!(!rendered.contains("provider-"), "{label}: the file name leaked");
+        }
+        // A key file that ends in the usual newline is the key without it.
+        let ok = write_key_file(&directory, b"fine-key\r\n");
+        assert_eq!(read_key_file(&ok).unwrap().as_str(), "fine-key");
+    }
+
+    /// A bearer token is one run of visible ASCII. Each shape that cannot ride
+    /// an Authorization header is refused at open with the typed fault, and the
+    /// refusal carries neither the key text nor the path.
+    #[test]
+    fn hosted_binding_refuses_a_key_shape_that_cannot_ride_a_header() {
+        let directory = tempfile::tempdir().unwrap();
+        let cases: [(&str, &[u8]); 8] = [
+            ("interior newline", b"keycanary\nsecondline"),
+            ("interior carriage return", b"keycanary\rsecondline"),
+            ("interior tab", b"keycanary\tsecondline"),
+            ("interior NUL", b"keycanary\0secondline"),
+            ("leading space", b" keycanary"),
+            ("trailing space before the newline", b"keycanary \n"),
+            ("non-ascii", "keycanary-\u{e9}".as_bytes()),
+            ("leading newline", b"\nkeycanary"),
+        ];
+        for (label, content) in cases {
+            let path = write_key_file(&directory, content);
+            let canary = path.display().to_string();
+            let error = open_hosted_port(hosted_binding("https://api.example.test", path))
+                .err()
+                .unwrap_or_else(|| panic!("{label}: a key that cannot ride a header opened"));
+            assert!(matches!(error, ControllerOpenError::HostedKeyUnreadable), "{label}");
+            let rendered = format!("{error} | {error:?}");
+            assert!(!rendered.contains("keycanary"), "{label}: the key leaked");
+            assert!(!rendered.contains("secondline"), "{label}: the key leaked");
+            assert!(!rendered.contains(&canary), "{label}: the path leaked");
+        }
+    }
+
+    #[tokio::test]
+    async fn hosted_request_carries_the_bearer_and_loopback_carries_none() {
+        let directory = tempfile::tempdir().unwrap();
+        let key_path = write_key_file(&directory, format!("{SYNTHETIC_KEY}\n").as_bytes());
+
+        let hosted_responder = ScriptedResponder::start(vec![(200, text_reply("ok"))]).await;
+        let hosted = hosted_port_over_plain_http(format!("http://{}", hosted_responder.endpoint()), &key_path);
+        let output = infer_once(&hosted).await.expect("the hosted port infers");
+        assert_eq!(output.events, vec![InferenceEvent::Text("ok".into())]);
+        let header_block = hosted_responder.headers()[0].to_ascii_lowercase();
+        assert!(
+            header_block.contains(&format!("authorization: bearer {}", SYNTHETIC_KEY.to_ascii_lowercase())),
+            "{header_block}"
+        );
+
+        let local_responder = ScriptedResponder::start(vec![(200, text_reply("ok"))]).await;
+        infer_once(&port(local_responder.endpoint())).await.expect("the local port infers");
+        assert!(!local_responder.headers()[0].to_ascii_lowercase().contains("authorization"));
+    }
+
+    #[tokio::test]
+    async fn the_hosted_request_strips_its_prefix_and_names_the_v1_path() {
+        let directory = tempfile::tempdir().unwrap();
+        let key_path = write_key_file(&directory, SYNTHETIC_KEY.as_bytes());
+        let responder = ScriptedResponder::start(vec![(200, text_reply("ok"))]).await;
+        // A trailing slash on the origin must not double the path separator.
+        let hosted = hosted_port_over_plain_http(format!("http://{}/", responder.endpoint()), &key_path);
+        let request = tool_request(
+            CommandId::new(),
+            0,
+            InferencePurpose::Persona,
+            "hosted/deepseek-chat",
+            "Respond only in natural prose.",
+            vec![CodexInputItem::UserText { text: "Say something true.".into() }],
+            Vec::<CodexToolDefinition>::new(),
+            RequestShape { max_output_tokens: 1_200, parallel_tool_calls: false },
+        )
+        .expect("the request builds");
+        let prepared = hosted.prepare(request).unwrap();
+        hosted.infer(prepared).await.expect("the hosted port infers");
+        assert!(responder.headers()[0].starts_with("POST /v1/chat/completions HTTP/1.1"));
+        let body: Value = serde_json::from_str(&responder.bodies()[0]).unwrap();
+        assert_eq!(body["model"], "deepseek-chat");
+    }
+
+    /// The bearer must not follow a redirect, and no fault, log line or
+    /// receipt may carry the key or the endpoint.
+    #[tokio::test]
+    async fn the_hosted_bearer_is_never_sent_to_a_redirect_target_or_echoed() {
+        let directory = tempfile::tempdir().unwrap();
+        let key_path = write_key_file(&directory, SYNTHETIC_KEY.as_bytes());
+        let target = ScriptedResponder::start(vec![(200, text_reply("reached"))]).await;
+        let redirecting = start_redirecting_to(target.endpoint()).await;
+        let hosted = hosted_port_over_plain_http(format!("http://{redirecting}"), &key_path);
+        let fault = infer_once(&hosted).await.expect_err("a redirect produced an output");
+        assert!(target.headers().is_empty(), "the redirect target was reached");
+
+        let refusing = ScriptedResponder::start(vec![(401, "{}".to_owned())]).await;
+        let hosted = hosted_port_over_plain_http(format!("http://{}", refusing.endpoint()), &key_path);
+        let unauthorised = infer_once(&hosted).await.expect_err("a 401 produced an output");
+        let ok_responder = ScriptedResponder::start(vec![(200, text_reply("ok"))]).await;
+        let hosted = hosted_port_over_plain_http(format!("http://{}", ok_responder.endpoint()), &key_path);
+        let output = infer_once(&hosted).await.expect("the hosted port infers");
+
+        let rendered = format!(
+            "{fault} | {fault:?} | {unauthorised} | {unauthorised:?} | {output:?}"
+        );
+        assert!(!rendered.contains(SYNTHETIC_KEY), "the key leaked: {rendered}");
+        for addr in [redirecting, refusing.endpoint(), ok_responder.endpoint()] {
+            assert!(!rendered.contains(&addr.port().to_string()), "an endpoint leaked: {rendered}");
+        }
+    }
+
+    #[tokio::test]
+    async fn usage_reaches_inference_output() {
+        let directory = tempfile::tempdir().unwrap();
+        let key_path = write_key_file(&directory, SYNTHETIC_KEY.as_bytes());
+        let responder = ScriptedResponder::start(vec![
+            (
+                200,
+                usage_reply(json!({
+                    "prompt_tokens": 120,
+                    "completion_tokens": 7,
+                    "prompt_cache_hit_tokens": 100,
+                    "prompt_cache_miss_tokens": 20,
+                })),
+            ),
+            (200, usage_reply(json!({"prompt_tokens": 31, "completion_tokens": 4}))),
+        ])
+        .await;
+        for (hosted, expected) in [
+            (
+                true,
+                TokenUsage { prompt: 120, completion: 7, cached_prompt: Some(100) },
+            ),
+            (
+                false,
+                TokenUsage { prompt: 31, completion: 4, cached_prompt: None },
+            ),
+        ] {
+            let output = if hosted {
+                let port =
+                    hosted_port_over_plain_http(format!("http://{}", responder.endpoint()), &key_path);
+                infer_once(&port).await.unwrap()
+            } else {
+                infer_once(&port(responder.endpoint())).await.unwrap()
+            };
+            assert_eq!(output.usage(), Some(expected));
+        }
+    }
+
+    /// A reply without usage is a typed absence. The receipt keeps the zero
+    /// counts it always carried (the local lane's receipt is unchanged), so
+    /// the digest equals the digest of a reply that reported zeroes, while the
+    /// output tells the two apart.
+    #[tokio::test]
+    async fn a_reply_without_usage_is_none_and_the_local_receipt_is_unchanged() {
+        let absent = json!({
+            "id": "resp-usage",
+            "choices": [{
+                "message": {"role": "assistant", "content": "ok", "tool_calls": []},
+                "finish_reason": "stop",
+            }],
+        })
+        .to_string();
+        let responder = ScriptedResponder::start(vec![
+            (200, absent),
+            (200, usage_reply(json!({"prompt_tokens": 0, "completion_tokens": 0}))),
+            (200, usage_reply(json!({"prompt_tokens": 9}))),
+            (200, usage_reply(json!({"completion_tokens": 9}))),
+        ])
+        .await;
+        let port = port(responder.endpoint());
+        // One prepared request, so the receipts differ in nothing but the reply.
+        let prepared = port.prepare(plain_request()).expect("the port prepares");
+        let none = port.infer(prepared.clone()).await.unwrap();
+        let zeroes = port.infer(prepared.clone()).await.unwrap();
+        let half = port.infer(prepared.clone()).await.unwrap();
+        let other_half = port.infer(prepared).await.unwrap();
+        assert_eq!(none.usage(), None);
+        assert_eq!(zeroes.usage(), Some(TokenUsage { prompt: 0, completion: 0, cached_prompt: None }));
+        assert_eq!(half.usage(), None, "a reply missing the completion count reported a zero");
+        assert_eq!(other_half.usage(), None, "a reply missing the prompt count reported a zero");
+        assert_eq!(none.receipt_digest(), zeroes.receipt_digest());
+    }
+
+    /// A usage count that is present but null is a malformed reply: an
+    /// integrity violation on the local lane (as before the hosted lane
+    /// existed) and on the hosted lane that shares its driver. Only a count
+    /// that is absent is a typed absence.
+    #[tokio::test]
+    async fn a_null_usage_count_is_an_integrity_violation_on_both_lanes() {
+        let directory = tempfile::tempdir().unwrap();
+        let key_path = write_key_file(&directory, SYNTHETIC_KEY.as_bytes());
+        let bodies = [
+            json!({"prompt_tokens": null, "completion_tokens": 3}),
+            json!({"prompt_tokens": 3, "completion_tokens": null}),
+        ];
+        for hosted in [false, true] {
+            for usage in &bodies {
+                let responder = ScriptedResponder::start(vec![(200, usage_reply(usage.clone()))]).await;
+                let fault = if hosted {
+                    let port = hosted_port_over_plain_http(
+                        format!("http://{}", responder.endpoint()),
+                        &key_path,
+                    );
+                    infer_once(&port).await
+                } else {
+                    infer_once(&port(responder.endpoint())).await
+                }
+                .expect_err("a null usage count produced an output");
+                assert_eq!(fault.class(), InferenceFaultClass::BadReply, "hosted={hosted} {fault:?}");
+                assert_eq!(
+                    fault.disposition(),
+                    InferenceFaultDisposition::IntegrityViolation,
+                    "hosted={hosted} {fault:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_hosted_prefix_routes_to_the_hosted_port_and_shares_no_prefix() {
+        let directory = tempfile::tempdir().unwrap();
+        let key_path = write_key_file(&directory, SYNTHETIC_KEY.as_bytes());
+        let local_binding = || LocalBinding {
+            endpoint: "127.0.0.1:1".parse().unwrap(),
+            model_prefix: DEFAULT_LOCAL_MODEL_PREFIX.into(),
+            caller_runtime_id: TEST_RUNTIME.into(),
+        };
+        let hosted = || hosted_binding("https://api.example.test", key_path.clone());
+        let models = ["local/llama-8b", "hosted/deepseek-chat"];
+        assert!(open_inference(None, None, Some(local_binding()), Some(hosted()), &models).is_ok());
+        // Without the hosted binding its model has no owner: loud, not a fallback.
+        assert!(matches!(
+            open_inference(None, None, Some(local_binding()), None, &models),
+            Err(ControllerOpenError::UnroutableModel { .. })
+        ));
+        let mut clashing = hosted();
+        clashing.model_prefix = DEFAULT_LOCAL_MODEL_PREFIX.into();
+        assert!(matches!(
+            open_inference(None, None, Some(local_binding()), Some(clashing), &["local/x"]),
+            Err(ControllerOpenError::SharedModelPrefix { .. })
+        ));
+        let mut empty = hosted();
+        empty.model_prefix = String::new();
+        assert!(matches!(
+            open_inference(None, None, None, Some(empty), &["x"]),
+            Err(ControllerOpenError::EmptyModelPrefix { transport: "hosted" })
+        ));
+
+        // Routing itself: each prefix reaches its own port.
+        let local_port = Arc::new(port("127.0.0.1:1".parse().unwrap())) as Arc<dyn InferencePort>;
+        let hosted_port = Arc::new(port("127.0.0.1:1".parse().unwrap())) as Arc<dyn InferencePort>;
+        let routed = RoutedInferencePort::new(
+            None,
+            None,
+            "claude",
+            vec![
+                ("local/".to_owned(), Arc::clone(&local_port)),
+                ("hosted/".to_owned(), Arc::clone(&hosted_port)),
+            ],
+        );
+        assert!(Arc::ptr_eq(routed.route("local/a").unwrap(), &local_port));
+        assert!(Arc::ptr_eq(routed.route("hosted/a").unwrap(), &hosted_port));
+        assert!(routed.route("other").is_none());
+
+        // Overlapping hosted claims: the longest prefix wins.
+        let narrow_port = Arc::new(port("127.0.0.1:1".parse().unwrap())) as Arc<dyn InferencePort>;
+        let routed = RoutedInferencePort::new(
+            None,
+            None,
+            "claude",
+            vec![
+                ("hosted/".to_owned(), Arc::clone(&hosted_port)),
+                ("hosted/deep/".to_owned(), Arc::clone(&narrow_port)),
+            ],
+        );
+        assert!(Arc::ptr_eq(routed.route("hosted/deep/x").unwrap(), &narrow_port));
+        assert!(Arc::ptr_eq(routed.route("hosted/x").unwrap(), &hosted_port));
     }
 }
