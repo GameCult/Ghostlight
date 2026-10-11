@@ -92,11 +92,10 @@ pub enum RefusalReason {
     WorldRejected,
     /// The cell's subject no longer holds an opportunity.
     OpportunityGone,
-    /// The cell's subject holds an opportunity whose scope moved since the
-    /// cell's work was bound. A cell that committed earlier in an interrupted
-    /// tick ends this way when a run resumes the tick: its own act, or a
-    /// neighbour's in the shared room, changed what it knows. Nothing is
-    /// committed twice.
+    /// The cell's in-flight work was bound to a scope that has since moved,
+    /// so it is refused before any inference. A cell whose command already
+    /// committed does not end this way: the controller answers it with its
+    /// receipt whatever the scope has done since.
     ScopeMoved,
 }
 
