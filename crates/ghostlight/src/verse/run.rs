@@ -104,6 +104,9 @@ pub enum RefusalReason {
     /// this way: the controller answers it with its receipt whatever the scope
     /// has done since.
     ScopeMoved,
+    /// A grouped member's own tool call could not be decoded and it proposed
+    /// nothing else. No turn was submitted for it.
+    ProposalUndecodable,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -290,6 +293,7 @@ impl std::fmt::Display for TickReport {
                 RefusalReason::WorldRejected => "world_rejected",
                 RefusalReason::OpportunityGone => "opportunity_gone",
                 RefusalReason::ScopeMoved => "scope_moved",
+                RefusalReason::ProposalUndecodable => "proposal_undecodable",
             };
             let label = self.labels.get(&refusal.subject).map_or("-", String::as_str);
             writeln!(f, "  refused: cell {} {label} {reason}", refusal.cell)?;
@@ -650,12 +654,38 @@ fn command_of(submission: &SubmissionDisposition) -> CommandId {
     }
 }
 
-/// Folds one finished cell into the tick. Returns the code of the pending state
-/// that ends the run, when the cell did not finish. A pending cell's unreached
-/// members are not refusals: the tick stays open and they resume.
+/// Folds one cell's outcome into the tick. Returns the status that ends the
+/// run, when the cell did not finish. A pending cell's unreached members are
+/// not refusals: the tick stays open and they resume.
 fn absorb(
+    result: Result<CellRun, ControllerError>,
+    cell: &Cell,
+    frozen: &FrozenCell,
+    gone: &[SubjectId],
+    position: u32,
+    committed: &mut Vec<CommandId>,
+    refusals: &mut Vec<Refusal>,
+) -> Option<RunStatus> {
+    match result {
+        Ok(run) => absorb_run(run, cell, frozen, gone, position, committed, refusals).map(failed),
+        Err(error) => match classify(&error) {
+            CellEnd::Budget => Some(RunStatus::BudgetExhausted),
+            CellEnd::Fatal(code) => Some(failed(code)),
+            CellEnd::Refused(reason) => {
+                refusals.extend(refuse_all(cell, position, reason));
+                None
+            }
+        },
+    }
+}
+
+/// A finished cell's commits and refusals; the code of the pending state when
+/// it did not finish.
+fn absorb_run(
     run: CellRun,
     cell: &Cell,
+    frozen: &FrozenCell,
+    gone: &[SubjectId],
     position: u32,
     committed: &mut Vec<CommandId>,
     refusals: &mut Vec<Refusal>,
@@ -678,16 +708,48 @@ fn absorb(
             Some(pending_code(pending.reason()))
         }
         CellRun::Grouped(run) => {
-            committed.extend(run.submissions.iter().map(|entry| command_of(&entry.submission)));
-            refusals.extend(run.refused.iter().map(|refused| Refusal {
-                cell: position,
-                subject: refused.subject,
-                reason: match refused.reason {
-                    ConstituentRefusalReason::LeftBeforeSelection => RefusalReason::OpportunityGone,
-                    ConstituentRefusalReason::ScopeChanged => RefusalReason::ScopeMoved,
-                    ConstituentRefusalReason::WorldRefused => RefusalReason::WorldRejected,
-                },
-            }));
+            // The frozen cover owns who is in the cell. A resumed cell's
+            // persisted row may name other members: those are not listed, and a
+            // frozen member the row never mentions is refused, so a closed
+            // tick accounts for every frozen member once.
+            let listed = |subject: SubjectId| {
+                frozen.members.contains(&subject) && !gone.contains(&subject)
+            };
+            let mut accounted = Vec::new();
+            for entry in run.submissions.iter().filter(|entry| listed(entry.subject)) {
+                committed.push(command_of(&entry.submission));
+                accounted.push(entry.subject);
+            }
+            for refused in run.refused.iter().filter(|refused| listed(refused.subject)) {
+                accounted.push(refused.subject);
+                refusals.push(Refusal {
+                    cell: position,
+                    subject: refused.subject,
+                    reason: match refused.reason {
+                        ConstituentRefusalReason::LeftBeforeSelection => {
+                            RefusalReason::OpportunityGone
+                        }
+                        ConstituentRefusalReason::ScopeChanged => RefusalReason::ScopeMoved,
+                        ConstituentRefusalReason::WorldRefused => RefusalReason::WorldRejected,
+                        ConstituentRefusalReason::ProposalUndecodable => {
+                            RefusalReason::ProposalUndecodable
+                        }
+                    },
+                });
+            }
+            if run.pending.is_none() {
+                refusals.extend(
+                    frozen
+                        .members
+                        .iter()
+                        .filter(|member| listed(**member) && !accounted.contains(member))
+                        .map(|member| Refusal {
+                            cell: position,
+                            subject: *member,
+                            reason: RefusalReason::ScopeMoved,
+                        }),
+                );
+            }
             run.pending.map(pending_code)
         }
     }
@@ -933,7 +995,7 @@ where
             }
         };
         let (cell, gone) = refreshed(frozen, index, &fresh);
-        refusals.extend(gone.into_iter().map(|subject| Refusal {
+        refusals.extend(gone.iter().map(|&subject| Refusal {
             cell: position,
             subject,
             reason: RefusalReason::OpportunityGone,
@@ -941,26 +1003,18 @@ where
         let Some(cell) = cell else {
             continue;
         };
-        match runner.run_cell(&cell).await {
-            Ok(run) => {
-                if let Some(code) = absorb(run, &cell, position, &mut committed, &mut refusals) {
-                    open = Some(failed(code));
-                    break;
-                }
-            }
-            Err(error) => match classify(&error) {
-                CellEnd::Budget => {
-                    open = Some(RunStatus::BudgetExhausted);
-                    break;
-                }
-                CellEnd::Fatal(code) => {
-                    open = Some(failed(code));
-                    break;
-                }
-                CellEnd::Refused(reason) => {
-                    refusals.extend(refuse_all(&cell, position, reason));
-                }
-            },
+        let result = runner.run_cell(&cell).await;
+        if let Some(status) = absorb(
+            result,
+            &cell,
+            frozen,
+            &gone,
+            position,
+            &mut committed,
+            &mut refusals,
+        ) {
+            open = Some(status);
+            break;
         }
     }
 

@@ -1456,6 +1456,34 @@ fn record_persona_turn(
     ))
 }
 
+/// A narrative turn the world overtook, for a driver test that has no
+/// narrative subject to run one: the same value `interrupted` builds, bound to
+/// the opportunity it is given.
+#[cfg(test)]
+pub(crate) fn overtaken_narrative_run(opportunity: &DecisionOpportunity) -> NarrativeRun {
+    let turn = record_persona_turn(
+        opportunity,
+        "projector".into(),
+        "persona".into(),
+        "Prose.".into(),
+    )
+    .expect("a fixture opportunity encodes");
+    NarrativeRun::Interrupted(NarrativeInterruption {
+        subject: opportunity.scope.subject_id,
+        bound_scope_digest: opportunity.scope_digest.as_str().to_owned(),
+        fresh_scope_digest: None,
+        gap: TranslationGapSummary {
+            kind: TranslationGapKind::Unresolved,
+            source: SourceRange {
+                start_byte: 0,
+                end_byte: 6,
+            },
+            detail: OVERTAKEN_DETAIL.into(),
+        },
+        turn,
+    })
+}
+
 /// One opportunity's selection against one snapshot.
 ///
 /// The expected controller mode is read from the opportunity rather than
@@ -2883,6 +2911,10 @@ pub enum ConstituentRefusalReason {
     ScopeChanged,
     /// The kernel refused its command for any other reason.
     WorldRefused,
+    /// The member's own tool call could not be decoded and it proposed nothing
+    /// else, so no turn was submitted for it: a decode failure is not a
+    /// decision to decline.
+    ProposalUndecodable,
 }
 
 /// One coarse cell's outcome: one inference, N ordinary one-opportunity
@@ -3737,6 +3769,13 @@ impl ControllerRunner {
             (exercises, if exercises { place } else { 0 })
         });
         for (handle, constituent) in ordered {
+            if capture.undecodable.contains(&handle) {
+                refused.push(ConstituentRefusal {
+                    subject: constituent.subject,
+                    reason: ConstituentRefusalReason::ProposalUndecodable,
+                });
+                continue;
+            }
             let command = match capture.proposals.get(&handle) {
                 Some(invocation) => ControllerWorldCommand::Exercise(invocation.clone()),
                 None => ControllerWorldCommand::Decline,
@@ -5846,8 +5885,12 @@ fn split_handle(name: &str, constituents: usize) -> Option<(usize, &str)> {
 /// The batched decode. Vector-valued by construction: the singleton evaluator
 /// keeps its scalar proposal and is not touched.
 struct GroupedCapture {
-    /// Handle to proposal. A handle absent here proposed nothing and declines.
+    /// Handle to proposal. A handle absent here proposed nothing and declines,
+    /// unless it is in `undecodable`.
     proposals: BTreeMap<usize, DecisionInvocation>,
+    /// Handles whose own tool call failed to decode and which never finished
+    /// otherwise: nothing is submitted for them.
+    undecodable: BTreeSet<usize>,
     needs: Vec<ControllerNeed>,
 }
 
@@ -5861,6 +5904,9 @@ enum GroupedLoopEvaluation {
 pub(super) struct GroupedFold {
     proposals: BTreeMap<usize, DecisionInvocation>,
     terminal: BTreeSet<usize>,
+    /// Handles with a call that failed to decode, whether or not a later call
+    /// finished them.
+    decode_failed: BTreeSet<usize>,
     needs: Vec<ControllerNeed>,
 }
 
@@ -5869,6 +5915,7 @@ impl GroupedFold {
         Self {
             proposals: BTreeMap::new(),
             terminal: BTreeSet::new(),
+            decode_failed: BTreeSet::new(),
             needs: Vec::new(),
         }
     }
@@ -5917,6 +5964,7 @@ pub(super) fn grouped_tool_result(
                                 "invocation captured".into()
                             }
                             Err(detail) => {
+                                fold.decode_failed.insert(handle);
                                 fold.needs.push(tool_decode_need(name, arguments, &detail));
                                 "arguments recorded as a need".into()
                             }
@@ -5931,6 +5979,7 @@ pub(super) fn grouped_tool_result(
                         "need recorded".into()
                     }
                     Err(error) => {
+                        fold.decode_failed.insert(handle);
                         fold.needs
                             .push(tool_decode_need(name, arguments, &error.to_string()));
                         "arguments recorded as a need".into()
@@ -5951,6 +6000,7 @@ pub(super) fn grouped_tool_result(
                             "decision finished without a proposal".into()
                         }
                         Err(error) => {
+                            fold.decode_failed.insert(handle);
                             fold.needs
                                 .push(tool_decode_need(name, arguments, &error.to_string()));
                             "arguments recorded as a need".into()
@@ -5958,6 +6008,7 @@ pub(super) fn grouped_tool_result(
                     }
                 }
                 _ => {
+                    fold.decode_failed.insert(handle);
                     fold.needs.push(tool_decode_need(
                         name,
                         arguments,
@@ -6075,6 +6126,11 @@ fn evaluate_grouped_loop(
             return Ok(GroupedLoopEvaluation::Complete {
                 capture: GroupedCapture {
                     proposals: fold.proposals,
+                    undecodable: fold
+                        .decode_failed
+                        .difference(&fold.terminal)
+                        .copied()
+                        .collect(),
                     needs: fold.needs,
                 },
             });
