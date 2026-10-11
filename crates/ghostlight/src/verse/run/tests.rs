@@ -213,7 +213,7 @@ impl Harness {
         (dir, harness)
     }
 
-    /// One run over `inner`, recorded under the next sequence.
+    /// One run over `inner`, claimed and recorded under the next sequence.
     async fn run(
         &self,
         inner: Arc<dyn InferencePort>,
@@ -224,7 +224,8 @@ impl Harness {
         self.run_under(inner, cap, config(ticks), observe).await
     }
 
-    /// One run under the given config, recorded under the next sequence.
+    /// One run under the given config, claimed and recorded under the next
+    /// sequence.
     async fn run_under(
         &self,
         inner: Arc<dyn InferencePort>,
@@ -233,7 +234,8 @@ impl Harness {
         observe: impl FnMut(&TickReport) -> ControlFlow<()>,
     ) -> RunOutcome {
         let world = self.mailbox.snapshot().await.unwrap();
-        let sequence = self.runs.next_sequence(world.world_id).unwrap();
+        let claim = self.runs.claim(&world, cap, &config).unwrap();
+        let sequence = claim.sequence();
         let port = Arc::new(
             RecordingInferencePort::open(
                 inner,
@@ -252,8 +254,8 @@ impl Harness {
             &runner,
             &port,
             &self.runs,
+            claim,
             &config,
-            sequence,
             observe,
         )
         .await
@@ -977,17 +979,21 @@ fn an_error_ends_a_cell_as_the_run_must_treat_it() {
     ));
 }
 
-#[tokio::test]
-async fn a_port_opened_for_another_run_is_refused_before_anything_is_written() {
-    let (_dir, verse) = Harness::fresh().await;
-    let world = verse.mailbox.snapshot().await.unwrap();
+/// A recording port over the harness's call store for `sequence` under `cap`,
+/// and a runner on it.
+fn port_and_runner(
+    verse: &Harness,
+    world: &WorldSnapshot,
+    sequence: u64,
+    cap: u64,
+) -> (Arc<RecordingInferencePort>, ControllerRunner) {
     let port = Arc::new(
         RecordingInferencePort::open(
             ScriptedPort::speaking(),
             verse.calls.clone(),
-            call_run_id(7),
-            1_000,
-            &RunStart::of(&world),
+            call_run_id(sequence),
+            cap,
+            &RunStart::of(world),
         )
         .unwrap(),
     );
@@ -998,43 +1004,215 @@ async fn a_port_opened_for_another_run_is_refused_before_anything_is_written() {
         models(),
     )
     .unwrap();
-    let error = run_manual(
+    (port, runner)
+}
+
+/// Runs `claim` on the given port and runner, which must refuse it.
+async fn refused(
+    verse: &Harness,
+    port: &RecordingInferencePort,
+    runner: &ControllerRunner,
+    claim: RunClaim,
+    config: &VerseRunConfig,
+) -> VerseRunError {
+    run_manual(
         &verse.mailbox,
-        &runner,
-        &port,
+        runner,
+        port,
         &verse.runs,
-        &config(1),
-        1,
+        claim,
+        config,
         |_| ControlFlow::Continue(()),
     )
     .await
-    .unwrap_err();
-    assert!(matches!(error, VerseRunError::PortNotThisRun));
-    assert!(verse.runs.runs(world.world_id).unwrap().is_empty());
+    .unwrap_err()
+}
 
-    // A cover budget with no cells is refused before the record exists.
+#[tokio::test]
+async fn a_run_started_on_the_wrong_port_world_or_config_is_refused_and_its_claim_ends_failed() {
+    let (_dir, verse) = Harness::fresh().await;
+    let world = verse.mailbox.snapshot().await.unwrap();
+    let (_other_dir, elsewhere) = Harness::fresh().await;
+    let strange = elsewhere.mailbox.snapshot().await.unwrap();
+
+    // A cover budget with no cells cannot be claimed: no record exists.
     let mut bad = config(1);
     bad.cover.cells = 0;
-    let own = Arc::new(
-        RecordingInferencePort::open(
-            ScriptedPort::speaking(),
-            verse.calls.clone(),
-            call_run_id(1),
-            1_000,
-            &RunStart::of(&world),
-        )
-        .unwrap(),
-    );
-    let error = run_manual(&verse.mailbox, &runner, &own, &verse.runs, &bad, 1, |_| {
-        ControlFlow::Continue(())
-    })
-    .await
-    .unwrap_err();
     assert!(matches!(
-        error,
-        VerseRunError::Budget(CoverBudgetError::NoCells)
+        verse.runs.claim(&world, 1_000, &bad),
+        Err(VerseRunError::Budget(CoverBudgetError::NoCells))
     ));
     assert!(verse.runs.runs(world.world_id).unwrap().is_empty());
+
+    // Run 1: a port opened for another run's number.
+    let claim = verse.runs.claim(&world, 1_000, &config(1)).unwrap();
+    let (port, runner) = port_and_runner(&verse, &world, 7, 1_000);
+    let error = refused(&verse, &port, &runner, claim, &config(1)).await;
+    assert!(matches!(error, VerseRunError::PortNotThisRun));
+
+    // Run 2: a port under another cap than the claim recorded.
+    let claim = verse.runs.claim(&world, 1_000, &config(1)).unwrap();
+    let (port, runner) = port_and_runner(&verse, &world, claim.sequence(), 5_000);
+    let error = refused(&verse, &port, &runner, claim, &config(1)).await;
+    assert!(matches!(error, VerseRunError::PortNotThisRun));
+
+    // Run 3: a config other than the one the claim was made with.
+    let claim = verse.runs.claim(&world, 1_000, &config(1)).unwrap();
+    let (port, runner) = port_and_runner(&verse, &world, claim.sequence(), 1_000);
+    let error = refused(&verse, &port, &runner, claim, &config(2)).await;
+    assert!(matches!(error, VerseRunError::ConfigNotThisClaim));
+
+    // Another world's claim 1, on this world's mailbox and a port that fits it.
+    let claim = verse.runs.claim(&strange, 1_000, &config(1)).unwrap();
+    let (port, runner) = port_and_runner(&verse, &world, claim.sequence(), 1_000);
+    let error = refused(&verse, &port, &runner, claim, &config(1)).await;
+    assert!(matches!(error, VerseRunError::PortNotThisRun));
+
+    let statuses = |world: &WorldSnapshot| -> Vec<(u64, RunStatus)> {
+        verse
+            .runs
+            .runs(world.world_id)
+            .unwrap()
+            .into_iter()
+            .map(|record| (record.sequence, record.status))
+            .collect()
+    };
+    assert_eq!(
+        statuses(&world),
+        vec![
+            (1, failed("port_not_this_run")),
+            (2, failed("port_not_this_run")),
+            (3, failed("config_not_this_claim")),
+        ]
+    );
+    assert_eq!(statuses(&strange), vec![(1, failed("port_not_this_run"))]);
+    assert!(verse.runs.tick(world.world_id, 0).unwrap().is_none());
+    assert!(verse.runs.tick(strange.world_id, 0).unwrap().is_none());
+    assert_eq!(verse.mailbox.operator_log().await.unwrap().len(), 0);
+}
+
+fn record(world: WorldId, sequence: u64) -> VerseRunRecord {
+    VerseRunRecord {
+        world_id: world,
+        sequence,
+        token_cap: 10,
+        ticks_requested: 1,
+        tick_span_minutes: SPAN,
+        cover_budget: RecordedCoverBudget {
+            cells: 2,
+            constituent_cap: 8,
+            urgency_slots: 0,
+        },
+        start_revision: 0,
+        checkpoints: Vec::new(),
+        status: RunStatus::Running,
+    }
+}
+
+#[tokio::test]
+async fn the_run_store_claims_runs_per_world_and_replaces_a_claimed_run_with_its_later_state() {
+    let (_one_dir, one) = Harness::fresh().await;
+    let (_other_dir, other) = Harness::fresh().await;
+    let one = one.mailbox.snapshot().await.unwrap();
+    let other = other.mailbox.snapshot().await.unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("runs.cc");
+    let store = VerseRunStore::open(&path).unwrap();
+
+    // Claims number runs from one, per world, and write the Running record.
+    let first = store.claim(&one, 10, &config(3)).unwrap();
+    let second = store.claim(&one, 20, &config(1)).unwrap();
+    let elsewhere = store.claim(&other, 10, &config(1)).unwrap();
+    assert_eq!(
+        (first.sequence(), second.sequence(), elsewhere.sequence()),
+        (1, 2, 1)
+    );
+    let claimed = store.runs(one.world_id).unwrap();
+    assert_eq!(claimed.len(), 2);
+    assert_eq!(claimed[0].token_cap, 10);
+    assert_eq!(claimed[0].ticks_requested, 3);
+    assert_eq!(claimed[1].token_cap, 20);
+    assert_eq!(claimed[0].start_revision, one.revision);
+    assert_eq!(claimed[0].status, RunStatus::Running);
+
+    // A record is only ever a claimed one: a sequence with no record is refused.
+    assert!(matches!(
+        store.save(&record(one.world_id, 3)),
+        Err(VerseRunError::OutOfSequence)
+    ));
+    assert!(matches!(
+        store.save(&record(one.world_id, 0)),
+        Err(VerseRunError::OutOfSequence)
+    ));
+    assert_eq!(store.runs(one.world_id).unwrap().len(), 2);
+
+    // Saving a claimed run again replaces it, and the file reopens to the
+    // same rows.
+    let mut finished = claimed[0].clone();
+    finished.status = RunStatus::Completed;
+    store.save(&finished).unwrap();
+    drop(store);
+    let store = VerseRunStore::open(&path).unwrap();
+    assert_eq!(
+        store.runs(one.world_id).unwrap(),
+        vec![finished, claimed[1].clone()]
+    );
+    assert_eq!(store.runs(other.world_id).unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn a_claim_is_never_reissued_even_when_its_run_never_started() {
+    let (_dir, verse) = Harness::fresh().await;
+    let world = verse.mailbox.snapshot().await.unwrap();
+
+    // Run 1 is claimed, then nothing happens: the process died.
+    let lost = verse.runs.claim(&world, 1_000_000_000, &config(1)).unwrap();
+    assert_eq!(lost.sequence(), 1);
+    let before = verse.runs.runs(world.world_id).unwrap();
+    drop(lost);
+
+    // The next run is run 2 and leaves run 1's record exactly as it was.
+    let outcome = verse
+        .run_quietly(ScriptedPort::speaking(), 1_000_000_000, 1)
+        .await;
+    assert_eq!(outcome.record.sequence, 2);
+    assert_eq!(outcome.record.status, RunStatus::Completed);
+    let after = verse.runs.runs(world.world_id).unwrap();
+    assert_eq!(after.len(), 2);
+    assert_eq!(after[0], before[0], "run 1's record was overwritten");
+    assert_eq!(after[0].status, RunStatus::Running);
+    assert_eq!(after[1], outcome.record);
+}
+
+#[tokio::test]
+async fn a_start_refused_after_the_claim_leaves_the_next_run_free_to_choose_its_cap() {
+    let (_dir, verse) = Harness::fresh().await;
+    let world = verse.mailbox.snapshot().await.unwrap();
+
+    // Run 1 is claimed and its call ledger opens under a cap, then the start
+    // is refused before the run begins.
+    let claim = verse.runs.claim(&world, 1_000, &config(1)).unwrap();
+    let ledger = RecordingInferencePort::open(
+        ScriptedPort::speaking(),
+        verse.calls.clone(),
+        call_run_id(claim.sequence()),
+        1_000,
+        &RunStart::of(&world),
+    )
+    .unwrap();
+    drop(ledger);
+    verse.runs.abandon(claim, "start_refused").unwrap();
+
+    // The operator tries again under another cap: it is a new run, and runs.
+    let outcome = verse
+        .run_quietly(ScriptedPort::speaking(), 50_000, 1)
+        .await;
+    assert_eq!(outcome.record.sequence, 2);
+    assert_eq!(outcome.record.token_cap, 50_000);
+    assert_eq!(outcome.record.status, RunStatus::Completed);
+    let runs = verse.runs.runs(world.world_id).unwrap();
+    assert_eq!(runs[0].status, failed("start_refused"));
+    assert_eq!(runs[0].token_cap, 1_000);
 }
 
 #[tokio::test]
@@ -1059,62 +1237,6 @@ async fn an_unreadable_operator_log_is_no_tick_report() {
         Some(Vec::new()),
         "an empty tick is a readable one"
     );
-}
-
-fn record(world: WorldId, sequence: u64) -> VerseRunRecord {
-    VerseRunRecord {
-        world_id: world,
-        sequence,
-        token_cap: 10,
-        ticks_requested: 1,
-        tick_span_minutes: SPAN,
-        cover_budget: RecordedCoverBudget {
-            cells: 2,
-            constituent_cap: 8,
-            urgency_slots: 0,
-        },
-        start_revision: 0,
-        checkpoints: Vec::new(),
-        status: RunStatus::Running,
-    }
-}
-
-#[test]
-fn the_run_store_numbers_runs_per_world_and_replaces_a_run_with_its_later_state() {
-    let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("runs.cc");
-    let store = VerseRunStore::open(&path).unwrap();
-    let one = WorldId::nil_for_test();
-    let other = WorldId::issue();
-    assert_eq!(store.next_sequence(one).unwrap(), 1);
-
-    // A run can only begin as the next in its world.
-    assert!(matches!(
-        store.save(&record(one, 2)),
-        Err(VerseRunError::OutOfSequence)
-    ));
-    assert!(matches!(
-        store.save(&record(one, 0)),
-        Err(VerseRunError::OutOfSequence)
-    ));
-    store.save(&record(one, 1)).unwrap();
-    assert_eq!(store.next_sequence(one).unwrap(), 2);
-    assert_eq!(
-        store.next_sequence(other).unwrap(),
-        1,
-        "sequences are per world"
-    );
-
-    // Saving a run again replaces it, and the file reopens to the same rows.
-    let mut finished = record(one, 1);
-    finished.status = RunStatus::Completed;
-    store.save(&finished).unwrap();
-    store.save(&record(one, 2)).unwrap();
-    store.save(&record(other, 1)).unwrap();
-    drop(store);
-    let store = VerseRunStore::open(&path).unwrap();
-    assert_eq!(store.runs(one).unwrap(), vec![finished, record(one, 2)]);
-    assert_eq!(store.runs(other).unwrap(), vec![record(other, 1)]);
 }
 
 #[test]
@@ -1472,7 +1594,12 @@ fn the_tick_store_opens_once_closes_once_and_refuses_non_canonical_rows() {
     assert!(store.tick(world, 7).unwrap().is_none());
 
     // Tick documents and run records share the file and reopen intact.
-    store.save(&record(world, 1)).unwrap();
+    store
+        .store
+        .lock()
+        .unwrap()
+        .push(&run_row(&record(world, 1)).unwrap())
+        .unwrap();
     drop(store);
     let store = VerseRunStore::open(&path).unwrap();
     assert_eq!(store.runs(world).unwrap(), vec![record(world, 1)]);

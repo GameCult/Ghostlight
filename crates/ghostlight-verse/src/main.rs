@@ -195,13 +195,40 @@ async fn run(flags: Flags) -> Result<ExitCode> {
     let runs = VerseRunStore::open(state.join("runs.cc")).context("the run records cannot be opened")?;
     let work = open_controller_work(state.join("controller-work.cc"))
         .context("the controller work store cannot be opened")?;
-    let sequence = runs.next_sequence(world.world_id).context("the run records cannot be read")?;
-    let port = Arc::new(
-        RecordingInferencePort::open(inner, calls, call_run_id(sequence), cap, &RunStart::of(&world))
-            .context("the run's call records cannot be opened")?,
-    );
-    let runner = ControllerRunner::open(mailbox.clone(), port.clone(), work, models)
-        .context("the controller organ cannot open")?;
+    let config = VerseRunConfig {
+        ticks,
+        tick_span,
+        cover: COVER,
+    };
+    let claim = runs
+        .claim(&world, cap, &config)
+        .context("the run cannot be claimed")?;
+    let sequence = claim.sequence();
+    // A start that fails after the claim ends the claimed run, so it binds
+    // nothing: the next claim takes the next number.
+    let started = RecordingInferencePort::open(
+        inner,
+        calls,
+        call_run_id(sequence),
+        cap,
+        &RunStart::of(&world),
+    )
+    .context("the run's call records cannot be opened")
+    .and_then(|port| {
+        let port = Arc::new(port);
+        ControllerRunner::open(mailbox.clone(), port.clone(), work, models)
+            .map(|runner| (port, runner))
+            .context("the controller organ cannot open")
+    });
+    let (port, runner) = match started {
+        Ok(started) => started,
+        Err(error) => {
+            return Err(match runs.abandon(claim, "start_refused") {
+                Ok(()) => error,
+                Err(_) => error.context("the refused run's record could not be ended"),
+            });
+        }
+    };
 
     println!(
         "run {sequence}: {ticks} ticks of {span} minutes, cap {cap} tokens, model {model}"
@@ -220,12 +247,8 @@ async fn run(flags: Flags) -> Result<ExitCode> {
         &runner,
         &port,
         &runs,
-        &VerseRunConfig {
-            ticks,
-            tick_span,
-            cover: COVER,
-        },
-        sequence,
+        claim,
+        &config,
         |report| {
             print!("{report}");
             if interrupted.load(Ordering::SeqCst) {
@@ -315,4 +338,3 @@ fn lane_fault(error: &ControllerOpenError) -> &'static str {
         ControllerOpenError::EmptyModelPrefix { .. } => "an inference lane's model prefix is empty",
     }
 }
-

@@ -59,6 +59,8 @@ pub enum VerseRunError {
     OutOfSequence,
     #[error("the recording port belongs to another run")]
     PortNotThisRun,
+    #[error("the run's configuration is not the one its claim recorded")]
+    ConfigNotThisClaim,
     #[error("the cover budget is not valid: {0}")]
     Budget(#[from] CoverBudgetError),
     #[error(transparent)]
@@ -311,15 +313,43 @@ fn tick_row(tick: &VerseTick) -> Result<CultCacheEnvelope, VerseRunError> {
     })
 }
 
+fn run_row(record: &VerseRunRecord) -> Result<CultCacheEnvelope, VerseRunError> {
+    Ok(CultCacheEnvelope {
+        key: row_key(record.world_id, record.sequence),
+        r#type: RUN_ROW.into(),
+        payload: rmp_serde::to_vec_named(record).map_err(|_| VerseRunError::Store)?,
+        stored_at: Utc::now().to_rfc3339(),
+        schema_id: Some(RUN_RECORD_SCHEMA.into()),
+    })
+}
+
+/// A run's number and cap, claimed from the run store before anything of the
+/// run exists. The call ledger's run id derives from it ([`call_run_id`]), and
+/// [`run_manual`] runs only the record it names. Not `Clone`: a claim runs once
+/// or is abandoned.
+#[derive(Debug)]
+pub struct RunClaim {
+    world_id: WorldId,
+    sequence: u64,
+    token_cap: u64,
+}
+
+impl RunClaim {
+    /// The run's number, the one [`call_run_id`] names.
+    pub fn sequence(&self) -> u64 {
+        self.sequence
+    }
+}
+
 /// Every row of the file, split by type.
 struct Rows {
     runs: Vec<VerseRunRecord>,
     ticks: Vec<VerseTick>,
 }
 
-/// Run records and tick documents in one CultCache file. A run is saved when
-/// it begins and again each time it moves, so a row is replaced by its own
-/// later state. A tick is opened once and closed once, and only by the tick
+/// Run records and tick documents in one CultCache file. A run is claimed
+/// when it begins and saved again each time it moves, so a row is replaced by
+/// its own later state. A tick is opened once and closed once, and only by the tick
 /// driver: the writers are private to this module.
 ///
 /// ```compile_fail
@@ -383,9 +413,9 @@ impl VerseRunStore {
         Ok(Rows { runs, ticks })
     }
 
-    /// The sequence the next run of this world must carry. Sequences count from
-    /// one.
-    pub fn next_sequence(&self, world: WorldId) -> Result<u64, VerseRunError> {
+    /// The sequence the next claim of this world takes. Sequences count from
+    /// one. Private: a caller never chooses a run's number, `claim` does.
+    fn next_sequence(&self, world: WorldId) -> Result<u64, VerseRunError> {
         Ok(self
             .records()?
             .runs
@@ -474,22 +504,78 @@ impl VerseRunStore {
             .map_err(|_| VerseRunError::Store)
     }
 
-    /// Writes the record: the next run of its world, or a run already saved.
-    pub fn save(&self, record: &VerseRunRecord) -> Result<(), VerseRunError> {
-        if record.sequence == 0 || record.sequence > self.next_sequence(record.world_id)? {
+    /// Claims the next run of the snapshot's world: writes its `Running`
+    /// record, with the cap and config it was claimed under, in one insert that
+    /// cannot overwrite a record. The returned claim is the only way to run it;
+    /// a claim that never runs stays `Running` (a process that died) or is
+    /// ended by [`abandon`](Self::abandon), and its number is never issued
+    /// again.
+    pub fn claim(
+        &self,
+        snapshot: &WorldSnapshot,
+        token_cap: u64,
+        config: &VerseRunConfig,
+    ) -> Result<RunClaim, VerseRunError> {
+        let cover_budget = config.cover.validated()?;
+        let record = VerseRunRecord {
+            world_id: snapshot.world_id,
+            sequence: self.next_sequence(snapshot.world_id)?,
+            token_cap,
+            ticks_requested: config.ticks,
+            tick_span_minutes: config.tick_span.minutes(),
+            cover_budget: RecordedCoverBudget {
+                cells: cover_budget.cells,
+                constituent_cap: cover_budget.constituent_cap,
+                urgency_slots: cover_budget.urgency_slots,
+            },
+            start_revision: snapshot.revision,
+            checkpoints: Vec::new(),
+            status: RunStatus::Running,
+        };
+        let inserted = self
+            .store
+            .lock()
+            .map_err(|_| VerseRunError::Store)?
+            .insert_entry_if_absent(run_row(&record)?)
+            .map_err(|_| VerseRunError::Store)?;
+        if !inserted {
             return Err(VerseRunError::OutOfSequence);
         }
-        let row = CultCacheEnvelope {
-            key: row_key(record.world_id, record.sequence),
-            r#type: RUN_ROW.into(),
-            payload: rmp_serde::to_vec_named(record).map_err(|_| VerseRunError::Store)?,
-            stored_at: Utc::now().to_rfc3339(),
-            schema_id: Some(RUN_RECORD_SCHEMA.into()),
-        };
+        Ok(RunClaim {
+            world_id: record.world_id,
+            sequence: record.sequence,
+            token_cap,
+        })
+    }
+
+    /// Ends a claim that never ran: its record becomes `Failed { reason }`.
+    pub fn abandon(&self, claim: RunClaim, reason: &'static str) -> Result<(), VerseRunError> {
+        let mut record = self.claimed(&claim)?;
+        record.status = failed(reason);
+        self.save(&record)
+    }
+
+    /// The record a claim names.
+    fn claimed(&self, claim: &RunClaim) -> Result<VerseRunRecord, VerseRunError> {
+        self.records()?
+            .runs
+            .into_iter()
+            .find(|record| record.world_id == claim.world_id && record.sequence == claim.sequence)
+            .ok_or(VerseRunError::OutOfSequence)
+    }
+
+    /// Replaces a claimed record with its later state. A sequence with no
+    /// record is refused: only `claim` creates one.
+    fn save(&self, record: &VerseRunRecord) -> Result<(), VerseRunError> {
+        self.claimed(&RunClaim {
+            world_id: record.world_id,
+            sequence: record.sequence,
+            token_cap: record.token_cap,
+        })?;
         self.store
             .lock()
             .map_err(|_| VerseRunError::Store)?
-            .push(&row)
+            .push(&run_row(record)?)
             .map_err(|_| VerseRunError::Store)
     }
 }
@@ -627,39 +713,43 @@ fn failed(reason: &str) -> RunStatus {
 /// Runs `config.ticks` ticks from the world's present clock under the cap the
 /// recording port was opened with. `observe` sees each tick as it ends,
 /// including the one a run ends inside, and may stop the run after a finished
-/// tick by breaking. `sequence` is the run's number from
-/// [`VerseRunStore::next_sequence`]; the port must have been opened for it
-/// ([`call_run_id`]).
+/// tick by breaking. `claim` is the run's number from
+/// [`VerseRunStore::claim`]; the port must have been opened for it
+/// ([`call_run_id`]) under the cap the claim recorded, and `config` is the one
+/// the claim was made with. A claim this refuses is abandoned, so a refused
+/// start binds nothing.
 pub async fn run_manual(
     mailbox: &WorldMailbox,
     runner: &ControllerRunner,
     port: &RecordingInferencePort,
     store: &VerseRunStore,
+    claim: RunClaim,
     config: &VerseRunConfig,
-    sequence: u64,
     mut observe: impl FnMut(&TickReport) -> ControlFlow<()>,
 ) -> Result<RunOutcome, VerseRunError> {
-    if port.run_id() != &call_run_id(sequence) {
+    let begun = match mailbox.snapshot().await {
+        Ok(begun) => begun,
+        Err(error) => {
+            store.abandon(claim, "world_unavailable")?;
+            return Err(error.into());
+        }
+    };
+    if port.run_id() != &call_run_id(claim.sequence)
+        || port.cap() != claim.token_cap
+        || begun.world_id != claim.world_id
+    {
+        store.abandon(claim, "port_not_this_run")?;
         return Err(VerseRunError::PortNotThisRun);
     }
-    let cover_budget = config.cover.validated()?;
-    let begun = mailbox.snapshot().await?;
-    let mut record = VerseRunRecord {
-        world_id: begun.world_id,
-        sequence,
-        token_cap: port.cap(),
-        ticks_requested: config.ticks,
-        tick_span_minutes: config.tick_span.minutes(),
-        cover_budget: RecordedCoverBudget {
-            cells: cover_budget.cells,
-            constituent_cap: cover_budget.constituent_cap,
-            urgency_slots: cover_budget.urgency_slots,
-        },
-        start_revision: begun.revision,
-        checkpoints: Vec::new(),
-        status: RunStatus::Running,
+    let sequence = claim.sequence;
+    let mut record = store.claimed(&claim)?;
+    let cover_budget = match config.cover.validated() {
+        Ok(cover_budget) if record_matches(&record, config, cover_budget) => cover_budget,
+        _ => {
+            store.abandon(claim, "config_not_this_claim")?;
+            return Err(VerseRunError::ConfigNotThisClaim);
+        }
     };
-    store.save(&record)?;
 
     let mut spent_before = port.spent();
     for completed in 0..config.ticks {
@@ -702,6 +792,18 @@ pub async fn run_manual(
     record.status = RunStatus::Completed;
     store.save(&record)?;
     Ok(RunOutcome { record })
+}
+
+/// Whether the record a claim wrote was made under this config.
+fn record_matches(record: &VerseRunRecord, config: &VerseRunConfig, cover: CoverBudget) -> bool {
+    record.ticks_requested == config.ticks
+        && record.tick_span_minutes == config.tick_span.minutes()
+        && record.cover_budget
+            == RecordedCoverBudget {
+                cells: cover.cells,
+                constituent_cap: cover.constituent_cap,
+                urgency_slots: cover.urgency_slots,
+            }
 }
 
 /// The key a run's provider calls are recorded under: the run's sequence, so a
