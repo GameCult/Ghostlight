@@ -1487,3 +1487,135 @@ fn the_tick_store_opens_once_closes_once_and_refuses_non_canonical_rows() {
         );
     }
 }
+
+/// A restored world keeps its run store: the closed tick document at the
+/// world's own ordinal is refused before any provider call or act.
+#[tokio::test]
+async fn a_closed_tick_at_the_worlds_current_ordinal_is_refused_before_any_cell() {
+    let live = tempfile::tempdir().unwrap();
+    create_world(live.path()).await;
+    let backup = live.path().join("world.backup");
+    std::fs::copy(live.path().join("world.cc"), &backup).unwrap();
+    {
+        let verse = Harness::open(live.path()).await;
+        let ran = verse
+            .run_quietly_under(ScriptedPort::speaking(), config_of(2, 60, 2))
+            .await;
+        assert_eq!(ran.record.status, RunStatus::Completed);
+        let Harness {
+            mailbox,
+            _task,
+            calls,
+            runs,
+            work,
+        } = verse;
+        drop((calls, runs, work, mailbox));
+        _task.await.unwrap();
+    }
+    let restored = tempfile::tempdir().unwrap();
+    std::fs::copy(&backup, restored.path().join("world.cc")).unwrap();
+    std::fs::copy(live.path().join("runs.cc"), restored.path().join("runs.cc")).unwrap();
+    let verse = Harness::open(restored.path()).await;
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    assert_eq!(verse.mailbox.clock_advances().await.unwrap(), 0);
+    assert!(verse.runs.tick(world, 0).unwrap().unwrap().closed.is_some());
+    let acts = verse.acts().await;
+
+    let port = ScriptedPort::speaking();
+    let refused = verse.run_quietly_under(port.clone(), config_of(1, 60, 2)).await;
+    assert_eq!(
+        refused.record.status,
+        RunStatus::Failed {
+            reason: "run_store".into()
+        }
+    );
+    assert_eq!(port.calls(), 0, "no provider call before the refusal");
+    assert_eq!(verse.acts().await, acts);
+    assert_eq!(verse.now().await, 0);
+}
+
+/// A port that moves the world's clock through another writer on its first
+/// call, then answers like the wrapped port.
+struct ClockMovedMid {
+    inner: Arc<ScriptedPort>,
+    mailbox: WorldMailbox,
+    seen: AtomicUsize,
+    minutes: u32,
+}
+
+#[async_trait]
+impl InferencePort for ClockMovedMid {
+    fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+        self.inner.prepare(request)
+    }
+
+    async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
+        if self.seen.fetch_add(1, Ordering::SeqCst) == 0 {
+            self.mailbox
+                .submit_clock(CommandId::new(), TickMinutes::new(self.minutes).unwrap())
+                .await
+                .unwrap();
+        }
+        self.inner.infer(request).await
+    }
+}
+
+/// The ordinal counts every clock advance the world committed, whatever its
+/// length: a 45-minute advance by another writer inside an open tick moves
+/// it, so the next tick opens at ordinal 2 and ordinal 1 never has a document.
+#[tokio::test]
+async fn every_clock_advance_moves_the_ordinal_whatever_its_length() {
+    let (_dir, verse) = Harness::fresh().await;
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    let port = Arc::new(ClockMovedMid {
+        inner: ScriptedPort::speaking(),
+        mailbox: verse.mailbox.clone(),
+        seen: AtomicUsize::new(0),
+        minutes: 45,
+    });
+    let first = verse.run_quietly_under(port, config_of(1, 60, 2)).await;
+    assert_eq!(first.record.status, RunStatus::Completed);
+    assert_eq!(verse.mailbox.clock_advances().await.unwrap(), 2);
+    assert_eq!(
+        verse.runs.tick(world, 0).unwrap().unwrap().closed,
+        Some(TickClose::Clock { run: 1 })
+    );
+
+    let second = verse
+        .run_quietly_under(ScriptedPort::speaking(), config_of(1, 60, 2))
+        .await;
+    assert_eq!(second.record.status, RunStatus::Completed);
+    assert_eq!(second.record.checkpoints[0].tick, 2);
+    assert!(verse.runs.tick(world, 1).unwrap().is_none());
+    assert_eq!(verse.now().await, 45 + 60 + 60);
+}
+
+/// Two opens of one ordinal cannot both succeed, even raced.
+#[test]
+fn two_racing_opens_of_one_tick_cannot_both_succeed() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = VerseRunStore::open(dir.path().join("runs.cc")).unwrap();
+    let world = WorldId::nil_for_test();
+    for ordinal in 0..100u64 {
+        let barrier = std::sync::Barrier::new(2);
+        let opened = std::thread::scope(|scope| {
+            let handles: Vec<_> = (1..=2u64)
+                .map(|run| {
+                    let (store, barrier) = (&store, &barrier);
+                    scope.spawn(move || {
+                        let mut doc = tick_doc(world, ordinal);
+                        doc.opened_by_run = run;
+                        barrier.wait();
+                        store.open_tick(&doc).is_ok()
+                    })
+                })
+                .collect();
+            handles
+                .into_iter()
+                .map(|handle| handle.join().unwrap())
+                .filter(|ok| *ok)
+                .count()
+        });
+        assert_eq!(opened, 1, "ordinal {ordinal} was opened {opened} times");
+    }
+}
