@@ -15220,12 +15220,11 @@ mod tests {
             ])
             .await;
             let cell = one_group(&mailbox).await;
-            let long = "x".repeat(UNATTRIBUTED_TOOL_CAP + 36);
             let mut events = vec![
                 speak_call("c0", "c0__speak", "Hold the bridge."),
                 InferenceEvent::ToolCall {
                     call_id: "stray".into(),
-                    name: long.clone(),
+                    name: "c9__speak".into(),
                     arguments: json!({ "text": "SENTINEL-ARGUMENT" }).to_string(),
                 },
             ];
@@ -15246,7 +15245,7 @@ mod tests {
             let CellRun::Grouped(run) = runner.run_cell(&cell).await.unwrap() else {
                 panic!("a coarse cell did not run the grouped lane")
             };
-            assert_eq!(run.unattributed, vec!["x".repeat(UNATTRIBUTED_TOOL_CAP)]);
+            assert_eq!(run.unattributed, vec!["c9__speak".to_owned()]);
             assert!(
                 !format!("{run:?}").contains("SENTINEL-ARGUMENT"),
                 "the call's arguments were kept"
@@ -15268,6 +15267,16 @@ mod tests {
             drop(mailbox);
             task.await.unwrap();
         }
+    }
+
+    /// The name a run keeps of a call that named no handle is bounded; the
+    /// call's arguments are not kept at all.
+    #[test]
+    fn the_name_kept_of_a_call_naming_no_handle_is_capped() {
+        let mut fold = GroupedFold::new();
+        let long = "x".repeat(UNATTRIBUTED_TOOL_CAP + 36);
+        grouped_tool_result(&[], &mut fold, &long, r#"{"text":"SENTINEL-ARGUMENT"}"#).unwrap();
+        assert_eq!(fold.unattributed, vec!["x".repeat(UNATTRIBUTED_TOOL_CAP)]);
     }
 
     /// Verification 20b. No spelling of a handle outside the cell decodes, and
@@ -15921,7 +15930,8 @@ mod tests {
             panic!("a coarse cell did not run the grouped lane")
         };
         assert!(run.pending.is_none());
-        assert_eq!(run.submissions.len(), 3);
+        assert_eq!(run.submissions.len(), 1);
+        assert_eq!(run.refused.len(), 2);
 
         let live = mailbox.snapshot().await.unwrap();
         assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
