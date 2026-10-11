@@ -82,6 +82,11 @@ enum Request {
     AgencyGraph {
         reply: oneshot::Sender<Result<AgencyGraph, KernelError>>,
     },
+    /// The tick driver's opportunity list. Separate from `Snapshot` so the
+    /// list a cover is derived from has one door, held by the driver.
+    Opportunities {
+        reply: oneshot::Sender<Result<Vec<DecisionOpportunity>, KernelError>>,
+    },
     ControllerReceipt {
         command_id: CommandId,
         opportunity: super::DecisionOpportunity,
@@ -477,6 +482,21 @@ impl WorldMailbox {
         let (reply, response) = oneshot::channel();
         self.sender
             .send(Request::AgencyGraph { reply })
+            .await
+            .map_err(|_| MailboxError::Unavailable)?;
+
+        response
+            .await
+            .map_err(|_| MailboxError::Unavailable)?
+            .map_err(MailboxError::Kernel)
+    }
+
+    /// The tick driver's opportunity list, in snapshot order. It is on
+    /// `WorldMailbox` and on no controller port, as `agency_graph` is.
+    pub async fn opportunities(&self) -> Result<Vec<DecisionOpportunity>, MailboxError> {
+        let (reply, response) = oneshot::channel();
+        self.sender
+            .send(Request::Opportunities { reply })
             .await
             .map_err(|_| MailboxError::Unavailable)?;
 
@@ -946,6 +966,19 @@ async fn run_owner(mut owned: OwnedWorld, mut receiver: mpsc::Receiver<Request>)
                 let result = match &owned {
                     OwnedWorld::Empty(_) => Err(KernelError::WorldNotCreated),
                     OwnedWorld::Live(kernel) => kernel.agency_graph(),
+                };
+                let owner_must_stop = result
+                    .as_ref()
+                    .is_err_and(KernelError::requires_owner_restart);
+                let _ = reply.send(result);
+                if owner_must_stop {
+                    return;
+                }
+            }
+            Request::Opportunities { reply } => {
+                let result = match &owned {
+                    OwnedWorld::Empty(_) => Err(KernelError::WorldNotCreated),
+                    OwnedWorld::Live(kernel) => kernel.opportunities(),
                 };
                 let owner_must_stop = result
                     .as_ref()
