@@ -85,6 +85,7 @@ pub use consumer::{
 };
 pub use controllers::{
     CONTROLLER_WORK_SCHEMA, CellRun, ConnectorBinding, ControllerError, ControllerModels,
+    ControllerOpenError,
     ControllerNeed, ControllerPendingReason, ControllerRunner, ControllerWork,
     ControllerWorkCustody, ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError,
     ControllerWorkWrite,

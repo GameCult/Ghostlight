@@ -9,10 +9,10 @@
 //! `calls.cc`. The provider key is read from a file at run time and appears
 //! nowhere else.
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, anyhow, bail};
 use chrono::{Duration, Utc};
 use ghostlight::{
-    CommandBody, CommandId, ControllerModels, ControllerRunner, DEFAULT_HOSTED_MODEL_PREFIX,
+    CommandBody, CommandId, ControllerModels, ControllerOpenError, ControllerRunner, DEFAULT_HOSTED_MODEL_PREFIX,
     DEFAULT_LOCAL_MODEL_PREFIX, CallRecordStore, CoverBudget, CreateVerseWorldIntent,
     HostedBinding, Lens, LensWeights, LocalBinding, PrincipalCommandIntent, RecordingInferencePort,
     RunStart, RunStatus, TickMinutes, VerifiedPrincipalEvidence, VerseRunConfig, VerseRunStore,
@@ -290,5 +290,29 @@ fn open_lane(
         bail!("--model names no inference lane (expected a hosted/ or local/ prefix)");
     }
     open_inference(None, None, local, hosted, &models.each())
-        .context("the inference lane cannot open")
+        .map_err(|error| anyhow!(lane_fault(&error)))
 }
+
+/// What a lane that cannot open says: the flag or the kind of fault, never a
+/// value the operator passed.
+fn lane_fault(error: &ControllerOpenError) -> &'static str {
+    match error {
+        ControllerOpenError::InvalidModels => "--model is not an exact nonempty identifier",
+        ControllerOpenError::Connector(_) => "the connector lane cannot open",
+        ControllerOpenError::WorkStore(_) => "the controller work journal cannot open",
+        ControllerOpenError::UnroutableModel { .. } => "--model is claimed by no inference lane",
+        ControllerOpenError::SdkSidecarMissing { .. } => "the SDK sidecar entry is not a file",
+        ControllerOpenError::LocalEndpointNotLoopback { .. } => {
+            "--base-url for a local model must be a loopback address"
+        }
+        ControllerOpenError::HostedEndpointNotHttps => {
+            "--base-url for a hosted model must be an https URL"
+        }
+        ControllerOpenError::HostedKeyUnreadable => {
+            "--key-file is unreadable, empty, or not one run of visible ASCII"
+        }
+        ControllerOpenError::SharedModelPrefix { .. } => "two inference lanes claim one model prefix",
+        ControllerOpenError::EmptyModelPrefix { .. } => "an inference lane's model prefix is empty",
+    }
+}
+

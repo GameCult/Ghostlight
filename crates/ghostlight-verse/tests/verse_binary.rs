@@ -312,7 +312,7 @@ fn the_command_refuses_what_it_cannot_run_and_never_echoes_a_value() {
                 "--token-cap", "1", "--tick-span-minutes", "60", "--model", "hosted/x",
                 "--base-url", "https://api.example.test", "--key-file", key.to_str().unwrap(),
             ],
-            "the inference lane cannot open",
+            "--key-file is unreadable",
         ),
         (
             vec![
@@ -331,4 +331,31 @@ fn the_command_refuses_what_it_cannot_run_and_never_echoes_a_value() {
         assert!(!error.contains(secret), "{arguments:?} echoed a path: {error}");
         assert!(!error.contains("many"), "{arguments:?} echoed a value: {error}");
     }
+}
+
+#[test]
+fn a_non_loopback_local_endpoint_is_refused_without_echoing_it() {
+    let state = tempfile::tempdir().unwrap();
+    assert!(genesis(state.path()).status.success());
+    let output = verse(&[
+        "run",
+        "--state",
+        state.path().to_str().unwrap(),
+        "--ticks",
+        "1",
+        "--token-cap",
+        "1000",
+        "--tick-span-minutes",
+        "60",
+        "--model",
+        "local/x",
+        "--base-url",
+        "http://10.77.0.99:4242",
+    ]);
+    assert!(!output.status.success());
+    let error = stderr(&output);
+    assert!(error.contains("--base-url"), "{error}");
+    assert!(!error.contains("10.77.0.99"), "the endpoint was echoed: {error}");
+    // The lane failed before any run was claimed.
+    assert!(!stdout(&output).contains("run 1"), "{}", stdout(&output));
 }
