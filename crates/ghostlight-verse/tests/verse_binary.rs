@@ -54,6 +54,15 @@ struct Responder {
 
 impl Responder {
     fn start() -> Self {
+        Self::answering(200)
+    }
+
+    /// A provider that refuses every call with this status.
+    fn refusing(status: u16) -> Self {
+        Self::answering(status)
+    }
+
+    fn answering(status: u16) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
         let served = Arc::new(AtomicUsize::new(0));
@@ -62,7 +71,7 @@ impl Responder {
             for stream in listener.incoming() {
                 let Ok(stream) = stream else { return };
                 let counter = counter.clone();
-                std::thread::spawn(move || serve(stream, &counter));
+                std::thread::spawn(move || serve(stream, &counter, status));
             }
         });
         Self { address, served }
@@ -73,7 +82,7 @@ impl Responder {
     }
 }
 
-fn serve(mut stream: TcpStream, served: &AtomicUsize) {
+fn serve(mut stream: TcpStream, served: &AtomicUsize, status: u16) {
     let mut raw = Vec::new();
     let mut chunk = [0u8; 4096];
     let (head_end, length) = loop {
@@ -127,7 +136,7 @@ fn serve(mut stream: TcpStream, served: &AtomicUsize) {
     })
     .to_string();
     let response = format!(
-        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{reply}",
+        "HTTP/1.1 {status} Scripted\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{reply}",
         reply.len()
     );
     let _ = stream.write_all(response.as_bytes());
@@ -158,9 +167,7 @@ fn binary_run_prints_acts_and_spend() {
     assert!(made.status.success(), "{}", stderr(&made));
     let made = stdout(&made);
     assert!(made.contains("factions 2\n") && made.contains("phase Active\n"), "{made}");
-    for file in ["world.cc"] {
-        assert!(state.path().join(file).is_file());
-    }
+    assert!(state.path().join("world.cc").is_file());
 
     let responder = Responder::start();
     let output = run(state.path(), &responder, "2", "1000000");
@@ -224,6 +231,26 @@ fn a_cap_the_first_call_could_pass_ends_the_run_with_nothing_spent() {
 }
 
 #[test]
+fn a_run_that_fails_says_so_and_exits_nonzero() {
+    let state = tempfile::tempdir().unwrap();
+    assert!(genesis(state.path()).status.success());
+    let responder = Responder::refusing(500);
+    let output = run(state.path(), &responder, "2", "1000000");
+    assert!(!output.status.success());
+    let text = stdout(&output);
+    assert!(text.contains("tick 0 open: "), "{text}");
+    assert!(
+        text.ends_with("status: Failed (inference_recovery_required); 0 of 2 ticks closed\n"),
+        "{text}"
+    );
+    assert_eq!(
+        responder.served.load(Ordering::SeqCst),
+        1,
+        "the run stopped at the first refusal"
+    );
+}
+
+#[test]
 fn the_command_refuses_what_it_cannot_run_and_never_echoes_a_value() {
     let state = tempfile::tempdir().unwrap();
     let responder = Responder::start();
@@ -239,7 +266,7 @@ fn the_command_refuses_what_it_cannot_run_and_never_echoes_a_value() {
 
     let secret = "sk-not-a-real-key-0000";
     let key = state.path().join(secret);
-    let cases: [(Vec<&str>, &str); 6] = [
+    let cases: [(Vec<&str>, &str); 9] = [
         (vec![], "usage"),
         (vec!["fly"], "unknown command"),
         (
@@ -253,6 +280,30 @@ fn the_command_refuses_what_it_cannot_run_and_never_echoes_a_value() {
                 "--base-url", "http://127.0.0.1:1",
             ],
             "--ticks is not a positive integer",
+        ),
+        (
+            vec![
+                "run", "--state", state.path().to_str().unwrap(), "--ticks", "0",
+                "--token-cap", "1", "--tick-span-minutes", "60", "--model", "local/x",
+                "--base-url", "http://127.0.0.1:1",
+            ],
+            "--ticks is not a positive integer",
+        ),
+        (
+            vec![
+                "run", "--state", state.path().to_str().unwrap(), "--ticks", "1",
+                "--token-cap", "0", "--tick-span-minutes", "60", "--model", "local/x",
+                "--base-url", "http://127.0.0.1:1",
+            ],
+            "--token-cap is not a positive integer",
+        ),
+        (
+            vec![
+                "run", "--state", state.path().to_str().unwrap(), "--ticks", "1",
+                "--token-cap", "1", "--tick-span-minutes", "60", "--model", "gpt-4",
+                "--base-url", "http://127.0.0.1:1",
+            ],
+            "--model names no inference lane",
         ),
         (
             // A hosted model needs its key file; a missing one is named by flag.
