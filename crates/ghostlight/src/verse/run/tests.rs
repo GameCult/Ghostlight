@@ -495,7 +495,10 @@ async fn budget_exhausted_stops_before_the_clock_and_resumes() {
 /// The answer for a committed cell does not depend on where it sits in the
 /// tick's frozen order. Here the cell that acted is the second one: the first
 /// is still in flight when the run ends, the second commits by another driver,
-/// and the resuming run reaches the committed cell last.
+/// and the resuming run reaches the committed cell last. The factions share a
+/// room, so the committed act moved the in-flight cell's scope: that cell is
+/// refused before inference (its row still reasons), while the committed cell is
+/// answered with its receipt, whatever its own scope has done since.
 #[tokio::test]
 async fn a_committed_cell_is_answered_whichever_cell_the_resume_reaches_first() {
     let (_dir, verse) = Harness::fresh().await;
@@ -536,10 +539,17 @@ async fn a_committed_cell_is_answered_whichever_cell_the_resume_reaches_first() 
         panic!("the resuming run closed one tick")
     };
     assert!(closing.closed);
-    assert!(closing.refusals.is_empty(), "{closing:?}");
-    assert_eq!(closing.committed.len(), 2, "{closing:?}");
-    assert_eq!(resuming.calls(), 1, "only the cell left in flight reached the provider");
-    assert_eq!(verse.acts().await, 2, "no act was committed twice");
+    assert_eq!(
+        closing.refusals,
+        vec![Refusal {
+            cell: 0,
+            reason: RefusalReason::ScopeMoved
+        }],
+        "{closing:?}"
+    );
+    assert_eq!(closing.committed.len(), 1, "{closing:?}");
+    assert_eq!(resuming.calls(), 0, "no provider call was spent on a moved scope");
+    assert_eq!(verse.acts().await, 1, "no act was committed twice");
 }
 
 #[tokio::test]
