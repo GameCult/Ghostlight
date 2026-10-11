@@ -19704,8 +19704,14 @@ mod tests {
             .run_operational(operational_command, &operational[0])
             .await
             .unwrap();
+        // The operational act moved the narrative subject's scope: bind it as
+        // the world now holds it.
+        let narrative_bound = fresh_opportunity(
+            &mailbox.snapshot().await.unwrap(),
+            narrative[0].scope.subject_id,
+        );
         runner
-            .run_narrative(narrative_command, &narrative[0])
+            .run_narrative(narrative_command, &narrative_bound)
             .await
             .unwrap();
 
@@ -19714,7 +19720,7 @@ mod tests {
         let operational_now = fresh_opportunity(&moved, operational[0].scope.subject_id);
         let narrative_now = fresh_opportunity(&moved, narrative[0].scope.subject_id);
         assert_ne!(operational_now.scope_digest, operational[0].scope_digest);
-        assert_ne!(narrative_now.scope_digest, narrative[0].scope_digest);
+        assert_ne!(narrative_now.scope_digest, narrative_bound.scope_digest);
         let OperationalRun::Pending(pending) = uncertain
             .run_operational(operational_command, &operational_now)
             .await
