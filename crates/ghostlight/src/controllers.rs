@@ -2915,7 +2915,17 @@ pub enum ConstituentRefusalReason {
     /// else, so no turn was submitted for it: a decode failure is not a
     /// decision to decline.
     ProposalUndecodable,
+    /// The persisted row of a resumed cell does not hold this member, so the
+    /// cognition behind the row never saw it. Nothing is submitted for it.
+    RowDisagreesWithCell,
+    /// A tool call in the cell named no handle and this member finished
+    /// without a choice of its own, so whether the call was meant for it is
+    /// unknown. Declining it would pass the model's gap off as a decision.
+    CallUnattributed,
 }
+
+/// The longest tool name a run keeps of a call that named no handle.
+pub const UNATTRIBUTED_TOOL_CAP: usize = 64;
 
 /// One coarse cell's outcome: one inference, N ordinary one-opportunity
 /// submissions, and whatever the decode could not attribute.
@@ -2926,6 +2936,9 @@ pub struct GroupedRun {
     pub submissions: Vec<ConstituentSubmission>,
     /// Decode problems the grouped decode could not attribute to a constituent.
     pub needs: Vec<ControllerNeed>,
+    /// The tool names of the calls that named no handle, each capped at
+    /// [`UNATTRIBUTED_TOOL_CAP`] characters; never their arguments.
+    pub unattributed: Vec<String>,
     /// Constituents of this cell that did not commit, one entry each, with the
     /// reason. A constituent is in `submissions` or here, never lost.
     pub refused: Vec<ConstituentRefusal>,
@@ -3450,7 +3463,7 @@ impl ControllerRunner {
                 if checkpoint.cell() != cell {
                     return Err(ControllerError::OpportunityMismatch);
                 }
-                return self.resume_persisted_group(command_id, checkpoint).await;
+                return self.resume_row(command_id, checkpoint, members).await;
             }
             ControllerWorkLookup::CustodyUncertain(ControllerWork::Grouped(checkpoint)) => {
                 if checkpoint.cell() != cell {
@@ -3522,6 +3535,7 @@ impl ControllerRunner {
                 resolution: Resolution::Coarse { constituents: 0 },
                 submissions: Vec::new(),
                 needs: Vec::new(),
+                unattributed: Vec::new(),
                 refused,
                 pending: None,
             });
@@ -3575,7 +3589,8 @@ impl ControllerRunner {
         {
             grouped_pending(checkpoint, ControllerPendingReason::StoreReopenRequired)
         } else {
-            self.resume_persisted_group(command_id, checkpoint).await?
+            self.resume_persisted_group(command_id, checkpoint, members)
+                .await?
         };
         // The constituents that left the cell are reported beside the run they
         // were dropped from, not written into the row: they produced no
@@ -3584,20 +3599,51 @@ impl ControllerRunner {
         Ok(run)
     }
 
+    /// A persisted row resumed for the cell the driver froze. The cell owns
+    /// the member set: a cell member the row does not hold is refused here,
+    /// once, with the reason that is true of it, and a row member the cell
+    /// lacks is not run. Nothing downstream repairs the lists.
+    async fn resume_row(
+        &self,
+        command_id: CommandId,
+        checkpoint: GroupedCheckpoint,
+        members: &[Constituent],
+    ) -> Result<GroupedRun, ControllerError> {
+        let lacked: Vec<ConstituentRefusal> = members
+            .iter()
+            .filter(|member| {
+                !checkpoint
+                    .constituents()
+                    .iter()
+                    .any(|held| held.subject == member.subject)
+            })
+            .map(|member| ConstituentRefusal {
+                subject: member.subject,
+                reason: ConstituentRefusalReason::RowDisagreesWithCell,
+            })
+            .collect();
+        let mut run = self
+            .resume_persisted_group(command_id, checkpoint, members)
+            .await?;
+        run.refused.splice(0..0, lacked);
+        Ok(run)
+    }
+
     async fn resume_persisted_group(
         &self,
         command_id: CommandId,
         checkpoint: GroupedCheckpoint,
+        members: &[Constituent],
     ) -> Result<GroupedRun, ControllerError> {
         if checkpoint.command_id() != command_id {
             return Err(ControllerError::CommandMismatch);
         }
         match checkpoint {
             checkpoint @ GroupedCheckpoint::AgentInFlight { .. } => {
-                self.run_group_pending(checkpoint).await
+                self.run_group_pending(checkpoint, members).await
             }
             checkpoint @ GroupedCheckpoint::Submitting { .. } => {
-                self.submit_group(checkpoint).await
+                self.submit_group(checkpoint, members).await
             }
         }
     }
@@ -3605,6 +3651,7 @@ impl ControllerRunner {
     async fn run_group_pending(
         &self,
         mut checkpoint: GroupedCheckpoint,
+        members: &[Constituent],
     ) -> Result<GroupedRun, ControllerError> {
         loop {
             let GroupedCheckpoint::AgentInFlight {
@@ -3652,7 +3699,7 @@ impl ControllerRunner {
                             ControllerPendingReason::StoreReopenRequired,
                         ));
                     }
-                    return self.submit_group(next).await;
+                    return self.submit_group(next, members).await;
                 }
                 Ok(GroupedLoopEvaluation::Continue { conversation }) => {
                     let round = completed.len();
@@ -3703,6 +3750,7 @@ impl ControllerRunner {
     async fn submit_group(
         &self,
         checkpoint: GroupedCheckpoint,
+        members: &[Constituent],
     ) -> Result<GroupedRun, ControllerError> {
         let GroupedCheckpoint::Submitting {
             cell,
@@ -3730,6 +3778,7 @@ impl ControllerRunner {
             constituents: constituents.len(),
         };
         let needs = capture.needs;
+        let unattributed = capture.unattributed;
         let mut submissions = Vec::new();
         let mut refused = Vec::new();
         // The world's attention order, read once: among exercises the subject the
@@ -3769,10 +3818,22 @@ impl ControllerRunner {
             (exercises, if exercises { place } else { 0 })
         });
         for (handle, constituent) in ordered {
+            // The cell being run owns who acts. A row member the cell lacks
+            // has left it (the driver accounts for it there) and is not run.
+            if !members.iter().any(|member| member.subject == constituent.subject) {
+                continue;
+            }
             if capture.undecodable.contains(&handle) {
                 refused.push(ConstituentRefusal {
                     subject: constituent.subject,
                     reason: ConstituentRefusalReason::ProposalUndecodable,
+                });
+                continue;
+            }
+            if capture.call_unattributed.contains(&handle) {
+                refused.push(ConstituentRefusal {
+                    subject: constituent.subject,
+                    reason: ConstituentRefusalReason::CallUnattributed,
                 });
                 continue;
             }
@@ -3796,6 +3857,7 @@ impl ControllerRunner {
                         resolution,
                         submissions,
                         needs,
+                        unattributed,
                         refused,
                         pending: Some(reason),
                     });
@@ -3824,6 +3886,7 @@ impl ControllerRunner {
             resolution,
             submissions,
             needs,
+            unattributed,
             refused,
             pending: None,
         })
@@ -5891,6 +5954,11 @@ struct GroupedCapture {
     /// Handles whose own tool call failed to decode and which never finished
     /// otherwise: nothing is submitted for them.
     undecodable: BTreeSet<usize>,
+    /// Handles that finished with no choice while some call in the cell named
+    /// no handle: nothing says the call was not theirs, so they do not decline.
+    call_unattributed: BTreeSet<usize>,
+    /// The names of the calls that named no handle.
+    unattributed: Vec<String>,
     needs: Vec<ControllerNeed>,
 }
 
@@ -5907,6 +5975,8 @@ pub(super) struct GroupedFold {
     /// Handles with a call that failed to decode, whether or not a later call
     /// finished them.
     decode_failed: BTreeSet<usize>,
+    /// The names of the calls that named no handle, capped.
+    unattributed: Vec<String>,
     needs: Vec<ControllerNeed>,
 }
 
@@ -5916,6 +5986,7 @@ impl GroupedFold {
             proposals: BTreeMap::new(),
             terminal: BTreeSet::new(),
             decode_failed: BTreeSet::new(),
+            unattributed: Vec::new(),
             needs: Vec::new(),
         }
     }
@@ -5934,6 +6005,8 @@ pub(super) fn grouped_tool_result(
         // A model that writes `c99__carry` has not proposed anything. It has
         // produced a gap.
         None => {
+            fold.unattributed
+                .push(name.chars().take(UNATTRIBUTED_TOOL_CAP).collect());
             fold.needs.push(tool_decode_need(
                 name,
                 arguments,
@@ -6131,6 +6204,17 @@ fn evaluate_grouped_loop(
                         .difference(&fold.terminal)
                         .copied()
                         .collect(),
+                    call_unattributed: if fold.unattributed.is_empty() {
+                        BTreeSet::new()
+                    } else {
+                        (0..constituents.len())
+                            .filter(|handle| {
+                                !fold.terminal.contains(handle)
+                                    && !fold.decode_failed.contains(handle)
+                            })
+                            .collect()
+                    },
+                    unattributed: fold.unattributed,
                     needs: fold.needs,
                 },
             });
@@ -6193,6 +6277,7 @@ fn grouped_pending(checkpoint: GroupedCheckpoint, reason: ControllerPendingReaso
         },
         submissions: Vec::new(),
         needs: Vec::new(),
+        unattributed: Vec::new(),
         refused: Vec::new(),
         pending: Some(reason),
     }
@@ -14885,8 +14970,9 @@ mod tests {
     /// Verification 20. One inference proposes for `c0`, names a handle outside
     /// the cell, and says nothing for the rest. The valid call commits under its
     /// own opportunity; the out-of-cell name produces a gap and reaches no
-    /// mailbox; every silent handle declines, so "attended and stayed silent" is
-    /// distinguishable from "was never attended".
+    /// mailbox; every handle that finished with no choice is refused as
+    /// `CallUnattributed` and not declined, because the call that named no
+    /// handle may have been meant for it.
     #[tokio::test]
     async fn soul_a_batched_turn_attributes_by_tool_identity_and_refuses_an_outside_handle() {
         let (_directory, mailbox, task) = active_cell_mailbox(vec![
@@ -14919,7 +15005,8 @@ mod tests {
         };
         assert!(run.pending.is_none());
         assert_eq!(run.resolution, Resolution::Coarse { constituents: 3 });
-        assert_eq!(run.submissions.len(), 3, "every constituent finished");
+        assert_eq!(run.submissions.len(), 1, "only the attributed call committed");
+        assert_eq!(run.unattributed, vec!["c7__speak".to_owned()]);
         let first = cell.members()[0].subject;
         assert!(matches!(
             run.submissions
@@ -14928,16 +15015,17 @@ mod tests {
                 .map(|entry| &entry.submission),
             Some(SubmissionDisposition::Completed(_))
         ));
-        for entry in run
-            .submissions
-            .iter()
-            .filter(|entry| entry.subject != first)
-        {
-            assert!(
-                matches!(entry.submission, SubmissionDisposition::NoProposal(_)),
-                "a silent constituent did not decline"
-            );
-        }
+        assert_eq!(
+            run.refused,
+            cell.members()[1..]
+                .iter()
+                .map(|member| ConstituentRefusal {
+                    subject: member.subject,
+                    reason: ConstituentRefusalReason::CallUnattributed,
+                })
+                .collect::<Vec<_>>(),
+            "a silent constituent was declined behind a call that named no handle"
+        );
         assert!(
             run.needs
                 .iter()
@@ -14953,6 +15041,233 @@ mod tests {
         drop(runner);
         drop(mailbox);
         task.await.unwrap();
+    }
+
+    /// A resumed row is run for the cell the driver froze. The cell owns the
+    /// member set: a member the row lacks is refused once as
+    /// `RowDisagreesWithCell` wherever it stands in a three-member cell, and a
+    /// row member the cell lacks is not run.
+    #[tokio::test]
+    async fn a_resumed_row_is_run_for_the_cell_and_refuses_the_member_it_lacks() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let Cell::Group { id, tick, members } = one_group(&mailbox).await else {
+            panic!("the cell is not coarse")
+        };
+        let [m0, m1, m2] = [0, 1, 2].map(|index| members[index].clone());
+        let group = |members: Vec<Constituent>| Cell::Group { id, tick, members };
+        let (runner, _store) = grouped_runner(
+            &mailbox,
+            vec![output(
+                vec![
+                    speak_call("c0", "c0__speak", "Hold the bridge."),
+                    InferenceEvent::ToolCall {
+                        call_id: "c1".into(),
+                        name: "c1__finish_without_proposal".into(),
+                        arguments: "{}".into(),
+                    },
+                ],
+                "row",
+            )],
+        );
+        let subjects = |run: &GroupedRun| -> Vec<SubjectId> {
+            run.submissions.iter().map(|entry| entry.subject).collect()
+        };
+        // The row is persisted for [m0, m2].
+        let CellRun::Grouped(first) = runner
+            .run_cell(&group(vec![m0.clone(), m2.clone()]))
+            .await
+            .unwrap()
+        else {
+            panic!("a coarse cell did not run the grouped lane")
+        };
+        assert_eq!(subjects(&first), vec![m0.subject, m2.subject]);
+        let committed = mailbox.operator_log().await.unwrap().len();
+
+        // The cell is [m0, m1, m2]: the member in the middle is the one refused.
+        let CellRun::Grouped(second) = runner
+            .run_cell(&group(vec![m0.clone(), m1.clone(), m2.clone()]))
+            .await
+            .unwrap()
+        else {
+            panic!("a resumed coarse cell did not run the grouped lane")
+        };
+        assert_eq!(
+            second.refused,
+            vec![ConstituentRefusal {
+                subject: m1.subject,
+                reason: ConstituentRefusalReason::RowDisagreesWithCell,
+            }]
+        );
+        assert_eq!(subjects(&second), vec![m0.subject, m2.subject]);
+
+        // The cell is [m2, m1]: m1 is refused, m2 runs, and m0 (in the row,
+        // not in the cell) is neither run nor named.
+        let CellRun::Grouped(third) = runner
+            .run_cell(&group(vec![m2.clone(), m1.clone()]))
+            .await
+            .unwrap()
+        else {
+            panic!("a resumed coarse cell did not run the grouped lane")
+        };
+        assert_eq!(
+            third.refused,
+            vec![ConstituentRefusal {
+                subject: m1.subject,
+                reason: ConstituentRefusalReason::RowDisagreesWithCell,
+            }]
+        );
+        assert_eq!(subjects(&third), vec![m2.subject]);
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), committed);
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// Every site that marks a member's own call undecodable refuses that
+    /// member, for either handle; a well-formed `record_need` does not.
+    #[tokio::test]
+    async fn a_member_whose_own_call_cannot_be_decoded_is_refused_at_every_site() {
+        let bad_speak = || InferenceEvent::ToolCall {
+            call_id: "bad".into(),
+            name: "c0__speak".into(),
+            arguments: json!({ "text": 5 }).to_string(),
+        };
+        let call = |name: &str, arguments: &str| InferenceEvent::ToolCall {
+            call_id: "bad".into(),
+            name: name.into(),
+            arguments: arguments.into(),
+        };
+        let sites: Vec<(&str, InferenceEvent, bool)> = vec![
+            ("catalog arguments", bad_speak(), true),
+            (
+                "record_need arguments",
+                call("c0__record_need", "not json at all"),
+                true,
+            ),
+            (
+                "finish_without_proposal arguments",
+                call("c0__finish_without_proposal", "not json at all"),
+                true,
+            ),
+            ("tool not offered", call("c0__teleport", "{}"), true),
+            (
+                "a well-formed record_need",
+                call("c0__record_need", r#"{"detail":"no route"}"#),
+                false,
+            ),
+        ];
+        for (site, event, refuses) in sites {
+            let (_directory, mailbox, task) = active_cell_mailbox(vec![
+                NewController::OperationalAgent,
+                NewController::OperationalAgent,
+            ])
+            .await;
+            let cell = one_group(&mailbox).await;
+            let (runner, _store) = grouped_runner(
+                &mailbox,
+                vec![
+                    output(
+                        vec![event, speak_call("c1", "c1__speak", "Hold the bridge.")],
+                        "site-one",
+                    ),
+                    output(vec![InferenceEvent::Text("Nothing further.".into())], "site-two"),
+                ],
+            );
+            let CellRun::Grouped(run) = runner.run_cell(&cell).await.unwrap() else {
+                panic!("a coarse cell did not run the grouped lane")
+            };
+            let (zero, one) = (cell.members()[0].subject, cell.members()[1].subject);
+            if refuses {
+                assert_eq!(
+                    run.refused,
+                    vec![ConstituentRefusal {
+                        subject: zero,
+                        reason: ConstituentRefusalReason::ProposalUndecodable,
+                    }],
+                    "{site}"
+                );
+                assert_eq!(run.submissions.len(), 1, "{site}");
+                assert_eq!(run.submissions[0].subject, one, "{site}");
+            } else {
+                assert!(run.refused.is_empty(), "{site}: {:?}", run.refused);
+                assert_eq!(run.submissions.len(), 2, "{site}");
+                assert!(
+                    run.needs.iter().any(|need| need.detail.contains("c0: no route")),
+                    "{site}: the need was not recorded"
+                );
+            }
+            drop(runner);
+            drop(mailbox);
+            task.await.unwrap();
+        }
+    }
+
+    /// A call that names no handle is reported by tool name alone, and a
+    /// member that finished with no choice behind it is refused, not
+    /// declined; a member that decided to finish still declines.
+    #[tokio::test]
+    async fn a_call_naming_no_handle_is_reported_and_refuses_the_members_it_may_have_meant() {
+        for finishes in [false, true] {
+            let (_directory, mailbox, task) = active_cell_mailbox(vec![
+                NewController::OperationalAgent,
+                NewController::OperationalAgent,
+            ])
+            .await;
+            let cell = one_group(&mailbox).await;
+            let long = "x".repeat(UNATTRIBUTED_TOOL_CAP + 36);
+            let mut events = vec![
+                speak_call("c0", "c0__speak", "Hold the bridge."),
+                InferenceEvent::ToolCall {
+                    call_id: "stray".into(),
+                    name: long.clone(),
+                    arguments: json!({ "text": "SENTINEL-ARGUMENT" }).to_string(),
+                },
+            ];
+            if finishes {
+                events.push(InferenceEvent::ToolCall {
+                    call_id: "c1".into(),
+                    name: "c1__finish_without_proposal".into(),
+                    arguments: "{}".into(),
+                });
+            }
+            let (runner, _store) = grouped_runner(
+                &mailbox,
+                vec![
+                    output(events, "stray-one"),
+                    output(vec![InferenceEvent::Text("Nothing further.".into())], "stray-two"),
+                ],
+            );
+            let CellRun::Grouped(run) = runner.run_cell(&cell).await.unwrap() else {
+                panic!("a coarse cell did not run the grouped lane")
+            };
+            assert_eq!(run.unattributed, vec!["x".repeat(UNATTRIBUTED_TOOL_CAP)]);
+            assert!(
+                !format!("{run:?}").contains("SENTINEL-ARGUMENT"),
+                "the call's arguments were kept"
+            );
+            if finishes {
+                assert!(run.refused.is_empty(), "{:?}", run.refused);
+                assert_eq!(run.submissions.len(), 2);
+            } else {
+                assert_eq!(run.submissions.len(), 1);
+                assert_eq!(
+                    run.refused,
+                    vec![ConstituentRefusal {
+                        subject: cell.members()[1].subject,
+                        reason: ConstituentRefusalReason::CallUnattributed,
+                    }]
+                );
+            }
+            drop(runner);
+            drop(mailbox);
+            task.await.unwrap();
+        }
     }
 
     /// Verification 20b. No spelling of a handle outside the cell decodes, and

@@ -14,6 +14,6 @@ pub use calls::{
 };
 pub use run::{
     RUN_RECORD_SCHEMA, RecordedCoverBudget, Refusal, RefusalReason, RunClaim, RunOutcome, RunStatus,
-    TickCheckpoint, TickReport, VerseRunConfig, VerseRunError, VerseRunRecord, VerseRunStore,
+    TickCheckpoint, TickReport, UnattributedCall, VerseRunConfig, VerseRunError, VerseRunRecord, VerseRunStore,
     call_run_id, run_manual,
 };

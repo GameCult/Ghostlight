@@ -107,6 +107,12 @@ pub enum RefusalReason {
     /// A grouped member's own tool call could not be decoded and it proposed
     /// nothing else. No turn was submitted for it.
     ProposalUndecodable,
+    /// A resumed cell's persisted row did not hold this member. No turn was
+    /// submitted for it.
+    RowDisagreesWithCell,
+    /// A tool call in the member's cell named no handle and the member
+    /// finished with no choice of its own, so no turn was submitted for it.
+    CallUnattributed,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -117,6 +123,15 @@ pub struct Refusal {
     /// tick's cells is in `committed` or here, once.
     pub subject: SubjectId,
     pub reason: RefusalReason,
+}
+
+/// A tool call in a grouped cell that named no handle in it. The name is the
+/// call's own, capped; its arguments are never kept.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UnattributedCall {
+    /// The cell's position in the tick's cover.
+    pub cell: u32,
+    pub tool: String,
 }
 
 /// A tick as the run left it. A closed tick has all its cells run and the
@@ -133,6 +148,8 @@ pub struct TickCheckpoint {
     /// decline is a commit, so it is listed.
     pub committed: Vec<CommandId>,
     pub refusals: Vec<Refusal>,
+    /// The calls grouped cells received that named no handle, in cell order.
+    pub unattributed: Vec<UnattributedCall>,
     /// Tokens the recording port charged during the tick.
     pub tokens: u64,
 }
@@ -294,9 +311,14 @@ impl std::fmt::Display for TickReport {
                 RefusalReason::OpportunityGone => "opportunity_gone",
                 RefusalReason::ScopeMoved => "scope_moved",
                 RefusalReason::ProposalUndecodable => "proposal_undecodable",
+                RefusalReason::RowDisagreesWithCell => "row_disagrees_with_cell",
+                RefusalReason::CallUnattributed => "call_unattributed",
             };
             let label = self.labels.get(&refusal.subject).map_or("-", String::as_str);
             writeln!(f, "  refused: cell {} {label} {reason}", refusal.cell)?;
+        }
+        for call in &checkpoint.unattributed {
+            writeln!(f, "  note: cell {} call names no handle: tool {:?}", call.cell, call.tool)?;
         }
         writeln!(
             f,
@@ -660,14 +682,15 @@ fn command_of(submission: &SubmissionDisposition) -> CommandId {
 fn absorb(
     result: Result<CellRun, ControllerError>,
     cell: &Cell,
-    frozen: &FrozenCell,
-    gone: &[SubjectId],
     position: u32,
     committed: &mut Vec<CommandId>,
     refusals: &mut Vec<Refusal>,
+    unattributed: &mut Vec<UnattributedCall>,
 ) -> Option<RunStatus> {
     match result {
-        Ok(run) => absorb_run(run, cell, frozen, gone, position, committed, refusals).map(failed),
+        Ok(run) => {
+            absorb_run(run, cell, position, committed, refusals, unattributed).map(failed)
+        }
         Err(error) => match classify(&error) {
             CellEnd::Budget => Some(RunStatus::BudgetExhausted),
             CellEnd::Fatal(code) => Some(failed(code)),
@@ -684,11 +707,10 @@ fn absorb(
 fn absorb_run(
     run: CellRun,
     cell: &Cell,
-    frozen: &FrozenCell,
-    gone: &[SubjectId],
     position: u32,
     committed: &mut Vec<CommandId>,
     refusals: &mut Vec<Refusal>,
+    unattributed: &mut Vec<UnattributedCall>,
 ) -> Option<&'static str> {
     match run {
         CellRun::Narrative(NarrativeRun::Completed(decision)) => {
@@ -708,20 +730,18 @@ fn absorb_run(
             Some(pending_code(pending.reason()))
         }
         CellRun::Grouped(run) => {
-            // The frozen cover owns who is in the cell. A resumed cell's
-            // persisted row may name other members: those are not listed, and a
-            // frozen member the row never mentions is refused, so a closed
-            // tick accounts for every frozen member once.
-            let listed = |subject: SubjectId| {
-                frozen.members.contains(&subject) && !gone.contains(&subject)
-            };
-            let mut accounted = Vec::new();
-            for entry in run.submissions.iter().filter(|entry| listed(entry.subject)) {
+            // The controller owns who is in the cell and says, for each
+            // member, committed or refused. The driver copies. A finished
+            // cell whose lists miss a member, or name one it lacks, is a
+            // broken invariant and ends the run, not a relabel.
+            unattributed.extend(run.unattributed.iter().map(|tool| UnattributedCall {
+                cell: position,
+                tool: tool.clone(),
+            }));
+            for entry in &run.submissions {
                 committed.push(command_of(&entry.submission));
-                accounted.push(entry.subject);
             }
-            for refused in run.refused.iter().filter(|refused| listed(refused.subject)) {
-                accounted.push(refused.subject);
+            for refused in &run.refused {
                 refusals.push(Refusal {
                     cell: position,
                     subject: refused.subject,
@@ -734,21 +754,28 @@ fn absorb_run(
                         ConstituentRefusalReason::ProposalUndecodable => {
                             RefusalReason::ProposalUndecodable
                         }
+                        ConstituentRefusalReason::RowDisagreesWithCell => {
+                            RefusalReason::RowDisagreesWithCell
+                        }
+                        ConstituentRefusalReason::CallUnattributed => {
+                            RefusalReason::CallUnattributed
+                        }
                     },
                 });
             }
             if run.pending.is_none() {
-                refusals.extend(
-                    frozen
-                        .members
-                        .iter()
-                        .filter(|member| listed(**member) && !accounted.contains(member))
-                        .map(|member| Refusal {
-                            cell: position,
-                            subject: *member,
-                            reason: RefusalReason::ScopeMoved,
-                        }),
-                );
+                let listed: Vec<SubjectId> = run
+                    .submissions
+                    .iter()
+                    .map(|entry| entry.subject)
+                    .chain(run.refused.iter().map(|refused| refused.subject))
+                    .collect();
+                let members = cell.members();
+                let exact = listed.len() == members.len()
+                    && members.iter().all(|member| listed.contains(&member.subject));
+                if !exact {
+                    return Some("cell_membership");
+                }
             }
             run.pending.map(pending_code)
         }
@@ -984,6 +1011,7 @@ where
 
     let mut committed = Vec::new();
     let mut refusals = Vec::new();
+    let mut unattributed = Vec::new();
     let mut open: Option<RunStatus> = None;
     for (position, frozen) in tick.cells.iter().enumerate() {
         let position = position as u32;
@@ -1007,11 +1035,10 @@ where
         if let Some(status) = absorb(
             result,
             &cell,
-            frozen,
-            &gone,
             position,
             &mut committed,
             &mut refusals,
+            &mut unattributed,
         ) {
             open = Some(status);
             break;
@@ -1062,6 +1089,7 @@ where
             cells: tick.cells.len() as u32,
             committed,
             refusals,
+            unattributed,
             tokens: spent.saturating_sub(spent_before),
         },
         acts,

@@ -148,7 +148,7 @@ pub use verse::{
     CALL_RECORD_SCHEMA, CallRecordError, CallRecordStore, CreateVerseWorldIntent, ProviderCallRecord,
     RUN_RECORD_SCHEMA, RecordedCoverBudget, RecordingInferencePort, Refusal, RefusalReason, RunClaim,
     ReplayInferencePort, RunField, RunId, RunOutcome, RunStart, RunStatus, TickCheckpoint,
-    TickReport, VerseGenesisError, VerseRunConfig, VerseRunError, VerseRunRecord, VerseRunStore,
+    TickReport, UnattributedCall, VerseGenesisError, VerseRunConfig, VerseRunError, VerseRunRecord, VerseRunStore,
     call_run_id, run_manual,
 };
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
