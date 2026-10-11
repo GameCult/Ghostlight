@@ -831,6 +831,9 @@ async fn a_cell_is_run_on_what_the_world_holds_for_its_members_now() {
         };
         assert_ne!(member.opportunity, held.opportunity);
         assert!(moved.contains(&member.opportunity));
+        // The member is bound to its own subject's opportunity, not a neighbour's.
+        assert_eq!(member.subject, held.subject);
+        assert_eq!(member.opportunity.scope.subject_id, member.subject);
     }
     let frozen_group = FrozenCell::of(grouped);
     let Some(Cell::Group { members: now, .. }) = refreshed(&frozen_group, TickIndex(0), &moved)
@@ -839,6 +842,10 @@ async fn a_cell_is_run_on_what_the_world_holds_for_its_members_now() {
     };
     assert_eq!(now.len(), 2);
     assert!(now.iter().all(|member| moved.contains(&member.opportunity)));
+    assert!(
+        now.iter()
+            .all(|member| member.opportunity.scope.subject_id == member.subject)
+    );
 
     // A subject with no opportunity leaves its cell, and an empty cell is gone.
     let one = &opportunities[..1];
