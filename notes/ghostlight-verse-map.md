@@ -494,8 +494,8 @@ invariant `grammar-governs` in the draft target. An empty cell is marked
 | Individuated members (the people gestalts give up) | `SubjectId`, kind `Person`, with a Membership edge to the population (F3, F6) | born by an elaboration patch answering `IndividuationRequired` or a strategic individuation; never folded back (F4) | Kernel admits; the elaborator or the cell proposes; duplicates of an established identity refused (ported test). |
 | How a region moves between resolutions | derived, no identity of its own: a cell id is a content hash under `ghostlight.cover.v1` | recomputed every tick from pins, budget, pressure and debt; a leased cell survives while still connected (old lease rule) | `derive_cover` (pure); pins and budget from the run record; promotion and demotion are only cell assignment (F4, F9). Forbidden writers: the kernel (never sees a cell), any model. |
 | Cast (characters the audience follows) | a `Person` `SubjectId` named in the run record's cast roster; no kernel component (being followed changes attention, not the world) | joins or leaves by an operator steering act at a tick boundary (ruling `meddling-first-ruled`); a member who is retired in the world stays in the roster's history | Owner: the operator, through run controls. The cover keeps roster members at singleton resolution (the old `MinimumIndividualDetail` pin). Forbidden writers: models and the runner. Lands in phase D; phase A has no persons. |
-| Verse run (one invocation) | `(WorldId, run sequence)`, sequence assigned by the runner, document `ghostlight.verse_run.v1` | started manually under a token cap (ruling `verse-cadence-ruled`) → per-tick checkpoint → Completed, BudgetExhausted, Failed or Stopped; a failed run resumes from its last checkpoint; nightly scheduling arrives after cost per tick is measured | Owner: the verse runner (cut `verse-run`). Idunn will own scheduled start and process survival (phase D). Forbidden writers: Dungeon's play loop, an in-daemon timer, the Eve surface. |
-| Tick | `TickIndex`, derived from the world clock, never stored (cover.rs:33-38) | derive cover, run cells, submit proposals, then `AdvanceTime` (F15); a resumed tick re-derives the same command ids, so the kernel's idempotency ledger answers with the original receipts | Kernel owns time; the runner owns the order. |
+| Verse run (one invocation) | `(WorldId, run sequence)`, document `ghostlight.verse_run.v1`; the sequence is claimed from the run store before anything else is opened (see "Verse run identity" below) | claimed manually under a token cap (ruling `verse-cadence-ruled`) → per-tick checkpoint → Completed, BudgetExhausted, Failed or Stopped; a run never resumes itself: a later run resumes the open tick, which is the world's, not the run's | Owner: the run store claims, the verse runner writes its own record (cut `verse-run`). Idunn will own scheduled start and process survival (phase D). Forbidden writers: Dungeon's play loop, an in-daemon timer, the Eve surface. |
+| Tick | world-held ordinal: the count of `TimeAdvanced` commits when it opens, plus a tick document `ghostlight.verse_tick.v1` keyed (world, ordinal) freezing span, budget and cells (see "Verse run identity" below; the `now / span` index at 06a8373 collided across spans, Soul s1) | opened (document written before the first cell), closed by its clock commit, or closed by the world when the ordinal moved without it; never reopened | Kernel owns time and the ordinal's source; the run store owns the tick document; the runner owns the order. |
 | Run record: policy, pins, demand, roster, checkpoints, spend | inside `ghostlight.verse_run.v1`; phase A carries cap, tick span, cover budget, checkpoints and spend; pins, demand and roster arrive with phase C-D | policy and pins revised by operator act at a tick boundary with an epoch (old `ResolutionControlReceipt` rule); checkpoints per tick, superseded | Runner. Forbidden writers: the kernel. |
 | Model proposal and its validation | derived command id (world, tick, cell, constituent), so injective per tick | proposed; admitted, or refused (`ScopeChanged`, precondition, ceiling); a narrative singleton may re-lower once (`interrupted_from`) | Kernel reducer decides. Forbidden writers: an outcome resolver or verifier model (F12). |
 | Provider call record (for replay and cost) | `(run id, call sequence)`, document `ghostlight.verse_provider_call.v1`, carrying the provider request sha256, model, response events and token usage | written once per call by the recording port before its output reaches a lane; never edited; replay serves it back by request sha256 | Owner: the recording port in front of the inference lane (cut `call-record`), which also owns the run's spend and refuses a call whose bound exceeds the remaining cap. Forbidden writers: lanes and the runner. |
@@ -604,3 +604,148 @@ Rationale for the order: the two kernel cuts are pure and land before anything t
 reads a file; the reader's fixture needs Aetheria's types, so it waits on
 `verse-grammar`; spend has one owner, the recording port, so the cap is built
 before the runner and the runner never counts tokens itself.
+
+## Verse run identity (re-map after Soul s1, 2026-10-11)
+
+Imagination `imagination-gl-tick-identity`, session `self-2026-10-11-ag`. Pinned to
+Ghostlight `ghostlight-verse/verse-run` at `06a8373` (Hands report `cut-verse-run.h1`,
+Soul verdict `cut-verse-run.s1`, eight findings). Prior art is in the research note at
+the end of this section.
+
+### Body facts (source reads at 06a8373)
+
+- **R1 A tick is named by `now / span`.** `TickIndex::of` (`cover.rs:46-48`) floors
+  `now` by the span; `derive_cover` (`cover.rs:263-271`) takes `now` and the span and
+  names the tick so. The span is not in the name, so two spans reach the same index at
+  different times (Soul p4: two 60-minute ticks, then span 120 gives index 1 again).
+- **R2 Every derived id hangs off that index and the live partition.** `cell_id`
+  (`cover.rs:87-97`) is `(world, tick, size, lowest member)`; the cell's work row
+  (`cover.rs:100-102`) and each constituent's command (`cover.rs:106-113`) add the cell
+  id and the tick. The partition depends on the attention order (`lib.rs:4569-4580`:
+  pressure, then `attention_debt`, which an act resets, `lib.rs:4597-4602`), the cell
+  budget and the span. `run_tick` derives the cover afresh on every call
+  (`run.rs:557-565`), so a resuming run with another span, budget or order re-derives
+  other ids (Soul p1, p2).
+- **R3 The clock id is `derived(ghostlight.verse.clock, [world, tick])`** (`run.rs:612-615`).
+  The kernel answers a known command id by caller and body: same body,
+  `AlreadyApplied`; another body, `CommandIdConflict` (`lib.rs:1633-1645`). Under
+  another span the clock body differs, so p4's clock was refused and the run stalled.
+  No test pins the id (mutants H3 and S1 survive).
+- **R4 Rows outlive commits.** A controller-work row persists after its command
+  commits, and lookup-first refuses a row whose scope digest differs from the caller's
+  (`binds_same_scope`, `controllers.rs:1589-1593`, used at 3039, 3047, 3119, 3127). An
+  act moves its own subject's digest, so a resumed committed cell is refused
+  `OpportunityMismatch` (Hands' deviation). Resuming the row itself would get the
+  original receipt from the world: `submit_controller_world` asks `controller_receipt`
+  first (`controllers.rs:4276-4300`), which matches the row's own opportunity and
+  invocation (`lib.rs:1688-1712`).
+- **R5 A grouped cell loses members silently.** `run_group` drops a member whose
+  opportunity moved before selection into `needs` as text (`controllers.rs:3430-3437`);
+  a member the world refuses after the first member's act is also text in `needs`
+  (`controllers.rs:3686-3692`); `absorb` reads only `submissions` and `pending`
+  (`run.rs:400-403`); `refreshed` drops a group member with no opportunity without a
+  refusal (`run.rs:429-436`). Soul p3, p7: 2 acts of 4, refusals `[]`.
+- **R6 A refused member climbs the order.** No commit means `last_opportunity_at` is not
+  stamped, so its `attention_debt` grows and it sorts ahead next tick
+  (`lib.rs:4597-4602`).
+- **R7 The sequence has no owner.** `run_manual` takes any sequence its port was opened
+  for (`run.rs:459-470`) and `save` accepts any sequence up to the next
+  (`run.rs:306-309`), so an old sequence overwrites its record (Soul p6). The binary
+  opens the call ledger for `next_sequence` before any record exists
+  (`main.rs:193-200`), so a start that fails between the two binds that sequence's cap
+  (Soul p5).
+- **R8 Two output leaks.** `run_tick` swallows an operator-log error into zero acts
+  (`run.rs:631-639`). The binary prints errors with `{:#}` (`main.rs:46`), so
+  `open_inference`'s source chain reaches stderr (`main.rs:289-293`), and
+  `ControllerOpenError` echoes the endpoint, the model and the sidecar path
+  (`controllers.rs:2510-2530`).
+
+### Identity, lifecycle, authority
+
+| Kind | Identity | Lifecycle | Authority |
+|---|---|---|---|
+| Tick | (world, ordinal). Ordinal = number of `TimeAdvanced` commits in the world's journal when the tick opens: world-held, read through a driver-only mailbox door, injective and consecutive per world, independent of span, restored with a world snapshot. Not derived from `now`. | Opened: the run store writes `ghostlight.verse_tick.v1` (world, ordinal, opening now and revision, span, cover budget, oversubscribed, cells) before the first cell runs. Closed by its clock commit (the close names the run). Closed by the world when a later run finds the ordinal past it with the document still open (its clock landed and the close was lost, or another clock writer moved time). Never reopened or deleted. A resuming run with another span or budget finishes the open tick under the frozen ones; its own config applies from the next tick. | The kernel owns time and the count. The run store owns the tick document, and `run_tick` is its only writer. `TickIndex::of` is deleted; `derive_cover` takes the ordinal. Forbidden: deriving a tick from `now`; a run deriving a cover for a tick that has a document. |
+| Cell | `CellId` = `(world, ordinal, size, lowest member)` under `ghostlight.cover.v1`, formula unchanged; frozen in the tick document with its kind and member subjects | derived once when the tick opens, frozen, read by every run that works in that tick; each member is bound to the world's current opportunity when its cell runs (the existing `refreshed`), and a member with none is refused, not dropped | `derive_cover` decides the partition, once per tick. Forbidden: re-deriving the partition on resume. |
+| A cell's command ids | work row `for_cell(world, cell, ordinal)`; each member's `for_cell_constituent(world, cell, subject, ordinal)`. Derived from frozen identity only, so not stored twice. | issued when the member first runs; answered from the kernel's ledger on any retry; a persisted row whose command committed is answered with its receipt whatever the caller's digest; an in-flight row whose digest moved is refused before any inference | The controller organ, lookup-first by command id. Forbidden: the driver minting ids; a digest check deciding a committed row's outcome. |
+| Clock advance | `derived(ghostlight.verse.clock, [world, ordinal])`, body `AdvanceTime { frozen span }` | submitted once, after every cell of the tick finished; a retry in the same tick has the same body and is answered `AlreadyApplied`; it is what closes the tick | The kernel admits; `run_tick` is the only verse caller. Pinned by a test that re-submits a closed tick's clock. |
+| Run | (world, sequence), `ghostlight.verse_run.v1` | claimed (Running, no checkpoints) → per-tick checkpoints naming the ordinal → Completed, BudgetExhausted, Stopped or Failed. A run whose process died stays Running (known gap, report h1 undone). A claim abandoned before the run starts ends Failed(start_refused). | The run store claims; `run_manual` updates only the record its claim names. |
+| Run sequence | per world, from 1, claimed by the store as the next free number with the record written in the same call (`RunClaim`, not constructible outside the store, consumed by `run_manual`) | claimed once; never reissued, even when the run never started | The run store. Forbidden: a caller choosing a number; `save` creating a record. |
+| Call ledger | `call_run_id(sequence)` in `calls.cc`; cap and start digest fixed at first open | opened only after its sequence is claimed, so an orphaned ledger can never bind a later run's cap | The recording port owns cap and spend; the run record copies the cap, and `run_manual` refuses a port whose run id or cap differs from its claim. |
+
+### Questions
+
+- `verse-grouped-shared-room` (admitted, blocks no spec): in a shared room a grouped
+  cell lands at most one exercise per tick; the others are refused and, by R6, lead the
+  next tick's order. Recommended: record and carry. The alternative spends a second
+  inference in the same tick for the refused members.
+
+### Fix order (specs admitted 2026-10-11, all based on 06a8373)
+
+1. `verse-run` r3 (r2 superseded for a window split): tick identity (ordinal door, tick document, frozen cover, clock pin).
+2. `verse-run-lookup`: controller lookup-first by command id; typed grouped refusals.
+3. `verse-run-refusals` (after 1 and 2): every member of a tick's cover ends committed
+   or refused in the checkpoint.
+4. `verse-run-claim` (after 1): run claims, the binary's start order, the operator-log
+   error and the lane error.
+
+### Research note: where a turn's identity lives (verse-run re-map, 2026-10-11)
+
+Imagination `imagination-gl-tick-identity`, session `self-2026-10-11-ag`. A short
+prior-art check before settling tick identity for cut `verse-run` r2. Appended to the
+map's "Verse run identity" section.
+
+## The question
+
+At Ghostlight `06a8373` a tick is named `now / span` (`cover.rs:46`), the span is not in
+the name, and every cell id and command id is re-derived from the opportunities,
+attention order, span and cover budget the resuming run holds at that moment
+(`run.rs:557-565`). Soul s1 showed a different span or budget on resume yields new ids,
+so a subject acts twice in one tick (p1, p2), and a different span reuses a closed
+tick's index (p4).
+
+## Prior art
+
+- **Durable workflow engines (Temporal, Azure Durable Functions).** The identity of
+  each step is assigned when the step is first scheduled and recorded in the
+  execution's event history. On resume the code is replayed against that history and
+  every command it produces is compared with the recorded one; a difference is a
+  non-determinism error, not a second execution
+  ([Temporal: execution failures](https://docs.temporal.io/troubleshooting/execution-failures);
+  [community thread](https://community.temporal.io/t/non-determinism-error/8279)).
+  The forum cases are exactly Soul's: a timer duration or a child id computed
+  differently on replay. The lesson: resume reads the recorded decision; it does not
+  re-derive it from inputs that may have changed.
+- **Deterministic lockstep games.** The turn (frame) number is simulation state,
+  advanced only by the simulation, and every command is tagged with the turn it runs
+  in, so all peers and every replay agree on which turn a command belongs to whatever
+  the wall-clock or turn length
+  ([Unity discussion](https://discussions.unity.com/t/deterministic-rts-game-engine/467205);
+  [Gaffer On Games](https://gafferongames.com/post/what_every_programmer_needs_to_know_about_game_networking/)).
+  The turn count, not elapsed time divided by turn length, is the name.
+- **Idempotency keys (event-sourced command handlers, payment APIs).** A key answers a
+  retry with the stored result; the same key with a different request is refused, not
+  re-executed. Ghostlight's kernel already does this
+  (`lib.rs:1633-1644`: same caller and body, `AlreadyApplied`; otherwise
+  `CommandIdConflict`), which is why Soul's p4 clock under another span was refused.
+
+## What this decides for verse-run
+
+1. The tick ordinal is world-held: the number of `TimeAdvanced` commits in the world's
+   journal when the tick opens. It is span-independent, monotone, injective per world,
+   restored with a world snapshot (so ruling `replay-restored-snapshot` needs nothing
+   else for a run that starts on a tick boundary), and consecutive (which is what the
+   cover's rotation window wants, `cover.rs:340`).
+2. What a tick decided when it opened (span, cover budget, the partition and each
+   cell's id and members) is recorded once, before the first cell runs, in a tick
+   document owned by the run store, and a resuming run reads it instead of deriving a
+   cover. This is Temporal's history rule at the granularity the verse needs.
+3. Command ids stay derived, but only from that frozen identity (world, ordinal, cell
+   id, subject), never from live inputs, so there is no second copy of them to drift.
+4. The controller answers a persisted row whose command the world committed with its
+   receipt whatever the caller's current scope digest, because the command id is the
+   idempotency key; a row still in flight keeps the digest check, so no tokens are spent
+   on a scope that moved.
+
+Not adopted: a world-state tick counter (a `STATE_SCHEMA` change, and the kernel would
+learn ticks exist, which `cover.rs:1-12` forbids); a run-store-only ordinal (a replay
+over a restored world with a fresh run store would number ticks from 1 and diverge).
