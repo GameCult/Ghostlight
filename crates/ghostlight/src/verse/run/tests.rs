@@ -2595,6 +2595,116 @@ async fn a_grouped_cell_whose_lists_do_not_match_its_members_ends_the_run() {
     assert!(committed.is_empty() && refusals.is_empty());
 }
 
+/// A cell of three members at a later position, so that the guard is held to
+/// its length, to every member, and to the cell it is asked about rather than
+/// to the two-member first cell the fixture covers.
+async fn three_member_group(verse: &Harness) -> Cell {
+    let cover = cover_of(verse, 1).await;
+    let Cell::Group { id, tick, members } = &cover.cells[0] else {
+        panic!("a group")
+    };
+    let mut members = members.clone();
+    let mut third = members[0].clone();
+    third.subject = SubjectId::issue();
+    members.push(third);
+    Cell::Group {
+        id: *id,
+        tick: *tick,
+        members,
+    }
+}
+
+#[tokio::test]
+async fn a_finished_cell_of_three_must_list_each_member_exactly_once_wherever_it_sits() {
+    let (_dir, verse) = Harness::fresh().await;
+    let group = three_member_group(&verse).await;
+    let Cell::Group { id, members, .. } = &group else {
+        panic!("a group")
+    };
+    let left = ConstituentRefusalReason::LeftBeforeSelection;
+    let run = |listed: Vec<SubjectId>| {
+        Ok(CellRun::Grouped(crate::controllers::GroupedRun {
+            cell: *id,
+            resolution: crate::cover::Resolution::Coarse {
+                constituents: members.len(),
+            },
+            submissions: Vec::new(),
+            needs: Vec::new(),
+            unattributed: Vec::new(),
+            refused: listed
+                .into_iter()
+                .map(|subject| crate::controllers::ConstituentRefusal { subject, reason: left })
+                .collect(),
+            pending: None,
+        }))
+    };
+    let [a, b, c] = [members[0].subject, members[1].subject, members[2].subject];
+    let broken = Some(failed("cell_membership"));
+    for position in [0, 1, 2] {
+        let (status, _, _) = fold(run(vec![a, b, c]), &group, position);
+        assert_eq!(status, None, "every member listed once, at cell {position}");
+        // Every member listed, and one subject the cell does not hold.
+        let (status, _, _) = fold(run(vec![a, b, c, SubjectId::issue()]), &group, position);
+        assert_eq!(status, broken, "a foreign extra at cell {position}");
+        // Every member listed, and one of them twice.
+        let (status, _, _) = fold(run(vec![a, b, c, b]), &group, position);
+        assert_eq!(status, broken, "a duplicate at cell {position}");
+        // The right number of entries, and the last member missing: only the
+        // member at the end of the cell can be the one that is not there.
+        let (status, _, _) = fold(run(vec![a, b, SubjectId::issue()]), &group, position);
+        assert_eq!(status, broken, "a missing last member at cell {position}");
+        let (status, _, _) = fold(run(vec![a, c, a]), &group, position);
+        assert_eq!(status, broken, "a missing middle member at cell {position}");
+        let (status, _, _) = fold(run(vec![a, b]), &group, position);
+        assert_eq!(status, broken, "a short list at cell {position}");
+    }
+}
+
+#[tokio::test]
+async fn a_call_naming_no_handle_is_recorded_at_the_cell_it_was_made_in() {
+    let (_dir, verse) = Harness::fresh().await;
+    let group = three_member_group(&verse).await;
+    let Cell::Group { id, members, .. } = &group else {
+        panic!("a group")
+    };
+    for position in [0, 1, 4] {
+        let run = CellRun::Grouped(crate::controllers::GroupedRun {
+            cell: *id,
+            resolution: crate::cover::Resolution::Coarse {
+                constituents: members.len(),
+            },
+            submissions: Vec::new(),
+            needs: Vec::new(),
+            unattributed: vec!["c9__speak".to_string()],
+            refused: members
+                .iter()
+                .map(|member| crate::controllers::ConstituentRefusal {
+                    subject: member.subject,
+                    reason: ConstituentRefusalReason::CallUnattributed,
+                })
+                .collect(),
+            pending: None,
+        });
+        let mut unattributed = Vec::new();
+        let status = absorb(
+            Ok(run),
+            &group,
+            position,
+            &mut Vec::new(),
+            &mut Vec::new(),
+            &mut unattributed,
+        );
+        assert_eq!(status, None);
+        assert_eq!(
+            unattributed,
+            vec![UnattributedCall {
+                cell: position,
+                tool: "c9__speak".into()
+            }]
+        );
+    }
+}
+
 #[tokio::test]
 async fn a_call_naming_no_handle_is_printed_and_its_quiet_member_is_refused_not_declined() {
     let (_dir, verse) = Harness::fresh().await;

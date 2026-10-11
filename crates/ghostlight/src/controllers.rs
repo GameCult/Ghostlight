@@ -2924,9 +2924,6 @@ pub enum ConstituentRefusalReason {
     CallUnattributed,
 }
 
-/// The longest tool name a run keeps of a call that named no handle.
-pub const UNATTRIBUTED_TOOL_CAP: usize = 64;
-
 /// One coarse cell's outcome: one inference, N ordinary one-opportunity
 /// submissions, and whatever the decode could not attribute.
 #[derive(Debug)]
@@ -2936,8 +2933,8 @@ pub struct GroupedRun {
     pub submissions: Vec<ConstituentSubmission>,
     /// Decode problems the grouped decode could not attribute to a constituent.
     pub needs: Vec<ControllerNeed>,
-    /// The tool names of the calls that named no handle, each capped at
-    /// [`UNATTRIBUTED_TOOL_CAP`] characters; never their arguments.
+    /// The tool names of the calls that named no handle, already valid under
+    /// the provider contract; never their arguments.
     pub unattributed: Vec<String>,
     /// Constituents of this cell that did not commit, one entry each, with the
     /// reason. A constituent is in `submissions` or here, never lost.
@@ -6005,8 +6002,7 @@ pub(super) fn grouped_tool_result(
         // A model that writes `c99__carry` has not proposed anything. It has
         // produced a gap.
         None => {
-            fold.unattributed
-                .push(name.chars().take(UNATTRIBUTED_TOOL_CAP).collect());
+            fold.unattributed.push(name.to_string());
             fold.needs.push(tool_decode_need(
                 name,
                 arguments,
@@ -15269,14 +15265,13 @@ mod tests {
         }
     }
 
-    /// The name a run keeps of a call that named no handle is bounded; the
-    /// call's arguments are not kept at all.
+    /// The call's arguments are not kept at all: only the name is.
     #[test]
-    fn the_name_kept_of_a_call_naming_no_handle_is_capped() {
+    fn the_name_of_a_call_naming_no_handle_is_kept_and_its_arguments_are_not() {
         let mut fold = GroupedFold::new();
-        let long = "x".repeat(UNATTRIBUTED_TOOL_CAP + 36);
-        grouped_tool_result(&[], &mut fold, &long, r#"{"text":"SENTINEL-ARGUMENT"}"#).unwrap();
-        assert_eq!(fold.unattributed, vec!["x".repeat(UNATTRIBUTED_TOOL_CAP)]);
+        grouped_tool_result(&[], &mut fold, "c9__speak", r#"{"text":"SENTINEL-ARGUMENT"}"#)
+            .unwrap();
+        assert_eq!(fold.unattributed, vec!["c9__speak".to_string()]);
     }
 
     /// Verification 20b. No spelling of a handle outside the cell decodes, and
