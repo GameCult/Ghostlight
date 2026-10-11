@@ -19803,4 +19803,543 @@ mod tests {
         drop(mailbox);
         task.await.unwrap();
     }
+
+    fn operational_declines(receipt: &str) -> Result<InferenceOutput, InferenceFault> {
+        output(
+            vec![
+                InferenceEvent::ToolCall {
+                    call_id: "need".into(),
+                    name: RECORD_NEED_TOOL.into(),
+                    arguments: json!({"detail":"No current intervention is warranted."})
+                        .to_string(),
+                },
+                InferenceEvent::ToolCall {
+                    call_id: "finish".into(),
+                    name: FINISH_WITHOUT_PROPOSAL_TOOL.into(),
+                    arguments: "{}".into(),
+                },
+            ],
+            receipt,
+        )
+    }
+
+    fn narrative_declines(tag: &str) -> Vec<Result<InferenceOutput, InferenceFault>> {
+        let source = format!("{tag} lets the question pass.");
+        vec![
+            output(
+                vec![InferenceEvent::Text(format!("{tag} watches the water."))],
+                &format!("{tag}-projector"),
+            ),
+            output(
+                vec![InferenceEvent::Text(source.clone())],
+                &format!("{tag}-persona"),
+            ),
+            output(
+                vec![
+                    InferenceEvent::ToolCall {
+                        call_id: "gap".into(),
+                        name: INTERPRETER_RECORD_GAP_TOOL.into(),
+                        arguments: json!({
+                            "kind":"unresolved",
+                            "source_quote":source,
+                            "detail":"The prose expresses no supported world action."
+                        })
+                        .to_string(),
+                    },
+                    InferenceEvent::ToolCall {
+                        call_id: "finish".into(),
+                        name: FINISH_INTERPRETATION_TOOL.into(),
+                        arguments: "{}".into(),
+                    },
+                ],
+                &format!("{tag}-interpreter"),
+            ),
+        ]
+    }
+
+    #[tokio::test]
+    async fn a_committed_operational_decline_is_answered_with_its_receipt_after_its_scope_moved() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        // Exactly two provider answers: a third call would panic the port.
+        let (runner, _store) = grouped_runner(
+            &mailbox,
+            vec![
+                operational_declines("first"),
+                operational_speaks("Then we close the span.", "second"),
+            ],
+        );
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let first = snapshot.opportunities[0].clone();
+        let second = snapshot.opportunities[1].clone();
+        let first_command = CommandId::new();
+        let OperationalRun::Completed(committed) = runner
+            .run_operational(first_command, &first)
+            .await
+            .unwrap()
+        else {
+            panic!("the first decline remained pending")
+        };
+        let SubmissionDisposition::NoProposal(SubmitReceipt::Applied(original)) =
+            committed.submission
+        else {
+            panic!("the first turn did not commit a decline")
+        };
+        let second_now =
+            fresh_opportunity(&mailbox.snapshot().await.unwrap(), second.scope.subject_id);
+        assert!(matches!(
+            runner
+                .run_operational(CommandId::new(), &second_now)
+                .await
+                .unwrap(),
+            OperationalRun::Completed(_)
+        ));
+        let fresh = fresh_opportunity(&mailbox.snapshot().await.unwrap(), first.scope.subject_id);
+        assert_ne!(fresh.scope_digest, first.scope_digest, "the scope did not move");
+        let OperationalRun::Completed(answered) = runner
+            .run_operational(first_command, &fresh)
+            .await
+            .unwrap()
+        else {
+            panic!("the committed decline was not answered")
+        };
+        assert!(
+            matches!(
+                &answered.submission,
+                SubmissionDisposition::NoProposal(SubmitReceipt::AlreadyApplied(receipt))
+                    if *receipt == original
+            ),
+            "{:?}",
+            answered.submission
+        );
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn a_committed_narrative_decline_is_answered_with_its_receipt_after_its_scope_moved() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::NarrativePersona,
+        ])
+        .await;
+        let mut outputs = narrative_declines("Mara");
+        outputs.extend(narrative_turn_outputs("Tobin", "Then we close the span."));
+        let (runner, _store) = grouped_runner(&mailbox, outputs);
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let first = snapshot.opportunities[0].clone();
+        let second = snapshot.opportunities[1].clone();
+        let first_command = CommandId::new();
+        let NarrativeRun::Completed(committed) = runner
+            .run_narrative(first_command, &first)
+            .await
+            .unwrap()
+        else {
+            panic!("the first decline remained pending")
+        };
+        let SubmissionDisposition::NoProposal(SubmitReceipt::Applied(original)) =
+            committed.submission
+        else {
+            panic!("the first turn did not commit a decline")
+        };
+        let second_now =
+            fresh_opportunity(&mailbox.snapshot().await.unwrap(), second.scope.subject_id);
+        assert!(matches!(
+            runner
+                .run_narrative(CommandId::new(), &second_now)
+                .await
+                .unwrap(),
+            NarrativeRun::Completed(_)
+        ));
+        let fresh = fresh_opportunity(&mailbox.snapshot().await.unwrap(), first.scope.subject_id);
+        assert_ne!(fresh.scope_digest, first.scope_digest, "the scope did not move");
+        let NarrativeRun::Completed(answered) = runner
+            .run_narrative(first_command, &fresh)
+            .await
+            .unwrap()
+        else {
+            panic!("the committed decline was not answered")
+        };
+        assert!(
+            matches!(
+                &answered.submission,
+                SubmissionDisposition::NoProposal(SubmitReceipt::AlreadyApplied(receipt))
+                    if *receipt == original
+            ),
+            "{:?}",
+            answered.submission
+        );
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// An in-flight operational row read in uncertain custody after its scope
+    /// moved is refused as a mismatch, not reported pending; read against its
+    /// own scope it is pending.
+    #[tokio::test]
+    async fn an_operational_row_in_flight_in_uncertain_custody_keeps_the_digest_gate() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let (runner, store) = grouped_runner(
+            &mailbox,
+            vec![
+                Err(InferenceFault::retryable("the provider is busy")),
+                operational_speaks("Then we close the span.", "second"),
+            ],
+        );
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let first = snapshot.opportunities[0].clone();
+        let second = snapshot.opportunities[1].clone();
+        let command = CommandId::new();
+        assert!(matches!(
+            runner.run_operational(command, &first).await.unwrap(),
+            OperationalRun::Pending(_)
+        ));
+        assert!(matches!(
+            runner
+                .run_operational(CommandId::new(), &second)
+                .await
+                .unwrap(),
+            OperationalRun::Completed(_)
+        ));
+        let fresh = fresh_opportunity(&mailbox.snapshot().await.unwrap(), first.scope.subject_id);
+        assert_ne!(fresh.scope_digest, first.scope_digest, "the scope did not move");
+        let uncertain = uncertain_runner(&mailbox, &store);
+        assert!(matches!(
+            uncertain.run_operational(command, &fresh).await,
+            Err(ControllerError::OpportunityMismatch)
+        ));
+        let OperationalRun::Pending(pending) =
+            uncertain.run_operational(command, &first).await.unwrap()
+        else {
+            panic!("a row bound to the caller's own scope was not reported pending")
+        };
+        assert_eq!(pending.reason(), ControllerPendingReason::StoreReopenRequired);
+
+        drop((runner, uncertain));
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn a_narrative_row_in_flight_in_uncertain_custody_keeps_the_digest_gate() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::NarrativePersona,
+        ])
+        .await;
+        let mut outputs = vec![Err(InferenceFault::retryable("the provider is busy"))];
+        outputs.extend(narrative_turn_outputs("Tobin", "Then we close the span."));
+        let (runner, store) = grouped_runner(&mailbox, outputs);
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let first = snapshot.opportunities[0].clone();
+        let second = snapshot.opportunities[1].clone();
+        let command = CommandId::new();
+        assert!(matches!(
+            runner.run_narrative(command, &first).await.unwrap(),
+            NarrativeRun::Pending(_)
+        ));
+        assert!(matches!(
+            runner
+                .run_narrative(CommandId::new(), &second)
+                .await
+                .unwrap(),
+            NarrativeRun::Completed(_)
+        ));
+        let fresh = fresh_opportunity(&mailbox.snapshot().await.unwrap(), first.scope.subject_id);
+        assert_ne!(fresh.scope_digest, first.scope_digest, "the scope did not move");
+        let uncertain = uncertain_runner(&mailbox, &store);
+        assert!(matches!(
+            uncertain.run_narrative(command, &fresh).await,
+            Err(ControllerError::OpportunityMismatch)
+        ));
+        let NarrativeRun::Pending(pending) =
+            uncertain.run_narrative(command, &first).await.unwrap()
+        else {
+            panic!("a row bound to the caller's own scope was not reported pending")
+        };
+        assert_eq!(pending.reason(), ControllerPendingReason::StoreReopenRequired);
+
+        drop((runner, uncertain));
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// A provider port that severs the world's owner task once the answer is
+    /// in, so the next read of the world finds the mailbox unavailable. The
+    /// fixture's only fault injection: production code has no such seam.
+    struct SeversWorldAfterAnswer {
+        inner: RecordingPort,
+        world: tokio::task::AbortHandle,
+    }
+
+    #[async_trait]
+    impl InferencePort for SeversWorldAfterAnswer {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            self.inner.prepare(request)
+        }
+
+        async fn infer(
+            &self,
+            request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            let answer = self.inner.infer(request).await;
+            self.world.abort();
+            tokio::task::yield_now().await;
+            answer
+        }
+    }
+
+    #[tokio::test]
+    async fn a_grouped_cell_whose_world_cannot_be_read_at_submission_is_pending_with_nothing_submitted()
+     {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let both_act = output(
+            vec![
+                speak_call("c0", "c0__speak", "The hinge is flooding."),
+                speak_call("c1", "c1__speak", "Then we close the span."),
+            ],
+            "one",
+        );
+        let persisted = Arc::new(AtomicBool::new(true));
+        let port = Arc::new(SeversWorldAfterAnswer {
+            inner: RecordingPort {
+                outputs: Mutex::new(vec![both_act]),
+                persisted_before_interpreter: persisted.clone(),
+            },
+            world: task.abort_handle(),
+        });
+        let store = Arc::new(RecordingWorkStore {
+            persisted,
+            work: Mutex::new(BTreeMap::new()),
+        });
+        let runner = ControllerRunner::open(mailbox.clone(), port, store.clone(), models())
+            .expect("the fixture ports open");
+        let cell = one_group(&mailbox).await;
+        let CellRun::Grouped(run) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a coarse cell did not run the grouped lane")
+        };
+        assert_eq!(run.pending, Some(ControllerPendingReason::WorldUnavailable));
+        assert!(run.submissions.is_empty(), "{:?}", run.submissions);
+        assert!(run.refused.is_empty(), "{:?}", run.refused);
+        assert!(
+            !store.work.lock().unwrap().is_empty(),
+            "the cell's row was not kept for the resume"
+        );
+
+        drop(runner);
+        drop(mailbox);
+        assert!(task.await.unwrap_err().is_cancelled());
+    }
+
+    /// A store that answers the write of a row that awaits the world with
+    /// uncertain custody, so the run ends pending with the submission body
+    /// persisted but never sent.
+    struct NeverSentStore {
+        inner: Arc<RecordingWorkStore>,
+        armed: AtomicBool,
+    }
+
+    #[async_trait]
+    impl ControllerWorkStore for NeverSentStore {
+        async fn lookup(
+            &self,
+            command_id: CommandId,
+        ) -> Result<ControllerWorkLookup, ControllerWorkStoreError> {
+            self.inner.lookup(command_id).await
+        }
+
+        async fn persist(
+            &self,
+            work: &ControllerWork,
+        ) -> Result<ControllerWorkWrite, ControllerWorkStoreError> {
+            let written = self.inner.persist(work).await?;
+            let awaiting = match work {
+                ControllerWork::Narrative(row) => row.awaits_world(),
+                ControllerWork::Operational(row) => row.awaits_world(),
+                _ => false,
+            };
+            if awaiting && self.armed.load(Ordering::SeqCst) {
+                return Ok(ControllerWorkWrite::CustodyUncertain);
+            }
+            Ok(written)
+        }
+
+        async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError> {
+            self.inner.custody_probe().await
+        }
+
+        async fn elaboration_in_flight(
+            &self,
+        ) -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError> {
+            self.inner.elaboration_in_flight().await
+        }
+    }
+
+    fn runner_over(
+        mailbox: &WorldMailbox,
+        outputs: Vec<Result<InferenceOutput, InferenceFault>>,
+        store: Arc<dyn ControllerWorkStore>,
+    ) -> (ControllerRunner, Arc<RecordingPort>) {
+        let port = Arc::new(RecordingPort {
+            outputs: Mutex::new(outputs),
+            persisted_before_interpreter: Arc::new(AtomicBool::new(true)),
+        });
+        (
+            ControllerRunner::open(mailbox.clone(), port.clone(), store, models())
+                .expect("the fixture ports open"),
+            port,
+        )
+    }
+
+    fn recording_store() -> Arc<RecordingWorkStore> {
+        Arc::new(RecordingWorkStore {
+            persisted: Arc::new(AtomicBool::new(true)),
+            work: Mutex::new(BTreeMap::new()),
+        })
+    }
+
+    /// An operational row that awaits the world but never reached it, then a
+    /// neighbour moves the scope, then the same command is rerun against the
+    /// scope as it now stands. The row is submitted and the world refuses its
+    /// stale body: no provider call, nothing new in the log.
+    async fn operational_row_never_sent_then_scope_moved(
+        first_output: Result<InferenceOutput, InferenceFault>,
+    ) {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let inner = recording_store();
+        let never_sent = Arc::new(NeverSentStore {
+            inner: inner.clone(),
+            armed: AtomicBool::new(true),
+        });
+        let (a, _) = runner_over(&mailbox, vec![first_output], never_sent.clone());
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let first = snapshot.opportunities[0].clone();
+        let second = snapshot.opportunities[1].clone();
+        let command = CommandId::new();
+        assert!(matches!(
+            a.run_operational(command, &first).await,
+            Ok(OperationalRun::Pending(_))
+        ));
+        never_sent.armed.store(false, Ordering::SeqCst);
+        let (b, _) = runner_over(
+            &mailbox,
+            vec![operational_speaks("Then we close the span.", "second")],
+            inner.clone(),
+        );
+        assert!(matches!(
+            b.run_operational(CommandId::new(), &second).await.unwrap(),
+            OperationalRun::Completed(_)
+        ));
+        let log_before = mailbox.operator_log().await.unwrap().len();
+        let fresh = fresh_opportunity(&mailbox.snapshot().await.unwrap(), first.scope.subject_id);
+        assert_ne!(fresh.scope_digest, first.scope_digest, "the scope did not move");
+        let (c, port) = runner_over(&mailbox, Vec::new(), inner.clone());
+        assert!(matches!(
+            c.run_operational(command, &fresh).await,
+            Err(ControllerError::World(KernelError::ScopeChanged { .. }))
+        ));
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), log_before);
+        assert!(port.outputs.lock().unwrap().is_empty());
+
+        drop((a, b, c));
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn an_operational_row_ready_to_submit_but_never_sent_is_refused_by_the_world_after_its_scope_moved()
+     {
+        operational_row_never_sent_then_scope_moved(operational_speaks(
+            "The hinge is flooding.",
+            "first",
+        ))
+        .await;
+    }
+
+    #[tokio::test]
+    async fn an_operational_decline_never_sent_is_refused_by_the_world_after_its_scope_moved() {
+        operational_row_never_sent_then_scope_moved(operational_declines("first")).await;
+    }
+
+    /// The narrative lane answers the same refusal with its one bounded
+    /// re-lowering: one Interpreter call against the scope as it now stands,
+    /// and the re-lowered act commits.
+    #[tokio::test]
+    async fn a_narrative_row_ready_to_submit_but_never_sent_is_lowered_once_more_after_its_scope_moved()
+     {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::NarrativePersona,
+        ])
+        .await;
+        let inner = recording_store();
+        let never_sent = Arc::new(NeverSentStore {
+            inner: inner.clone(),
+            armed: AtomicBool::new(true),
+        });
+        let (a, _) = runner_over(
+            &mailbox,
+            narrative_turn_outputs("Mara", "The rain has teeth tonight."),
+            never_sent.clone(),
+        );
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let first = snapshot.opportunities[0].clone();
+        let second = snapshot.opportunities[1].clone();
+        let command = CommandId::new();
+        assert!(matches!(
+            a.run_narrative(command, &first).await,
+            Ok(NarrativeRun::Pending(_))
+        ));
+        never_sent.armed.store(false, Ordering::SeqCst);
+        let (b, _) = runner_over(
+            &mailbox,
+            narrative_turn_outputs("Tobin", "Then we close the span."),
+            inner.clone(),
+        );
+        assert!(matches!(
+            b.run_narrative(CommandId::new(), &second).await.unwrap(),
+            NarrativeRun::Completed(_)
+        ));
+        let log_before = mailbox.operator_log().await.unwrap().len();
+        let fresh = fresh_opportunity(&mailbox.snapshot().await.unwrap(), first.scope.subject_id);
+        assert_ne!(fresh.scope_digest, first.scope_digest, "the scope did not move");
+        // One answer is the bound; the second would be a second round.
+        let relowering = || narrative_turn_outputs("Mara", "The rain has teeth tonight.").remove(2);
+        let (c, port) = runner_over(&mailbox, vec![relowering(), relowering()], inner.clone());
+        assert!(matches!(
+            c.run_narrative(command, &fresh).await,
+            Ok(NarrativeRun::Completed(_))
+        ));
+        assert_eq!(
+            port.outputs.lock().unwrap().len(),
+            1,
+            "the re-lowering did not spend exactly one provider call"
+        );
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), log_before + 1);
+
+        drop((a, b, c));
+        drop(mailbox);
+        task.await.unwrap();
+    }
 }
