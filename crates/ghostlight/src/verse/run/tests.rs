@@ -2217,7 +2217,7 @@ async fn a_frozen_member_the_resumed_row_lacks_is_refused_not_lost() {
     }];
     verse.runs.put_tick(&tick).unwrap();
     let second = verse
-        .run_under(ScriptedPort::speaking(), u64::MAX, one_cell(1), |_| {
+        .run_under(ScriptedPort::new(grouped_reply), u64::MAX, one_cell(1), |_| {
             ControlFlow::Continue(())
         })
         .await;
