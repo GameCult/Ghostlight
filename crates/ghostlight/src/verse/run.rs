@@ -80,8 +80,14 @@ pub enum RefusalReason {
     Interrupted,
     /// The world refused the cell's submission.
     WorldRejected,
-    /// The cell's subject no longer holds the opportunity it was derived for.
+    /// The cell's subject no longer holds an opportunity.
     OpportunityGone,
+    /// The cell's subject holds an opportunity whose scope moved since the
+    /// cell's work was bound. A cell that committed earlier in an interrupted
+    /// tick ends this way when a run resumes the tick: its own act, or a
+    /// neighbour's in the shared room, changed what it knows. Nothing is
+    /// committed twice.
+    ScopeMoved,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -91,10 +97,14 @@ pub struct Refusal {
     pub reason: RefusalReason,
 }
 
-/// One finished tick. The clock has advanced by the run's span.
+/// A tick as the run left it. A closed tick has all its cells run and the
+/// clock advanced by the run's span. The tick a run ended inside is recorded
+/// too, unclosed, so what its cells committed is not lost; a later run derives
+/// that tick again from the world's clock.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TickCheckpoint {
     pub tick: u64,
+    pub closed: bool,
     pub cells: u32,
     /// Every command the tick's cells hold a receipt for, in cell order. A
     /// decline is a commit, so it is listed.
@@ -128,6 +138,13 @@ pub struct VerseRunRecord {
     pub status: RunStatus,
 }
 
+impl VerseRunRecord {
+    /// The ticks this run finished: every cell run and the clock advanced.
+    pub fn ticks_closed(&self) -> usize {
+        self.checkpoints.iter().filter(|c| c.closed).count()
+    }
+}
+
 /// What a caller asks of one run. The token cap is not here: the recording
 /// port owns it.
 #[derive(Clone, Copy, Debug)]
@@ -137,8 +154,7 @@ pub struct VerseRunConfig {
     pub cover: CoverBudget,
 }
 
-/// A tick as the operator reads it. `closed` is false for the tick a run ended
-/// inside, whose cells may have committed before the run stopped.
+/// A tick as the operator reads it, including the one a run ended inside.
 #[derive(Clone, Debug)]
 pub struct TickReport {
     pub checkpoint: TickCheckpoint,
@@ -146,7 +162,6 @@ pub struct TickReport {
     pub acts: Vec<OperatorEvent>,
     pub spent: u64,
     pub remaining: u64,
-    pub closed: bool,
 }
 
 impl std::fmt::Display for RunStatus {
@@ -171,7 +186,7 @@ impl std::fmt::Display for TickReport {
             f,
             "tick {} {}: {} cells, {} acts, {} refused",
             checkpoint.tick,
-            if self.closed { "closed" } else { "open" },
+            if checkpoint.closed { "closed" } else { "open" },
             checkpoint.cells,
             self.acts.len(),
             checkpoint.refusals.len()
@@ -199,6 +214,7 @@ impl std::fmt::Display for TickReport {
                 RefusalReason::Interrupted => "interrupted",
                 RefusalReason::WorldRejected => "world_rejected",
                 RefusalReason::OpportunityGone => "opportunity_gone",
+                RefusalReason::ScopeMoved => "scope_moved",
             };
             writeln!(f, "  refused: cell {} {reason}", refusal.cell)?;
         }
@@ -322,9 +338,10 @@ fn classify(error: &ControllerError) -> CellEnd {
         }
         _ if error.requires_quarantine() => CellEnd::Fatal("controller_quarantined"),
         ControllerError::World(_) => CellEnd::Refused(RefusalReason::WorldRejected),
-        ControllerError::NoOpportunity { .. }
-        | ControllerError::AmbiguousOpportunity
-        | ControllerError::OpportunityMismatch => CellEnd::Refused(RefusalReason::OpportunityGone),
+        ControllerError::NoOpportunity { .. } | ControllerError::AmbiguousOpportunity => {
+            CellEnd::Refused(RefusalReason::OpportunityGone)
+        }
+        ControllerError::OpportunityMismatch => CellEnd::Refused(RefusalReason::ScopeMoved),
         _ => CellEnd::Fatal("controller_error"),
     }
 }
@@ -485,9 +502,12 @@ pub async fn run_manual(
         match end {
             TickEnd::Open(status) => {
                 record.status = status;
-                store.save(&record)?;
                 if let Some(report) = report {
+                    record.checkpoints.push(report.checkpoint.clone());
+                    store.save(&record)?;
                     let _ = observe(&report);
+                } else {
+                    store.save(&record)?;
                 }
                 return Ok(RunOutcome { record });
             }
@@ -602,6 +622,7 @@ async fn run_tick(
     let report = TickReport {
         checkpoint: TickCheckpoint {
             tick: cover.tick.0,
+            closed: open.is_none(),
             cells: cover.cells.len() as u32,
             committed,
             refusals,
@@ -618,7 +639,6 @@ async fn run_tick(
             .unwrap_or_default(),
         spent,
         remaining: port.cap().saturating_sub(spent),
-        closed: open.is_none(),
     };
     (open.map_or(TickEnd::Closed, TickEnd::Open), Some(report))
 }

@@ -240,7 +240,7 @@ async fn run(flags: Flags) -> Result<ExitCode> {
     println!(
         "status: {}; {} of {} ticks closed",
         outcome.record.status,
-        outcome.record.checkpoints.len(),
+        outcome.record.ticks_closed(),
         outcome.record.ticks_requested
     );
     drop(runner);

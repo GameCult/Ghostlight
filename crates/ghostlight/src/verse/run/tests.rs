@@ -294,6 +294,7 @@ async fn scripted_run_commits_and_checkpoints_every_tick() {
     assert_eq!(outcome.record.status, RunStatus::Completed);
     let ticks: Vec<u64> = outcome.record.checkpoints.iter().map(|c| c.tick).collect();
     assert_eq!(ticks, vec![0, 1, 2]);
+    assert_eq!(outcome.record.ticks_closed(), 3);
     assert_eq!(verse.now().await, 3 * u64::from(SPAN));
     // Both factions acted every tick, the second on a scope the first moved.
     assert_eq!(verse.acts().await, 6);
@@ -323,6 +324,7 @@ async fn scripted_run_commits_and_checkpoints_every_tick() {
         assert_eq!(expected.len(), 2);
         assert_eq!(checkpoint.committed, expected);
         assert_eq!(checkpoint.cells, 2);
+        assert!(checkpoint.closed);
         assert!(checkpoint.refusals.is_empty());
     }
 
@@ -363,7 +365,7 @@ async fn scripted_run_commits_and_checkpoints_every_tick() {
     let mut spent = 0;
     for (tick, report) in reports.iter().enumerate() {
         spent += report.checkpoint.tokens;
-        assert!(report.closed);
+        assert!(report.checkpoint.closed);
         assert_eq!(report.acts.len(), 2);
         assert_eq!(report.spent, spent);
         assert_eq!(report.remaining, 10_000_000 - spent);
@@ -405,15 +407,22 @@ async fn budget_exhausted_stops_before_the_clock_and_resumes() {
         })
         .await;
     assert_eq!(ended.record.status, RunStatus::BudgetExhausted);
-    assert!(ended.record.checkpoints.is_empty());
+    // The tick it ended inside is recorded, unclosed, with the act it committed.
+    let [open] = ended.record.checkpoints.as_slice() else {
+        panic!("the open tick is the run's one checkpoint")
+    };
+    assert!(!open.closed);
+    assert_eq!(open.tick, 0);
+    assert_eq!(open.committed.len(), 1);
+    assert_eq!(ended.record.ticks_closed(), 0);
     assert_eq!(verse.now().await, 0, "the open tick's clock did not advance");
     assert_eq!(first.calls(), 1, "the second call never reached the provider");
     assert_eq!(verse.acts().await, 1);
     // The open tick is reported, unclosed, with what it committed.
     assert_eq!(reports.len(), 1);
-    assert!(!reports[0].closed);
+    assert!(!reports[0].checkpoint.closed);
     assert_eq!(reports[0].acts.len(), 1);
-    assert_eq!(reports[0].checkpoint.committed.len(), 1);
+    assert_eq!(&reports[0].checkpoint, open);
     assert!(reports[0].remaining < first_bound);
     assert_eq!(
         verse.runs.runs(world.world_id).unwrap(),
@@ -431,14 +440,18 @@ async fn budget_exhausted_stops_before_the_clock_and_resumes() {
     assert_eq!(verse.now().await, 2 * u64::from(SPAN));
     assert_eq!(second.calls(), 3, "one call finished tick 0, two ran tick 1");
     assert_eq!(verse.acts().await, 4, "no act was committed twice");
-    // The faction that had acted holds no opportunity until the clock moves, so
-    // the tick that was open is closed by the one cell left, a command the
-    // first run did not commit.
+    // Both factions still hold opportunities. The one the first run left in
+    // flight finishes; the one that already acted has had its scope moved by
+    // that act and by its neighbour's, so its cell is refused rather than run
+    // again.
     let closing = &resumed.record.checkpoints[0];
-    eprintln!("DIAG first={:#?} resumed={:#?}", ended.record, resumed.record);
-    assert_eq!(closing.cells, 1);
+    assert!(closing.closed);
+    assert_eq!(closing.cells, 2);
     assert_eq!(closing.committed.len(), 1);
-    assert_ne!(closing.committed[0], reports[0].checkpoint.committed[0]);
+    assert_ne!(closing.committed[0], open.committed[0]);
+    assert_eq!(closing.refusals.len(), 1);
+    assert_eq!(closing.refusals[0].reason, RefusalReason::ScopeMoved);
+    assert_eq!(resumed.record.ticks_closed(), 2);
     assert_eq!(resumed.record.checkpoints[1].committed.len(), 2);
 }
 
@@ -517,7 +530,11 @@ async fn a_pending_cell_ends_the_run_without_the_clock_and_a_later_run_finishes_
             reason: "inference_retryable".into()
         }
     );
-    assert!(ended.record.checkpoints.is_empty());
+    assert_eq!(ended.record.ticks_closed(), 0);
+    let [open] = ended.record.checkpoints.as_slice() else {
+        panic!("the open tick is recorded")
+    };
+    assert!(!open.closed && open.committed.is_empty());
     assert_eq!(verse.now().await, 0);
     assert_eq!(verse.acts().await, 0);
 
@@ -552,7 +569,7 @@ async fn a_provider_answer_against_the_tool_contract_ends_the_run_without_the_cl
             reason: "inference_recovery_required".into()
         }
     );
-    assert!(outcome.record.checkpoints.is_empty());
+    assert_eq!(outcome.record.ticks_closed(), 0);
     assert_eq!(verse.now().await, 0);
 }
 
@@ -592,6 +609,7 @@ fn the_operator_reads_refusals_and_how_a_run_ended() {
     let report = TickReport {
         checkpoint: TickCheckpoint {
             tick: 4,
+            closed: false,
             cells: 3,
             committed: Vec::new(),
             refusals: vec![
@@ -607,22 +625,27 @@ fn the_operator_reads_refusals_and_how_a_run_ended() {
                     cell: 0,
                     reason: RefusalReason::Interrupted,
                 },
+                Refusal {
+                    cell: 5,
+                    reason: RefusalReason::ScopeMoved,
+                },
             ],
             tokens: 7,
         },
         acts: Vec::new(),
         spent: 40,
         remaining: 60,
-        closed: false,
     };
     assert_eq!(
         report.to_string(),
-        "tick 4 open: 3 cells, 0 acts, 3 refused
-  refused: cell 1 world_rejected
-  refused: cell 2 opportunity_gone
-  refused: cell 0 interrupted
-  tokens: 7 this tick, 40 spent, 60 remaining
-"
+        concat!(
+            "tick 4 open: 3 cells, 0 acts, 4 refused\n",
+            "  refused: cell 1 world_rejected\n",
+            "  refused: cell 2 opportunity_gone\n",
+            "  refused: cell 0 interrupted\n",
+            "  refused: cell 5 scope_moved\n",
+            "  tokens: 7 this tick, 40 spent, 60 remaining\n",
+        )
     );
     let ended: Vec<String> = [
         RunStatus::Running,
@@ -688,25 +711,25 @@ async fn an_act_names_its_verb_render_path_and_bound_roles() {
     };
     let text = reports[0].to_string();
     let checkpoint = &reports[0].checkpoint;
-    assert!(text.starts_with("tick 0 closed: 2 cells, 2 acts, 0 refused
-"), "{text}");
-    assert!(text.contains(&format!(
-        "
-  Adrasteia attack [{}] target=Brannoch says \"Adrasteia strikes.\"
-",
+    assert!(
+        text.starts_with("tick 0 closed: 2 cells, 2 acts, 0 refused\n"),
+        "{text}"
+    );
+    let attack_line = format!(
+        "\n  Adrasteia attack [{}] target=Brannoch says \"Adrasteia strikes.\"\n",
         name("attack")
-    )), "{text}");
-    assert!(text.contains(&format!(
-        "
-  Brannoch speak [{}] says \"Brannoch answers.\"
-",
+    );
+    assert!(text.contains(&attack_line), "{text}");
+    let speak_line = format!(
+        "\n  Brannoch speak [{}] says \"Brannoch answers.\"\n",
         name("speak")
-    )), "{text}");
-    assert!(text.ends_with(&format!(
-        "  tokens: {} this tick, {} spent, {} remaining
-",
+    );
+    assert!(text.contains(&speak_line), "{text}");
+    let tokens_line = format!(
+        "  tokens: {} this tick, {} spent, {} remaining\n",
         checkpoint.tokens, reports[0].spent, reports[0].remaining
-    )), "{text}");
+    );
+    assert!(text.ends_with(&tokens_line), "{text}");
     let speak = acts.iter().find(|act| act.verb == "speak").unwrap();
     assert_eq!(speak.speaker_label, "Brannoch");
     assert_eq!(
@@ -825,13 +848,16 @@ fn an_error_ends_a_cell_as_the_run_must_treat_it() {
             expected: ControllerMode::OperationalAgent,
         },
         ControllerError::AmbiguousOpportunity,
-        ControllerError::OpportunityMismatch,
     ] {
         assert!(matches!(
             classify(&gone),
             CellEnd::Refused(RefusalReason::OpportunityGone)
         ));
     }
+    assert!(matches!(
+        classify(&ControllerError::OpportunityMismatch),
+        CellEnd::Refused(RefusalReason::ScopeMoved)
+    ));
     assert!(matches!(
         classify(&ControllerError::CommandMismatch),
         CellEnd::Fatal("controller_error")
