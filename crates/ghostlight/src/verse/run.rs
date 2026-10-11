@@ -23,7 +23,7 @@
 
 use super::calls::{RecordingInferencePort, canonical};
 use crate::controllers::{
-    CellRun, ControllerError, ControllerPendingReason, ControllerRunner, InferenceFaultClass,
+    CellRun, ConstituentRefusalReason, ControllerError, ControllerPendingReason, ControllerRunner, InferenceFaultClass,
     NarrativeRun, OperationalRun, SubmissionDisposition,
 };
 use crate::cover::{
@@ -37,7 +37,7 @@ use crate::{
 use chrono::Utc;
 use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use serde::{Deserialize, Serialize};
-use std::{ops::ControlFlow, path::Path, sync::Mutex};
+use std::{collections::BTreeMap, ops::ControlFlow, path::Path, sync::Mutex};
 use thiserror::Error;
 
 /// The run record document's schema.
@@ -108,6 +108,9 @@ pub enum RefusalReason {
 pub struct Refusal {
     /// The cell's position in the tick's cover.
     pub cell: u32,
+    /// The frozen member that committed nothing. Every member of a closed
+    /// tick's cells is in `committed` or here, once.
+    pub subject: SubjectId,
     pub reason: RefusalReason,
 }
 
@@ -227,6 +230,9 @@ pub struct TickReport {
     pub checkpoint: TickCheckpoint,
     /// Every act the tick committed, from the operator log.
     pub acts: Vec<OperatorEvent>,
+    /// The labels of the subjects the checkpoint's refusals name, from the
+    /// snapshot the tick opened on.
+    pub labels: BTreeMap<SubjectId, String>,
     pub spent: u64,
     pub remaining: u64,
 }
@@ -283,7 +289,8 @@ impl std::fmt::Display for TickReport {
                 RefusalReason::OpportunityGone => "opportunity_gone",
                 RefusalReason::ScopeMoved => "scope_moved",
             };
-            writeln!(f, "  refused: cell {} {reason}", refusal.cell)?;
+            let label = self.labels.get(&refusal.subject).map_or("-", String::as_str);
+            writeln!(f, "  refused: cell {} {label} {reason}", refusal.cell)?;
         }
         writeln!(
             f,
@@ -634,10 +641,12 @@ fn command_of(submission: &SubmissionDisposition) -> CommandId {
 }
 
 /// Folds one finished cell into the tick. Returns the code of the pending state
-/// that ends the run, when the cell did not finish.
+/// that ends the run, when the cell did not finish. A pending cell's unreached
+/// members are not refusals: the tick stays open and they resume.
 fn absorb(
     run: CellRun,
-    cell: u32,
+    cell: &Cell,
+    position: u32,
     committed: &mut Vec<CommandId>,
     refusals: &mut Vec<Refusal>,
 ) -> Option<&'static str> {
@@ -648,10 +657,7 @@ fn absorb(
         }
         CellRun::Narrative(NarrativeRun::Pending(pending)) => Some(pending_code(pending.reason())),
         CellRun::Narrative(NarrativeRun::Interrupted(_)) => {
-            refusals.push(Refusal {
-                cell,
-                reason: RefusalReason::Interrupted,
-            });
+            refusals.extend(refuse_all(cell, position, RefusalReason::Interrupted));
             None
         }
         CellRun::Operational(OperationalRun::Completed(decision)) => {
@@ -663,32 +669,55 @@ fn absorb(
         }
         CellRun::Grouped(run) => {
             committed.extend(run.submissions.iter().map(|entry| command_of(&entry.submission)));
+            refusals.extend(run.refused.iter().map(|refused| Refusal {
+                cell: position,
+                subject: refused.subject,
+                reason: match refused.reason {
+                    ConstituentRefusalReason::LeftBeforeSelection => RefusalReason::OpportunityGone,
+                    ConstituentRefusalReason::ScopeChanged => RefusalReason::ScopeMoved,
+                    ConstituentRefusalReason::WorldRefused => RefusalReason::WorldRejected,
+                },
+            }));
             run.pending.map(pending_code)
         }
     }
 }
 
+/// One refusal per member of the cell.
+fn refuse_all(cell: &Cell, position: u32, reason: RefusalReason) -> impl Iterator<Item = Refusal> {
+    cell.members().iter().map(move |member| Refusal {
+        cell: position,
+        subject: member.subject,
+        reason,
+    })
+}
+
 /// The frozen cell with each member bound to the opportunity the world holds
-/// for that subject now. The partition is fixed when the tick opens; an
-/// opportunity is the world's current binding for a subject, and an earlier
-/// cell's act can move it (a word spoken in a shared room changes what its
-/// listeners know). A subject that no longer holds an opportunity leaves the
-/// cell, and an empty cell is gone.
-fn refreshed(frozen: &FrozenCell, tick: TickIndex, fresh: &[DecisionOpportunity]) -> Option<Cell> {
-    let members: Vec<Constituent> = frozen
-        .members
-        .iter()
-        .filter_map(|subject| {
-            fresh
-                .iter()
-                .find(|opportunity| opportunity.scope.subject_id == *subject)
-                .map(|opportunity| Constituent {
-                    subject: *subject,
-                    opportunity: opportunity.clone(),
-                })
-        })
-        .collect();
-    if frozen.group {
+/// for that subject now, and the frozen members that hold none. The partition
+/// is fixed when the tick opens; an opportunity is the world's current binding
+/// for a subject, and an earlier cell's act can move it (a word spoken in a
+/// shared room changes what its listeners know). A subject that no longer holds
+/// an opportunity leaves the cell, and an empty cell is gone.
+fn refreshed(
+    frozen: &FrozenCell,
+    tick: TickIndex,
+    fresh: &[DecisionOpportunity],
+) -> (Option<Cell>, Vec<SubjectId>) {
+    let mut gone = Vec::new();
+    let mut members: Vec<Constituent> = Vec::new();
+    for subject in &frozen.members {
+        match fresh
+            .iter()
+            .find(|opportunity| opportunity.scope.subject_id == *subject)
+        {
+            Some(opportunity) => members.push(Constituent {
+                subject: *subject,
+                opportunity: opportunity.clone(),
+            }),
+            None => gone.push(*subject),
+        }
+    }
+    let cell = if frozen.group {
         (!members.is_empty()).then(|| Cell::Group {
             id: frozen.id,
             tick,
@@ -700,7 +729,8 @@ fn refreshed(frozen: &FrozenCell, tick: TickIndex, fresh: &[DecisionOpportunity]
             tick,
             member,
         })
-    }
+    };
+    (cell, gone)
 }
 
 enum TickEnd {
@@ -880,16 +910,18 @@ async fn run_tick(
                 break;
             }
         };
-        let Some(cell) = refreshed(frozen, index, &fresh) else {
-            refusals.push(Refusal {
-                cell: position,
-                reason: RefusalReason::OpportunityGone,
-            });
+        let (cell, gone) = refreshed(frozen, index, &fresh);
+        refusals.extend(gone.into_iter().map(|subject| Refusal {
+            cell: position,
+            subject,
+            reason: RefusalReason::OpportunityGone,
+        }));
+        let Some(cell) = cell else {
             continue;
         };
         match runner.run_cell(&cell).await {
             Ok(run) => {
-                if let Some(code) = absorb(run, position, &mut committed, &mut refusals) {
+                if let Some(code) = absorb(run, &cell, position, &mut committed, &mut refusals) {
                     open = Some(failed(code));
                     break;
                 }
@@ -903,10 +935,9 @@ async fn run_tick(
                     open = Some(failed(code));
                     break;
                 }
-                CellEnd::Refused(reason) => refusals.push(Refusal {
-                    cell: position,
-                    reason,
-                }),
+                CellEnd::Refused(reason) => {
+                    refusals.extend(refuse_all(&cell, position, reason));
+                }
             },
         }
     }
@@ -938,6 +969,16 @@ async fn run_tick(
             Vec::new()
         }
     };
+    let labels = refusals
+        .iter()
+        .filter_map(|refusal| {
+            snapshot
+                .subjects
+                .iter()
+                .find(|subject| subject.id == refusal.subject)
+                .map(|subject| (refusal.subject, subject.label.clone()))
+        })
+        .collect();
     let report = TickReport {
         checkpoint: TickCheckpoint {
             tick: ordinal,
@@ -948,6 +989,7 @@ async fn run_tick(
             tokens: spent.saturating_sub(spent_before),
         },
         acts,
+        labels,
         spent,
         remaining: port.cap().saturating_sub(spent),
     };

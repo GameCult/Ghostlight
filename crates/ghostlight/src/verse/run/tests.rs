@@ -531,7 +531,7 @@ async fn resumed_after_both_cells_committed_elsewhere(reverse: bool) {
     };
     for cell in order {
         let fresh = verse.mailbox.opportunities().await.unwrap();
-        let bound = refreshed(&FrozenCell::of(cell), TickIndex(0), &fresh).unwrap();
+        let bound = refreshed(&FrozenCell::of(cell), TickIndex(0), &fresh).0.unwrap();
         runner.run_cell(&bound).await.unwrap();
     }
     assert_eq!(verse.acts().await, 2);
@@ -706,12 +706,19 @@ async fn a_cell_the_world_refuses_is_a_refusal_and_the_tick_closes() {
     assert_eq!(checkpoint.refusals.len(), 1);
     assert_eq!(checkpoint.refusals[0].reason, RefusalReason::WorldRejected);
     assert!(checkpoint.refusals[0].cell < 2);
+    assert_eq!(checkpoint.refusals[0].subject, verse.subject("Adrasteia").await);
     assert_eq!(verse.now().await, u64::from(SPAN));
     assert_eq!(verse.acts().await, 1);
 }
 
 #[test]
 fn the_operator_reads_refusals_and_how_a_run_ended() {
+    let [one, two, three, four] = [(); 4].map(|()| crate::SubjectId::issue());
+    let refusal = |cell, subject, reason| Refusal {
+        cell,
+        subject,
+        reason,
+    };
     let report = TickReport {
         checkpoint: TickCheckpoint {
             tick: 4,
@@ -719,26 +726,20 @@ fn the_operator_reads_refusals_and_how_a_run_ended() {
             cells: 3,
             committed: Vec::new(),
             refusals: vec![
-                Refusal {
-                    cell: 1,
-                    reason: RefusalReason::WorldRejected,
-                },
-                Refusal {
-                    cell: 2,
-                    reason: RefusalReason::OpportunityGone,
-                },
-                Refusal {
-                    cell: 0,
-                    reason: RefusalReason::Interrupted,
-                },
-                Refusal {
-                    cell: 5,
-                    reason: RefusalReason::ScopeMoved,
-                },
+                refusal(1, one, RefusalReason::WorldRejected),
+                refusal(2, two, RefusalReason::OpportunityGone),
+                refusal(0, three, RefusalReason::Interrupted),
+                refusal(5, four, RefusalReason::ScopeMoved),
             ],
             tokens: 7,
         },
         acts: Vec::new(),
+        labels: BTreeMap::from([
+            (one, "Ada".to_owned()),
+            (two, "Brann".to_owned()),
+            (three, "Cato".to_owned()),
+            (four, "Dura".to_owned()),
+        ]),
         spent: 40,
         remaining: 60,
     };
@@ -746,10 +747,10 @@ fn the_operator_reads_refusals_and_how_a_run_ended() {
         report.to_string(),
         concat!(
             "tick 4 open: 3 cells, 0 acts, 4 refused\n",
-            "  refused: cell 1 world_rejected\n",
-            "  refused: cell 2 opportunity_gone\n",
-            "  refused: cell 0 interrupted\n",
-            "  refused: cell 5 scope_moved\n",
+            "  refused: cell 1 Ada world_rejected\n",
+            "  refused: cell 2 Brann opportunity_gone\n",
+            "  refused: cell 0 Cato interrupted\n",
+            "  refused: cell 5 Dura scope_moved\n",
             "  tokens: 7 this tick, 40 spent, 60 remaining\n",
         )
     );
@@ -895,7 +896,7 @@ async fn a_cell_is_run_on_what_the_world_holds_for_its_members_now() {
             panic!("two subjects under two cells are singletons")
         };
         let frozen = FrozenCell::of(cell);
-        let Some(Cell::Singleton { member, .. }) = refreshed(&frozen, TickIndex(0), &moved) else {
+        let (Some(Cell::Singleton { member, .. }), gone) = refreshed(&frozen, TickIndex(0), &moved) else {
             panic!("a subject that still has an opportunity keeps its cell")
         };
         assert_ne!(member.opportunity, held.opportunity);
@@ -903,12 +904,15 @@ async fn a_cell_is_run_on_what_the_world_holds_for_its_members_now() {
         // The member is bound to its own subject's opportunity, not a neighbour's.
         assert_eq!(member.subject, held.subject);
         assert_eq!(member.opportunity.scope.subject_id, member.subject);
+        assert!(gone.is_empty());
     }
     let frozen_group = FrozenCell::of(grouped);
-    let Some(Cell::Group { members: now, .. }) = refreshed(&frozen_group, TickIndex(0), &moved)
+    let (Some(Cell::Group { members: now, .. }), gone) =
+        refreshed(&frozen_group, TickIndex(0), &moved)
     else {
         panic!("a group keeps its members")
     };
+    assert!(gone.is_empty());
     assert_eq!(now.len(), 2);
     assert!(now.iter().all(|member| moved.contains(&member.opportunity)));
     assert!(
@@ -918,7 +922,8 @@ async fn a_cell_is_run_on_what_the_world_holds_for_its_members_now() {
 
     // A subject with no opportunity leaves its cell, and an empty cell is gone.
     let one = &opportunities[..1];
-    let Some(Cell::Group { members: left, .. }) = refreshed(&frozen_group, TickIndex(0), one)
+    let (Some(Cell::Group { members: left, .. }), left_out) =
+        refreshed(&frozen_group, TickIndex(0), one)
     else {
         panic!("one member remains")
     };
@@ -927,10 +932,13 @@ async fn a_cell_is_run_on_what_the_world_holds_for_its_members_now() {
     let gone = singles
         .cells
         .iter()
-        .filter(|cell| refreshed(&FrozenCell::of(cell), TickIndex(0), one).is_none())
+        .filter(|cell| refreshed(&FrozenCell::of(cell), TickIndex(0), one).0.is_none())
         .count();
     assert_eq!(gone, 1);
-    assert!(refreshed(&frozen_group, TickIndex(0), &[]).is_none());
+    let (nothing, all_gone) = refreshed(&frozen_group, TickIndex(0), &[]);
+    assert!(nothing.is_none());
+    assert_eq!(all_gone, frozen_group.members);
+    assert_eq!(left_out, vec![opportunities[1].scope.subject_id]);
 }
 
 #[test]
@@ -1791,4 +1799,163 @@ fn two_racing_opens_of_one_tick_cannot_both_succeed() {
         });
         assert_eq!(opened, 1, "ordinal {ordinal} was opened {opened} times");
     }
+}
+
+
+/// A reply for the one-cell cover: every constituent the request offers
+/// speaks, so the grouped cell gets its one inference answered for both.
+fn grouped_reply(request: &str) -> Vec<InferenceEvent> {
+    let handles: Vec<usize> = (0..8)
+        .filter(|i| request.contains(&format!("c{i}__speak")))
+        .collect();
+    assert!(!handles.is_empty(), "a one-cell cover offers grouped handles");
+    handles
+        .into_iter()
+        .map(|i| InferenceEvent::ToolCall {
+            call_id: format!("act{i}"),
+            name: format!("c{i}__speak"),
+            arguments: json!({ "text": format!("Member {i} speaks.") }).to_string(),
+        })
+        .collect()
+}
+
+fn one_cell(ticks: u32) -> VerseRunConfig {
+    VerseRunConfig {
+        ticks,
+        tick_span: TickMinutes::new(SPAN).unwrap(),
+        cover: CoverBudget {
+            cells: 1,
+            constituent_cap: 8,
+            urgency_slots: 0,
+        },
+    }
+}
+
+/// Runs the grouped cover for `ticks`, returning the verse, the outcome and
+/// every report the operator saw.
+async fn grouped_run(ticks: u32) -> (tempfile::TempDir, Harness, RunOutcome, Vec<TickReport>) {
+    let (dir, verse) = Harness::fresh().await;
+    let mut reports = Vec::new();
+    let outcome = verse
+        .run_under(
+            ScriptedPort::new(grouped_reply),
+            u64::MAX,
+            one_cell(ticks),
+            |report| {
+                reports.push(report.clone());
+                ControlFlow::Continue(())
+            },
+        )
+        .await;
+    (dir, verse, outcome, reports)
+}
+
+/// Every member of every frozen cell of a closed tick is, once, either a
+/// subject whose command id the checkpoint holds or a subject it refused.
+async fn assert_every_member_accounted_for(verse: &Harness, outcome: &RunOutcome) {
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    let closed: Vec<_> = outcome.record.checkpoints.iter().filter(|c| c.closed).collect();
+    assert!(!closed.is_empty(), "a run with no closed tick proves nothing");
+    for checkpoint in closed {
+        let tick = verse.runs.tick(world, checkpoint.tick).unwrap().unwrap();
+        let mut members = 0;
+        for cell in &tick.cells {
+            for subject in &cell.members {
+                members += 1;
+                let command = CommandId::for_cell_constituent(
+                    world,
+                    cell.id,
+                    *subject,
+                    TickIndex(checkpoint.tick),
+                );
+                let committed = checkpoint.committed.iter().filter(|c| **c == command).count();
+                let refused = checkpoint
+                    .refusals
+                    .iter()
+                    .filter(|r| r.subject == *subject)
+                    .count();
+                assert_eq!(committed + refused, 1, "tick {} member", checkpoint.tick);
+            }
+        }
+        assert_eq!(checkpoint.committed.len() + checkpoint.refusals.len(), members);
+    }
+}
+
+#[tokio::test]
+async fn a_grouped_cell_records_every_member_it_could_not_commit() {
+    let (_dir, verse, outcome, reports) = grouped_run(2).await;
+    assert_eq!(outcome.record.status, RunStatus::Completed);
+    assert_eq!(reports.len(), 2);
+    let world = verse.mailbox.snapshot().await.unwrap();
+    for (checkpoint, report) in outcome.record.checkpoints.iter().zip(&reports) {
+        assert!(checkpoint.closed);
+        assert_eq!(checkpoint.cells, 1);
+        assert_eq!(checkpoint.committed.len(), 1);
+        let [refusal] = checkpoint.refusals.as_slice() else {
+            panic!("one member of two is refused")
+        };
+        assert_eq!(refusal.reason, RefusalReason::ScopeMoved);
+        let label = &world
+            .subjects
+            .iter()
+            .find(|subject| subject.id == refusal.subject)
+            .unwrap()
+            .label;
+        assert!(
+            report
+                .to_string()
+                .contains(&format!("refused: cell 0 {label} scope_moved")),
+            "the operator reads who was refused"
+        );
+    }
+    assert_every_member_accounted_for(&verse, &outcome).await;
+}
+
+#[tokio::test]
+async fn every_member_of_a_closed_tick_is_committed_or_refused_once() {
+    // Singletons, all committing.
+    let (_dir, verse) = Harness::fresh().await;
+    let outcome = verse.run_quietly(ScriptedPort::speaking(), u64::MAX, 2).await;
+    assert_every_member_accounted_for(&verse, &outcome).await;
+
+    // Singletons, one refused by the world.
+    let (_dir, verse) = Harness::fresh().await;
+    let nothing = id_text(CommandId::new());
+    let port = ScriptedPort::new(move |request| {
+        if who(request) == "Adrasteia" {
+            vec![InferenceEvent::ToolCall {
+                call_id: "act".into(),
+                name: "attack".into(),
+                arguments: json!({ "target": nothing, "text": "Adrasteia strikes." }).to_string(),
+            }]
+        } else {
+            vec![speak_call("Brannoch speaks.")]
+        }
+    });
+    let outcome = verse.run_quietly(port, u64::MAX, 2).await;
+    assert!(outcome.record.checkpoints.iter().all(|c| c.refusals.len() == 1));
+    assert_every_member_accounted_for(&verse, &outcome).await;
+
+    // One grouped cell.
+    let (_dir, verse, outcome, _) = grouped_run(2).await;
+    assert_every_member_accounted_for(&verse, &outcome).await;
+}
+
+#[tokio::test]
+async fn a_refused_grouped_member_acts_next_tick() {
+    let (_dir, verse, outcome, _) = grouped_run(2).await;
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    let [first, second] = outcome.record.checkpoints.as_slice() else {
+        panic!("two ticks, two checkpoints")
+    };
+    let refused_first = first.refusals[0].subject;
+    let tick = verse.runs.tick(world, second.tick).unwrap().unwrap();
+    let again = CommandId::for_cell_constituent(
+        world,
+        tick.cells[0].id,
+        refused_first,
+        TickIndex(second.tick),
+    );
+    assert!(second.committed.contains(&again));
+    assert_ne!(second.refusals[0].subject, refused_first);
 }
