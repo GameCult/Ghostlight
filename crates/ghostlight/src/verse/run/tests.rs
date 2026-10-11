@@ -492,6 +492,56 @@ async fn budget_exhausted_stops_before_the_clock_and_resumes() {
     assert_eq!(resumed.record.checkpoints[1].committed.len(), 2);
 }
 
+/// The answer for a committed cell does not depend on where it sits in the
+/// tick's frozen order. Here the cell that acted is the second one: the first
+/// is still in flight when the run ends, the second commits by another driver,
+/// and the resuming run reaches the committed cell last.
+#[tokio::test]
+async fn a_committed_cell_is_answered_whichever_cell_the_resume_reaches_first() {
+    let (_dir, verse) = Harness::fresh().await;
+    let ended = verse
+        .run_quietly_under(fault_at(0), config_of(1, 60, 2))
+        .await;
+    assert_eq!(
+        ended.record.status,
+        RunStatus::Failed {
+            reason: "inference_retryable".into()
+        }
+    );
+    assert_eq!(verse.acts().await, 0, "the first cell was left in flight");
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    let tick = verse.runs.tick(world, 0).unwrap().unwrap();
+    assert_eq!(tick.cells.len(), 2);
+
+    // The second frozen cell commits on its own.
+    let other = ScriptedPort::speaking();
+    let runner = ControllerRunner::open(
+        verse.mailbox.clone(),
+        other.clone(),
+        verse.work.clone(),
+        models(),
+    )
+    .unwrap();
+    let fresh = verse.mailbox.opportunities().await.unwrap();
+    let second = refreshed(&tick.cells[1], TickIndex(0), &fresh).unwrap();
+    runner.run_cell(&second).await.unwrap();
+    assert_eq!(verse.acts().await, 1);
+
+    let resuming = ScriptedPort::speaking();
+    let resumed = verse
+        .run_quietly_under(resuming.clone(), config_of(1, 60, 2))
+        .await;
+    assert_eq!(resumed.record.status, RunStatus::Completed);
+    let [closing] = resumed.record.checkpoints.as_slice() else {
+        panic!("the resuming run closed one tick")
+    };
+    assert!(closing.closed);
+    assert!(closing.refusals.is_empty(), "{closing:?}");
+    assert_eq!(closing.committed.len(), 2, "{closing:?}");
+    assert_eq!(resuming.calls(), 1, "only the cell left in flight reached the provider");
+    assert_eq!(verse.acts().await, 2, "no act was committed twice");
+}
+
 #[tokio::test]
 async fn recorded_run_replays_to_the_same_journal() {
     let live_dir = tempfile::tempdir().unwrap();
