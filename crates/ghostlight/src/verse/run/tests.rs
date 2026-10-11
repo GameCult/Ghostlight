@@ -431,12 +431,14 @@ async fn budget_exhausted_stops_before_the_clock_and_resumes() {
     assert_eq!(verse.now().await, 2 * u64::from(SPAN));
     assert_eq!(second.calls(), 3, "one call finished tick 0, two ran tick 1");
     assert_eq!(verse.acts().await, 4, "no act was committed twice");
-    // The tick that was open committed both of its cells' commands.
-    assert_eq!(resumed.record.checkpoints[0].committed.len(), 2);
-    assert_eq!(
-        resumed.record.checkpoints[0].committed[0],
-        reports[0].checkpoint.committed[0]
-    );
+    // The faction that had acted holds no opportunity until the clock moves, so
+    // the tick that was open is closed by the one cell left, a command the
+    // first run did not commit.
+    let closing = &resumed.record.checkpoints[0];
+    assert_eq!(closing.cells, 1);
+    assert_eq!(closing.committed.len(), 1);
+    assert_ne!(closing.committed[0], reports[0].checkpoint.committed[0]);
+    assert_eq!(resumed.record.checkpoints[1].committed.len(), 2);
 }
 
 #[tokio::test]
