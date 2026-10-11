@@ -181,6 +181,11 @@ impl WorldJournal {
         self.commits.get(&command_id)
     }
 
+    /// Every commit the journal holds, in no particular order.
+    pub(super) fn commits(&self) -> impl Iterator<Item = &WorldCommit> {
+        self.commits.values()
+    }
+
     #[cfg(test)]
     pub(super) fn commit_count(&self) -> usize {
         self.commits.len()

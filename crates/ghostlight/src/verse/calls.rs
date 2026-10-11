@@ -256,7 +256,7 @@ enum DecodedRow {
     Ledger(RunLedger),
 }
 
-fn canonical<T: Serialize + for<'de> Deserialize<'de>>(
+pub(super) fn canonical<T: Serialize + for<'de> Deserialize<'de>>(
     row: &CultCacheEnvelope,
 ) -> Result<T, CallRecordError> {
     let value: T = rmp_serde::from_slice(&row.payload).map_err(|_| CallRecordError::Corrupt)?;
@@ -583,6 +583,16 @@ impl RecordingInferencePort {
             run,
             cap: cap_tokens,
         })
+    }
+
+    /// The run this port records.
+    pub fn run_id(&self) -> &RunId {
+        &self.run
+    }
+
+    /// The token cap the run was opened under.
+    pub fn cap(&self) -> u64 {
+        self.cap
     }
 
     /// Tokens reserved or charged to the run so far.

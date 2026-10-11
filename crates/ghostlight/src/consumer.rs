@@ -469,7 +469,7 @@ mod tests {
         AuthorityTargetRef, CallerId, CausalBoundary, CommandBody, CommandEnvelope, CommitmentKind,
         ComponentOp, CoverBudget, DecisionOpportunity, DecisionScope, Declaration, DraftHandle,
         EntityDeclaration, EntityId, EntityKind, EvidenceRef, FactDeclaration, FactStandingRef,
-        FictionalMinutes, JurisdictionKey, NewController, PatchGround, Quantity, Ref,
+        FictionalMinutes, JurisdictionKey, NewController, PatchGround, Quantity, Ref, TickIndex,
         RouteDeclaration, Statement, SubjectDeclaration, SubjectId, SubjectKind, SystemCapability,
         WorldEffect, WorldId, WorldKernel, WorldMailbox, WorldScaleIntentRef, agency_graph,
         commit_digest, derive_boundaries, derive_cover, derive_opportunities,
@@ -736,8 +736,7 @@ mod tests {
         assert!(!graph.subjects.contains(&mirror.first));
         let cover = derive_cover(
             snapshot.world_id,
-            snapshot.now,
-            30,
+            TickIndex(0),
             &opportunities,
             &graph,
             CoverBudget {

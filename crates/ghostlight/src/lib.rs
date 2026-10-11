@@ -85,6 +85,7 @@ pub use consumer::{
 };
 pub use controllers::{
     CONTROLLER_WORK_SCHEMA, CellRun, ConnectorBinding, ControllerError, ControllerModels,
+    ControllerOpenError,
     ControllerNeed, ControllerPendingReason, ControllerRunner, ControllerWork,
     ControllerWorkCustody, ControllerWorkLookup, ControllerWorkStore, ControllerWorkStoreError,
     ControllerWorkWrite,
@@ -145,7 +146,10 @@ pub use table::{
 pub use vault::{VaultError, VaultEvidenceSource};
 pub use verse::{
     CALL_RECORD_SCHEMA, CallRecordError, CallRecordStore, CreateVerseWorldIntent, ProviderCallRecord,
-    RecordingInferencePort, ReplayInferencePort, RunField, RunId, RunStart, VerseGenesisError,
+    RUN_RECORD_SCHEMA, RecordedCoverBudget, RecordingInferencePort, Refusal, RefusalReason, RunClaim,
+    ReplayInferencePort, RunField, RunId, RunOutcome, RunStart, RunStatus, TickCheckpoint,
+    TickReport, UnattributedCall, VerseGenesisError, VerseRunConfig, VerseRunError, VerseRunRecord, VerseRunStore,
+    call_run_id, run_manual,
 };
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
 
@@ -1275,6 +1279,21 @@ pub struct OperatorEvent {
     pub speaker_label: String,
     pub speech: Option<Statement>,
     pub display: Option<Statement>,
+    /// The affordance kind the act exercised.
+    pub verb: String,
+    /// How the world's grammar renders that verb; none in a world with no
+    /// grammar.
+    pub render_path: Option<RenderPath>,
+    /// What the act bound each of the verb's roles to, in the invocation's
+    /// order.
+    pub roles: Vec<BoundRole>,
+}
+
+/// One role an act bound, with the label of what it was bound to.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BoundRole {
+    pub role: String,
+    pub target: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1565,7 +1584,43 @@ impl WorldKernel {
     /// no consumer may read in full would be a loaded gun with a comment on it.
     fn operator_log(&self) -> Result<Vec<OperatorEvent>, KernelError> {
         self.journal.ensure_healthy()?;
-        operator_log(&self.state)
+        // An event records what the world did; the invocation, which names the
+        // bound roles, lives on the commit that produced it.
+        let invocations: BTreeMap<EventId, &DecisionInvocation> = self
+            .journal
+            .commits()
+            .filter_map(|commit| match &commit.effect {
+                WorldEffect::DecisionExercised {
+                    invocation, event, ..
+                } => Some((event.id, invocation)),
+                _ => None,
+            })
+            .collect();
+        operator_log(&self.state, &invocations)
+    }
+
+    /// The tick driver's opportunity list, in the same order a snapshot
+    /// carries it. Separate from `snapshot` for the reason `agency_graph` is:
+    /// only the tick driver reads it.
+    fn opportunities(&self) -> Result<Vec<DecisionOpportunity>, KernelError> {
+        self.journal.ensure_healthy()?;
+        Ok(order_opportunities(
+            &self.state,
+            derive_opportunities(&self.state)?,
+        ))
+    }
+
+    /// How many clock advances the world has committed: the next tick's
+    /// ordinal, held by the world and read from its journal. Separate from
+    /// `snapshot` for the reason `opportunities` is: only the tick driver
+    /// reads it.
+    fn clock_advances(&self) -> Result<u64, KernelError> {
+        self.journal.ensure_healthy()?;
+        Ok(self
+            .journal
+            .commits()
+            .filter(|commit| matches!(commit.effect, WorldEffect::TimeAdvanced { .. }))
+            .count() as u64)
     }
 
     /// The scheduler's adjacency projection. Separate from `snapshot` for the
@@ -3740,7 +3795,10 @@ fn scope_components(state: &WorldState, subject_id: SubjectId) -> ScopeComponent
 /// The human operator's story feed, derived from the causal record. The events
 /// log is not a perception surface: `knowledge` is the sole answer to what a
 /// subject may act on and what its projection may contain.
-fn operator_log(state: &WorldState) -> Result<Vec<OperatorEvent>, KernelError> {
+fn operator_log(
+    state: &WorldState,
+    invocations: &BTreeMap<EventId, &DecisionInvocation>,
+) -> Result<Vec<OperatorEvent>, KernelError> {
     state
         .events
         .iter()
@@ -3749,6 +3807,30 @@ fn operator_log(state: &WorldState) -> Result<Vec<OperatorEvent>, KernelError> {
                 .subjects
                 .get(&event.scope.subject_id)
                 .ok_or_else(|| KernelError::Invariant("event names no live subject".into()))?;
+            let invocation = invocations.get(&event.id).ok_or_else(|| {
+                KernelError::Invariant("event has no committed invocation".into())
+            })?;
+            let entry = state
+                .affordance_catalog
+                .get(&event.affordance)
+                .ok_or_else(|| KernelError::Invariant("event names no catalog entry".into()))?;
+            let roles = invocation
+                .bindings
+                .iter()
+                .map(|binding| {
+                    let label = match binding.target {
+                        Target::Subject(id) => state.subjects.get(&id).map(|s| s.label.clone()),
+                        Target::Entity(id) => state.entities.get(&id).map(|e| e.label.clone()),
+                        Target::Edge(id) => state.edges.contains_key(&id).then(|| "edge".to_owned()),
+                    };
+                    label
+                        .map(|target| BoundRole {
+                            role: binding.role.0.clone(),
+                            target,
+                        })
+                        .ok_or_else(|| KernelError::Invariant("event binds no live referent".into()))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
             Ok(OperatorEvent {
                 revision: event.revision,
                 speaker: event.scope.subject_id,
@@ -3761,6 +3843,13 @@ fn operator_log(state: &WorldState) -> Result<Vec<OperatorEvent>, KernelError> {
                     .display
                     .and_then(|fact| state.facts.get(&fact))
                     .map(|record| record.statement.clone()),
+                verb: entry.kind.0.clone(),
+                render_path: state
+                    .grammar
+                    .as_ref()
+                    .and_then(|grammar| grammar.verb(&entry.kind.0))
+                    .map(|verb| verb.render_path),
+                roles,
             })
         })
         .collect()
@@ -11533,7 +11622,7 @@ mod soul_knowledge_tests {
         // Nobody holds it.
         assert!(kernel.state.knowledge.is_empty());
         // The operator reads it anyway, with the speaker resolved by label.
-        let log = operator_log(&kernel.state).unwrap();
+        let log = kernel.operator_log().unwrap();
         assert_eq!(
             log,
             vec![OperatorEvent {
@@ -11542,6 +11631,9 @@ mod soul_knowledge_tests {
                 speaker_label: "The Yard Bystander".into(),
                 speech: Some(Statement::new(text).unwrap()),
                 display: None,
+                verb: "speak".into(),
+                render_path: None,
+                roles: Vec::new(),
             }]
         );
         // And no subject snapshot carries it.

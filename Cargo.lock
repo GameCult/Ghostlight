@@ -731,6 +731,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ghostlight-verse"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "ghostlight",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

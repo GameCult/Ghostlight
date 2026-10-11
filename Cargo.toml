@@ -3,6 +3,7 @@ members = [
   "crates/ghostlight",
   "crates/ghostlight-dungeon",
   "crates/ghostlight-persona-projection",
+  "crates/ghostlight-verse",
 ]
 resolver = "2"
 
