@@ -87,6 +87,11 @@ enum Request {
     Opportunities {
         reply: oneshot::Sender<Result<Vec<DecisionOpportunity>, KernelError>>,
     },
+    /// The tick ordinal's one door: how many clock advances the world has
+    /// committed. Held by the tick driver, as `Opportunities` is.
+    ClockAdvances {
+        reply: oneshot::Sender<Result<u64, KernelError>>,
+    },
     ControllerReceipt {
         command_id: CommandId,
         opportunity: super::DecisionOpportunity,
@@ -497,6 +502,22 @@ impl WorldMailbox {
         let (reply, response) = oneshot::channel();
         self.sender
             .send(Request::Opportunities { reply })
+            .await
+            .map_err(|_| MailboxError::Unavailable)?;
+
+        response
+            .await
+            .map_err(|_| MailboxError::Unavailable)?
+            .map_err(MailboxError::Kernel)
+    }
+
+    /// The tick driver's ordinal: how many clock advances the world has
+    /// committed. It is on `WorldMailbox` and on no controller port, as
+    /// `opportunities` is.
+    pub async fn clock_advances(&self) -> Result<u64, MailboxError> {
+        let (reply, response) = oneshot::channel();
+        self.sender
+            .send(Request::ClockAdvances { reply })
             .await
             .map_err(|_| MailboxError::Unavailable)?;
 
@@ -979,6 +1000,19 @@ async fn run_owner(mut owned: OwnedWorld, mut receiver: mpsc::Receiver<Request>)
                 let result = match &owned {
                     OwnedWorld::Empty(_) => Err(KernelError::WorldNotCreated),
                     OwnedWorld::Live(kernel) => kernel.opportunities(),
+                };
+                let owner_must_stop = result
+                    .as_ref()
+                    .is_err_and(KernelError::requires_owner_restart);
+                let _ = reply.send(result);
+                if owner_must_stop {
+                    return;
+                }
+            }
+            Request::ClockAdvances { reply } => {
+                let result = match &owned {
+                    OwnedWorld::Empty(_) => Err(KernelError::WorldNotCreated),
+                    OwnedWorld::Live(kernel) => kernel.clock_advances(),
                 };
                 let owner_must_stop = result
                     .as_ref()

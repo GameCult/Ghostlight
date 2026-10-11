@@ -221,6 +221,17 @@ impl Harness {
         ticks: u32,
         observe: impl FnMut(&TickReport) -> ControlFlow<()>,
     ) -> RunOutcome {
+        self.run_under(inner, cap, config(ticks), observe).await
+    }
+
+    /// One run under the given config, recorded under the next sequence.
+    async fn run_under(
+        &self,
+        inner: Arc<dyn InferencePort>,
+        cap: u64,
+        config: VerseRunConfig,
+        observe: impl FnMut(&TickReport) -> ControlFlow<()>,
+    ) -> RunOutcome {
         let world = self.mailbox.snapshot().await.unwrap();
         let sequence = self.runs.next_sequence(world.world_id).unwrap();
         let port = Arc::new(
@@ -241,7 +252,7 @@ impl Harness {
             &runner,
             &port,
             &self.runs,
-            &config(ticks),
+            &config,
             sequence,
             observe,
         )
@@ -251,6 +262,15 @@ impl Harness {
 
     async fn run_quietly(&self, inner: Arc<dyn InferencePort>, cap: u64, ticks: u32) -> RunOutcome {
         self.run(inner, cap, ticks, |_| ControlFlow::Continue(()))
+            .await
+    }
+
+    async fn run_quietly_under(
+        &self,
+        inner: Arc<dyn InferencePort>,
+        config: VerseRunConfig,
+    ) -> RunOutcome {
+        self.run_under(inner, u64::MAX, config, |_| ControlFlow::Continue(()))
             .await
     }
 
@@ -279,8 +299,6 @@ impl Harness {
 async fn scripted_run_commits_and_checkpoints_every_tick() {
     let (_dir, verse) = Harness::fresh().await;
     let world = verse.mailbox.snapshot().await.unwrap();
-    let opportunities = verse.mailbox.opportunities().await.unwrap();
-    let graph = verse.mailbox.agency_graph().await.unwrap();
     let port = ScriptedPort::speaking();
     let mut reports = Vec::new();
     let outcome = verse
@@ -300,25 +318,28 @@ async fn scripted_run_commits_and_checkpoints_every_tick() {
     assert_eq!(verse.acts().await, 6);
     assert_eq!(port.calls(), 6);
 
-    // Every committed command id is the one the cover derives for that cell,
-    // in cell order.
+    // Every committed command id is the one the tick document's frozen cells
+    // derive, in cell order, and the document is closed by this run's clock.
     for checkpoint in &outcome.record.checkpoints {
-        let cover = derive_cover(
-            world.world_id,
-            FictionalMinutes(checkpoint.tick * u64::from(SPAN)),
-            SPAN,
-            &opportunities,
-            &graph,
-            two_cells(),
-        );
-        let expected: Vec<CommandId> = cover
+        let tick = verse
+            .runs
+            .tick(world.world_id, checkpoint.tick)
+            .unwrap()
+            .unwrap();
+        assert_eq!(tick.closed, Some(TickClose::Clock { run: 1 }));
+        assert_eq!(tick.opened_by_run, 1);
+        assert_eq!(tick.span_minutes, SPAN);
+        let expected: Vec<CommandId> = tick
             .cells
             .iter()
-            .map(|cell| match cell {
-                Cell::Singleton { id, tick, member } => {
-                    CommandId::for_cell_constituent(world.world_id, *id, member.subject, *tick)
-                }
-                Cell::Group { .. } => panic!("two factions under two cells are singletons"),
+            .map(|cell| {
+                assert!(!cell.group, "two factions under two cells are singletons");
+                CommandId::for_cell_constituent(
+                    world.world_id,
+                    cell.id,
+                    cell.members[0],
+                    TickIndex(checkpoint.tick),
+                )
             })
             .collect();
         assert_eq!(expected.len(), 2);
@@ -441,6 +462,10 @@ async fn budget_exhausted_stops_before_the_clock_and_resumes() {
         .await;
     assert_eq!(resumed.record.status, RunStatus::Completed);
     assert_eq!(resumed.record.sequence, 2);
+    // The resumed tick is the document run 1 opened, closed by run 2.
+    let opened = verse.runs.tick(world.world_id, 0).unwrap().unwrap();
+    assert_eq!(opened.opened_by_run, 1);
+    assert_eq!(opened.closed, Some(TickClose::Clock { run: 2 }));
     let ticks: Vec<u64> = resumed.record.checkpoints.iter().map(|c| c.tick).collect();
     assert_eq!(ticks, vec![0, 1], "the open tick is the first this run closes");
     assert_eq!(verse.now().await, 2 * u64::from(SPAN));
@@ -771,16 +796,14 @@ async fn a_cell_is_run_on_what_the_world_holds_for_its_members_now() {
     let world = verse.mailbox.snapshot().await.unwrap().world_id;
     let singles = derive_cover(
         world,
-        FictionalMinutes(0),
-        SPAN,
+        TickIndex(0),
         &opportunities,
         &graph,
         two_cells(),
     );
     let group = derive_cover(
         world,
-        FictionalMinutes(0),
-        SPAN,
+        TickIndex(0),
         &opportunities,
         &graph,
         CoverBudget {
@@ -803,13 +826,16 @@ async fn a_cell_is_run_on_what_the_world_holds_for_its_members_now() {
         let Cell::Singleton { member: held, .. } = cell else {
             panic!("two subjects under two cells are singletons")
         };
-        let Some(Cell::Singleton { member, .. }) = refreshed(cell, &moved) else {
+        let frozen = FrozenCell::of(cell);
+        let Some(Cell::Singleton { member, .. }) = refreshed(&frozen, TickIndex(0), &moved) else {
             panic!("a subject that still has an opportunity keeps its cell")
         };
         assert_ne!(member.opportunity, held.opportunity);
         assert!(moved.contains(&member.opportunity));
     }
-    let Some(Cell::Group { members: now, .. }) = refreshed(grouped, &moved) else {
+    let frozen_group = FrozenCell::of(grouped);
+    let Some(Cell::Group { members: now, .. }) = refreshed(&frozen_group, TickIndex(0), &moved)
+    else {
         panic!("a group keeps its members")
     };
     assert_eq!(now.len(), 2);
@@ -817,7 +843,8 @@ async fn a_cell_is_run_on_what_the_world_holds_for_its_members_now() {
 
     // A subject with no opportunity leaves its cell, and an empty cell is gone.
     let one = &opportunities[..1];
-    let Some(Cell::Group { members: left, .. }) = refreshed(grouped, one) else {
+    let Some(Cell::Group { members: left, .. }) = refreshed(&frozen_group, TickIndex(0), one)
+    else {
         panic!("one member remains")
     };
     assert_eq!(left.len(), 1);
@@ -825,10 +852,10 @@ async fn a_cell_is_run_on_what_the_world_holds_for_its_members_now() {
     let gone = singles
         .cells
         .iter()
-        .filter(|cell| refreshed(cell, one).is_none())
+        .filter(|cell| refreshed(&FrozenCell::of(cell), TickIndex(0), one).is_none())
         .count();
     assert_eq!(gone, 1);
-    assert!(refreshed(grouped, &[]).is_none());
+    assert!(refreshed(&frozen_group, TickIndex(0), &[]).is_none());
 }
 
 #[test]
@@ -1035,6 +1062,355 @@ fn the_run_store_refuses_rows_that_are_not_canonical_run_records() {
         assert!(
             matches!(VerseRunStore::open(&file), Err(VerseRunError::Corrupt)),
             "case {index} was accepted"
+        );
+    }
+}
+
+/// A port that answers like `ScriptedPort::speaking` and fails the `at`th
+/// provider call it sees, retryably.
+struct FaultAt {
+    inner: Arc<ScriptedPort>,
+    at: usize,
+    seen: AtomicUsize,
+}
+
+#[async_trait]
+impl InferencePort for FaultAt {
+    fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+        self.inner.prepare(request)
+    }
+
+    async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
+        if self.seen.fetch_add(1, Ordering::SeqCst) == self.at {
+            return Err(InferenceFault::retryable("the provider is busy"));
+        }
+        self.inner.infer(request).await
+    }
+}
+
+fn fault_at(at: usize) -> Arc<FaultAt> {
+    Arc::new(FaultAt {
+        inner: ScriptedPort::speaking(),
+        at,
+        seen: AtomicUsize::new(0),
+    })
+}
+
+fn config_of(ticks: u32, span: u32, cells: u16) -> VerseRunConfig {
+    VerseRunConfig {
+        ticks,
+        tick_span: TickMinutes::new(span).unwrap(),
+        cover: CoverBudget {
+            cells,
+            constituent_cap: 8,
+            urgency_slots: 0,
+        },
+    }
+}
+
+/// Run 1 closes tick 0 (two cells, 60 minutes). Run 2 commits one faction's act
+/// in tick 1 and ends pending. Run 3 resumes under `resume`. Asserts that each
+/// faction acted exactly once between the end of run 1 and the end of run 3.
+async fn resumed_after_a_pending_cell(
+    resume: VerseRunConfig,
+) -> (tempfile::TempDir, Harness, RunOutcome) {
+    let (dir, verse) = Harness::fresh().await;
+    let first = verse
+        .run_quietly_under(ScriptedPort::speaking(), config_of(1, 60, 2))
+        .await;
+    assert_eq!(first.record.status, RunStatus::Completed);
+    let mark = verse.mailbox.snapshot().await.unwrap().revision;
+
+    let ended = verse
+        .run_quietly_under(fault_at(1), config_of(1, 60, 2))
+        .await;
+    assert_eq!(
+        ended.record.status,
+        RunStatus::Failed {
+            reason: "inference_retryable".into()
+        }
+    );
+    let opened: Vec<_> = verse
+        .mailbox
+        .operator_log()
+        .await
+        .unwrap()
+        .into_iter()
+        .filter(|event| event.revision > mark)
+        .map(|event| event.speaker)
+        .collect();
+    assert_eq!(opened.len(), 1, "one faction acted in the open tick");
+
+    let resumed = verse
+        .run_quietly_under(ScriptedPort::speaking(), resume)
+        .await;
+    assert_eq!(resumed.record.status, RunStatus::Completed);
+    let since: Vec<_> = verse
+        .mailbox
+        .operator_log()
+        .await
+        .unwrap()
+        .into_iter()
+        .filter(|event| event.revision > mark)
+        .map(|event| event.speaker)
+        .collect();
+    assert_eq!(since.len(), 2, "each faction acted once in the open tick");
+    assert_eq!(
+        since.iter().filter(|speaker| **speaker == opened[0]).count(),
+        1,
+        "the faction that acted before the pause did not act again"
+    );
+    (dir, verse, resumed)
+}
+
+#[tokio::test]
+async fn a_resume_under_another_span_finishes_the_open_tick_under_its_own() {
+    let (_dir, verse, resumed) = resumed_after_a_pending_cell(config_of(1, 30, 2)).await;
+    // Tick 1's clock advance is the frozen 60 minutes, not the resuming 30.
+    assert_eq!(verse.now().await, 120);
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    let tick = verse.runs.tick(world, 1).unwrap().unwrap();
+    assert_eq!(tick.span_minutes, 60);
+    assert_eq!(tick.opened_by_run, 2);
+    assert_eq!(tick.closed, Some(TickClose::Clock { run: 3 }));
+    let [closing] = resumed.record.checkpoints.as_slice() else {
+        panic!("the resuming run closed one tick")
+    };
+    assert_eq!(closing.tick, 1);
+    assert!(closing.closed);
+}
+
+#[tokio::test]
+async fn a_resume_under_another_cover_budget_keeps_the_frozen_cells() {
+    // One cell would be a group of both factions; the open tick keeps its two
+    // singletons.
+    let (_dir, verse, resumed) = resumed_after_a_pending_cell(config_of(1, 60, 1)).await;
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    let tick = verse.runs.tick(world, 1).unwrap().unwrap();
+    assert_eq!(tick.cover_budget.cells, 2);
+    assert_eq!(tick.cells.len(), 2);
+    assert!(tick.cells.iter().all(|cell| !cell.group));
+    assert_eq!(resumed.record.checkpoints[0].cells, 2);
+    assert_eq!(verse.now().await, 120);
+}
+
+#[tokio::test]
+async fn a_new_span_opens_a_new_tick_and_never_reuses_a_closed_one() {
+    let (_dir, verse) = Harness::fresh().await;
+    let first = verse
+        .run_quietly_under(ScriptedPort::speaking(), config_of(2, 60, 2))
+        .await;
+    assert_eq!(first.record.status, RunStatus::Completed);
+    assert_eq!(verse.now().await, 120);
+    let acts = verse.acts().await;
+
+    let port = ScriptedPort::speaking();
+    let second = verse
+        .run_quietly_under(port.clone(), config_of(2, 120, 2))
+        .await;
+    assert_eq!(second.record.status, RunStatus::Completed);
+    let ordinals: Vec<u64> = second.record.checkpoints.iter().map(|c| c.tick).collect();
+    assert_eq!(ordinals, vec![2, 3]);
+    assert_eq!(verse.now().await, 120 + 240);
+    assert_eq!(verse.acts().await, acts + 4);
+    assert_eq!(port.calls(), 4);
+    let before: Vec<CommandId> = first
+        .record
+        .checkpoints
+        .iter()
+        .flat_map(|c| c.committed.clone())
+        .collect();
+    for checkpoint in &second.record.checkpoints {
+        assert!(checkpoint.committed.iter().all(|id| !before.contains(id)));
+    }
+}
+
+#[tokio::test]
+async fn a_closed_ticks_clock_is_answered_from_the_kernels_ledger() {
+    let (_dir, verse) = Harness::fresh().await;
+    verse.run_quietly(ScriptedPort::speaking(), u64::MAX, 2).await;
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    assert_eq!(verse.now().await, 120);
+    for ordinal in 0..2 {
+        let receipt = verse
+            .mailbox
+            .submit_clock(
+                clock_command_id(world, ordinal),
+                TickMinutes::new(SPAN).unwrap(),
+            )
+            .await
+            .unwrap();
+        assert!(
+            matches!(receipt, SubmitReceipt::AlreadyApplied(_)),
+            "the clock of tick {ordinal} was not the id the run submitted"
+        );
+    }
+    assert_eq!(verse.now().await, 120);
+}
+
+#[tokio::test]
+async fn an_open_tick_the_world_moved_past_is_closed_by_the_world() {
+    let (_probe_dir, probe) = Harness::fresh().await;
+    let measuring = ScriptedPort::speaking();
+    probe.run_quietly(measuring.clone(), u64::MAX, 1).await;
+    let first_bound = measuring.bounds()[0];
+
+    let (_dir, verse) = Harness::fresh().await;
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    let ended = verse
+        .run_under(
+            ScriptedPort::speaking(),
+            first_bound + 64,
+            config(1),
+            |_| ControlFlow::Continue(()),
+        )
+        .await;
+    assert_eq!(ended.record.status, RunStatus::BudgetExhausted);
+    assert_eq!(verse.acts().await, 1);
+    // Another writer moves time without closing the tick.
+    verse
+        .mailbox
+        .submit_clock(CommandId::new(), TickMinutes::new(SPAN).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(verse.now().await, 60);
+
+    let resumed = verse
+        .run_quietly(ScriptedPort::speaking(), u64::MAX, 1)
+        .await;
+    assert_eq!(resumed.record.status, RunStatus::Completed);
+    let abandoned = verse.runs.tick(world, 0).unwrap().unwrap();
+    assert_eq!(abandoned.closed, Some(TickClose::World));
+    let next = verse.runs.tick(world, 1).unwrap().unwrap();
+    assert_eq!(next.opened_by_run, 2);
+    assert_eq!(next.closed, Some(TickClose::Clock { run: 2 }));
+    let [checkpoint] = resumed.record.checkpoints.as_slice() else {
+        panic!("one tick, one checkpoint")
+    };
+    assert_eq!(checkpoint.tick, 1);
+    assert_eq!(checkpoint.committed.len(), 2, "a fresh cover ran both factions");
+    assert_eq!(verse.acts().await, 3);
+    assert_eq!(verse.now().await, 120);
+    // No faction has two acts in one ordinal: ordinal 1 opened after run 1's
+    // act, so its acts are the ones past the tick's opening revision.
+    let log = verse.mailbox.operator_log().await.unwrap();
+    for speaker in log.iter().map(|event| event.speaker) {
+        let in_first = log
+            .iter()
+            .filter(|event| event.speaker == speaker && event.revision <= next.opened_revision)
+            .count();
+        let in_second = log
+            .iter()
+            .filter(|event| event.speaker == speaker && event.revision > next.opened_revision)
+            .count();
+        assert!(in_first <= 1 && in_second <= 1);
+    }
+}
+
+fn tick_doc(world: WorldId, ordinal: u64) -> VerseTick {
+    VerseTick {
+        world_id: world,
+        ordinal,
+        opened_now: 0,
+        opened_revision: 3,
+        span_minutes: SPAN,
+        cover_budget: RecordedCoverBudget {
+            cells: 2,
+            constituent_cap: 8,
+            urgency_slots: 0,
+        },
+        oversubscribed: false,
+        cells: Vec::new(),
+        opened_by_run: 1,
+        closed: None,
+    }
+}
+
+#[test]
+fn the_tick_store_opens_once_closes_once_and_refuses_non_canonical_rows() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("runs.cc");
+    let store = VerseRunStore::open(&path).unwrap();
+    let world = WorldId::nil_for_test();
+    let other = WorldId::issue();
+
+    store.open_tick(&tick_doc(world, 0)).unwrap();
+    assert!(matches!(
+        store.open_tick(&tick_doc(world, 0)),
+        Err(VerseRunError::OutOfSequence)
+    ));
+    // A tick opened already closed is not an open.
+    let mut born_closed = tick_doc(world, 5);
+    born_closed.closed = Some(TickClose::World);
+    assert!(matches!(
+        store.open_tick(&born_closed),
+        Err(VerseRunError::OutOfSequence)
+    ));
+    assert!(matches!(
+        store.close_tick(world, 9, TickClose::World),
+        Err(VerseRunError::OutOfSequence)
+    ));
+    store
+        .close_tick(world, 0, TickClose::Clock { run: 4 })
+        .unwrap();
+    assert!(matches!(
+        store.close_tick(world, 0, TickClose::World),
+        Err(VerseRunError::OutOfSequence)
+    ));
+
+    // The world closes the open ticks below an ordinal and no others.
+    for ordinal in 1..4 {
+        store.open_tick(&tick_doc(world, ordinal)).unwrap();
+    }
+    store.open_tick(&tick_doc(other, 1)).unwrap();
+    store.close_ticks_before(world, 3).unwrap();
+    let closed_by = |store: &VerseRunStore, world, ordinal| {
+        store.tick(world, ordinal).unwrap().unwrap().closed
+    };
+    assert_eq!(closed_by(&store, world, 0), Some(TickClose::Clock { run: 4 }));
+    assert_eq!(closed_by(&store, world, 1), Some(TickClose::World));
+    assert_eq!(closed_by(&store, world, 2), Some(TickClose::World));
+    assert_eq!(closed_by(&store, world, 3), None);
+    assert_eq!(closed_by(&store, other, 1), None);
+    assert!(store.tick(world, 7).unwrap().is_none());
+
+    // Tick documents and run records share the file and reopen intact.
+    store.save(&record(world, 1)).unwrap();
+    drop(store);
+    let store = VerseRunStore::open(&path).unwrap();
+    assert_eq!(store.runs(world).unwrap(), vec![record(world, 1)]);
+    assert_eq!(closed_by(&store, world, 2), Some(TickClose::World));
+
+    let good = tick_doc(world, 0);
+    let envelope = |key: String, row_type: &str, schema: &str, payload: Vec<u8>| CultCacheEnvelope {
+        key,
+        r#type: row_type.into(),
+        payload,
+        stored_at: Utc::now().to_rfc3339(),
+        schema_id: Some(schema.into()),
+    };
+    let named = rmp_serde::to_vec_named(&good).unwrap();
+    let cases = [
+        envelope(tick_key(world, 9), TICK_ROW, TICK_RECORD_SCHEMA, named.clone()),
+        envelope(tick_key(world, 0), TICK_ROW, "ghostlight.verse_tick.v2", named.clone()),
+        envelope(tick_key(world, 0), TICK_ROW, TICK_RECORD_SCHEMA, vec![0xc0]),
+        envelope(
+            tick_key(world, 0),
+            TICK_ROW,
+            TICK_RECORD_SCHEMA,
+            rmp_serde::to_vec(&good).unwrap(),
+        ),
+        envelope(tick_key(world, 0), "something_else.v1", TICK_RECORD_SCHEMA, named),
+    ];
+    for (index, row) in cases.into_iter().enumerate() {
+        let file = dir.path().join(format!("tick-case-{index}.cc"));
+        {
+            let mut raw = OwnedRedbMessagePackBackingStore::new(&file).unwrap();
+            raw.push(&row).unwrap();
+        }
+        assert!(
+            matches!(VerseRunStore::open(&file), Err(VerseRunError::Corrupt)),
+            "tick case {index} was accepted"
         );
     }
 }

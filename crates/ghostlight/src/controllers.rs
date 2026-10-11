@@ -14699,8 +14699,7 @@ mod tests {
         let graph = mailbox.agency_graph().await.unwrap();
         let cover = derive_cover(
             snapshot.world_id,
-            snapshot.now,
-            60,
+            TickIndex(snapshot.now.0 / 60),
             &snapshot.opportunities,
             &graph,
             CoverBudget {

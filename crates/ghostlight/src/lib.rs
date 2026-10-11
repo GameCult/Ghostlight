@@ -1609,6 +1609,19 @@ impl WorldKernel {
         ))
     }
 
+    /// How many clock advances the world has committed: the next tick's
+    /// ordinal, held by the world and read from its journal. Separate from
+    /// `snapshot` for the reason `opportunities` is: only the tick driver
+    /// reads it.
+    fn clock_advances(&self) -> Result<u64, KernelError> {
+        self.journal.ensure_healthy()?;
+        Ok(self
+            .journal
+            .commits()
+            .filter(|commit| matches!(commit.effect, WorldEffect::TimeAdvanced { .. }))
+            .count() as u64)
+    }
+
     /// The scheduler's adjacency projection. Separate from `snapshot` for the
     /// same reason `operator_log` is: it is wider than any subject view, so a
     /// `WorldSnapshot` field carrying it would be reachable from every prompt

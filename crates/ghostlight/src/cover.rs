@@ -11,7 +11,6 @@
 //! The cover is a partition, never a filter: every active subject is in exactly
 //! one cell every tick. The budget decides at what resolution, not whether.
 
-use super::clock::FictionalMinutes;
 use super::{ControllerMode, DecisionOpportunity, SubjectId, WorldId};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -29,24 +28,17 @@ pub(crate) const AGENCY_STAR_THRESHOLD: usize = 16;
 /// the name, not by a second namespace.
 const COVER_NAMESPACE: &str = "ghostlight.cover.v1";
 
-/// Monotone tick index. Derived from the world clock, never stored. It is
-/// threaded into every derived command id, so a resumed tick over the same
-/// snapshot re-derives the same ids and the kernel's idempotency ledger answers
-/// with the original receipts instead of double-committing.
+/// A tick's ordinal: the number of clock advances the world had committed when
+/// the tick opened. The driver reads it from the world and freezes it in the
+/// tick document; it is never derived from `now`, so it does not depend on the
+/// span. It is threaded into every derived command id, so a resumed tick
+/// re-submits the same ids and the kernel's idempotency ledger answers with the
+/// original receipts instead of double-committing.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
 )]
 #[serde(transparent)]
 pub struct TickIndex(pub u64);
-
-impl TickIndex {
-    /// Floor division by the span one `AdvanceTime` carries. The driver submits
-    /// the clock *after* the cells run, so every cell in one tick sees the same
-    /// `now` and therefore the same index.
-    pub(crate) fn of(now: FictionalMinutes, tick_minutes: u32) -> Self {
-        Self(now.0 / u64::from(tick_minutes.max(1)))
-    }
-}
 
 /// How a subject was represented this tick. Derived from the cell, carried
 /// nowhere in world state: representation is a compute budget, not world truth.
@@ -254,7 +246,7 @@ impl AgencyGraph {
     }
 }
 
-/// The partition. Pure over `(world, now, opportunities, graph, budget)`.
+/// The partition. Pure over `(world, tick, opportunities, graph, budget)`.
 ///
 /// `opportunities` arrives in the kernel's one attention order (pressure, then
 /// attention debt, then id) and is never re-sorted and never filtered here: a
@@ -262,13 +254,11 @@ impl AgencyGraph {
 /// is a fact about cognition rather than a scheduling preference.
 pub fn derive_cover(
     world: WorldId,
-    now: FictionalMinutes,
-    tick_minutes: u32,
+    tick: TickIndex,
     opportunities: &[DecisionOpportunity],
     graph: &AgencyGraph,
     budget: CoverBudget,
 ) -> Cover {
-    let tick = TickIndex::of(now, tick_minutes);
     let active: Vec<&DecisionOpportunity> = opportunities
         .iter()
         .filter(|opportunity| opportunity.controller_mode != ControllerMode::Human)
@@ -601,8 +591,7 @@ mod tests {
     ) -> Cover {
         derive_cover(
             WorldId::nil_for_test(),
-            FictionalMinutes(tick * 60),
-            60,
+            TickIndex(tick),
             opportunities,
             graph,
             budget,
