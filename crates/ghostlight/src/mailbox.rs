@@ -3,9 +3,10 @@ use super::{
     ConsumerId, CreateWorld, CreateWorldIntent, CreationReceipt, DecisionInvocation,
     DecisionOpportunity, Declaration, DraftHandle, EntityDeclaration, EntityKind, JurisdictionKey,
     KernelError, NewController, OperatorEvent, PatchAnswer, PrincipalCommandIntent, PrincipalId,
-    Ref, SubjectDeclaration, SubjectKind, SubmitReceipt, SystemCapability, TickMinutes, WorldId,
+    EntityId, Ref, SubjectDeclaration, SubjectKind, SubmitReceipt, SystemCapability, TickMinutes, WorldId,
     WorldKernel, WorldPatch, WorldPhase, WorldScaleIntentRef, WorldSnapshot, journal,
     patch::kernel_speak_grant, prepare_creation,
+    verse::{CreateVerseWorldIntent, VerseGenesisError},
 };
 use crate::VerifiedPrincipalEvidence;
 use chrono::Utc;
@@ -17,6 +18,21 @@ use tokio::task::JoinHandle;
 /// The one place a world starts with, so its first subjects can hear each
 /// other. A world that wants more declares them through the patch lane.
 const GENESIS_PLACE: &str = "commons";
+
+/// The commons every genesis declares, the one room its first subjects share.
+pub(crate) fn commons_declaration() -> Declaration {
+    Declaration::Entity(EntityDeclaration {
+        handle: DraftHandle::new(GENESIS_PLACE),
+        label: "The Commons".into(),
+        kind: EntityKind::Place,
+        container: None,
+    })
+}
+
+/// Where a genesis subject stands.
+pub(crate) fn commons_ref() -> Ref<EntityId> {
+    Ref::Draft(DraftHandle::new(GENESIS_PLACE))
+}
 
 const REQUEST_CAPACITY: usize = 32;
 
@@ -120,7 +136,7 @@ impl WorldMailbox {
                 kind,
                 controller,
                 affordances: kernel_speak_grant(),
-                position: Some(Ref::Draft(DraftHandle::new(GENESIS_PLACE))),
+                position: Some(commons_ref()),
                 import_key: None,
             })
         };
@@ -130,12 +146,7 @@ impl WorldMailbox {
         // jurisdiction's population target. The owner subject lands in
         // `Uncovered`, visible and reducing nothing.
         let mut declarations = vec![
-            Declaration::Entity(EntityDeclaration {
-                handle: DraftHandle::new(GENESIS_PLACE),
-                label: "The Commons".into(),
-                kind: EntityKind::Place,
-                container: None,
-            }),
+            commons_declaration(),
             declare(
                 "first-person",
                 input.human_subject_label,
@@ -217,6 +228,20 @@ impl WorldMailbox {
             .await
             .map_err(|_| MailboxError::OutcomeUnknown { command_id })?
             .map_err(mailbox_outcome)
+    }
+
+    /// Creates the canonical Aetheria verse world through the same
+    /// authenticated creation `create` uses.
+    pub async fn create_verse(
+        &self,
+        intent: CreateVerseWorldIntent,
+        principal: &VerifiedPrincipalEvidence,
+    ) -> Result<CreationReceipt, VerseGenesisError> {
+        let principal_id = PrincipalId::new(principal.account_subject_hash());
+        let input = intent.lower(principal_id.clone())?;
+        Ok(self
+            .create_authenticated(input, AuthenticatedCaller::verified_principal(principal_id))
+            .await?)
     }
 
     /// A wall-clock read at the boundary a request crosses into the mailbox is

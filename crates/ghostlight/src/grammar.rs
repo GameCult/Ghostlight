@@ -8,7 +8,7 @@
 //! digest its verbs do not have.
 
 use crate::SubjectKind;
-use crate::patch::{AffordanceKindName, EntityKind, RefKind, RoleSpec, kernel_speak_entry};
+use crate::patch::{AffordanceKindName, EntityKind, RefKind, Role, RoleSpec, kernel_speak_entry};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -63,10 +63,20 @@ impl GrammarVerb {
     /// Whether a declared role list is this verb's signature: same names, same
     /// referent kinds, same order.
     pub(crate) fn admits_roles(&self, roles: &[RoleSpec]) -> bool {
-        self.roles.len() == roles.len()
-            && self.roles.iter().zip(roles).all(|(want, have)| {
-                want.role == have.role.0 && want.referent.ref_kind() == have.kind
+        self.role_specs() == roles
+    }
+
+    /// This verb's signature as the kernel declares it: the one lowering of a
+    /// grammar role, so declaring a verb and admitting a declaration cannot
+    /// disagree.
+    pub(crate) fn role_specs(&self) -> Vec<RoleSpec> {
+        self.roles
+            .iter()
+            .map(|role| RoleSpec {
+                role: Role(role.role.clone()),
+                kind: role.referent.ref_kind(),
             })
+            .collect()
     }
 }
 
@@ -163,6 +173,11 @@ impl GrammarBinding {
             revision: self.revision,
             digest: self.digest.clone(),
         }
+    }
+
+    /// Every verb, in kind order.
+    pub(crate) fn verbs(&self) -> impl Iterator<Item = (&str, &GrammarVerb)> {
+        self.verbs.iter().map(|(kind, verb)| (kind.as_str(), verb))
     }
 
     pub(crate) fn verb(&self, kind: &str) -> Option<&GrammarVerb> {
