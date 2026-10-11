@@ -1079,7 +1079,7 @@ async fn a_run_started_on_the_wrong_port_world_or_config_is_refused_and_its_clai
     // A port opened for another run's number.
     let claim = verse.runs.claim(&world, 1_000, &config(1)).unwrap();
     expected.push((claim.sequence(), failed("port_not_this_run")));
-    let (port, runner) = port_and_runner(&verse, &world, 7, 1_000);
+    let (port, runner) = port_and_runner(&verse, &world, 70, 1_000);
     let error = refused(&verse, &port, &runner, claim, &config(1)).await;
     assert!(matches!(error, VerseRunError::PortNotThisRun));
 
