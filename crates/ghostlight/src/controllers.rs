@@ -15411,12 +15411,9 @@ mod tests {
             panic!("a coarse cell did not run the grouped lane")
         };
         assert_eq!(run.submissions.len(), 1);
-        assert!(
-            run.needs
-                .iter()
-                .any(|need| need.detail.contains("scope changed")),
-            "{:?}",
-            run.needs
+        assert_eq!(
+            run.refused.iter().map(|entry| (entry.subject, entry.reason)).collect::<Vec<_>>(),
+            vec![(second, ConstituentRefusalReason::ScopeChanged)]
         );
 
         let after = digest_of(&mailbox.snapshot().await.unwrap(), second)
