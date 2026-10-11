@@ -19697,6 +19697,7 @@ mod tests {
         let narrative = by_mode(ControllerMode::NarrativePersona);
         let mut outputs = vec![operational_speaks("The hinge is flooding.", "operational")];
         outputs.extend(narrative_turn_outputs("Mara", "The rain has teeth tonight."));
+        outputs.push(operational_speaks("Then we close the span.", "other"));
         let (runner, store) = grouped_runner(&mailbox, outputs);
         let operational_command = CommandId::new();
         let narrative_command = CommandId::new();
@@ -19712,6 +19713,15 @@ mod tests {
         );
         runner
             .run_narrative(narrative_command, &narrative_bound)
+            .await
+            .unwrap();
+        // Another subject speaks in the commons, so every scope moves.
+        let other_bound = fresh_opportunity(
+            &mailbox.snapshot().await.unwrap(),
+            operational[1].scope.subject_id,
+        );
+        runner
+            .run_operational(CommandId::new(), &other_bound)
             .await
             .unwrap();
 
