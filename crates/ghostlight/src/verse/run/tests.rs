@@ -2067,3 +2067,375 @@ async fn a_refused_grouped_member_acts_next_tick() {
     assert!(second.committed.contains(&again));
     assert_ne!(second.refusals[0].subject, refused_first);
 }
+
+// ---- Refusals are recorded by the tick's frozen cover ----
+
+/// The cover of the fixture world at tick 0 under `cells` cells.
+async fn cover_of(verse: &Harness, cells: u16) -> crate::cover::Cover {
+    let snapshot = verse.mailbox.snapshot().await.unwrap();
+    let graph = verse.mailbox.agency_graph().await.unwrap();
+    derive_cover(
+        snapshot.world_id,
+        TickIndex(0),
+        &snapshot.opportunities,
+        &graph,
+        CoverBudget {
+            cells,
+            constituent_cap: 8,
+            urgency_slots: 0,
+        },
+    )
+}
+
+/// Opens tick 0's document with these frozen cells, as an earlier run would
+/// have left it.
+async fn open_tick_with(verse: &Harness, cells: Vec<FrozenCell>) {
+    let snapshot = verse.mailbox.snapshot().await.unwrap();
+    verse
+        .runs
+        .open_tick(&VerseTick {
+            world_id: snapshot.world_id,
+            ordinal: 0,
+            opened_now: snapshot.now.0,
+            opened_revision: snapshot.revision,
+            span_minutes: SPAN,
+            cover_budget: RecordedCoverBudget {
+                cells: 2,
+                constituent_cap: 8,
+                urgency_slots: 0,
+            },
+            oversubscribed: false,
+            cells,
+            opened_by_run: 1,
+            closed: None,
+        })
+        .unwrap();
+}
+
+/// The fixture's one-cell cover: its group's id and the two real members.
+async fn the_group(verse: &Harness) -> (crate::cover::CellId, Vec<SubjectId>) {
+    let cover = cover_of(verse, 1).await;
+    let [Cell::Group { id, members, .. }] = cover.cells.as_slice() else {
+        panic!("one cell over the fixture is a group")
+    };
+    (*id, members.iter().map(|member| member.subject).collect())
+}
+
+fn command_for(world: WorldId, cell: crate::cover::CellId, subject: SubjectId) -> CommandId {
+    CommandId::for_cell_constituent(world, cell, subject, TickIndex(0))
+}
+
+#[tokio::test]
+async fn a_tick_refuses_the_frozen_members_that_hold_no_opportunity_by_cell_and_member() {
+    let (_dir, verse) = Harness::fresh().await;
+    let (group, real) = the_group(&verse).await;
+    let single = match &cover_of(&verse, 2).await.cells[1] {
+        Cell::Singleton { id, .. } => *id,
+        Cell::Group { .. } => panic!("the second cell of two is a singleton"),
+    };
+    let (g1, g2, g3) = (SubjectId::issue(), SubjectId::issue(), SubjectId::issue());
+    let mut members = real.clone();
+    members.extend([g1, g2]);
+    open_tick_with(
+        &verse,
+        vec![
+            FrozenCell {
+                id: group,
+                group: true,
+                members,
+            },
+            FrozenCell {
+                id: single,
+                group: false,
+                members: vec![g3],
+            },
+        ],
+    )
+    .await;
+    let mut reports = Vec::new();
+    let outcome = verse
+        .run_under(ScriptedPort::new(grouped_reply), u64::MAX, one_cell(1), |report| {
+            reports.push(report.clone());
+            ControlFlow::Continue(())
+        })
+        .await;
+    let [checkpoint] = outcome.record.checkpoints.as_slice() else {
+        panic!("one tick, one checkpoint")
+    };
+    assert!(checkpoint.closed);
+    let gone: Vec<(SubjectId, u32)> = checkpoint
+        .refusals
+        .iter()
+        .filter(|refusal| refusal.reason == RefusalReason::OpportunityGone)
+        .map(|refusal| (refusal.subject, refusal.cell))
+        .collect();
+    // A gone member of the first cell, a second one, and a cell gone
+    // entirely: each once, at its own cell.
+    assert_eq!(gone.len(), 3);
+    for expected in [(g1, 0), (g2, 0), (g3, 1)] {
+        assert_eq!(gone.iter().filter(|g| **g == expected).count(), 1);
+    }
+    // The two real members: one committed, one refused for the shared room.
+    assert_eq!(checkpoint.committed.len(), 1);
+    assert_eq!(checkpoint.refusals.len(), 4);
+    assert!(
+        reports[0]
+            .to_string()
+            .contains("refused: cell 1 - opportunity_gone"),
+        "a subject outside the snapshot prints without a label"
+    );
+}
+
+#[tokio::test]
+async fn a_frozen_member_the_resumed_row_lacks_is_refused_not_lost() {
+    let (_dir, verse) = Harness::fresh().await;
+    let (group, real) = the_group(&verse).await;
+    let (a, b) = (real[0], real[1]);
+    // The first attempt froze [a, ghost]: the row it persists holds only a.
+    open_tick_with(
+        &verse,
+        vec![FrozenCell {
+            id: group,
+            group: true,
+            members: vec![a, SubjectId::issue()],
+        }],
+    )
+    .await;
+    let first = verse
+        .run_under(fault_at(0), u64::MAX, one_cell(1), |_| {
+            ControlFlow::Continue(())
+        })
+        .await;
+    assert!(matches!(first.record.status, RunStatus::Failed { .. }));
+    // On resume the frozen cell names a and b; the row still holds only a.
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    let mut tick = verse.runs.tick(world, 0).unwrap().unwrap();
+    tick.cells = vec![FrozenCell {
+        id: group,
+        group: true,
+        members: vec![a, b],
+    }];
+    verse.runs.put_tick(&tick).unwrap();
+    let second = verse
+        .run_under(ScriptedPort::speaking(), u64::MAX, one_cell(1), |_| {
+            ControlFlow::Continue(())
+        })
+        .await;
+    let checkpoint = &second.record.checkpoints[0];
+    assert!(checkpoint.closed);
+    assert_eq!(checkpoint.committed, vec![command_for(world, group, a)]);
+    assert_eq!(
+        checkpoint.refusals,
+        vec![Refusal {
+            cell: 0,
+            subject: b,
+            reason: RefusalReason::ScopeMoved
+        }]
+    );
+}
+
+#[tokio::test]
+async fn a_row_member_outside_the_frozen_cell_is_never_listed() {
+    let (_dir, verse) = Harness::fresh().await;
+    let (group, real) = the_group(&verse).await;
+    let (a, b) = (real[0], real[1]);
+    open_tick_with(
+        &verse,
+        vec![FrozenCell {
+            id: group,
+            group: true,
+            members: vec![a, b],
+        }],
+    )
+    .await;
+    let first = verse
+        .run_under(fault_at(0), u64::MAX, one_cell(1), |_| {
+            ControlFlow::Continue(())
+        })
+        .await;
+    assert!(matches!(first.record.status, RunStatus::Failed { .. }));
+    // On resume the frozen cell names only a; the row holds a and b.
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    let mut tick = verse.runs.tick(world, 0).unwrap().unwrap();
+    tick.cells = vec![FrozenCell {
+        id: group,
+        group: true,
+        members: vec![a],
+    }];
+    verse.runs.put_tick(&tick).unwrap();
+    let second = verse
+        .run_under(ScriptedPort::new(grouped_reply), u64::MAX, one_cell(1), |_| {
+            ControlFlow::Continue(())
+        })
+        .await;
+    let checkpoint = &second.record.checkpoints[0];
+    assert!(checkpoint.closed);
+    assert_eq!(checkpoint.committed, vec![command_for(world, group, a)]);
+    assert!(checkpoint.refusals.is_empty());
+}
+
+/// The cell folding is the one place a cell's outcome becomes the tick's
+/// committed and refused lists, so it is driven with each outcome directly.
+fn fold(
+    result: Result<CellRun, ControllerError>,
+    cell: &Cell,
+    position: u32,
+) -> (Option<RunStatus>, Vec<CommandId>, Vec<Refusal>) {
+    let (mut committed, mut refusals) = (Vec::new(), Vec::new());
+    let status = absorb(
+        result,
+        cell,
+        &FrozenCell::of(cell),
+        &[],
+        position,
+        &mut committed,
+        &mut refusals,
+    );
+    (status, committed, refusals)
+}
+
+fn grouped_refusing(
+    group: &Cell,
+    reasons: &[ConstituentRefusalReason],
+) -> Result<CellRun, ControllerError> {
+    let Cell::Group { id, members, .. } = group else {
+        panic!("a group")
+    };
+    Ok(CellRun::Grouped(crate::controllers::GroupedRun {
+        cell: *id,
+        resolution: crate::cover::Resolution::Coarse {
+            constituents: members.len(),
+        },
+        submissions: Vec::new(),
+        needs: Vec::new(),
+        refused: members
+            .iter()
+            .zip(reasons)
+            .map(|(member, reason)| crate::controllers::ConstituentRefusal {
+                subject: member.subject,
+                reason: *reason,
+            })
+            .collect(),
+        pending: None,
+    }))
+}
+
+#[tokio::test]
+async fn a_cell_the_driver_folds_records_each_refused_member_at_its_own_position() {
+    let (_dir, verse) = Harness::fresh().await;
+    let cover = cover_of(&verse, 1).await;
+    let group = &cover.cells[0];
+    let Cell::Group { members, .. } = group else {
+        panic!("a group")
+    };
+
+    // Every grouped reason maps to its own driver reason, for every member,
+    // at the position given (not cell 0).
+    for (grouped, driver) in [
+        (
+            ConstituentRefusalReason::LeftBeforeSelection,
+            RefusalReason::OpportunityGone,
+        ),
+        (
+            ConstituentRefusalReason::ScopeChanged,
+            RefusalReason::ScopeMoved,
+        ),
+        (
+            ConstituentRefusalReason::WorldRefused,
+            RefusalReason::WorldRejected,
+        ),
+        (
+            ConstituentRefusalReason::ProposalUndecodable,
+            RefusalReason::ProposalUndecodable,
+        ),
+    ] {
+        let (status, committed, refusals) =
+            fold(grouped_refusing(group, &[grouped, grouped]), group, 3);
+        assert!(status.is_none() && committed.is_empty());
+        let expected: Vec<Refusal> = members
+            .iter()
+            .map(|member| Refusal {
+                cell: 3,
+                subject: member.subject,
+                reason: driver,
+            })
+            .collect();
+        assert_eq!(refusals, expected, "{grouped:?}");
+    }
+
+    // A cell-level refusal of a grouped cell refuses every member.
+    let error = ControllerError::NoOpportunity {
+        expected: ControllerMode::OperationalAgent,
+    };
+    let (status, _, refusals) = fold(Err(error), group, 2);
+    assert!(status.is_none());
+    let expected: Vec<Refusal> = members
+        .iter()
+        .map(|member| Refusal {
+            cell: 2,
+            subject: member.subject,
+            reason: RefusalReason::OpportunityGone,
+        })
+        .collect();
+    assert_eq!(refusals, expected);
+
+    // A narrative turn the world overtook refuses its member.
+    let single = &cover_of(&verse, 2).await.cells[1];
+    let Cell::Singleton { member, .. } = single else {
+        panic!("a singleton")
+    };
+    let overtaken = crate::controllers::overtaken_narrative_run(&member.opportunity);
+    let (status, committed, refusals) = fold(Ok(CellRun::Narrative(overtaken)), single, 1);
+    assert!(status.is_none() && committed.is_empty());
+    assert_eq!(
+        refusals,
+        vec![Refusal {
+            cell: 1,
+            subject: member.subject,
+            reason: RefusalReason::Interrupted
+        }]
+    );
+}
+
+#[tokio::test]
+async fn a_grouped_member_whose_proposal_fails_to_decode_is_refused_not_declined() {
+    for finished_anyway in [false, true] {
+        let (_dir, verse) = Harness::fresh().await;
+        let port = ScriptedPort::new(move |request| {
+            let mut events = grouped_reply(request);
+            if let InferenceEvent::ToolCall { arguments, .. } = &mut events[1] {
+                *arguments = json!({ "text": 5 }).to_string();
+            }
+            if finished_anyway {
+                events.push(InferenceEvent::ToolCall {
+                    call_id: "done".into(),
+                    name: "c1__finish_without_proposal".into(),
+                    arguments: "{}".into(),
+                });
+            }
+            events
+        });
+        let mut reports = Vec::new();
+        let outcome = verse
+            .run_under(port, u64::MAX, one_cell(1), |report| {
+                reports.push(report.clone());
+                ControlFlow::Continue(())
+            })
+            .await;
+        let checkpoint = &outcome.record.checkpoints[0];
+        assert!(checkpoint.closed);
+        if finished_anyway {
+            // A later finish is the member's decision: it declines, committed.
+            assert_eq!(checkpoint.committed.len(), 2);
+            assert!(checkpoint.refusals.is_empty());
+        } else {
+            assert_eq!(checkpoint.committed.len(), 1);
+            let [refusal] = checkpoint.refusals.as_slice() else {
+                panic!("the undecodable member is the one refusal")
+            };
+            assert_eq!(refusal.reason, RefusalReason::ProposalUndecodable);
+            assert!(reports[0].to_string().contains("proposal_undecodable"));
+            assert_every_member_accounted_for(&verse, &outcome).await;
+        }
+    }
+}
