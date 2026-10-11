@@ -127,7 +127,7 @@ async fn genesis(flags: Flags) -> Result<ExitCode> {
     let principal = VerifiedPrincipalEvidence::new(flags.text("owner-hash"), Utc::now() + Duration::hours(1));
 
     let (mailbox, task) = WorldMailbox::open(state.join("world.cc"))
-        .context("the world file cannot be opened")?;
+        .map_err(store_fault("the world file in --state cannot be opened"))?;
     let receipt = mailbox
         .create_verse(
             CreateVerseWorldIntent {
@@ -189,12 +189,12 @@ async fn run(flags: Flags) -> Result<ExitCode> {
     let inner = open_lane(&flags, &model, &models)?;
 
     let (mailbox, task) = WorldMailbox::open(state.join("world.cc"))
-        .context("the world file cannot be opened")?;
+        .map_err(store_fault("the world file in --state cannot be opened"))?;
     let world = mailbox.snapshot().await.context("the world cannot be read")?;
-    let calls = Arc::new(CallRecordStore::open(state.join("calls.cc")).context("the call records cannot be opened")?);
-    let runs = VerseRunStore::open(state.join("runs.cc")).context("the run records cannot be opened")?;
+    let calls = Arc::new(CallRecordStore::open(state.join("calls.cc")).map_err(store_fault("the call records in --state cannot be opened"))?);
+    let runs = VerseRunStore::open(state.join("runs.cc")).map_err(store_fault("the run records in --state cannot be opened"))?;
     let work = open_controller_work(state.join("controller-work.cc"))
-        .context("the controller work store cannot be opened")?;
+        .map_err(store_fault("the controller work store in --state cannot be opened"))?;
     let config = VerseRunConfig {
         ticks,
         tick_span,
@@ -314,6 +314,12 @@ fn open_lane(
     }
     open_inference(None, None, local, hosted, &models.each())
         .map_err(|error| anyhow!(lane_fault(&error)))
+}
+
+/// A store that cannot open says which one and that it is under `--state`,
+/// never the path or the store's own text, which carries the path.
+fn store_fault<E>(message: &'static str) -> impl FnOnce(E) -> anyhow::Error {
+    move |_| anyhow!(message)
 }
 
 /// What a lane that cannot open says: the flag or the kind of fault, never a

@@ -359,3 +359,87 @@ fn a_non_loopback_local_endpoint_is_refused_without_echoing_it() {
     // The lane failed before any run was claimed.
     assert!(!stdout(&output).contains("run 1"), "{}", stdout(&output));
 }
+
+/// A start refused after its claim ends the claimed record Failed, so the run
+/// binds nothing. Reached from the command by removing the run records while
+/// the call ledger still holds run 1 under another cap.
+#[test]
+fn a_start_the_ledger_refuses_ends_its_claimed_record_failed() {
+    let parent = tempfile::tempdir().unwrap();
+    let state = parent.path().join("state");
+    std::fs::create_dir_all(&state).unwrap();
+    assert!(genesis(&state).status.success());
+    let responder = Responder::start();
+    let first = run(&state, &responder, "1", "1000000");
+    assert!(first.status.success(), "{}", stderr(&first));
+    std::fs::remove_file(state.join("runs.cc")).unwrap();
+
+    let refused = run(&state, &responder, "1", "500000");
+    assert!(!refused.status.success());
+
+    let world = {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let _entered = runtime.enter();
+        let (mailbox, task) = ghostlight::WorldMailbox::open(state.join("world.cc")).unwrap();
+        let world = runtime.block_on(mailbox.snapshot()).unwrap().world_id;
+        drop(mailbox);
+        runtime.block_on(task).unwrap();
+        world
+    };
+    let runs = ghostlight::VerseRunStore::open(state.join("runs.cc"))
+        .unwrap()
+        .runs(world)
+        .unwrap();
+    assert_eq!(runs.len(), 1);
+    assert_eq!(
+        runs[0].status,
+        ghostlight::RunStatus::Failed {
+            reason: "start_refused".into()
+        }
+    );
+}
+
+/// A store that cannot open names the flag and the fault, never the path.
+#[test]
+fn a_store_that_cannot_open_never_echoes_the_state_path() {
+    let responder = Responder::start();
+    for file in ["world.cc", "controller-work.cc"] {
+        for held in [false, true] {
+            let parent = tempfile::tempdir().unwrap();
+            let state = parent.path().join("distinctivestatename");
+            std::fs::create_dir_all(&state).unwrap();
+            assert!(genesis(&state).status.success());
+            let first = run(&state, &responder, "1", "1000000");
+            assert!(first.status.success(), "{}", stderr(&first));
+
+            let target = state.join(file);
+            let _guard: Box<dyn std::any::Any> = if !held {
+                std::fs::write(&target, b"not a database").unwrap();
+                Box::new(())
+            } else if file == "world.cc" {
+                let runtime = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap();
+                let entered = runtime.enter();
+                let opened = ghostlight::WorldMailbox::open(&target).unwrap();
+                drop(entered);
+                Box::new((runtime, opened))
+            } else {
+                Box::new(ghostlight::open_controller_work(&target).unwrap())
+            };
+
+            let output = run(&state, &responder, "1", "1000000");
+            assert!(!output.status.success(), "{file} held={held}");
+            let error = stderr(&output);
+            assert!(error.contains("--state"), "{file} held={held}: {error}");
+            assert!(
+                !error.contains("distinctivestatename"),
+                "{file} held={held} echoed the path: {error}"
+            );
+        }
+    }
+}
