@@ -713,7 +713,7 @@ async fn a_cell_the_world_refuses_is_a_refusal_and_the_tick_closes() {
 
 #[test]
 fn the_operator_reads_refusals_and_how_a_run_ended() {
-    let [one, two, three, four] = [(); 4].map(|()| crate::SubjectId::issue());
+    let [one, two, three, four, five, six] = [(); 6].map(|()| crate::SubjectId::issue());
     let refusal = |cell, subject, reason| Refusal {
         cell,
         subject,
@@ -730,7 +730,13 @@ fn the_operator_reads_refusals_and_how_a_run_ended() {
                 refusal(2, two, RefusalReason::OpportunityGone),
                 refusal(0, three, RefusalReason::Interrupted),
                 refusal(5, four, RefusalReason::ScopeMoved),
+                refusal(3, five, RefusalReason::RowDisagreesWithCell),
+                refusal(3, six, RefusalReason::CallUnattributed),
             ],
+            unattributed: vec![UnattributedCall {
+                cell: 3,
+                tool: "c9__speak".into(),
+            }],
             tokens: 7,
         },
         acts: Vec::new(),
@@ -739,6 +745,8 @@ fn the_operator_reads_refusals_and_how_a_run_ended() {
             (two, "Brann".to_owned()),
             (three, "Cato".to_owned()),
             (four, "Dura".to_owned()),
+            (five, "Eve".to_owned()),
+            (six, "Fay".to_owned()),
         ]),
         spent: 40,
         remaining: 60,
@@ -746,11 +754,14 @@ fn the_operator_reads_refusals_and_how_a_run_ended() {
     assert_eq!(
         report.to_string(),
         concat!(
-            "tick 4 open: 3 cells, 0 acts, 4 refused\n",
+            "tick 4 open: 3 cells, 0 acts, 6 refused\n",
             "  refused: cell 1 Ada world_rejected\n",
             "  refused: cell 2 Brann opportunity_gone\n",
             "  refused: cell 0 Cato interrupted\n",
             "  refused: cell 5 Dura scope_moved\n",
+            "  refused: cell 3 Eve row_disagrees_with_cell\n",
+            "  refused: cell 3 Fay call_unattributed\n",
+            "  note: cell 3 call names no handle: tool \"c9__speak\"\n",
             "  tokens: 7 this tick, 40 spent, 60 remaining\n",
         )
     );
@@ -2188,24 +2199,45 @@ async fn a_tick_refuses_the_frozen_members_that_hold_no_opportunity_by_cell_and_
 
 #[tokio::test]
 async fn a_frozen_member_the_resumed_row_lacks_is_refused_not_lost() {
-    // The member the row lacks is the cell's second member, then its first.
-    for lacking_first in [false, true] {
-        a_row_lacking_a_frozen_member(lacking_first).await;
+    // The member the row lacks is the cell's second member, then its first,
+    // with the group first in the tick and then behind a cell that is gone.
+    for behind_a_gone_cell in [false, true] {
+        for lacking_first in [false, true] {
+            a_row_lacking_a_frozen_member(lacking_first, behind_a_gone_cell).await;
+        }
     }
 }
 
-async fn a_row_lacking_a_frozen_member(lacking_first: bool) {
+async fn a_row_lacking_a_frozen_member(lacking_first: bool, behind_a_gone_cell: bool) {
     let (_dir, verse) = Harness::fresh().await;
     let (group, real) = the_group(&verse).await;
     let (a, b) = (real[0], real[1]);
+    let single = match &cover_of(&verse, 2).await.cells[1] {
+        Cell::Singleton { id, .. } => *id,
+        Cell::Group { .. } => panic!("the second cell of two is a singleton"),
+    };
+    let gone = SubjectId::issue();
+    let leading = |cells: Vec<FrozenCell>| -> Vec<FrozenCell> {
+        if behind_a_gone_cell {
+            let mut all = vec![FrozenCell {
+                id: single,
+                group: false,
+                members: vec![gone],
+            }];
+            all.extend(cells);
+            all
+        } else {
+            cells
+        }
+    };
     // The first attempt froze [a, ghost]: the row it persists holds only a.
     open_tick_with(
         &verse,
-        vec![FrozenCell {
+        leading(vec![FrozenCell {
             id: group,
             group: true,
             members: vec![a, SubjectId::issue()],
-        }],
+        }]),
     )
     .await;
     let first = verse
@@ -2217,12 +2249,13 @@ async fn a_row_lacking_a_frozen_member(lacking_first: bool) {
     // On resume the frozen cell names a and b; the row still holds only a.
     let world = verse.mailbox.snapshot().await.unwrap().world_id;
     let mut tick = verse.runs.tick(world, 0).unwrap().unwrap();
-    tick.cells = vec![FrozenCell {
+    tick.cells = leading(vec![FrozenCell {
         id: group,
         group: true,
         members: if lacking_first { vec![b, a] } else { vec![a, b] },
-    }];
+    }]);
     verse.runs.put_tick(&tick).unwrap();
+    let cell = u32::from(behind_a_gone_cell);
     let second = verse
         .run_under(ScriptedPort::new(grouped_reply), u64::MAX, one_cell(1), |_| {
             ControlFlow::Continue(())
@@ -2231,14 +2264,20 @@ async fn a_row_lacking_a_frozen_member(lacking_first: bool) {
     let checkpoint = &second.record.checkpoints[0];
     assert!(checkpoint.closed);
     assert_eq!(checkpoint.committed, vec![command_for(world, group, a)]);
-    assert_eq!(
-        checkpoint.refusals,
-        vec![Refusal {
+    let mut expected = Vec::new();
+    if behind_a_gone_cell {
+        expected.push(Refusal {
             cell: 0,
-            subject: b,
-            reason: RefusalReason::ScopeMoved
-        }]
-    );
+            subject: gone,
+            reason: RefusalReason::OpportunityGone,
+        });
+    }
+    expected.push(Refusal {
+        cell,
+        subject: b,
+        reason: RefusalReason::RowDisagreesWithCell,
+    });
+    assert_eq!(checkpoint.refusals, expected);
 }
 
 #[tokio::test]
@@ -2292,11 +2331,10 @@ fn fold(
     let status = absorb(
         result,
         cell,
-        &FrozenCell::of(cell),
-        &[],
         position,
         &mut committed,
         &mut refusals,
+        &mut Vec::new(),
     );
     (status, committed, refusals)
 }
@@ -2315,6 +2353,7 @@ fn grouped_refusing(
         },
         submissions: Vec::new(),
         needs: Vec::new(),
+        unattributed: Vec::new(),
         refused: members
             .iter()
             .zip(reasons)
@@ -2445,4 +2484,162 @@ async fn a_grouped_member_whose_proposal_fails_to_decode_is_refused_not_declined
             assert_every_member_accounted_for(&verse, &outcome).await;
         }
     }
+}
+
+#[tokio::test]
+async fn a_grouped_cell_behind_another_is_accounted_at_its_own_position() {
+    let (_dir, verse) = Harness::fresh().await;
+    let (group, real) = the_group(&verse).await;
+    let single = match &cover_of(&verse, 2).await.cells[1] {
+        Cell::Singleton { id, .. } => *id,
+        Cell::Group { .. } => panic!("the second cell of two is a singleton"),
+    };
+    let gone = SubjectId::issue();
+    open_tick_with(
+        &verse,
+        vec![
+            FrozenCell {
+                id: single,
+                group: false,
+                members: vec![gone],
+            },
+            FrozenCell {
+                id: group,
+                group: true,
+                members: real.clone(),
+            },
+        ],
+    )
+    .await;
+    let outcome = verse
+        .run_under(ScriptedPort::new(grouped_reply), u64::MAX, one_cell(1), |_| {
+            ControlFlow::Continue(())
+        })
+        .await;
+    let [checkpoint] = outcome.record.checkpoints.as_slice() else {
+        panic!("one tick, one checkpoint")
+    };
+    assert!(checkpoint.closed);
+    let world = verse.mailbox.snapshot().await.unwrap().world_id;
+    let [first, second] = checkpoint.refusals.as_slice() else {
+        panic!("the gone cell and the refused member: {:?}", checkpoint.refusals)
+    };
+    assert_eq!(
+        *first,
+        Refusal {
+            cell: 0,
+            subject: gone,
+            reason: RefusalReason::OpportunityGone
+        }
+    );
+    assert_eq!(second.cell, 1);
+    assert_eq!(second.reason, RefusalReason::ScopeMoved);
+    let acted: Vec<SubjectId> = real.iter().copied().filter(|s| *s != second.subject).collect();
+    assert_eq!(acted.len(), 1);
+    assert_eq!(checkpoint.committed, vec![command_for(world, group, acted[0])]);
+}
+
+#[tokio::test]
+async fn a_grouped_cell_whose_lists_do_not_match_its_members_ends_the_run() {
+    let (_dir, verse) = Harness::fresh().await;
+    let cover = cover_of(&verse, 1).await;
+    let group = &cover.cells[0];
+    let Cell::Group { id, members, .. } = group else {
+        panic!("a group")
+    };
+    let run = |refused: Vec<crate::controllers::ConstituentRefusal>, pending| {
+        Ok(CellRun::Grouped(crate::controllers::GroupedRun {
+            cell: *id,
+            resolution: crate::cover::Resolution::Coarse {
+                constituents: members.len(),
+            },
+            submissions: Vec::new(),
+            needs: Vec::new(),
+            unattributed: Vec::new(),
+            refused,
+            pending,
+        }))
+    };
+    let refusal = |subject, reason| crate::controllers::ConstituentRefusal { subject, reason };
+    let left = ConstituentRefusalReason::LeftBeforeSelection;
+    let broken = Some(failed("cell_membership"));
+
+    // A finished cell that lists one of its two members.
+    let (status, _, _) = fold(run(vec![refusal(members[0].subject, left)], None), group, 0);
+    assert_eq!(status, broken);
+    // One that lists a subject the cell does not hold, and misses one it does.
+    let (status, _, _) = fold(
+        run(
+            vec![refusal(members[0].subject, left), refusal(SubjectId::issue(), left)],
+            None,
+        ),
+        group,
+        0,
+    );
+    assert_eq!(status, broken);
+    // One that lists a member twice.
+    let (status, _, _) = fold(
+        run(
+            vec![refusal(members[0].subject, left), refusal(members[0].subject, left)],
+            None,
+        ),
+        group,
+        0,
+    );
+    assert_eq!(status, broken);
+    // A cell that stopped pending has not listed its unreached members, and
+    // that is not a broken invariant: the tick stays open and they resume.
+    let reason = crate::controllers::ControllerPendingReason::WorldUnavailable;
+    let (status, committed, refusals) = fold(run(Vec::new(), Some(reason)), group, 0);
+    assert_eq!(status, Some(failed(pending_code(reason))));
+    assert!(committed.is_empty() && refusals.is_empty());
+}
+
+#[tokio::test]
+async fn a_call_naming_no_handle_is_printed_and_its_quiet_member_is_refused_not_declined() {
+    let (_dir, verse) = Harness::fresh().await;
+    let port = ScriptedPort::new(|request| {
+        if request.contains("unattributed tool recorded as a need") {
+            return Vec::new();
+        }
+        let mut events = grouped_reply(request);
+        events.truncate(1);
+        events.push(InferenceEvent::ToolCall {
+            call_id: "stray".into(),
+            name: "c9__speak".into(),
+            arguments: json!({ "text": "SENTINEL-ARGUMENT" }).to_string(),
+        });
+        events
+    });
+    let mut reports = Vec::new();
+    let outcome = verse
+        .run_under(port, u64::MAX, one_cell(1), |report| {
+            reports.push(report.clone());
+            ControlFlow::Continue(())
+        })
+        .await;
+    let [checkpoint] = outcome.record.checkpoints.as_slice() else {
+        panic!("one tick, one checkpoint")
+    };
+    assert!(checkpoint.closed);
+    assert_eq!(checkpoint.committed.len(), 1);
+    let [refusal] = checkpoint.refusals.as_slice() else {
+        panic!("the quiet member is the one refusal")
+    };
+    assert_eq!(refusal.reason, RefusalReason::CallUnattributed);
+    assert_eq!(
+        checkpoint.unattributed,
+        vec![UnattributedCall {
+            cell: 0,
+            tool: "c9__speak".into()
+        }]
+    );
+    let printed = reports[0].to_string();
+    assert!(printed.contains("call_unattributed"), "{printed}");
+    assert!(
+        printed.contains("note: cell 0 call names no handle: tool \"c9__speak\""),
+        "{printed}"
+    );
+    assert!(!printed.contains("SENTINEL-ARGUMENT"));
+    assert_every_member_accounted_for(&verse, &outcome).await;
 }
