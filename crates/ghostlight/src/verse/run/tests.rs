@@ -429,10 +429,16 @@ async fn budget_exhausted_stops_before_the_clock_and_resumes() {
         vec![ended.record.clone()]
     );
 
-    // A later run, under its own cap, finishes the tick: the first faction's
-    // act is answered from the kernel's ledger and costs no call.
+    // A later run, under its own cap, finishes the tick and costs no call for
+    // the act already committed.
     let second = ScriptedPort::speaking();
-    let resumed = verse.run_quietly(second.clone(), u64::MAX, 2).await;
+    let mut resumed_reports = Vec::new();
+    let resumed = verse
+        .run(second.clone(), u64::MAX, 2, |report| {
+            resumed_reports.push(report.clone());
+            ControlFlow::Continue(())
+        })
+        .await;
     assert_eq!(resumed.record.status, RunStatus::Completed);
     assert_eq!(resumed.record.sequence, 2);
     let ticks: Vec<u64> = resumed.record.checkpoints.iter().map(|c| c.tick).collect();
@@ -452,6 +458,13 @@ async fn budget_exhausted_stops_before_the_clock_and_resumes() {
     assert_eq!(closing.refusals.len(), 1);
     assert_eq!(closing.refusals[0].reason, RefusalReason::ScopeMoved);
     assert_eq!(resumed.record.ticks_closed(), 2);
+    // The tick reports the act this run committed and not the one it found.
+    assert_eq!(resumed_reports[0].acts.len(), 1);
+    assert!(resumed_reports[0].acts[0].revision > reports[0].acts[0].revision);
+    assert_ne!(
+        resumed_reports[0].acts[0].speaker_label,
+        reports[0].acts[0].speaker_label
+    );
     assert_eq!(resumed.record.checkpoints[1].committed.len(), 2);
 }
 
