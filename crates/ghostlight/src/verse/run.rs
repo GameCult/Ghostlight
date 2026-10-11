@@ -301,6 +301,16 @@ fn tick_key(world: WorldId, ordinal: u64) -> String {
     format!("{}/{ordinal:020}", world.key())
 }
 
+fn tick_row(tick: &VerseTick) -> Result<CultCacheEnvelope, VerseRunError> {
+    Ok(CultCacheEnvelope {
+        key: tick_key(tick.world_id, tick.ordinal),
+        r#type: TICK_ROW.into(),
+        payload: rmp_serde::to_vec_named(tick).map_err(|_| VerseRunError::Store)?,
+        stored_at: Utc::now().to_rfc3339(),
+        schema_id: Some(TICK_RECORD_SCHEMA.into()),
+    })
+}
+
 /// Every row of the file, split by type.
 struct Rows {
     runs: Vec<VerseRunRecord>,
@@ -309,7 +319,14 @@ struct Rows {
 
 /// Run records and tick documents in one CultCache file. A run is saved when
 /// it begins and again each time it moves, so a row is replaced by its own
-/// later state. A tick is opened once and closed once.
+/// later state. A tick is opened once and closed once, and only by the tick
+/// driver: the writers are private to this module.
+///
+/// ```compile_fail
+/// fn wedge(store: &ghostlight::VerseRunStore, world: ghostlight::WorldId) {
+///     store.close_ticks_before(world, 1).unwrap();
+/// }
+/// ```
 pub struct VerseRunStore {
     store: Mutex<OwnedRedbMessagePackBackingStore>,
 }
@@ -399,16 +416,29 @@ impl VerseRunStore {
             .find(|tick| tick.world_id == world && tick.ordinal == ordinal))
     }
 
-    /// Writes a tick document that does not exist yet, open.
-    pub fn open_tick(&self, tick: &VerseTick) -> Result<(), VerseRunError> {
-        if tick.closed.is_some() || self.tick(tick.world_id, tick.ordinal)?.is_some() {
+    /// Writes a tick document that does not exist yet, open. The store's own
+    /// insert-if-absent decides, so two opens of one ordinal cannot both win.
+    /// Private: the tick driver is the only writer of tick rows.
+    fn open_tick(&self, tick: &VerseTick) -> Result<(), VerseRunError> {
+        if tick.closed.is_some() {
             return Err(VerseRunError::OutOfSequence);
         }
-        self.put_tick(tick)
+        let row = tick_row(tick)?;
+        let inserted = self
+            .store
+            .lock()
+            .map_err(|_| VerseRunError::Store)?
+            .insert_entry_if_absent(row)
+            .map_err(|_| VerseRunError::Store)?;
+        if inserted {
+            Ok(())
+        } else {
+            Err(VerseRunError::OutOfSequence)
+        }
     }
 
-    /// Closes an open tick document.
-    pub fn close_tick(
+    /// Closes an open tick document. Private, like every tick writer.
+    fn close_tick(
         &self,
         world: WorldId,
         ordinal: u64,
@@ -425,7 +455,7 @@ impl VerseRunStore {
     }
 
     /// Closes, as the world's, every open tick of the world below `ordinal`.
-    pub fn close_ticks_before(&self, world: WorldId, ordinal: u64) -> Result<(), VerseRunError> {
+    fn close_ticks_before(&self, world: WorldId, ordinal: u64) -> Result<(), VerseRunError> {
         for mut tick in self.records()?.ticks {
             if tick.world_id == world && tick.ordinal < ordinal && tick.closed.is_none() {
                 tick.closed = Some(TickClose::World);
@@ -436,13 +466,7 @@ impl VerseRunStore {
     }
 
     fn put_tick(&self, tick: &VerseTick) -> Result<(), VerseRunError> {
-        let row = CultCacheEnvelope {
-            key: tick_key(tick.world_id, tick.ordinal),
-            r#type: TICK_ROW.into(),
-            payload: rmp_serde::to_vec_named(tick).map_err(|_| VerseRunError::Store)?,
-            stored_at: Utc::now().to_rfc3339(),
-            schema_id: Some(TICK_RECORD_SCHEMA.into()),
-        };
+        let row = tick_row(tick)?;
         self.store
             .lock()
             .map_err(|_| VerseRunError::Store)?
