@@ -358,3 +358,119 @@ async fn the_dungeon_ingress_still_creates_an_unbound_world() {
             .any(|place| place.label == "The Commons")
     );
 }
+
+#[tokio::test]
+async fn a_faction_name_is_trimmed_into_its_institution_label() {
+    let mut padded = catalog();
+    let expected = padded.factions[0].name.trim().to_owned();
+    padded.factions[0].name = format!("  {expected}\t ");
+    let key = padded.factions[0].key.clone();
+    let verse = verse(intent_of(padded, COMMIT)).await;
+    let snapshot = verse.mailbox.snapshot().await.unwrap();
+    let subject = snapshot
+        .subjects
+        .iter()
+        .find(|subject| subject.import_key.as_ref() == Some(&key))
+        .expect("the padded faction was created");
+    assert_eq!(subject.label, expected);
+}
+
+#[tokio::test]
+async fn genesis_twice_with_one_intent_is_one_creation() {
+    let dir = tempfile::tempdir().unwrap();
+    let (mailbox, _task) = WorldMailbox::open(dir.path().join("world.cc")).unwrap();
+    let principal =
+        VerifiedPrincipalEvidence::fixture("verse-owner", Utc::now() + Duration::hours(1));
+    let intent = intent_of(catalog(), COMMIT);
+    let first = mailbox.create_verse(intent.clone(), &principal).await.unwrap();
+    let before = mailbox.snapshot().await.unwrap();
+    let again = mailbox.create_verse(intent, &principal).await.unwrap();
+    let after = mailbox.snapshot().await.unwrap();
+    assert_eq!(again, first);
+    assert_eq!(after.revision, before.revision);
+    assert_eq!(after.state_digest, before.state_digest);
+    assert_eq!(after.subjects.len(), before.subjects.len());
+}
+
+#[tokio::test]
+async fn genesis_under_another_command_id_finds_the_world_occupied() {
+    let verse = verse(intent_of(catalog(), COMMIT)).await;
+    let before = verse.mailbox.snapshot().await.unwrap();
+    let refused = verse
+        .mailbox
+        .create_verse(intent_of(catalog(), COMMIT), &verse.principal)
+        .await;
+    assert!(
+        matches!(
+            refused,
+            Err(VerseGenesisError::Mailbox(MailboxError::Kernel(
+                KernelError::CreationTargetOccupied
+            )))
+        ),
+        "{refused:?}"
+    );
+    let after = verse.mailbox.snapshot().await.unwrap();
+    assert_eq!(after.revision, before.revision);
+    assert_eq!(after.state_digest, before.state_digest);
+}
+
+/// Evidence for the open question `ship-acts-are-not-speech`, pinning what the
+/// phase A lowering does today: a ship verb is only admissible as an utterance,
+/// and committing it asserts a claim fact the room hears.
+#[test]
+fn phase_a_ship_verbs_are_spoken_acts_in_the_room() {
+    use crate::tests::{command, opportunity_for, spoken, submit_owner};
+    use crate::{
+        AuthenticatedCaller, CallerId, DecisionInvocation, Role, RoleBinding, SubmitReceipt,
+        Target,
+    };
+
+    let (_scratch, kernel) = kernel_of(intent_of(catalog(), COMMIT));
+    let mut kernel = kernel.unwrap();
+    for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(&mut kernel, &snapshot, body);
+    }
+    let active = kernel.snapshot().unwrap();
+    let attack = active
+        .affordances
+        .iter()
+        .find(|a| a.entry.kind.0 == "attack")
+        .unwrap()
+        .id;
+    let [first, second] = [&active.subjects[0], &active.subjects[1]];
+    let opportunity = opportunity_for(&active, first.id);
+    let caller = CallerId::Controller(opportunity.controller_id);
+    let invocation = |speech: Option<&str>| DecisionInvocation {
+        affordance: attack,
+        bindings: vec![RoleBinding {
+            role: Role("target".into()),
+            target: Target::Subject(second.id),
+        }],
+        proposed: Vec::new(),
+        speech: speech.map(|text| crate::patch::Statement::new(text).unwrap()),
+        display: None,
+    };
+    let try_it = |kernel: &mut WorldKernel, speech: Option<&str>| {
+        kernel.submit(
+            command(
+                &active,
+                CommandId::new(),
+                caller.clone(),
+                CommandBody::ExerciseDecision {
+                    opportunity: opportunity.clone(),
+                    invocation: invocation(speech),
+                },
+            ),
+            &AuthenticatedCaller::fixture(caller.clone()),
+        )
+    };
+
+    // Without an utterance the act is refused: the verb has no other way in.
+    assert!(try_it(&mut kernel, None).is_err());
+    // With one, the act commits and its words are a claim fact.
+    let receipt = try_it(&mut kernel, Some("We strike.")).expect("the attack commits");
+    assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+    let event = kernel.state.events.last().unwrap();
+    assert_eq!(spoken(&kernel.state, event), Some("We strike."));
+}
