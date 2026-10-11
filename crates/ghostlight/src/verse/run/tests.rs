@@ -2188,6 +2188,13 @@ async fn a_tick_refuses_the_frozen_members_that_hold_no_opportunity_by_cell_and_
 
 #[tokio::test]
 async fn a_frozen_member_the_resumed_row_lacks_is_refused_not_lost() {
+    // The member the row lacks is the cell's second member, then its first.
+    for lacking_first in [false, true] {
+        a_row_lacking_a_frozen_member(lacking_first).await;
+    }
+}
+
+async fn a_row_lacking_a_frozen_member(lacking_first: bool) {
     let (_dir, verse) = Harness::fresh().await;
     let (group, real) = the_group(&verse).await;
     let (a, b) = (real[0], real[1]);
@@ -2213,7 +2220,7 @@ async fn a_frozen_member_the_resumed_row_lacks_is_refused_not_lost() {
     tick.cells = vec![FrozenCell {
         id: group,
         group: true,
-        members: vec![a, b],
+        members: if lacking_first { vec![b, a] } else { vec![a, b] },
     }];
     verse.runs.put_tick(&tick).unwrap();
     let second = verse
