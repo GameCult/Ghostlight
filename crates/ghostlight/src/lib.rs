@@ -144,8 +144,8 @@ pub use table::{
 };
 pub use vault::{VaultError, VaultEvidenceSource};
 pub use verse::{
-    CALL_RECORD_SCHEMA, CallRecordError, CallRecordStore, ProviderCallRecord, RecordingInferencePort,
-    ReplayInferencePort, RunField, RunId, RunStart,
+    CALL_RECORD_SCHEMA, CallRecordError, CallRecordStore, CreateVerseWorldIntent, ProviderCallRecord,
+    RecordingInferencePort, ReplayInferencePort, RunField, RunId, RunStart, VerseGenesisError,
 };
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
 

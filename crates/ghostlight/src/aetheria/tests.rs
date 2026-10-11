@@ -524,3 +524,66 @@ fn bin_and_ext_fields_aetheria_adds_at_higher_keys_are_ignored() {
         read_aetheria_catalog(FIXTURE).unwrap()
     );
 }
+
+/// A faction record re-encoded with `change` applied to its decoded cells, for
+/// shapes `serde_json` cannot spell: a non-string map key, raw invalid bytes.
+fn with_cells(key: &str, change: impl FnOnce(&mut Vec<rmpv::Value>)) -> Vec<CultCacheEnvelope> {
+    let mut rows = fixture_rows();
+    let row = row_of(&mut rows, key);
+    let rmpv::Value::Array(mut cells) =
+        rmpv::decode::read_value(&mut row.payload.as_slice()).unwrap()
+    else {
+        panic!("not positional");
+    };
+    change(&mut cells);
+    let mut payload = Vec::new();
+    rmpv::encode::write_value(&mut payload, &rmpv::Value::Array(cells)).unwrap();
+    row.payload = payload;
+    rows
+}
+
+#[test]
+fn an_allegiance_key_that_is_not_a_string_is_malformed_by_key_and_field() {
+    for key in [
+        rmpv::Value::from(5),
+        rmpv::Value::Nil,
+        rmpv::Value::Binary(b"faction-adrasteia".to_vec()),
+    ] {
+        let rows = with_cells("faction-brannoch", |cells| {
+            cells[12] = rmpv::Value::Map(vec![(key, rmpv::Value::F64(0.5))]);
+        });
+        assert_eq!(
+            read(&rows),
+            Err(CatalogReadError::MalformedRecord {
+                record: "faction-brannoch".into(),
+                field: 12
+            })
+        );
+    }
+}
+
+#[test]
+fn text_that_is_not_utf8_is_malformed_by_key_and_field() {
+    // The marker is overwritten in the encoded bytes with an invalid sequence of
+    // the same length, since a decoded string cannot hold one.
+    const MARKER: &str = "ZZZZ";
+    for field in [1usize, 3] {
+        let mut rows = with_cells("faction-brannoch", |cells| {
+            cells[field] = rmpv::Value::from(MARKER);
+        });
+        let payload = &mut row_of(&mut rows, "faction-brannoch").payload;
+        let at = payload
+            .windows(MARKER.len())
+            .position(|window| window == MARKER.as_bytes())
+            .unwrap();
+        payload[at..at + MARKER.len()].copy_from_slice(&[0xff, 0xfe, 0xfd, 0xfc]);
+        assert_eq!(
+            read(&rows),
+            Err(CatalogReadError::MalformedRecord {
+                record: "faction-brannoch".into(),
+                field: field as u8
+            }),
+            "field {field}"
+        );
+    }
+}
