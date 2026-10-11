@@ -492,64 +492,71 @@ async fn budget_exhausted_stops_before_the_clock_and_resumes() {
     assert_eq!(resumed.record.checkpoints[1].committed.len(), 2);
 }
 
-/// The answer for a committed cell does not depend on where it sits in the
-/// tick's frozen order. Here the cell that acted is the second one: the first
-/// is still in flight when the run ends, the second commits by another driver,
-/// and the resuming run reaches the committed cell last. The factions share a
-/// room, so the committed act moved the in-flight cell's scope: that cell is
-/// refused before inference (its row still reasons), while the committed cell is
-/// answered with its receipt, whatever its own scope has done since.
-#[tokio::test]
-async fn a_committed_cell_is_answered_whichever_cell_the_resume_reaches_first() {
+/// Both cells of a tick committed through another driver before any run opened
+/// it, one after the other, so each one's act has since moved the other's
+/// scope. The run that opens the tick reaches both committed rows, in whatever
+/// order it froze, and answers each with its receipt: no inference, no refusal,
+/// no second act. `reverse` flips which cell the other driver committed first,
+/// so the answer is shown not to depend on the order the cells are reached in.
+async fn resumed_after_both_cells_committed_elsewhere(reverse: bool) {
     let (_dir, verse) = Harness::fresh().await;
-    let ended = verse
-        .run_quietly_under(fault_at(0), config_of(1, 60, 2))
-        .await;
-    assert_eq!(
-        ended.record.status,
-        RunStatus::Failed {
-            reason: "inference_retryable".into()
-        }
+    let snapshot = verse.mailbox.snapshot().await.unwrap();
+    let graph = verse.mailbox.agency_graph().await.unwrap();
+    let cover = derive_cover(
+        snapshot.world_id,
+        TickIndex(0),
+        &snapshot.opportunities,
+        &graph,
+        CoverBudget {
+            cells: 2,
+            constituent_cap: 8,
+            urgency_slots: 0,
+        },
     );
-    assert_eq!(verse.acts().await, 0, "the first cell was left in flight");
-    let world = verse.mailbox.snapshot().await.unwrap().world_id;
-    let tick = verse.runs.tick(world, 0).unwrap().unwrap();
-    assert_eq!(tick.cells.len(), 2);
-
-    // The second frozen cell commits on its own.
-    let other = ScriptedPort::speaking();
+    assert_eq!(cover.cells.len(), 2);
+    let elsewhere = ScriptedPort::speaking();
     let runner = ControllerRunner::open(
         verse.mailbox.clone(),
-        other.clone(),
+        elsewhere.clone(),
         verse.work.clone(),
         models(),
     )
     .unwrap();
-    let fresh = verse.mailbox.opportunities().await.unwrap();
-    let second = refreshed(&tick.cells[1], TickIndex(0), &fresh).unwrap();
-    runner.run_cell(&second).await.unwrap();
-    assert_eq!(verse.acts().await, 1);
+    let order: Vec<&Cell> = if reverse {
+        cover.cells.iter().rev().collect()
+    } else {
+        cover.cells.iter().collect()
+    };
+    for cell in order {
+        let fresh = verse.mailbox.opportunities().await.unwrap();
+        let bound = refreshed(&FrozenCell::of(cell), TickIndex(0), &fresh).unwrap();
+        runner.run_cell(&bound).await.unwrap();
+    }
+    assert_eq!(verse.acts().await, 2);
 
     let resuming = ScriptedPort::speaking();
-    let resumed = verse
+    let ran = verse
         .run_quietly_under(resuming.clone(), config_of(1, 60, 2))
         .await;
-    assert_eq!(resumed.record.status, RunStatus::Completed);
-    let [closing] = resumed.record.checkpoints.as_slice() else {
-        panic!("the resuming run closed one tick")
+    assert_eq!(ran.record.status, RunStatus::Completed);
+    let [closing] = ran.record.checkpoints.as_slice() else {
+        panic!("the run closed one tick")
     };
     assert!(closing.closed);
-    assert_eq!(
-        closing.refusals,
-        vec![Refusal {
-            cell: 0,
-            reason: RefusalReason::ScopeMoved
-        }],
-        "{closing:?}"
-    );
-    assert_eq!(closing.committed.len(), 1, "{closing:?}");
-    assert_eq!(resuming.calls(), 0, "no provider call was spent on a moved scope");
-    assert_eq!(verse.acts().await, 1, "no act was committed twice");
+    assert!(closing.refusals.is_empty(), "{closing:?}");
+    assert_eq!(closing.committed.len(), 2, "{closing:?}");
+    assert_eq!(resuming.calls(), 0, "a committed cell was asked again");
+    assert_eq!(verse.acts().await, 2, "no act was committed twice");
+}
+
+#[tokio::test]
+async fn committed_cells_are_answered_in_the_order_the_tick_froze() {
+    resumed_after_both_cells_committed_elsewhere(false).await;
+}
+
+#[tokio::test]
+async fn committed_cells_are_answered_against_the_order_the_tick_froze() {
+    resumed_after_both_cells_committed_elsewhere(true).await;
 }
 
 #[tokio::test]

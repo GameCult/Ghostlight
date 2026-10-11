@@ -19632,4 +19632,159 @@ mod tests {
         drop(mailbox);
         task.await.unwrap();
     }
+
+    /// The same rows as the store sees them while its custody is uncertain.
+    struct UncertainStore(Arc<RecordingWorkStore>);
+
+    #[async_trait]
+    impl ControllerWorkStore for UncertainStore {
+        async fn lookup(
+            &self,
+            command_id: CommandId,
+        ) -> Result<ControllerWorkLookup, ControllerWorkStoreError> {
+            Ok(match self.0.lookup(command_id).await? {
+                ControllerWorkLookup::Confirmed(work) => ControllerWorkLookup::CustodyUncertain(work),
+                other => other,
+            })
+        }
+
+        async fn persist(
+            &self,
+            work: &ControllerWork,
+        ) -> Result<ControllerWorkWrite, ControllerWorkStoreError> {
+            self.0.persist(work).await
+        }
+
+        async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError> {
+            self.0.custody_probe().await
+        }
+
+        async fn elaboration_in_flight(
+            &self,
+        ) -> Result<Vec<(CommandId, ElaboratorSession)>, ControllerWorkStoreError> {
+            self.0.elaboration_in_flight().await
+        }
+    }
+
+    fn uncertain_runner(mailbox: &WorldMailbox, store: &Arc<RecordingWorkStore>) -> ControllerRunner {
+        let port = Arc::new(RecordingPort {
+            outputs: Mutex::new(Vec::new()),
+            persisted_before_interpreter: Arc::new(AtomicBool::new(true)),
+        });
+        ControllerRunner::open(mailbox.clone(), port, Arc::new(UncertainStore(store.clone())), models())
+            .expect("the fixture ports open")
+    }
+
+    #[tokio::test]
+    async fn a_row_read_in_uncertain_custody_is_reported_pending_for_its_own_decision_only() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+            NewController::NarrativePersona,
+            NewController::NarrativePersona,
+        ])
+        .await;
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let by_mode = |mode: ControllerMode| {
+            snapshot
+                .opportunities
+                .iter()
+                .filter(|opportunity| opportunity.controller_mode == mode)
+                .cloned()
+                .collect::<Vec<_>>()
+        };
+        let operational = by_mode(ControllerMode::OperationalAgent);
+        let narrative = by_mode(ControllerMode::NarrativePersona);
+        let mut outputs = vec![operational_speaks("The hinge is flooding.", "operational")];
+        outputs.extend(narrative_turn_outputs("Mara", "The rain has teeth tonight."));
+        let (runner, store) = grouped_runner(&mailbox, outputs);
+        let operational_command = CommandId::new();
+        let narrative_command = CommandId::new();
+        runner
+            .run_operational(operational_command, &operational[0])
+            .await
+            .unwrap();
+        runner
+            .run_narrative(narrative_command, &narrative[0])
+            .await
+            .unwrap();
+
+        let uncertain = uncertain_runner(&mailbox, &store);
+        let moved = mailbox.snapshot().await.unwrap();
+        let operational_now = fresh_opportunity(&moved, operational[0].scope.subject_id);
+        let narrative_now = fresh_opportunity(&moved, narrative[0].scope.subject_id);
+        assert_ne!(operational_now.scope_digest, operational[0].scope_digest);
+        assert_ne!(narrative_now.scope_digest, narrative[0].scope_digest);
+        let OperationalRun::Pending(pending) = uncertain
+            .run_operational(operational_command, &operational_now)
+            .await
+            .unwrap()
+        else {
+            panic!("an operational row in uncertain custody was not reported pending")
+        };
+        assert_eq!(pending.reason(), ControllerPendingReason::StoreReopenRequired);
+        let NarrativeRun::Pending(pending) = uncertain
+            .run_narrative(narrative_command, &narrative_now)
+            .await
+            .unwrap()
+        else {
+            panic!("a narrative row in uncertain custody was not reported pending")
+        };
+        assert_eq!(pending.reason(), ControllerPendingReason::StoreReopenRequired);
+
+        let other_operational = fresh_opportunity(&moved, operational[1].scope.subject_id);
+        let other_narrative = fresh_opportunity(&moved, narrative[1].scope.subject_id);
+        assert!(matches!(
+            uncertain
+                .run_operational(operational_command, &other_operational)
+                .await,
+            Err(ControllerError::OpportunityMismatch)
+        ));
+        assert!(matches!(
+            uncertain
+                .run_narrative(narrative_command, &other_narrative)
+                .await,
+            Err(ControllerError::OpportunityMismatch)
+        ));
+
+        drop((runner, uncertain));
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn a_narrative_row_in_flight_whose_scope_moved_is_refused_before_inference() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::NarrativePersona,
+        ])
+        .await;
+        // The first turn's projector call is pending; the second subject's turn
+        // commits; a further call would panic the port.
+        let mut outputs = vec![Err(InferenceFault::retryable("the provider is busy"))];
+        outputs.extend(narrative_turn_outputs("Tobin", "Then we close the span."));
+        let (runner, _store) = grouped_runner(&mailbox, outputs);
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let first = snapshot.opportunities[0].clone();
+        let second = snapshot.opportunities[1].clone();
+        let command = CommandId::new();
+        assert!(matches!(
+            runner.run_narrative(command, &first).await.unwrap(),
+            NarrativeRun::Pending(_)
+        ));
+        assert!(matches!(
+            runner.run_narrative(CommandId::new(), &second).await.unwrap(),
+            NarrativeRun::Completed(_)
+        ));
+        let moved = mailbox.snapshot().await.unwrap();
+        let fresh = fresh_opportunity(&moved, first.scope.subject_id);
+        assert_ne!(fresh.scope_digest, first.scope_digest, "the scope did not move");
+        let error = runner.run_narrative(command, &fresh).await.unwrap_err();
+        assert!(matches!(error, ControllerError::OpportunityMismatch));
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
 }
