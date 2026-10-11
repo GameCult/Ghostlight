@@ -62,6 +62,8 @@ pub enum VerseRunError {
     PortNotThisRun,
     #[error("the run's configuration is not the one its claim recorded")]
     ConfigNotThisClaim,
+    #[error("the world is not at the revision its claim was made from")]
+    WorldMovedSinceClaim,
     #[error("the cover budget is not valid: {0}")]
     Budget(#[from] CoverBudgetError),
     #[error(transparent)]
@@ -542,20 +544,28 @@ impl VerseRunStore {
             checkpoints: Vec::new(),
             status: RunStatus::Running,
         };
-        let inserted = self
-            .store
-            .lock()
-            .map_err(|_| VerseRunError::Store)?
-            .insert_entry_if_absent(run_row(&record)?)
-            .map_err(|_| VerseRunError::Store)?;
-        if !inserted {
-            return Err(VerseRunError::OutOfSequence);
-        }
+        self.insert_run(&record)?;
         Ok(RunClaim {
             world_id: record.world_id,
             sequence: record.sequence,
             token_cap,
         })
+    }
+
+    /// Writes a run record that does not exist yet. The store's own
+    /// insert-if-absent decides, so two claims of one sequence cannot both win.
+    fn insert_run(&self, record: &VerseRunRecord) -> Result<(), VerseRunError> {
+        let inserted = self
+            .store
+            .lock()
+            .map_err(|_| VerseRunError::Store)?
+            .insert_entry_if_absent(run_row(record)?)
+            .map_err(|_| VerseRunError::Store)?;
+        if inserted {
+            Ok(())
+        } else {
+            Err(VerseRunError::OutOfSequence)
+        }
     }
 
     /// Ends a claim that never ran: its record becomes `Failed { reason }`.
@@ -786,6 +796,12 @@ pub async fn run_manual(
             return Err(VerseRunError::ConfigNotThisClaim);
         }
     };
+    // The record names the revision the run started from, so the run starts
+    // from it.
+    if record.start_revision != begun.revision {
+        store.abandon(claim, "world_moved_since_claim")?;
+        return Err(VerseRunError::WorldMovedSinceClaim);
+    }
 
     let mut spent_before = port.spent();
     for completed in 0..config.ticks {
@@ -798,6 +814,7 @@ pub async fn run_manual(
             config,
             cover_budget,
             spent_before,
+            || mailbox.operator_log(),
         )
         .await;
         spent_before = port.spent();
@@ -859,7 +876,7 @@ pub(crate) fn clock_command_id(world: WorldId, ordinal: u64) -> CommandId {
 /// One tick. The report is absent only when the world or the tick document
 /// could not be read at all.
 #[allow(clippy::too_many_arguments)]
-async fn run_tick(
+async fn run_tick<ReadLog, Log>(
     mailbox: &WorldMailbox,
     runner: &ControllerRunner,
     port: &RecordingInferencePort,
@@ -868,7 +885,12 @@ async fn run_tick(
     config: &VerseRunConfig,
     cover_budget: CoverBudget,
     spent_before: u64,
-) -> (TickEnd, Option<TickReport>) {
+    read_log: ReadLog,
+) -> (TickEnd, Option<TickReport>)
+where
+    ReadLog: FnOnce() -> Log,
+    Log: Future<Output = Result<Vec<OperatorEvent>, MailboxError>>,
+{
     let read = async {
         let snapshot = mailbox.snapshot().await?;
         let ordinal = mailbox.clock_advances().await?;
@@ -942,8 +964,17 @@ async fn run_tick(
         }
     }
 
-    let closed = open.is_none();
-    if closed {
+    // The act listing is the tick's report to the operator: a tick whose log
+    // cannot be read is not closed, and the run ends there.
+    let acts = match acts_since(read_log().await, snapshot.revision) {
+        Some(acts) => acts,
+        None => {
+            open = Some(failed("operator_log_unavailable"));
+            Vec::new()
+        }
+    };
+
+    if open.is_none() {
         if mailbox
             .submit_clock(clock_command_id(world, ordinal), span)
             .await
@@ -959,16 +990,7 @@ async fn run_tick(
     }
 
     let spent = port.spent();
-    // The act listing is the tick's report to the operator: a log that cannot
-    // be read ends the run after the tick's checkpoint, closed or not.
     let checkpoint_closed = open.is_none();
-    let acts = match acts_since(mailbox.operator_log().await, snapshot.revision) {
-        Some(acts) => acts,
-        None => {
-            open = Some(failed("operator_log_unavailable"));
-            Vec::new()
-        }
-    };
     let labels = refusals
         .iter()
         .filter_map(|refusal| {
