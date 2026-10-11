@@ -1037,6 +1037,30 @@ async fn a_port_opened_for_another_run_is_refused_before_anything_is_written() {
     assert!(verse.runs.runs(world.world_id).unwrap().is_empty());
 }
 
+#[tokio::test]
+async fn an_unreadable_operator_log_is_no_tick_report() {
+    let (_dir, verse) = Harness::fresh().await;
+    verse.run_quietly(ScriptedPort::speaking(), u64::MAX, 2).await;
+    let log = verse.mailbox.operator_log().await.unwrap();
+    assert!(log.len() >= 4, "two ticks of two cells acted");
+
+    // A log that cannot be read is no tick report, whatever the revision.
+    assert!(acts_since(Err(MailboxError::Unavailable), 0).is_none());
+    assert!(acts_since(Err(MailboxError::Unavailable), u64::MAX).is_none());
+
+    // A log that can is cut at the tick's opening revision.
+    assert_eq!(acts_since(Ok(log.clone()), 0), Some(log.clone()));
+    let middle = log[1].revision;
+    let later: Vec<_> = log.iter().filter(|e| e.revision > middle).cloned().collect();
+    assert!(!later.is_empty() && later.len() < log.len());
+    assert_eq!(acts_since(Ok(log.clone()), middle), Some(later));
+    assert_eq!(
+        acts_since(Ok(log), u64::MAX),
+        Some(Vec::new()),
+        "an empty tick is a readable one"
+    );
+}
+
 fn record(world: WorldId, sequence: u64) -> VerseRunRecord {
     VerseRunRecord {
         world_id: world,

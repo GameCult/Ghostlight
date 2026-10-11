@@ -820,28 +820,43 @@ async fn run_tick(
     }
 
     let spent = port.spent();
+    // The act listing is the tick's report to the operator: a log that cannot
+    // be read ends the run after the tick's checkpoint, closed or not.
+    let checkpoint_closed = open.is_none();
+    let acts = match acts_since(mailbox.operator_log().await, snapshot.revision) {
+        Some(acts) => acts,
+        None => {
+            open = Some(failed("operator_log_unavailable"));
+            Vec::new()
+        }
+    };
     let report = TickReport {
         checkpoint: TickCheckpoint {
             tick: ordinal,
-            closed: open.is_none(),
+            closed: checkpoint_closed,
             cells: tick.cells.len() as u32,
             committed,
             refusals,
             tokens: spent.saturating_sub(spent_before),
         },
-        acts: mailbox
-            .operator_log()
-            .await
-            .map(|log| {
-                log.into_iter()
-                    .filter(|event| event.revision > snapshot.revision)
-                    .collect()
-            })
-            .unwrap_or_default(),
+        acts,
         spent,
         remaining: port.cap().saturating_sub(spent),
     };
     (open.map_or(TickEnd::Closed, TickEnd::Open), Some(report))
+}
+
+/// The acts a tick committed: the operator log's events past the tick's
+/// opening revision. A log that cannot be read is `None`, never an empty tick.
+fn acts_since(
+    log: Result<Vec<OperatorEvent>, MailboxError>,
+    since: u64,
+) -> Option<Vec<OperatorEvent>> {
+    log.ok().map(|log| {
+        log.into_iter()
+            .filter(|event| event.revision > since)
+            .collect()
+    })
 }
 
 /// The tick document for `ordinal`: the open one a run left, or a new one
