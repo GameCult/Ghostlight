@@ -435,6 +435,7 @@ async fn budget_exhausted_stops_before_the_clock_and_resumes() {
     // the tick that was open is closed by the one cell left, a command the
     // first run did not commit.
     let closing = &resumed.record.checkpoints[0];
+    eprintln!("DIAG first={:#?} resumed={:#?}", ended.record, resumed.record);
     assert_eq!(closing.cells, 1);
     assert_eq!(closing.committed.len(), 1);
     assert_ne!(closing.committed[0], reports[0].checkpoint.committed[0]);
