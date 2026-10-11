@@ -471,17 +471,16 @@ async fn budget_exhausted_stops_before_the_clock_and_resumes() {
     assert_eq!(verse.now().await, 2 * u64::from(SPAN));
     assert_eq!(second.calls(), 3, "one call finished tick 0, two ran tick 1");
     assert_eq!(verse.acts().await, 4, "no act was committed twice");
-    // Both factions still hold opportunities. The one the first run left in
-    // flight finishes; the one that already acted has had its scope moved by
-    // that act and by its neighbour's, so its cell is refused rather than run
-    // again.
+    // The frozen cells run in their frozen order: the cell that already acted
+    // answers with its original receipt and costs no call, and the one the
+    // first run left in flight finishes.
     let closing = &resumed.record.checkpoints[0];
     assert!(closing.closed);
     assert_eq!(closing.cells, 2);
-    assert_eq!(closing.committed.len(), 1);
-    assert_ne!(closing.committed[0], open.committed[0]);
-    assert_eq!(closing.refusals.len(), 1);
-    assert_eq!(closing.refusals[0].reason, RefusalReason::ScopeMoved);
+    assert_eq!(closing.committed.len(), 2, "{closing:?}");
+    assert_eq!(closing.committed[0], open.committed[0], "{closing:?}");
+    assert_ne!(closing.committed[1], open.committed[0], "{closing:?}");
+    assert!(closing.refusals.is_empty(), "{closing:?}");
     assert_eq!(resumed.record.ticks_closed(), 2);
     // The tick reports the act this run committed and not the one it found.
     assert_eq!(resumed_reports[0].acts.len(), 1);
