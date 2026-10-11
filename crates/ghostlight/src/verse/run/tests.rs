@@ -2598,8 +2598,11 @@ async fn a_grouped_cell_whose_lists_do_not_match_its_members_ends_the_run() {
 #[tokio::test]
 async fn a_call_naming_no_handle_is_printed_and_its_quiet_member_is_refused_not_declined() {
     let (_dir, verse) = Harness::fresh().await;
-    let port = ScriptedPort::new(|request| {
-        if request.contains("unattributed tool recorded as a need") {
+    let rounds = AtomicUsize::new(0);
+    let port = ScriptedPort::new(move |request| {
+        // The first inference proposes for one member and strays once; the
+        // round after it says nothing more.
+        if rounds.fetch_add(1, Ordering::SeqCst) > 0 {
             return Vec::new();
         }
         let mut events = grouped_reply(request);
