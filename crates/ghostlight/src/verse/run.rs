@@ -30,7 +30,8 @@ use crate::cover::{
     Cell, CellId, Constituent, CoverBudget, CoverBudgetError, TickIndex, derive_cover,
 };
 use crate::{
-    AgencyGraph, CommandId, DecisionOpportunity, MailboxError, OperatorEvent, RenderPath,
+    AgencyGraph, CommandId, DecisionOpportunity, KernelError, MailboxError, OperatorEvent,
+    RenderPath,
     SubjectId, SubmitReceipt, TickMinutes, WorldId, WorldMailbox, WorldSnapshot,
 };
 use chrono::Utc;
@@ -94,10 +95,12 @@ pub enum RefusalReason {
     WorldRejected,
     /// The cell's subject no longer holds an opportunity.
     OpportunityGone,
-    /// The cell's in-flight work was bound to a scope that has since moved,
-    /// so it is refused before any inference. A cell whose command already
-    /// committed does not end this way: the controller answers it with its
-    /// receipt whatever the scope has done since.
+    /// The cell's work was bound to a scope that has since moved. Work still
+    /// reasoning is refused before any inference. Work whose submission body
+    /// was persisted but never sent is submitted and refused by the world with
+    /// `ScopeChanged`. A cell whose command already committed does not end
+    /// this way: the controller answers it with its receipt whatever the scope
+    /// has done since.
     ScopeMoved,
 }
 
@@ -595,6 +598,9 @@ fn classify(error: &ControllerError) -> CellEnd {
             CellEnd::Budget
         }
         _ if error.requires_quarantine() => CellEnd::Fatal("controller_quarantined"),
+        ControllerError::World(KernelError::ScopeChanged { .. }) => {
+            CellEnd::Refused(RefusalReason::ScopeMoved)
+        }
         ControllerError::World(_) => CellEnd::Refused(RefusalReason::WorldRejected),
         ControllerError::NoOpportunity { .. } | ControllerError::AmbiguousOpportunity => {
             CellEnd::Refused(RefusalReason::OpportunityGone)

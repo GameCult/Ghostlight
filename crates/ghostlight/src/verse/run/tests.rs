@@ -979,6 +979,28 @@ fn an_error_ends_a_cell_as_the_run_must_treat_it() {
     ));
 }
 
+/// One fact, one label: the world refusing a body whose scope moved is
+/// `ScopeMoved`, the same label the controller's own refusal of in-flight work
+/// carries, and not the catch-all `WorldRejected`.
+#[tokio::test]
+async fn a_world_refusal_for_a_moved_scope_is_scope_moved() {
+    let (_dir, verse) = Harness::fresh().await;
+    let opportunity = verse.mailbox.snapshot().await.unwrap().opportunities[0].clone();
+    let moved = ControllerError::World(KernelError::ScopeChanged {
+        scope: opportunity.scope.clone(),
+        expected: opportunity.scope_digest.clone(),
+        actual: opportunity.scope_digest.clone(),
+    });
+    assert!(matches!(
+        classify(&moved),
+        CellEnd::Refused(RefusalReason::ScopeMoved)
+    ));
+    assert!(matches!(
+        classify(&ControllerError::World(KernelError::AffordanceDenied)),
+        CellEnd::Refused(RefusalReason::WorldRejected)
+    ));
+}
+
 /// A recording port over the harness's call store for `sequence` under `cap`,
 /// and a runner on it.
 fn port_and_runner(
