@@ -9,6 +9,15 @@ Phase 1 map: Imagination, session `self-2026-10-09-morning`, 2026-10-09.
 Base for every phase-1 anchor: Ghostlight `origin/main` `4fee97f`.
 Times are UTC unless marked local (UTC+2).
 
+## Cut sequence
+
+Cuts without a `cut_spec`, withdrawn 2026-10-12 under map-only-what-runs: a spec is admitted when Self is about to dispatch the cut. The live run waits on the operator's DeepSeek key. Re-map a line by a fresh Imagination pass against the Body when the frontier reaches it.
+
+- model-asleep: The play card says the storyteller is waking while Bonsai reloads, and refuses a turn with an asleep line when the. Waits on: play-faults (live run waits on the operator DeepSeek key).
+- raven-bonsai-scripts: Raven's Bonsai scripts enter gamecult-ops; the server stays up and sleeps its model on idle, the reaper is gone, and. Waits on: nothing in the mind (not queued; Ghostlight live run waits on the operator DeepSeek key).
+- deploy-main: Main deploys on Yggdrasil through Idunn, stays up, and a human plays a session end to end. Waits on: play-faults, play-surface, session-refresh, acceptance-gate, raven-bonsai-scripts, model-asleep, create-flow (blocked on the DeepSeek key and the Ghostlight live-run chain).
+- v1-retire: The retired v1 Ghostlight body leaves Yggdrasil and gamecult-ops. Waits on: nothing in the mind (not queued; Ghostlight frontier is the live run).
+
 ## Body facts (probed 2026-10-09)
 
 ### Does main run on Yggdrasil?
