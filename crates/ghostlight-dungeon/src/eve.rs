@@ -52,8 +52,8 @@ const PLAY_FAULT_LINE: &str =
     "The storyteller lost the thread and your turn ended. Write again to start a new turn.";
 
 /// What the Begin button captures from the owner: the three fields the form
-/// asks for. The rest of `world_create.v4` rides the button's own action as
-/// authored constants (`begin_action`).
+/// asks for, and all `world_begin.v1` carries. Every other choice a world is
+/// born with is the route's (`runtime::begin_intent`), not the surface's.
 const BEGIN_BINDINGS: [&str; 3] = ["title", "brief", "subject_label"];
 
 const SEED_BINDINGS: [&str; 2] = ["vault_scope", "brief"];
@@ -201,20 +201,6 @@ fn jurisdiction_label(world: &WorldSnapshot, jurisdiction: JurisdictionKey) -> S
     }
 }
 
-/// The `world_create.v4` fields the Begin form does not ask for, stated
-/// explicitly: no scale targets, no jurisdiction roots, no persona or agent
-/// label, and Dungeon's uniform lens policy (the library holds no default
-/// weights). They travel as the button's own action, which the lowering
-/// spreads into the payload beside the captured `bindings`.
-fn begin_action() -> anyhow::Result<Value> {
-    Ok(json!({
-        "targets":"{}",
-        "jurisdictions":"[]",
-        "lens_weights":serde_json::to_string(&crate::runtime::uniform_lens_weights())
-            .context("the default lens weights encode")?
-    }))
-}
-
 /// `play` arrives beside the snapshot rather than inside it: `WorldSnapshot`
 /// carries no play-turn state of its own. The play card below reads `play`
 /// alone, never the operator's own unscoped log of every committed event:
@@ -281,13 +267,13 @@ pub(crate) fn authenticated_surface(
                     "world.begin",
                     "Begin",
                     "world.begin",
-                    begin_action()?,
+                    json!({}),
                     &BEGIN_BINDINGS,
                 ),
             ]);
             commands.push(command_descriptor(
                 "world.begin",
-                "ghostlight.world_create.v4",
+                "ghostlight.world_begin.v1",
                 &BEGIN_BINDINGS,
                 "WorldMailbox",
             ));
@@ -560,7 +546,7 @@ pub(crate) fn authenticated_surface(
                             json!({
                                 "id":"world.play.text",
                                 "kind":"control.input.textarea",
-                                // PA.f214: an authored `value`, as `world.create.brief` above:
+                                // PA.f214: an authored `value`, as `world.begin.brief` above:
                                 // the lowering only captures a `value`, so a box left
                                 // untouched must still submit `text: ""`, which continues
                                 // an existing Running turn (the running hint tells players
@@ -660,8 +646,7 @@ pub(crate) fn operation_schema(operation: &str) -> Option<&'static str> {
         "heimdall.auth.begin" => "heimdall.auth_begin_command.v1",
         "heimdall.auth.complete" => "heimdall.auth_complete_command.v1",
         "app.auth.logout" => "ghostlight.app_logout.v2",
-        "world.create" => "ghostlight.world_create.v4",
-        "world.begin" => "ghostlight.world_create.v4",
+        "world.begin" => "ghostlight.world_begin.v1",
         "world.approve" => "ghostlight.world_approve.v0",
         "world.activate" => "ghostlight.world_activate.v0",
         "world.advance_time" => "ghostlight.world_advance_time.v0",
@@ -881,9 +866,10 @@ mod tests {
     }
 
     /// R2 at the surface: the empty world asks for a title, a name and an
-    /// optional brief, and offers one command, Begin. The fields the form no
-    /// longer asks for are authored constants on the button, and the
-    /// descriptor captures only what the form asks.
+    /// optional brief, and offers one command, Begin. The button carries no
+    /// authored choice of its own: what a world is born with beyond those
+    /// three fields is the route's, and the descriptor captures only what the
+    /// form asks.
     #[test]
     fn the_empty_world_surface_asks_for_a_title_a_name_and_offers_one_begin() {
         let surface = authenticated_surface("sha256:owner", None, None, true).unwrap();
@@ -893,6 +879,8 @@ mod tests {
             "narrative_persona",
             "operational_agent",
             "world.create",
+            "lens_weights",
+            "jurisdictions",
             "session_zero",
             "campaign",
         ] {
@@ -926,21 +914,44 @@ mod tests {
             .collect();
         assert_eq!(commands.len(), 1, "{commands:?}");
         assert_eq!(commands[0]["command"], "world.begin");
-        assert_eq!(commands[0]["payloadSchema"], "ghostlight.world_create.v4");
+        assert_eq!(commands[0]["payloadSchema"], "ghostlight.world_begin.v1");
+        assert_eq!(commands[0]["authority"], "WorldMailbox");
         assert_eq!(commands[0]["captureBindings"], json!(["title", "brief", "subject_label"]));
 
-        // The constants are explicit, and the lens weights are Dungeon's
-        // uniform policy, every stock lens named.
         let button = find(root, "world.begin").expect("a Begin button");
         assert_eq!(button["props"]["label"], "Begin");
-        let action = &button["props"]["action"];
-        assert_eq!(action["targets"], "{}");
-        assert_eq!(action["jurisdictions"], "[]");
-        let decoded: ghostlight::LensWeights =
-            serde_json::from_str(action["lens_weights"].as_str().expect("lens weights text")).unwrap();
-        assert_eq!(decoded, crate::runtime::uniform_lens_weights());
-        assert_eq!(decoded.iter().count(), ghostlight::Lens::ALL.len());
-        assert!(decoded.iter().all(|(_, weight)| weight == 1));
+        assert_eq!(
+            button["props"]["action"],
+            json!({"command":"world.begin"}),
+            "the Begin button authors nothing beyond its command"
+        );
+    }
+
+    /// Each control feeds the field it is named for: typing into a control
+    /// puts the text under the binding that control declares, and the Begin
+    /// button captures exactly the bindings the three controls declare. A
+    /// control bound to another control's field would submit no name (or
+    /// overwrite the title) in a real client.
+    #[test]
+    fn each_begin_control_is_bound_to_its_own_field_and_the_button_captures_them_all() {
+        let surface = authenticated_surface("sha256:owner", None, None, false).unwrap();
+        let root = &surface["surface"]["root"];
+        let bound = |id: &str| -> String {
+            let bindings = find(root, id).unwrap()["stateBindings"].as_array().unwrap().clone();
+            assert_eq!(bindings.len(), 1, "{id}");
+            bindings[0]["bindingName"].as_str().unwrap().to_owned()
+        };
+        assert_eq!(bound("world.begin.title"), "title");
+        assert_eq!(bound("world.begin.subject"), "subject_label");
+        assert_eq!(bound("world.begin.brief"), "brief");
+        let mut captured: Vec<String> = find(root, "world.begin").unwrap()["props"]["captureBindings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|name| name.as_str().unwrap().to_owned())
+            .collect();
+        captured.sort();
+        assert_eq!(captured, ["brief", "subject_label", "title"]);
     }
 
     /// `world.play`'s own operation id resolves to its schema through

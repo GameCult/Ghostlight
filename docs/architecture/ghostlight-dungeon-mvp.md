@@ -624,10 +624,11 @@ lane still uses. The real-model gate that exists today is the Idunn recipe's
 runs `controllers::tests::real_local_model_cognition_modes_commit_speech`
 against a real model; exercising a whole play turn against one is not gated
 by this contract.
-`world.create`'s current payload is `world_create.v4`: title, brief, targets,
-jurisdiction roots and lens weights are required. Dungeon's Begin button states
-them as authored constants (no targets, no roots, uniform weights) beside the
-three fields the form asks for. `world.seed` runs one
+`world.begin` is the one route that makes a world. Its payload is
+`world_begin.v1`: title, brief and subject_label, nothing else; the route
+decides everything else a world is born with (no targets, no roots, no persona
+or agent label, uniform lens weights) and `begin_plan` decides how far Begin
+goes. `world.seed` runs one
 `SeedRunner` session per invocation against a `VaultEvidenceSource`.
 
 Focused tests must prove:

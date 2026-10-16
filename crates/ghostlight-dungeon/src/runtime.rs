@@ -14,7 +14,7 @@ use crate::{
 use ghostlight::{
     CONSUMER_BODY_LIMIT, CommandBody, CommandId, ConnectorBinding, ConsumerPort,
     ConsumerRegistry, ControllerError, ControllerModels, ControllerPort, ControllerRunner, ControllerWorkCustody,
-    CreateJurisdictionIntent, CreateWorldIntent, CreationReceipt, DEFAULT_LOCAL_MODEL_PREFIX,
+    CreateWorldIntent, DEFAULT_LOCAL_MODEL_PREFIX,
     DEFAULT_SDK_MODEL_PREFIX, KernelError, Lens,
     LensWeights, LocalBinding, MailboxError, PersonaLane, PrincipalCommandIntent, PrincipalId,
     SdkBinding, SeedOutcome, SeedPort, SubjectKind, SubmitReceipt, TickMinutes,
@@ -108,36 +108,19 @@ struct ProductionAdmission {
     write_lease: ProcessWriteLeaseGuard,
 }
 
+/// What the owner states to begin a world: three fields, nothing else. Every
+/// other choice a world is born with (no scale targets, no jurisdiction roots,
+/// no persona or agent label, uniform lens weights) is decided in
+/// `begin_intent`, so a client cannot author them and the surface does not
+/// carry them.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct CreatePayload {
+struct BeginPayload {
     title: String,
     /// The world's premise in the owner's words, projected to every lane as
-    /// guidance. Required, may be empty; a payload that omits it is refused,
-    /// which is what `world_create.v4` means.
+    /// guidance. Required, may be empty.
     brief: String,
     subject_label: String,
-    #[serde(default)]
-    narrative_persona_label: Option<String>,
-    #[serde(default)]
-    operational_agent_label: Option<String>,
-    /// World-wide target of goal-bearing subjects per kind. Required, and may
-    /// be empty: a world with no target is a deliberate choice, not a default
-    /// that arrives because nobody said anything. A payload that omits it is
-    /// refused, which is what `world_create.v4` means.
-    #[serde(deserialize_with = "deserialize_json_capture")]
-    targets: BTreeMap<SubjectKind, u32>,
-    /// The jurisdiction roots, declared by genesis beside the commons because
-    /// `resolve_patch` only resolves roots the same patch declares. A duplicate
-    /// handle and a permille sum over 1000 are refused by the resolver, not
-    /// pre-checked here: a pre-check would be a second reducer.
-    #[serde(deserialize_with = "deserialize_json_capture")]
-    jurisdictions: Vec<CreateJurisdiction>,
-    /// Required, and must draw: a payload that omits it is refused, which is
-    /// what `world_create.v4` means. An unknown lens name is refused by
-    /// deserialization before any handler runs.
-    #[serde(deserialize_with = "deserialize_json_capture")]
-    lens_weights: LensWeights,
 }
 
 /// Cut 10 (PA.f149): the vendored Eve browser lowering's own
@@ -217,35 +200,6 @@ fn unwrap_bindings(payload: &Value) -> Result<Value, String> {
     Ok(Value::Object(merged))
 }
 
-/// Cut 10 (PA.f149): every one of these three fields is edited in a plain
-/// `control.input.textarea` — the vendored Eve browser lowering has no
-/// JSON-typed control — so a real client always captures the field as the
-/// JS string the textarea holds (Dungeon's own `eve::local_draft` calls
-/// these fields' `valueKind` `"string"` for exactly this reason), never a
-/// parsed object or array. A hand-built payload (existing tests) may still
-/// supply the already-parsed value directly. This accepts either: a JSON
-/// string is parsed as JSON text; anything else is deserialized as the typed
-/// value directly.
-fn deserialize_json_capture<'de, D, T>(deserializer: D) -> Result<T, D::Error>
-where
-    D: serde::Deserializer<'de>,
-    T: serde::de::DeserializeOwned,
-{
-    match Value::deserialize(deserializer)? {
-        Value::String(text) => serde_json::from_str(&text).map_err(serde::de::Error::custom),
-        other => serde_json::from_value(other).map_err(serde::de::Error::custom),
-    }
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct CreateJurisdiction {
-    /// The draft handle genesis declares the root under, and the intent's key.
-    handle: String,
-    label: String,
-    permille: u32,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct SeedPayload {
@@ -260,16 +214,6 @@ struct SeedPayload {
     /// and into the Vault query as a referent.
     #[serde(default)]
     brief: Option<String>,
-}
-
-/// The shape a jurisdiction handle may take. Checked at ingress because the
-/// handle becomes a draft-index key the model reads back in mismatches, and a
-/// handle carrying whitespace or case would make that text unusable.
-fn is_handle_shape(value: &str) -> bool {
-    let mut chars = value.chars();
-    value.len() <= 48
-        && chars.next().is_some_and(|first| first.is_ascii_lowercase())
-        && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '-')
 }
 
 /// `world.play`'s own payload. Cut 10 (PA.f151) deleted the client-supplied
@@ -1260,121 +1204,125 @@ fn answer_token_admits(given: Option<&str>, expected: Option<&str>) -> bool {
     matches!((given, expected), (Some(given), Some(expected)) if given == expected)
 }
 
-/// `world.create`'s whole effect: genesis for the payload as stated. The one
-/// create path, shared by the `world.create` command and the first step of
-/// `world.begin`.
-async fn create_world(
-    state: &AppState,
-    verified_principal: &VerifiedPrincipalEvidence,
-    command_id: CommandId,
-    payload: CreatePayload,
-) -> Result<CreationReceipt, RuntimeCommandError> {
-    if payload
-        .jurisdictions
-        .iter()
-        .any(|root| !is_handle_shape(&root.handle))
-    {
-        return Err(RuntimeCommandError::Payload(
-            "a jurisdiction handle is not a draft handle".into(),
-        ));
-    }
-    state
-        .world
-        .create(
-            CreateWorldIntent {
-                id: command_id,
-                title: payload.title,
-                brief: payload.brief,
-                human_subject_label: payload.subject_label,
-                narrative_persona_label: payload.narrative_persona_label.filter(|label| !label.trim().is_empty()),
-                operational_agent_label: payload.operational_agent_label.filter(|label| !label.trim().is_empty()),
-                targets: payload.targets,
-                jurisdictions: payload
-                    .jurisdictions
-                    .into_iter()
-                    .map(|root| CreateJurisdictionIntent {
-                        handle: root.handle,
-                        label: root.label,
-                        permille: root.permille,
-                    })
-                    .collect(),
-                lens_weights: payload.lens_weights,
-            },
-            verified_principal,
-        )
-        .await
-        .map_err(map_mailbox)
+/// What Begin does after the create, and nothing else decides it: the kernel
+/// commands it submits in order, each as its own command. The kernel judges
+/// each one; the sequence stops at the first refusal. Where a seed vault is
+/// configured the sequence ends at the approved Draft, because seeding is the
+/// owner's Draft-only lane and Begin must not close it by activating; the
+/// card then offers the seed controls and Activate.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum BeginStep {
+    Approve,
+    Activate,
 }
 
-fn created_receipt(receipt: &CreationReceipt) -> Value {
-    json!({
-        "kind":"created",
-        "commandId":serde_json::to_value(receipt.command_id).unwrap_or(Value::Null),
-        "worldId":serde_json::to_value(receipt.world_id).unwrap_or(Value::Null),
-        "stateDigest":receipt.resulting_state_digest,
-        "commitDigest":receipt.commit_digest
-    })
+impl BeginStep {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Approve => "approve",
+            Self::Activate => "activate",
+        }
+    }
+
+    fn reached(self) -> &'static str {
+        match self {
+            Self::Approve => "approved",
+            Self::Activate => "activated",
+        }
+    }
+
+    fn body(self) -> CommandBody {
+        match self {
+            Self::Approve => CommandBody::ApproveDraft,
+            Self::Activate => CommandBody::ActivateWorld,
+        }
+    }
+}
+
+fn begin_plan(seed_available: bool) -> &'static [BeginStep] {
+    if seed_available {
+        &[BeginStep::Approve]
+    } else {
+        &[BeginStep::Approve, BeginStep::Activate]
+    }
+}
+
+/// The world a Begin creates: the owner's three fields and the defaults this
+/// route owns (no scale targets, no jurisdiction roots, no persona or agent
+/// label, Dungeon's uniform lens policy).
+fn begin_intent(id: CommandId, payload: BeginPayload) -> CreateWorldIntent {
+    CreateWorldIntent {
+        id,
+        title: payload.title,
+        brief: payload.brief,
+        human_subject_label: payload.subject_label,
+        narrative_persona_label: None,
+        operational_agent_label: None,
+        targets: BTreeMap::new(),
+        jurisdictions: Vec::new(),
+        lens_weights: uniform_lens_weights(),
+    }
 }
 
 /// The id of one of the kernel commands a Begin submits after its create:
 /// derived from the Begin's own key and the step's name, so a replayed Begin
 /// replays each of its commands through the kernel's own idempotency ledger
 /// instead of submitting new ones.
-fn begin_step_id(begin_key: &str, step: &str) -> Result<CommandId, KernelError> {
+fn begin_step_id(begin_key: &str, step: BeginStep) -> Result<CommandId, KernelError> {
     let key = uuid::Uuid::parse_str(begin_key).map_err(|_| KernelError::InvalidCommandId)?;
     let digest = Sha256::new()
         .chain_update(b"ghostlight.world.begin.v1")
         .chain_update(key.as_bytes())
-        .chain_update(step.as_bytes())
+        .chain_update(step.name().as_bytes())
         .finalize();
     let mut bytes = [0_u8; 16];
     bytes.copy_from_slice(&digest[..16]);
     CommandId::parse_uuid(&uuid::Uuid::from_bytes(bytes).to_string())
 }
 
-/// `world.begin`: the owner's one click. The surface sequences, the kernel
-/// decides: create, approve and activate reach it as three separate commands,
-/// each admitted or refused on its own, and the sequence stops at the first
-/// refusal. What the kernel committed before it stays committed, and the
-/// card then offers the next step's own button. When the owner is not the
-/// world's only required approver the kernel refuses the activate step.
+/// `world.begin`, the one way a world is made: the owner's one click. The
+/// surface sequences, the kernel decides: create and the steps of
+/// `begin_plan` reach it as separate commands, each admitted or refused on
+/// its own, and the sequence stops at the first refusal. What the kernel
+/// committed before it stays committed, and the card then offers the next
+/// step's own button. When the owner is not the world's only required
+/// approver the kernel refuses the activate step.
 async fn begin_world(
     state: &AppState,
     verified_principal: &VerifiedPrincipalEvidence,
     begin_key: &str,
     command_id: CommandId,
-    payload: CreatePayload,
+    payload: BeginPayload,
 ) -> Result<Value, RuntimeCommandError> {
-    let created = create_world(state, verified_principal, command_id, payload)
+    let created = state
+        .world
+        .create(begin_intent(command_id, payload), verified_principal)
         .await
-        .map_err(|error| stopped_at("create", error))?;
+        .map_err(|error| stopped_at("create", map_mailbox(error)))?;
     let mut reached = "created";
-    for (step, body, done) in [
-        ("approve", CommandBody::ApproveDraft, "approved"),
-        ("activate", CommandBody::ActivateWorld, "activated"),
-    ] {
+    for &step in begin_plan(state.seed_vault_root.is_some()) {
         let snapshot = current_world(state)
             .await
             .ok()
             .flatten()
             .ok_or(RuntimeCommandError::BeginStopped {
-                step,
+                step: step.name(),
                 cause: "the world could not be read".into(),
             })?;
         state
             .world
             .submit_principal(
                 PrincipalCommandIntent {
-                    id: begin_step_id(begin_key, step).map_err(|error| stopped_at(step, error.into()))?,
+                    id: begin_step_id(begin_key, step).map_err(|error| stopped_at(step.name(), error.into()))?,
                     world_id: created.world_id,
                     expected_revision: snapshot.revision,
-                    body,
+                    body: step.body(),
                 },
                 verified_principal,
             )
             .await
-            .map_err(|error| stopped_at(step, map_mailbox(error)))?;
-        reached = done;
+            .map_err(|error| stopped_at(step.name(), map_mailbox(error)))?;
+        reached = step.reached();
     }
     Ok(json!({
         "kind":"begun",
@@ -1409,21 +1357,14 @@ async fn execute_world(
             .as_deref()
             .unwrap_or(""),
     )?;
-    if invocation.operation.operation_id == "world.create" {
-        let payload: CreatePayload = serde_json::from_value(unwrap_bindings(&invocation.payload).map_err(RuntimeCommandError::Payload)?)
-            .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
-        let receipt = create_world(state, verified_principal, command_id, payload).await?;
-        return Ok(created_receipt(&receipt));
-    }
     if invocation.operation.operation_id == "world.begin" {
-        // The same `world_create.v4` payload as `world.create`. The detail of a
-        // refused payload is not echoed: this route's fields are what the
-        // owner typed.
-        let payload: CreatePayload = unwrap_bindings(&invocation.payload)
+        // The detail of a refused payload is not echoed: this route's fields
+        // are what the owner typed.
+        let payload: BeginPayload = unwrap_bindings(&invocation.payload)
             .ok()
             .and_then(|flat| serde_json::from_value(flat).ok())
             .ok_or_else(|| {
-                RuntimeCommandError::Payload("the begin payload does not satisfy world_create.v4".into())
+                RuntimeCommandError::Payload("the begin payload does not satisfy world_begin.v1".into())
             })?;
         let key = invocation.operation.idempotency_key.as_deref().unwrap_or("");
         return begin_world(state, verified_principal, key, command_id, payload).await;
@@ -2404,7 +2345,7 @@ mod tests {
         GameCultRuntimePresenceHealthRecord, RuntimePresenceAuthenticationContext,
         authenticate_runtime_presence_claim,
     };
-    use ghostlight::{InferenceFault, InferencePurpose};
+    use ghostlight::{CreateJurisdictionIntent, CreationReceipt, InferenceFault, InferencePurpose};
     use tower::ServiceExt;
 
     /// A fake clock so the retry-until-deadline policy is provable without
@@ -4158,11 +4099,9 @@ mod tests {
         // rather than omitting the fields outright.
         let bindings = &intent["payload"]["bindings"];
         assert_eq!(bindings["brief"], "");
-        // The fields the form does not ask for ride the button's own action,
-        // beside `bindings`, not through it.
-        assert_eq!(intent["payload"]["targets"], "{}");
-        assert_eq!(intent["payload"]["jurisdictions"], "[]");
-        assert!(intent["payload"]["lens_weights"].is_string());
+        // The button authors nothing beside `bindings`: the route owns every
+        // other choice a world is born with.
+        assert_eq!(intent["payload"].as_object().unwrap().keys().collect::<Vec<_>>(), ["bindings"]);
 
         let created = post(&fixture.state, &fixture.cookie, intent).await;
         assert_eq!(
@@ -4187,26 +4126,7 @@ mod tests {
     #[tokio::test]
     async fn a_payload_with_an_unrecognized_sibling_field_beside_bindings_is_refused() {
         let fixture = fixture().await;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"Sibling Field World",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted");
+        draft_world(&fixture.state, &fixture.cookie, "Sibling Field World").await;
 
         let denied = post(
             &fixture.state,
@@ -4242,26 +4162,7 @@ mod tests {
     #[tokio::test]
     async fn a_payload_naming_the_same_field_in_bindings_and_as_a_sibling_is_refused() {
         let fixture = fixture().await;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"Colliding Field World",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted");
+        draft_world(&fixture.state, &fixture.cookie, "Colliding Field World").await;
         let approved = post(
             &fixture.state,
             &fixture.cookie,
@@ -4299,27 +4200,7 @@ mod tests {
     #[tokio::test]
     async fn http_eve_journey_uses_one_world_owner() {
         let fixture = fixture().await;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"Cutover World",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted");
-        assert_eq!(created["receipt"]["sourceVersion"], 1);
+        draft_world(&fixture.state, &fixture.cookie, "Cutover World").await;
 
         let approved = post(
             &fixture.state,
@@ -4403,26 +4284,7 @@ mod tests {
     #[tokio::test]
     async fn world_play_reaches_the_play_table_and_is_accepted() {
         let fixture = fixture().await;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"Play Routing World",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted");
+        draft_world(&fixture.state, &fixture.cookie, "Play Routing World").await;
 
         let played = post(
             &fixture.state,
@@ -4470,26 +4332,7 @@ mod tests {
     #[tokio::test]
     async fn a_play_commit_does_not_poison_the_next_world_commands_compare_and_swap() {
         let fixture = fixture().await;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"CAS World",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted");
+        draft_world(&fixture.state, &fixture.cookie, "CAS World").await;
         let approved = post(
             &fixture.state,
             &fixture.cookie,
@@ -4556,74 +4399,9 @@ mod tests {
         );
     }
 
-    /// The create/approve/activate boilerplate every scripted-question
-    /// harness below needs, factored out so `play_world_with_a_scripted_question`
-    /// and `play_world_with_two_scripted_questions` (Cut 13) do not each
-    /// repeat it. Returns the fixture and the world's `sourceVersion` after
-    /// activation.
-    /// A cleared optional label means none. The form's persona and agent boxes
-    /// have no authored value, so a player who typed a name and deleted it
-    /// sends "" (or spaces); the route reads that as no persona and no agent,
-    /// not as a world with an empty-named one the kernel then refuses.
-    ///
-    /// Mutation: pass `payload.narrative_persona_label` and
-    /// `payload.operational_agent_label` through `create` unfiltered.
-    #[tokio::test]
-    async fn cleared_optional_labels_create_a_world_with_no_persona_and_no_agent() {
-        let fixture = fixture().await;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"Cleared Labels",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "narrative_persona_label":"",
-                    "operational_agent_label":"  ",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted", "{created}");
-        let snapshot = fixture.state.world.snapshot().await.unwrap();
-        assert_eq!(
-            snapshot.subjects.len(),
-            1,
-            "a cleared label declared a persona or agent: {} subjects",
-            snapshot.subjects.len()
-        );
-    }
-
     async fn activated_fixture(title: &str) -> (Fixture, u64) {
         let fixture = fixture().await;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":title,
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted");
+        draft_world(&fixture.state, &fixture.cookie, title).await;
         let approved = post(
             &fixture.state,
             &fixture.cookie,
@@ -5346,26 +5124,7 @@ mod tests {
     #[tokio::test]
     async fn a_play_row_only_change_wakes_the_revisions_channel() {
         let fixture = fixture().await;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"Wake World",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted");
+        draft_world(&fixture.state, &fixture.cookie, "Wake World").await;
         let approved = post(
             &fixture.state,
             &fixture.cookie,
@@ -5472,26 +5231,7 @@ mod tests {
     #[tokio::test]
     async fn an_admission_refusal_reaches_the_caller_as_denied_not_accepted() {
         let fixture = fixture().await;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"Admission World",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted");
+        draft_world(&fixture.state, &fixture.cookie, "Admission World").await;
         let approved = post(
             &fixture.state,
             &fixture.cookie,
@@ -5537,26 +5277,7 @@ mod tests {
     #[tokio::test]
     async fn world_play_is_owner_gated_on_the_surface_and_the_route() {
         let fixture = fixture().await;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"Owner-Gated World",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted");
+        draft_world(&fixture.state, &fixture.cookie, "Owner-Gated World").await;
         let approved = post(
             &fixture.state,
             &fixture.cookie,
@@ -5618,26 +5339,7 @@ mod tests {
     async fn world_play_without_a_play_table_is_denied() {
         let mut fixture = fixture().await;
         fixture.state.play = None;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"No Play World",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted");
+        draft_world(&fixture.state, &fixture.cookie, "No Play World").await;
 
         let played = post(
             &fixture.state,
@@ -5674,26 +5376,7 @@ mod tests {
     #[tokio::test]
     async fn world_play_without_an_idempotency_key_is_refused_not_defaulted() {
         let fixture = fixture().await;
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"No Key World",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted");
+        draft_world(&fixture.state, &fixture.cookie, "No Key World").await;
 
         let mut keyless: EveCommandInvocation = serde_json::from_value(invocation(
             "world.play",
@@ -5722,8 +5405,8 @@ mod tests {
     // ---- World.begin ----------------------------------------------------
 
     /// The payload the real client builds from the served Begin button, with
-    /// the three fields typed. Every authored constant comes from the surface
-    /// this process served, never from a copy in the test.
+    /// the three fields typed. Every input comes from the surface this process
+    /// served, never from a copy in the test.
     fn begin_payload_from(surface: &Value, title: &str, brief: &str, subject: &str) -> Value {
         untouched_intent(
             surface,
@@ -5733,8 +5416,29 @@ mod tests {
             .clone()
     }
 
+    /// What a client sends when the player types into the controls named by
+    /// id: each text lands under the binding that control declares on the
+    /// served surface. A control bound to the wrong field shows up here.
+    fn begin_payload_typed_into_controls(surface: &Value, typed: &[(&str, &str)]) -> Value {
+        fn control<'a>(node: &'a Value, id: &str) -> Option<&'a Value> {
+            if node["id"] == id {
+                return Some(node);
+            }
+            node["children"].as_array().into_iter().flatten().find_map(|child| control(child, id))
+        }
+        let by_binding: Vec<(String, Value)> = typed
+            .iter()
+            .map(|(id, text)| {
+                let node = control(&surface["surface"]["root"], id).unwrap_or_else(|| panic!("no control {id}"));
+                (node["stateBindings"][0]["bindingName"].as_str().unwrap().to_owned(), json!(text))
+            })
+            .collect();
+        let pairs: Vec<(&str, Value)> = by_binding.iter().map(|(name, value)| (name.as_str(), value.clone())).collect();
+        untouched_intent(surface, "world.begin", &pairs)["payload"].clone()
+    }
+
     fn begin_invocation(payload: Value, key: &str) -> Value {
-        invocation("world.begin", "ghostlight.world_create.v4", 0, payload, key)
+        invocation("world.begin", "ghostlight.world_begin.v1", 0, payload, key)
     }
 
     async fn served_surface(fixture: &Fixture) -> Value {
@@ -5752,6 +5456,10 @@ mod tests {
             .unwrap()
     }
 
+    fn typed_begin(title: &str, brief: &str, subject: &str) -> BeginPayload {
+        BeginPayload { title: title.into(), brief: brief.into(), subject_label: subject.into() }
+    }
+
     /// R1 and R2: one Begin reaches an Active world, and the kernel received
     /// three separate commands, each admitted on its own. The ledger is the
     /// witness: each step's own id replays as already applied at its own
@@ -5765,7 +5473,7 @@ mod tests {
         let fixture = fixture().await;
         let key = uuid::Uuid::new_v4().to_string();
         let payload = begin_payload_from(&served_surface(&fixture).await, "Begun World", "A premise.", "The Owner");
-        let begun = post(&fixture.state, &fixture.cookie, begin_invocation(payload.clone(), &key)).await;
+        let begun = post(&fixture.state, &fixture.cookie, begin_invocation(payload, &key)).await;
         assert_eq!(begun["receipt"]["state"], "accepted", "{begun}");
         assert_eq!(begun["receipt"]["kind"], "begun");
         assert_eq!(begun["receipt"]["reached"], "activated");
@@ -5775,10 +5483,7 @@ mod tests {
         assert_eq!(world.revision, 2, "genesis, approval and activation are three commits");
 
         let principal = owner_principal(&fixture).await;
-        for (step, body, revision) in [
-            ("approve", CommandBody::ApproveDraft, 1),
-            ("activate", CommandBody::ActivateWorld, 2),
-        ] {
+        for (step, revision) in [(BeginStep::Approve, 1), (BeginStep::Activate, 2)] {
             let replay = fixture
                 .state
                 .world
@@ -5787,25 +5492,60 @@ mod tests {
                         id: begin_step_id(&key, step).unwrap(),
                         world_id: world.world_id,
                         expected_revision: world.revision,
-                        body,
+                        body: step.body(),
                     },
                     &principal,
                 )
                 .await
                 .unwrap();
             match replay {
-                SubmitReceipt::AlreadyApplied(receipt) => assert_eq!(receipt.resulting_revision, revision, "{step}"),
-                SubmitReceipt::Applied(_) => panic!("the {step} step was not already in the ledger"),
+                SubmitReceipt::AlreadyApplied(receipt) => assert_eq!(receipt.resulting_revision, revision, "{}", step.name()),
+                SubmitReceipt::Applied(_) => panic!("the {} step was not already in the ledger", step.name()),
             }
         }
         // The create is the command under the Begin's own key.
-        let create_replay = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation("world.create", "ghostlight.world_create.v4", 0, payload, &key),
-        )
-        .await;
-        assert_eq!(create_replay["receipt"]["commitDigest"], begun["receipt"]["commitDigest"]);
+        let create_replay = fixture
+            .state
+            .world
+            .create(
+                begin_intent(CommandId::parse_uuid(&key).unwrap(), typed_begin("Begun World", "A premise.", "The Owner")),
+                &principal,
+            )
+            .await
+            .unwrap();
+        assert_eq!(create_replay.commit_digest, begun["receipt"]["commitDigest"].as_str().unwrap());
+    }
+
+    /// The commands a Begin submits after its create have ids that are a
+    /// function of the Begin's whole key and the step's name: two keys that
+    /// differ only late in the string, or one key's two steps, never share an
+    /// id.
+    ///
+    /// Mutations: hash only a prefix of the key; hash no step name.
+    #[test]
+    fn begin_step_ids_depend_on_the_whole_key_and_the_step() {
+        let key = "123e4567-e89b-12d3-a456-426614174000";
+        let late = "123e4567-e89b-12d3-a456-426614174001";
+        assert_ne!(begin_step_id(key, BeginStep::Approve).unwrap(), begin_step_id(late, BeginStep::Approve).unwrap());
+        assert_ne!(begin_step_id(key, BeginStep::Approve).unwrap(), begin_step_id(key, BeginStep::Activate).unwrap());
+        assert_eq!(begin_step_id(key, BeginStep::Approve).unwrap(), begin_step_id(key, BeginStep::Approve).unwrap());
+        assert_ne!(begin_step_id(key, BeginStep::Approve).unwrap(), CommandId::parse_uuid(key).unwrap());
+    }
+
+    /// A refusal at a step names that step, and an undecided outcome is never
+    /// read as a refusal: the owner must not be told to retry a Begin that may
+    /// have committed.
+    ///
+    /// Mutation: map every error, the unknown outcome included, to
+    /// `BeginStopped`.
+    #[test]
+    fn a_stopped_step_names_itself_and_an_unknown_outcome_stays_unknown() {
+        match stopped_at("approve", RuntimeCommandError::OutcomeUnknown("cmd".into())) {
+            RuntimeCommandError::OutcomeUnknown(detail) => assert_eq!(detail, "approve: cmd"),
+            other => panic!("an unknown outcome was read as {other}"),
+        }
+        let refused = stopped_at("activate", RuntimeCommandError::Payload("no".into())).to_string();
+        assert!(refused.starts_with("the begin stopped at its activate step"), "{refused}");
     }
 
     /// A replayed Begin (the same key) replays its commands through the
@@ -5820,6 +5560,7 @@ mod tests {
         let second = post(&fixture.state, &fixture.cookie, begin_invocation(payload, &key)).await;
         assert_eq!(second["receipt"]["state"], "accepted", "{second}");
         assert_eq!(second["receipt"]["reached"], "activated");
+        assert_eq!(first["receipt"]["commitDigest"], second["receipt"]["commitDigest"]);
         assert_eq!(current_world(&fixture.state).await.unwrap().unwrap().revision, 2);
     }
 
@@ -5836,14 +5577,16 @@ mod tests {
         let fixture = fixture().await;
         let key = uuid::Uuid::new_v4().to_string();
         let payload = begin_payload_from(&served_surface(&fixture).await, "Stopped World", "", "The Owner");
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation("world.create", "ghostlight.world_create.v4", 0, payload.clone(), &key),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted", "{created}");
-        let draft = current_world(&fixture.state).await.unwrap().unwrap();
+        let principal = owner_principal(&fixture).await;
+        let draft = fixture
+            .state
+            .world
+            .create(
+                begin_intent(CommandId::parse_uuid(&key).unwrap(), typed_begin("Stopped World", "", "The Owner")),
+                &principal,
+            )
+            .await
+            .unwrap();
         fixture
             .state
             .world
@@ -5851,10 +5594,10 @@ mod tests {
                 PrincipalCommandIntent {
                     id: CommandId::new(),
                     world_id: draft.world_id,
-                    expected_revision: draft.revision,
+                    expected_revision: 0,
                     body: CommandBody::ApproveDraft,
                 },
-                &owner_principal(&fixture).await,
+                &principal,
             )
             .await
             .unwrap();
@@ -5891,58 +5634,83 @@ mod tests {
         assert_eq!(current_world(&fixture.state).await.unwrap().unwrap().phase, WorldPhase::Active);
     }
 
-    /// A Draft the kernel holds unapproved (a world created by `world.create`
-    /// alone) offers Approve, then Activate: Begin's refusal paths land on the
-    /// same buttons a hand-driven Draft always had.
+    /// A Draft the kernel holds unapproved (a refused Begin can leave one)
+    /// offers Approve, then Activate, and no Begin.
     #[tokio::test]
     async fn an_unapproved_draft_offers_approve_and_no_begin() {
         let fixture = fixture().await;
-        let payload = begin_payload_from(&served_surface(&fixture).await, "Plain Draft", "", "The Owner");
-        let created = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation("world.create", "ghostlight.world_create.v4", 0, payload, &uuid::Uuid::new_v4().to_string()),
-        )
-        .await;
-        assert_eq!(created["receipt"]["state"], "accepted", "{created}");
+        draft_world(&fixture.state, &fixture.cookie, "Plain Draft").await;
         let mut buttons = Vec::new();
         surface_buttons(&served_surface(&fixture).await["surface"]["root"], &mut buttons);
         assert!(buttons.contains(&"world.approve".to_owned()), "{buttons:?}");
         assert!(!buttons.contains(&"world.begin".to_owned()), "{buttons:?}");
     }
 
-    /// No refusal of a Begin echoes anything the owner typed or sent: not the
-    /// kernel's refusal of an empty title, not a payload the begin route cannot
-    /// read, not a jurisdiction handle (here and on `world.create`, which
-    /// shares the create path).
+    /// Each control the player types into feeds the field it is named for:
+    /// the world that results carries the typed title, brief and name.
+    ///
+    /// Mutations: bind the "Your name" control to the title field; bind the
+    /// title control to the name field; hand the world's first person a label
+    /// other than the typed one.
     #[tokio::test]
-    async fn a_refused_begin_never_echoes_what_was_sent() {
+    async fn the_text_typed_into_each_control_reaches_its_own_field() {
+        let fixture = fixture().await;
+        let payload = begin_payload_typed_into_controls(
+            &served_surface(&fixture).await,
+            &[
+                ("world.begin.title", "Typed Title"),
+                ("world.begin.subject", "Typed Name"),
+                ("world.begin.brief", "Typed Brief"),
+            ],
+        );
+        let begun = post(
+            &fixture.state,
+            &fixture.cookie,
+            begin_invocation(payload, &uuid::Uuid::new_v4().to_string()),
+        )
+        .await;
+        assert_eq!(begun["receipt"]["state"], "accepted", "{begun}");
+        let world = current_world(&fixture.state).await.unwrap().unwrap();
+        assert_eq!(world.title, "Typed Title");
+        assert_eq!(world.brief, "Typed Brief");
+        assert_eq!(world.subjects.len(), 1);
+        assert_eq!(world.subjects[0].label, "Typed Name");
+    }
+
+    /// No refusal of a Begin echoes anything the owner typed or sent, and each
+    /// names the step it stopped at or the route's own fixed line. A blank
+    /// name or title is refused whatever whitespace it is made of, and no
+    /// refused Begin leaves a world.
+    ///
+    /// Mutations: put the payload in the unreadable-payload line; stop naming
+    /// the create step; keep a blank name by padding it with a letter.
+    #[tokio::test]
+    async fn a_refused_begin_never_echoes_what_was_sent_and_leaves_no_world() {
         let fixture = fixture().await;
         let canary = "CANARY-7f3a91-ZZ";
         let surface = served_surface(&fixture).await;
 
-        let mut empty_title = begin_payload_from(&surface, "", canary, canary);
-        empty_title["bindings"]["title"] = json!("");
         let mut unreadable = begin_payload_from(&surface, "A World", canary, canary);
         unreadable[canary] = json!(canary);
-        let mut bad_handle = begin_payload_from(&surface, "A World", canary, canary);
-        bad_handle["jurisdictions"] = json!(
-            serde_json::to_string(&json!([{"handle":canary,"label":canary,"permille":10}])).unwrap()
-        );
         let mut missing_name = begin_payload_from(&surface, canary, canary, canary);
         missing_name["bindings"].as_object_mut().unwrap().remove("subject_label");
+        let mut authored_default = begin_payload_from(&surface, "A World", canary, canary);
+        authored_default["targets"] = json!(canary);
 
-        for (what, operation, payload) in [
-            ("empty title", "world.begin", empty_title),
-            ("unreadable payload", "world.begin", unreadable),
-            ("jurisdiction handle", "world.begin", bad_handle.clone()),
-            ("jurisdiction handle on create", "world.create", bad_handle),
-            ("missing name", "world.begin", missing_name),
+        for (what, payload, create_refusal) in [
+            ("empty title", begin_payload_from(&surface, "", canary, canary), true),
+            ("blank title", begin_payload_from(&surface, "   ", canary, canary), true),
+            ("empty name", begin_payload_from(&surface, canary, canary, ""), true),
+            ("blank name", begin_payload_from(&surface, canary, canary, "   "), true),
+            ("tab name", begin_payload_from(&surface, canary, canary, "\t\n"), true),
+            ("unreadable payload", unreadable, false),
+            ("missing name", missing_name, false),
+            ("an authored default", authored_default, false),
         ] {
             let refused = post(
                 &fixture.state,
                 &fixture.cookie,
-                invocation(operation, "ghostlight.world_create.v4", 0, payload, &uuid::Uuid::new_v4().to_string()),
+                begin_invocation(payload, &uuid::Uuid::new_v4().to_string()),
             )
             .await;
             assert_eq!(refused["receipt"]["state"], "denied", "{what}: {refused}");
@@ -5950,6 +5718,13 @@ mod tests {
                 !refused.to_string().contains(canary),
                 "{what}: the refusal echoed an input value: {refused}"
             );
+            if create_refusal {
+                let message = refused["receipt"]["message"].as_str().unwrap_or_default();
+                assert!(
+                    message.starts_with("the begin stopped at its create step"),
+                    "{what}: the refusal did not name the create step: {message}"
+                );
+            }
             assert!(
                 current_world(&fixture.state).await.unwrap().is_none(),
                 "{what}: a refused Begin left a world"
@@ -5957,24 +5732,123 @@ mod tests {
         }
     }
 
+    /// Begin is the one way a world is made: `world.create` is not an
+    /// operation this server advertises, so naming it, under either payload
+    /// schema, is refused before any handler runs and makes no world.
+    ///
+    /// Mutation: advertise `world.create` again in `operation_schema`.
+    #[tokio::test]
+    async fn world_create_is_not_a_route() {
+        let fixture = fixture().await;
+        for schema in ["ghostlight.world_create.v4", "ghostlight.world_begin.v1"] {
+            let payload = json!({"title":"Bypass","brief":"","subject_label":"Operator"});
+            let refused = post(
+                &fixture.state,
+                &fixture.cookie,
+                invocation("world.create", schema, 0, payload, &uuid::Uuid::new_v4().to_string()),
+            )
+            .await;
+            assert_eq!(refused["receipt"]["state"], "denied", "{schema}: {refused}");
+            assert!(
+                refused["receipt"]["message"].as_str().unwrap_or_default().contains("not advertised"),
+                "{schema}: {refused}"
+            );
+            assert!(current_world(&fixture.state).await.unwrap().is_none());
+        }
+        let served = served_surface(&fixture).await;
+        assert!(
+            served["commands"].as_array().unwrap().iter().all(|descriptor| descriptor["command"] != "world.create"),
+            "the surface advertises world.create"
+        );
+    }
+
+    /// The route owns the defaults. Another client's Begin states the three
+    /// fields and nothing else: it cannot author scale targets, roots, labels
+    /// or lens weights (each is refused as an unknown field, and no world is
+    /// made), and the world a three-field Begin makes has the route's
+    /// defaults: one person, uniform lens weights, no scale deficit.
+    ///
+    /// Mutations: drop `deny_unknown_fields` from `BeginPayload`; give one
+    /// lens weight 0 or a weight other than 1 in `uniform_lens_weights`;
+    /// declare a persona in `begin_intent`.
+    #[tokio::test]
+    async fn begin_owns_the_defaults_and_refuses_a_client_that_authors_them() {
+        let fixture = fixture().await;
+        let surface = served_surface(&fixture).await;
+        for (field, value) in [
+            ("targets", json!("{}")),
+            ("jurisdictions", json!("[]")),
+            ("lens_weights", json!("{}")),
+            ("narrative_persona_label", json!("Persona")),
+            ("operational_agent_label", json!("Agent")),
+        ] {
+            let mut payload = begin_payload_from(&surface, "Authored", "", "Operator");
+            payload[field] = value;
+            let refused = post(
+                &fixture.state,
+                &fixture.cookie,
+                begin_invocation(payload, &uuid::Uuid::new_v4().to_string()),
+            )
+            .await;
+            assert_eq!(refused["receipt"]["state"], "denied", "{field}: {refused}");
+            assert!(current_world(&fixture.state).await.unwrap().is_none(), "{field}: made a world");
+        }
+
+        let begun = post(
+            &fixture.state,
+            &fixture.cookie,
+            begin_invocation(
+                begin_payload_from(&surface, "Defaults", "", "Operator"),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(begun["receipt"]["state"], "accepted", "{begun}");
+        let world = current_world(&fixture.state).await.unwrap().unwrap();
+        assert_eq!(world.subjects.len(), 1, "a default declared a persona or an agent");
+        assert!(world.scale_deficit.is_empty(), "a default declared a scale target");
+        assert_eq!(world.lens_weights.iter().count(), ghostlight::Lens::ALL.len());
+        assert!(world.lens_weights.iter().all(|(_, weight)| weight == 1), "the lens weights are not uniform");
+    }
+
+    /// Where a seed vault is configured, Begin stops at the approved Draft:
+    /// seeding is the Draft-only lane, so the owner then finds the seed
+    /// controls and Activate on the card, and no Begin. Without a vault the
+    /// same click reaches an Active world.
+    ///
+    /// Mutations: ignore the vault in `begin_plan`; leave the approve out of
+    /// the vault plan.
+    #[tokio::test]
+    async fn begin_stops_at_the_approved_draft_where_a_vault_is_configured() {
+        let fixture = fixture().await;
+        let mut configured = fixture.state.clone();
+        configured.seed_vault_root = Some(PathBuf::from("/vault-for-begin"));
+        let payload = begin_payload_from(&served_surface(&fixture).await, "Seeded World", "", "The Owner");
+        let begun = post(&configured, &fixture.cookie, begin_invocation(payload, &uuid::Uuid::new_v4().to_string())).await;
+        assert_eq!(begun["receipt"]["state"], "accepted", "{begun}");
+        assert_eq!(begun["receipt"]["reached"], "approved");
+
+        let world = current_world(&configured).await.unwrap().unwrap();
+        assert_eq!(world.phase, WorldPhase::Draft);
+        assert_eq!(world.draft_approvals, world.required_approvers, "the Draft is approved");
+
+        let served = get(&configured, &fixture.cookie, "/api/eve/surfaces/ghostlight.play").await;
+        let mut buttons = Vec::new();
+        surface_buttons(&served["surface"]["root"], &mut buttons);
+        for wanted in ["world.seed", "world.activate"] {
+            assert!(buttons.contains(&wanted.to_owned()), "{wanted} missing: {buttons:?}");
+        }
+        assert!(!buttons.contains(&"world.begin".to_owned()), "{buttons:?}");
+        assert_eq!(begin_plan(true), [BeginStep::Approve]);
+        assert_eq!(begin_plan(false), [BeginStep::Approve, BeginStep::Activate]);
+    }
+
     #[tokio::test]
     async fn exact_stale_retry_returns_journal_receipt_without_app_cache() {
         let fixture = fixture().await;
         let id = uuid::Uuid::new_v4().to_string();
-        let command = invocation(
-            "world.create",
-            "ghostlight.world_create.v4",
-            0,
-            json!({
-                "title":"Retry World",
-                "brief":"",
-                "subject_label":"Operator",
-                "targets":{},
-                "jurisdictions":[],
-                "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-            }),
-            &id,
-        );
+        let payload = begin_payload_from(&served_surface(&fixture).await, "Retry World", "", "Operator");
+        let command = begin_invocation(payload, &id);
         let first = post(&fixture.state, &fixture.cookie, command.clone()).await;
         let second = post(&fixture.state, &fixture.cookie, command).await;
         assert_eq!(
@@ -5987,7 +5861,7 @@ mod tests {
                 .unwrap()
                 .unwrap()
                 .revision,
-            0
+            2
         );
     }
 
@@ -6001,47 +5875,11 @@ mod tests {
     async fn a_principal_command_resubmitted_under_its_own_key_returns_applied_then_already_applied()
      {
         let fixture = fixture().await;
+        let payload = begin_payload_from(&served_surface(&fixture).await, "Retry Receipt World", "", "Operator");
         post(
             &fixture.state,
             &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({
-                    "title":"Retry Receipt World",
-                    "brief":"",
-                    "subject_label":"Operator",
-                    "targets":{},
-                    "jurisdictions":[],
-                    "lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}
-                }),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.approve",
-                "ghostlight.world_approve.v0",
-                1,
-                json!({}),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.activate",
-                "ghostlight.world_activate.v0",
-                2,
-                json!({}),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
+            begin_invocation(payload, &uuid::Uuid::new_v4().to_string()),
         )
         .await;
         let id = uuid::Uuid::new_v4().to_string();
@@ -6131,7 +5969,36 @@ mod tests {
         );
     }
 
-    /// A Draft world from `world.create`'s own intent: the owner's Human
+    /// A Draft world made through the kernel's own mailbox, as `begin_world`
+    /// makes one before it approves: tests that need a Draft (or the walk
+    /// from one) start here, since `world.begin` is the only route that
+    /// creates a world and it does not stop at a Draft.
+    async fn draft_world(state: &AppState, cookie: &str, title: &str) -> CreationReceipt {
+        let principal = state
+            .sessions
+            .lock()
+            .await
+            .account_for_cookie(cookie, Utc::now())
+            .unwrap()
+            .expect("the fixture cookie names a live session");
+        state
+            .world
+            .create(
+                begin_intent(
+                    CommandId::new(),
+                    BeginPayload {
+                        title: title.into(),
+                        brief: String::new(),
+                        subject_label: "Operator".into(),
+                    },
+                ),
+                &principal,
+            )
+            .await
+            .unwrap()
+    }
+
+    /// A Draft world from the kernel's own create intent: the owner's Human
     /// subject beside a narrative persona and an operational agent, with the
     /// given scale intent and jurisdictions, so a test can look at the Draft
     /// world the seed lane actually runs against.
@@ -6331,124 +6198,6 @@ mod tests {
     }
 
     // ---- The seed command ------------------------------------------------
-
-    /// Spec test 1. The previous create schema is not kept alive beside
-    /// `world_create.v4`: a complete payload announcing it dies at validation before any handler runs,
-    /// and a payload that announces v4 but omits the lens weights or the brief
-    /// is a payload error rather than a defaulted intent. None creates a world.
-    #[tokio::test]
-    async fn a_stale_create_payload_is_refused() {
-        let fixture = fixture().await;
-        let stale = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v3",
-                0,
-                json!({"title":"Stale World","brief":"","subject_label":"Operator","targets":{},"jurisdictions":[]}),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(stale["receipt"]["state"], "denied");
-        assert!(current_world(&fixture.state).await.unwrap().is_none());
-
-        let unweighted = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({"title":"Unweighted World","brief":"","subject_label":"Operator","targets":{},"jurisdictions":[]}),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(unweighted["receipt"]["state"], "denied");
-        // Refused as a payload, before genesis: a defaulted empty set would
-        // also be denied, by the resolver, and must not pass for this.
-        let message = unweighted["receipt"]["message"].as_str().unwrap_or_default();
-        assert!(
-            message.contains("missing field `lens_weights`"),
-            "the omission was not refused at the payload: {message}"
-        );
-        assert!(
-            current_world(&fixture.state).await.unwrap().is_none(),
-            "a v4 payload with no lens weights created a world anyway"
-        );
-
-        let partial = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({"title":"Half World","subject_label":"Operator","targets":{},"jurisdictions":[],"lens_weights":{"patina":1,"charter":1,"ledger":1,"hearth":1,"tangle":1,"veil":1,"ember":1,"numen":1}}),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(partial["receipt"]["state"], "denied");
-        assert!(
-            current_world(&fixture.state).await.unwrap().is_none(),
-            "a v4 payload with no brief created a world anyway"
-        );
-    }
-
-    /// A lens name the library does not know, beside one it does, is refused
-    /// by deserialization before any handler runs. No world is created.
-    #[tokio::test]
-    async fn a_create_payload_naming_an_unknown_lens_is_refused() {
-        let fixture = fixture().await;
-        let result = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({"title":"Tribunal World","brief":"","subject_label":"Operator","targets":{},"jurisdictions":[],"lens_weights":{"patina":1,"tribunal":1}}),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(result["receipt"]["state"], "denied");
-        let message = result["receipt"]["message"].as_str().unwrap_or_default();
-        assert!(
-            message.contains("tribunal"),
-            "the unknown lens was not refused by name: {message}"
-        );
-        assert!(current_world(&fixture.state).await.unwrap().is_none());
-    }
-
-    /// Every lens named, every weight zero: the payload decodes, and the
-    /// library's genesis refuses it with `LensWeightsNeverDraw`. No world.
-    #[tokio::test]
-    async fn a_create_payload_whose_lenses_never_draw_is_refused() {
-        let fixture = fixture().await;
-        let result = post(
-            &fixture.state,
-            &fixture.cookie,
-            invocation(
-                "world.create",
-                "ghostlight.world_create.v4",
-                0,
-                json!({"title":"Still World","brief":"","subject_label":"Operator","targets":{},"jurisdictions":[],"lens_weights":{"patina":0,"charter":0,"ledger":0,"hearth":0,"tangle":0,"veil":0,"ember":0,"numen":0}}),
-                &uuid::Uuid::new_v4().to_string(),
-            ),
-        )
-        .await;
-        assert_eq!(result["receipt"]["state"], "denied");
-        let message = result["receipt"]["message"].as_str().unwrap_or_default();
-        assert!(
-            message.contains("LensWeightsNeverDraw"),
-            "the refusal did not name the draw rule: {message}"
-        );
-        assert!(current_world(&fixture.state).await.unwrap().is_none());
-    }
 
     /// Every `control.button` in a surface, at whatever depth.
     fn surface_buttons(node: &Value, into: &mut Vec<String>) {

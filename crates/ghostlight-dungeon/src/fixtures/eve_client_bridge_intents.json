@@ -13,17 +13,14 @@
             "sourceVersion": 0,
             "transport": "https-json"
           },
-          "schemaId": "ghostlight.world_create.v4"
+          "schemaId": "ghostlight.world_begin.v1"
         },
         "payload": {
           "bindings": {
             "brief": "A world captured for the committed Eve client bridge fixture.",
             "subject_label": "The Fixture Operator",
             "title": "Bridge Fixture World"
-          },
-          "jurisdictions": "[]",
-          "lens_weights": "{\"patina\":1,\"charter\":1,\"ledger\":1,\"hearth\":1,\"tangle\":1,\"veil\":1,\"ember\":1,\"numen\":1}",
-          "targets": "{}"
+          }
         },
         "providerId": "gamecult.ghostlight.dungeon",
         "receiptSchema": "gamecult.eve.command_result.v1",
