@@ -414,8 +414,8 @@ async fn genesis_under_another_command_id_finds_the_world_occupied() {
     assert_eq!(after.state_digest, before.state_digest);
 }
 
-/// Evidence for the open question `ship-acts-are-not-speech`, pinning what the
-/// phase A lowering does today: a ship verb is only admissible as an utterance,
+/// Pins the standing phase A behaviour (ruling `ship-acts-speech-shaped-phase-a`):
+/// the lowering admits a ship verb only as an utterance,
 /// and committing it asserts a claim fact the room hears.
 #[test]
 fn phase_a_ship_verbs_are_spoken_acts_in_the_room() {

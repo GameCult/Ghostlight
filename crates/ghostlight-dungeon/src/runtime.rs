@@ -4048,7 +4048,7 @@ mod tests {
     }
 
     /// PA.f164: `targets`, `jurisdictions`, and `brief` are all documented
-    /// "required, may be empty" (`CreatePayload`) — a legitimate deliberate
+    /// "required, may be empty" (`BeginPayload`) — a legitimate deliberate
     /// choice, not a value nobody supplied. Before this fix, only `lens_weights`
     /// carried an authored `value` the real lowering's own
     /// `findAuthoredBindingValue` could capture without the field being typed
@@ -5480,6 +5480,7 @@ mod tests {
 
         let world = current_world(&fixture.state).await.unwrap().unwrap();
         assert_eq!(world.phase, WorldPhase::Active);
+        assert_eq!(begun["receipt"]["worldId"], serde_json::to_value(world.world_id).unwrap(), "the receipt names the world it made");
         assert_eq!(world.revision, 2, "genesis, approval and activation are three commits");
 
         let principal = owner_principal(&fixture).await;
@@ -5521,12 +5522,15 @@ mod tests {
     /// differ only late in the string, or one key's two steps, never share an
     /// id.
     ///
-    /// Mutations: hash only a prefix of the key; hash no step name.
+    /// Mutations: hash only a prefix of the key; hash no step name; drop the key's first byte.
     #[test]
     fn begin_step_ids_depend_on_the_whole_key_and_the_step() {
         let key = "123e4567-e89b-12d3-a456-426614174000";
         let late = "123e4567-e89b-12d3-a456-426614174001";
         assert_ne!(begin_step_id(key, BeginStep::Approve).unwrap(), begin_step_id(late, BeginStep::Approve).unwrap());
+        let early = "023e4567-e89b-12d3-a456-426614174000";
+        assert_ne!(begin_step_id(key, BeginStep::Approve).unwrap(), begin_step_id(early, BeginStep::Approve).unwrap());
+        assert_ne!(begin_step_id(key, BeginStep::Activate).unwrap(), begin_step_id(early, BeginStep::Activate).unwrap());
         assert_ne!(begin_step_id(key, BeginStep::Approve).unwrap(), begin_step_id(key, BeginStep::Activate).unwrap());
         assert_eq!(begin_step_id(key, BeginStep::Approve).unwrap(), begin_step_id(key, BeginStep::Approve).unwrap());
         assert_ne!(begin_step_id(key, BeginStep::Approve).unwrap(), CommandId::parse_uuid(key).unwrap());

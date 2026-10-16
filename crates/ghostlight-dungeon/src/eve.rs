@@ -253,7 +253,7 @@ pub(crate) fn authenticated_surface(
                     "stateBindings":[local_draft("subject_label", "string")],
                     "children":[]
                 }),
-                // `brief` is "required, may be empty" (`CreatePayload::brief`):
+                // `brief` is "required, may be empty" (`BeginPayload::brief`):
                 // an authored `value`, because the lowering captures only a
                 // `value`, so a form left untouched here still submits.
                 json!({
