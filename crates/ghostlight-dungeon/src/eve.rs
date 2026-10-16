@@ -51,18 +51,10 @@ pub(crate) struct EveRouteHint {
 const PLAY_FAULT_LINE: &str =
     "The storyteller lost the thread and your turn ended. Write again to start a new turn.";
 
-/// The `world_create.v4` payload, in one place, so the button that captures it
-/// and the descriptor that advertises it cannot drift.
-const CREATE_BINDINGS: [&str; 8] = [
-    "title",
-    "brief",
-    "subject_label",
-    "narrative_persona_label",
-    "operational_agent_label",
-    "targets",
-    "jurisdictions",
-    "lens_weights",
-];
+/// What the Begin button captures from the owner: the three fields the form
+/// asks for, and all `world_begin.v1` carries. Every other choice a world is
+/// born with is the route's (`runtime::begin_intent`), not the surface's.
+const BEGIN_BINDINGS: [&str; 3] = ["title", "brief", "subject_label"];
 
 const SEED_BINDINGS: [&str; 2] = ["vault_scope", "brief"];
 
@@ -246,99 +238,43 @@ pub(crate) fn authenticated_surface(
 
     match snapshot {
         None => {
-            // Dungeon policy, editable before submission; the library holds no
-            // default weights.
-            let default_lens_weights =
-                serde_json::to_string(&crate::runtime::uniform_lens_weights())
-                    .context("the default lens weights encode")?;
             children.extend([
                 json!({
-                    "id":"world.create.title",
+                    "id":"world.begin.title",
                     "kind":"control.input.text",
                     "props":{"label":"World title","placeholder":"A name for this world"},
                     "stateBindings":[local_draft("title", "string")],
                     "children":[]
                 }),
-                // Cut 10 (PA.f149): `CREATE_BINDINGS` has always advertised
-                // `brief` — `world_create.v4`'s `CreatePayload.brief` is
-                // required, not `#[serde(default)]` — but no control ever
-                // captured it. Driving `world.create` with the real
-                // vendored lowering surfaced this: nothing the lowering
-                // could ever submit through this form would satisfy
-                // `world_create.v4`, hand-built test payloads notwithstanding.
                 json!({
-                    "id":"world.create.brief",
-                    "kind":"control.input.textarea",
-                    // PA.f164: `brief` is documented "required, may be empty"
-                    // (`CreatePayload::brief`), the same deliberate-empty
-                    // shape as `targets`/`jurisdictions` below — an authored
-                    // `value` so a form left untouched here still submits.
-                    "props":{"label":"Brief","rows":2,"value":"","placeholder":"One sentence of what this world is for"},
-                    "stateBindings":[local_draft("brief", "string")],
-                    "children":[]
-                }),
-                json!({
-                    "id":"world.create.subject",
+                    "id":"world.begin.subject",
                     "kind":"control.input.text",
                     "props":{"label":"Your name","placeholder":"The first person in the world"},
                     "stateBindings":[local_draft("subject_label", "string")],
                     "children":[]
                 }),
+                // `brief` is "required, may be empty" (`CreatePayload::brief`):
+                // an authored `value`, because the lowering captures only a
+                // `value`, so a form left untouched here still submits.
                 json!({
-                    "id":"world.create.narrative_persona",
-                    "kind":"control.input.text",
-                    "props":{"label":"Narrative persona (optional)","placeholder":"A person who lives the story in prose"},
-                    "stateBindings":[local_draft("narrative_persona_label", "string")],
-                    "children":[]
-                }),
-                json!({
-                    "id":"world.create.operational_agent",
-                    "kind":"control.input.text",
-                    "props":{"label":"Operational agent (optional)","placeholder":"An institution or operator-shaped mind"},
-                    "stateBindings":[local_draft("operational_agent_label", "string")],
-                    "children":[]
-                }),
-                json!({
-                    "id":"world.create.targets",
+                    "id":"world.begin.brief",
                     "kind":"control.input.textarea",
-                    // PA.f164: an authored `value`, not only a `placeholder` —
-                    // `findAuthoredBindingValue` (the vendored lowering) only
-                    // ever captures a control's `value`, never its
-                    // `placeholder`, so a form submitted without editing this
-                    // field would otherwise be refused as missing. `{}` is a
-                    // legitimate `targets` (a world with no scale target is a
-                    // deliberate choice, `CreatePayload`'s own doc comment).
-                    "props":{"label":"Scale target","rows":2,"value":"{}","placeholder":"{\"person\": 12, \"institution\": 3}"},
-                    "stateBindings":[local_draft("targets", "string")],
-                    "children":[]
-                }),
-                json!({
-                    "id":"world.create.jurisdictions",
-                    "kind":"control.input.textarea",
-                    // PA.f164: same gap, `[]` is a legitimate empty root list.
-                    "props":{"label":"Jurisdiction roots","rows":3,"value":"[]","placeholder":"[{\"handle\":\"low_sere\",\"label\":\"The Low Sere\",\"permille\":700}]"},
-                    "stateBindings":[local_draft("jurisdictions", "string")],
-                    "children":[]
-                }),
-                json!({
-                    "id":"world.create.lens_weights",
-                    "kind":"control.input.textarea",
-                    "props":{"label":"Lens weights","rows":2,"value":default_lens_weights,"placeholder":default_lens_weights},
-                    "stateBindings":[local_draft("lens_weights", "string")],
+                    "props":{"label":"Brief (optional)","rows":2,"value":"","placeholder":"One sentence of what this world is for"},
+                    "stateBindings":[local_draft("brief", "string")],
                     "children":[]
                 }),
                 command_button(
-                    "world.create",
-                    "Create world",
-                    "world.create",
+                    "world.begin",
+                    "Begin",
+                    "world.begin",
                     json!({}),
-                    &CREATE_BINDINGS,
+                    &BEGIN_BINDINGS,
                 ),
             ]);
             commands.push(command_descriptor(
-                "world.create",
-                "ghostlight.world_create.v4",
-                &CREATE_BINDINGS,
+                "world.begin",
+                "ghostlight.world_begin.v1",
+                &BEGIN_BINDINGS,
                 "WorldMailbox",
             ));
         }
@@ -610,7 +546,7 @@ pub(crate) fn authenticated_surface(
                             json!({
                                 "id":"world.play.text",
                                 "kind":"control.input.textarea",
-                                // PA.f214: an authored `value`, as `world.create.brief` above:
+                                // PA.f214: an authored `value`, as `world.begin.brief` above:
                                 // the lowering only captures a `value`, so a box left
                                 // untouched must still submit `text: ""`, which continues
                                 // an existing Running turn (the running hint tells players
@@ -710,7 +646,7 @@ pub(crate) fn operation_schema(operation: &str) -> Option<&'static str> {
         "heimdall.auth.begin" => "heimdall.auth_begin_command.v1",
         "heimdall.auth.complete" => "heimdall.auth_complete_command.v1",
         "app.auth.logout" => "ghostlight.app_logout.v2",
-        "world.create" => "ghostlight.world_create.v4",
+        "world.begin" => "ghostlight.world_begin.v1",
         "world.approve" => "ghostlight.world_approve.v0",
         "world.activate" => "ghostlight.world_activate.v0",
         "world.advance_time" => "ghostlight.world_advance_time.v0",
@@ -922,37 +858,100 @@ mod tests {
         assert_eq!(surface["version"], 0);
     }
 
-    #[test]
-    fn empty_authenticated_surface_has_create_without_session_zero() {
-        let surface = authenticated_surface("sha256:owner", None, None, true).unwrap();
-        let encoded = serde_json::to_string(&surface).unwrap();
-        assert!(encoded.contains("world.create"));
-        assert!(encoded.contains("narrative_persona_label"));
-        assert!(encoded.contains("operational_agent_label"));
-        assert!(!encoded.contains("session_zero"));
-        assert!(!encoded.contains("campaign"));
-        assert_eq!(surface["version"], 0);
-
-        // The lens control's default is Dungeon's uniform policy, every stock
-        // lens named, and it decodes as the weights the payload will carry.
-        fn find<'a>(node: &'a Value, id: &str) -> Option<&'a Value> {
-            if node["id"] == id {
-                return Some(node);
-            }
-            node.as_object()?
-                .values()
-                .flat_map(|value| match value {
-                    Value::Array(items) => items.iter().collect::<Vec<_>>(),
-                    other => vec![other],
-                })
-                .find_map(|child| find(child, id))
+    fn find<'a>(node: &'a Value, id: &str) -> Option<&'a Value> {
+        if node["id"] == id {
+            return Some(node);
         }
-        let control = find(&surface, "world.create.lens_weights").expect("a lens weights control");
-        let default = control["props"]["value"].as_str().expect("a default value");
-        let decoded: ghostlight::LensWeights = serde_json::from_str(default).unwrap();
-        assert_eq!(decoded, crate::runtime::uniform_lens_weights());
-        assert_eq!(decoded.iter().count(), ghostlight::Lens::ALL.len());
-        assert!(decoded.iter().all(|(_, weight)| weight == 1));
+        node["children"].as_array()?.iter().find_map(|child| find(child, id))
+    }
+
+    /// R2 at the surface: the empty world asks for a title, a name and an
+    /// optional brief, and offers one command, Begin. The button carries no
+    /// authored choice of its own: what a world is born with beyond those
+    /// three fields is the route's, and the descriptor captures only what the
+    /// form asks.
+    #[test]
+    fn the_empty_world_surface_asks_for_a_title_a_name_and_offers_one_begin() {
+        let surface = authenticated_surface("sha256:owner", None, None, true).unwrap();
+        assert_eq!(surface["version"], 0);
+        let encoded = serde_json::to_string(&surface).unwrap();
+        for retired in [
+            "narrative_persona",
+            "operational_agent",
+            "world.create",
+            "lens_weights",
+            "jurisdictions",
+            "session_zero",
+            "campaign",
+        ] {
+            assert!(
+                !encoded.contains(retired),
+                "the empty-world surface still carries {retired}"
+            );
+        }
+        let root = &surface["surface"]["root"];
+        for id in ["world.begin.title", "world.begin.subject", "world.begin.brief"] {
+            assert!(find(root, id).is_some(), "{id}");
+        }
+        for id in [
+            "world.begin.narrative_persona",
+            "world.begin.operational_agent",
+            "world.begin.targets",
+            "world.begin.jurisdictions",
+            "world.begin.lens_weights",
+        ] {
+            assert!(find(root, id).is_none(), "{id}");
+        }
+        assert_eq!(find(root, "world.begin.brief").unwrap()["props"]["value"], "");
+
+        // Beside the sign-out every signed-in surface carries, Begin is the
+        // only command.
+        let commands: Vec<&Value> = surface["commands"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|descriptor| descriptor["command"] != "app.auth.logout")
+            .collect();
+        assert_eq!(commands.len(), 1, "{commands:?}");
+        assert_eq!(commands[0]["command"], "world.begin");
+        assert_eq!(commands[0]["payloadSchema"], "ghostlight.world_begin.v1");
+        assert_eq!(commands[0]["authority"], "WorldMailbox");
+        assert_eq!(commands[0]["captureBindings"], json!(["title", "brief", "subject_label"]));
+
+        let button = find(root, "world.begin").expect("a Begin button");
+        assert_eq!(button["props"]["label"], "Begin");
+        assert_eq!(
+            button["props"]["action"],
+            json!({"command":"world.begin"}),
+            "the Begin button authors nothing beyond its command"
+        );
+    }
+
+    /// Each control feeds the field it is named for: typing into a control
+    /// puts the text under the binding that control declares, and the Begin
+    /// button captures exactly the bindings the three controls declare. A
+    /// control bound to another control's field would submit no name (or
+    /// overwrite the title) in a real client.
+    #[test]
+    fn each_begin_control_is_bound_to_its_own_field_and_the_button_captures_them_all() {
+        let surface = authenticated_surface("sha256:owner", None, None, false).unwrap();
+        let root = &surface["surface"]["root"];
+        let bound = |id: &str| -> String {
+            let bindings = find(root, id).unwrap()["stateBindings"].as_array().unwrap().clone();
+            assert_eq!(bindings.len(), 1, "{id}");
+            bindings[0]["bindingName"].as_str().unwrap().to_owned()
+        };
+        assert_eq!(bound("world.begin.title"), "title");
+        assert_eq!(bound("world.begin.subject"), "subject_label");
+        assert_eq!(bound("world.begin.brief"), "brief");
+        let mut captured: Vec<String> = find(root, "world.begin").unwrap()["props"]["captureBindings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|name| name.as_str().unwrap().to_owned())
+            .collect();
+        captured.sort();
+        assert_eq!(captured, ["brief", "subject_label", "title"]);
     }
 
     /// `world.play`'s own operation id resolves to its schema through
