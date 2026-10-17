@@ -2917,11 +2917,12 @@ pub struct ConstituentRefusal {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ConstituentRefusalReason {
-    /// The subject's opportunity moved between the cover and the cell, so it was
-    /// not selected and nothing was submitted for it.
+    /// The subject holds no single decidable opportunity on its scope any more,
+    /// so it was not selected and nothing was submitted for it.
     LeftBeforeSelection,
-    /// The kernel refused its proposal because the scope it was reasoned from
-    /// no longer held (a neighbour's act moved it).
+    /// The scope the member was bound to no longer held: found moved at
+    /// selection (still offered at a new digest, nothing submitted), or refused
+    /// by the kernel at admission (a neighbour's act moved it).
     ScopeChanged,
     /// The kernel refused its command for any other reason.
     WorldRefused,
@@ -3536,6 +3537,12 @@ impl ControllerRunner {
                 // cell was not active when the cell ran. It is dropped rather
                 // than declined: declining a stale opportunity would be refused
                 // anyway, and the drop is recorded where a reader can see it.
+                // Still offered at a new digest is a moved scope; anything else
+                // means the subject holds no single decidable opportunity.
+                Err(ControllerError::ScopeMoved) => refused.push(ConstituentRefusal {
+                    subject: member.subject,
+                    reason: ConstituentRefusalReason::ScopeChanged,
+                }),
                 Err(_) => refused.push(ConstituentRefusal {
                     subject: member.subject,
                     reason: ConstituentRefusalReason::LeftBeforeSelection,
@@ -19908,7 +19915,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_grouped_member_that_left_the_cell_is_named_in_refused() {
+    async fn a_grouped_member_whose_scope_moved_is_named_in_refused_as_scope_changed() {
         let (_directory, mailbox, task) = active_cell_mailbox(vec![
             NewController::OperationalAgent,
             NewController::OperationalAgent,
@@ -19932,6 +19939,62 @@ mod tests {
             Constituent {
                 subject: leaver,
                 opportunity: stale,
+            },
+        ];
+        let (runner, _store) = grouped_runner(
+            &mailbox,
+            vec![output(
+                vec![speak_call("c0", "c0__speak", "The hinge is flooding.")],
+                "lone-act",
+            )],
+        );
+        let cell = Cell::Group {
+            id,
+            tick,
+            members: bound,
+        };
+        let CellRun::Grouped(run) = runner.run_cell(&cell).await.unwrap() else {
+            panic!("a coarse cell did not run the grouped lane")
+        };
+        assert_eq!(
+            run.refused,
+            vec![ConstituentRefusal {
+                subject: leaver,
+                reason: ConstituentRefusalReason::ScopeChanged,
+            }]
+        );
+        assert!(run.needs.is_empty(), "{:?}", run.needs);
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn a_grouped_member_that_truly_left_is_named_in_refused_as_left_before_selection() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let cell = one_group(&mailbox).await;
+        let Cell::Group { id, tick, members } = cell else {
+            panic!("the cell is not coarse")
+        };
+        // One member's subject is no longer in the world at all; the other is
+        // bound to the world as it is.
+        let world = mailbox.snapshot().await.unwrap();
+        let leaver = SubjectId::issue();
+        let mut gone = members[1].opportunity.clone();
+        gone.scope.subject_id = leaver;
+        let bound = vec![
+            Constituent {
+                subject: members[0].subject,
+                opportunity: fresh_opportunity(&world, members[0].subject),
+            },
+            Constituent {
+                subject: leaver,
+                opportunity: gone,
             },
         ];
         let (runner, _store) = grouped_runner(
