@@ -211,6 +211,26 @@ from 21:04 the denial forever. Mechanism:
   code is flat under `crates/ghostlight/src/`. Dated cut documents and
   postmortems keep their paths: they are history.
 
+### Who refuses an operational in-flight row whose scope moved? (probed 2026-10-17, `4741d50`)
+
+- Three paths answer the same fact (the subject still holds one opportunity on
+  the bound scope, at a new digest), with two errors. A probe test run on
+  Yggdrasil returned these, with one provider call in total:
+  - The scope moves during round 0 of a fresh run. Round 1's
+    `ensure_scope_unchanged` returns `NoOpportunity`.
+  - A resume passing the row's own stale opportunity returns `NoOpportunity`
+    (same gate).
+  - A resume passing the fresh opportunity returns `OpportunityMismatch`, from
+    the digest clause of `row_answers_caller` at lookup.
+- The driver's `classify` (`verse/run.rs` 641-651) labels the first two
+  `OpportunityGone` and the third `ScopeMoved`. That makes the first two
+  mislabels: the label's doc says `OpportunityGone` means the subject holds no
+  opportunity. Cause: when `select_scope`'s digest clause empties the match
+  list, it answers `NoOpportunity` (`controllers.rs` ~1552).
+- In the narrative lane, the lookup digest clause is the only gate. A driver
+  resume with the fresh opportunity is refused there. Fork A's kernel-refusal
+  re-lowering (`1ef973a`) runs only when a caller passes the stale opportunity.
+
 ## Model page
 
 One row per persistent kind phase 1 touches. No cell may be empty.
