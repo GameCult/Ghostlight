@@ -982,21 +982,17 @@ fn an_error_ends_a_cell_as_the_run_must_treat_it() {
             expected: ControllerMode::OperationalAgent,
         },
         ControllerError::AmbiguousOpportunity,
+        ControllerError::OpportunityMismatch,
     ] {
         assert!(matches!(
             classify(&gone),
             CellEnd::Refused(RefusalReason::OpportunityGone)
         ));
     }
-    for moved in [
-        ControllerError::ScopeMoved,
-        ControllerError::OpportunityMismatch,
-    ] {
-        assert!(matches!(
-            classify(&moved),
-            CellEnd::Refused(RefusalReason::ScopeMoved)
-        ));
-    }
+    assert!(matches!(
+        classify(&ControllerError::ScopeMoved),
+        CellEnd::Refused(RefusalReason::ScopeMoved)
+    ));
     assert!(matches!(
         classify(&ControllerError::CommandMismatch),
         CellEnd::Fatal("controller_error")
