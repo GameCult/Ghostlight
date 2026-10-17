@@ -4325,16 +4325,9 @@ impl ControllerRunner {
             .snapshot()
             .await
             .map_err(ControllerError::Snapshot)?;
+        // The kernel's `ScopeChanged` already decided that the scope moved;
+        // nothing here compares digests to decide it again.
         let fresh = select_fresh(&snapshot, &opportunity)?;
-        if fresh.opportunity.scope_digest == opportunity.scope_digest {
-            // The refusal was not this scope's move, and the runner does not
-            // invent a second explanation for it.
-            return Err(ControllerError::World(KernelError::ScopeChanged {
-                scope: opportunity.scope,
-                expected: opportunity.scope_digest.clone(),
-                actual: fresh.opportunity.scope_digest,
-            }));
-        }
         // No branch here checks the fresh grant set for `SPEAK_KIND`: grants
         // are recorded in an insert-only ledger (`affordance_grants` never
         // removes an entry), and this checkpoint could only reach
@@ -20286,6 +20279,69 @@ mod tests {
         assert_eq!(mailbox.operator_log().await.unwrap().len(), log_before + 1);
 
         drop((runner, resume));
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn a_narrative_row_resumed_for_another_decision_is_refused_without_spend() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::NarrativePersona,
+            NewController::NarrativePersona,
+        ])
+        .await;
+        let mut outputs = vec![Err(InferenceFault::retryable("the provider is busy"))];
+        outputs.extend(narrative_turn_outputs("Tobin", "Then we close the span."));
+        let (runner, store) = grouped_runner(&mailbox, outputs);
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let first = snapshot.opportunities[0].clone();
+        let second = snapshot.opportunities[1].clone();
+        let command = CommandId::new();
+        assert!(matches!(
+            runner.run_narrative(command, &first).await.unwrap(),
+            NarrativeRun::Pending(_)
+        ));
+        let (resume, port) =
+            runner_over(&mailbox, narrative_turn_outputs("Mara", "Rain."), store.clone());
+        assert!(matches!(
+            resume.run_narrative(command, &second).await,
+            Err(ControllerError::OpportunityMismatch)
+        ));
+        assert_eq!(port.outputs.lock().unwrap().len(), 3, "the refused resume spent a call");
+        // The row's own decision still resumes: the refusal was identity alone.
+        assert!(matches!(
+            resume.run_narrative(command, &first).await.unwrap(),
+            NarrativeRun::Completed(_)
+        ));
+
+        drop((runner, resume));
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn a_narrative_row_whose_scope_did_not_move_commits_without_re_lowering() {
+        let (_directory, mailbox, task) =
+            active_cell_mailbox(vec![NewController::NarrativePersona]).await;
+        let mut outputs = vec![Err(InferenceFault::retryable("the provider is busy"))];
+        outputs.extend(narrative_turn_outputs("Mara", "The rain has teeth tonight."));
+        let (runner, _store) = grouped_runner(&mailbox, outputs);
+        let opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
+        let command = CommandId::new();
+        assert!(matches!(
+            runner.run_narrative(command, &opportunity).await.unwrap(),
+            NarrativeRun::Pending(_)
+        ));
+        // The kernel accepts the unmoved scope, so nothing is refused and
+        // `interrupted` is never reached: the move is the kernel's to decide.
+        let NarrativeRun::Completed(decision) =
+            runner.run_narrative(command, &opportunity).await.unwrap()
+        else {
+            panic!("an unmoved scope did not commit")
+        };
+        assert!(decision.persona_turn().binding().interrupted_from.is_none());
+
+        drop(runner);
         drop(mailbox);
         task.await.unwrap();
     }
