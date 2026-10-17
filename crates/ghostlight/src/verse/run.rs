@@ -101,8 +101,10 @@ pub enum RefusalReason {
     /// reasoning is refused by the operational lane's world check before each
     /// inference round. Work whose submission body
     /// was persisted but never sent is submitted and refused by the world with
-    /// `ScopeChanged`. A cell whose command already committed does not end
-    /// this way: the controller answers it with its receipt whatever the scope
+    /// `ScopeChanged`. Narrative work is never refused for a moved scope at
+    /// resume: the kernel refuses it at submit and the same prose is
+    /// re-lowered once, and only a second move ends it overtaken. A cell whose
+    /// command already committed does not end this way: the controller answers it with its receipt whatever the scope
     /// has done since.
     ScopeMoved,
     /// A grouped member's own tool call could not be decoded and it proposed
@@ -646,12 +648,10 @@ fn classify(error: &ControllerError) -> CellEnd {
             CellEnd::Refused(RefusalReason::ScopeMoved)
         }
         ControllerError::World(_) => CellEnd::Refused(RefusalReason::WorldRejected),
-        ControllerError::NoOpportunity { .. } | ControllerError::AmbiguousOpportunity => {
-            CellEnd::Refused(RefusalReason::OpportunityGone)
-        }
-        ControllerError::ScopeMoved | ControllerError::OpportunityMismatch => {
-            CellEnd::Refused(RefusalReason::ScopeMoved)
-        }
+        ControllerError::NoOpportunity { .. }
+        | ControllerError::AmbiguousOpportunity
+        | ControllerError::OpportunityMismatch => CellEnd::Refused(RefusalReason::OpportunityGone),
+        ControllerError::ScopeMoved => CellEnd::Refused(RefusalReason::ScopeMoved),
         _ => CellEnd::Fatal("controller_error"),
     }
 }

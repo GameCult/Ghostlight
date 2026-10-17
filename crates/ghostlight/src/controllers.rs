@@ -924,11 +924,6 @@ impl ControllerWork {
 }
 
 impl NarrativeCheckpoint {
-    /// The row holds its submission body: the next step is the world's answer.
-    fn awaits_world(&self) -> bool {
-        matches!(self, Self::ReadyToSubmit { .. } | Self::NoProposal { .. })
-    }
-
     fn command_id(&self) -> CommandId {
         match self {
             Self::Projector { command_id, .. }
@@ -1103,11 +1098,6 @@ impl OperationalCheckpoint {
             | Self::ReadyToSubmit { command_id, .. }
             | Self::NoProposal { command_id, .. } => *command_id,
         }
-    }
-
-    /// The row holds its submission body: the next step is the world's answer.
-    fn awaits_world(&self) -> bool {
-        matches!(self, Self::ReadyToSubmit { .. } | Self::NoProposal { .. })
     }
 
     fn opportunity(&self) -> &DecisionOpportunity {
@@ -1633,29 +1623,14 @@ fn turn_matches_opportunity(turn: &PersonaTurn, opportunity: &DecisionOpportunit
 }
 
 /// Two opportunity values that name the same decision: the same world and the
-/// same decision scope. The scope digest is not part of the name. It says what
-/// the scope looked like when a proposal was reasoned, so it gates work that is
-/// still reasoning, never a row whose submission body the world answers by
-/// command id.
+/// same decision scope. This is the one owner of which decision a persisted
+/// row answers, for both lanes. The caller's opportunity only names the
+/// decision; it never decides staleness. The world does: the operational lane
+/// checks `ensure_scope_unchanged` before each round, and the narrative lane
+/// runs to the kernel's `ScopeChanged` at submit, where `interrupted`
+/// re-lowers the same prose once.
 fn same_decision(left: &DecisionOpportunity, right: &DecisionOpportunity) -> bool {
     left.world_id == right.world_id && left.scope == right.scope
-}
-
-/// Whether a persisted narrative row may be resumed against the caller's
-/// opportunity. The operational lane no longer uses it: its caller opportunity
-/// only identifies the decision (`same_decision`) and the world check in
-/// `ensure_scope_unchanged` decides staleness. The narrative lane keeps it
-/// pending question `narrative-resume-scope-moved`.
-/// A row that awaits the world carries its submission body, and the world
-/// answers it by command id (its receipt, or a `ScopeChanged` refusal), so the
-/// caller's digest cannot change what that command is. A row still reasoning
-/// keeps the digest check, so no tokens are spent on a scope that moved.
-fn row_answers_caller(
-    row: &DecisionOpportunity,
-    caller: &DecisionOpportunity,
-    awaits_world: bool,
-) -> bool {
-    same_decision(row, caller) && (awaits_world || row.scope_digest == caller.scope_digest)
 }
 
 fn derive_narrative_capture(
@@ -2939,6 +2914,16 @@ pub enum ConstituentRefusalReason {
     CallUnattributed,
 }
 
+/// The label for a member whose selection failed: only a moved scope is
+/// `ScopeChanged`; every other error means the subject holds no single
+/// decidable opportunity.
+fn selection_refusal(error: &ControllerError) -> ConstituentRefusalReason {
+    match error {
+        ControllerError::ScopeMoved => ConstituentRefusalReason::ScopeChanged,
+        _ => ConstituentRefusalReason::LeftBeforeSelection,
+    }
+}
+
 /// One coarse cell's outcome: one inference, N ordinary one-opportunity
 /// submissions, and whatever the decode could not attribute.
 #[derive(Debug)]
@@ -3141,7 +3126,9 @@ impl ControllerRunner {
         }
         match self.work.lookup(command_id).await? {
             ControllerWorkLookup::Confirmed(ControllerWork::Narrative(checkpoint)) => {
-                if !row_answers_caller(checkpoint.opportunity(), opportunity, checkpoint.awaits_world()) {
+                // A moved scope is the kernel's to refuse at submit, and
+                // `interrupted` re-lowers once (ruling narrative-resume-relowers).
+                if !same_decision(checkpoint.opportunity(), opportunity) {
                     return Err(ControllerError::OpportunityMismatch);
                 }
                 return self
@@ -3149,7 +3136,7 @@ impl ControllerRunner {
                     .await;
             }
             ControllerWorkLookup::CustodyUncertain(ControllerWork::Narrative(checkpoint)) => {
-                if !row_answers_caller(checkpoint.opportunity(), opportunity, checkpoint.awaits_world()) {
+                if !same_decision(checkpoint.opportunity(), opportunity) {
                     return Err(ControllerError::OpportunityMismatch);
                 }
                 return Ok(narrative_pending(
@@ -3539,13 +3526,9 @@ impl ControllerRunner {
                 // anyway, and the drop is recorded where a reader can see it.
                 // Still offered at a new digest is a moved scope; anything else
                 // means the subject holds no single decidable opportunity.
-                Err(ControllerError::ScopeMoved) => refused.push(ConstituentRefusal {
+                Err(error) => refused.push(ConstituentRefusal {
                     subject: member.subject,
-                    reason: ConstituentRefusalReason::ScopeChanged,
-                }),
-                Err(_) => refused.push(ConstituentRefusal {
-                    subject: member.subject,
-                    reason: ConstituentRefusalReason::LeftBeforeSelection,
+                    reason: selection_refusal(&error),
                 }),
             }
         }
@@ -19970,6 +19953,28 @@ mod tests {
         task.await.unwrap();
     }
 
+    /// `AmbiguousOpportunity` cannot be built through a live world (one
+    /// opportunity per scope), so the mapping is pinned directly.
+    #[test]
+    fn selection_refusal_names_only_a_moved_scope_scope_changed() {
+        assert_eq!(
+            selection_refusal(&ControllerError::ScopeMoved),
+            ConstituentRefusalReason::ScopeChanged
+        );
+        for left in [
+            ControllerError::NoOpportunity {
+                expected: ControllerMode::NarrativePersona,
+            },
+            ControllerError::AmbiguousOpportunity,
+            ControllerError::OpportunityMismatch,
+        ] {
+            assert_eq!(
+                selection_refusal(&left),
+                ConstituentRefusalReason::LeftBeforeSelection
+            );
+        }
+    }
+
     #[tokio::test]
     async fn a_grouped_member_that_truly_left_is_named_in_refused_as_left_before_selection() {
         let (_directory, mailbox, task) = active_cell_mailbox(vec![
@@ -20227,17 +20232,17 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_narrative_row_in_flight_whose_scope_moved_is_refused_before_inference() {
+    async fn a_narrative_row_in_flight_whose_scope_moved_runs_to_the_kernel_and_re_lowers_once() {
         let (_directory, mailbox, task) = active_cell_mailbox(vec![
             NewController::NarrativePersona,
             NewController::NarrativePersona,
         ])
         .await;
         // The first turn's projector call is pending; the second subject's turn
-        // commits; a further call would panic the port.
+        // commits and moves the first's scope.
         let mut outputs = vec![Err(InferenceFault::retryable("the provider is busy"))];
         outputs.extend(narrative_turn_outputs("Tobin", "Then we close the span."));
-        let (runner, _store) = grouped_runner(&mailbox, outputs);
+        let (runner, store) = grouped_runner(&mailbox, outputs);
         let snapshot = mailbox.snapshot().await.unwrap();
         let first = snapshot.opportunities[0].clone();
         let second = snapshot.opportunities[1].clone();
@@ -20253,11 +20258,34 @@ mod tests {
         let moved = mailbox.snapshot().await.unwrap();
         let fresh = fresh_opportunity(&moved, first.scope.subject_id);
         assert_ne!(fresh.scope_digest, first.scope_digest, "the scope did not move");
-        let error = runner.run_narrative(command, &fresh).await.unwrap_err();
-        assert!(matches!(error, ControllerError::OpportunityMismatch));
-        assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
+        let log_before = mailbox.operator_log().await.unwrap().len();
+        assert_eq!(log_before, 1);
 
-        drop(runner);
+        // The fresh caller names the row's decision, so the row runs on: the
+        // three turn calls, the kernel's refusal, then one re-lowering. A fifth
+        // answer is left over to show that no further call was made.
+        let relowering = || narrative_turn_outputs("Mara", "The rain has teeth tonight.").remove(2);
+        let mut resumed = narrative_turn_outputs("Mara", "The rain has teeth tonight.");
+        resumed.push(relowering());
+        resumed.push(relowering());
+        let (resume, port) = runner_over(&mailbox, resumed, store.clone());
+        let NarrativeRun::Completed(decision) =
+            resume.run_narrative(command, &fresh).await.unwrap()
+        else {
+            panic!("the resumed narrative row did not re-lower to a commit")
+        };
+        assert!(
+            decision.persona_turn().binding().interrupted_from.is_some(),
+            "the turn committed without recording the interruption"
+        );
+        assert_eq!(
+            port.outputs.lock().unwrap().len(),
+            1,
+            "the resume did not spend exactly four provider calls"
+        );
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), log_before + 1);
+
+        drop((runner, resume));
         drop(mailbox);
         task.await.unwrap();
     }
@@ -20578,7 +20606,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_narrative_row_in_flight_in_uncertain_custody_keeps_the_digest_gate() {
+    async fn a_narrative_row_in_flight_in_uncertain_custody_is_pending_for_its_own_decision() {
         let (_directory, mailbox, task) = active_cell_mailbox(vec![
             NewController::NarrativePersona,
             NewController::NarrativePersona,
@@ -20605,16 +20633,14 @@ mod tests {
         let fresh = fresh_opportunity(&mailbox.snapshot().await.unwrap(), first.scope.subject_id);
         assert_ne!(fresh.scope_digest, first.scope_digest, "the scope did not move");
         let uncertain = uncertain_runner(&mailbox, &store);
-        assert!(matches!(
-            uncertain.run_narrative(command, &fresh).await,
-            Err(ControllerError::OpportunityMismatch)
-        ));
-        let NarrativeRun::Pending(pending) =
-            uncertain.run_narrative(command, &first).await.unwrap()
-        else {
-            panic!("a row bound to the caller's own scope was not reported pending")
-        };
-        assert_eq!(pending.reason(), ControllerPendingReason::StoreReopenRequired);
+        for caller in [&fresh, &first] {
+            let NarrativeRun::Pending(pending) =
+                uncertain.run_narrative(command, caller).await.unwrap()
+            else {
+                panic!("a row of the caller's own decision was not reported pending")
+            };
+            assert_eq!(pending.reason(), ControllerPendingReason::StoreReopenRequired);
+        }
 
         drop((runner, uncertain));
         drop(mailbox);
@@ -20715,8 +20741,14 @@ mod tests {
         ) -> Result<ControllerWorkWrite, ControllerWorkStoreError> {
             let written = self.inner.persist(work).await?;
             let awaiting = match work {
-                ControllerWork::Narrative(row) => row.awaits_world(),
-                ControllerWork::Operational(row) => row.awaits_world(),
+                ControllerWork::Narrative(row) => matches!(
+                    row,
+                    NarrativeCheckpoint::ReadyToSubmit { .. } | NarrativeCheckpoint::NoProposal { .. }
+                ),
+                ControllerWork::Operational(row) => matches!(
+                    row,
+                    OperationalCheckpoint::ReadyToSubmit { .. } | OperationalCheckpoint::NoProposal { .. }
+                ),
                 _ => false,
             };
             if awaiting && self.armed.load(Ordering::SeqCst) {
