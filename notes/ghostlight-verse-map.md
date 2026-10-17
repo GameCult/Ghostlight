@@ -230,6 +230,13 @@ from 21:04 the denial forever. Mechanism:
 - In the narrative lane, the lookup digest clause is the only gate. A driver
   resume with the fresh opportunity is refused there. Fork A's kernel-refusal
   re-lowering (`1ef973a`) runs only when a caller passes the stale opportunity.
+- Grouped lane (probed 2026-10-17, `771a79d`, by reading; `select_one` now
+  returns `ScopeMoved`): `run_group` maps every `select_one` error to
+  `LeftBeforeSelection`, which the driver records as `OpportunityGone`. A member
+  whose scope moved is dropped before any constituent, inference or submission
+  exists, so only the label is wrong; spend is identical and nothing branches on
+  the reason (`grouped-record-and-carry` keys on membership in `refused`). Own
+  cut: `cut-grouped-scope-moved-label.r1`.
 
 ## Model page
 
