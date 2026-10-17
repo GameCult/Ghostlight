@@ -1,6 +1,6 @@
 # Ghostlight Verse: Map
 
-Campaign `ghostlight-verse`, target `ghostlight-verse:target:r2`
+Campaign `ghostlight-verse`, target `ghostlight-verse:target:r3`
 (`notes/ghostlight-verse-target.md`). This page holds body facts, the model
 page and rationale only. Cut specs, questions, rulings and follow-ups live in
 the Eureka mind; query them there, never copy them here.
@@ -238,6 +238,40 @@ from 21:04 the denial forever. Mechanism:
   the reason (`grouped-record-and-carry` keys on membership in `refused`). Own
   cut: `cut-grouped-scope-moved-label.r1`.
 
+### Who refuses a resumed narrative row whose scope moved? (probed 2026-10-17, `73f26a5`)
+
+- **Today, at lookup, by the caller's digest.** `run_narrative`'s Confirmed
+  and CustodyUncertain arms (`controllers.rs` 3144, 3152) call
+  `row_answers_caller`, the only callers it has since `in-flight-gate`
+  (`771a79d`). A fresh caller is refused `OpportunityMismatch`; a stale caller
+  passes to Fork A. Nothing in Projector, Persona or Interpreter rounds reads
+  the world (source read: `self.select` is called only at fresh run, round
+  checks of the operational lane, and the other lanes' fresh paths).
+- **The kernel path is already whole.** `submit_narrative`'s `ScopeChanged`
+  arm calls `interrupted`, which re-lowers once. A second move reads
+  `interrupted_from.is_some()` and ends the turn `overtaken`, with nothing
+  submitted and no further inference. The progression arm (~2375) refuses to
+  persist a second re-lowering even if the runner tried. Pinned by
+  `a_second_scope_change_after_the_re_lowering_spends_nothing`.
+- **Probe** (Yggdrasil, ygg-verify rust, clone at `73f26a5`, sed in the job;
+  script `probe1.sh` in the imagination-ag5-narrative scratchpad): both lookup
+  arms put on `same_decision`, and `OpportunityMismatch` moved from `ScopeMoved`
+  to `OpportunityGone` in `classify`. `cargo test -p ghostlight --lib`: 803
+  passed, 3 failed. The failures were
+  `a_narrative_row_in_flight_whose_scope_moved_is_refused_before_inference`
+  (the resumed row now called the provider and ran the test port dry),
+  `a_narrative_row_in_flight_in_uncertain_custody_keeps_the_digest_gate`, and
+  `an_error_ends_a_cell_as_the_run_must_treat_it` (the classify table). No
+  verse driver test reached `ScopeMoved` through `OpportunityMismatch`.
+- **`OpportunityMismatch` is no longer a moved scope anywhere.** After the cut
+  it arises from `same_decision` (another decision), `select_scope`'s
+  controller-id check, and the Persona lane's forged-field refusals. The driver
+  cannot reach a `same_decision` mismatch, because `run_cell` derives the
+  command id from world, cell, subject and tick.
+- **Dead code.** Both `awaits_world` methods have no production caller once
+  `row_answers_caller` goes. The operational one has been test-only since
+  `771a79d`. The only other reader is the `NeverSentStore` test fixture.
+
 ## Model page
 
 One row per persistent kind phase 1 touches. No cell may be empty.
@@ -252,6 +286,7 @@ One row per persistent kind phase 1 touches. No cell may be empty.
 | v1 body (`ghostlight-dungeon.service`, `/srv/ghostlight`, v1 state) | unit name; paths | retired in fact 2026-09-23; unit still enabled | nobody today; phase 1 assigns its removal to a gamecult-ops cut, data by operator ruling |
 | Bonsai lifecycle (Raven containers) | container `bonsai`; scripts under `/opt/gamecult/bonsai` | started by hand ("Start AI Chat"); restarted by the RSS watchdog; stopped by the idle reaper | gamecult-ops/Raven; Dungeon only reads the endpoint; availability policy is an operator question |
 | Repository docs (README, AGENTS, live architecture pages, handoff) | path on `main` | rewritten to the live machine; pre-rebuild material leaves `main` by operator ruling | the Ghostlight repo; history in git, dated cut documents and postmortems |
+| Controller-work row (`controller-work.cc`, narrative and operational checkpoints) | `CommandId` (driver: derived from world, cell, subject, tick) | persisted before each spend; advanced only by the progression rule; a narrative row re-lowers at most once (`interrupted_from`), then commits, declines or ends overtaken | which decision a row answers: `same_decision`, both lanes, the caller naming identity only. Whether its scope moved: the world (operational: `ensure_scope_unchanged` before each round; narrative: the kernel's `ScopeChanged` at submit, answered by `interrupted`). Labels: `classify` alone |
 
 ### Where phase 2's verb sets plug in
 
@@ -300,3 +335,16 @@ verbs as the target.
   Dungeon tests that drive the real client, and nothing runs them. Fixing the
   gate means a runner with both Rust and Node, which is Idunn's recipe and
   runner surface: a follow-up, with each phase-1 Hands run doing them by hand.
+- **A narrative resume has one detector, and it is the kernel** (ruling
+  `narrative-resume-relowers`). The caller's opportunity names the decision
+  and nothing more, in both lanes, through the one `same_decision`. The lanes
+  differ only in when the world is asked. The operational lane asks before each
+  round, because it has nothing to preserve. The narrative lane asks at submit,
+  because its prose and receipts survive to be lowered again. The price is the
+  remaining rounds plus at most one Interpreter call. `OpportunityMismatch`
+  then stops meaning a moved scope, so `classify` labels it `OpportunityGone`,
+  as the grouped lane already does. Keeping it on `ScopeMoved` would leave a
+  second, wrong answer to "did the scope move". The grouped selection label
+  becomes a pure function, because `AmbiguousOpportunity` cannot be built
+  through a live world, which offers one opportunity per scope. Pinning the
+  function is what closes follow-up `grouped-left-arms-pin`.
