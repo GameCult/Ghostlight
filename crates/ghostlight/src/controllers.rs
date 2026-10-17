@@ -8449,12 +8449,7 @@ mod tests {
             .turn(CommandId::new(), &stale_opportunity)
             .await
             .unwrap_err();
-        assert!(matches!(
-            error,
-            ControllerError::NoOpportunity {
-                expected: ControllerMode::NarrativePersona
-            }
-        ));
+        assert!(matches!(error, ControllerError::ScopeMoved), "{error:?}");
         assert!(
             capturing.prepared.lock().unwrap().is_empty(),
             "a stale scope digest reached inference"
@@ -11370,14 +11365,13 @@ mod tests {
         let refreshed = after.opportunities[0].clone();
         assert_ne!(refreshed, opportunity);
         assert_eq!(refreshed.scope_digest, opportunity.scope_digest);
-        // A digest the world does not derive selects nothing.
+        // A digest the world does not derive selects nothing: the scope is
+        // still offered, at a digest this caller did not see.
         let mut forged = opportunity.clone();
         forged.scope_digest = ScopeDigest::fixture("sha256:not-this-scope");
         assert!(matches!(
             runner.run_narrative(CommandId::new(), &forged).await,
-            Err(ControllerError::NoOpportunity {
-                expected: ControllerMode::NarrativePersona
-            })
+            Err(ControllerError::ScopeMoved)
         ));
         let NarrativeRun::Completed(resumed) =
             runner.run_narrative(command_id, &refreshed).await.unwrap()
