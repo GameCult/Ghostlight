@@ -98,7 +98,8 @@ pub enum RefusalReason {
     /// The cell's subject no longer holds an opportunity.
     OpportunityGone,
     /// The cell's work was bound to a scope that has since moved. Work still
-    /// reasoning is refused before any inference. Work whose submission body
+    /// reasoning is refused by the operational lane's world check before each
+    /// inference round. Work whose submission body
     /// was persisted but never sent is submitted and refused by the world with
     /// `ScopeChanged`. A cell whose command already committed does not end
     /// this way: the controller answers it with its receipt whatever the scope
@@ -648,7 +649,9 @@ fn classify(error: &ControllerError) -> CellEnd {
         ControllerError::NoOpportunity { .. } | ControllerError::AmbiguousOpportunity => {
             CellEnd::Refused(RefusalReason::OpportunityGone)
         }
-        ControllerError::OpportunityMismatch => CellEnd::Refused(RefusalReason::ScopeMoved),
+        ControllerError::ScopeMoved | ControllerError::OpportunityMismatch => {
+            CellEnd::Refused(RefusalReason::ScopeMoved)
+        }
         _ => CellEnd::Fatal("controller_error"),
     }
 }

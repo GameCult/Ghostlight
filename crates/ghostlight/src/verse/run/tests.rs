@@ -988,10 +988,15 @@ fn an_error_ends_a_cell_as_the_run_must_treat_it() {
             CellEnd::Refused(RefusalReason::OpportunityGone)
         ));
     }
-    assert!(matches!(
-        classify(&ControllerError::OpportunityMismatch),
-        CellEnd::Refused(RefusalReason::ScopeMoved)
-    ));
+    for moved in [
+        ControllerError::ScopeMoved,
+        ControllerError::OpportunityMismatch,
+    ] {
+        assert!(matches!(
+            classify(&moved),
+            CellEnd::Refused(RefusalReason::ScopeMoved)
+        ));
+    }
     assert!(matches!(
         classify(&ControllerError::CommandMismatch),
         CellEnd::Fatal("controller_error")

@@ -1551,10 +1551,20 @@ fn select_scope(
         .cloned()
         .collect::<Vec<_>>();
     let [opportunity] = matches.as_slice() else {
-        return if matches.is_empty() {
-            Err(ControllerError::NoOpportunity { expected })
-        } else {
+        return if !matches.is_empty() {
             Err(ControllerError::AmbiguousOpportunity)
+        } else if require_digest
+            && snapshot
+                .opportunities
+                .iter()
+                .filter(|opportunity| opportunity.scope == exact_opportunity.scope)
+                .count()
+                == 1
+        {
+            // The scope is still offered, at a digest the bound run did not see.
+            Err(ControllerError::ScopeMoved)
+        } else {
+            Err(ControllerError::NoOpportunity { expected })
         };
     };
     let granted: Vec<AffordanceSnapshot> = snapshot
@@ -1631,7 +1641,11 @@ fn same_decision(left: &DecisionOpportunity, right: &DecisionOpportunity) -> boo
     left.world_id == right.world_id && left.scope == right.scope
 }
 
-/// Whether a persisted row may be resumed against the caller's opportunity.
+/// Whether a persisted narrative row may be resumed against the caller's
+/// opportunity. The operational lane no longer uses it: its caller opportunity
+/// only identifies the decision (`same_decision`) and the world check in
+/// `ensure_scope_unchanged` decides staleness. The narrative lane keeps it
+/// pending question `narrative-resume-scope-moved`.
 /// A row that awaits the world carries its submission body, and the world
 /// answers it by command id (its receipt, or a `ScopeChanged` refusal), so the
 /// caller's digest cannot change what that command is. A row still reasoning
@@ -2971,6 +2985,8 @@ pub enum ControllerError {
     AmbiguousOpportunity,
     #[error("opportunity does not match this exact controller command")]
     OpportunityMismatch,
+    #[error("the subject's opportunity on this scope moved to a new digest")]
+    ScopeMoved,
     #[error("controller opportunity has no Speak affordance")]
     SpeakUnavailable,
     #[error("controller opportunity grants no affordance")]
@@ -3204,7 +3220,7 @@ impl ControllerRunner {
         }
         match self.work.lookup(command_id).await? {
             ControllerWorkLookup::Confirmed(ControllerWork::Operational(checkpoint)) => {
-                if !row_answers_caller(checkpoint.opportunity(), opportunity, checkpoint.awaits_world()) {
+                if !same_decision(checkpoint.opportunity(), opportunity) {
                     return Err(ControllerError::OpportunityMismatch);
                 }
                 return self
@@ -3212,7 +3228,7 @@ impl ControllerRunner {
                     .await;
             }
             ControllerWorkLookup::CustodyUncertain(ControllerWork::Operational(checkpoint)) => {
-                if !row_answers_caller(checkpoint.opportunity(), opportunity, checkpoint.awaits_world()) {
+                if !same_decision(checkpoint.opportunity(), opportunity) {
                     return Err(ControllerError::OpportunityMismatch);
                 }
                 return Ok(operational_pending(
@@ -3905,10 +3921,13 @@ impl ControllerRunner {
         select_one(&snapshot, exact_opportunity)
     }
 
-    /// The scope this run bound still derives the same digest. The operational
-    /// lane's early abort, and only its: a lane holding nothing to preserve
-    /// stops as soon as the scope moves, while the narrative lane runs to the
-    /// kernel's refusal so its prose and receipts survive to be lowered again.
+    /// The one owner of "an operational in-flight row whose scope moved spends
+    /// nothing": the scope this run bound still derives the same digest, checked
+    /// against the world before every round, fresh or resumed. The caller's
+    /// opportunity only names the decision and never decides staleness; a moved
+    /// digest is `ScopeMoved`. The operational lane's early abort, and only its:
+    /// the narrative lane runs to the kernel's refusal so its prose and receipts
+    /// survive to be lowered again.
     async fn ensure_scope_unchanged(
         &self,
         opportunity: &DecisionOpportunity,
@@ -8430,12 +8449,7 @@ mod tests {
             .turn(CommandId::new(), &stale_opportunity)
             .await
             .unwrap_err();
-        assert!(matches!(
-            error,
-            ControllerError::NoOpportunity {
-                expected: ControllerMode::NarrativePersona
-            }
-        ));
+        assert!(matches!(error, ControllerError::ScopeMoved), "{error:?}");
         assert!(
             capturing.prepared.lock().unwrap().is_empty(),
             "a stale scope digest reached inference"
@@ -11351,14 +11365,13 @@ mod tests {
         let refreshed = after.opportunities[0].clone();
         assert_ne!(refreshed, opportunity);
         assert_eq!(refreshed.scope_digest, opportunity.scope_digest);
-        // A digest the world does not derive selects nothing.
+        // A digest the world does not derive selects nothing: the scope is
+        // still offered, at a digest this caller did not see.
         let mut forged = opportunity.clone();
         forged.scope_digest = ScopeDigest::fixture("sha256:not-this-scope");
         assert!(matches!(
             runner.run_narrative(CommandId::new(), &forged).await,
-            Err(ControllerError::NoOpportunity {
-                expected: ControllerMode::NarrativePersona
-            })
+            Err(ControllerError::ScopeMoved)
         ));
         let NarrativeRun::Completed(resumed) =
             runner.run_narrative(command_id, &refreshed).await.unwrap()
@@ -19535,7 +19548,7 @@ mod tests {
         .run_operational(operational_command, &operational)
         .await;
         assert!(
-            matches!(refused, Err(ControllerError::NoOpportunity { .. })),
+            matches!(refused, Err(ControllerError::ScopeMoved)),
             "the operational lane stopped holding its early abort: {refused:?}"
         );
         assert_eq!(
@@ -19804,7 +19817,13 @@ mod tests {
             .run_operational(first_command, &fresh)
             .await
             .unwrap_err();
-        assert!(matches!(error, ControllerError::OpportunityMismatch));
+        assert!(matches!(error, ControllerError::ScopeMoved), "{error:?}");
+        // The row's own stale opportunity reads the same: the world decides.
+        let error = runner
+            .run_operational(first_command, &first)
+            .await
+            .unwrap_err();
+        assert!(matches!(error, ControllerError::ScopeMoved), "{error:?}");
         assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
 
         drop(runner);
@@ -20358,11 +20377,99 @@ mod tests {
         task.await.unwrap();
     }
 
-    /// An in-flight operational row read in uncertain custody after its scope
-    /// moved is refused as a mismatch, not reported pending; read against its
-    /// own scope it is pending.
     #[tokio::test]
-    async fn an_operational_row_in_flight_in_uncertain_custody_keeps_the_digest_gate() {
+    async fn select_scope_tells_a_moved_digest_from_a_gone_scope() {
+        let (_directory, mailbox, task) = active_cell_mailbox(vec![
+            NewController::OperationalAgent,
+            NewController::OperationalAgent,
+        ])
+        .await;
+        let snapshot = mailbox.snapshot().await.unwrap();
+        let first = snapshot.opportunities[0].clone();
+        let mut moved = snapshot.clone();
+        moved.opportunities[0].scope_digest = snapshot.opportunities[1].scope_digest.clone();
+        assert_ne!(first.scope_digest, moved.opportunities[0].scope_digest);
+        assert!(matches!(
+            select_scope(&moved, &first, true),
+            Err(ControllerError::ScopeMoved)
+        ));
+        assert!(select_scope(&moved, &first, false).is_ok());
+        let mut gone = snapshot.clone();
+        gone.opportunities.remove(0);
+        assert!(matches!(
+            select_scope(&gone, &first, true),
+            Err(ControllerError::NoOpportunity { .. })
+        ));
+        let mut doubled = snapshot.clone();
+        doubled.opportunities.push(first.clone());
+        assert!(matches!(
+            select_scope(&doubled, &first, true),
+            Err(ControllerError::AmbiguousOpportunity)
+        ));
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// The probe's first case: the world moves under a run between its rounds.
+    /// The check at the top of the next round refuses it, one provider call in
+    /// total, and the driver would label it `ScopeMoved`.
+    #[tokio::test]
+    async fn an_operational_scope_move_between_rounds_is_refused_before_the_next_round() {
+        let (_directory, mailbox, task, world) = interruption_world().await;
+        let operational = mailbox
+            .snapshot()
+            .await
+            .unwrap()
+            .opportunities
+            .iter()
+            .find(|entry| entry.scope.subject_id == world.neighbour)
+            .expect("the neighbour has a live opportunity")
+            .clone();
+        let calls = Arc::new(AtomicUsize::new(0));
+        let runner = ControllerRunner::open(
+            mailbox.clone(),
+            Arc::new(InterruptingPort {
+                mailbox: mailbox.clone(),
+                outputs: Mutex::new(vec![output(
+                    vec![InferenceEvent::ToolCall {
+                        call_id: "need".into(),
+                        name: RECORD_NEED_TOOL.into(),
+                        arguments: json!({ "detail": "no route" }).to_string(),
+                    }],
+                    "operational-need",
+                )]),
+                calls: calls.clone(),
+                commits: vec![(
+                    0,
+                    MidTurnCommit::Ops(vec![crate::patch::ComponentOp::CloseRoute {
+                        route: Ref::Existing(world.ramp),
+                    }]),
+                )],
+                seen: Arc::new(Mutex::new(Vec::new())),
+            }),
+            Arc::new(RecordingWorkStore {
+                persisted: Arc::new(AtomicBool::new(true)),
+                work: Mutex::new(BTreeMap::new()),
+            }),
+            models(),
+        )
+        .expect("the fixture ports open");
+        let result = runner.run_operational(CommandId::new(), &operational).await;
+        assert!(
+            matches!(result, Err(ControllerError::ScopeMoved)),
+            "{result:?}"
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), 1, "a doomed round spent inference");
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// An in-flight operational row read in uncertain custody is pending for
+    /// its own decision whatever digest the caller holds: nothing is spent
+    /// there, and the world check runs at the point of spend after reopen.
+    #[tokio::test]
+    async fn an_operational_row_in_flight_in_uncertain_custody_is_pending_for_its_own_decision() {
         let (_directory, mailbox, task) = active_cell_mailbox(vec![
             NewController::OperationalAgent,
             NewController::OperationalAgent,
@@ -20393,16 +20500,14 @@ mod tests {
         let fresh = fresh_opportunity(&mailbox.snapshot().await.unwrap(), first.scope.subject_id);
         assert_ne!(fresh.scope_digest, first.scope_digest, "the scope did not move");
         let uncertain = uncertain_runner(&mailbox, &store);
-        assert!(matches!(
-            uncertain.run_operational(command, &fresh).await,
-            Err(ControllerError::OpportunityMismatch)
-        ));
-        let OperationalRun::Pending(pending) =
-            uncertain.run_operational(command, &first).await.unwrap()
-        else {
-            panic!("a row bound to the caller's own scope was not reported pending")
-        };
-        assert_eq!(pending.reason(), ControllerPendingReason::StoreReopenRequired);
+        for caller in [&fresh, &first] {
+            let OperationalRun::Pending(pending) =
+                uncertain.run_operational(command, caller).await.unwrap()
+            else {
+                panic!("a row in uncertain custody was not reported pending")
+            };
+            assert_eq!(pending.reason(), ControllerPendingReason::StoreReopenRequired);
+        }
 
         drop((runner, uncertain));
         drop(mailbox);
