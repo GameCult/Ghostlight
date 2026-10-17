@@ -2372,6 +2372,30 @@ fn grouped_refusing(
 }
 
 #[tokio::test]
+async fn a_moved_scope_member_in_a_coarse_cell_is_recorded_as_scope_moved_at_its_position() {
+    let (_dir, verse) = Harness::fresh().await;
+    let group = three_member_group(&verse).await;
+    let Cell::Group { members, .. } = &group else {
+        panic!("a group")
+    };
+    let reasons = [
+        ConstituentRefusalReason::LeftBeforeSelection,
+        ConstituentRefusalReason::ScopeChanged,
+        ConstituentRefusalReason::LeftBeforeSelection,
+    ];
+    let (status, committed, refusals) = fold(grouped_refusing(&group, &reasons), &group, 3);
+    assert!(status.is_none() && committed.is_empty());
+    assert_eq!(
+        refusals,
+        vec![
+            Refusal { cell: 3, subject: members[0].subject, reason: RefusalReason::OpportunityGone },
+            Refusal { cell: 3, subject: members[1].subject, reason: RefusalReason::ScopeMoved },
+            Refusal { cell: 3, subject: members[2].subject, reason: RefusalReason::OpportunityGone },
+        ]
+    );
+}
+
+#[tokio::test]
 async fn a_cell_the_driver_folds_records_each_refused_member_at_its_own_position() {
     let (_dir, verse) = Harness::fresh().await;
     let cover = cover_of(&verse, 1).await;
