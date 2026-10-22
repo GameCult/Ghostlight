@@ -1,5 +1,7 @@
 # Ghostlight Dungeon Session Zero
 
+> Status: the Dungeon daemon described here is parked at tag `parked/ghostlight-eve-surface` (2026-10-22); it is not on main.
+
 Status: adopted direction, 2026-09-15. Not implemented. Its role as the
 playtest gate is superseded (operator, 2026-09-22) by the play agent,
 `ghostlight-play-agent.md` (plan step 16). D1–D3 and the library passes

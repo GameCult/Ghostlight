@@ -63,6 +63,11 @@ attributed proposal — is not part of this pass; see "Not in this pass" below.
 
 ## Transport
 
+Status: the HTTP door below lived in the Dungeon daemon's `api_router` and is
+parked with it at tag `parked/ghostlight-eve-surface`; no process on main serves
+it. `ghostlight::admit_document` and `encode_receipt` are the contract a host
+serves.
+
 `POST /cultnet/world-patch`, declared beside `/cultnet/snapshot` in
 `api_router` (`runtime.rs`). The handler gates loopback and content type
 (`application/msgpack`) exactly as the snapshot route does, then hands the

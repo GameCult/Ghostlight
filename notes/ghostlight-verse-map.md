@@ -1,5 +1,7 @@
 # Ghostlight Verse: Map
 
+> Status: Dungeon, eve.rs and the bridge-test references below are parked at tag `parked/ghostlight-eve-surface`; line refs are to that tag.
+
 Campaign `ghostlight-verse`, target `ghostlight-verse:target:r3`
 (`notes/ghostlight-verse-target.md`). This page holds body facts, the model
 page and rationale only. Cut specs, questions, rulings and follow-ups live in

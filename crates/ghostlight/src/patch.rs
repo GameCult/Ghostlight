@@ -7916,7 +7916,8 @@ mod tests {
     };
 
     /// Owner: `WorldPatch::sets_persona_of_existing_subject`. Consumer:
-    /// `ghostlight-dungeon`'s play agent (PA.f61), which refuses a
+    /// `ghostlight-dungeon`'s play agent (PA.f61, parked at
+    /// `parked/ghostlight-eve-surface`), which refuses a
     /// `set_persona_material` run whose patch answers true here, since
     /// `WorldPatch`'s own fields are `pub(crate)` and Dungeon may not parse
     /// its JSON to decide the question itself.

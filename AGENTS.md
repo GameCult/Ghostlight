@@ -5,7 +5,8 @@
 Ghostlight is a Rust world kernel and the play daemon built on it. Models
 propose; the kernel admits or refuses. The same kernel is meant to run the
 simulation behind Aetheria's public story, a persistent cast and storylets, as
-well as Ghostlight Dungeon, the single-player DM-led client. `README.md` says
+well as Ghostlight Dungeon, the single-player DM-led client (parked at
+tag `parked/ghostlight-eve-surface`). `README.md` says
 what exists today and what does not.
 
 ## Where State Lives
@@ -55,28 +56,20 @@ what exists today and what does not.
 - Kernel: `crates/ghostlight/src/`. Its vocabulary and current mechanism:
   `docs/architecture/ghostlight-world-ontology.md`. The consumer contract:
   `docs/architecture/ghostlight-world-consumer-api.md`.
-- Dungeon daemon: `crates/ghostlight-dungeon/src/` (`runtime.rs` for routes and
-  commands, `play.rs` for the play table, `eve.rs` for the surface).
-  Interface authority: `docs/architecture/ghostlight-eve-native-interface.md`.
+- Parked Dungeon (daemon, play table, Eve surface, browser host, Idunn recipe):
+  tag `parked/ghostlight-eve-surface`; not on main.
 - Persona membrane: `crates/ghostlight-persona-projection/src/lib.rs`.
-- Browser host: `web/`. Claude SDK sidecar: `sidecar/claude-sdk/`.
-- Architecture rationale: `docs/architecture/ghostlight-dungeon-mvp.md`.
+- Claude SDK sidecar: `sidecar/claude-sdk/`.
+- Architecture rationale (the parked Dungeon's): `docs/architecture/ghostlight-dungeon-mvp.md`.
   `notes/ghostlight-implementation-plan.md` is the historical plan of the 2026-09
   rebuild, not the current plan.
 
 ## Build, Verify, Deploy
 
-Ghostlight Dungeon ships to Linux on Yggdrasil. Idunn freezes an exact commit,
-runs the locked native Linux tests, builds the daemon and web projection in
-pinned containers, and seals the release. The steps are
-`deployment/idunn/recipe.toml`; the owning runbook is
-`gamecult-ops/runbooks/ghostlight-dungeon-yggdrasil.md`.
-
-You are probably reading this on a Windows workstation. That is where the shell
-is, not where the artifact runs. A Windows compile is not evidence about the
-Linux release; build for the target, or let the deploy path's builder do it, and
-say which one you used. Heavy builds and test runs go to Yggdrasil, not the
-workstation. Deploy only through Idunn (`idunn up ghostlight`).
+Nothing deploys from this repo: the Idunn target `ghostlight` is retired and no
+recipe exists on main. Kernel and verse tests run on Linux on Yggdrasil (the
+`ygg-verify` stopgap), not on the workstation; a Windows compile is not evidence
+about Linux, so say which host you used. Do not run `idunn up ghostlight`.
 
 For infrastructure, SSH, Idunn, Odin, or Heimdall work, consult
 `F:\Projects\gamecult-ops` before acting.

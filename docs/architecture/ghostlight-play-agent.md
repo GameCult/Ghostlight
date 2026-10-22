@@ -1,5 +1,7 @@
 # Ghostlight Dungeon play agent (plan step 16)
 
+> Status: the Dungeon daemon described here is parked at tag `parked/ghostlight-eve-surface` (2026-10-22); it is not on main.
+
 ## Status
 
 Target, adopted 2026-09-22. Not implemented. The means will be in
