@@ -68,7 +68,7 @@ Cuts without a `cut_spec`, withdrawn 2026-10-12 under map-only-what-runs: a spec
 
 ### Does main build and pass?
 
-Two jobs through `ygg-verify.sh` at `4fee97f`, with `vendor/eve` initialised:
+Two jobs through `ygg-verify.sh` at `4fee97f`, with the Eve submodule initialised:
 
 - Rust (image `eureka-verify-rust`), the recipe's own steps:
   `ghostlight-persona-projection` 35 passed; `ghostlight` lib 621 passed,
