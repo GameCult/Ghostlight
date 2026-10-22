@@ -1,5 +1,4 @@
 node_modules/
-web/dist/
 sidecar/claude-sdk/dist/
 target/
 

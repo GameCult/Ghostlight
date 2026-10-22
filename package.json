@@ -2,11 +2,8 @@
   "name": "ghostlight",
   "private": true,
   "version": "0.0.0",
-  "description": "Ghostlight: the Rust kernel for socially situated agents, and Ghostlight Dungeon, the single-player DM-led client.",
+  "description": "Ghostlight: the Rust kernel for socially situated agents.",
   "scripts": {
-    "dungeon:build": "cargo build --workspace && npm --prefix web run build",
-    "dungeon:test": "cargo test --workspace && npm --prefix web run build",
-    "dungeon:run": "cargo run -p ghostlight-dungeon",
     "sdk:build": "npm --prefix sidecar/claude-sdk run build",
     "sdk:test": "npm --prefix sidecar/claude-sdk test"
   },
