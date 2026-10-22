@@ -34,6 +34,15 @@ its ports.
 
 Start with those two documents, then `cargo doc -p ghostlight --open`.
 
+**Populate the algebra first.** The kernel owns the component operations; a world owns its
+affordance catalog, the verbs its actors can attempt. A fresh world knows one: the built-in
+Speak, which records an utterance and changes nothing. Until your world declares affordances
+(at genesis, by patch, or through elaborators) for moving, trading, taking, deciding and so on,
+every intent a model voices lowers to speech or to a recorded gap, and the prose built on that
+will be thin no matter how good the model is. The Aetheria verse genesis
+(`crates/ghostlight/src/verse/genesis.rs`) declares its grammar's verbs, and today they still
+only record the act; their effects are the next phase.
+
 ## Elaborators
 
 An elaborator is a model session, confined to one jurisdiction of the world, that
@@ -70,7 +79,8 @@ product under repair, not a demo to judge the kernel by. Its play-session
 defects are open (`notes/ghostlight-verse-map.md`, probed 2026-10-09), its
 storyteller is a small local model by default, and a live run with a hosted model
 waits on an operator key. An agent that runs it as a game master and finds the
-narration incoherent has measured the model, not the kernel. Sign-in is
+narration incoherent has most likely measured an empty affordance catalog or the model,
+not the kernel. Sign-in is
 Heimdall's, so it does not serve an anonymous visitor.
 
 ## Repo map
