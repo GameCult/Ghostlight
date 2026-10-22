@@ -5,8 +5,14 @@ No live smoke exists in this tree. The ignored test this file once documented,
 ran the production tick driver and the Active elaboration sweep against a real
 CodexConnector; the play agent's Cut 1 (`d69e9d4`) deleted both, and the test
 with them. A command that names it now matches nothing and exits 0. No
-replacement exists. The real-model gate that does exist is the Idunn recipe's
-`accept-real-persona-membrane` step (`deployment/idunn/recipe.toml`).
+replacement exists. The recipe that once gated a deploy on a real model is
+gone from main, and so is its `accept-real-persona-membrane` step. The one real-model test
+left is the ignored `controllers::tests::real_local_model_cognition_modes_commit_speech`
+(`crates/ghostlight/src/controllers.rs`). It has no automated run: it needs a model server
+on `GHOSTLIGHT_LOCAL_ENDPOINT` plus the `GHOSTLIGHT_CONTROLLER_*_MODEL`,
+`GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID` and `GHOSTLIGHT_ACCEPTANCE_PERSONA_PROSE_LOG`
+variables, and a person runs it by hand with `cargo test -p ghostlight -- --ignored
+real_local_model_cognition_modes_commit_speech`.
 
 What remains true and stays here: bringing up a real CodexConnector and a
 built Claude SDK sidecar. The seed lane (`world.seed`) still runs real

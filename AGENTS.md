@@ -66,8 +66,9 @@ what exists today and what does not.
 
 ## Build, Verify, Deploy
 
-Nothing deploys from this repo: the Idunn target `ghostlight` is retired and no
-recipe exists on main. Kernel and verse tests run on Linux on Yggdrasil (the
+Nothing deploys from this repo: the Idunn target `ghostlight` is braked and stopped (deployment and
+lifecycle brakes engaged, unit stopped; retirement waits on
+`ghostlight-verse:follow_up:idunn-v2-target-retirement`) and no recipe exists on main. Kernel and verse tests run on Linux on Yggdrasil (the
 `ygg-verify` stopgap), not on the workstation; a Windows compile is not evidence
 about Linux, so say which host you used. Do not run `idunn up ghostlight`.
 
