@@ -1,5 +1,7 @@
 # Ghostlight Verse: Map
 
+> Status: Dungeon, eve.rs and the bridge-test references below are parked at tag `parked/ghostlight-eve-surface`; line refs are to that tag.
+
 Campaign `ghostlight-verse`, target `ghostlight-verse:target:r3`
 (`notes/ghostlight-verse-target.md`). This page holds body facts, the model
 page and rationale only. Cut specs, questions, rulings and follow-ups live in
@@ -66,7 +68,7 @@ Cuts without a `cut_spec`, withdrawn 2026-10-12 under map-only-what-runs: a spec
 
 ### Does main build and pass?
 
-Two jobs through `ygg-verify.sh` at `4fee97f`, with `vendor/eve` initialised:
+Two jobs through `ygg-verify.sh` at `4fee97f`, with the Eve submodule initialised:
 
 - Rust (image `eureka-verify-rust`), the recipe's own steps:
   `ghostlight-persona-projection` 35 passed; `ghostlight` lib 621 passed,

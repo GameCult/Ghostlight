@@ -1,3 +1,0 @@
-[submodule "vendor/eve"]
-	path = vendor/eve
-	url = https://github.com/GameCult/Eve.git

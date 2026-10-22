@@ -2,7 +2,7 @@
 
 **Ghostlight is a world kernel: typed world state that a language model can
 propose changes to and can never write.** The valuable part is
-`crates/ghostlight`. The dungeon game in this repo is one client of it.
+`crates/ghostlight`. The Dungeon game, one client of it, is parked (below).
 
 **The thesis.** World state is typed documents. Every change to it, and every
 narrative dependency on it, is an operation in a closed, predefined algebra.
@@ -13,7 +13,7 @@ committed. A model-as-game-master holds the world in a context window and
 drifts; here the world is a digest-chained journal that survives restarts and
 cannot be talked into contradicting itself.
 
-**Use it as a structured state backend.** Do not judge it by the dungeon's
+**Use it as a structured state backend.** Do not judge it by the parked Dungeon's
 prose. The kernel is a library; prose comes from whichever model you plug into
 its ports.
 
@@ -30,7 +30,8 @@ its ports.
   algebra, and what the reducer checks.
 - `docs/architecture/ghostlight-world-consumer-api.md`: the contract for a
   program that reads a world and proposes changes to the characters it controls
-  (`POST /cultnet/world-patch`, served by the Dungeon daemon).
+  (`POST /cultnet/world-patch`; no process on main serves that door, a host serves
+  `ghostlight::admit_document`).
 
 Start with those two documents, then `cargo doc -p ghostlight --open`.
 
@@ -70,18 +71,12 @@ advances it a number of ticks under a token cap, reporting per tick what each
 faction did and what it cost. Nothing loads AetheriaLore prose, models
 storylets, or produces episodes yet. Targets: `notes/ghostlight-verse-target.md`.
 
-## The dungeon harness
+## Ghostlight Dungeon (parked)
 
-`crates/ghostlight-dungeon` is a single-player, DM-led game on one world: free
-text in, a Persona's prose out, an Interpreter lowering that prose to proposals
-the kernel decides. Status: it is deployed on Yggdrasil under Idunn, but it is a
-product under repair, not a demo to judge the kernel by. Its play-session
-defects are open (`notes/ghostlight-verse-map.md`, probed 2026-10-09), its
-storyteller is a small local model by default, and a live run with a hosted model
-waits on an operator key. An agent that runs it as a game master and finds the
-narration incoherent has most likely measured an empty affordance catalog or the model,
-not the kernel. Sign-in is
-Heimdall's, so it does not serve an anonymous visitor.
+The single-player, DM-led client and its daemon, Eve play surface and browser
+host are parked at tag `parked/ghostlight-eve-surface`. Nothing is deployed and
+nothing on main serves HTTP. The Dungeon returns when Thing 2 gives it a UI
+(follow-up `dungeon-ui-on-thing2`); the rebuild starts from the tag.
 
 ## Repo map
 
@@ -89,14 +84,10 @@ Heimdall's, so it does not serve an anonymous visitor.
 |---|---|
 | `crates/ghostlight/` | The sealed kernel library. |
 | `crates/ghostlight-persona-projection/` | Membrane between structured state and a prose-only Persona. |
-| `crates/ghostlight-dungeon/` | The `ghostlight-dungeon` daemon: HTTP and Eve routes, play table, CultMesh publication, Idunn health. |
 | `crates/ghostlight-verse/` | The `ghostlight-verse` operator command line (`genesis`, `run`). |
-| `web/` | Thin Eve browser host and Heimdall access adapter; owns no product state. |
 | `sidecar/claude-sdk/` | Node process serving `claude`-prefixed models to the kernel; a stopgap for a direct Messages API port. |
-| `deployment/idunn/recipe.toml` | The steps Idunn runs to test, build and seal a release. |
-| `vendor/eve/` | Git submodule supplying the Eve browser lowering. |
 | `AGENTS.md` | Invariants and where things are. |
-| `docs/architecture/ghostlight-dungeon-mvp.md` | The authority architecture. |
+| `docs/architecture/ghostlight-dungeon-mvp.md` | The parked Dungeon's authority architecture (design record). |
 | `notes/` | The verse campaign's target and map, the handoff pointer, local smoke notes. |
 
 `docs/public-architecture/`, `docs/articles/` and `docs/product/` are design
@@ -106,32 +97,25 @@ running machine. Pages ending in `-cut.md` or `-postmortem.md` are dated history
 
 ## Build and test
 
-The release target is Linux on Yggdrasil; a Windows build says nothing about it.
-The recipe's steps are the verification:
+Nothing deploys from this repo. Linux verification runs on Yggdrasil, not on a
+workstation:
 
 ```sh
-git submodule update --init vendor/eve
+cargo build --locked --workspace
 cargo test --locked -p ghostlight-persona-projection
 cargo test --locked -p ghostlight
-cargo test --locked -p ghostlight-dungeon --bin ghostlight-dungeon
-cargo build --locked --release -p ghostlight-dungeon --bin ghostlight-dungeon
-npm --prefix web ci && npm --prefix web test && npm --prefix web run build
+cargo test --locked -p ghostlight-verse
 ```
 
 The kernel alone needs only `cargo test -p ghostlight`. The sidecar has
-`npm run sdk:build` and `npm run sdk:test`. Four Dungeon tests are `#[ignore]`d
-because they drive the vendored browser lowering through
-`tools/eve_client_bridge.mjs` and need Node beside cargo; the release acceptance
-test `controllers::tests::real_local_model_cognition_modes_commit_speech` is
-ignored by default and needs a real model.
+`npm run sdk:build` and `npm run sdk:test`. The acceptance test
+`controllers::tests::real_local_model_cognition_modes_commit_speech` is ignored
+by default and needs a real model.
 
-Run the Dungeon locally with `npm run dungeon:run` or
-`cargo run -p ghostlight-dungeon -- --state-root PATH`; configuration is by
-`GHOSTLIGHT_*` environment variables (the recipe's `required_environment` lists
-the deployment ones). Inference is routed by model name: `local/` goes to an
-OpenAI-compatible loopback endpoint, `claude` to the SDK sidecar, and the verse
-runner's `hosted/` to an https endpoint. Ghostlight never reads, stores or
-forwards a model credential beyond a key file named at run time.
+Inference is routed by model name: `local/` goes to an OpenAI-compatible
+loopback endpoint, `claude` to the SDK sidecar, and the verse runner's `hosted/`
+to an https endpoint. Ghostlight never reads, stores or forwards a model
+credential beyond a key file named at run time.
 
 Runtime documents are MessagePack-backed CultCache. JSON appears only at schema
-publication, browser, model-provider and diagnostic boundaries.
+publication, model-provider and diagnostic boundaries.

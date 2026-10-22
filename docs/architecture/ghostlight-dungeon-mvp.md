@@ -1,5 +1,7 @@
 # Ghostlight authority architecture
 
+> Status: the Dungeon daemon described here is parked at tag `parked/ghostlight-eve-surface` (2026-10-22); it is not on main.
+
 ## Status
 
 This document is the adopted rebuild target for the Ghostlight runtime. It is

@@ -1606,7 +1606,8 @@ mod tests {
     // PA.f75: `communicate` was removed from `PLAY_TOOLS`; Dungeon drops it
     // from its own list too. This is now the complete 24-tool list.
     // PA.f88: this is the library's own test fixture, kept in sync by hand.
-    // Dungeon's `PLAY_TOOLS` in `ghostlight-dungeon/src/play.rs` is the
+    // Dungeon's `PLAY_TOOLS` in `ghostlight-dungeon/src/play.rs` (parked at
+    // `parked/ghostlight-eve-surface`) is the
     // single policy owner of what the play agent may actually call; this
     // copy pins nothing there and is not read by production code.
     const PLAY_TOOLS: &[&str] = &[
