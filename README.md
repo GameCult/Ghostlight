@@ -118,4 +118,4 @@ to an https endpoint. Ghostlight never reads, stores or forwards a model
 credential beyond a key file named at run time.
 
 Runtime documents are MessagePack-backed CultCache. JSON appears only at schema
-publication, browser, model-provider and diagnostic boundaries.
+publication, model-provider and diagnostic boundaries.
